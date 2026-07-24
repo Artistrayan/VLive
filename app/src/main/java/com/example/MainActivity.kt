@@ -1,26 +1,39 @@
 package com.example
 
 import android.os.Bundle
+import android.view.ViewGroup
 import android.view.WindowManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.ui.screens.MainMiniAppContainer
-import com.example.ui.theme.MyApplicationTheme
-import com.example.viewmodel.AppViewModel
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.AndroidView
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    // Clear FLAG_SECURE so that the browser streaming preview canvas can render the app UI
     window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
     enableEdgeToEdge()
     setContent {
-      MyApplicationTheme {
-        val appViewModel: AppViewModel = viewModel()
-        MainMiniAppContainer(viewModel = appViewModel)
-      }
+      AndroidView(
+        modifier = Modifier.fillMaxSize(),
+        factory = { context ->
+          WebView(context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+              ViewGroup.LayoutParams.MATCH_PARENT,
+              ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            settings.allowFileAccess = true
+            webViewClient = WebViewClient()
+            loadUrl("file:///android_asset/index.html")
+          }
+        }
+      )
     }
   }
 }
