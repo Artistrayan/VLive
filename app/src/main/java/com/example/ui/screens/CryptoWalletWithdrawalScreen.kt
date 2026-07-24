@@ -178,7 +178,7 @@ fun CryptoWalletWithdrawalScreen(
                         }
 
                         IconButton(onClick = {
-                            viewModel.showNotification("آدرس TRC20 با موفقیت کپی شد! 📋")
+                            viewModel.showNotification("TRC20 Address copied successfully!")
                         }) {
                             Icon(Icons.Default.ContentCopy, contentDescription = "Copy Address", tint = NeonCyan)
                         }

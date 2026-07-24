@@ -1,7 +1,5 @@
 package com.example.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -24,16 +22,33 @@ private val NeonDarkColorScheme = darkColorScheme(
     outline = CardBorderNeon
 )
 
+private val OledDarkColorScheme = darkColorScheme(
+    primary = NeonPink,
+    onPrimary = Color.White,
+    primaryContainer = NeonPurple,
+    onPrimaryContainer = Color.White,
+    secondary = NeonCyan,
+    onSecondary = Color.Black,
+    tertiary = NeonGold,
+    background = BackgroundOledBlack,
+    onBackground = TextPrimary,
+    surface = SurfaceOledBlack,
+    onSurface = TextPrimary,
+    surfaceVariant = SurfaceOledElevated,
+    onSurfaceVariant = TextSecondary,
+    outline = CardBorderNeon
+)
+
 @Composable
 fun MyApplicationTheme(
-    darkTheme: Boolean = true,
-    dynamicColor: Boolean = false,
+    isOledDeepBlack: Boolean = false,
     content: @Composable () -> Unit
 ) {
+    val activeColorScheme = if (isOledDeepBlack) OledDarkColorScheme else NeonDarkColorScheme
+
     MaterialTheme(
-        colorScheme = NeonDarkColorScheme,
+        colorScheme = activeColorScheme,
         typography = Typography,
         content = content
     )
 }
-

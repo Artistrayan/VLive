@@ -30,8 +30,8 @@ fun AdminAndAiSecurityScreen(
     val userReports by viewModel.userReports.collectAsState()
     val bannedUsernames by viewModel.bannedUsernames.collectAsState()
     val securityLogs by viewModel.securityDeviceLogs.collectAsState()
+    val telegramAdsEnabled by viewModel.telegramAdsEnabled.collectAsState()
     val currentLang by viewModel.currentLanguage.collectAsState()
-
 
     var selectedTab by remember { mutableStateOf(0) }
     var loginUsernameInput by remember { mutableStateOf("") }
@@ -119,7 +119,7 @@ fun AdminAndAiSecurityScreen(
                                 )
                             }
                         }
-                        NeonBadge(text = "UNLIMITED 👑", color = NeonGold)
+                        NeonBadge(text = "SUPER ADMIN ACTIVE", color = NeonGold)
                     }
                 }
             }
@@ -168,18 +168,32 @@ fun AdminAndAiSecurityScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.AdminPanelSettings, contentDescription = "Admin", tint = NeonPink)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = com.example.util.Strings.get("admin_panel_title", currentLang),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = Color.White
-                            )
-                        }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.AdminPanelSettings, contentDescription = "Admin", tint = NeonPink)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = com.example.util.Strings.get("admin_panel_title", currentLang),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White
+                        )
                     }
-                    NeonBadge(text = "ADMIN ACTIVE", color = NeonGreen)
+                    NeonBadge(text = "ADMIN CONTROL PANEL", color = NeonGreen)
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Telegram Ads & System Toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Telegram Ads & Smart System", style = MaterialTheme.typography.labelMedium, color = TextSecondary)
+                    Switch(
+                        checked = telegramAdsEnabled,
+                        onCheckedChange = { viewModel.toggleTelegramAds() },
+                        colors = SwitchDefaults.colors(checkedThumbColor = NeonCyan)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
@@ -238,7 +252,6 @@ fun AdminAndAiSecurityScreen(
                             )
                         )
                     }
-
                 }
             }
         }
@@ -439,12 +452,21 @@ fun AdminAndAiSecurityScreen(
 
                         if (report.status == "PENDING") {
                             Spacer(modifier = Modifier.height(10.dp))
-                            Button(
-                                onClick = { viewModel.banUserAndRevokeSubscription(report.reportedUsername) },
-                                colors = ButtonDefaults.buttonColors(containerColor = ErrorRed),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(com.example.util.Strings.get("ban_user_button", currentLang), style = MaterialTheme.typography.labelSmall)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(
+                                    onClick = { viewModel.banUserAndRevokeSubscription(report.reportedUsername) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = ErrorRed),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(com.example.util.Strings.get("ban_user_button", currentLang), style = MaterialTheme.typography.labelSmall)
+                                }
+                                Button(
+                                    onClick = { viewModel.dismissReport(report.id) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = SurfaceDarkElevated),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Dismiss Report", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                                }
                             }
                         }
                     }
@@ -472,7 +494,13 @@ fun AdminAndAiSecurityScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("@$bannedUser", style = MaterialTheme.typography.titleSmall, color = Color.White)
                         }
-                        NeonBadge(text = "PERMANENTLY BANNED (0 REFUND)", color = ErrorRed)
+                        Button(
+                            onClick = { viewModel.unbanUser(bannedUser) },
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonGreen),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp)
+                        ) {
+                            Text("Unban User", style = MaterialTheme.typography.labelSmall, color = Color.Black)
+                        }
                     }
                 }
             }
@@ -493,7 +521,7 @@ fun AdminAndAiSecurityScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("User: @${log.username}", style = MaterialTheme.typography.titleSmall, color = Color.White)
-                            NeonBadge(text = "FLAG_SECURE ACTIVE 🛡️", color = NeonGreen)
+                            NeonBadge(text = "FLAG_SECURE ACTIVE", color = NeonGreen)
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                         Text("IP: ${log.ipAddress} • Device: ${log.deviceModel}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
@@ -504,5 +532,3 @@ fun AdminAndAiSecurityScreen(
         }
     }
 }
-
-

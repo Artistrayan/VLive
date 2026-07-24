@@ -34,6 +34,7 @@ fun MainMiniAppContainer(
     val userNotification by viewModel.userNotification.collectAsState()
     val user by viewModel.userProfile.collectAsState()
     val currentLang by viewModel.currentLanguage.collectAsState()
+    val isOled by viewModel.isOledDeepBlack.collectAsState()
 
     var showStartLiveModal by remember { mutableStateOf(false) }
     var showRulesModal by remember { mutableStateOf(false) }
@@ -43,7 +44,7 @@ fun MainMiniAppContainer(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        containerColor = BackgroundDark,
+        containerColor = if (isOled) BackgroundOledBlack else BackgroundDark,
         topBar = {
             if (activeStream == null) {
                 Surface(
@@ -66,7 +67,38 @@ fun MainMiniAppContainer(
                             )
                         }
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            // High-Contrast OLED / Cyber Neon Theme Toggle
+                            Surface(
+                                modifier = Modifier
+                                    .border(
+                                        1.dp,
+                                        if (isOled) NeonGreen else NeonPurple,
+                                        RoundedCornerShape(16.dp)
+                                    )
+                                    .clickable { viewModel.toggleOledTheme() },
+                                color = if (isOled) Color(0x66000000) else Color(0x33121420),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = if (isOled) Icons.Default.Contrast else Icons.Default.Palette,
+                                        contentDescription = "Theme Mode",
+                                        tint = if (isOled) NeonGreen else NeonPurple,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = if (isOled) "OLED" else "NEON",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+
                             // Rules & Terms Modal Trigger Button
                             Surface(
                                 modifier = Modifier
@@ -76,7 +108,7 @@ fun MainMiniAppContainer(
                                 shape = RoundedCornerShape(16.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -87,7 +119,7 @@ fun MainMiniAppContainer(
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "قوانین / Rules",
+                                        text = "Rules",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = Color.White
                                     )
@@ -106,7 +138,7 @@ fun MainMiniAppContainer(
                                 shape = RoundedCornerShape(16.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -287,7 +319,7 @@ fun MainMiniAppContainer(
                             OutlinedTextField(
                                 value = newLiveTitleText,
                                 onValueChange = { newLiveTitleText = it },
-                                placeholder = { Text("مثال: چت و گفتگو زنده با طرفداران ✨", color = TextMuted) },
+                                placeholder = { Text("e.g. Live Q&A and Chat with Fans ✨", color = TextMuted) },
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = NeonPink,
                                     unfocusedBorderColor = CardBorderNeon,
@@ -309,12 +341,12 @@ fun MainMiniAppContainer(
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = NeonPink)
                         ) {
-                            Text("شروع بث زنده")
+                            Text("Go Live Now")
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showStartLiveModal = false }) {
-                            Text("انصراف", color = TextSecondary)
+                            Text("Cancel", color = TextSecondary)
                         }
                     }
                 )

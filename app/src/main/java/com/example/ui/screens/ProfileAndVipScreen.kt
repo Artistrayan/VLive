@@ -36,28 +36,14 @@ fun ProfileAndVipScreen(
     val user by viewModel.userProfile.collectAsState()
     val currentLang by viewModel.currentLanguage.collectAsState()
 
+    var activeSubTab by remember { mutableStateOf(0) }
+
     var usernameText by remember(user) { mutableStateOf(user.username) }
     var displayNameText by remember(user) { mutableStateOf(user.displayName) }
+    var bioText by remember(user) { mutableStateOf(user.bio) }
     var selectedGender by remember(user) { mutableStateOf(user.gender) }
 
-    val vipPlans = listOf(
-        VipPlan(
-            id = "vip_1",
-            title = "VIP 1 Month Subscription",
-            durationDays = 30,
-            usdtPrice = 19.99,
-            starsPrice = 500,
-            features = listOf("Golden 3D VIP Badge", "Neon Highlighted Comments", "Access to Private Video Calls")
-        ),
-        VipPlan(
-            id = "vip_2",
-            title = "Super VIP 3 Months 🚀",
-            durationDays = 90,
-            usdtPrice = 49.99,
-            starsPrice = 1200,
-            features = listOf("Golden 3D VIP Badge", "20% Discount on Gifts", "24/7 Dedicated Support", "HD Video Stream Quality")
-        )
-    )
+    val vipPlans = viewModel.vipPlans
 
     LazyColumn(
         modifier = Modifier
@@ -66,117 +52,7 @@ fun ProfileAndVipScreen(
         contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Direct Messages & Auto-Translate Chat Card
-        item {
-            val directMsgs by viewModel.directMessages.collectAsState()
-            val autoTranslate by viewModel.autoTranslateChat.collectAsState()
-            var dmInputText by remember { mutableStateOf("") }
-
-            NeonGlassCard(
-                borderColor = NeonCyan,
-                glowColor = NeonPurple
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Chat, contentDescription = null, tint = NeonCyan)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = Strings.get("direct_messages_title", currentLang),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = Color.White
-                        )
-                    }
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = if (autoTranslate) "Auto Translate: ON 🌐" else "Auto Translate: OFF",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (autoTranslate) NeonGreen else TextSecondary
-                        )
-                        Switch(
-                            checked = autoTranslate,
-                            onCheckedChange = { viewModel.toggleAutoTranslate() },
-                            colors = SwitchDefaults.colors(checkedThumbColor = NeonGreen)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(160.dp)
-                        .background(Color(0x44000000), RoundedCornerShape(12.dp))
-                        .padding(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(directMsgs) { msg ->
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                            ) {
-                                Text(
-                                    text = "@${msg.senderUsername}: ${msg.originalText}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (msg.isSystemMessage) NeonGold else Color.White
-                                )
-                                if (autoTranslate && msg.translatedText.isNotBlank()) {
-                                    Text(
-                                        text = msg.translatedText,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = NeonCyan
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextField(
-                        value = dmInputText,
-                        onValueChange = { dmInputText = it },
-                        placeholder = { Text("ارسال پیام مستقیم / Support...", color = TextMuted) },
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = NeonCyan,
-                            unfocusedBorderColor = CardBorderNeon,
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-
-                    Button(
-                        onClick = {
-                            if (dmInputText.isNotBlank()) {
-                                viewModel.sendDirectMessage("Support", dmInputText)
-                                dmInputText = ""
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = NeonCyan)
-                    ) {
-                        Text("ارسال", color = Color.Black)
-                    }
-                }
-            }
-        }
-
-        // User Profile Header Card
-
+        // User Profile Main Header Card
         item {
             NeonGlassCard(
                 borderColor = if (user.isVip) NeonGold else NeonCyan,
@@ -191,7 +67,7 @@ fun ProfileAndVipScreen(
                             model = user.avatarUrl,
                             contentDescription = "Avatar",
                             modifier = Modifier
-                                .size(90.dp)
+                                .size(96.dp)
                                 .clip(CircleShape)
                                 .border(2.dp, if (user.isVip) NeonGold else NeonPink, CircleShape),
                             contentScale = ContentScale.Crop
@@ -199,7 +75,7 @@ fun ProfileAndVipScreen(
                         if (user.isVip) {
                             Icon(
                                 imageVector = Icons.Default.WorkspacePremium,
-                                contentDescription = "VIP",
+                                contentDescription = "VIP Badge",
                                 tint = NeonGold,
                                 modifier = Modifier
                                     .size(28.dp)
@@ -219,7 +95,12 @@ fun ProfileAndVipScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         if (user.genderVerified) {
-                            Icon(Icons.Default.Verified, contentDescription = "Verified", tint = NeonCyan, modifier = Modifier.size(18.dp))
+                            Icon(
+                                imageVector = Icons.Default.Verified,
+                                contentDescription = "Verified",
+                                tint = NeonCyan,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
 
@@ -229,6 +110,13 @@ fun ProfileAndVipScreen(
                         color = TextSecondary
                     )
 
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    NeonBadge(
+                        text = "Exclusive ID: ID-${user.id}",
+                        color = NeonGold
+                    )
+
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -236,14 +124,373 @@ fun ProfileAndVipScreen(
                             text = if (user.gender == Gender.FEMALE) "Female (Host)" else "Male (Viewer)",
                             color = if (user.gender == Gender.FEMALE) NeonPink else NeonCyan
                         )
-                        NeonBadge(text = "+18 Verified 🔞", color = NeonGreen)
+                        NeonBadge(
+                            text = if (user.isVip) "VIP Active" else "Standard User",
+                            color = if (user.isVip) NeonGold else TextSecondary
+                        )
+                        NeonBadge(text = "+18 Verified", color = NeonGreen)
                     }
                 }
             }
         }
 
-        // Female Host 40% Commission Badge & Pricing Controls (if Female)
-        if (user.gender == Gender.FEMALE) {
+        // Subtabs Navigation Row
+        item {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, CardBorderNeon, RoundedCornerShape(20.dp)),
+                color = Color(0xDD121420),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(6.dp),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    FilterChip(
+                        selected = activeSubTab == 0,
+                        onClick = { activeSubTab = 0 },
+                        label = { Text("Overview") },
+                        leadingIcon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = NeonCyan,
+                            selectedLabelColor = Color.Black
+                        )
+                    )
+
+                    FilterChip(
+                        selected = activeSubTab == 1,
+                        onClick = { activeSubTab = 1 },
+                        label = { Text("VIP Pass") },
+                        leadingIcon = { Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = NeonGold,
+                            selectedLabelColor = Color.Black
+                        )
+                    )
+
+                    FilterChip(
+                        selected = activeSubTab == 2,
+                        onClick = { activeSubTab = 2 },
+                        label = { Text("Hosting & Media") },
+                        leadingIcon = { Icon(Icons.Default.Videocam, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = NeonPink,
+                            selectedLabelColor = Color.White
+                        )
+                    )
+
+                    FilterChip(
+                        selected = activeSubTab == 3,
+                        onClick = { activeSubTab = 3 },
+                        label = { Text("Settings") },
+                        leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = NeonPurple,
+                            selectedLabelColor = Color.White
+                        )
+                    )
+                }
+            }
+        }
+
+        // TAB 0: Overview & Balance Cards
+        if (activeSubTab == 0) {
+            item {
+                Text(
+                    text = "Wallet & Balance Overview",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White
+                )
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // USDT Balance Card
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .border(1.dp, NeonGreen, RoundedCornerShape(16.dp)),
+                        color = SurfaceDarkElevated,
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.AttachMoney, contentDescription = null, tint = NeonGreen, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("USDT Balance", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "$${String.format("%.2f", user.usdtBalance)}",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White
+                            )
+                        }
+                    }
+
+                    // Stars Balance Card
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .border(1.dp, NeonGold, RoundedCornerShape(16.dp)),
+                        color = SurfaceDarkElevated,
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Stars, contentDescription = null, tint = NeonGold, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Stars Balance", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "${user.starsBalance} Stars",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = NeonGold
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Total Host Earnings Card (If female or host)
+            if (user.gender == Gender.FEMALE || user.totalEarningsUsdt > 0) {
+                item {
+                    NeonGlassCard(
+                        borderColor = NeonPink,
+                        glowColor = NeonPurple
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Savings, contentDescription = null, tint = NeonPink, modifier = Modifier.size(28.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text("Total Hosting & Call Earnings", style = MaterialTheme.typography.titleSmall, color = Color.White)
+                                    Text("40% Female Creator Revenue Share Active", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                                }
+                            }
+                            Text(
+                                text = "$${String.format("%.2f", user.totalEarningsUsdt)}",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = NeonGreen
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Male Quotas & Daily Bonus Card
+            item {
+                val freeCalls by viewModel.dailyFreeCallsRemaining.collectAsState()
+                val freeLiveSecs by viewModel.dailyFreeLiveSecondsRemaining.collectAsState()
+                val giftClaimed by viewModel.dailyGiftClaimed.collectAsState()
+
+                NeonGlassCard(
+                    borderColor = NeonGreen,
+                    glowColor = NeonCyan
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.CardGiftcard, contentDescription = null, tint = NeonGreen)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = Strings.get("daily_gift_title", currentLang),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = NeonGreen
+                            )
+                        }
+                        NeonBadge(
+                            text = if (giftClaimed) Strings.get("daily_gift_claimed", currentLang) else "+50 Stars",
+                            color = if (giftClaimed) Color.Gray else NeonGold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    NeonButton(
+                        text = if (giftClaimed) Strings.get("daily_gift_claimed", currentLang) else Strings.get("claim_daily_gift", currentLang),
+                        onClick = { viewModel.claimDailyGift() },
+                        primaryColor = NeonGreen,
+                        enabled = !giftClaimed
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = Strings.get("free_call_quota", currentLang),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextSecondary
+                            )
+                            Text(
+                                text = "$freeCalls / 3",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = NeonCyan
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = Strings.get("free_live_quota", currentLang),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextSecondary
+                            )
+                            Text(
+                                text = "${freeLiveSecs / 60}m ${freeLiveSecs % 60}s",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = NeonCyan
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Bio Card
+            item {
+                NeonGlassCard(
+                    borderColor = NeonCyan,
+                    glowColor = NeonPurple
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Bio & Account Summary", style = MaterialTheme.typography.titleSmall, color = NeonCyan)
+                        if (user.bioVerified) {
+                            NeonBadge(text = "Verified Bio", color = NeonGreen)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = user.bio.ifBlank { "No biography added yet." },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+
+        // TAB 1: VIP Subscriptions
+        if (activeSubTab == 1) {
+            item {
+                NeonGlassCard(
+                    borderColor = NeonGold,
+                    glowColor = NeonPink
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.WorkspacePremium, contentDescription = null, tint = NeonGold, modifier = Modifier.size(32.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text("Exclusive V.Live VIP Passes", style = MaterialTheme.typography.titleMedium, color = NeonGold)
+                            Text("Unlock 4K streams, gift discounts & 3D badge", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                        }
+                    }
+                }
+            }
+
+            items(vipPlans) { plan ->
+                NeonGlassCard(
+                    borderColor = when(plan.id) {
+                        "vip_bronze" -> Color(0xFFCD7F32)
+                        "vip_silver" -> Color(0xFFC0C0C0)
+                        "vip_gold" -> NeonGold
+                        "vip_platinum" -> NeonCyan
+                        else -> NeonPurple
+                    },
+                    glowColor = NeonPurple
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = plan.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "Duration: ${plan.durationDays} Days",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextSecondary
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "$${plan.usdtPrice} USDT",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = NeonGreen
+                            )
+                            Text(
+                                text = "or ${plan.starsPrice} Stars",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = NeonGold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    plan.features.forEach { feature ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        ) {
+                            Icon(Icons.Default.Check, contentDescription = null, tint = NeonGreen, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = feature, style = MaterialTheme.typography.labelMedium, color = TextSecondary)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { viewModel.buyVipPlan(plan) },
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonGold),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Buy with USDT", color = Color.Black)
+                        }
+
+                        Button(
+                            onClick = { viewModel.subscribeToVipWithStars(plan) },
+                            colors = ButtonDefaults.buttonColors(containerColor = SurfaceDarkElevated),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Buy with Stars", color = NeonGold)
+                        }
+                    }
+                }
+            }
+        }
+
+        // TAB 2: Host Settings & Media Vault
+        if (activeSubTab == 2) {
             item {
                 val isFreeLive by viewModel.isFreeLive.collectAsState()
                 val callStarsRate by viewModel.callStarsPerMin.collectAsState()
@@ -328,7 +575,6 @@ fun ProfileAndVipScreen(
                         color = TextSecondary
                     )
 
-
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -350,379 +596,216 @@ fun ProfileAndVipScreen(
             }
         }
 
-        // Male Quotas & Daily Bonus Card
-        item {
-            val freeCalls by viewModel.dailyFreeCallsRemaining.collectAsState()
-            val freeLiveSecs by viewModel.dailyFreeLiveSecondsRemaining.collectAsState()
-            val giftClaimed by viewModel.dailyGiftClaimed.collectAsState()
+        // TAB 3: Edit Profile & Messages / Settings
+        if (activeSubTab == 3) {
+            // Direct Messages Card
+            item {
+                val directMsgs by viewModel.directMessages.collectAsState()
+                val autoTranslate by viewModel.autoTranslateChat.collectAsState()
+                var dmInputText by remember { mutableStateOf("") }
 
-            NeonGlassCard(
-                borderColor = NeonGreen,
-                glowColor = NeonCyan
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                NeonGlassCard(
+                    borderColor = NeonCyan,
+                    glowColor = NeonPurple
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Chat, contentDescription = null, tint = NeonCyan)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = Strings.get("direct_messages_title", currentLang),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = Color.White
+                            )
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (autoTranslate) "Translate: ON" else "Translate: OFF",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (autoTranslate) NeonGreen else TextSecondary
+                            )
+                            Switch(
+                                checked = autoTranslate,
+                                onCheckedChange = { viewModel.toggleAutoTranslate() },
+                                colors = SwitchDefaults.colors(checkedThumbColor = NeonGreen)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp)
+                            .background(Color(0x44000000), RoundedCornerShape(12.dp))
+                            .padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            items(directMsgs) { msg ->
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = "@${msg.senderUsername}: ${msg.originalText}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (msg.isSystemMessage) NeonGold else Color.White
+                                    )
+                                    if (autoTranslate && msg.translatedText.isNotBlank()) {
+                                        Text(
+                                            text = msg.translatedText,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = NeonCyan
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = dmInputText,
+                            onValueChange = { dmInputText = it },
+                            placeholder = { Text("Send direct message to support...", color = TextMuted) },
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = NeonCyan,
+                                unfocusedBorderColor = CardBorderNeon,
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+
+                        Button(
+                            onClick = {
+                                if (dmInputText.isNotBlank()) {
+                                    viewModel.sendDirectMessage("Support", dmInputText)
+                                    dmInputText = ""
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonCyan)
+                        ) {
+                            Text("Send", color = Color.Black)
+                        }
+                    }
+                }
+            }
+
+            // Edit Profile Form Card
+            item {
+                NeonGlassCard(
+                    borderColor = NeonCyan,
+                    glowColor = NeonPurple
                 ) {
                     Text(
-                        text = Strings.get("daily_gift_title", currentLang),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = NeonGreen
+                        text = Strings.get("profile_edit_title", currentLang),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = NeonCyan
                     )
-                    NeonBadge(
-                        text = if (giftClaimed) Strings.get("daily_gift_claimed", currentLang) else "+50 Stars 🎁",
-                        color = if (giftClaimed) Color.Gray else NeonGold
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = displayNameText,
+                        onValueChange = { displayNameText = it },
+                        label = { Text(Strings.get("display_name_label", currentLang), color = TextSecondary) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = NeonCyan,
+                            unfocusedBorderColor = CardBorderNeon,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
                     )
-                }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                NeonButton(
-                    text = if (giftClaimed) Strings.get("daily_gift_claimed", currentLang) else Strings.get("claim_daily_gift", currentLang),
-                    onClick = { viewModel.claimDailyGift() },
-                    primaryColor = NeonGreen,
-                    enabled = !giftClaimed
-                )
+                    OutlinedTextField(
+                        value = usernameText,
+                        onValueChange = { usernameText = it },
+                        label = { Text(Strings.get("username_label", currentLang), color = TextSecondary) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = NeonCyan,
+                            unfocusedBorderColor = CardBorderNeon,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text(
-                            text = Strings.get("free_call_quota", currentLang),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = TextSecondary
-                        )
-                        Text(
-                            text = "$freeCalls / 3",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = NeonCyan
-                        )
-                    }
+                    OutlinedTextField(
+                        value = bioText,
+                        onValueChange = { bioText = it },
+                        label = { Text("Biography & Profile Summary", color = TextSecondary) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = NeonCyan,
+                            unfocusedBorderColor = CardBorderNeon,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
 
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = Strings.get("free_live_quota", currentLang),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = TextSecondary
-                        )
-                        Text(
-                            text = "${freeLiveSecs / 60}m ${freeLiveSecs % 60}s",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = NeonCyan
-                        )
-                    }
-                }
-            }
-        }
+                    Spacer(modifier = Modifier.height(12.dp))
 
-        // Live Stream Viewing Packages
-        item {
-            Text(
-                text = Strings.get("live_stream_packages", currentLang),
-                style = MaterialTheme.typography.titleMedium,
-                color = TextPrimary
-            )
-        }
+                    Text(Strings.get("select_gender", currentLang), style = MaterialTheme.typography.labelMedium, color = TextSecondary)
+                    Spacer(modifier = Modifier.height(6.dp))
 
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .border(1.dp, NeonCyan, RoundedCornerShape(16.dp)),
-                    color = SurfaceDarkElevated,
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text("3-Day Live Pass 🎟️", style = MaterialTheme.typography.titleSmall, color = NeonCyan)
-                        Text("Unlimited Stream Access", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("$4.99 USDT", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(
-                            onClick = { viewModel.topUpWallet(4.99, 100) },
-                            colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Buy", color = Color.Black)
-                        }
-                    }
-                }
-
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .border(1.dp, NeonPink, RoundedCornerShape(16.dp)),
-                    color = SurfaceDarkElevated,
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text("Monthly Pass 🌟", style = MaterialTheme.typography.titleSmall, color = NeonPink)
-                        Text("All Hosts Unlimited", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("$14.99 USDT", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(
-                            onClick = { viewModel.topUpWallet(14.99, 300) },
-                            colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Buy", color = Color.White)
-                        }
-                    }
-                }
-            }
-        }
-
-        // Private Call Token Packages
-        item {
-            Text(
-                text = Strings.get("private_call_packages", currentLang),
-                style = MaterialTheme.typography.titleMedium,
-                color = TextPrimary
-            )
-        }
-
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .border(1.dp, NeonGold, RoundedCornerShape(16.dp)),
-                    color = SurfaceDarkElevated,
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text("500 Call Stars 🪙", style = MaterialTheme.typography.titleSmall, color = NeonGold)
-                        Text("~ 20 Mins Private Call", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("$9.99 USDT", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(
-                            onClick = { viewModel.topUpWallet(9.99, 500) },
-                            colors = ButtonDefaults.buttonColors(containerColor = NeonGold),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Buy", color = Color.Black)
-                        }
-                    }
-                }
-
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .border(1.dp, NeonPurple, RoundedCornerShape(16.dp)),
-                    color = SurfaceDarkElevated,
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text("2000 Call Stars 💎", style = MaterialTheme.typography.titleSmall, color = NeonPurple)
-                        Text("~ 80 Mins HD Call", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("$29.99 USDT", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(
-                            onClick = { viewModel.topUpWallet(29.99, 2000) },
-                            colors = ButtonDefaults.buttonColors(containerColor = NeonPurple),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Buy", color = Color.White)
-                        }
-                    }
-                }
-            }
-        }
-        item {
-            NeonGlassCard(
-                borderColor = NeonCyan,
-                glowColor = NeonPurple
-            ) {
-                Text(
-                    text = Strings.get("language_switch_title", currentLang),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = NeonCyan
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    AppLanguage.values().forEach { lang ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         FilterChip(
-                            selected = currentLang == lang,
-                            onClick = { viewModel.setLanguage(lang) },
-                            label = { Text(lang.label) },
+                            selected = selectedGender == Gender.FEMALE,
+                            onClick = { selectedGender = Gender.FEMALE },
+                            label = { Text(Strings.get("gender_female", currentLang)) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = NeonPink,
+                                selectedLabelColor = Color.White
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        FilterChip(
+                            selected = selectedGender == Gender.MALE,
+                            onClick = { selectedGender = Gender.MALE },
+                            label = { Text(Strings.get("gender_male", currentLang)) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = NeonCyan,
-                                selectedLabelColor = Color.Black,
-                                containerColor = SurfaceDarkElevated,
-                                labelColor = TextSecondary
+                                selectedLabelColor = Color.Black
                             ),
                             modifier = Modifier.weight(1f)
                         )
                     }
-                }
-            }
-        }
 
-        // Edit Profile Form
-        item {
-            NeonGlassCard(
-                borderColor = NeonCyan,
-                glowColor = NeonPurple
-            ) {
-                Text(
-                    text = Strings.get("profile_edit_title", currentLang),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = NeonCyan
-                )
+                    Spacer(modifier = Modifier.height(14.dp))
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = displayNameText,
-                    onValueChange = { displayNameText = it },
-                    label = { Text(Strings.get("display_name_label", currentLang), color = TextSecondary) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = NeonCyan,
-                        unfocusedBorderColor = CardBorderNeon,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                OutlinedTextField(
-                    value = usernameText,
-                    onValueChange = { usernameText = it },
-                    label = { Text(Strings.get("username_label", currentLang), color = TextSecondary) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = NeonCyan,
-                        unfocusedBorderColor = CardBorderNeon,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(Strings.get("select_gender", currentLang), style = MaterialTheme.typography.labelMedium, color = TextSecondary)
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    FilterChip(
-                        selected = selectedGender == Gender.FEMALE,
-                        onClick = { selectedGender = Gender.FEMALE },
-                        label = { Text(Strings.get("gender_female", currentLang)) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = NeonPink,
-                            selectedLabelColor = Color.White
-                        ),
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    FilterChip(
-                        selected = selectedGender == Gender.MALE,
-                        onClick = { selectedGender = Gender.MALE },
-                        label = { Text(Strings.get("gender_male", currentLang)) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = NeonCyan,
-                            selectedLabelColor = Color.Black
-                        ),
-                        modifier = Modifier.weight(1f)
+                    NeonButton(
+                        text = Strings.get("save_profile", currentLang),
+                        onClick = {
+                            viewModel.updateProfileDetails(displayNameText, usernameText, bioText, selectedGender)
+                        },
+                        primaryColor = NeonCyan
                     )
                 }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                NeonButton(
-                    text = Strings.get("save_profile", currentLang),
-                    onClick = {
-                        viewModel.updateProfile(usernameText, displayNameText, selectedGender)
-                    },
-                    primaryColor = NeonCyan
-                )
-            }
-        }
-
-        // VIP Purchase Section
-        item {
-            Text(
-                text = Strings.get("buy_vip_title", currentLang),
-                style = MaterialTheme.typography.titleMedium,
-                color = TextPrimary
-            )
-        }
-
-        items(vipPlans) { plan ->
-            NeonGlassCard(
-                borderColor = NeonGold,
-                glowColor = NeonPurple
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = plan.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = NeonGold
-                        )
-                        Text(
-                            text = "Duration: ${plan.durationDays} days",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = TextSecondary
-                        )
-                    }
-
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "$${plan.usdtPrice} USDT",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.White
-                        )
-                        Text(
-                            text = "or ${plan.starsPrice} Stars ⭐️",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = NeonGold
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                plan.features.forEach { feature ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(vertical = 2.dp)
-                    ) {
-                        Icon(Icons.Default.Check, contentDescription = null, tint = NeonGreen, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = feature, style = MaterialTheme.typography.labelMedium, color = TextSecondary)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                NeonButton(
-                    text = Strings.get("buy_with_usdt", currentLang),
-                    onClick = { viewModel.buyVipPlan(plan) },
-                    primaryColor = NeonGold
-                )
             }
         }
     }

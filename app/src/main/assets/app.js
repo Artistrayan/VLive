@@ -297,7 +297,6 @@ function renderUsers() {
                     <span class="display-name">${u.name}</span>
                     <span class="username-sub">@${u.username}</span>
                     <div class="meta-tags-row">
-                        <span class="uid-badge">${u.uid || ('ID-' + u.id)}</span>
                         <span class="age-badge">${u.age} سال</span>
                         <span class="vip-badge">VIP ${u.vip_level}</span>
                     </div>
@@ -362,7 +361,6 @@ function renderStreams() {
                     <span class="display-name">${s.display_name || s.host_username}</span>
                     <span class="username-sub">@${s.host_username}</span>
                     <div class="meta-tags-row">
-                        <span class="uid-badge">${s.host_uid || ('ID-' + (s.id + 100))}</span>
                         <span class="age-badge">${s.age || 24} سال</span>
                         <span class="vip-badge">VIP ${s.vip_level || 3}</span>
                         ${s.is_plus_18 ? '<span class="tag-badge-18">18+</span>' : '<span class="age-badge" style="color:#39FF14; border-color:#39FF14;">رایگان</span>'}
@@ -600,7 +598,7 @@ function openStreamModal(host, avatar, name, age, vip, uid) {
     document.getElementById('active-streamer-name').innerText = name ? `${name} (@${host})` : '@' + host;
     document.getElementById('active-streamer-avatar').src = avatar || ('https://api.dicebear.com/7.x/avataaars/svg?seed=' + host);
     if (age) document.getElementById('active-streamer-age').innerText = age + ' سال';
-    if (vip) document.getElementById('active-streamer-vip').innerText = (uid ? uid + ' • ' : '') + 'سطح VIP ' + vip;
+    if (vip) document.getElementById('active-streamer-vip').innerText = 'سطح VIP ' + vip;
     document.getElementById('stream-modal').classList.remove('hidden');
 }
 

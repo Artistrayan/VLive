@@ -122,7 +122,7 @@ fun VideoCallStreamRoomScreen(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "تطبیق چهره عکس پروفایل با مجری لایو: ۹۸.۴٪ (تایید شده - بدون تقلب)",
+                        text = "Face Verification Match: 98.4% (Verified Host)",
                         style = MaterialTheme.typography.labelSmall,
                         color = NeonGreen
                     )
@@ -148,7 +148,7 @@ fun VideoCallStreamRoomScreen(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "FLAG_SECURE Active: ممانعت کامل از ضبط فیلم و اسکرین‌شوت",
+                        text = "FLAG_SECURE Active: Screenshot & Screen Recording Blocked",
                         style = MaterialTheme.typography.labelSmall,
                         color = ErrorRed
                     )
@@ -315,7 +315,7 @@ fun VideoCallStreamRoomScreen(
                     glowColor = NeonPink
                 ) {
                     Text(
-                        text = "ارسال هدایای نئونی ۳ بعدی و ارز دیجیتال",
+                        text = "Send 3D Neon Gifts & Crypto",
                         style = MaterialTheme.typography.titleMedium,
                         color = NeonGold
                     )
@@ -340,7 +340,7 @@ fun VideoCallStreamRoomScreen(
                 OutlinedTextField(
                     value = commentInput,
                     onValueChange = { commentInput = it },
-                    placeholder = { Text("ارسال پیام در لایو...", color = TextMuted) },
+                    placeholder = { Text("Send comment...", color = TextMuted) },
                     modifier = Modifier.weight(1f),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color(0x66121420),
@@ -390,22 +390,22 @@ fun VideoCallStreamRoomScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.ReportProblem, contentDescription = null, tint = ErrorRed)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("گزارش تخلف / Report Violation", color = Color.White)
+                    Text("Report Violation", color = Color.White)
                 }
             },
             text = {
                 Column {
                     Text(
-                        text = "لطفاً علت گزارش تخلف مجری/کاربر @${stream.hostName} را انتخاب کنید:",
+                        text = "Select violation reason for @${stream.hostName}:",
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
                     listOf(
-                        "توهین و آزار و اذیت (Harassment / Offensive)",
-                        "محتوای خطرناک یا غیرقانونی (Dangerous Content)",
-                        "هویت جعلی / اکانت ساختگی (Fake Identity)"
+                        "Harassment / Offensive Language",
+                        "Dangerous / Illegal Content",
+                        "Fake Identity / Impersonation"
                     ).forEach { reason ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -432,12 +432,12 @@ fun VideoCallStreamRoomScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
                 ) {
-                    Text("ارسال گزارش به مدیریت")
+                    Text("Submit Report")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showReportDialog = false }) {
-                    Text("انصراف", color = TextSecondary)
+                    Text("Cancel", color = TextSecondary)
                 }
             }
         )
@@ -454,13 +454,13 @@ fun VideoCallStreamRoomScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Star, contentDescription = null, tint = NeonGold)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("امتیازدهی و ثبت نظر درباره مجری @${stream.hostName}", color = Color.White, style = MaterialTheme.typography.titleSmall)
+                    Text("Rate Streamer @${stream.hostName}", color = Color.White, style = MaterialTheme.typography.titleSmall)
                 }
             },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "کیفیت استریم و نحوه پاسخگویی مجری چطور بود؟",
+                        text = "How was your experience with this stream?",
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary
                     )
@@ -486,7 +486,7 @@ fun VideoCallStreamRoomScreen(
                     if (ratingStars < 3) {
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "لطفاً علت نارضایتی خود را بیان فرمایید (ارسال به پشتیبانی):",
+                            text = "Please describe why you were unsatisfied:",
                             style = MaterialTheme.typography.labelSmall,
                             color = ErrorRed
                         )
@@ -494,7 +494,7 @@ fun VideoCallStreamRoomScreen(
                         OutlinedTextField(
                             value = dissatisfactionReasonText,
                             onValueChange = { dissatisfactionReasonText = it },
-                            placeholder = { Text("توضیحات علت نارضایتی...", color = TextMuted) },
+                            placeholder = { Text("Details...", color = TextMuted) },
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = ErrorRed,
                                 unfocusedBorderColor = CardBorderNeon,
@@ -516,7 +516,7 @@ fun VideoCallStreamRoomScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = NeonGreen)
                 ) {
-                    Text("ثبت امتیاز و خروج", color = Color.Black)
+                    Text("Submit & Exit", color = Color.Black)
                 }
             },
             dismissButton = {
@@ -524,7 +524,7 @@ fun VideoCallStreamRoomScreen(
                     showRatingDialog = false
                     onCloseClick()
                 }) {
-                    Text("انصراف و خروج", color = TextSecondary)
+                    Text("Cancel & Exit", color = TextSecondary)
                 }
             }
         )
@@ -538,39 +538,63 @@ fun GiftItemCard(
 ) {
     Surface(
         modifier = Modifier
-            .width(100.dp)
+            .width(82.dp)
             .clickable { onSend() }
-            .border(1.dp, Color(gift.neonColorHex), RoundedCornerShape(16.dp)),
-        color = Color(0x44121420),
-        shape = RoundedCornerShape(16.dp)
+            .border(1.5.dp, Color(gift.neonColorHex), RoundedCornerShape(20.dp)),
+        color = Color(0xAA0A0C14),
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(
-            modifier = Modifier.padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = when (gift.iconName) {
-                    "directions_car" -> Icons.Default.DirectionsCar
-                    "military_tech" -> Icons.Default.MilitaryTech
-                    "diamond" -> Icons.Default.Diamond
-                    "rocket_launch" -> Icons.Default.RocketLaunch
-                    else -> Icons.Default.Favorite
-                },
-                contentDescription = gift.name,
-                tint = Color(gift.neonColorHex),
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = gift.name,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+            Surface(
+                modifier = Modifier
+                    .size(44.dp)
+                    .border(1.dp, Color(gift.neonColorHex).copy(alpha = 0.5f), CircleShape),
+                color = Color(gift.neonColorHex).copy(alpha = 0.2f),
+                shape = CircleShape
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = when (gift.iconName) {
+                            "local_florist" -> Icons.Default.LocalFlorist
+                            "local_bar" -> Icons.Default.LocalBar
+                            "military_tech" -> Icons.Default.MilitaryTech
+                            "verified" -> Icons.Default.Verified
+                            "directions_car" -> Icons.Default.DirectionsCar
+                            "diamond" -> Icons.Default.Diamond
+                            "speed" -> Icons.Default.Speed
+                            "rocket_launch" -> Icons.Default.RocketLaunch
+                            "sailing" -> Icons.Default.Sailing
+                            "shield" -> Icons.Default.Shield
+                            "flight_takeoff" -> Icons.Default.FlightTakeoff
+                            "castle" -> Icons.Default.Castle
+                            "whatshot" -> Icons.Default.Whatshot
+                            "blur_circular" -> Icons.Default.BlurCircular
+                            "auto_awesome" -> Icons.Default.AutoAwesome
+                            else -> Icons.Default.Favorite
+                        },
+                        contentDescription = gift.name,
+                        tint = Color(gift.neonColorHex),
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             if (gift.usdtCost > 0) {
-                NeonBadge(text = "$${gift.usdtCost}", color = NeonCyan)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.AttachMoney, contentDescription = null, tint = NeonCyan, modifier = Modifier.size(12.dp))
+                    Text(text = "${gift.usdtCost}", style = MaterialTheme.typography.labelSmall, color = NeonCyan)
+                }
             } else {
-                NeonBadge(text = "${gift.starsCost} ⭐️", color = NeonGold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Star, contentDescription = null, tint = NeonGold, modifier = Modifier.size(12.dp))
+                    Text(text = "${gift.starsCost}", style = MaterialTheme.typography.labelSmall, color = NeonGold)
+                }
             }
         }
     }

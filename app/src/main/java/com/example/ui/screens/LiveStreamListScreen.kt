@@ -180,7 +180,7 @@ fun LiveStreamListScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Videocam, contentDescription = null, tint = if (selectedSubTab == 0) NeonPink else TextMuted, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("استریم‌ها", color = if (selectedSubTab == 0) NeonPink else TextMuted)
+                                Text("Streams", color = if (selectedSubTab == 0) NeonPink else TextMuted)
                             }
                         }
                     )
@@ -192,7 +192,7 @@ fun LiveStreamListScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Lock, contentDescription = null, tint = if (selectedSubTab == 1) NeonPurple else TextMuted, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("آلبوم اختصاصی (Vault)", color = if (selectedSubTab == 1) NeonPurple else TextMuted)
+                                Text("Media Vault", color = if (selectedSubTab == 1) NeonPurple else TextMuted)
                             }
                         }
                     )
@@ -204,7 +204,7 @@ fun LiveStreamListScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = if (selectedSubTab == 2) NeonGold else TextMuted, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("جدول رتبه‌بندی", color = if (selectedSubTab == 2) NeonGold else TextMuted)
+                                Text("Leaderboard", color = if (selectedSubTab == 2) NeonGold else TextMuted)
                             }
                         }
                     )
@@ -216,7 +216,7 @@ fun LiveStreamListScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Event, contentDescription = null, tint = if (selectedSubTab == 3) NeonCyan else TextMuted, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("رزرو تماس خصوصی", color = if (selectedSubTab == 3) NeonCyan else TextMuted)
+                                Text("Private Calls", color = if (selectedSubTab == 3) NeonCyan else TextMuted)
                             }
                         }
                     )
@@ -282,7 +282,7 @@ fun LiveStreamListScreen(
                                     ) {
                                         Icon(Icons.Default.AddAPhoto, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text("انتشار آلبوم", style = MaterialTheme.typography.labelSmall)
+                                        Text("Publish Album", style = MaterialTheme.typography.labelSmall)
                                     }
                                 }
                             }
@@ -324,7 +324,7 @@ fun LiveStreamListScreen(
                                             Spacer(modifier = Modifier.height(6.dp))
 
                                             if (vaultItem.isUnlocked) {
-                                                Text("✅ قفل باز شده و آماده مشاهده است", style = MaterialTheme.typography.labelSmall, color = NeonGreen)
+                                                Text("✅ Unlocked & Ready to View", style = MaterialTheme.typography.labelSmall, color = NeonGreen)
                                             } else {
                                                 Button(
                                                     onClick = { viewModel.unlockVaultMedia(vaultItem.id) },
@@ -332,7 +332,7 @@ fun LiveStreamListScreen(
                                                 ) {
                                                     Icon(Icons.Default.Star, contentDescription = null, tint = NeonGold, modifier = Modifier.size(16.dp))
                                                     Spacer(modifier = Modifier.width(4.dp))
-                                                    Text("باز کردن قفل (${vaultItem.unlockCostStars} Stars)", style = MaterialTheme.typography.labelSmall)
+                                                    Text("Unlock (${vaultItem.unlockCostStars} Stars)", style = MaterialTheme.typography.labelSmall)
                                                 }
                                             }
                                         }
@@ -344,20 +344,20 @@ fun LiveStreamListScreen(
                                 AlertDialog(
                                     onDismissRequest = { showPublishVaultDialog = false },
                                     containerColor = Color(0xFF121420),
-                                    title = { Text("انتشار آلبوم اختصاصی جدید", color = Color.White) },
+                                    title = { Text("Publish New Private Album", color = Color.White) },
                                     text = {
                                         Column {
                                             OutlinedTextField(
                                                 value = newVaultTitleText,
                                                 onValueChange = { newVaultTitleText = it },
-                                                label = { Text("عنوان آلبوم / عکس", color = TextSecondary) },
+                                                label = { Text("Album Title / Photo", color = TextSecondary) },
                                                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = NeonPurple, focusedTextColor = Color.White)
                                             )
                                             Spacer(modifier = Modifier.height(8.dp))
                                             OutlinedTextField(
                                                 value = newVaultPriceStars,
                                                 onValueChange = { newVaultPriceStars = it },
-                                                label = { Text("قیمت قفل‌گشایی (Stars)", color = TextSecondary) },
+                                                label = { Text("Unlock Price (Stars)", color = TextSecondary) },
                                                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = NeonPurple, focusedTextColor = Color.White)
                                             )
                                         }
@@ -366,7 +366,7 @@ fun LiveStreamListScreen(
                                         Button(
                                             onClick = {
                                                 viewModel.publishVaultMedia(
-                                                    title = newVaultTitleText.ifBlank { "آلبوم اختصاصی ۴K" },
+                                                    title = newVaultTitleText.ifBlank { "Exclusive 4K Album" },
                                                     unlockCostStars = newVaultPriceStars.toLongOrNull() ?: 150L,
                                                     isVideo = false
                                                 )
@@ -374,7 +374,7 @@ fun LiveStreamListScreen(
                                             },
                                             colors = ButtonDefaults.buttonColors(containerColor = NeonPurple)
                                         ) {
-                                            Text("انتشار در آلبوم")
+                                            Text("Publish to Vault")
                                         }
                                     }
                                 )
@@ -458,7 +458,7 @@ fun LiveStreamListScreen(
                                 ) {
                                     Icon(Icons.Default.Add, contentDescription = null, tint = Color.Black)
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("رزرو وقت جدید", color = Color.Black, style = MaterialTheme.typography.labelSmall)
+                                    Text("Book New Slot", color = Color.Black, style = MaterialTheme.typography.labelSmall)
                                 }
                             }
 
@@ -470,12 +470,12 @@ fun LiveStreamListScreen(
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text("رزرو تماس ۱ به ۱ با @${book.hostUsername}", style = MaterialTheme.typography.titleSmall, color = Color.White)
+                                            Text("Private 1-on-1 Call with @${book.hostUsername}", style = MaterialTheme.typography.titleSmall, color = Color.White)
                                             NeonBadge(text = book.status, color = NeonGreen)
                                         }
                                         Spacer(modifier = Modifier.height(6.dp))
-                                        Text("📅 تاریخ: ${book.date} • ⏰ زمان: ${book.timeSlot}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                                        Text("هزینه رزرو: ${book.costStars} Stars", style = MaterialTheme.typography.labelSmall, color = NeonGold)
+                                        Text("📅 Date: ${book.date} • ⏰ Time: ${book.timeSlot}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                                        Text("Booking Fee: ${book.costStars} Stars", style = MaterialTheme.typography.labelSmall, color = NeonGold)
                                     }
                                 }
                             }
@@ -484,27 +484,27 @@ fun LiveStreamListScreen(
                                 AlertDialog(
                                     onDismissRequest = { showBookingDialog = false },
                                     containerColor = Color(0xFF121420),
-                                    title = { Text("رزرو زمان تماس خصوصی با مجری", color = Color.White) },
+                                    title = { Text("Book Private Call with Host", color = Color.White) },
                                     text = {
                                         Column {
                                             OutlinedTextField(
                                                 value = targetHostName,
                                                 onValueChange = { targetHostName = it },
-                                                label = { Text("نام مجری", color = TextSecondary) },
+                                                label = { Text("Host Username", color = TextSecondary) },
                                                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = NeonCyan, focusedTextColor = Color.White)
                                             )
                                             Spacer(modifier = Modifier.height(8.dp))
                                             OutlinedTextField(
                                                 value = bookingDate,
                                                 onValueChange = { bookingDate = it },
-                                                label = { Text("تاریخ رزرو (مثال: 2026-07-25)", color = TextSecondary) },
+                                                label = { Text("Booking Date (e.g. 2026-07-25)", color = TextSecondary) },
                                                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = NeonCyan, focusedTextColor = Color.White)
                                             )
                                             Spacer(modifier = Modifier.height(8.dp))
                                             OutlinedTextField(
                                                 value = bookingTimeSlot,
                                                 onValueChange = { bookingTimeSlot = it },
-                                                label = { Text("بازه زمانی (مثال: 22:00 - 22:30)", color = TextSecondary) },
+                                                label = { Text("Time Slot (e.g. 22:00 - 22:30)", color = TextSecondary) },
                                                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = NeonCyan, focusedTextColor = Color.White)
                                             )
                                         }
@@ -517,7 +517,7 @@ fun LiveStreamListScreen(
                                             },
                                             colors = ButtonDefaults.buttonColors(containerColor = NeonCyan)
                                         ) {
-                                            Text("تایید و پرداخت ۵۰۰ سکه", color = Color.Black)
+                                            Text("Confirm & Pay 500 Stars", color = Color.Black)
                                         }
                                     }
                                 )
@@ -679,7 +679,7 @@ fun LiveStreamCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "${stream.pricePerMinStars} Stars/دقیقه",
+                        text = "${stream.pricePerMinStars} Stars/min",
                         style = MaterialTheme.typography.labelSmall,
                         color = NeonGold
                     )

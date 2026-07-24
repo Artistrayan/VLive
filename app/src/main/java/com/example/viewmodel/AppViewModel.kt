@@ -20,12 +20,21 @@ class AppViewModel : ViewModel() {
         _currentLanguage.value = lang
     }
 
+    // OLED Deep Black Theme Toggle
+    private val _isOledDeepBlack = MutableStateFlow(false)
+    val isOledDeepBlack: StateFlow<Boolean> = _isOledDeepBlack.asStateFlow()
+
+    fun toggleOledTheme() {
+        _isOledDeepBlack.value = !_isOledDeepBlack.value
+        showNotification(if (_isOledDeepBlack.value) "OLED Deep Black Theme Enabled" else "Cyber Neon Theme Enabled")
+    }
+
     // Current User Profile State
     private val _userProfile = MutableStateFlow(
         UserProfile(
             id = "usr_9981",
             username = "LuminaQueen",
-            displayName = "الناز (تایید شده ✨)",
+            displayName = "Elnaz (Verified Host)",
             avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
             gender = Gender.FEMALE,
             role = UserRole.HOST,
@@ -48,13 +57,68 @@ class AppViewModel : ViewModel() {
     private val _activeStream = MutableStateFlow<LiveStream?>(null)
     val activeStream: StateFlow<LiveStream?> = _activeStream.asStateFlow()
 
-    // Gifts list
+    // Gifts list (16 Diverse 3D & Neon Vector Icon Gifts)
     val gifts = listOf(
-        LiveGift("gift_1", "قلب نئونی", "favorite", usdtCost = 0.5, starsCost = 10, neonColorHex = 0xFFFF007A),
-        LiveGift("gift_2", "ماسکراتی 3D", "directions_car", usdtCost = 5.0, starsCost = 100, neonColorHex = 0xFF00F0FF),
-        LiveGift("gift_3", "تاج VIP نئون", "military_tech", usdtCost = 15.0, starsCost = 300, neonColorHex = 0xFFFFB800),
-        LiveGift("gift_4", "الماس 3D درخشان", "diamond", usdtCost = 50.0, starsCost = 1000, neonColorHex = 0xFF9D00FF),
-        LiveGift("gift_5", "موشک نئون 🚀", "rocket_launch", usdtCost = 100.0, starsCost = 2000, neonColorHex = 0xFF00FF66)
+        LiveGift("gift_1", "Neon Heart", "favorite", usdtCost = 0.5, starsCost = 10, neonColorHex = 0xFFFF007A),
+        LiveGift("gift_2", "Glowing Rose", "local_florist", usdtCost = 1.0, starsCost = 20, neonColorHex = 0xFFFF1493),
+        LiveGift("gift_3", "Neon Cocktail", "local_bar", usdtCost = 2.5, starsCost = 50, neonColorHex = 0xFF00E5FF),
+        LiveGift("gift_4", "Neon VIP Crown", "military_tech", usdtCost = 5.0, starsCost = 100, neonColorHex = 0xFFFFB800),
+        LiveGift("gift_5", "3D Diamond Ring", "verified", usdtCost = 12.5, starsCost = 250, neonColorHex = 0xFF00F0FF),
+        LiveGift("gift_6", "3D Sport Maserati", "directions_car", usdtCost = 15.0, starsCost = 300, neonColorHex = 0xFF00F0FF),
+        LiveGift("gift_7", "Shining 3D Diamond", "diamond", usdtCost = 25.0, starsCost = 500, neonColorHex = 0xFF9D00FF),
+        LiveGift("gift_8", "Cyberpunk Ferrari", "speed", usdtCost = 50.0, starsCost = 1000, neonColorHex = 0xFFFF3366),
+        LiveGift("gift_9", "Cyber Neon Rocket", "rocket_launch", usdtCost = 75.0, starsCost = 1500, neonColorHex = 0xFF00FF66),
+        LiveGift("gift_10", "3D Luxury Yacht", "sailing", usdtCost = 100.0, starsCost = 2000, neonColorHex = 0xFF00E5FF),
+        LiveGift("gift_11", "3D Golden Shield", "shield", usdtCost = 150.0, starsCost = 3000, neonColorHex = 0xFFFFD700),
+        LiveGift("gift_12", "3D Private Jet", "flight_takeoff", usdtCost = 200.0, starsCost = 4000, neonColorHex = 0xFFFFB800),
+        LiveGift("gift_13", "3D Neon Castle", "castle", usdtCost = 250.0, starsCost = 5000, neonColorHex = 0xFFFF007A),
+        LiveGift("gift_14", "3D Neon Dragon Flame", "whatshot", usdtCost = 375.0, starsCost = 7500, neonColorHex = 0xFFFF4500),
+        LiveGift("gift_15", "3D Galactic Portal", "blur_circular", usdtCost = 400.0, starsCost = 8000, neonColorHex = 0xFF00F0FF),
+        LiveGift("gift_16", "3D Starburst Explosion", "auto_awesome", usdtCost = 500.0, starsCost = 10000, neonColorHex = 0xFFFFD700)
+    )
+
+    // VIP Subscriptions list (5 Tiered Subscriptions)
+    val vipPlans = listOf(
+        VipPlan(
+            id = "vip_bronze",
+            title = "Bronze VIP Pass",
+            durationDays = 7,
+            usdtPrice = 9.99,
+            starsPrice = 200,
+            features = listOf("3D Bronze Chat Badge", "Highlighted Meta Messages", "Priority Video Call Queue")
+        ),
+        VipPlan(
+            id = "vip_silver",
+            title = "Silver Sport VIP",
+            durationDays = 30,
+            usdtPrice = 29.99,
+            starsPrice = 600,
+            features = listOf("3D Silver Neon Badge", "10% Discount on Gifts", "HD 1080p Stream Quality", "Dedicated VIP Support")
+        ),
+        VipPlan(
+            id = "vip_gold",
+            title = "Gold Royal VIP",
+            durationDays = 90,
+            usdtPrice = 79.99,
+            starsPrice = 1600,
+            features = listOf("3D Golden Crown Badge", "20% Discount on Gifts", "Access to Exclusive VIP Live Streams", "Neon Room Entrance Effects")
+        ),
+        VipPlan(
+            id = "vip_platinum",
+            title = "Platinum Cyber VIP",
+            durationDays = 180,
+            usdtPrice = 149.99,
+            starsPrice = 3000,
+            features = listOf("3D Platinum Glowing Aura", "30% Discount on All Gifts", "4K Ultra HD Live Streams", "24/7 VIP Concierge Support")
+        ),
+        VipPlan(
+            id = "vip_diamond",
+            title = "Diamond Supreme VIP",
+            durationDays = 365,
+            usdtPrice = 299.99,
+            starsPrice = 6000,
+            features = listOf("3D Kingdom Diamond Badge", "50% Discount on All Gifts", "Unlimited Private Video Calls", "Custom Animated Room Entry")
+        )
     )
 
     // Chat messages in Live Stream
@@ -128,7 +192,7 @@ class AppViewModel : ViewModel() {
 
     fun toggleAutoTranslate() {
         _autoTranslateChat.value = !_autoTranslateChat.value
-        showNotification(if (_autoTranslateChat.value) "ترجمه خودکار پیام‌ها فعال شد 🌐" else "ترجمه خودکار غیرفعال شد.")
+        showNotification(if (_autoTranslateChat.value) "Auto chat translation enabled 🌐" else "Auto chat translation disabled.")
     }
 
     // Host Studio Beauty Filter Selection
@@ -137,7 +201,7 @@ class AppViewModel : ViewModel() {
 
     fun setBeautyFilter(filter: BeautyFilter) {
         _activeBeautyFilter.value = filter
-        showNotification("افکت چهره لایو به '${filter.label}' تغییر یافت ✨")
+        showNotification("Beauty filter set to '${filter.label}'")
     }
 
     // Direct Messaging (Chat System)
@@ -148,7 +212,7 @@ class AppViewModel : ViewModel() {
                 senderUsername = "LuminaSupport",
                 receiverUsername = "LuminaUser",
                 originalText = "Welcome to V.Live! Your account is protected with FLAG_SECURE anti-recording.",
-                translatedText = "به V.Live خوش آمدید! حساب شما با سیستم ضد ضبط FLAG_SECURE محافظت می‌شود.",
+                translatedText = "Welcome to V.Live! Your account is protected with FLAG_SECURE anti-recording.",
                 timestamp = "14:30",
                 isSystemMessage = true
             ),
@@ -157,7 +221,7 @@ class AppViewModel : ViewModel() {
                 senderUsername = "Rayan",
                 receiverUsername = "LuminaUser",
                 originalText = "Hello! Super Admin support is active 24/7.",
-                translatedText = "سلام! پشتیبانی مدیریت کل ۲۴/۷ فعال است.",
+                translatedText = "Hello! Super Admin support is active 24/7.",
                 timestamp = "14:35"
             )
         )
@@ -166,7 +230,7 @@ class AppViewModel : ViewModel() {
 
     fun sendDirectMessage(receiverUsername: String, text: String) {
         val currentSender = _userProfile.value.username
-        val simulatedTranslation = if (text.contains(Regex("[a-zA-Z]"))) "ترجمه: $text (پاسخ خودکار)" else "Translated: $text (Auto Translation)"
+        val simulatedTranslation = "Translated: $text (Auto Translation)"
         val newDm = DirectMessage(
             id = "dm_${System.currentTimeMillis()}",
             senderUsername = currentSender,
@@ -176,7 +240,7 @@ class AppViewModel : ViewModel() {
             timestamp = "15:20"
         )
         _directMessages.value = _directMessages.value + newDm
-        showNotification("پیام مستقیم ارسال شد 💬")
+        showNotification("Direct message sent")
     }
 
     // Security Audit Logs
@@ -211,7 +275,7 @@ class AppViewModel : ViewModel() {
                 id = "vault_1",
                 hostUsername = "Sogand_Live",
                 hostAvatar = "",
-                title = "آلبوم اختصاصی ۴K نئونی استودیو",
+                title = "Exclusive 4K Studio Neon Album",
                 previewUrl = "",
                 unlockCostStars = 150,
                 isUnlocked = false,
@@ -222,7 +286,7 @@ class AppViewModel : ViewModel() {
                 id = "vault_2",
                 hostUsername = "Elena_Stream",
                 hostAvatar = "",
-                title = "ویدئوی اختصاصی پشت صحنه لایو VIP",
+                title = "Behind-the-Scenes VIP Video",
                 previewUrl = "",
                 unlockCostStars = 300,
                 isUnlocked = false,
@@ -244,9 +308,9 @@ class AppViewModel : ViewModel() {
             _vaultMediaItems.value = _vaultMediaItems.value.map {
                 if (it.id == itemId) it.copy(isUnlocked = true) else it
             }
-            showNotification("قفل آلبوم اختصاصی @${item.hostUsername} با موفقیت باز شد!")
+            showNotification("Unlocked media vault for @${item.hostUsername}!")
         } else {
-            showNotification("موجودی سکه کافی نیست! لطفاً کیف پول خود را شارژ کنید.")
+            showNotification("Insufficient Stars balance! Please top up your wallet.")
         }
     }
 
@@ -263,26 +327,26 @@ class AppViewModel : ViewModel() {
             likesCount = 1
         )
         _vaultMediaItems.value = listOf(newMedia) + _vaultMediaItems.value
-        showNotification("محتوای اختصاصی قفل‌دار با موفقیت در آلبوم منتشر شد!")
+        showNotification("Exclusive album published successfully!")
     }
 
     // 2. Weekly Leaderboard & VIP Supporters
     private val _leaderboardHosts = MutableStateFlow<List<LeaderboardEntry>>(
         listOf(
-            LeaderboardEntry(1, "Sogand_Live", "", 45200, true, "Golden Queen 👑"),
-            LeaderboardEntry(2, "Elena_Stream", "", 38900, true, "Neon Goddess ✨"),
-            LeaderboardEntry(3, "Sara_Vip", "", 29400, true, "Silver Host 💎"),
-            LeaderboardEntry(4, "Niloofar_Live", "", 18500, true, "Top Streamer 🌟")
+            LeaderboardEntry(1, "Sogand_Live", "", 45200, true, "Golden Queen"),
+            LeaderboardEntry(2, "Elena_Stream", "", 38900, true, "Neon Goddess"),
+            LeaderboardEntry(3, "Sara_Vip", "", 29400, true, "Silver Host"),
+            LeaderboardEntry(4, "Niloofar_Live", "", 18500, true, "Top Streamer")
         )
     )
     val leaderboardHosts: StateFlow<List<LeaderboardEntry>> = _leaderboardHosts.asStateFlow()
 
     private val _leaderboardSupporters = MutableStateFlow<List<LeaderboardEntry>>(
         listOf(
-            LeaderboardEntry(1, "Whale_King_99", "", 125000, false, "Diamond Donor 💎"),
-            LeaderboardEntry(2, "Crypto_Lord", "", 98000, false, "Golden Whale 🐋"),
-            LeaderboardEntry(3, "Rayan_Sponsor", "", 74000, false, "Super Sponsor 🚀"),
-            LeaderboardEntry(4, "Vip_Viewer_007", "", 43000, false, "Top Supporter ⭐️")
+            LeaderboardEntry(1, "Whale_King_99", "", 125000, false, "Diamond Donor"),
+            LeaderboardEntry(2, "Crypto_Lord", "", 98000, false, "Golden Whale"),
+            LeaderboardEntry(3, "Rayan_Sponsor", "", 74000, false, "Super Sponsor"),
+            LeaderboardEntry(4, "Vip_Viewer_007", "", 43000, false, "Top Supporter")
         )
     )
     val leaderboardSupporters: StateFlow<List<LeaderboardEntry>> = _leaderboardSupporters.asStateFlow()
@@ -320,21 +384,21 @@ class AppViewModel : ViewModel() {
                 status = "CONFIRMED"
             )
             _privateBookings.value = listOf(newBooking) + _privateBookings.value
-            showNotification("زمان تماس خصوصی با @$hostUsername برای تاریخ $date نهایی شد!")
+            showNotification("Private call slot booked with @$hostUsername for $date!")
         } else {
-            showNotification("موجودی سکه کافی نیست! لطفاً سکه خریداری نمایید.")
+            showNotification("Insufficient Stars balance! Please buy more Stars.")
         }
     }
 
     fun acceptRules() {
         _rulesAccepted.value = true
-        showNotification("قوانین برنامه تایید شد. خوش آمدید!")
+        showNotification("Platform terms accepted. Welcome!")
     }
 
     fun disconnectCallByHost(hostUsername: String) {
         // Disconnection by host cancels earnings for this call and charges 0 fee to male viewer
         _hostPerSecondEarnings.value = 0.0
-        showNotification("تماس توسط مجری قطع شد! طبق قوانین هیچ هزینه‌ای کسر نگردید و هیچ درآمدی برای مجری محاسبه نشد.")
+        showNotification("Call disconnected by host! 0 fees charged.")
     }
 
     fun submitStreamRating(streamId: String, hostName: String, stars: Int, dissatisfactionReason: String) {
@@ -345,9 +409,9 @@ class AppViewModel : ViewModel() {
                 reportedUsername = hostName,
                 reason = "Low Rating ($stars/5 Stars): $dissatisfactionReason"
             )
-            showNotification("امتیاز $stars ستاره ثبت شد. بازخورد نارضایتی شما جهت بررسی کیفیت به مدیریت ارسال گردید.")
+            showNotification("Rating $stars stars submitted and feedback sent to support.")
         } else {
-            showNotification("با تشکر! امتیاز $stars ستاره شما برای مجری @$hostName ثبت گردید. ⭐️")
+            showNotification("Thank you! Rating $stars stars submitted for @$hostName.")
         }
     }
 
@@ -356,25 +420,25 @@ class AppViewModel : ViewModel() {
             _userProfile.value = UserProfile(
                 id = "admin_rayan_001",
                 username = "Rayan",
-                displayName = "Rayan (Super Admin 👑)",
+                displayName = "Rayan (Super Admin)",
                 avatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde",
                 gender = Gender.FEMALE, // Allowed full host access & viewer access
                 role = UserRole.ADMIN,
                 ageVerified = true,
                 genderVerified = true,
                 isVip = true,
-                vipExpiryDate = "UNLIMITED 2099 🚀",
+                vipExpiryDate = "UNLIMITED 2099",
                 usdtBalance = 999999.00,
                 starsBalance = 999999,
                 totalEarningsUsdt = 999999.00,
-                bio = "مدیریت کل و پشتیبانی رسمی V.Live (دسترسی کامل نامحدود) 👑",
+                bio = "Super Admin & Official Support for V.Live",
                 bioVerified = true,
                 isSuperAdmin = true
             )
-            showNotification("ورود موفق به عنوان مدیریت کل (Rayan) - دسترسی نامحدود به تمام امکانات فعال شد! 👑")
+            showNotification("Logged in as Super Admin (Rayan) - Unlimited Access Granted!")
             return true
         } else {
-            showNotification("نام کاربری یا رمز عبور اشتباه است!")
+            showNotification("Invalid username or password!")
             return false
         }
     }
@@ -389,7 +453,7 @@ class AppViewModel : ViewModel() {
             timestamp = "2026-07-23 ${java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())}"
         )
         _userReports.value = listOf(newReport) + _userReports.value
-        showNotification("گزارش تخلف کاربر @$reportedUsername ثبت شد و جهت بررسی به مدیریت ارسال گردید.")
+        showNotification("Violation report for @$reportedUsername submitted to admin.")
     }
 
     fun banUserAndRevokeSubscription(reportedUsername: String) {
@@ -400,33 +464,33 @@ class AppViewModel : ViewModel() {
         }
         // Remove active streams hosted by this user
         _liveStreams.value = _liveStreams.value.filter { it.hostName != reportedUsername }
-        showNotification("کاربر @$reportedUsername مسدود گردید. اشتراک فعال لغو شده و هیچ وجهی مسترد نمی‌گردد!")
+        showNotification("User @$reportedUsername banned. Active subscriptions revoked.")
     }
 
     fun setFreeLiveMode(isFree: Boolean) {
         _isFreeLive.value = isFree
-        showNotification(if (isFree) "حالت لایو رایگان شد." else "حالت لایو پولی شد.")
+        showNotification(if (isFree) "Stream set to FREE mode." else "Stream set to PAID mode.")
     }
 
     fun setCallStarsPerMinRate(rate: Int) {
         _callStarsPerMin.value = rate
-        showNotification("قیمت هر دقیقه تماس خصوصی به $rate سکه/Stars تنظیم شد.")
+        showNotification("Private call rate set to $rate Stars/min.")
     }
 
     fun claimDailyGift() {
         if (!_dailyGiftClaimed.value) {
             _dailyGiftClaimed.value = true
             topUpWallet(0.0, 50)
-            showNotification("هدیه روزانه ۵۰ سکه/Stars به حساب شما اضافه شد! 🎁")
+            showNotification("Daily bonus 50 Stars added to your account!")
         } else {
-            showNotification("هدیه روزانه امروز قبلاً دریافت شده است!")
+            showNotification("Daily gift already claimed today!")
         }
     }
 
     fun useFreeCallQuota(): Boolean {
         if (_dailyFreeCallsRemaining.value > 0) {
             _dailyFreeCallsRemaining.value -= 1
-            showNotification("یک تماس ۳۰ ثانیه‌ای رایگان روزانه فعال شد (باقیمانده: ${_dailyFreeCallsRemaining.value})")
+            showNotification("1 Free 30s call activated (Remaining: ${_dailyFreeCallsRemaining.value})")
             return true
         }
         return false
@@ -459,42 +523,42 @@ class AppViewModel : ViewModel() {
             LiveStream(
                 id = "live_101",
                 hostId = "host_1",
-                hostName = "الناز نئون",
+                hostName = "Elnaz Neon",
                 hostAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
-                title = "چت نئونی شبانه و تماس تصویری VIP 🔥✨",
+                title = "Nightly Neon Chat & VIP Calls",
                 viewerCount = 1420,
                 pricePerMinStars = 25,
-                tags = listOf("تایید هویت", "VIP", "پخش زنده"),
+                tags = listOf("Verified", "VIP", "Live Stream"),
                 isFemaleVerified = true
             ),
             LiveStream(
                 id = "live_102",
                 hostId = "host_2",
-                hostName = "سارا لایو",
+                hostName = "Sara Live",
                 hostAvatar = "https://images.unsplash.com/photo-1517841905240-472988babdf9",
-                title = "پاسخ به سوالات شبی با استریم اختصاصی 💎",
+                title = "Nightly Q&A Stream",
                 viewerCount = 890,
                 pricePerMinStars = 20,
-                tags = listOf("تماس خصوصی", "تایید جنسیت"),
+                tags = listOf("Private Call", "Gender Verified"),
                 isFemaleVerified = true
             ),
             LiveStream(
                 id = "live_103",
                 hostId = "host_3",
-                hostName = "رکسانا VIP",
+                hostName = "Roxana VIP",
                 hostAvatar = "https://images.unsplash.com/photo-1524504388940-b1c1722653e1",
-                title = "استریم زنده ۳ بعدی و هدایای کریپتویی 🚀",
+                title = "3D Stream & Crypto Gifts",
                 viewerCount = 2300,
                 pricePerMinStars = 50,
-                tags = listOf("سوپر VIP", "ارز دیجیتال"),
+                tags = listOf("Super VIP", "Crypto"),
                 isFemaleVerified = true
             )
         )
 
         _streamComments.value = listOf(
-            "امیر" to "سلام الناز جان! استریم حرفه‌ای نئونی عالیه 🔥",
-            "رضا" to "برات الماس ۵۰ دلاری فرستادم! 💎",
-            "کامران" to "کیفیت تماس تصویری فوق العاده است"
+            "Amir" to "Great stream Elnaz!",
+            "Reza" to "Sent a $50 Diamond gift!",
+            "Kamran" to "HD Video Call quality is amazing!"
         )
 
         _withdrawals.value = listOf(
@@ -508,7 +572,7 @@ class AppViewModel : ViewModel() {
                 netPayoutUsdt = 68.50,
                 walletAddress = "0x71C...49b2",
                 status = "PENDING",
-                requestedAt = "1403/05/01 14:20"
+                requestedAt = "2026-07-24 14:20"
             ),
             WithdrawalRequest(
                 id = "tx_900",
@@ -520,7 +584,7 @@ class AppViewModel : ViewModel() {
                 netPayoutUsdt = 173.50,
                 walletAddress = "0x71C...49b2",
                 status = "APPROVED",
-                requestedAt = "1403/04/30 18:10"
+                requestedAt = "2026-07-23 18:10"
             )
         )
 
@@ -532,8 +596,8 @@ class AppViewModel : ViewModel() {
                 alertType = "GENDER_MISMATCH",
                 riskScore = 92,
                 status = "FLAGGED",
-                details = "هوش مصنوعی عدم تطابق چهره زنانه در لایو را شناسایی کرد.",
-                timestamp = "10 دقیقه پیش"
+                details = "AI detected non-female face mismatch in live stream.",
+                timestamp = "10 mins ago"
             ),
             AiSecurityAlert(
                 id = "ai_2",
@@ -542,8 +606,8 @@ class AppViewModel : ViewModel() {
                 alertType = "SUSPICIOUS_TRANSFER",
                 riskScore = 85,
                 status = "RESOLVED",
-                details = "تلاش برای ارسال خودکار هدیه و اسپم شناسایی و مسدود شد.",
-                timestamp = "1 ساعت پیش"
+                details = "Automated gift spam attempt blocked.",
+                timestamp = "1 hour ago"
             )
         )
     }
@@ -560,20 +624,20 @@ class AppViewModel : ViewModel() {
                     _userProfile.value = user.copy(
                         usdtBalance = user.usdtBalance - gift.usdtCost
                     )
-                    addComment(user.displayName, "هدیه ارسال کرد: ${gift.name} 🎁")
-                    showNotification("هدیه ${gift.name} با موفقیت ارسال شد!")
+                    addComment(user.displayName, "Sent gift: ${gift.name} 🎁")
+                    showNotification("Gift ${gift.name} sent successfully!")
                 } else {
-                    showNotification("موجودی USDT کافی نیست! لطفاً کیف پول خود را شارژ کنید.")
+                    showNotification("Insufficient USDT balance! Please top up.")
                 }
             } else if (gift.starsCost > 0) {
                 if (user.starsBalance >= gift.starsCost) {
                     _userProfile.value = user.copy(
                         starsBalance = user.starsBalance - gift.starsCost
                     )
-                    addComment(user.displayName, "هدیه ارسال کرد: ${gift.name} ⭐️")
-                    showNotification("هدیه ${gift.name} با Stars ارسال شد!")
+                    addComment(user.displayName, "Sent gift: ${gift.name} ⭐️")
+                    showNotification("Gift ${gift.name} sent with Stars!")
                 } else {
-                    showNotification("موجودی Telegram Stars کافی نیست!")
+                    showNotification("Insufficient Telegram Stars balance!")
                 }
             }
         }
@@ -588,11 +652,11 @@ class AppViewModel : ViewModel() {
             val user = _userProfile.value
             // Check female host restriction & 1 per day restriction
             if (user.gender != Gender.FEMALE) {
-                showNotification("خطا: برداشت درآمد فقط مخصوص مجریان خانم تایید شده می‌باشد.")
+                showNotification("Error: Earnings withdrawal is restricted to verified female creators.")
                 return@launch
             }
             if (amountUsdt <= 0 || amountUsdt > user.usdtBalance) {
-                showNotification("موجودی قابل برداشت نامعتبر است.")
+                showNotification("Invalid withdrawal amount.")
                 return@launch
             }
 
@@ -610,14 +674,14 @@ class AppViewModel : ViewModel() {
                 netPayoutUsdt = netPayout,
                 walletAddress = walletAddress,
                 status = "PENDING",
-                requestedAt = "هم اکنون"
+                requestedAt = "Just now"
             )
 
             _userProfile.value = user.copy(
                 usdtBalance = user.usdtBalance - amountUsdt
             )
             _withdrawals.value = listOf(newTx) + _withdrawals.value
-            showNotification("درخواست برداشت $amountUsdt USDT ثبت شد (در انتظار تایید دستی مدیریت).")
+            showNotification("Withdrawal request for $amountUsdt USDT submitted (Pending admin approval).")
         }
     }
 
@@ -625,7 +689,7 @@ class AppViewModel : ViewModel() {
         _withdrawals.value = _withdrawals.value.map {
             if (it.id == txId) it.copy(status = "APPROVED") else it
         }
-        showNotification("درخواست برداشت تایید شد.")
+        showNotification("Withdrawal request approved.")
     }
 
     fun rejectWithdrawal(txId: String) {
@@ -638,7 +702,7 @@ class AppViewModel : ViewModel() {
             _userProfile.value = _userProfile.value.copy(
                 usdtBalance = _userProfile.value.usdtBalance + tx.amountUsdt
             )
-            showNotification("درخواست برداشت رد و مبلغ به کیف پول بازگردانده شد.")
+            showNotification("Withdrawal request rejected. Funds refunded to wallet.")
         }
     }
 
@@ -648,7 +712,7 @@ class AppViewModel : ViewModel() {
             usdtBalance = current.usdtBalance + usdtAmount,
             starsBalance = current.starsBalance + starsAmount
         )
-        showNotification("کیف پول با موفقیت شارژ شد!")
+        showNotification("Wallet topped up successfully!")
     }
 
     fun buyVipPlan(plan: VipPlan) {
@@ -657,7 +721,7 @@ class AppViewModel : ViewModel() {
             _userProfile.value = user.copy(
                 usdtBalance = user.usdtBalance - plan.usdtPrice,
                 isVip = true,
-                vipExpiryDate = "1405/01/01"
+                vipExpiryDate = "2027-01-01"
             )
             // 40% Commission for female host pool
             val femaleCommissionUsdt = plan.usdtPrice * 0.40
@@ -666,13 +730,55 @@ class AppViewModel : ViewModel() {
                     usdtBalance = _userProfile.value.usdtBalance + femaleCommissionUsdt,
                     totalEarningsUsdt = _userProfile.value.totalEarningsUsdt + femaleCommissionUsdt
                 )
-                showNotification("اشتراک VIP فعال شد (+ $femaleCommissionUsdt USDT پاداش ۴۰٪ درآمد خانم‌ها اضافه گردید) ✨")
+                showNotification("VIP Pass activated (+ $femaleCommissionUsdt USDT 40% female creator share added) ✨")
             } else {
-                showNotification("اشتراک VIP ${plan.title} فعال شد! (۴۰٪ کمیسیون این خرید به مجریان خانم تعلق گرفت) ✨")
+                showNotification("VIP Pass ${plan.title} activated! (40% commission contributed to female host pool) ✨")
             }
         } else {
-            showNotification("موجودی USDT کافی نیست.")
+            showNotification("Insufficient USDT balance.")
         }
+    }
+
+    fun subscribeToVipWithStars(plan: VipPlan) {
+        val user = _userProfile.value
+        if (user.starsBalance >= plan.starsPrice) {
+            _userProfile.value = user.copy(
+                starsBalance = user.starsBalance - plan.starsPrice,
+                isVip = true,
+                vipExpiryDate = "2026-12-31"
+            )
+            showNotification("Subscription ${plan.title} activated with ${plan.starsPrice} Stars!")
+        } else {
+            showNotification("Insufficient Stars balance! Required: ${plan.starsPrice} Stars.")
+        }
+    }
+
+    fun updateProfileDetails(displayName: String, username: String, bio: String, gender: Gender) {
+        val current = _userProfile.value
+        _userProfile.value = current.copy(
+            displayName = displayName,
+            username = username,
+            bio = bio,
+            gender = gender
+        )
+        showNotification("Profile details updated successfully.")
+    }
+
+    fun unbanUser(username: String) {
+        _bannedUsernames.value = _bannedUsernames.value.filter { it != username }
+        showNotification("User @$username unbanned.")
+    }
+
+    fun dismissReport(reportId: String) {
+        _userReports.value = _userReports.value.map { rep ->
+            if (rep.id == reportId) rep.copy(status = "DISMISSED") else rep
+        }
+        showNotification("Report dismissed.")
+    }
+
+    fun toggleTelegramAds() {
+        _telegramAdsEnabled.value = !_telegramAdsEnabled.value
+        showNotification(if (_telegramAdsEnabled.value) "Telegram Ads enabled" else "Telegram Ads disabled")
     }
 
     fun updateProfile(username: String, displayName: String, gender: Gender) {
@@ -682,13 +788,13 @@ class AppViewModel : ViewModel() {
             displayName = displayName,
             gender = gender
         )
-        showNotification("اطلاعات پروفایل به روز رسانی شد.")
+        showNotification("Profile updated successfully.")
     }
 
     fun startFemaleLiveStream(title: String) {
         val user = _userProfile.value
         if (user.gender != Gender.FEMALE || !user.genderVerified) {
-            showNotification("خطا: شروع بث زنده/لایو طبق قوانین سیستم فقط مخصوص خانم‌های تایید هویت شده می‌باشد.")
+            showNotification("Error: Starting live stream is restricted to verified female creators.")
             return
         }
 
@@ -700,13 +806,13 @@ class AppViewModel : ViewModel() {
             title = title,
             viewerCount = 1,
             pricePerMinStars = 30,
-            tags = listOf("زنده جدید", "تایید هویت"),
+            tags = listOf("New Stream", "Verified"),
             isFemaleVerified = true
         )
 
         _liveStreams.value = listOf(newStream) + _liveStreams.value
         _activeStream.value = newStream
-        showNotification("لایو شما با موفقیت پخش گردید 🚀")
+        showNotification("Your stream is now live! 🚀")
     }
 
     fun showNotification(message: String) {

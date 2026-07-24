@@ -11,7 +11,7 @@ enum class UserRole {
 data class UserProfile(
     val id: String = "usr_101",
     val username: String = "LuminaUser",
-    val displayName: String = "کاربر لومینا",
+    val displayName: String = "Lumina User",
     val avatarUrl: String = "",
     val gender: Gender = Gender.MALE,
     val role: UserRole = UserRole.VIEWER,
@@ -22,7 +22,7 @@ data class UserProfile(
     val usdtBalance: Double = 145.50,
     val starsBalance: Long = 1250,
     val totalEarningsUsdt: Double = 320.00,
-    val bio: String = "علاقه‌مند به گفتگو و استریم‌های نئونی ✨",
+    val bio: String = "Live streams and cyber neon calls",
     val bioVerified: Boolean = true,
     val isSuperAdmin: Boolean = false,
     val isBanned: Boolean = false
@@ -49,7 +49,7 @@ data class LiveStream(
     val tags: List<String>,
     val isPrivateCall: Boolean = false,
     val isLive: Boolean = true,
-    val category: String = "پخش زنده داغ",
+    val category: String = "Hot Streams",
     val isFemaleVerified: Boolean = true
 )
 
@@ -107,11 +107,11 @@ data class SecurityDeviceLog(
 )
 
 enum class BeautyFilter(val label: String, val neonColor: Long) {
-    STUDIO_GLOW("استودیو نئونی (Studio Glow)", 0xFFFF007F),
-    HOLLYWOOD_GLAM("هالیوود گلم (Hollywood Glam)", 0xFFFFD700),
-    NATURAL_SMOOTH("طبیعی ناعم (Natural Smooth)", 0xFF00F5FF),
-    VIBRANT_AURA("آورا درخشان (Vibrant Aura)", 0xFF39FF14),
-    CYBER_MASK("ماسک نئونی سایبرپانک (AR Cyber Mask)", 0xFF9D00FF)
+    STUDIO_GLOW("Studio Glow", 0xFFFF007F),
+    HOLLYWOOD_GLAM("Hollywood Glam", 0xFFFFD700),
+    NATURAL_SMOOTH("Natural Smooth", 0xFF00F5FF),
+    VIBRANT_AURA("Vibrant Aura", 0xFF39FF14),
+    CYBER_MASK("AR Cyber Mask", 0xFF9D00FF)
 }
 
 data class VaultMediaItem(
