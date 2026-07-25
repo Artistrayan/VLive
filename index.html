@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>V.Live+18 - Telegram Web Mini App</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app" class="cyber-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="user-badge">
+                <div class="avatar-glow">
+                    <img id="user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=User" alt="Avatar">
+                </div>
+                <div class="user-info">
+                    <span id="user-name" class="username">کاربر تلگرام</span>
+                    <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                        <span id="user-rank" class="rank-tag">VIP Level 1</span>
+                        <span id="user-uid" class="uid-badge">ID: #849201</span>
+                    </div>
+                </div>
+            </div>
+            <div class="wallet-pill" onclick="switchTab('wallet')">
+                <svg class="svg-icon star-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                <span id="coin-balance" class="balance-amount">1,250</span>
+                <span class="plus-btn">+</span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="nav-btn active" onclick="switchTab('streams')">
+                <svg class="nav-icon svg-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                <span class="nav-label">لایو استریم</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('vault')">
+                <svg class="nav-icon svg-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                <span class="nav-label">آلبوم اختصاصی</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('leaderboard')">
+                <svg class="nav-icon svg-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V18H8v2h8v-2h-3v-2.1c2.03-.43 3.61-2.02 3.96-4.06C19.38 11.52 21 9.45 21 7V5c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>
+                <span class="nav-label">رتبه‌بندی</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('booking')">
+                <svg class="nav-icon svg-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+                <span class="nav-label">رزرو تماس</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('wallet')">
+                <svg class="nav-icon svg-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                <span class="nav-label">کیف پول</span>
+            </button>
+        </nav>
+
+        <!-- Main Content Screens -->
+        <main class="content-area">
+            <!-- 1. Live Streams & Users Section -->
+            <section id="tab-streams" class="tab-content active">
+                
+                <!-- Main View Switcher: Users vs Live Streams -->
+                <div class="main-view-switcher">
+                    <button class="switcher-btn active" id="view-btn-users" onclick="switchStreamMainSubTab('users')">
+                        <svg class="svg-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <span>نمایش کاربران</span>
+                    </button>
+                    <button class="switcher-btn" id="view-btn-lives" onclick="switchStreamMainSubTab('lives')">
+                        <svg class="svg-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                        <span>نمایش لایو زنده</span>
+                        <span class="pulse-live-badge-mini">
+                            <span class="live-status-dot mini"></span>
+                            LIVE
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Subview 1: Users View -->
+                <div id="subview-users" class="subview-container">
+                    <div class="filter-chips-scroll">
+                        <button class="filter-chip active" id="user-filter-all" onclick="filterUsers('all')">همه کاربران</button>
+                        <button class="filter-chip" id="user-filter-online" onclick="filterUsers('online')">
+                            <span class="online-status-dot mini"></span> آنلاین‌ها
+                        </button>
+                        <button class="filter-chip" id="user-filter-top" onclick="filterUsers('top')">برترین‌ها</button>
+                        <button class="filter-chip" id="user-filter-popular" onclick="filterUsers('popular')">محبوب‌ترین‌ها</button>
+                    </div>
+
+                    <div class="users-grid" id="users-grid-container">
+                        <!-- User Cards loaded via JS -->
+                    </div>
+                </div>
+
+                <!-- Subview 2: Live Streams View -->
+                <div id="subview-lives" class="subview-container hidden">
+                    <div class="filter-chips-scroll filter-icons-only">
+                        <button class="filter-chip active" id="stream-filter-all" onclick="filterStreams('all')" title="همه لایوها" aria-label="همه لایوها">
+                            <svg class="svg-icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 14H3V8h18v12z"/></svg>
+                        </button>
+                        <button class="filter-chip" id="stream-filter-plus18" onclick="filterStreams('plus18')" title="لایو +۱۸" aria-label="لایو +۱۸">
+                            <span class="tag-badge-18" style="font-size:12px; padding:2px 6px;">18+</span>
+                        </button>
+                        <button class="filter-chip" id="stream-filter-free" onclick="filterStreams('free')" title="لایو رایگان" aria-label="لایو رایگان">
+                            <svg class="svg-icon" style="width:20px; height:20px; color:#39FF14;" viewBox="0 0 24 24"><path fill="currentColor" d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="stream-grid" id="stream-grid-container">
+                        <!-- Stream cards loaded via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. Pay-Per-View Media Vault Section -->
+            <section id="tab-vault" class="tab-content">
+                <div class="section-title-bar">
+                    <h2>گالری و آلبوم اختصاصی</h2>
+                    <button class="action-btn-small neon-purple-btn" onclick="openPublishVaultModal()">+ انتشار جدید</button>
+                </div>
+                <p class="section-desc">عکس‌ها و ویدیوهای اختصاصی ۴K مجریان خانم (قفل‌گشایی با سکه)</p>
+                <div class="vault-grid" id="vault-grid-container">
+                    <!-- Vault items loaded via JS -->
+                </div>
+            </section>
+
+            <!-- 3. Leaderboard & VIP Supporters Section -->
+            <section id="tab-leaderboard" class="tab-content">
+                <div class="section-title-bar">
+                    <h2>جدول رتبه‌بندی طلایی ۳ بعدی</h2>
+                </div>
+                
+                <div class="sub-toggle-bar">
+                    <button class="sub-tab-btn active" id="subtab-hosts-btn" onclick="toggleLeaderboardSubtab('hosts')">مجریان برتر هفته</button>
+                    <button class="sub-tab-btn" id="subtab-supporters-btn" onclick="toggleLeaderboardSubtab('supporters')">حامیان مالی VIP</button>
+                </div>
+
+                <div id="leaderboard-hosts-list" class="leaderboard-list">
+                    <!-- Top hosts loaded via JS -->
+                </div>
+
+                <div id="leaderboard-supporters-list" class="leaderboard-list hidden">
+                    <!-- Top supporters loaded via JS -->
+                </div>
+            </section>
+
+            <!-- 4. Private Call Booking Calendar Section -->
+            <section id="tab-booking" class="tab-content">
+                <div class="section-title-bar">
+                    <h2>تقویم رزرو زمان تماس تصویری ۱ به ۱</h2>
+                    <button class="action-btn-small neon-cyan-btn" onclick="openBookingModal()">+ رزرو جدید</button>
+                </div>
+                <p class="section-desc">تعیین وقت خصوصی برای گفتگو و استریم اختصاصی با مجری مورد علاقه</p>
+                
+                <div class="bookings-list" id="bookings-container">
+                    <!-- Bookings loaded via JS -->
+                </div>
+            </section>
+
+            <!-- 5. Crypto Wallet Section -->
+            <section id="tab-wallet" class="tab-content">
+                <div class="section-title-bar">
+                    <h2>کیف پول ارز دیجیتال & Stars</h2>
+                </div>
+                <div class="wallet-card-3d">
+                    <div class="wallet-balance-box">
+                        <span class="label">موجودی کل شما</span>
+                        <div class="amount-row">
+                            <span class="big-stars">
+                                <svg class="svg-icon star-big" viewBox="0 0 24 24"><path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                1,250 Stars
+                            </span>
+                            <span class="usdt-value">معادل $12.50 USDT</span>
+                        </div>
+                    </div>
+                    <div class="wallet-actions">
+                        <button class="btn-deposit" onclick="buyCoins('USDT')">شارژ با USDT (TRC20 / TON)</button>
+                        <button class="btn-deposit-stars" onclick="buyCoins('STARS')">خرید با Telegram Stars</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Modal: Live Stream Player / AR Filters -->
+        <div id="stream-modal" class="modal-overlay hidden">
+            <div class="modal-box stream-modal-box">
+                <div class="modal-header">
+                    <div class="streamer-info">
+                        <div class="avatar-modal-wrap">
+                            <img id="active-streamer-avatar" src="" alt="Avatar">
+                            <span class="live-status-dot modal-dot"></span>
+                        </div>
+                        <div>
+                            <h3 id="active-streamer-name">مجری</h3>
+                            <div id="active-streamer-meta" class="streamer-modal-meta">
+                                <span id="active-streamer-age" class="age-tag">۲۴ سال</span>
+                                <span id="active-streamer-vip" class="vip-badge">سطح VIP 4</span>
+                            </div>
+                            <span class="viewers-count">
+                                <svg class="svg-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                <span id="modal-viewer-count">1,420</span> بیننده
+                            </span>
+                        </div>
+                    </div>
+                    <button class="close-btn" onclick="closeStreamModal()">✕</button>
+                </div>
+                
+                <div class="video-preview-area">
+                    <div class="ar-overlay-badge" id="active-ar-filter-name">فیلتر نئونی: Studio Glow</div>
+                    <div class="video-placeholder">
+                        <div class="neon-video-ring"></div>
+                        <span>پخش زنده کیفیت 4K</span>
+                    </div>
+                </div>
+
+                <div class="ar-filters-bar">
+                    <span class="bar-title">فیلترهای نئونی هوش مصنوعی:</span>
+                    <div class="filters-scroll">
+                        <button class="ar-chip active" onclick="applyArFilter('Studio Glow')">Studio Glow</button>
+                        <button class="ar-chip" onclick="applyArFilter('Hollywood Glam')">Hollywood Glam</button>
+                        <button class="ar-chip" onclick="applyArFilter('Cyber Mask')">AR Cyber Mask</button>
+                        <button class="ar-chip" onclick="applyArFilter('Vibrant Aura')">Vibrant Aura</button>
+                    </div>
+                </div>
+
+                <div class="stream-actions">
+                    <button class="gift-btn" onclick="sendGift('تاج طلایی (200 سکه)')">ارسال هدیه</button>
+                    <button class="private-call-btn" onclick="switchTab('booking'); closeStreamModal();">رزرو تماس ۱ به ۱</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Book Private Call -->
+        <div id="booking-modal" class="modal-overlay hidden">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>رزرو وقت تماس خصوصی</h3>
+                    <button class="close-btn" onclick="closeBookingModal()">✕</button>
+                </div>
+                <div class="form-group">
+                    <label>نام مجری:</label>
+                    <select id="booking-host-select" class="form-input">
+                        <option value="Sogand_Live">Sogand_Live (سوگند)</option>
+                        <option value="Elena_Stream">Elena_Stream (النا)</option>
+                        <option value="Sara_Vip">Sara_Vip (سارا)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>تاریخ رزرو:</label>
+                    <input type="date" id="booking-date-input" class="form-input" value="2026-07-25">
+                </div>
+                <div class="form-group">
+                    <label>ساعت رزرو:</label>
+                    <select id="booking-time-select" class="form-input">
+                        <option value="21:00 - 21:30">21:00 - 21:30</option>
+                        <option value="22:00 - 22:30">22:00 - 22:30</option>
+                        <option value="23:00 - 23:30">23:00 - 23:30</option>
+                    </select>
+                </div>
+                <div class="cost-summary">
+                    <span>هزینه رزرو: </span>
+                    <strong class="neon-gold-text">۵۰۰ سکه / Stars</strong>
+                </div>
+                <button class="submit-btn neon-cyan-bg" onclick="submitBooking()">تایید و رزرو نهایی</button>
+            </div>
+        </div>
+
+        <!-- Modal: Publish Vault Media -->
+        <div id="vault-modal" class="modal-overlay hidden">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>انتشار عکس/فیلم اختصاصی در Vault</h3>
+                    <button class="close-btn" onclick="closeVaultModal()">✕</button>
+                </div>
+                <div class="form-group">
+                    <label>عنوان آلبوم:</label>
+                    <input type="text" id="vault-title-input" class="form-input" placeholder="مثال: عکس‌های پشت صحنه استودیو نئونی">
+                </div>
+                <div class="form-group">
+                    <label>قیمت باز کردن قفل (Stars):</label>
+                    <input type="number" id="vault-price-input" class="form-input" value="150">
+                </div>
+                <button class="submit-btn neon-purple-bg" onclick="submitVaultMedia()">انتشار در آلبوم</button>
+            </div>
+        </div>
+
+        <!-- Fullscreen Direct Chat Screen -->
+        <div id="chat-modal" class="fullscreen-chat-overlay hidden">
+            <!-- Fullscreen Header -->
+            <div class="chat-header-bar">
+                <div class="chat-header-left">
+                    <button class="chat-back-btn" onclick="closeChatModal()" title="برگشت به صفحه قبل" aria-label="برگشت به صفحه قبل">
+                        <svg class="svg-icon" style="width:22px; height:22px;" viewBox="0 0 24 24"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                    </button>
+                    <div class="chat-user-info-group">
+                        <div class="chat-avatar-container">
+                            <img id="chat-user-avatar" src="" alt="Avatar">
+                            <span class="live-status-dot mini" style="position:absolute; bottom:0; right:0; width:10px; height:10px; border:1px solid #000;"></span>
+                        </div>
+                        <div>
+                            <h3 id="chat-user-title" style="margin:0; font-size:14px; font-weight:800; color:#FFF;">گفتگوی مستقیم</h3>
+                            <span id="chat-user-sub" style="font-size:11px; color:var(--neon-cyan); display:block;">@username</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Toolbar: Translation, Gifts, Call, Block -->
+                <div class="chat-actions-toolbar">
+                    <!-- Translate Icon -->
+                    <button class="chat-tool-btn" onclick="toggleChatTranslation()" title="ترجمه پیام‌ها" aria-label="ترجمه پیام‌ها">
+                        <svg class="svg-icon" style="width:18px; height:18px;" viewBox="0 0 24 24"><path fill="currentColor" d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+                    </button>
+                    <!-- Gifts Icon -->
+                    <button class="chat-tool-btn" onclick="sendGiftInChat()" title="ارسال هدیه" aria-label="ارسال هدیه">
+                        <svg class="svg-icon" style="width:18px; height:18px; color:var(--neon-gold);" viewBox="0 0 24 24"><path fill="currentColor" d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h7.02v3h1.96V8H20v6z"/></svg>
+                    </button>
+                    <!-- Call Icon -->
+                    <button class="chat-tool-btn" onclick="startChatCall()" title="تماس صوتی" aria-label="تماس">
+                        <svg class="svg-icon" style="width:18px; height:18px; color:var(--neon-green);" viewBox="0 0 24 24"><path fill="currentColor" d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 0 0-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
+                    </button>
+                    <!-- Block Icon -->
+                    <button class="chat-tool-btn block-btn" onclick="blockUserInChat()" title="مسدود کردن" aria-label="مسدود کردن">
+                        <svg class="svg-icon" style="width:18px; height:18px; color:var(--neon-pink);" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Scrollable Messages Area -->
+            <div id="chat-messages-box" class="chat-messages-container">
+                <div class="chat-msg-bubble incoming">
+                    سلام! خوش آمدید. پیام مستقیم خود را بنویسید.
+                    <div class="msg-meta-row">
+                        <span>21:42</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Input Bar -->
+            <div class="chat-bottom-bar">
+                <!-- Attach Photo Icon -->
+                <button class="chat-attach-btn" onclick="sendImageInChat()" title="ارسال عکس" aria-label="ارسال عکس">
+                    <svg class="svg-icon" style="width:22px; height:22px;" viewBox="0 0 24 24"><path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                </button>
+                
+                <!-- Voice Message / Audio Chat Icon -->
+                <button class="chat-attach-btn" onclick="sendVoiceNoteInChat()" title="چت صوتی" aria-label="چت صوتی">
+                    <svg class="svg-icon" style="width:22px; height:22px; color:var(--neon-cyan);" viewBox="0 0 24 24"><path fill="currentColor" d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+                </button>
+
+                <!-- Input Field Container -->
+                <div class="chat-input-wrapper">
+                    <input type="text" id="chat-input-text" placeholder="پیام خود را بنویسید..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+                </div>
+
+                <!-- Send Button -->
+                <button class="chat-send-btn" onclick="sendChatMessage()" title="ارسال پیام" aria-label="ارسال">
+                    <svg class="svg-icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast-notification" class="toast hidden">پیام سیستم</div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
