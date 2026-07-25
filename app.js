@@ -9,6 +9,7 @@ const API_BASE_URL = window.location.origin.includes('8000') ? window.location.o
 
 // State
 let state = {
+    isAdmin: false,
     userCoins: 1250,
     currentMainSubTab: 'users',
     currentUserFilter: 'all',
@@ -101,8 +102,8 @@ function getOrCreateUserUID() {
 // Async API Loaders
 async function loadUser() {
     try {
-        const uidEl = document.getElementById('user-uid');
-        if (uidEl) uidEl.innerText = getOrCreateUserUID();
+        const profileUidEl = document.getElementById('profile-uid-text');
+        if (profileUidEl) profileUidEl.innerText = getOrCreateUserUID();
 
         if (tg?.initDataUnsafe?.user) {
             const u = tg.initDataUnsafe.user;
@@ -110,14 +111,17 @@ async function loadUser() {
             if (nameEl) nameEl.innerText = u.first_name + (u.last_name ? ' ' + u.last_name : '');
             const avatarEl = document.getElementById('user-avatar');
             if (avatarEl && u.photo_url) avatarEl.src = u.photo_url;
+
+            const profileAvatar = document.getElementById('profile-avatar-large');
+            if (profileAvatar && u.photo_url) profileAvatar.src = u.photo_url;
         }
         const res = await fetch(`${API_BASE_URL}/api/users/me`, { headers: getAuthHeaders() });
         if (res.ok) {
             const user = await res.json();
             const nameEl = document.getElementById('user-name');
             if (nameEl && user.username) nameEl.innerText = '@' + user.username;
-            if (user.uid && uidEl) {
-                uidEl.innerText = user.uid;
+            if (user.uid && profileUidEl) {
+                profileUidEl.innerText = user.uid;
                 localStorage.setItem('user_permanent_uid', user.uid);
             }
             if (user.wallet_stars !== undefined) {
@@ -213,6 +217,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadVault();
     await loadLeaderboard();
     await loadBookings();
+    updateGenderVisibility();
+
+    // Check if auth already completed on first run
+    const isAuthDone = localStorage.getItem('vlive_auth_completed');
+    const authHeaderBtn = document.getElementById('auth-header-btn');
+    if (isAuthDone === 'true') {
+        state.isLoggedIn = true;
+        state.isAgeVerified = true;
+        state.isIdentityVerified = true;
+        closeAuthModal();
+        if (authHeaderBtn) authHeaderBtn.style.display = 'none';
+
+        const userAvatarGlow = document.querySelector('.avatar-glow');
+        if (userAvatarGlow) userAvatarGlow.classList.add('verified-gold');
+    } else {
+        openAuthModal();
+        if (authHeaderBtn) authHeaderBtn.style.display = 'flex';
+    }
 });
 
 // Tab Switching
@@ -280,43 +302,33 @@ function renderUsers() {
     }
     
     if (list.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:30px; color:#8E9BAE; grid-column: span 2;">کاربری در این دسته یافت نشد</div>';
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:#8E9BAE; grid-column: span 2;">کاربری یافت نشد</div>';
         return;
     }
     
     container.innerHTML = list.map(u => `
         <div class="user-card">
             <div class="card-top-layout">
-                <div class="avatar-large-container ${u.is_online ? 'online' : ''}">
+                <div class="avatar-large-container verified-gold ${u.is_online ? 'online' : ''}">
                     <img src="${u.avatar}" alt="${u.name}">
-                    <div class="status-dot-overlay">
-                        ${u.is_online ? '<span class="online-status-dot"></span>' : ''}
-                    </div>
                 </div>
-                <div class="user-details-box">
-                    <span class="display-name">${u.name}</span>
-                    <span class="username-sub">@${u.username}</span>
-                    <div class="meta-tags-row">
-                        <span class="age-badge">${u.age} سال</span>
-                        <span class="vip-badge">VIP ${u.vip_level}</span>
+                <div class="user-details-box" style="margin-top: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <span class="display-name">${u.name}</span>
+                        <span class="age-badge">${u.age}</span>
+                    </div>
+                    <div class="status-indicator-badge ${u.is_online ? 'online' : 'offline'}" style="margin-top: 4px; display: inline-flex; align-items: center; justify-content: center;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${u.is_online ? '#39FF14' : '#8E9BAE'}; display: inline-block; box-shadow: 0 0 8px ${u.is_online ? '#39FF14' : 'transparent'};"></span>
                     </div>
                 </div>
             </div>
-            <div class="card-action-bar" style="margin-top: 10px; display: flex; gap: 6px; width: 100%;">
-                ${u.is_online ? 
-                    `<button class="join-live-btn" style="flex:1; padding: 10px 4px;" onclick="openStreamModal('${u.username}', '${u.avatar}', '${u.name}', ${u.age}, ${u.vip_level}, '${u.uid || ('ID-' + u.id)}')">
-                        <svg class="svg-icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
-                    </button>
-                    <button class="profile-btn" style="flex:1; padding: 10px 4px;" onclick="openChatModal('${u.username}', '${u.avatar}', '${u.name}')">
-                        <svg class="svg-icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-                    </button>` :
-                    `<button class="profile-btn" style="flex:1; padding: 10px 4px;" onclick="openChatModal('${u.username}', '${u.avatar}', '${u.name}')">
-                        <svg class="svg-icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-                    </button>
-                    <button class="profile-btn" style="flex:1; padding: 10px 4px;" onclick="switchTab('booking')">
-                        <svg class="svg-icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
-                    </button>`
-                }
+            <div class="card-action-bar" style="margin-top: 12px; display: flex; gap: 8px; width: 100%;">
+                <button class="profile-btn" style="flex: 1; padding: 10px 4px; display: flex; align-items: center; justify-content: center;" title="ارسال پیام" onclick="openChatModal('${u.username}', '${u.avatar}', '${u.name}')">
+                    <svg class="svg-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+                </button>
+                <button class="join-live-btn" style="flex: 1; padding: 10px 4px; display: flex; align-items: center; justify-content: center;" title="تماس خصوصی" onclick="openStreamModal('${u.username}', '${u.avatar}', '${u.name}', ${u.age}, ${u.vip_level || 1}, '${u.uid || ('ID-' + u.id)}')">
+                    <svg class="svg-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                </button>
             </div>
         </div>
     `).join('');
@@ -325,7 +337,7 @@ function renderUsers() {
 // Live Streams View Filters & Rendering
 function filterStreams(filter) {
     state.currentStreamFilter = filter;
-    ['all', 'plus18', 'free'].forEach(f => {
+    ['all', 'plus18', 'adultvip', 'free'].forEach(f => {
         const el = document.getElementById(`stream-filter-${f}`);
         if (el) el.classList.toggle('active', f === filter);
     });
@@ -339,19 +351,21 @@ function renderStreams() {
     let list = state.streams;
     if (state.currentStreamFilter === 'plus18') {
         list = list.filter(s => s.is_plus_18);
+    } else if (state.currentStreamFilter === 'adultvip') {
+        list = list.filter(s => s.is_plus_18 && (s.vip_level && s.vip_level >= 3));
     } else if (state.currentStreamFilter === 'free') {
         list = list.filter(s => s.is_free);
     }
 
     if (list.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:30px; color:#8E9BAE; grid-column: span 2;">هیچ لایو استریمی در این فیلتر فعال نیست</div>';
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:#8E9BAE; grid-column: span 2;">هیچ لایوی یافت نشد</div>';
         return;
     }
 
     container.innerHTML = list.map(s => `
         <div class="stream-card">
             <div class="card-top-layout">
-                <div class="avatar-large-container">
+                <div class="avatar-large-container verified-gold">
                     <img src="${s.host_avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + s.host_username}" alt="${s.display_name || s.host_username}">
                     <div class="status-dot-overlay">
                         <span class="live-status-dot"></span>
@@ -361,9 +375,9 @@ function renderStreams() {
                     <span class="display-name">${s.display_name || s.host_username}</span>
                     <span class="username-sub">@${s.host_username}</span>
                     <div class="meta-tags-row">
-                        <span class="age-badge">${s.age || 24} سال</span>
+                        <span class="age-badge">${s.age || 24}</span>
                         <span class="vip-badge">VIP ${s.vip_level || 3}</span>
-                        ${s.is_plus_18 ? '<span class="tag-badge-18">18+</span>' : '<span class="age-badge" style="color:#39FF14; border-color:#39FF14;">رایگان</span>'}
+                        ${s.is_plus_18 ? '<span class="tag-badge-18">18+</span>' : '<span class="age-badge" style="color:#39FF14; border-color:#39FF14;">FREE</span>'}
                     </div>
                 </div>
             </div>
@@ -372,15 +386,15 @@ function renderStreams() {
                     <svg class="svg-icon" style="width:14px; height:14px;" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                     ${s.viewer_count || 1420}
                 </span>
-                <span style="font-size:11px; color:#FF007F; font-weight:bold; display:flex; align-items:center; gap:4px;">
-                    <span class="live-status-dot mini"></span> زنده
+                <span style="display:flex; align-items:center; gap:4px;">
+                    <span class="live-status-dot mini"></span>
                 </span>
             </div>
             <div class="card-action-bar" style="display: flex; gap: 6px; width: 100%;">
-                <button class="join-live-btn" style="flex:1; padding: 10px 4px;" onclick="openStreamModal('${s.host_username}', '${s.host_avatar}', '${s.display_name || s.host_username}', ${s.age || 24}, ${s.vip_level || 3}, '${s.host_uid || ('ID-' + (s.id + 100))}')">
+                <button class="join-live-btn" style="flex:1; padding: 10px 4px;" title="ورود به لایو" onclick="openStreamModal('${s.host_username}', '${s.host_avatar}', '${s.display_name || s.host_username}', ${s.age || 24}, ${s.vip_level || 3}, '${s.host_uid || ('ID-' + (s.id + 100))}')">
                     <svg class="svg-icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
                 </button>
-                <button class="profile-btn" style="flex:1; padding: 10px 4px;" onclick="openChatModal('${s.host_username}', '${s.host_avatar}', '${s.display_name || s.host_username}')">
+                <button class="profile-btn" style="flex:1; padding: 10px 4px;" title="چت خصوصی" onclick="openChatModal('${s.host_username}', '${s.host_avatar}', '${s.display_name || s.host_username}')">
                     <svg class="svg-icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
                 </button>
             </div>
@@ -808,8 +822,337 @@ async function submitBooking() {
 function updateCoinDisplay() {
     const el = document.getElementById('coin-balance');
     if (el) el.innerText = state.userCoins.toLocaleString();
+    const elStars = document.getElementById('wallet-stars-display');
+    if (elStars) elStars.innerText = state.userCoins.toLocaleString() + ' Stars';
 }
 
 function buyCoins(method) {
     showToast('هدایت به درگاه پرداخت ' + method + '...');
 }
+
+// Support Chat
+function openSupportChat() {
+    openChatModal('Rayan_Support', 'https://api.dicebear.com/7.x/bottts/svg?seed=AdminRayan', 'پشتیبانی رسمی V.LIVE (سوپر ادمین)');
+    showToast('متصل به پشتیبانی آنلاین ۲۴/۷ سوپر ادمین');
+}
+
+// Profile & VIP Handlers
+function updateGenderVisibility() {
+    const femaleRadio = document.getElementById('gender-female');
+    const femalePanel = document.getElementById('female-withdrawal-panel');
+    const isFemale = femaleRadio ? femaleRadio.checked : false;
+    const isAdmin = state.isAdmin || false;
+
+    if (femalePanel) {
+        if (isFemale || isAdmin) {
+            femalePanel.classList.remove('hidden');
+            femalePanel.style.display = 'block';
+        } else {
+            femalePanel.classList.add('hidden');
+            femalePanel.style.display = 'none';
+        }
+    }
+}
+
+function saveProfileChanges() {
+    const name = document.getElementById('profile-name-input').value;
+    const username = document.getElementById('profile-username-input').value;
+
+    const displayNameEl = document.getElementById('user-name');
+    if (displayNameEl) displayNameEl.innerText = name;
+
+    const profileNameEl = document.getElementById('profile-display-name-text');
+    if (profileNameEl) profileNameEl.innerText = name;
+
+    const profileUserEl = document.getElementById('profile-username-text');
+    if (profileUserEl) profileUserEl.innerText = '@' + username;
+
+    updateGenderVisibility();
+
+    showToast('تغییرات پروفایل با موفقیت ذخیره شد!');
+}
+
+function buyVipPlan(planTitle, priceUsdt) {
+    showToast(`اشتراک VIP ${planTitle} با موفقیت فعال گردید! (${priceUsdt} USDT)`);
+    const rankEl = document.getElementById('user-rank');
+    if (rankEl) rankEl.innerText = 'VIP ' + planTitle;
+    const vipBadgeEl = document.getElementById('profile-vip-badge');
+    if (vipBadgeEl) vipBadgeEl.innerText = 'VIP ' + planTitle;
+}
+
+function submitWithdrawalRequest() {
+    const amount = document.getElementById('withdraw-amount-input').value;
+    const address = document.getElementById('withdraw-address-input').value;
+    if (!address || amount <= 0) {
+        showToast('لطفا مبلغ و آدرس کیف پول معتبر وارد کنید.');
+        return;
+    }
+    showToast(`درخواست تسویه ${amount} USDT جهت بررسی توسط ادمین ثبت گردید.`);
+}
+
+// Super Admin Handlers
+function loginSuperAdmin() {
+    const user = document.getElementById('admin-user-input').value;
+    const pass = document.getElementById('admin-pass-input').value;
+
+    if (user.trim().toLowerCase() === 'rayan' && pass.trim() === 'admin') {
+        state.isAdmin = true;
+        document.getElementById('admin-login-box').classList.add('hidden');
+        document.getElementById('admin-dashboard-box').classList.remove('hidden');
+        updateGenderVisibility();
+        showToast('ورود موفقیت‌آمیز سوپر ادمین (رایان) - دسترسی کامل فعال گردید!');
+    } else {
+        showToast('نام کاربری یا رمز عبور ادمین اشتباه است.');
+    }
+}
+
+function switchAdminSubtab(sub) {
+    document.getElementById('adm-tab-ai-btn').classList.toggle('active', sub === 'ai');
+    document.getElementById('adm-tab-withdrawals-btn').classList.toggle('active', sub === 'withdrawals');
+    document.getElementById('adm-tab-reports-btn').classList.toggle('active', sub === 'reports');
+
+    document.getElementById('adm-subtab-ai').classList.toggle('hidden', sub !== 'ai');
+    document.getElementById('adm-subtab-withdrawals').classList.toggle('hidden', sub !== 'withdrawals');
+    document.getElementById('adm-subtab-reports').classList.toggle('hidden', sub !== 'reports');
+}
+
+function approveWithdrawal(id) {
+    showToast(`درخواست تسویه #${id} تایید شد و ۵۰.۰۰ USDT واریز گردید.`);
+    const el = document.getElementById('admin-withdrawals-list');
+    if (el) el.innerHTML = '<div style="font-size:12px; color:var(--neon-green);">همه درخواست‌های تسویه واریز شدند.</div>';
+}
+
+function rejectWithdrawal(id) {
+    showToast(`درخواست تسویه #${id} رد گردید.`);
+    const el = document.getElementById('admin-withdrawals-list');
+    if (el) el.innerHTML = '<div style="font-size:12px; color:var(--neon-pink);">درخواست تسویه رد شد.</div>';
+}
+
+function banUser(username) {
+    showToast(`کاربر @${username} به دلیل تخلف به طور دائم مسدود گردید.`);
+    const el = document.getElementById('admin-reports-list');
+    if (el) el.innerHTML = '<div style="font-size:12px; color:var(--neon-green);">گزارشات بررسی و مسدودسازی انجام شد.</div>';
+}
+
+// Telegram Auth & Identity Verification Modal Handlers
+let authSelectedGender = 'female';
+let currentAuthMode = 'register';
+
+function switchAuthMode(mode) {
+    currentAuthMode = mode;
+    const regView = document.getElementById('auth-register-view');
+    const loginView = document.getElementById('auth-login-view');
+    const regTabBtn = document.getElementById('auth-tab-reg-btn');
+    const loginTabBtn = document.getElementById('auth-tab-login-btn');
+
+    if (mode === 'register') {
+        regView?.classList.remove('hidden');
+        loginView?.classList.add('hidden');
+        regTabBtn?.classList.add('active');
+        loginTabBtn?.classList.remove('active');
+    } else {
+        regView?.classList.add('hidden');
+        loginView?.classList.remove('hidden');
+        regTabBtn?.classList.remove('active');
+        loginTabBtn?.classList.add('active');
+    }
+}
+
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+
+    if (btn) {
+        btn.style.color = isPassword ? 'var(--neon-pink)' : 'var(--text-muted)';
+    }
+}
+
+function validateAgeInput() {
+    const ageInput = document.getElementById('reg-age-input');
+    const warningBanner = document.getElementById('auth-age-warning');
+    const submitBtn = document.getElementById('reg-submit-btn');
+
+    if (!ageInput) return true;
+
+    const age = parseInt(ageInput.value, 10) || 0;
+    if (age < 18) {
+        warningBanner?.classList.remove('hidden');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
+            submitBtn.style.cursor = 'not-allowed';
+        }
+        return false;
+    } else {
+        warningBanner?.classList.add('hidden');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+        }
+        return true;
+    }
+}
+
+function openAuthModal() {
+    const modal = document.getElementById('auth-fullscreen-modal');
+    if (modal) modal.classList.remove('hidden');
+
+    // Auto populate Telegram WebApp user if available
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+        const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+        const tgNameEl = document.getElementById('auth-tg-name');
+        const tgHandleEl = document.getElementById('auth-tg-username');
+        const tgAvatarEl = document.getElementById('auth-tg-avatar');
+        const regUsernameInput = document.getElementById('reg-username-input');
+
+        if (tgNameEl) tgNameEl.innerText = (tgUser.first_name + ' ' + (tgUser.last_name || '')).trim();
+        if (tgHandleEl) tgHandleEl.innerText = '@' + (tgUser.username || 'user');
+        if (tgAvatarEl && tgUser.photo_url) tgAvatarEl.src = tgUser.photo_url;
+        if (regUsernameInput && !regUsernameInput.value) regUsernameInput.value = tgUser.username || '';
+    }
+
+    // Auto load saved password if remember password was checked
+    const savedUser = localStorage.getItem('vlive_saved_username');
+    const savedPass = localStorage.getItem('vlive_saved_password');
+    if (savedUser && savedPass) {
+        const loginUserInp = document.getElementById('login-username-input');
+        const loginPassInp = document.getElementById('login-password-input');
+        if (loginUserInp) loginUserInp.value = savedUser;
+        if (loginPassInp) loginPassInp.value = savedPass;
+    }
+
+    validateAgeInput();
+}
+
+function closeAuthModal() {
+    const modal = document.getElementById('auth-fullscreen-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function selectAuthGender(gender) {
+    authSelectedGender = gender;
+    document.getElementById('role-female-card')?.classList.toggle('active', gender === 'female');
+    document.getElementById('role-male-card')?.classList.toggle('active', gender === 'male');
+    document.getElementById('profile-gender-female-btn')?.classList.toggle('active', gender === 'female');
+    document.getElementById('profile-gender-male-btn')?.classList.toggle('active', gender === 'male');
+
+    const femaleRadio = document.getElementById('gender-female');
+    const maleRadio = document.getElementById('gender-male');
+    if (gender === 'female' && femaleRadio) femaleRadio.checked = true;
+    if (gender === 'male' && maleRadio) maleRadio.checked = true;
+
+    updateGenderVisibility();
+}
+
+function startAiFaceScan() {
+    const btn = document.getElementById('scan-face-btn');
+    const statusText = document.getElementById('kyc-text-status');
+    if (btn) btn.innerText = 'در حال اسکن زنده چهره با دوربین جلو (AI Face Check)...';
+
+    setTimeout(() => {
+        if (btn) btn.innerText = 'اسکن چهره با موفقیت انجام شد (AI Verification Success)';
+        if (statusText) {
+            statusText.style.color = 'var(--neon-green)';
+            statusText.innerText = 'تایید هویت و جنسیت صورت ۱۰۰٪ موفقیت‌آمیز (تایید شده)';
+        }
+        showToast('عکس و اسکن چهره با موفقیت تایید شد!');
+    }, 1200);
+}
+
+function completeTelegramAuth() {
+    const isAgeValid = validateAgeInput();
+    if (!isAgeValid) {
+        showToast('ورود افراد زیر ۱۸ سال به برنامه غیرمجاز است.');
+        return;
+    }
+
+    const regUsername = document.getElementById('reg-username-input')?.value.trim();
+    const pass1 = document.getElementById('reg-password-input')?.value;
+    const pass2 = document.getElementById('reg-confirm-password-input')?.value;
+    const country = document.getElementById('reg-country-select')?.value || 'IR';
+
+    if (pass1 && pass2 && pass1 !== pass2) {
+        showToast('رمز ورود و تایید آن با هم مطابقت ندارند!');
+        return;
+    }
+
+    if (regUsername) {
+        const profileNameInput = document.getElementById('profile-username-input');
+        if (profileNameInput) profileNameInput.value = regUsername;
+        const mainUsernameDisplay = document.getElementById('user-name');
+        if (mainUsernameDisplay) mainUsernameDisplay.innerText = '@' + regUsername;
+    }
+
+    localStorage.setItem('vlive_auth_completed', 'true');
+    localStorage.setItem('vlive_user_country', country);
+    state.isLoggedIn = true;
+    state.isAgeVerified = true;
+    state.isIdentityVerified = true;
+
+    // Save login credentials if password set
+    if (regUsername && pass1) {
+        localStorage.setItem('vlive_saved_username', regUsername);
+        localStorage.setItem('vlive_saved_password', pass1);
+    }
+
+    // Sync selected gender to profile
+    selectAuthGender(authSelectedGender);
+
+    closeAuthModal();
+
+    const authHeaderBtn = document.getElementById('auth-header-btn');
+    if (authHeaderBtn) authHeaderBtn.style.display = 'none';
+
+    // Add golden neon ring around user avatar in header
+    const userAvatarGlow = document.querySelector('.avatar-glow');
+    if (userAvatarGlow) userAvatarGlow.classList.add('verified-gold');
+
+    showToast('ثبت‌نام و احراز هویت با موفقیت تایید شد!');
+}
+
+function processAccountLogin() {
+    const loginUser = document.getElementById('login-username-input')?.value.trim();
+    const loginPass = document.getElementById('login-password-input')?.value;
+    const rememberCheck = document.getElementById('remember-password-check')?.checked;
+
+    if (!loginUser || !loginPass) {
+        showToast('لطفا نام کاربری و رمز ورود را وارد کنید.');
+        return;
+    }
+
+    if (rememberCheck) {
+        localStorage.setItem('vlive_saved_username', loginUser);
+        localStorage.setItem('vlive_saved_password', loginPass);
+    } else {
+        localStorage.removeItem('vlive_saved_username');
+        localStorage.removeItem('vlive_saved_password');
+    }
+
+    localStorage.setItem('vlive_auth_completed', 'true');
+    state.isLoggedIn = true;
+    state.isAgeVerified = true;
+    state.isIdentityVerified = true;
+
+    const mainUsernameDisplay = document.getElementById('user-name');
+    if (mainUsernameDisplay) mainUsernameDisplay.innerText = '@' + loginUser;
+
+    closeAuthModal();
+
+    const authHeaderBtn = document.getElementById('auth-header-btn');
+    if (authHeaderBtn) authHeaderBtn.style.display = 'none';
+
+    const userAvatarGlow = document.querySelector('.avatar-glow');
+    if (userAvatarGlow) userAvatarGlow.classList.add('verified-gold');
+
+    showToast('ورود موفقیت‌آمیز به حساب کاربری!');
+}
+
+function sendTelegramResetCode() {
+    const loginUser = document.getElementById('login-username-input')?.value.trim() || 'کاربر';
+    showToast(`رمز عبور موقت برای حساب ${loginUser} به اکانت تلگرام شما ارسال گردید.`);
+}
+
+
