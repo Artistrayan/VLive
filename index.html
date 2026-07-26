@@ -320,11 +320,11 @@
                     <h3 style="font-size:14px; font-weight:800; color:var(--neon-pink); margin-bottom:12px;">ورود سوپر ادمین (پشتیبانی رسمی)</h3>
                     <div class="form-group">
                         <label>نام کاربری سوپر ادمین:</label>
-                        <input type="text" id="admin-user-input" class="form-input" value="Rayan">
+                        <input type="text" id="admin-user-input" class="form-input" placeholder="نام کاربری ادمین را وارد کنید..." value="">
                     </div>
                     <div class="form-group">
                         <label>رمز عبور:</label>
-                        <input type="password" id="admin-pass-input" class="form-input" value="admin">
+                        <input type="password" id="admin-pass-input" class="form-input" placeholder="رمز عبور امنیتی ادمین..." value="">
                     </div>
                     <button class="submit-btn neon-purple-bg" onclick="loginSuperAdmin()">ورود به پنل سوپر ادمین</button>
                 </div>
@@ -333,10 +333,13 @@
                 <div id="admin-dashboard-box" class="hidden">
                     <div class="admin-badge-banner" style="background:rgba(255,0,127,0.15); border:1px solid var(--neon-pink); border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                         <div>
-                            <strong style="color:var(--neon-pink); font-size:13px;">SUPER ADMIN (RAYAN) - دسترسی نامحدود</strong>
+                            <strong style="color:var(--neon-pink); font-size:13px;">SUPER ADMIN - دسترسی مدیریت کامل</strong>
                             <div style="font-size:11px; color:#FFF;">سیستم امنیت و هوش مصنوعی فعال است.</div>
                         </div>
-                        <button class="action-btn-small neon-cyan-btn" onclick="openSupportChat()">پشتیبانی مستقیم</button>
+                        <div style="display:flex; gap:8px;">
+                            <button class="action-btn-small neon-cyan-btn" onclick="openSupportChat()">پشتیبانی مستقیم</button>
+                            <button class="action-btn-small" style="background:rgba(255,0,60,0.2); border:1px solid #FF003C; color:#FF003C;" onclick="logoutSuperAdmin()">خروج از ادمین</button>
+                        </div>
                     </div>
 
                     <!-- Admin Subtabs -->

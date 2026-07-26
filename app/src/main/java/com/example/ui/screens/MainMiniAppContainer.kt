@@ -53,7 +53,9 @@ fun MainMiniAppContainer(
                 webViewClient = WebViewClient()
                 webChromeClient = object : WebChromeClient() {
                     override fun onPermissionRequest(request: PermissionRequest?) {
-                        request?.grant(request.resources)
+                        post {
+                            request?.grant(request.resources)
+                        }
                     }
                 }
 

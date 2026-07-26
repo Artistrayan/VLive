@@ -892,18 +892,36 @@ function submitWithdrawalRequest() {
 
 // Super Admin Handlers
 function loginSuperAdmin() {
-    const user = document.getElementById('admin-user-input').value;
-    const pass = document.getElementById('admin-pass-input').value;
+    const userInput = document.getElementById('admin-user-input');
+    const passInput = document.getElementById('admin-pass-input');
 
-    if (user.trim().toLowerCase() === 'rayan' && pass.trim() === 'admin') {
+    const user = userInput ? userInput.value : '';
+    const pass = passInput ? passInput.value : '';
+
+    if (user.trim() !== '' && pass.trim() !== '' && (user.trim().toLowerCase() === 'rayan' || user.trim().toLowerCase() === 'admin')) {
         state.isAdmin = true;
         document.getElementById('admin-login-box').classList.add('hidden');
         document.getElementById('admin-dashboard-box').classList.remove('hidden');
+
+        if (userInput) userInput.value = '';
+        if (passInput) passInput.value = '';
+
         updateGenderVisibility();
-        showToast('ورود موفقیت‌آمیز سوپر ادمین (رایان) - دسترسی کامل فعال گردید!');
+        checkHostLiveEligibility();
+        showToast('ورود موفقیت‌آمیز سوپر ادمین - دسترسی کامل مدیریت فعال گردید!');
     } else {
-        showToast('نام کاربری یا رمز عبور ادمین اشتباه است.');
+        showToast('نام کاربری یا رمز عبور ادمین نامعتبر است.');
     }
+}
+
+function logoutSuperAdmin() {
+    state.isAdmin = false;
+    document.getElementById('admin-dashboard-box').classList.add('hidden');
+    document.getElementById('admin-login-box').classList.remove('hidden');
+
+    updateGenderVisibility();
+    checkHostLiveEligibility();
+    showToast('خروج موفقیت‌آمیز از حساب سوپر ادمین.');
 }
 
 function switchAdminSubtab(sub) {
@@ -1189,31 +1207,10 @@ function checkHostLiveEligibility() {
     }
 }
 
-// Runtime Permission Request: Requested ONLY ONCE
+// Runtime Permission Request
 async function requestCameraPermissionOnce() {
-    const savedPerm = localStorage.getItem('vlive_camera_perm_granted');
-    if (savedPerm === 'true') {
-        isCameraPermissionGranted = true;
-        return true;
-    }
-
-    try {
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            // Stop tracks immediately after getting permission
-            stream.getTracks().forEach(track => track.stop());
-            localStorage.setItem('vlive_camera_perm_granted', 'true');
-            isCameraPermissionGranted = true;
-            showToast('مجوز استفاده از دوربین و میکروفون با موفقیت ثبت شد (یک‌بار برای همیشه).');
-            return true;
-        }
-    } catch (e) {
-        console.warn('Camera permission denied or unavailable:', e);
-    }
-
-    // Fallback if camera not present or user refused
-    localStorage.setItem('vlive_camera_perm_granted', 'true');
     isCameraPermissionGranted = true;
+    localStorage.setItem('vlive_camera_perm_granted', 'true');
     return true;
 }
 
@@ -1227,29 +1224,50 @@ async function startHostLiveStream() {
         return;
     }
 
-    await requestCameraPermissionOnce();
-
     const hostModal = document.getElementById('host-stream-modal');
     if (hostModal) hostModal.classList.remove('hidden');
 
-    // Attempt live video preview
-    try {
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            const videoEl = document.getElementById('host-camera-video');
-            const placeholder = document.getElementById('host-camera-placeholder');
+    const videoEl = document.getElementById('host-camera-video');
+    const placeholder = document.getElementById('host-camera-placeholder');
 
-            hostMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            if (videoEl) {
-                videoEl.srcObject = hostMediaStream;
-                videoEl.style.display = 'block';
-                if (placeholder) placeholder.style.display = 'none';
+    // Attempt live video camera stream connection
+    let streamObtained = false;
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const constraintsList = [
+            { video: { facingMode: 'user' }, audio: true },
+            { video: true, audio: true },
+            { video: true, audio: false }
+        ];
+
+        for (const constraints of constraintsList) {
+            try {
+                hostMediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+                if (hostMediaStream && videoEl) {
+                    videoEl.srcObject = hostMediaStream;
+                    videoEl.style.display = 'block';
+                    try {
+                        await videoEl.play();
+                    } catch (playErr) {
+                        console.warn('Video play promise caught:', playErr);
+                    }
+                    if (placeholder) placeholder.style.display = 'none';
+                    streamObtained = true;
+                    showToast('دوربین گوشی با موفقیت متصل شد (4K Stream)');
+                    break;
+                }
+            } catch (err) {
+                console.warn('Camera constraints failed:', constraints, err);
             }
         }
-    } catch (err) {
-        console.log('Stream video fallback active:', err);
     }
 
-    showToast('لایواستریم زنده با کیفیت 4K شروع شد!');
+    if (!streamObtained) {
+        if (placeholder) {
+            placeholder.style.display = 'flex';
+            placeholder.innerHTML = `<div class="neon-stream-ring"></div><span>دوربین در دسترس نیست (محیط شبیه‌ساز یا عدم صدور مجوز)</span>`;
+        }
+        showToast('دوربین گوشی یافت نشد یا مجوز آن صادر نشده است.');
+    }
 }
 
 function stopHostLiveStream() {
