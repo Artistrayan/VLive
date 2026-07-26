@@ -1155,4 +1155,365 @@ function sendTelegramResetCode() {
     showToast(`رمز عبور موقت برای حساب ${loginUser} به اکانت تلگرام شما ارسال گردید.`);
 }
 
+// ==========================================
+// LIVE STREAM HOST & VIEWER SYSTEM LOGIC
+// ==========================================
+
+let isCameraPermissionGranted = false;
+let hostMediaStream = null;
+let currentHostIs18Plus = false;
+let isHostTranslateActive = false;
+let isViewerChatHidden = false;
+let isFollowingCurrentStreamer = false;
+let currentStreamerIndex = 0;
+
+const sampleLiveStreams = [
+    { name: 'Sogand_Live', title: 'سوگند • چت نئونی شبانه', viewers: '1,420', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Sogand' },
+    { name: 'Elena_Stream', title: 'النا • اجرای موسیقی و گفتگو', viewers: '2,890', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Elena' },
+    { name: 'Melika_Art', title: 'ملیکا • هنر دیزاین سه بعدی', viewers: '980', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Melika' },
+    { name: 'Daria_Vip', title: 'دریا • لایواستریم اختصاصی VIP', viewers: '3,100', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Daria' }
+];
+
+// Check eligibility: Only female users or Admins can start live
+function checkHostLiveEligibility() {
+    const container = document.getElementById('host-live-container');
+    if (!container) return;
+
+    const isFemale = authSelectedGender === 'female';
+    const isAdminUser = state.isAdmin || state.isSuperAdmin;
+
+    if (isFemale || isAdminUser) {
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+// Runtime Permission Request: Requested ONLY ONCE
+async function requestCameraPermissionOnce() {
+    const savedPerm = localStorage.getItem('vlive_camera_perm_granted');
+    if (savedPerm === 'true') {
+        isCameraPermissionGranted = true;
+        return true;
+    }
+
+    try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            // Stop tracks immediately after getting permission
+            stream.getTracks().forEach(track => track.stop());
+            localStorage.setItem('vlive_camera_perm_granted', 'true');
+            isCameraPermissionGranted = true;
+            showToast('مجوز استفاده از دوربین و میکروفون با موفقیت ثبت شد (یک‌بار برای همیشه).');
+            return true;
+        }
+    } catch (e) {
+        console.warn('Camera permission denied or unavailable:', e);
+    }
+
+    // Fallback if camera not present or user refused
+    localStorage.setItem('vlive_camera_perm_granted', 'true');
+    isCameraPermissionGranted = true;
+    return true;
+}
+
+// Host Studio: Start Broadcast
+async function startHostLiveStream() {
+    const isFemale = authSelectedGender === 'female';
+    const isAdminUser = state.isAdmin || state.isSuperAdmin;
+
+    if (!isFemale && !isAdminUser) {
+        showToast('ایجاد لایواستریم فقط برای حساب‌های کاربری خانم و مدیران سیستم مجاز است.');
+        return;
+    }
+
+    await requestCameraPermissionOnce();
+
+    const hostModal = document.getElementById('host-stream-modal');
+    if (hostModal) hostModal.classList.remove('hidden');
+
+    // Attempt live video preview
+    try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            const videoEl = document.getElementById('host-camera-video');
+            const placeholder = document.getElementById('host-camera-placeholder');
+
+            hostMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            if (videoEl) {
+                videoEl.srcObject = hostMediaStream;
+                videoEl.style.display = 'block';
+                if (placeholder) placeholder.style.display = 'none';
+            }
+        }
+    } catch (err) {
+        console.log('Stream video fallback active:', err);
+    }
+
+    showToast('لایواستریم زنده با کیفیت 4K شروع شد!');
+}
+
+function stopHostLiveStream() {
+    if (hostMediaStream) {
+        hostMediaStream.getTracks().forEach(track => track.stop());
+        hostMediaStream = null;
+    }
+    const hostModal = document.getElementById('host-stream-modal');
+    if (hostModal) hostModal.classList.add('hidden');
+    showToast('لایواستریم با موفقیت خاتمه یافت.');
+}
+
+function setHostCategory(is18) {
+    currentHostIs18Plus = is18;
+    const btnFree = document.getElementById('host-cat-free');
+    const btn18 = document.getElementById('host-cat-18');
+
+    if (btnFree) btnFree.classList.toggle('active', !is18);
+    if (btn18) btn18.classList.toggle('active', is18);
+
+    showToast(is18 ? 'دسته‌بندی لایو به بزرگسالان (18+) تغییر یافت.' : 'دسته‌بندی لایو به رایگان (Free) تغییر یافت.');
+}
+
+function kickViewerFromLive(username) {
+    showToast(`کاربر @${username} از لایو اخراج گردید.`);
+    const rows = document.querySelectorAll('.audience-user-row');
+    rows.forEach(row => {
+        if (row.innerText.includes(username)) row.remove();
+    });
+}
+
+function blockViewerFromLive(username) {
+    showToast(`کاربر @${username} مسدود و از لایو اخراج شد.`);
+    kickViewerFromLive(username);
+}
+
+function toggleHostLiveTranslation() {
+    isHostTranslateActive = !isHostTranslateActive;
+    const btnText = document.getElementById('translate-btn-text');
+    if (btnText) {
+        btnText.innerText = isHostTranslateActive ? 'ترجمه همزمان (روشن 🤖)' : 'ترجمه همزمان (خاموش)';
+    }
+    showToast(isHostTranslateActive ? 'ترجمه همزمان هوش مصنوعی فعال گردید.' : 'ترجمه غیرفعال شد.');
+}
+
+function sendHostChatMessage() {
+    const input = document.getElementById('host-chat-input');
+    const msgBox = document.getElementById('host-chat-messages');
+    if (!input || !input.value.trim() || !msgBox) return;
+
+    const div = document.createElement('div');
+    div.className = 'host-msg-item';
+    div.style.color = 'var(--neon-pink)';
+    div.innerHTML = `<strong>@مجری (شما):</strong> ${input.value.trim()}`;
+    msgBox.appendChild(div);
+    msgBox.scrollTop = msgBox.scrollHeight;
+
+    input.value = '';
+}
+
+// Fullscreen TikTok-Style Stream Viewer Logic
+function openStreamModal(streamerName) {
+    const foundIdx = sampleLiveStreams.findIndex(s => s.name === streamerName || s.name.includes(streamerName));
+    if (foundIdx !== -1) currentStreamerIndex = foundIdx;
+
+    loadStreamDataByIndex(currentStreamerIndex);
+
+    const streamModal = document.getElementById('stream-modal');
+    if (streamModal) streamModal.classList.remove('hidden');
+
+    setupVerticalStreamSwipe();
+}
+
+function loadStreamDataByIndex(idx) {
+    const stream = sampleLiveStreams[idx] || sampleLiveStreams[0];
+    const avatarEl = document.getElementById('active-streamer-avatar');
+    const nameEl = document.getElementById('active-streamer-name');
+    const countEl = document.getElementById('modal-viewer-count');
+
+    if (avatarEl) avatarEl.src = stream.avatar;
+    if (nameEl) nameEl.innerText = stream.name;
+    if (countEl) countEl.innerText = stream.viewers;
+
+    isFollowingCurrentStreamer = false;
+    const followBtn = document.getElementById('stream-follow-btn');
+    if (followBtn) {
+        followBtn.innerText = '+ دنبال کردن';
+        followBtn.style.background = 'linear-gradient(135deg, var(--neon-pink), var(--neon-purple))';
+    }
+}
+
+function closeStreamModal() {
+    const streamModal = document.getElementById('stream-modal');
+    if (streamModal) streamModal.classList.add('hidden');
+}
+
+function toggleFollowStreamer() {
+    isFollowingCurrentStreamer = !isFollowingCurrentStreamer;
+    const followBtn = document.getElementById('stream-follow-btn');
+    if (followBtn) {
+        if (isFollowingCurrentStreamer) {
+            followBtn.innerText = 'دنبال شده ✓';
+            followBtn.style.background = 'var(--neon-green)';
+            showToast('مجری به لیست دنبال‌شده‌های شما اضافه شد.');
+        } else {
+            followBtn.innerText = '+ دنبال کردن';
+            followBtn.style.background = 'linear-gradient(135deg, var(--neon-pink), var(--neon-purple))';
+        }
+    }
+}
+
+function triggerStreamLike() {
+    const countEl = document.getElementById('stream-like-count');
+    if (countEl) {
+        let currentLikes = parseFloat(countEl.innerText) || 3.4;
+        currentLikes = (currentLikes + 0.1).toFixed(1);
+        countEl.innerText = currentLikes + 'K';
+    }
+
+    // Spawn animated floating heart particle
+    const layer = document.getElementById('floating-hearts-layer');
+    if (layer) {
+        const heart = document.createElement('span');
+        heart.className = 'heart-particle';
+        const hearts = ['❤️', '💖', '💗', '🔥', '⭐️'];
+        heart.innerText = hearts[Math.floor(Math.random() * hearts.length)];
+        heart.style.left = (Math.random() * 30) + 'px';
+        layer.appendChild(heart);
+
+        setTimeout(() => heart.remove(), 1800);
+    }
+}
+
+function requestPrivateVideoCall() {
+    showToast('درخواست تماس تصویری خصوصی برای مجری ارسال گردید.');
+}
+
+function toggleStreamChatVisibility() {
+    isViewerChatHidden = !isViewerChatHidden;
+    const chatBox = document.getElementById('stream-chat-overlay-box');
+    const label = document.getElementById('chat-toggle-label');
+
+    if (chatBox) {
+        chatBox.style.opacity = isViewerChatHidden ? '0' : '1';
+        chatBox.style.pointerEvents = isViewerChatHidden ? 'none' : 'all';
+    }
+    if (label) {
+        label.innerText = isViewerChatHidden ? 'نمایش' : 'چت';
+    }
+}
+
+function sendStreamViewerMessage() {
+    const input = document.getElementById('stream-viewer-chat-input');
+    const msgsList = document.getElementById('stream-live-messages');
+    if (!input || !input.value.trim() || !msgsList) return;
+
+    const div = document.createElement('div');
+    div.className = 'stream-msg-item';
+    div.innerHTML = `<span class="user-tag">@شما:</span> <span class="msg-text">${input.value.trim()}</span>`;
+
+    msgsList.appendChild(div);
+    msgsList.scrollTop = msgsList.scrollHeight;
+    input.value = '';
+}
+
+// Vertical Swipe/Wheel Listener for Switching Streams
+let isSwiping = false;
+function setupVerticalStreamSwipe() {
+    const zone = document.getElementById('stream-video-swipe-zone');
+    if (!zone || zone.dataset.swipeBound === 'true') return;
+    zone.dataset.swipeBound = 'true';
+
+    let touchStartY = 0;
+
+    zone.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    zone.addEventListener('touchend', (e) => {
+        const touchEndY = e.changedTouches[0].clientY;
+        const diffY = touchStartY - touchEndY;
+
+        if (Math.abs(diffY) > 50) {
+            if (diffY > 0) {
+                // Swiped Up -> Next Stream
+                switchNextStream();
+            } else {
+                // Swiped Down -> Prev Stream
+                switchPrevStream();
+            }
+        }
+    }, { passive: true });
+
+    zone.addEventListener('wheel', (e) => {
+        if (isSwiping) return;
+        isSwiping = true;
+        if (e.deltaY > 30) switchNextStream();
+        else if (e.deltaY < -30) switchPrevStream();
+
+        setTimeout(() => { isSwiping = false; }, 600);
+    });
+}
+
+function switchNextStream() {
+    currentStreamerIndex = (currentStreamerIndex + 1) % sampleLiveStreams.length;
+    loadStreamDataByIndex(currentStreamerIndex);
+    showToast(`انتقال به لایو بعدی: @${sampleLiveStreams[currentStreamerIndex].name}`);
+}
+
+function switchPrevStream() {
+    currentStreamerIndex = (currentStreamerIndex - 1 + sampleLiveStreams.length) % sampleLiveStreams.length;
+    loadStreamDataByIndex(currentStreamerIndex);
+    showToast(`انتقال به لایو قبلی: @${sampleLiveStreams[currentStreamerIndex].name}`);
+}
+
+// Rich Variety Gift Picker Modal
+function openGiftPickerModal() {
+    const modal = document.getElementById('gift-picker-modal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeGiftPickerModal() {
+    const modal = document.getElementById('gift-picker-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function sendSelectedGift(giftTitle, priceStars) {
+    if (state.coins < priceStars) {
+        showToast(`موجودی Stars شما کافی نیست (${priceStars} Stars نیاز است).`);
+        buyCoins('STARS');
+        return;
+    }
+
+    state.coins -= priceStars;
+    updateBalanceUI();
+
+    closeGiftPickerModal();
+    showToast(`هدیه ${giftTitle} با موفقیت برای مجری ارسال شد! 🎉`);
+
+    // Post to viewer chat stream
+    const msgsList = document.getElementById('stream-live-messages');
+    if (msgsList) {
+        const div = document.createElement('div');
+        div.className = 'stream-msg-item gift-alert';
+        div.innerHTML = `<span class="user-tag">@شما:</span> <span class="msg-text">هدیه ${giftTitle} ارسال گردید! 🎉</span>`;
+        msgsList.appendChild(div);
+        msgsList.scrollTop = msgsList.scrollHeight;
+    }
+
+    // Trigger hearts animation
+    triggerStreamLike();
+}
+
+// Override Tab Switcher to check Host Eligibility
+const originalSwitchTab = window.switchTab;
+window.switchTab = function(tabName) {
+    if (typeof originalSwitchTab === 'function') originalSwitchTab(tabName);
+    checkHostLiveEligibility();
+};
+
+// Check on initial load
+document.addEventListener('DOMContentLoaded', () => {
+    checkHostLiveEligibility();
+});
+
+
 

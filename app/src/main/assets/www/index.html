@@ -224,6 +224,20 @@
                     </div>
                 </div>
 
+                <!-- Host Live Stream Creator Button (Only for Female Users & Admin) -->
+                <div id="host-live-container" class="panel-box" style="margin-top:16px; background:linear-gradient(135deg, rgba(255,0,127,0.15), rgba(138,43,226,0.15)); border:2px solid var(--neon-pink);">
+                    <div style="display:flex; align-items:center; justify-content:space-between;">
+                        <div>
+                            <h3 style="margin:0; font-size:14px; font-weight:800; color:var(--neon-pink);">استودیو پخش زنده لایو (Live Host Studio)</h3>
+                            <p style="margin:4px 0 0 0; font-size:11px; color:var(--text-muted);">ویژه مجریان زن و مدیران - کسب درآمد مستقیم از هدایا</p>
+                        </div>
+                        <button id="start-host-live-btn" class="submit-btn neon-pink-bg" style="width:auto; padding:10px 16px; margin:0;" onclick="startHostLiveStream()">
+                            <svg class="svg-icon" style="width:18px; height:18px; margin-left:4px;" viewBox="0 0 24 24"><path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                            شروع لایواستریم
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Edit Account Details -->
                 <div class="panel-box" style="margin-top:16px;">
                     <h3 style="font-size:14px; font-weight:800; color:var(--neon-cyan); margin-bottom:12px;">اطلاعات حساب کاربری</h3>
@@ -382,51 +396,238 @@
             </section>
         </main>
 
-        <!-- Modal: Live Stream Player / AR Filters -->
-        <div id="stream-modal" class="modal-overlay hidden">
-            <div class="modal-box stream-modal-box">
-                <div class="modal-header">
-                    <div class="streamer-info">
-                        <div class="avatar-modal-wrap">
-                            <img id="active-streamer-avatar" src="" alt="Avatar">
-                            <span class="live-status-dot modal-dot"></span>
-                        </div>
-                        <div>
-                            <h3 id="active-streamer-name">مجری</h3>
-                            <div id="active-streamer-meta" class="streamer-modal-meta">
-                                <span id="active-streamer-age" class="age-tag">۲۴ سال</span>
-                                <span id="active-streamer-vip" class="vip-badge">سطح VIP 4</span>
-                            </div>
-                            <span class="viewers-count">
-                                <svg class="svg-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                                <span id="modal-viewer-count">1,420</span> بیننده
+        <!-- Modal 1: Fullscreen TikTok-Style Stream Viewer Modal -->
+        <div id="stream-modal" class="fullscreen-stream-overlay hidden">
+            <!-- Vertical Swipe Gesture Zone -->
+            <div class="stream-video-container" id="stream-video-swipe-zone">
+                <!-- Video Background Placeholder / Stream Surface -->
+                <div class="stream-video-placeholder">
+                    <div class="neon-stream-ring"></div>
+                    <span class="stream-quality-tag">4K LIVE • VERTICAL STREAM</span>
+                </div>
+
+                <!-- Top Bar: Streamer Info, Viewer Count ONLY, Follow & Close -->
+                <div class="stream-top-bar">
+                    <div class="streamer-top-info">
+                        <img id="active-streamer-avatar" src="" alt="Avatar" class="streamer-avatar-thumb">
+                        <div class="streamer-text-col">
+                            <span id="active-streamer-name" class="streamer-name-bold">مجری</span>
+                            <span class="viewers-count-only">
+                                <svg class="svg-icon" style="width:14px; height:14px; color:var(--neon-cyan);" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                <span id="modal-viewer-count">1,420</span>
                             </span>
                         </div>
+                        <button id="stream-follow-btn" class="follow-chip-btn" onclick="toggleFollowStreamer()">+ دنبال کردن</button>
                     </div>
-                    <button class="close-btn" onclick="closeStreamModal()">✕</button>
-                </div>
-                
-                <div class="video-preview-area">
-                    <div class="ar-overlay-badge" id="active-ar-filter-name">فیلتر نئونی: Studio Glow</div>
-                    <div class="video-placeholder">
-                        <div class="neon-video-ring"></div>
-                        <span>پخش زنده کیفیت 4K</span>
+
+                    <div class="stream-top-right-actions">
+                        <span class="swipe-hint-pill">▲ اسکرول به بالا/پایین ▼</span>
+                        <button class="stream-close-icon-btn" onclick="closeStreamModal()" title="خروج از لایو" aria-label="خروج">✕</button>
                     </div>
                 </div>
 
-                <div class="ar-filters-bar">
-                    <span class="bar-title">فیلترهای نئونی هوش مصنوعی:</span>
-                    <div class="filters-scroll">
-                        <button class="ar-chip active" onclick="applyArFilter('Studio Glow')">Studio Glow</button>
-                        <button class="ar-chip" onclick="applyArFilter('Hollywood Glam')">Hollywood Glam</button>
-                        <button class="ar-chip" onclick="applyArFilter('Cyber Mask')">AR Cyber Mask</button>
-                        <button class="ar-chip" onclick="applyArFilter('Vibrant Aura')">Vibrant Aura</button>
+                <!-- Floating Right Vertical Toolbar -->
+                <div class="stream-right-toolbar">
+                    <!-- Like Icon with Hearts -->
+                    <button class="stream-side-tool-btn" onclick="triggerStreamLike()" title="لایک">
+                        <svg class="svg-icon" style="width:22px; height:22px; color:#FF0055;" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                        <span id="stream-like-count">3.4K</span>
+                    </button>
+
+                    <!-- Private Video Call Request Icon -->
+                    <button class="stream-side-tool-btn" onclick="requestPrivateVideoCall()" title="درخواست تماس تصویری خصوصی">
+                        <svg class="svg-icon" style="width:22px; height:22px; color:var(--neon-green);" viewBox="0 0 24 24"><path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                        <span>تماس</span>
+                    </button>
+
+                    <!-- Rich Variety Gift Picker Button -->
+                    <button class="stream-side-tool-btn gift-glow-btn" onclick="openGiftPickerModal()" title="ارسال هدایا">
+                        <svg class="svg-icon" style="width:24px; height:24px; color:var(--neon-gold);" viewBox="0 0 24 24"><path fill="currentColor" d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zM15 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h7.02v3h1.96V8H20v6z"/></svg>
+                        <span>هدایا</span>
+                    </button>
+
+                    <!-- Hide / Show Chat Messages Toggle -->
+                    <button class="stream-side-tool-btn" id="toggle-chat-visibility-btn" onclick="toggleStreamChatVisibility()" title="مخفی کردن چت برای دید بهتر">
+                        <svg class="svg-icon" style="width:22px; height:22px; color:var(--neon-cyan);" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        <span id="chat-toggle-label">چت</span>
+                    </button>
+
+                    <!-- Exit Live Icon -->
+                    <button class="stream-side-tool-btn" onclick="closeStreamModal()" title="خروج از دیدن لایو">
+                        <svg class="svg-icon" style="width:22px; height:22px; color:#FF3366;" viewBox="0 0 24 24"><path fill="currentColor" d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+                        <span>خروج</span>
+                    </button>
+                </div>
+
+                <!-- Floating Hearts Container -->
+                <div id="floating-hearts-layer" class="floating-hearts-container"></div>
+
+                <!-- Bottom Floating Chat Container -->
+                <div id="stream-chat-overlay-box" class="stream-chat-overlay-box">
+                    <div id="stream-live-messages" class="stream-live-messages-list">
+                        <div class="stream-msg-item">
+                            <span class="user-tag">@Aria_88:</span>
+                            <span class="msg-text">سلام! فوق‌العاده است این لایو 🔥</span>
+                        </div>
+                        <div class="stream-msg-item gift-alert">
+                            <span class="user-tag">@Rayan_VIP:</span>
+                            <span class="msg-text">هدیه 👑 تاج طلایی ارسال کرد!</span>
+                        </div>
+                    </div>
+
+                    <div class="stream-chat-input-row">
+                        <input type="text" id="stream-viewer-chat-input" class="stream-chat-input" placeholder="ارسال پیام در لایو..." onkeypress="if(event.key==='Enter') sendStreamViewerMessage()">
+                        <button class="stream-send-btn" onclick="sendStreamViewerMessage()">
+                            <svg class="svg-icon" style="width:18px; height:18px;" viewBox="0 0 24 24"><path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal 2: Rich Variety Gift Selector Modal -->
+        <div id="gift-picker-modal" class="modal-overlay hidden">
+            <div class="modal-box gift-picker-box">
+                <div class="modal-header">
+                    <h3>انتخاب هدیه اختصاصی (Gift Variety)</h3>
+                    <button class="close-btn" onclick="closeGiftPickerModal()">✕</button>
+                </div>
+                <div class="gifts-grid-container">
+                    <button class="gift-card-item" onclick="sendSelectedGift('🌹 گل رز', 10)">
+                        <span class="gift-emoji">🌹</span>
+                        <span class="gift-title">گل رز</span>
+                        <span class="gift-price">10 Stars</span>
+                    </button>
+                    <button class="gift-card-item" onclick="sendSelectedGift('💖 قلب نئونی', 50)">
+                        <span class="gift-emoji">💖</span>
+                        <span class="gift-title">قلب نئونی</span>
+                        <span class="gift-price">50 Stars</span>
+                    </button>
+                    <button class="gift-card-item" onclick="sendSelectedGift('💎 الماس درخشان', 100)">
+                        <span class="gift-emoji">💎</span>
+                        <span class="gift-title">الماس درخشان</span>
+                        <span class="gift-price">100 Stars</span>
+                    </button>
+                    <button class="gift-card-item" onclick="sendSelectedGift('👑 تاج سلطنتی', 500)">
+                        <span class="gift-emoji">👑</span>
+                        <span class="gift-title">تاج سلطنتی</span>
+                        <span class="gift-price">500 Stars</span>
+                    </button>
+                    <button class="gift-card-item" onclick="sendSelectedGift('🏎️ ماشین فراری', 1000)">
+                        <span class="gift-emoji">🏎️</span>
+                        <span class="gift-title">ماشین سوپراسپرت</span>
+                        <span class="gift-price">1,000 Stars</span>
+                    </button>
+                    <button class="gift-card-item" onclick="sendSelectedGift('✈️ جت شخصی', 2500)">
+                        <span class="gift-emoji">✈️</span>
+                        <span class="gift-title">جت اختصاصی</span>
+                        <span class="gift-price">2,500 Stars</span>
+                    </button>
+                    <button class="gift-card-item" onclick="sendSelectedGift('🏰 قصر نئونی VIP', 5000)">
+                        <span class="gift-emoji">🏰</span>
+                        <span class="gift-title">قصر نئونی</span>
+                        <span class="gift-price">5,000 Stars</span>
+                    </button>
+                    <button class="gift-card-item" onclick="sendSelectedGift('⭐️ ستاره شانس', 20)">
+                        <span class="gift-emoji">⭐️</span>
+                        <span class="gift-title">ستاره شانس</span>
+                        <span class="gift-price">20 Stars</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal 3: Fullscreen Host Live Studio Modal (For Female & Admin Users) -->
+        <div id="host-stream-modal" class="fullscreen-stream-overlay hidden">
+            <div class="host-studio-container">
+                <!-- Top Control Header Bar -->
+                <div class="host-top-bar">
+                    <div class="host-live-badge">
+                        <span class="live-status-dot"></span>
+                        <span>LIVE STUDIO</span>
+                    </div>
+
+                    <!-- Toggle Category: Free vs 18+ Adult -->
+                    <div class="host-category-toggle">
+                        <button class="cat-toggle-btn active" id="host-cat-free" onclick="setHostCategory(false)">رایگان (Free)</button>
+                        <button class="cat-toggle-btn" id="host-cat-18" onclick="setHostCategory(true)">بزرگسالان (18+)</button>
+                    </div>
+
+                    <button class="end-stream-btn" onclick="stopHostLiveStream()">پایان لایواستریم ✕</button>
+                </div>
+
+                <!-- Host Camera Stream Preview Area -->
+                <div class="host-video-preview">
+                    <video id="host-camera-video" autoplay playsinline muted class="camera-stream-video"></video>
+                    <div id="host-camera-placeholder" class="video-placeholder">
+                        <div class="neon-stream-ring"></div>
+                        <span>دوربین زنده فعال شد (4K Stream)</span>
                     </div>
                 </div>
 
-                <div class="stream-actions">
-                    <button class="gift-btn" onclick="sendGift('تاج طلایی (200 سکه)')">ارسال هدیه</button>
-                    <button class="private-call-btn" onclick="switchTab('booking'); closeStreamModal();">رزرو تماس ۱ به ۱</button>
+                <!-- Host Control Grid Overlay -->
+                <div class="host-dashboard-grid">
+                    <!-- Column 1: Audience Viewers & Actions (Kick/Block) -->
+                    <div class="host-panel-box">
+                        <div class="host-panel-header">
+                            <svg class="svg-icon" style="width:16px; height:16px; color:var(--neon-cyan);" viewBox="0 0 24 24"><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                            <span>آمار بازدیدکنندگان (<span id="host-viewers-count">12</span>)</span>
+                        </div>
+                        <div id="host-audience-list" class="host-audience-scroll">
+                            <div class="audience-user-row">
+                                <span>@User_Saman (VIP 2)</span>
+                                <div class="aud-action-btns">
+                                    <button class="aud-btn kick-btn" onclick="kickViewerFromLive('User_Saman')">اخراج</button>
+                                    <button class="aud-btn block-btn" onclick="blockViewerFromLive('User_Saman')">مسدود</button>
+                                </div>
+                            </div>
+                            <div class="audience-user-row">
+                                <span>@Ali_Tehrani (VIP 4)</span>
+                                <div class="aud-action-btns">
+                                    <button class="aud-btn kick-btn" onclick="kickViewerFromLive('Ali_Tehrani')">اخراج</button>
+                                    <button class="aud-btn block-btn" onclick="blockViewerFromLive('Ali_Tehrani')">مسدود</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Received Gifts List -->
+                    <div class="host-panel-box">
+                        <div class="host-panel-header">
+                            <svg class="svg-icon" style="width:16px; height:16px; color:var(--neon-gold);" viewBox="0 0 24 24"><path fill="currentColor" d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/></svg>
+                            <span>هدایای دریافتی (<span id="host-gifts-total-stars" style="color:var(--neon-gold);">1,250 Stars</span>)</span>
+                        </div>
+                        <div id="host-received-gifts-list" class="host-gifts-scroll">
+                            <div class="gift-received-row">
+                                <span>👑 تاج سلطنتی از @Rayan_VIP</span>
+                                <strong style="color:var(--neon-gold);">+500 Stars</strong>
+                            </div>
+                            <div class="gift-received-row">
+                                <span>🏎️ ماشین فراری از @User_Saman</span>
+                                <strong style="color:var(--neon-gold);">+1000 Stars</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Host Live Chat & Real-time Translation -->
+                <div class="host-chat-panel">
+                    <div class="host-chat-top-row">
+                        <span>چت زنده استودیو</span>
+                        <button class="translate-toggle-btn" id="host-translate-btn" onclick="toggleHostLiveTranslation()">
+                            <svg class="svg-icon" style="width:14px; height:14px;" viewBox="0 0 24 24"><path fill="currentColor" d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+                            <span id="translate-btn-text">ترجمه همزمان (خاموش)</span>
+                        </button>
+                    </div>
+                    <div id="host-chat-messages" class="host-chat-messages-box">
+                        <div class="host-msg-item">
+                            <strong>@User_Saman:</strong> کیفیت لایو فوق‌العاده است!
+                        </div>
+                    </div>
+                    <div class="host-chat-input-row">
+                        <input type="text" id="host-chat-input" placeholder="پاسخ مجری..." onkeypress="if(event.key==='Enter') sendHostChatMessage()">
+                        <button class="submit-btn neon-pink-bg" style="width:auto; padding:8px 14px;" onclick="sendHostChatMessage()">ارسال</button>
+                    </div>
                 </div>
             </div>
         </div>
