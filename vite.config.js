@@ -32,22 +32,10 @@ const syncAssetsToAndroidPlugin = () => ({
 
       copyRecursive(distDir, androidDir);
 
-      const processHtmlFile = (filePath) => {
-        if (fs.existsSync(filePath)) {
-          let html = fs.readFileSync(filePath, 'utf-8');
-          html = html.replace(/type="module"\s+crossorigin/g, '');
-          html = html.replace(/type="module"/g, '');
-          fs.writeFileSync(filePath, html, 'utf-8');
-        }
-      };
-
       const distHtmlPath = path.join(distDir, 'index.html');
       const androidHtmlPath = path.join(androidDir, 'index.html');
 
-      processHtmlFile(distHtmlPath);
-      processHtmlFile(androidHtmlPath);
-
-      console.log('Successfully processed and synced build to dist and app/src/main/assets/www!');
+      console.log('Successfully synced build to dist and app/src/main/assets/www!');
     }
   }
 });

@@ -8,25 +8,46 @@ const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 10000;
 
+const MIME_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2'
+};
+
 const server = http.createServer((req, res) => {
-  let filePath = path.join(__dirname, 'dist', 'index.html');
-  if (!fs.existsSync(filePath)) {
-    filePath = path.join(__dirname, 'app', 'src', 'main', 'assets', 'www', 'index.html');
-  }
-  if (!fs.existsSync(filePath)) {
-    filePath = path.join(__dirname, 'index.html');
+  let reqUrl = req.url.split('?')[0];
+  let distDir = path.join(__dirname, 'dist');
+  
+  if (!fs.existsSync(distDir)) {
+    distDir = path.join(__dirname, 'app', 'src', 'main', 'assets', 'www');
   }
 
-  fs.readFile(filePath, (err, content) => {
+  let targetFile = path.join(distDir, reqUrl === '/' ? 'index.html' : reqUrl);
+
+  if (!fs.existsSync(targetFile) || fs.statSync(targetFile).isDirectory()) {
+    targetFile = path.join(distDir, 'index.html');
+  }
+
+  const ext = path.extname(targetFile);
+  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+  fs.readFile(targetFile, (err, content) => {
     if (err) {
       res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('V.Live+ Server Error: Build index.html not found.');
+      res.end('V.Live+ Server Error: File not found.');
     } else {
       res.writeHead(200, {
-        'Content-Type': 'text/html; charset=utf-8',
+        'Content-Type': contentType,
         'Access-Control-Allow-Origin': '*'
       });
-      res.end(content, 'utf-8');
+      res.end(content);
     }
   });
 });
