@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api/admin", tags=["Admin Panel"])
 
 def verify_admin_key(x_admin_key: str = Header(None)):
     admin_key = getattr(settings, "ADMIN_API_KEY", None)
-    if admin_key and x_admin_key != admin_key:
+    if not admin_key or not x_admin_key or x_admin_key != admin_key:
         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز مدیر!")
     return True
 
