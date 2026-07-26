@@ -21,6 +21,27 @@ export default function App() {
   const [userAvatar, setUserAvatar] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80');
   const [isVerified, setIsVerified] = useState(true);
 
+  // Initialize Telegram Mini App
+  useEffect(() => {
+    try {
+      if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+        const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
+        if (tgUser) {
+          if (tgUser.first_name) {
+            setUserName(`${tgUser.first_name} ${tgUser.last_name || ''}`.trim());
+          }
+          if (tgUser.photo_url) {
+            setUserAvatar(tgUser.photo_url);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Telegram WebApp init ignored:', e);
+    }
+  }, []);
+
   // Modals State
   const [isHostLiveOpen, setIsHostLiveOpen] = useState(false);
   const [activeChatUser, setActiveChatUser] = useState(null);
