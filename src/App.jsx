@@ -4,20 +4,35 @@ import {
   MessageSquare, Send, Camera, Mic, MicOff, Settings, Search, Check, 
   RefreshCw, LogOut, Flame, Heart, Crown, Plus, X, Globe, Sparkles, 
   Sliders, ChevronLeft, ChevronRight, Eye, Radio, CreditCard, Gift, 
-  PhoneCall, Play, Image, Layers, CheckCircle, AlertCircle, Bot
+  PhoneCall, Play, Image, Layers, CheckCircle, AlertCircle, Bot,
+  Key, Mail, Phone, Copy, QrCode, ArrowRight, ExternalLink, SwitchCamera
 } from 'lucide-react';
 
 export default function App() {
-  // State
+  // Authentication State
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('vlive_user_logged_in') === 'true';
+  });
+  const [authTab, setAuthTab] = useState('login'); // 'login' or 'register'
+  const [authPhone, setAuthPhone] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authFullName, setAuthFullName] = useState('');
+
+  // Main UI State
   const [activeTab, setActiveTab] = useState('streams');
   const [streamSubTab, setStreamSubTab] = useState('lives'); // 'users' or 'lives'
   const [userFilter, setUserFilter] = useState('all'); // 'all', 'online', 'top'
   const [toastMessage, setToastMessage] = useState(null);
   
   // User & Wallet State
-  const [userCoins, setUserCoins] = useState(1250);
+  const [userCoins, setUserCoins] = useState(() => {
+    const saved = localStorage.getItem('vlive_user_coins');
+    return saved ? parseInt(saved, 10) : 1250;
+  });
   const [userRank, setUserRank] = useState('VIP Level 1');
-  const [userName, setUserName] = useState('کاربر رایان');
+  const [userName, setUserName] = useState(() => {
+    return localStorage.getItem('vlive_user_name') || 'کاربر VIP V.Live';
+  });
   const [userAvatar, setUserAvatar] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80');
   const [isVerified, setIsVerified] = useState(true);
 
@@ -30,7 +45,9 @@ export default function App() {
         const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
         if (tgUser) {
           if (tgUser.first_name) {
-            setUserName(`${tgUser.first_name} ${tgUser.last_name || ''}`.trim());
+            const fullName = `${tgUser.first_name} ${tgUser.last_name || ''}`.trim();
+            setUserName(fullName);
+            localStorage.setItem('vlive_user_name', fullName);
           }
           if (tgUser.photo_url) {
             setUserAvatar(tgUser.photo_url);
@@ -42,24 +59,34 @@ export default function App() {
     }
   }, []);
 
+  // Save coins changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('vlive_user_coins', userCoins.toString());
+  }, [userCoins]);
+
   // Modals State
   const [isHostLiveOpen, setIsHostLiveOpen] = useState(false);
   const [activeChatUser, setActiveChatUser] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [tipModalUser, setTipModalUser] = useState(null);
-  const [customTipAmount, setCustomTipAmount] = useState('');
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [supportMessages, setSupportMessages] = useState([
     { sender: 'bot', text: 'درود! پشتیبانی ۲۴ ساعته V.Live در خدمت شماست. چطور می‌توانم کمک‌تان کنم؟' }
   ]);
   const [supportInput, setSupportInput] = useState('');
+
+  // Deposit & Top-Up Modal State
+  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
+  const [selectedPack, setSelectedPack] = useState(null);
+  const [depositMethod, setDepositMethod] = useState('bank'); // 'bank', 'usdt', 'stars'
+  const [depositTxId, setDepositTxId] = useState('');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   
   // Admin State
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminUser, setAdminUser] = useState('');
   const [adminPass, setAdminPass] = useState('');
-  const [adminSubTab, setAdminSubTab] = useState('hosts');
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -69,10 +96,11 @@ export default function App() {
   const [mediaStream, setMediaStream] = useState(null);
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraFacingMode, setCameraFacingMode] = useState('user'); // 'user' or 'environment'
   const [cameraError, setCameraError] = useState(null);
 
   // Mock Users & Hosts Data
-  const [usersList, setUsersList] = useState([
+  const [usersList] = useState([
     { id: 1, name: 'سارا ملکی', role: 'استریمر VIP', online: true, isTop: true, avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', rate: '500 سکه / دقیقه' },
     { id: 2, name: 'الناز کریمی', role: 'مدل آنلاین', online: true, isTop: true, avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', rate: '750 سکه / دقیقه' },
     { id: 3, name: 'مریم حسینی', role: 'میزبان رسمی', online: false, isTop: false, avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80', rate: '400 سکه / دقیقه' },
@@ -93,15 +121,49 @@ export default function App() {
     }, 3500);
   };
 
+  // Bind camera stream to video element whenever mediaStream or modal changes
+  useEffect(() => {
+    if (isHostLiveOpen && mediaStream && videoRef.current) {
+      try {
+        videoRef.current.srcObject = mediaStream;
+        videoRef.current.muted = true;
+        videoRef.current.setAttribute('playsinline', 'true');
+        videoRef.current.setAttribute('autoplay', 'true');
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            setIsCameraActive(true);
+          }).catch(err => {
+            console.warn('Video element play() caught error:', err);
+            // Retry playing
+            setTimeout(() => {
+              if (videoRef.current) {
+                videoRef.current.play().catch(e => console.warn('Retry play error:', e));
+              }
+            }, 300);
+          });
+        }
+      } catch (e) {
+        console.error('Error attaching mediaStream to video element:', e);
+      }
+    }
+  }, [isHostLiveOpen, mediaStream]);
+
   // Start Live Stream Camera
-  const startLiveStream = async () => {
+  const startLiveStream = async (facing = cameraFacingMode) => {
     setIsHostLiveOpen(true);
     setCameraError(null);
     setIsCameraActive(false);
 
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(track => track.stop());
+      setMediaStream(null);
+    }
+
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       const constraintsList = [
-        { video: { facingMode: 'user' }, audio: true },
+        { video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true },
+        { video: { facingMode: facing }, audio: true },
         { video: true, audio: true },
         { video: true, audio: false }
       ];
@@ -111,19 +173,22 @@ export default function App() {
           const stream = await navigator.mediaDevices.getUserMedia(constraints);
           setMediaStream(stream);
           setIsCameraActive(true);
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-            videoRef.current.play().catch(() => {});
-          }
-          showToast('دوربین گوشی با موفقیت متصل شد (استریم کیفیت 4K)');
+          showToast('دوربین با موفقیت متصل شد (استریم زنده 4K)');
           return;
         } catch (err) {
           console.warn('Constraint failed:', constraints, err);
         }
       }
     }
-    setCameraError('دوربین در دسترس نیست یا مجوز آن داده نشده است.');
-    showToast('خطا در اتصال به دوربین گوشی');
+    setCameraError('دسترسی به دوربین برقرار نشد. مجوز دوربین را در مرورگر یا دستگاه فعال کنید.');
+    showToast('خطا در اتصال به دوربین');
+  };
+
+  // Toggle Camera Front / Rear
+  const toggleCameraFacing = () => {
+    const nextFacing = cameraFacingMode === 'user' ? 'environment' : 'user';
+    setCameraFacingMode(nextFacing);
+    startLiveStream(nextFacing);
   };
 
   const stopLiveStream = () => {
@@ -146,14 +211,96 @@ export default function App() {
     }
   };
 
+  // Authentication Handlers
+  const handleAuthSubmit = (e) => {
+    e.preventDefault();
+    if (!authPhone.trim() || !authPassword.trim()) {
+      showToast('لطفاً شماره تلفن / ایمیل و رمز عبور را وارد کنید');
+      return;
+    }
+
+    if (authTab === 'register' && !authFullName.trim()) {
+      showToast('لطفاً نام و نام خانوادگی خود را وارد کنید');
+      return;
+    }
+
+    const finalName = authTab === 'register' && authFullName.trim() ? authFullName.trim() : (userName || 'کاربر جدید V.Live');
+    setUserName(finalName);
+    setIsLoggedIn(true);
+    localStorage.setItem('vlive_user_logged_in', 'true');
+    localStorage.setItem('vlive_user_name', finalName);
+    
+    showToast(authTab === 'login' ? 'ورود موفقیت‌آمیز به پلتفرم V.Live+' : 'حساب کاربری جدید با موفقیت ایجاد شد');
+  };
+
+  const handleQuickTelegramAuth = () => {
+    try {
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
+        const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+        const name = `${tgUser.first_name} ${tgUser.last_name || ''}`.trim();
+        setUserName(name);
+        localStorage.setItem('vlive_user_name', name);
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    setIsLoggedIn(true);
+    localStorage.setItem('vlive_user_logged_in', 'true');
+    showToast('ورود با شناسه تلگرام تایید شد');
+  };
+
+  const handleGuestLogin = () => {
+    setIsLoggedIn(true);
+    localStorage.setItem('vlive_user_logged_in', 'true');
+    showToast('ورود به عنوان مهمان');
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('vlive_user_logged_in');
+    showToast('شما از حساب کاربری خارج شدید');
+  };
+
+  // Deposit & Top-Up Handler
+  const openDepositModal = (pack = { coins: 500, priceToman: '250,000 تومان', priceUsdt: '5 USDT', bonus: '10% سکه هدیه' }) => {
+    setSelectedPack(pack);
+    setDepositMethod('bank');
+    setDepositTxId('');
+    setIsDepositModalOpen(true);
+  };
+
+  const handleTelegramStarsClick = () => {
+    showToast('پرداخت با Telegram Stars به زودی فعال می‌شود');
+  };
+
+  const handleConfirmDeposit = () => {
+    if (depositMethod === 'stars') {
+      handleTelegramStarsClick();
+      return;
+    }
+
+    if (!depositTxId.trim()) {
+      showToast('لطفاً شماره پیگیری یا ۴ رقم کارت / کد تراکنش را وارد نمایید');
+      return;
+    }
+
+    setIsProcessingPayment(true);
+    setTimeout(() => {
+      setIsProcessingPayment(false);
+      const addedCoins = selectedPack ? selectedPack.coins : 500;
+      setUserCoins(prev => prev + addedCoins);
+      setIsDepositModalOpen(false);
+      showToast(`فیش واریزی با شماره ${depositTxId} ثبت شد. تعداد ${addedCoins.toLocaleString()} سکه به کیف پول افزوده گردید.`);
+    }, 1200);
+  };
+
   // Send Private Message
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
     const newMsg = { sender: 'me', text: chatInput, time: new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) };
-    setChatMessages([...chatMessages, newMsg]);
+    setChatMessages(prev => [...prev, newMsg]);
     setChatInput('');
 
-    // Auto response
     setTimeout(() => {
       setChatMessages(prev => [
         ...prev,
@@ -206,11 +353,139 @@ export default function App() {
     setAiResponse('');
     setTimeout(() => {
       setIsAiLoading(false);
-      setAiResponse(`تحلیل هوش مصنوعی V.Live:
+      setAiResponse(`تحلیل هوش مصنوعی V.Live+:
 درخواست شما در سیستم پردازش گردید. تنظیمات بهینه‌سازی الگوریتم استریم با موفقیت اعمال شد.`);
     }, 1500);
   };
 
+  // IF NOT LOGGED IN: DISPLAY AUTHENTICATION (LOGIN & SIGNUP) SCREEN
+  if (!isLoggedIn) {
+    return (
+      <div className="cyber-container min-h-screen text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 border border-pink-500 text-pink-300 px-6 py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-3 toast-animate">
+            <Sparkles className="w-5 h-5 text-pink-400 animate-pulse" />
+            <span className="text-sm font-semibold">{toastMessage}</span>
+          </div>
+        )}
+
+        {/* Ambient Neon Backlights */}
+        <div className="absolute -top-20 -left-20 w-72 h-72 bg-pink-600/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-20 -right-20 w-72 h-72 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="w-full max-w-md card-3d p-6 border border-pink-500/40 bg-slate-950/90 backdrop-blur-xl space-y-6 relative z-10">
+          
+          {/* Logo & Header */}
+          <div className="text-center space-y-2">
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 p-0.5 shadow-[0_0_25px_rgba(255,0,127,0.5)] flex items-center justify-center">
+              <div className="w-full h-full bg-slate-950 rounded-[22px] flex items-center justify-center">
+                <Video className="w-8 h-8 text-pink-400 drop-shadow-[0_0_10px_rgba(255,0,127,0.8)]" />
+              </div>
+            </div>
+            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-400">
+              V.Live+ Platform
+            </h1>
+            <p className="text-xs text-slate-400">پلتفرم اختصاصی استریم زنده و ارتباط تصویری 4K</p>
+          </div>
+
+          {/* Auth Mode Tabs */}
+          <div className="flex bg-slate-900 p-1 rounded-2xl border border-slate-800">
+            <button 
+              onClick={() => setAuthTab('login')}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${authTab === 'login' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            >
+              ورود به حساب
+            </button>
+            <button 
+              onClick={() => setAuthTab('register')}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${authTab === 'register' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            >
+              ثبت‌نام جدید
+            </button>
+          </div>
+
+          {/* Auth Form */}
+          <form onSubmit={handleAuthSubmit} className="space-y-4">
+            
+            {authTab === 'register' && (
+              <div>
+                <label className="text-xs text-slate-300 font-semibold mb-1.5 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-pink-400" />
+                  نام و نام خانوادگی
+                </label>
+                <input 
+                  type="text" 
+                  value={authFullName}
+                  onChange={e => setAuthFullName(e.target.value)}
+                  placeholder="مثال: سارا محمدی"
+                  className="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 transition"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="text-xs text-slate-300 font-semibold mb-1.5 flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-pink-400" />
+                شماره موبایل یا ایمیل
+              </label>
+              <input 
+                type="text" 
+                value={authPhone}
+                onChange={e => setAuthPhone(e.target.value)}
+                placeholder="09123456789 یا user@domain.com"
+                className="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 transition"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-300 font-semibold mb-1.5 flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-pink-400" />
+                رمز عبور
+              </label>
+              <input 
+                type="password" 
+                value={authPassword}
+                onChange={e => setAuthPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 transition"
+              />
+            </div>
+
+            <button 
+              type="submit"
+              className="w-full py-3.5 rounded-2xl btn-neon-pink font-bold text-xs shadow-xl flex items-center justify-center gap-2"
+            >
+              <CheckCircle className="w-4 h-4" />
+              {authTab === 'login' ? 'ورود به حساب کاربری' : 'تکمیل و ایجاد حساب'}
+            </button>
+          </form>
+
+          {/* Quick Telegram Auth & Guest Buttons */}
+          <div className="space-y-2 pt-2 border-t border-slate-800/80">
+            <button 
+              onClick={handleQuickTelegramAuth}
+              className="w-full py-3 rounded-2xl bg-cyan-950/60 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 font-bold text-xs flex items-center justify-center gap-2 transition"
+            >
+              <Send className="w-4 h-4 text-cyan-400" />
+              ورود سریع با اکانت تلگرام
+            </button>
+
+            <button 
+              onClick={handleGuestLogin}
+              className="w-full py-2.5 rounded-2xl bg-slate-900 text-slate-400 hover:text-white font-medium text-xs flex items-center justify-center gap-1 transition"
+            >
+              ورود به عنوان مهمان (مشاهده دمو)
+            </button>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // MAIN APP VIEW WHEN LOGGED IN
   return (
     <div className="cyber-container min-h-screen pb-24 text-slate-100 flex flex-col">
       
@@ -298,179 +573,161 @@ export default function App() {
                 onClick={() => setStreamSubTab('users')}
               >
                 <User className="w-4 h-4" />
-                کاربران و میزبان‌ها
+                کاربران و استریمرها
               </button>
             </div>
 
-            {/* Start Live Stream Button */}
-            <div className="card-3d p-4 border border-pink-500/30 bg-gradient-to-br from-pink-950/30 to-slate-900/80">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Flame className="w-5 h-5 text-pink-500" />
-                  <span className="font-bold text-sm text-pink-300">شروع پخش زنده شما</span>
-                </div>
-                <span className="text-xs text-slate-400">کیفیت 4K Ultra HD</span>
+            {/* HOST LIVE BROADCAST BANNER */}
+            <div className="card-3d p-4 border border-pink-500/30 bg-gradient-to-br from-pink-950/30 via-purple-950/20 to-slate-900 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-sm text-white flex items-center gap-1.5">
+                  <Camera className="w-4 h-4 text-pink-400" />
+                  شروع لایو شما (میزبان)
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">پخش مستقیم با کیفیت 4K و دریافت سکه</p>
               </div>
               <button 
-                onClick={startLiveStream}
-                className="w-full py-3 rounded-xl btn-neon-pink font-bold flex items-center justify-center gap-2 text-sm shadow-xl"
+                onClick={() => startLiveStream('user')}
+                className="px-4 py-2.5 rounded-2xl btn-neon-pink text-xs font-bold shadow-lg flex items-center gap-1.5"
               >
-                <Camera className="w-4 h-4" />
-                اتصال دوربین و شروع استریم
+                <Play className="w-3.5 h-3.5 fill-white" />
+                میزبان شو
               </button>
             </div>
 
-            {/* SUBVIEW: LIVES */}
+            {/* SUB-TAB 1: LIVES */}
             {streamSubTab === 'lives' && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between text-xs text-slate-400 px-1">
-                  <span className="font-bold text-slate-200">استریم‌های فعال هم‌اکنون</span>
-                  <span className="flex items-center gap-1 text-pink-400">
-                    <span className="w-2 h-2 rounded-full bg-pink-500 animate-ping"></span>
-                    2 لایو فعال
-                  </span>
-                </div>
+                {streamsList.map(stream => (
+                  <div key={stream.id} className="card-3d rounded-3xl overflow-hidden border border-slate-800/80 group">
+                    <div className="relative aspect-video bg-slate-900 overflow-hidden">
+                      <img src={stream.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-black/40"></div>
+                      
+                      <div className="absolute top-3 right-3 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                        LIVE 4K
+                      </div>
 
-                <div className="grid grid-cols-1 gap-4">
-                  {streamsList.map(stream => (
-                    <div key={stream.id} className="card-3d overflow-hidden group cursor-pointer border border-slate-800 hover:border-pink-500/40">
-                      <div className="relative aspect-video bg-slate-950">
-                        <img src={stream.thumbnail} alt={stream.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-black/40"></div>
-                        
-                        <div className="absolute top-3 right-3 bg-pink-600/90 text-white text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1.5 shadow-lg backdrop-blur">
-                          <Radio className="w-3.5 h-3.5 animate-pulse" />
-                          زنده
-                        </div>
+                      <div className="absolute top-3 left-3 bg-slate-950/70 backdrop-blur text-cyan-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                        <Eye className="w-3 h-3 text-cyan-400" />
+                        {stream.viewers.toLocaleString()} بیننده
+                      </div>
 
-                        <div className="absolute top-3 left-3 bg-slate-900/80 text-cyan-300 text-xs px-2.5 py-1 rounded-full font-semibold flex items-center gap-1 backdrop-blur">
-                          <Eye className="w-3.5 h-3.5" />
-                          {stream.viewers.toLocaleString()}
-                        </div>
-
-                        <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between">
-                          <div>
-                            <h3 className="font-bold text-sm text-white mb-0.5">{stream.title}</h3>
-                            <p className="text-xs text-pink-400 font-medium">{stream.host}</p>
-                          </div>
-                          <button 
-                            onClick={() => showToast(`ورود به استریم زنده ${stream.host}`)}
-                            className="p-2.5 rounded-full bg-pink-600 text-white shadow-lg hover:scale-110 transition"
-                          >
-                            <Play className="w-4 h-4 fill-white" />
-                          </button>
-                        </div>
+                      <div className="absolute bottom-3 right-3 left-3">
+                        <h4 className="font-bold text-sm text-white drop-shadow-md">{stream.title}</h4>
+                        <p className="text-xs text-pink-400 font-medium drop-shadow">{stream.host}</p>
                       </div>
                     </div>
+
+                    <div className="p-3 bg-slate-900/90 flex items-center justify-between gap-2 border-t border-slate-800">
+                      <button 
+                        onClick={() => setActiveChatUser({ name: stream.host, avatar: stream.thumbnail })}
+                        className="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+                        چت خصوصی
+                      </button>
+                      <button 
+                        onClick={() => setTipModalUser({ name: stream.host })}
+                        className="flex-1 py-2 rounded-xl btn-neon-pink text-xs font-bold flex items-center justify-center gap-1.5"
+                      >
+                        <Gift className="w-3.5 h-3.5" />
+                        اهداء سکه
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* SUB-TAB 2: USERS */}
+            {streamSubTab === 'users' && (
+              <div className="space-y-3">
+                <div className="flex gap-2 mb-2">
+                  {[
+                    { id: 'all', label: 'همه کاربران' },
+                    { id: 'online', label: 'آنلاین ها' },
+                    { id: 'top', label: 'برترین ها' }
+                  ].map(f => (
+                    <button 
+                      key={f.id}
+                      onClick={() => setUserFilter(f.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${userFilter === f.id ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-900 text-slate-400'}`}
+                    >
+                      {f.label}
+                    </button>
                   ))}
                 </div>
-              </div>
-            )}
 
-            {/* SUBVIEW: USERS */}
-            {streamSubTab === 'users' && (
-              <div className="space-y-4">
-                {/* Filter Chips */}
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  <button 
-                    onClick={() => setUserFilter('all')}
-                    className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${userFilter === 'all' ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-900 text-slate-400 border border-slate-800'}`}
-                  >
-                    همه کاربران
-                  </button>
-                  <button 
-                    onClick={() => setUserFilter('online')}
-                    className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${userFilter === 'online' ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-900 text-slate-400 border border-slate-800'}`}
-                  >
-                    آنلاین‌ها
-                  </button>
-                  <button 
-                    onClick={() => setUserFilter('top')}
-                    className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${userFilter === 'top' ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-900 text-slate-400 border border-slate-800'}`}
-                  >
-                    برترین‌ها
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3">
-                  {usersList
-                    .filter(u => userFilter === 'all' || (userFilter === 'online' && u.online) || (userFilter === 'top' && u.isTop))
-                    .map(u => (
-                      <div key={u.id} className="card-3d p-3 flex items-center justify-between border border-slate-800/80 hover:border-cyan-500/40">
-                        <div className="flex items-center gap-3">
-                          <div className="relative">
-                            <img src={u.avatar} alt={u.name} className="w-12 h-12 rounded-2xl object-cover border border-slate-700" />
-                            {u.online && (
-                              <span className="w-3 h-3 bg-emerald-500 border-2 border-slate-950 rounded-full absolute -top-1 -right-1"></span>
-                            )}
-                          </div>
-                          <div>
-                            <div className="text-sm font-bold text-white flex items-center gap-1.5">
-                              {u.name}
-                              {u.isTop && <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />}
-                            </div>
-                            <div className="text-xs text-cyan-400 mt-0.5">{u.role}</div>
-                            <div className="text-[11px] text-slate-400">{u.rate}</div>
-                          </div>
+                {usersList
+                  .filter(u => userFilter === 'all' || (userFilter === 'online' && u.online) || (userFilter === 'top' && u.isTop))
+                  .map(user => (
+                    <div key={user.id} className="card-3d p-3.5 flex items-center justify-between border border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-2xl object-cover" />
+                          <span className={`w-3 h-3 rounded-full absolute -top-1 -right-1 border-2 border-slate-950 ${user.online ? 'bg-emerald-500' : 'bg-slate-600'}`}></span>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => { setActiveChatUser(u); setChatMessages([]); }}
-                            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 transition"
-                            title="چت اختصاصی"
-                          >
-                            <MessageSquare className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => setTipModalUser(u)}
-                            className="p-2 rounded-xl bg-pink-950/60 border border-pink-500/40 text-pink-400 hover:bg-pink-900/60 transition"
-                            title="اهداء سکه"
-                          >
-                            <Gift className="w-4 h-4" />
-                          </button>
+                        <div>
+                          <h4 className="font-bold text-sm text-white flex items-center gap-1">
+                            {user.name}
+                            {user.isTop && <Crown className="w-3.5 h-3.5 text-amber-400" />}
+                          </h4>
+                          <span className="text-xs text-slate-400">{user.role}</span>
+                          <span className="text-[11px] text-amber-400 block font-medium">{user.rate}</span>
                         </div>
                       </div>
-                    ))}
-                </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button 
+                          onClick={() => setActiveChatUser(user)}
+                          className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-cyan-400 hover:border-cyan-400"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => setTipModalUser(user)}
+                          className="p-2.5 rounded-xl btn-neon-pink text-xs font-bold"
+                        >
+                          <Gift className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                ))}
               </div>
             )}
+
           </div>
         )}
 
-        {/* TAB 2: VAULT (ALBUM) */}
+        {/* TAB 2: PRIVATE VAULT */}
         {activeTab === 'vault' && (
           <div className="space-y-4">
-            <div className="card-3d p-4 border border-purple-500/30 bg-gradient-to-br from-purple-950/30 to-slate-900">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="card-3d p-4 border border-purple-500/30 bg-gradient-to-br from-purple-950/20 to-slate-900">
+              <div className="flex items-center gap-2 mb-1">
                 <Lock className="w-5 h-5 text-purple-400" />
-                <h2 className="text-base font-bold text-white">آلبوم اختصاصی و تصاویر VIP</h2>
+                <h2 className="text-base font-bold text-white">آلبوم‌های عکس و ویدیو VIP</h2>
               </div>
-              <p className="text-xs text-slate-400">مشاهده و بازکردن قفل آلبوم عکس‌ها و ویدیوهای اختصاصی استریمرها</p>
+              <p className="text-xs text-slate-400">محتوای انحصاری و آلبوم‌های قفل‌شده استریمرها</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               {[
-                { id: 1, title: 'آلبوم خصوصی سارا', cost: 150, img: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80', count: '12 تصویر HD' },
-                { id: 2, title: 'مجموعه ویدیویی الناز', cost: 250, img: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80', count: '5 کلیپ VIP' },
-                { id: 3, title: 'شات‌های ویژه مریم', cost: 100, img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80', count: '8 تصویر' },
-                { id: 4, title: 'لایوهای ضبط شده', cost: 300, img: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80', count: '4 ویدیو 4K' }
-              ].map(album => (
-                <div key={album.id} className="card-3d overflow-hidden border border-slate-800 hover:border-purple-500/50">
-                  <div className="relative aspect-square">
-                    <img src={album.img} alt={album.title} className="w-full h-full object-cover blur-sm scale-105" />
-                    <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-center">
-                      <Lock className="w-8 h-8 text-purple-400 mb-2" />
-                      <h3 className="text-xs font-bold text-white mb-1">{album.title}</h3>
-                      <span className="text-[10px] text-slate-400 mb-3">{album.count}</span>
-                      <button 
-                        onClick={() => handleSendTip(album.cost)}
-                        className="w-full py-1.5 rounded-xl btn-neon-purple text-xs font-bold flex items-center justify-center gap-1"
-                      >
-                        <Star className="w-3 h-3 text-amber-300 fill-amber-300" />
-                        بازکردن ({album.cost} سکه)
-                      </button>
-                    </div>
+                { id: 1, title: 'آلبوم VIP سارا ملکی', price: '200 سکه', bg: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80' },
+                { id: 2, title: 'ویدیوهای انحصاری الناز', price: '350 سکه', bg: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80' }
+              ].map(item => (
+                <div key={item.id} className="card-3d rounded-2xl overflow-hidden border border-slate-800 relative group">
+                  <img src={item.bg} alt="" className="w-full h-36 object-cover blur-[3px] group-hover:blur-none transition duration-500" />
+                  <div className="absolute inset-0 bg-slate-950/60 flex flex-col items-center justify-center p-3 text-center">
+                    <Lock className="w-6 h-6 text-purple-400 mb-1" />
+                    <span className="text-xs font-bold text-white mb-2">{item.title}</span>
+                    <button 
+                      onClick={() => handleSendTip(200)}
+                      className="px-3 py-1.5 rounded-xl btn-neon-purple text-[10px] font-bold"
+                    >
+                      بازکردن ({item.price})
+                    </button>
                   </div>
                 </div>
               ))}
@@ -484,18 +741,16 @@ export default function App() {
             <div className="card-3d p-4 border border-amber-500/30 bg-gradient-to-br from-amber-950/20 to-slate-900">
               <div className="flex items-center gap-2 mb-1">
                 <Award className="w-5 h-5 text-amber-400" />
-                <h2 className="text-base font-bold text-white">جدول رتبه‌بندی برترین حامیان</h2>
+                <h2 className="text-base font-bold text-white">رتبه‌بندی برترین حامیان و استریمرها</h2>
               </div>
-              <p className="text-xs text-slate-400">حامیان برتر هفته و دریافت جوایز ویژه VIP</p>
+              <p className="text-xs text-slate-400">لیست برترین اعضای VIP و فعال‌ترین میزبانان هفته</p>
             </div>
 
             <div className="space-y-2">
               {[
-                { rank: 1, name: 'امیرحسین VIP', coins: '125,000', color: 'text-amber-400', badge: 'طلا' },
-                { rank: 2, name: 'رضا کینگ', coins: '98,500', color: 'text-slate-300', badge: 'نقره' },
-                { rank: 3, name: 'کاربر رایان', coins: '64,200', color: 'text-amber-600', badge: 'برنز' },
-                { rank: 4, name: 'محسن استار', coins: '42,000', color: 'text-slate-400', badge: 'سطح 4' },
-                { rank: 5, name: 'یاسین متین', coins: '31,500', color: 'text-slate-400', badge: 'سطح 5' }
+                { rank: 1, name: 'کاربر شاهین', coins: '125,000 سکه', badge: 'تاپ دوناتور', color: 'text-amber-400' },
+                { rank: 2, name: 'سارا ملکی', coins: '98,000 سکه', badge: 'استریمر برتر', color: 'text-slate-300' },
+                { rank: 3, name: 'کاربر آرش', coins: '74,500 سکه', badge: 'VIP طلایی', color: 'text-amber-600' }
               ].map(item => (
                 <div key={item.rank} className="card-3d p-3.5 flex items-center justify-between border border-slate-800">
                   <div className="flex items-center gap-3">
@@ -565,15 +820,15 @@ export default function App() {
 
               <div className="grid grid-cols-2 gap-2">
                 <button 
-                  onClick={() => showToast('درگاه USDT TRC20 آماده دریافت واریز است')}
-                  className="py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg"
+                  onClick={() => openDepositModal({ coins: 1000, priceToman: '500,000 تومان', priceUsdt: '10 USDT', bonus: '15% سکه هدیه' })}
+                  className="py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg hover:bg-amber-400 transition"
                 >
                   <CreditCard className="w-4 h-4" />
-                  شارژ با تتر (USDT)
+                  شارژ کیف پول
                 </button>
                 <button 
-                  onClick={() => showToast('درگاه تلگرام استارز فعال است')}
-                  className="py-2.5 rounded-xl bg-slate-800 text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 border border-amber-500/30"
+                  onClick={handleTelegramStarsClick}
+                  className="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 border border-amber-500/30 transition"
                 >
                   <Star className="w-4 h-4 fill-amber-300" />
                   Telegram Stars
@@ -586,9 +841,9 @@ export default function App() {
               
               <div className="grid grid-cols-1 gap-2.5">
                 {[
-                  { coins: 500, price: '5 USDT', bonus: '10% سکه هدیه' },
-                  { coins: 1500, price: '12 USDT', bonus: '20% سکه هدیه' },
-                  { coins: 5000, price: '35 USDT', bonus: '35% سکه هدیه VIP' }
+                  { coins: 500, priceToman: '250,000 تومان', priceUsdt: '5 USDT', bonus: '10% سکه هدیه' },
+                  { coins: 1500, priceToman: '600,000 تومان', priceUsdt: '12 USDT', bonus: '20% سکه هدیه' },
+                  { coins: 5000, priceToman: '1,750,000 تومان', priceUsdt: '35 USDT', bonus: '35% سکه هدیه VIP' }
                 ].map((pack, idx) => (
                   <div key={idx} className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
                     <div>
@@ -599,10 +854,10 @@ export default function App() {
                       <div className="text-xs text-emerald-400 mt-0.5">{pack.bonus}</div>
                     </div>
                     <button 
-                      onClick={() => { setUserCoins(prev => prev + pack.coins); showToast(`تعداد ${pack.coins} سکه شارژ شد!`); }}
+                      onClick={() => openDepositModal(pack)}
                       className="px-4 py-2 rounded-xl btn-neon-cyan text-xs font-bold"
                     >
-                      خرید ({pack.price})
+                      خرید ({pack.priceUsdt})
                     </button>
                   </div>
                 ))}
@@ -631,7 +886,7 @@ export default function App() {
               <div className="grid grid-cols-2 gap-2 text-center bg-slate-900/80 p-3 rounded-2xl border border-slate-800">
                 <div>
                   <div className="text-xs text-slate-400">موجودی سکه</div>
-                  <div className="text-sm font-bold text-amber-400">{userCoins}</div>
+                  <div className="text-sm font-bold text-amber-400">{userCoins.toLocaleString()}</div>
                 </div>
                 <div>
                   <div className="text-xs text-slate-400">وضعیت حساب</div>
@@ -642,18 +897,37 @@ export default function App() {
 
             <div className="card-3d p-4 border border-slate-800 space-y-2">
               <button 
-                onClick={() => showToast('تنظیمات اعلانات ذخیره شد')}
-                className="w-full p-3 rounded-xl bg-slate-900/80 text-right text-xs font-bold text-slate-300 flex items-center justify-between border border-slate-800/80"
+                onClick={() => openDepositModal()}
+                className="w-full p-3 rounded-xl bg-slate-900/80 text-right text-xs font-bold text-slate-300 flex items-center justify-between border border-slate-800/80 hover:border-amber-500/40 transition"
               >
-                <span>تنظیمات اعلانات و صدا</span>
+                <div className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-amber-400" />
+                  <span>شارژ حساب و خرید سکه</span>
+                </div>
                 <ChevronLeft className="w-4 h-4 text-slate-500" />
               </button>
+
               <button 
                 onClick={() => setIsSupportOpen(true)}
-                className="w-full p-3 rounded-xl bg-slate-900/80 text-right text-xs font-bold text-slate-300 flex items-center justify-between border border-slate-800/80"
+                className="w-full p-3 rounded-xl bg-slate-900/80 text-right text-xs font-bold text-slate-300 flex items-center justify-between border border-slate-800/80 hover:border-purple-500/40 transition"
               >
-                <span>ارتباط با پشتیبانی رسمی</span>
+                <div className="flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-purple-400" />
+                  <span>ارتباط با پشتیبانی رسمی ۲۴ ساعته</span>
+                </div>
                 <ChevronLeft className="w-4 h-4 text-slate-500" />
+              </button>
+
+              {/* Logout Button */}
+              <button 
+                onClick={handleLogout}
+                className="w-full p-3 rounded-xl bg-red-950/40 text-right text-xs font-bold text-red-400 flex items-center justify-between border border-red-500/30 hover:bg-red-950/70 transition mt-2"
+              >
+                <div className="flex items-center gap-2">
+                  <LogOut className="w-4 h-4" />
+                  <span>خروج از حساب کاربری (صفحه ورود/ثبت‌نام)</span>
+                </div>
+                <ChevronLeft className="w-4 h-4 text-red-400" />
               </button>
             </div>
           </div>
@@ -755,36 +1029,61 @@ export default function App() {
               <span className="w-3 h-3 rounded-full bg-pink-500 animate-ping"></span>
               <span className="font-bold text-sm text-white">پخش زنده شما (Live 4K)</span>
             </div>
-            <button 
-              onClick={stopLiveStream}
-              className="p-2 rounded-full bg-slate-800 text-slate-300 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={toggleCameraFacing}
+                className="p-2 rounded-full bg-slate-800 text-cyan-400 hover:text-white"
+                title="تغییر دوربین جلو / پشت"
+              >
+                <SwitchCamera className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={stopLiveStream}
+                className="p-2 rounded-full bg-slate-800 text-slate-300 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 relative rounded-3xl overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center">
-            {isCameraActive ? (
-              <video 
-                ref={videoRef} 
-                autoPlay 
-                playsInline 
-                muted={isMicMuted} 
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="text-center p-6">
-                <Camera className="w-12 h-12 text-slate-600 mx-auto mb-3 animate-bounce" />
-                <p className="text-xs text-slate-400 max-w-xs">{cameraError || 'در حال دریافت تصویر دوربین...'}</p>
+            {/* Always mount video element so videoRef.current is ready to receive mediaStream */}
+            <video 
+              ref={videoRef} 
+              autoPlay 
+              playsInline 
+              muted={true} 
+              className={`w-full h-full object-cover rounded-2xl ${isCameraActive ? 'block' : 'hidden'}`}
+            />
+
+            {!isCameraActive && (
+              <div className="text-center p-6 space-y-3">
+                <Camera className="w-12 h-12 text-pink-500 mx-auto animate-bounce" />
+                <p className="text-xs text-slate-300 max-w-xs">{cameraError || 'در حال آماده‌سازی و اتصال به دوربین...'}</p>
+                <button 
+                  onClick={() => startLiveStream(cameraFacingMode)}
+                  className="px-4 py-2 rounded-xl btn-neon-pink text-xs font-bold inline-flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  تلاش مجدد اتصال به دوربین
+                </button>
               </div>
             )}
 
-            <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center gap-4 bg-slate-950/70 p-3 rounded-2xl backdrop-blur">
+            <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center gap-3 bg-slate-950/80 p-3 rounded-2xl backdrop-blur border border-slate-800 z-10">
               <button 
                 onClick={toggleMic}
                 className={`p-3 rounded-2xl transition ${isMicMuted ? 'bg-red-600 text-white' : 'bg-slate-800 text-cyan-400'}`}
+                title="صدا"
               >
                 {isMicMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              </button>
+              <button 
+                onClick={toggleCameraFacing}
+                className="p-3 rounded-2xl bg-slate-800 text-cyan-400 hover:text-white"
+                title="چرخش دوربین"
+              >
+                <SwitchCamera className="w-5 h-5" />
               </button>
               <button 
                 onClick={stopLiveStream}
@@ -793,6 +1092,138 @@ export default function App() {
                 پایان لایو
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: DEPOSIT & TOP-UP (کارت به کارت / تتر / استارز) */}
+      {isDepositModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="card-3d p-5 w-full max-w-md border border-amber-500/40 space-y-4 bg-slate-950">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-amber-400" />
+                <h3 className="font-bold text-sm text-white">شارژ کیف پول (افزایش سکه)</h3>
+              </div>
+              <button onClick={() => setIsDepositModalOpen(false)} className="p-1 text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {selectedPack && (
+              <div className="p-3 rounded-2xl bg-slate-900 border border-amber-500/30 flex items-center justify-between">
+                <div>
+                  <span className="text-xs text-slate-400">بسته انتخابی:</span>
+                  <div className="text-sm font-bold text-amber-300 flex items-center gap-1">
+                    <Star className="w-4 h-4 fill-amber-300" />
+                    {selectedPack.coins.toLocaleString()} سکه
+                  </div>
+                </div>
+                <div className="text-left">
+                  <div className="text-xs font-bold text-white">{selectedPack.priceToman || selectedPack.priceUsdt}</div>
+                  <div className="text-[10px] text-emerald-400">{selectedPack.bonus}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Deposit Method Selection */}
+            <div className="grid grid-cols-3 gap-2">
+              <button 
+                onClick={() => setDepositMethod('bank')}
+                className={`py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center gap-1 border transition ${depositMethod === 'bank' ? 'bg-amber-500/20 border-amber-400 text-amber-300' : 'bg-slate-900 border-slate-800 text-slate-400'}`}
+              >
+                <CreditCard className="w-4 h-4" />
+                کارت به کارت
+              </button>
+              <button 
+                onClick={() => setDepositMethod('usdt')}
+                className={`py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center gap-1 border transition ${depositMethod === 'usdt' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300' : 'bg-slate-900 border-slate-800 text-slate-400'}`}
+              >
+                <QrCode className="w-4 h-4" />
+                تتر TRC20
+              </button>
+              <button 
+                onClick={() => { setDepositMethod('stars'); handleTelegramStarsClick(); }}
+                className={`py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center gap-1 border transition ${depositMethod === 'stars' ? 'bg-purple-500/20 border-purple-400 text-purple-300' : 'bg-slate-900 border-slate-800 text-slate-400'}`}
+              >
+                <Star className="w-4 h-4 fill-purple-300" />
+                Stars تلگرام
+              </button>
+            </div>
+
+            {/* Deposit Method Details */}
+            {depositMethod === 'bank' && (
+              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400">شماره کارت درگاه رسمی:</span>
+                  <button 
+                    onClick={() => { navigator.clipboard?.writeText('6037997912345678'); showToast('شماره کارت کپی شد'); }}
+                    className="text-amber-400 font-bold flex items-center gap-1"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    کپی کارت
+                  </button>
+                </div>
+                <div className="text-center font-mono font-bold text-sm text-amber-300 bg-slate-950 p-2.5 rounded-xl border border-amber-500/30 dir-ltr tracking-wider">
+                  6037 - 9979 - 1234 - 5678
+                </div>
+                <div>
+                  <label className="text-[11px] text-slate-400 mb-1 block">کد پیگیری یا ۴ رقم آخر کارت:</label>
+                  <input 
+                    type="text" 
+                    value={depositTxId}
+                    onChange={e => setDepositTxId(e.target.value)}
+                    placeholder="مثال: 98124501"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+            )}
+
+            {depositMethod === 'usdt' && (
+              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400">آدرس کیف پول USDT TRC20:</span>
+                  <button 
+                    onClick={() => { navigator.clipboard?.writeText('TQn9Y2vK8sM7pX3wL1qR5tY0uI4oP2aS6d'); showToast('آدرس تتر کپی شد'); }}
+                    className="text-cyan-400 font-bold flex items-center gap-1"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    کپی آدرس
+                  </button>
+                </div>
+                <div className="text-center font-mono text-[11px] text-cyan-300 bg-slate-950 p-2.5 rounded-xl border border-cyan-500/30 break-all dir-ltr">
+                  TQn9Y2vK8sM7pX3wL1qR5tY0uI4oP2aS6d
+                </div>
+                <div>
+                  <label className="text-[11px] text-slate-400 mb-1 block">کد پیگیری ترکنش (TXID):</label>
+                  <input 
+                    type="text" 
+                    value={depositTxId}
+                    onChange={e => setDepositTxId(e.target.value)}
+                    placeholder="کد تراکنش شبکه ترون..."
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-cyan-400"
+                  />
+                </div>
+              </div>
+            )}
+
+            {depositMethod === 'stars' && (
+              <div className="p-4 rounded-2xl bg-purple-950/40 border border-purple-500/40 text-center space-y-2">
+                <Star className="w-8 h-8 text-purple-400 fill-purple-400 mx-auto animate-pulse" />
+                <p className="text-xs text-purple-200 font-bold">پرداخت با Telegram Stars به زودی فعال می‌شود.</p>
+                <p className="text-[11px] text-slate-400">لطفاً از روش درگاه کارت به کارت یا شارژ تتر استفاده فرمایید.</p>
+              </div>
+            )}
+
+            <button 
+              onClick={handleConfirmDeposit}
+              disabled={isProcessingPayment}
+              className="w-full py-3 rounded-2xl btn-neon-cyan font-bold text-xs shadow-lg flex items-center justify-center gap-2"
+            >
+              {isProcessingPayment ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              تایید و واریز شارژ کیف پول
+            </button>
           </div>
         </div>
       )}
@@ -847,7 +1278,7 @@ export default function App() {
       {/* MODAL: TIP COINS */}
       {tipModalUser && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="card-3d p-5 w-full max-w-xs border border-pink-500/40 space-y-4">
+          <div className="card-3d p-5 w-full max-w-xs border border-pink-500/40 space-y-4 bg-slate-950">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-sm text-white">اهداء سکه به {tipModalUser.name}</h3>
               <button onClick={() => setTipModalUser(null)} className="p-1 text-slate-400 hover:text-white">
