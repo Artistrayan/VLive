@@ -1,5 +1,8 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 from app.database import engine, Base
@@ -33,13 +36,32 @@ app.add_middleware(
 def startup_db_event():
     Base.metadata.create_all(bind=engine)
 
-# Root endpoint
+# Path to dist directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DIST_DIR = os.path.join(BASE_DIR, "dist")
+INDEX_HTML = os.path.join(DIST_DIR, "index.html")
+
+if os.path.exists(DIST_DIR):
+    app.mount("/dist", StaticFiles(directory=DIST_DIR), name="dist")
+
+# Root endpoint serving Telegram Web Mini App
 @app.get("/")
 def root():
+    if os.path.exists(INDEX_HTML):
+        return FileResponse(INDEX_HTML)
     return {
         "status": "ONLINE",
         "app_name": settings.PROJECT_NAME,
         "mode": "Telegram Mini App & Mobile API Backend",
+        "version": "2.0.0"
+    }
+
+# API Status endpoint
+@app.get("/api/status")
+def api_status():
+    return {
+        "status": "ONLINE",
+        "app_name": settings.PROJECT_NAME,
         "version": "2.0.0"
     }
 

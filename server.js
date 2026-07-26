@@ -1,0 +1,36 @@
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const PORT = process.env.PORT || 10000;
+
+const server = http.createServer((req, res) => {
+  let filePath = path.join(__dirname, 'dist', 'index.html');
+  if (!fs.existsSync(filePath)) {
+    filePath = path.join(__dirname, 'app', 'src', 'main', 'assets', 'www', 'index.html');
+  }
+  if (!fs.existsSync(filePath)) {
+    filePath = path.join(__dirname, 'index.html');
+  }
+
+  fs.readFile(filePath, (err, content) => {
+    if (err) {
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('V.Live+ Server Error: Build index.html not found.');
+    } else {
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(content, 'utf-8');
+    }
+  });
+});
+
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`V.Live+ Production Server running on port ${PORT}`);
+});
