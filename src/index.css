@@ -1,0 +1,162 @@
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --bg-dark: #070913;
+  --bg-card: rgba(15, 23, 42, 0.75);
+  --bg-card-hover: rgba(30, 41, 59, 0.85);
+  --neon-cyan: #00f3ff;
+  --neon-pink: #ff007f;
+  --neon-purple: #9d4edd;
+  --neon-gold: #ffb703;
+  --neon-green: #00ff88;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-neon: rgba(0, 243, 255, 0.25);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body, html {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  direction: rtl;
+}
+
+.cyber-bg {
+  background: radial-gradient(circle at 50% 0%, rgba(157, 78, 221, 0.15) 0%, transparent 60%),
+              radial-gradient(circle at 0% 100%, rgba(0, 243, 255, 0.12) 0%, transparent 50%),
+              radial-gradient(circle at 100% 100%, rgba(255, 0, 127, 0.12) 0%, transparent 50%),
+              #070913;
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(10, 15, 30, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--neon-purple);
+  border-radius: 4px;
+}
+
+/* 3D Glassmorphism Cards */
+.card-3d {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.card-3d:hover {
+  border-color: rgba(0, 243, 255, 0.4);
+  box-shadow: 0 15px 35px -10px rgba(0, 243, 255, 0.25),
+              0 0 15px rgba(0, 243, 255, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px) scale(1.01);
+}
+
+.card-neon-pink:hover {
+  border-color: rgba(255, 0, 127, 0.5);
+  box-shadow: 0 15px 35px -10px rgba(255, 0, 127, 0.3),
+              0 0 15px rgba(255, 0, 127, 0.2);
+}
+
+.card-neon-gold:hover {
+  border-color: rgba(255, 183, 3, 0.5);
+  box-shadow: 0 15px 35px -10px rgba(255, 183, 3, 0.3),
+              0 0 15px rgba(255, 183, 3, 0.2);
+}
+
+/* Neon Glow Text & Buttons */
+.neon-text-cyan {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
+}
+.neon-text-pink {
+  color: var(--neon-pink);
+  text-shadow: 0 0 8px rgba(255, 0, 127, 0.5);
+}
+.neon-text-gold {
+  color: var(--neon-gold);
+  text-shadow: 0 0 8px rgba(255, 183, 3, 0.5);
+}
+
+.btn-neon-cyan {
+  background: linear-gradient(135deg, rgba(0, 243, 255, 0.2), rgba(0, 150, 255, 0.3));
+  border: 1px solid var(--neon-cyan);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+  transition: all 0.25s ease;
+}
+.btn-neon-cyan:hover {
+  background: linear-gradient(135deg, rgba(0, 243, 255, 0.4), rgba(0, 150, 255, 0.5));
+  box-shadow: 0 0 25px rgba(0, 243, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+.btn-neon-pink {
+  background: linear-gradient(135deg, rgba(255, 0, 127, 0.25), rgba(157, 78, 221, 0.35));
+  border: 1px solid var(--neon-pink);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(255, 0, 127, 0.35);
+  transition: all 0.25s ease;
+}
+.btn-neon-pink:hover {
+  background: linear-gradient(135deg, rgba(255, 0, 127, 0.45), rgba(157, 78, 221, 0.55));
+  box-shadow: 0 0 25px rgba(255, 0, 127, 0.65);
+  transform: translateY(-2px);
+}
+
+.btn-neon-purple {
+  background: linear-gradient(135deg, rgba(157, 78, 221, 0.25), rgba(114, 9, 183, 0.35));
+  border: 1px solid var(--neon-purple);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(157, 78, 221, 0.35);
+  transition: all 0.25s ease;
+}
+.btn-neon-purple:hover {
+  background: linear-gradient(135deg, rgba(157, 78, 221, 0.45), rgba(114, 9, 183, 0.55));
+  box-shadow: 0 0 25px rgba(157, 78, 221, 0.65);
+  transform: translateY(-2px);
+}
+
+/* Pulse animation for live badge */
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(255, 0, 127, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(255, 0, 127, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 0, 127, 0); }
+}
+
+.live-pulse {
+  animation: pulseGlow 2s infinite;
+}
+
+/* Toast Notification Animation */
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.toast-animate {
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
