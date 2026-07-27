@@ -6,7 +6,7 @@ import './index.css';
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error) {
@@ -15,7 +15,6 @@ class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error("V.Live+ Render Error:", error, errorInfo);
-    this.setState({ errorInfo });
   }
 
   handleReset = () => {
@@ -26,10 +25,6 @@ class ErrorBoundary extends React.Component {
       console.warn("Storage clear error:", e);
     }
     window.location.reload();
-  };
-
-  handleRetry = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
   };
 
   render() {
@@ -49,92 +44,39 @@ class ErrorBoundary extends React.Component {
           direction: 'rtl'
         }}>
           <div style={{
-            maxWidth: '420px',
+            maxWidth: '380px',
             width: '100%',
             background: 'rgba(15, 23, 42, 0.95)',
             border: '1px solid rgba(0, 243, 255, 0.4)',
             borderRadius: '24px',
-            padding: '28px 20px',
-            boxShadow: '0 15px 35px rgba(0, 243, 255, 0.2)',
+            padding: '24px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
             backdropFilter: 'blur(16px)'
           }}>
-            <div style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '20px',
-              background: 'rgba(0, 243, 255, 0.15)',
-              border: '1px solid rgba(0, 243, 255, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px',
-              fontSize: '24px',
-              color: '#00f3ff'
-            }}>
-              ⚡
-            </div>
-
-            <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px', color: '#00f3ff' }}>
-              پلتفرم V.Live+ آماده راه‌اندازی است
+            <h2 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px', color: '#00f3ff' }}>
+              مشکل در بارگذاری برنامه
             </h2>
             <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px', lineHeight: '1.6' }}>
-              به دلیل همگام‌سازی حافظه کش مرورگر تلگرام یا Render، لطفاً برای باز کردن سریع برنامه روی دکمه زیر کلیک کنید.
+              برای بازنشانی و بارگذاری مجدد لطفاً دکمه زیر را کلیک کنید.
             </p>
 
-            {this.state.error && (
-              <div style={{
-                background: 'rgba(2, 6, 23, 0.8)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: '12px',
-                padding: '10px',
-                marginBottom: '16px',
-                textAlign: 'left',
-                direction: 'ltr',
-                maxHeight: '80px',
-                overflowY: 'auto',
-                fontSize: '10px',
-                color: '#f87171'
-              }}>
-                {this.state.error.toString()}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button
-                onClick={this.handleReset}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: '14px',
-                  background: 'linear-gradient(135deg, #00f3ff, #0096ff)',
-                  color: '#090d16',
-                  fontWeight: 'bold',
-                  fontSize: '13px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  boxShadow: '0 0 15px rgba(0,243,255,0.4)'
-                }}
-              >
-                پاکسازی حافظه کش و ورود
-              </button>
-
-              <button
-                onClick={this.handleRetry}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: '14px',
-                  background: 'rgba(30, 41, 59, 0.8)',
-                  color: '#e2e8f0',
-                  fontWeight: '600',
-                  fontSize: '13px',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  cursor: 'pointer'
-                }}
-              >
-                تلاش مجدد بارگذاری
-              </button>
-            </div>
+            <button
+              onClick={this.handleReset}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '14px',
+                background: 'linear-gradient(135deg, #00f3ff, #0096ff)',
+                color: '#090d16',
+                fontWeight: 'bold',
+                fontSize: '13px',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 0 15px rgba(0,243,255,0.4)'
+              }}
+            >
+              بازنشانی و شروع مجدد
+            </button>
           </div>
         </div>
       );
@@ -144,7 +86,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// Telegram WebApp initialization safely
+// Telegram WebApp safe init
 try {
   if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
     if (typeof window.Telegram.WebApp.ready === 'function') {
@@ -165,5 +107,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </ErrorBoundary>
   </React.StrictMode>
 );
-
-

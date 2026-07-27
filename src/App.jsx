@@ -266,57 +266,6 @@ const safeStorage = {
 };
 
 export default function App() {
-  // Registered Users Storage
-  const [usersList, setUsersList] = useState(() => {
-    return safeStorage.getParsed('vlive_app_users_v7', DEFAULT_REAL_USERS);
-  });
-
-  useEffect(() => {
-    safeStorage.setItem('vlive_app_users_v7', JSON.stringify(usersList));
-  }, [usersList]);
-
-  // Telegram WebApp Auto Ready & Init
-  useEffect(() => {
-    try {
-      if (window.Telegram?.WebApp) {
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
-        
-        const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
-        if (tgUser && tgUser.first_name) {
-          const fullName = `${tgUser.first_name}${tgUser.last_name ? ' ' + tgUser.last_name : ''}`;
-          setUserName(fullName);
-          if (tgUser.username) {
-            setCurrentUsername(tgUser.username);
-          }
-        }
-      }
-    } catch (e) {
-      console.log('Telegram WebApp init notice:', e);
-    }
-  }, []);
-
-  // Terms and Conditions Acceptance State - Always true for instant application access
-  const [isTermsAccepted, setIsTermsAccepted] = useState(true);
-
-  // Authentication State - Always logged in by default for seamless UI navigation
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [authTab, setAuthTab] = useState('login');
-  const [authUsername, setAuthUsername] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authFullName, setAuthFullName] = useState('');
-  const [authGender, setAuthGender] = useState('female');
-
-  // Main UI State
-  const [activeTab, setActiveTab] = useState('streams'); // 'streams', 'messages', 'wallet', 'profile'
-  const [streamSubTab, setStreamSubTab] = useState('lives'); // 'users' or 'lives'
-  const [streamModeFilter, setStreamModeFilter] = useState('all');
-  
-  // USER FILTER BAR STATE ('all', 'online', 'top', 'verified')
-  const [userFilter, setUserFilter] = useState('all');
-  
-  const [toastMessage, setToastMessage] = useState(null);
-  
   // Current User State
   const [userName, setUserName] = useState(() => {
     return safeStorage.getItem('vlive_user_name') || 'Sara Maleki';
@@ -344,7 +293,33 @@ export default function App() {
     return safeStorage.getItem('vlive_user_bio') || 'Official Live Streamer | Private video calls & interactive 4K streams';
   });
   const [isVerified, setIsVerified] = useState(true);
+
+  // Registered Users Storage
+  const [usersList, setUsersList] = useState(() => {
+    return safeStorage.getParsed('vlive_app_users_v7', DEFAULT_REAL_USERS);
+  });
+
+  // Terms and Conditions Acceptance State - Always true for instant application access
+  const [isTermsAccepted, setIsTermsAccepted] = useState(true);
+
+  // Authentication State - Always logged in by default for seamless UI navigation
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [authTab, setAuthTab] = useState('login');
+  const [authUsername, setAuthUsername] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authFullName, setAuthFullName] = useState('');
+  const [authGender, setAuthGender] = useState('female');
+
+  // Main UI State
+  const [activeTab, setActiveTab] = useState('streams'); // 'streams', 'messages', 'wallet', 'profile'
+  const [streamSubTab, setStreamSubTab] = useState('lives'); // 'users' or 'lives'
+  const [streamModeFilter, setStreamModeFilter] = useState('all');
   
+  // USER FILTER BAR STATE ('all', 'online', 'top', 'verified')
+  const [userFilter, setUserFilter] = useState('all');
+  
+  const [toastMessage, setToastMessage] = useState(null);
+
   // Host Crypto Wallet State for Female Streamers
   const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     return safeStorage.getItem('vlive_host_usdt_address') || 'TKh8zXpQ7yM3vN1L9R2W4b6K8a0C';
@@ -352,6 +327,36 @@ export default function App() {
   const [lastWithdrawalDate, setLastWithdrawalDate] = useState(() => {
     return safeStorage.getItem('vlive_last_withdrawal_date') || '';
   });
+
+  // Save Users Effect
+  useEffect(() => {
+    safeStorage.setItem('vlive_app_users_v7', JSON.stringify(usersList));
+  }, [usersList]);
+
+  // Telegram WebApp Auto Ready & Init
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+        if (typeof window.Telegram.WebApp.ready === 'function') {
+          window.Telegram.WebApp.ready();
+        }
+        if (typeof window.Telegram.WebApp.expand === 'function') {
+          window.Telegram.WebApp.expand();
+        }
+        
+        const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
+        if (tgUser && tgUser.first_name) {
+          const fullName = `${tgUser.first_name}${tgUser.last_name ? ' ' + tgUser.last_name : ''}`;
+          setUserName(fullName);
+          if (tgUser.username) {
+            setCurrentUsername(tgUser.username);
+          }
+        }
+      }
+    } catch (e) {
+      console.log('Telegram WebApp init notice:', e);
+    }
+  }, []);
 
   // Edit Profile Settings Form State
   const [editFullName, setEditFullName] = useState(userName);
