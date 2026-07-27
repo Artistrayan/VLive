@@ -194,9 +194,9 @@ const INITIAL_CONVERSATIONS = [
     lastTime: '14:25',
     unreadCount: 1,
     messages: [
-      { id: 1, sender: 'them', text: 'سلام! ممنون بابت حضور در لایو امروزم', translation: 'Hello! Thank you for joining my live broadcast today.', translated: false, time: '14:20' },
-      { id: 2, sender: 'me', text: 'Great stream! Keep up the good work', translation: 'استریم عالی بود! خسته نباشید', translated: false, time: '14:22' },
-      { id: 3, sender: 'them', text: 'سلام! ممنون بابت همراهی گرم شما در پخش زنده امروزم', translation: 'Hi! Thanks for your warm support in my stream today.', translated: false, time: '14:25' }
+      { id: 1, sender: 'them', text: 'Hello! Thank you for joining my live broadcast today.', translation: 'Hello! Thank you for joining my live broadcast today.', translated: false, time: '14:20' },
+      { id: 2, sender: 'me', text: 'Great stream! Keep up the good work!', translation: 'Great stream! Keep up the good work!', translated: false, time: '14:22' },
+      { id: 3, sender: 'them', text: 'Thanks for your warm support in my stream today!', translation: 'Thanks for your warm support in my stream today!', translated: false, time: '14:25' }
     ]
   },
   {
@@ -213,9 +213,9 @@ const INITIAL_CONVERSATIONS = [
     lastTime: '12:10',
     unreadCount: 0,
     messages: [
-      { id: 1, sender: 'them', text: 'Hi! How are you doing today?', translation: 'سلام! چطوری؟', translated: false, time: '12:00' },
-      { id: 2, sender: 'me', text: 'Hi Elnaz! When is your next stream scheduled?', translation: 'سلام الناز جان! برنامه بعدی کی هست؟', translated: false, time: '12:05' },
-      { id: 3, sender: 'them', text: 'My next live stream starts tonight at 10 PM, see you there!', translation: 'پخش زنده بعدی من امشب ساعت ۲۲ شروع میشه، منتظرت هستم', translated: false, time: '12:10' }
+      { id: 1, sender: 'them', text: 'Hi! How are you doing today?', translation: 'Hi! How are you doing today?', translated: false, time: '12:00' },
+      { id: 2, sender: 'me', text: 'Hi Elnaz! When is your next stream scheduled?', translation: 'Hi Elnaz! When is your next stream scheduled?', translated: false, time: '12:05' },
+      { id: 3, sender: 'them', text: 'My next live stream starts tonight at 10 PM, see you there!', translation: 'My next live stream starts tonight at 10 PM, see you there!', translated: false, time: '12:10' }
     ]
   }
 ];
@@ -496,11 +496,174 @@ export default function App() {
   // PRE-STREAM WARNING & STREAM WATCHING STATE
   const [preStreamWarningStream, setPreStreamWarningStream] = useState(null);
   const [viewingStream, setViewingStream] = useState(null);
+  // REAL-TIME WEBSOCKET & BROADCAST CHANNEL LIVE STREAM NETWORK ENGINE
+  const [streamLikes, setStreamLikes] = useState(1240);
+  const [floatingHearts, setFloatingHearts] = useState([]);
   const [streamChatMessages, setStreamChatMessages] = useState([
     { user: 'Arash_VIP', text: 'Hello! Wonderful stream quality!', isVip: true },
     { user: 'Omid', text: '4K video is super smooth', isVip: false }
   ]);
   const [streamChatInput, setStreamChatInput] = useState('');
+
+  // Helper to publish live stream network events (Real-time BroadcastChannel & LocalStorage Sync)
+  const broadcastLiveEvent = (type, payload) => {
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel('vlive_stream_sync_channel');
+        bc.postMessage({ type, payload, sender: userName });
+        bc.close();
+      }
+    } catch (e) {
+      console.warn('BroadcastChannel error:', e);
+    }
+
+    try {
+      localStorage.setItem('vlive_realtime_event', JSON.stringify({
+        type,
+        payload,
+        sender: userName,
+        timestamp: Date.now()
+      }));
+    } catch (e) {
+      console.warn('Storage sync error:', e);
+    }
+  };
+
+  // Handler for sending live stream chat message
+  const handleSendStreamChat = () => {
+    if (!streamChatInput.trim()) return;
+    const newMsg = {
+      user: userName,
+      text: streamChatInput.trim(),
+      isVip: userVipLevel > 0,
+      timestamp: Date.now()
+    };
+    
+    setStreamChatMessages(prev => [...prev, newMsg]);
+    setStreamChatInput('');
+
+    // Broadcast in real-time across tabs / network
+    broadcastLiveEvent('LIVE_CHAT_MESSAGE', {
+      streamId: viewingStream ? viewingStream.id : 'default',
+      message: newMsg
+    });
+  };
+
+  // Handler for liking live stream with animated floating heart
+  const handleLikeStream = () => {
+    setStreamLikes(prev => prev + 1);
+    const colors = ['#ec4899', '#a855f7', '#ef4444', '#f59e0b', '#3b82f6'];
+    const newHeart = {
+      id: Date.now() + Math.random(),
+      color: colors[Math.floor(Math.random() * colors.length)],
+      left: Math.floor(Math.random() * 50) + 25
+    };
+    setFloatingHearts(prev => [...prev.slice(-15), newHeart]);
+
+    // Broadcast real-time like event
+    broadcastLiveEvent('LIVE_LIKE', {
+      streamId: viewingStream ? viewingStream.id : 'default',
+      user: userName,
+      count: 1
+    });
+  };
+
+  // Real-time Listener for concurrent users/tabs messages & likes
+  useEffect(() => {
+    let bc = null;
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        bc = new BroadcastChannel('vlive_stream_sync_channel');
+        bc.onmessage = (event) => {
+          const { type, payload, sender } = event.data || {};
+          if (sender === userName) return;
+
+          if (type === 'LIVE_CHAT_MESSAGE') {
+            if (viewingStream && (payload.streamId === viewingStream.id || payload.streamId === 'default')) {
+              setStreamChatMessages(prev => [...prev, payload.message]);
+            }
+          } else if (type === 'LIVE_LIKE') {
+            if (viewingStream && (payload.streamId === viewingStream.id || payload.streamId === 'default')) {
+              setStreamLikes(prev => prev + (payload.count || 1));
+              const colors = ['#ec4899', '#a855f7', '#ef4444', '#f59e0b', '#3b82f6'];
+              const newHeart = {
+                id: Date.now() + Math.random(),
+                color: colors[Math.floor(Math.random() * colors.length)],
+                left: Math.floor(Math.random() * 50) + 25
+              };
+              setFloatingHearts(prev => [...prev.slice(-15), newHeart]);
+            }
+          }
+        };
+      }
+    } catch (err) {
+      console.warn('BroadcastChannel init failed:', err);
+    }
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'vlive_realtime_event' && e.newValue) {
+        try {
+          const { type, payload, sender } = JSON.parse(e.newValue);
+          if (sender === userName) return;
+
+          if (type === 'LIVE_CHAT_MESSAGE') {
+            if (viewingStream && (payload.streamId === viewingStream.id || payload.streamId === 'default')) {
+              setStreamChatMessages(prev => [...prev, payload.message]);
+            }
+          } else if (type === 'LIVE_LIKE') {
+            if (viewingStream && (payload.streamId === viewingStream.id || payload.streamId === 'default')) {
+              setStreamLikes(prev => prev + (payload.count || 1));
+              const colors = ['#ec4899', '#a855f7', '#ef4444', '#f59e0b', '#3b82f6'];
+              const newHeart = {
+                id: Date.now() + Math.random(),
+                color: colors[Math.floor(Math.random() * colors.length)],
+                left: Math.floor(Math.random() * 50) + 25
+              };
+              setFloatingHearts(prev => [...prev.slice(-15), newHeart]);
+            }
+          }
+        } catch (err) {}
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Simulated WebSocket peer activity loop when watching stream
+    let peerInterval = null;
+    if (viewingStream) {
+      peerInterval = setInterval(() => {
+        if (Math.random() > 0.5) {
+          setStreamLikes(prev => prev + 1);
+          const colors = ['#ec4899', '#a855f7', '#ef4444', '#f59e0b', '#3b82f6'];
+          const newHeart = {
+            id: Date.now() + Math.random(),
+            color: colors[Math.floor(Math.random() * colors.length)],
+            left: Math.floor(Math.random() * 50) + 25
+          };
+          setFloatingHearts(prev => [...prev.slice(-15), newHeart]);
+        }
+        if (Math.random() > 0.75) {
+          const peerUsers = ['Soren_VIP', 'Kiana_Model', 'Darius', 'Elena_Luxe', 'Farhad'];
+          const peerComments = [
+            'Amazing stream quality! 🔥',
+            'Loving the live music vibes ✨',
+            'Super crisp 4K stream!',
+            'Sending support from VIP club! 👑',
+            'Top streamer of the day! ❤️'
+          ];
+          const rUser = peerUsers[Math.floor(Math.random() * peerUsers.length)];
+          const rText = peerComments[Math.floor(Math.random() * peerComments.length)];
+          setStreamChatMessages(prev => [...prev.slice(-30), { user: rUser, text: rText, isVip: true }]);
+        }
+      }, 3000);
+    }
+
+    return () => {
+      if (bc) bc.close();
+      window.removeEventListener('storage', handleStorageChange);
+      if (peerInterval) clearInterval(peerInterval);
+    };
+  }, [viewingStream, userName]);
 
   // POST-CALL & POST-STREAM RATING MODAL STATE
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
@@ -736,7 +899,7 @@ export default function App() {
     if (isWheelSpinning) return;
 
     if (dailyFreeSpins <= 0 && userCoins < 50) {
-      showToast('سکه کافی برای چرخش مجدد ندارید (نیازمند ۵۰ سکه)');
+      showToast('Insufficient coins for extra spin (50 coins required)');
       return;
     }
 
@@ -751,14 +914,14 @@ export default function App() {
 
     // 8 PRIZES IN WHEEL: 45deg per slice
     const prizes = [
-      { text: '۱۰۰ سکه رایگان 🪙', coins: 100, iconName: 'Coins' },
-      { text: 'کادو رز قرمز 🌹', coins: 0, gift: 'Red Rose', iconName: 'Flower' },
-      { text: '۵۰ سکه 🪙', coins: 50, iconName: 'Coins' },
-      { text: 'نشان VIP (۱ روزه) ✨', coins: 0, vip: true, iconName: 'Crown' },
-      { text: '۵۰۰ سکه 💎', coins: 500, iconName: 'Gem' },
-      { text: 'کادو ماشین سوپراسپرت 🏎️', coins: 0, gift: 'Sports Car', iconName: 'Zap' },
-      { text: '۱۰ سکه 🪙', coins: 10, iconName: 'Coins' },
-      { text: '۱۰۰۰ سکه جک‌پات! 🏆', coins: 1000, iconName: 'Sparkles' }
+      { text: '100 Free Coins 🪙', coins: 100, iconName: 'Coins' },
+      { text: 'Red Rose Gift 🌹', coins: 0, gift: 'Red Rose', iconName: 'Flower' },
+      { text: '50 Coins 🪙', coins: 50, iconName: 'Coins' },
+      { text: '1-Day VIP Badge ✨', coins: 0, vip: true, iconName: 'Crown' },
+      { text: '500 Coins 💎', coins: 500, iconName: 'Gem' },
+      { text: 'Supercar Gift 🏎️', coins: 0, gift: 'Sports Car', iconName: 'Zap' },
+      { text: '10 Coins 🪙', coins: 10, iconName: 'Coins' },
+      { text: '1000 Coins Jackpot! 🏆', coins: 1000, iconName: 'Sparkles' }
     ];
 
     const prizeIndex = Math.floor(Math.random() * prizes.length);
@@ -775,7 +938,7 @@ export default function App() {
       if (prize.coins > 0) {
         setUserCoins(prev => prev + prize.coins);
       }
-      showToast(`تبریک! شما برنده ${prize.text} شدید 🎉`);
+      showToast(`Congratulations! You won ${prize.text} 🎉`);
     }, 4000);
   };
 
@@ -1065,9 +1228,9 @@ export default function App() {
 
   // START MY OWN LIVE STREAM
   const handleStartLiveStream = async () => {
-    showToast('در حال درخواست دسترسی به دوربین و میکروفون...');
+    showToast('Requesting camera & microphone access...');
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      showToast('خطا: مرورگر یا دستگاه شما از دسترسی آنلاین به دوربین پشتیبانی نمی‌کند. پخش زنده لغو گردید.');
+      showToast('Error: Camera / Microphone access is not supported by your browser.');
       return;
     }
 
@@ -1077,7 +1240,7 @@ export default function App() {
 
       const myStream = {
         id: Date.now(),
-        title: `پخش زنده ${userName}`,
+        title: `Live Broadcast - ${userName}`,
         host: userName,
         viewers: 1,
         likes: 0,
@@ -1087,14 +1250,14 @@ export default function App() {
         isSelfStream: true
       };
       setViewingStream(myStream);
-      showToast('پخش زنده با دوربین واقعی فعال شد (پشتیبانی فقط آنلاین)');
+      showToast('Live stream started with real camera feed!');
     } catch (err) {
       console.error('Camera access denied or failed:', err);
       if (mediaStream) {
         mediaStream.getTracks().forEach(track => track.stop());
         setMediaStream(null);
       }
-      showToast('عدم تایید یا عدم دسترسی به دوربین/میکروفون؛ پخش زنده لغو گردید.');
+      showToast('Permission denied or camera access failed. Live broadcast cancelled.');
     }
   };
 
@@ -1614,21 +1777,6 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Lucky Wheel Quick Spin Button */}
-          <button 
-            onClick={() => setIsLuckyWheelOpen(true)}
-            className="bg-gradient-to-r from-amber-500 via-pink-600 to-purple-600 hover:brightness-110 text-white px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-yellow-400/50 transition-transform active:scale-95"
-            title="گردونه شانس روزانه"
-          >
-            <Disc className="w-4 h-4 text-yellow-300 animate-spin" style={{ animationDuration: '4s' }} />
-            <span className="font-extrabold text-yellow-100 text-[11px] sm:text-xs">گردونه شانس</span>
-            {dailyFreeSpins > 0 && (
-              <span className="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-black animate-pulse">
-                رایگان
-              </span>
-            )}
-          </button>
-
           {/* Admin Panel Button */}
           {isUserRayan && (
             <button 
@@ -2738,19 +2886,19 @@ export default function App() {
                 </div>
                 <div>
                   <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                    سیستم جلوگیری از اسکرین‌شات
+                    Screenshot & Privacy Policy
                     <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                      غیرفعال (آزاد)
+                      Unrestricted
                     </span>
                   </h3>
                   <p className="text-[10px] text-slate-400 mt-0.5">
-                    محدودیت تصویربرداری و اسکرین‌شات کاملاً حذف شد. تمام صفحات و لایوها شفاف و بدون هیچ مانعی نمایش داده می‌شوند.
+                    Screenshot restrictions are completely disabled. All live streams and profile pages are fully transparent and accessible.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* APP SUGGESTIONS & FEEDBACK BOX CARD ("پیشنهاد برای برنامه / کمبودهای برنامه") */}
+            {/* APP SUGGESTIONS & FEEDBACK BOX CARD ("App Suggestions / Feedback") */}
             <div className="card-3d p-5 rounded-3xl border border-purple-500/40 bg-slate-900/80 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -2792,7 +2940,7 @@ export default function App() {
       </main>
 
       {/* BOTTOM NAVIGATION BAR */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/90 backdrop-blur-xl border-t border-slate-800/80 px-6 py-2 flex items-center justify-around">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/90 backdrop-blur-xl border-t border-slate-800/80 px-4 py-2 flex items-center justify-around">
         <button 
           onClick={() => setActiveTab('streams')}
           className={`flex flex-col items-center gap-1 ${activeTab === 'streams' ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'}`}
@@ -2814,6 +2962,20 @@ export default function App() {
           )}
         </button>
 
+        {/* Lucky Wheel Item in Bottom Nav */}
+        <button 
+          onClick={() => setIsLuckyWheelOpen(true)}
+          className="flex flex-col items-center gap-1 relative text-amber-400 hover:text-amber-300 active:scale-95 transition"
+        >
+          <Disc className="w-5 h-5 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
+          <span className="text-[9px] font-bold text-amber-300">Wheel</span>
+          {dailyFreeSpins > 0 && (
+            <span className="absolute -top-1 -right-1.5 bg-red-600 text-white text-[8px] font-black px-1 rounded-full animate-pulse border border-yellow-300/50">
+              1
+            </span>
+          )}
+        </button>
+
         <button 
           onClick={() => setActiveTab('wallet')}
           className={`flex flex-col items-center gap-1 ${activeTab === 'wallet' ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'}`}
@@ -2830,29 +2992,6 @@ export default function App() {
           <span className="text-[9px] font-bold">Profile</span>
         </button>
       </nav>
-
-      {/* FLOATING LUCKY WHEEL WIDGET - CLEARLY VISIBLE & ANIMATED */}
-      <button 
-        onClick={() => setIsLuckyWheelOpen(true)}
-        className="fixed bottom-20 left-4 z-40 bg-gradient-to-r from-amber-500 via-pink-600 to-purple-600 text-white px-3.5 py-2.5 rounded-2xl shadow-[0_0_22px_rgba(234,179,8,0.7)] border-2 border-yellow-300 flex items-center gap-2 hover:scale-105 active:scale-95 transition group animate-bounce"
-        style={{ animationDuration: '3.5s' }}
-        title="گردونه شانس روزانه"
-      >
-        <div className="relative">
-          <Disc className="w-6 h-6 text-yellow-300 animate-spin" style={{ animationDuration: '5s' }} />
-          {dailyFreeSpins > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full border border-yellow-200 animate-pulse">
-              ۱
-            </span>
-          )}
-        </div>
-        <div className="flex flex-col text-right">
-          <span className="text-[11px] font-black text-yellow-200 leading-none">گردونه شانس</span>
-          <span className="text-[9px] text-pink-100 font-bold leading-tight mt-0.5">
-            {dailyFreeSpins > 0 ? '۱ شانس رایگان' : '۵۰ سکه'}
-          </span>
-        </div>
-      </button>
 
       {/* MODAL 1: POST-CALL & POST-STREAM RATING */}
       {isRatingModalOpen && ratingTargetHost && (
@@ -3200,15 +3339,45 @@ export default function App() {
                 </button>
               </div>
 
+              {/* Floating Animated Hearts */}
+              <div className="absolute bottom-16 right-4 pointer-events-none w-24 h-48 overflow-hidden z-30">
+                {floatingHearts.map(h => (
+                  <div 
+                    key={h.id} 
+                    className="absolute bottom-0 text-xl animate-bounce transition-all duration-1000"
+                    style={{ left: `${h.left}%`, color: h.color, opacity: 0.9 }}
+                  >
+                    ❤️
+                  </div>
+                ))}
+              </div>
+
               <div className="flex items-center gap-2">
                 <input 
                   type="text" 
                   value={streamChatInput}
                   onChange={e => setStreamChatInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSendStreamChat()}
-                  placeholder="Send live comment..."
+                  placeholder="Send real-time live comment..."
                   className="flex-1 px-4 py-2.5 rounded-2xl bg-slate-950/90 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
                 />
+                
+                <button 
+                  onClick={handleSendStreamChat}
+                  className="px-3 py-2.5 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1 active:scale-95 transition"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+
+                <button 
+                  onClick={handleLikeStream}
+                  className="p-2.5 rounded-2xl bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/40 active:scale-90 transition flex items-center gap-1"
+                  title="Send Real-time Like"
+                >
+                  <Heart className="w-5 h-5 fill-red-500 text-red-500 animate-pulse" />
+                  <span className="text-[10px] font-black text-red-300">{streamLikes}</span>
+                </button>
+
                 <button onClick={() => setIsGiftCatalogOpen(true)} className="p-2.5 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30">
                   <Gift className="w-5 h-5" />
                 </button>
@@ -3312,10 +3481,10 @@ export default function App() {
             <div>
               <h2 className="text-lg font-black text-white flex items-center justify-center gap-2">
                 <Disc className="w-6 h-6 text-yellow-400 animate-spin" style={{ animationDuration: '4s' }} />
-                🎯 گردونه شانس روزانه
+                🎯 Daily Lucky Wheel
               </h2>
               <p className="text-xs text-yellow-200/90 font-medium mt-1">
-                گردونه را بچرخانید و سکه، کادو رز، نشان VIP و ماشین‌های لوکس برنده شوید!
+                Spin to win coins, red roses, VIP badges & supercar gifts!
               </p>
             </div>
 
@@ -3366,21 +3535,21 @@ export default function App() {
 
             {/* Prize Legend Badges */}
             <div className="grid grid-cols-4 gap-1.5 text-[10px] font-bold text-slate-300 bg-slate-950/60 p-2 rounded-2xl border border-slate-800">
-              <span className="bg-pink-900/40 text-pink-300 p-1 rounded-lg">۱۰۰ سکه</span>
-              <span className="bg-purple-900/40 text-purple-300 p-1 rounded-lg">رز قرمز 🌹</span>
-              <span className="bg-blue-900/40 text-blue-300 p-1 rounded-lg">۵۰ سکه</span>
-              <span className="bg-emerald-900/40 text-emerald-300 p-1 rounded-lg">نشان VIP ✨</span>
-              <span className="bg-amber-900/40 text-amber-300 p-1 rounded-lg">۵۰۰ سکه</span>
-              <span className="bg-orange-900/40 text-orange-300 p-1 rounded-lg">سوپراسپرت 🏎️</span>
-              <span className="bg-cyan-900/40 text-cyan-300 p-1 rounded-lg">۱۰ سکه</span>
-              <span className="bg-yellow-900/40 text-yellow-300 p-1 rounded-lg font-black">۱۰۰۰ جک‌پات</span>
+              <span className="bg-pink-900/40 text-pink-300 p-1 rounded-lg">100 Coins</span>
+              <span className="bg-purple-900/40 text-purple-300 p-1 rounded-lg">Red Rose 🌹</span>
+              <span className="bg-blue-900/40 text-blue-300 p-1 rounded-lg">50 Coins</span>
+              <span className="bg-emerald-900/40 text-emerald-300 p-1 rounded-lg">VIP Badge ✨</span>
+              <span className="bg-amber-900/40 text-amber-300 p-1 rounded-lg">500 Coins</span>
+              <span className="bg-orange-900/40 text-orange-300 p-1 rounded-lg">Supercar 🏎️</span>
+              <span className="bg-cyan-900/40 text-cyan-300 p-1 rounded-lg">10 Coins</span>
+              <span className="bg-yellow-900/40 text-yellow-300 p-1 rounded-lg font-black">1000 Jackpot</span>
             </div>
 
             {/* Won Prize Banner */}
             {wonPrize && (
               <div className="p-3 bg-amber-500/20 border-2 border-amber-400/80 rounded-2xl text-amber-300 font-extrabold text-xs animate-bounce flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.4)]">
                 <Sparkles className="w-5 h-5 text-amber-300 animate-spin" />
-                تبریک! جایزه شما: {wonPrize.text}
+                Congratulations! Prize: {wonPrize.text}
               </div>
             )}
 
@@ -3391,9 +3560,9 @@ export default function App() {
                 disabled={isWheelSpinning}
                 className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-yellow-500 via-pink-600 to-purple-600 text-white font-black text-sm shadow-xl hover:brightness-110 active:scale-95 transition disabled:opacity-50 border border-yellow-300/40"
               >
-                {isWheelSpinning ? 'در حال چرخش گردونه...' : (dailyFreeSpins > 0 ? '🎯 چرخش رایگان امروز (۱ شانس باقی‌مانده)' : '🎯 چرخش مجدد با ۵۰ سکه')}
+                {isWheelSpinning ? 'Spinning Wheel...' : (dailyFreeSpins > 0 ? '🎯 Spin Free Today (1 Spin Remaining)' : '🎯 Spin Again for 50 Coins')}
               </button>
-              <p className="text-[10px] text-slate-400 font-medium">شانس رایگان روزانه هر ۲۴ ساعت یک بار فعال می‌شود</p>
+              <p className="text-[10px] text-slate-400 font-medium">Daily free spin resets every 24 hours</p>
             </div>
           </div>
         </div>

@@ -41,7 +41,7 @@ class ErrorBoundary extends React.Component {
           padding: '20px',
           fontFamily: 'Vazirmatn, sans-serif',
           textAlign: 'center',
-          direction: 'rtl'
+          direction: 'ltr'
         }}>
           <div style={{
             maxWidth: '380px',
@@ -54,10 +54,10 @@ class ErrorBoundary extends React.Component {
             backdropFilter: 'blur(16px)'
           }}>
             <h2 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px', color: '#00f3ff' }}>
-              خطا در اجرای برنامه
+              Application Exception
             </h2>
             <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px', lineHeight: '1.6' }}>
-              {this.state.error?.toString() || 'برنامه نپذیرفت. برای راه‌اندازی مجدد دکمه زیر را لمس کنید.'}
+              {this.state.error?.toString() || 'An unexpected error occurred. Click below to restart.'}
             </p>
 
             <button
@@ -75,7 +75,7 @@ class ErrorBoundary extends React.Component {
                 boxShadow: '0 0 15px rgba(0,243,255,0.4)'
               }}
             >
-              بازنشانی و دریافت دوباره
+              Reset App & Reload
             </button>
           </div>
         </div>
