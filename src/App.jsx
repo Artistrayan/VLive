@@ -250,12 +250,14 @@ export default function App() {
 
   // Terms and Conditions Acceptance State
   const [isTermsAccepted, setIsTermsAccepted] = useState(() => {
-    return localStorage.getItem('vlive_terms_accepted') === 'true';
+    const saved = localStorage.getItem('vlive_terms_accepted');
+    return saved !== null ? saved === 'true' : true;
   });
 
   // Authentication State
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem('vlive_user_logged_in') === 'true';
+    const saved = localStorage.getItem('vlive_user_logged_in');
+    return saved !== null ? saved === 'true' : true;
   });
   const [authTab, setAuthTab] = useState('login');
   const [authUsername, setAuthUsername] = useState('');
