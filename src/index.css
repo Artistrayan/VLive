@@ -19,13 +19,14 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  user-select: none;
+  font-family: 'Vazirmatn', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  user-select: auto !important;
+  -webkit-user-select: auto !important;
   -webkit-tap-highlight-color: transparent;
 }
 
 body, html {
-  background-color: #030712 !important;
+  background-color: #090d16 !important;
   color: var(--text-main);
   height: 100%;
   width: 100%;
@@ -34,10 +35,10 @@ body, html {
 }
 
 .cyber-bg, .cyber-container {
-  background-color: #030712 !important;
-  background: radial-gradient(circle at 50% 0%, rgba(0, 243, 255, 0.04) 0%, transparent 50%),
-              radial-gradient(circle at 100% 100%, rgba(236, 72, 153, 0.04) 0%, transparent 50%),
-              #030712 !important;
+  background-color: #090d16 !important;
+  background: radial-gradient(circle at 50% 0%, rgba(0, 243, 255, 0.08) 0%, transparent 60%),
+              radial-gradient(circle at 100% 100%, rgba(236, 72, 153, 0.06) 0%, transparent 60%),
+              #090d16 !important;
   background-attachment: fixed;
   min-height: 100vh;
 }

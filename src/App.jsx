@@ -2606,6 +2606,26 @@ export default function App() {
               )}
             </div>
 
+            {/* SCREENSHOT & SCREEN RECORDING PROTECTION STATUS CARD */}
+            <div className="card-3d p-4 rounded-3xl border border-emerald-500/40 bg-slate-900/80 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    سیستم جلوگیری از اسکرین‌شات
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                      غیرفعال (آزاد)
+                    </span>
+                  </h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    محدودیت تصویربرداری و اسکرین‌شات کاملاً حذف شد. تمام صفحات و لایوها شفاف و بدون هیچ مانعی نمایش داده می‌شوند.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* APP SUGGESTIONS & FEEDBACK BOX CARD ("پیشنهاد برای برنامه / کمبودهای برنامه") */}
             <div className="card-3d p-5 rounded-3xl border border-purple-500/40 bg-slate-900/80 space-y-3">
               <div className="flex items-center justify-between">
