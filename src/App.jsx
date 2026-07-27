@@ -325,8 +325,13 @@ export default function App() {
     return safeStorage.getItem('vlive_current_username') || 'Sara_Maleki';
   });
   const [userCoins, setUserCoins] = useState(() => {
-    const saved = safeStorage.getItem('vlive_user_coins');
-    return saved ? parseInt(saved, 10) : 45000;
+    try {
+      const saved = safeStorage.getItem('vlive_user_coins');
+      const val = saved ? parseInt(saved, 10) : 45000;
+      return isNaN(val) ? 45000 : val;
+    } catch (e) {
+      return 45000;
+    }
   });
   const [userGender, setUserGender] = useState(() => {
     return safeStorage.getItem('vlive_user_gender') || 'female';
