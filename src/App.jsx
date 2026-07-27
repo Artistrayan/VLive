@@ -248,17 +248,11 @@ export default function App() {
     localStorage.setItem('vlive_app_users_v7', JSON.stringify(usersList));
   }, [usersList]);
 
-  // Terms and Conditions Acceptance State
-  const [isTermsAccepted, setIsTermsAccepted] = useState(() => {
-    const saved = localStorage.getItem('vlive_terms_accepted');
-    return saved !== null ? saved === 'true' : true;
-  });
+  // Terms and Conditions Acceptance State - Always true for instant application access
+  const [isTermsAccepted, setIsTermsAccepted] = useState(true);
 
-  // Authentication State
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    const saved = localStorage.getItem('vlive_user_logged_in');
-    return saved !== null ? saved === 'true' : true;
-  });
+  // Authentication State - Always logged in by default for seamless UI navigation
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [authTab, setAuthTab] = useState('login');
   const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
