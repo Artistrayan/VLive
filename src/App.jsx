@@ -547,6 +547,93 @@ export default function App() {
   const [newAgencyName, setNewAgencyName] = useState('');
   const [newAgencyDesc, setNewAgencyDesc] = useState('');
 
+  // 8. WEEKLY HALL OF FAME & LEADERBOARD STATE
+  const [leaderboardTab, setLeaderboardTab] = useState('donors'); // 'donors' or 'earners'
+  const [topDonorsList] = useState([
+    { rank: 1, user: 'Arash_VIP', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', score: '185,000 Coins', badge: '👑 VIP Sponsor' },
+    { rank: 2, user: 'Rayan_Admin', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', score: '142,000 Coins', badge: '💎 Master Sponsor' },
+    { rank: 3, user: 'Kian_Royal', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80', score: '98,000 Coins', badge: '🏆 Gold Donor' }
+  ]);
+  const [topEarnersList] = useState([
+    { rank: 1, user: 'Sara_Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', score: '380,000 Coins', badge: '🔥 #1 Top Host' },
+    { rank: 2, user: 'Elnaz_Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', score: '295,000 Coins', badge: '💎 Diamond Host' },
+    { rank: 3, user: 'Sahar_Star', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80', score: '210,000 Coins', badge: '⭐ Rising Star' }
+  ]);
+
+  // 9. MOMENTS & SHORT CLIPS REELS STATE
+  const [momentsFeed, setMomentsFeed] = useState([
+    {
+      id: 'm_1',
+      host: 'Sara_Maleki',
+      hostAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
+      caption: 'Singing live Persian song for my VIP sponsors! 🎤✨ Thank you all for the love!',
+      mediaUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
+      likes: 1240,
+      isLiked: false,
+      commentsCount: 88,
+      giftsCount: 45
+    },
+    {
+      id: 'm_2',
+      host: 'Elnaz_Karimi',
+      hostAvatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
+      caption: 'Crazy victory in PK battle tonight! Supercar animation was insane 🏎️🔥',
+      mediaUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
+      likes: 2150,
+      isLiked: true,
+      commentsCount: 142,
+      giftsCount: 89
+    }
+  ]);
+
+  // 10. DAILY QUESTS & TASKS REWARD CENTER STATE
+  const [dailyQuests, setDailyQuests] = useState([
+    { id: 'q_1', title: 'Watch Live Broadcasts for 3 Mins', reward: 25, progress: '3/3 mins', completed: true, claimed: false },
+    { id: 'q_2', title: 'Send 1 Gift to Any Host', reward: 50, progress: '0/1 gift', completed: false, claimed: false },
+    { id: 'q_3', title: 'Spin Lucky Wheel of Fortune', reward: 30, progress: '1/1 spin', completed: true, claimed: false },
+    { id: 'q_4', title: 'Share Stream or Moment Clip', reward: 20, progress: '0/1 share', completed: false, claimed: false }
+  ]);
+
+  // 11. IN-STREAM SOUND FX SOUNDBOARD
+  const playSoundEffect = (type) => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (type === 'applause') {
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.5);
+      } else if (type === 'cheer') {
+        osc.frequency.setValueAtTime(523, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1046, ctx.currentTime + 0.4);
+      } else if (type === 'horn') {
+        osc.frequency.setValueAtTime(300, ctx.currentTime);
+        osc.frequency.setValueAtTime(600, ctx.currentTime + 0.2);
+      }
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+      showToast(`🎵 Sound FX Triggered: ${type.toUpperCase()}`);
+    } catch (e) {
+      showToast(`🎵 Sound FX Played: ${type.toUpperCase()}`);
+    }
+  };
+
+  // 12. MYSTERY LUCKY BOX IN STREAM
+  const [isLuckyBoxOpen, setIsLuckyBoxOpen] = useState(false);
+  const handleOpenLuckyBox = () => {
+    if (userCoins < 100) {
+      showToast('100 coins required to open Mystery Lucky Box');
+      return;
+    }
+    setUserCoins(prev => prev - 100);
+    const winAmount = Math.floor(Math.random() * 400) + 50; // win 50 to 450 coins
+    setUserCoins(prev => prev + winAmount);
+    showToast(`🎁 Mystery Box Opened! You won ${winAmount} Coins!`);
+  };
+
   // PK BATTLE TIMER EFFECT
   useEffect(() => {
     let timer = null;
@@ -1458,24 +1545,45 @@ export default function App() {
               <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-2xl border border-slate-800 overflow-x-auto">
                 <button 
                   onClick={() => setStreamSubTab('lives')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${streamSubTab === 'lives' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 ${streamSubTab === 'lives' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                 >
                   <Flame className="w-3.5 h-3.5 text-pink-400" />
                   Live Broadcasts
                 </button>
                 <button 
                   onClick={() => setStreamSubTab('party')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${streamSubTab === 'party' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 ${streamSubTab === 'party' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                 >
                   <Users className="w-3.5 h-3.5 text-purple-400" />
-                  Party Rooms
+                  Party Stage
+                </button>
+                <button 
+                  onClick={() => setStreamSubTab('moments')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 ${streamSubTab === 'moments' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                >
+                  <Video className="w-3.5 h-3.5 text-amber-400" />
+                  Moments & Reels
+                </button>
+                <button 
+                  onClick={() => setStreamSubTab('leaderboard')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 ${streamSubTab === 'leaderboard' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                >
+                  <Crown className="w-3.5 h-3.5 text-yellow-400" />
+                  Hall of Fame
+                </button>
+                <button 
+                  onClick={() => setStreamSubTab('quests')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 ${streamSubTab === 'quests' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                  Daily Quests
                 </button>
                 <button 
                   onClick={() => setStreamSubTab('users')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${streamSubTab === 'users' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 ${streamSubTab === 'users' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                 >
-                  <Star className="w-3.5 h-3.5 text-cyan-400" />
-                  Streamers & Hosts
+                  <Star className="w-3.5 h-3.5 text-emerald-400" />
+                  Streamers
                 </button>
               </div>
 
@@ -1659,6 +1767,204 @@ export default function App() {
                         <Play className="w-3.5 h-3.5 fill-white" />
                         Enter Stage & Take Seat
                       </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* IF MOMENTS & REELS SUBTAB */}
+            {streamSubTab === 'moments' && (
+              <div className="space-y-4">
+                <div className="p-4 rounded-3xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-purple-950/40 border border-amber-500/40 flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                      <Video className="w-4 h-4 text-amber-400" />
+                      Streamer Moments & Short Clips Feed
+                    </h3>
+                    <p className="text-[10px] text-amber-200">Watch highlight reels, like clips & gift coins directly to hosts</p>
+                  </div>
+                  <button 
+                    onClick={() => showToast('Clip upload camera opened')}
+                    className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Post Moment
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {momentsFeed.map(item => (
+                    <div key={item.id} className="card-3d rounded-3xl border border-slate-800 bg-slate-900/90 overflow-hidden space-y-3 p-4">
+                      <div className="flex items-center gap-3">
+                        <img src={item.hostAvatar} alt={item.host} className="w-10 h-10 rounded-2xl object-cover border border-amber-500 shadow-md shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-xs font-bold text-white truncate">@{item.host}</h4>
+                          <span className="text-[9px] text-amber-300 font-mono">Official Host Moment</span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-slate-200 leading-relaxed">{item.caption}</p>
+
+                      <div className="relative rounded-2xl overflow-hidden h-48 bg-slate-950 border border-slate-800">
+                        <img src={item.mediaUrl} alt="Moment Reel" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-slate-950/30 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-pink-600/90 text-white flex items-center justify-center shadow-2xl backdrop-blur-sm">
+                            <Play className="w-6 h-6 fill-white ml-0.5" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 text-xs">
+                        <button 
+                          onClick={() => {
+                            const updated = momentsFeed.map(m => m.id === item.id ? { ...m, likes: m.isLiked ? m.likes - 1 : m.likes + 1, isLiked: !m.isLiked } : m);
+                            setMomentsFeed(updated);
+                          }}
+                          className={`flex items-center gap-1.5 font-bold ${item.isLiked ? 'text-pink-500' : 'text-slate-400 hover:text-white'}`}
+                        >
+                          <Heart className={`w-4 h-4 ${item.isLiked ? 'fill-pink-500' : ''}`} />
+                          <span>{item.likes.toLocaleString()}</span>
+                        </button>
+
+                        <button 
+                          onClick={() => showToast('Comments drawer opened')}
+                          className="flex items-center gap-1.5 text-slate-400 hover:text-white font-bold"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                          <span>{item.commentsCount}</span>
+                        </button>
+
+                        <button 
+                          onClick={() => {
+                            if (userCoins < 20) {
+                              showToast('20 coins required to send clip gift');
+                              return;
+                            }
+                            setUserCoins(prev => prev - 20);
+                            showToast(`🌹 Sent Rose Gift (20 coins) to @${item.host} for Moment!`);
+                          }}
+                          className="px-3 py-1 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-[10px] flex items-center gap-1 shadow-md"
+                        >
+                          <Gift className="w-3.5 h-3.5" />
+                          Gift Clip
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* IF HALL OF FAME LEADERBOARD SUBTAB */}
+            {streamSubTab === 'leaderboard' && (
+              <div className="space-y-4">
+                <div className="p-4 rounded-3xl bg-gradient-to-r from-yellow-950/40 via-slate-900 to-amber-950/40 border border-yellow-500/40 flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                      <Crown className="w-4 h-4 text-yellow-400" />
+                      Weekly Hall of Fame & Leaderboard
+                    </h3>
+                    <p className="text-[10px] text-yellow-200">Top Weekly Sponsors & Highest Earning Stream Stars</p>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-2xl border border-slate-800">
+                    <button 
+                      onClick={() => setLeaderboardTab('donors')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${leaderboardTab === 'donors' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      Top Donors
+                    </button>
+                    <button 
+                      onClick={() => setLeaderboardTab('earners')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${leaderboardTab === 'earners' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      Top Hosts
+                    </button>
+                  </div>
+                </div>
+
+                {/* Leaderboard Ranking Cards */}
+                <div className="space-y-3">
+                  {(leaderboardTab === 'donors' ? topDonorsList : topEarnersList).map((item, idx) => (
+                    <div key={idx} className="card-3d p-4 rounded-3xl border border-yellow-500/30 bg-slate-900/90 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-2xl font-black text-xs flex items-center justify-center shrink-0 border ${idx === 0 ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.8)]' : (idx === 1 ? 'bg-slate-300 text-slate-950 border-slate-200' : 'bg-amber-800 text-amber-200 border-amber-600')}`}>
+                          #{item.rank}
+                        </div>
+
+                        <img src={item.avatar} alt={item.user} className="w-12 h-12 rounded-2xl object-cover border-2 border-yellow-400 shadow-md shrink-0" />
+
+                        <div>
+                          <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                            @{item.user}
+                            <span className="px-2 py-0.5 rounded-full bg-yellow-950 text-yellow-300 text-[9px] font-bold border border-yellow-500/30">
+                              {item.badge}
+                            </span>
+                          </h4>
+                          <p className="text-[10px] text-amber-300 font-mono mt-0.5">{item.score}</p>
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={() => showToast(`View profile of @${item.user}`)}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs shrink-0"
+                      >
+                        Profile
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* IF DAILY QUESTS SUBTAB */}
+            {streamSubTab === 'quests' && (
+              <div className="space-y-4">
+                <div className="p-4 rounded-3xl bg-gradient-to-r from-cyan-950/40 via-slate-900 to-purple-950/40 border border-cyan-500/40 flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-cyan-400" />
+                      Daily Mission Reward Center
+                    </h3>
+                    <p className="text-[10px] text-cyan-200">Complete daily stream tasks to claim free coin rewards!</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {dailyQuests.map(q => (
+                    <div key={q.id} className="card-3d p-4 rounded-3xl border border-slate-800 bg-slate-900/90 flex items-center justify-between gap-3">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <h4 className="text-xs font-bold text-white truncate">{q.title}</h4>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-amber-300 font-bold flex items-center gap-1">
+                            <CoinsIcon className="w-3 h-3 text-amber-400" />
+                            +{q.reward} Coins
+                          </span>
+                          <span className="text-[10px] text-slate-400">Progress: {q.progress}</span>
+                        </div>
+                      </div>
+
+                      {q.claimed ? (
+                        <span className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-400 text-xs font-bold shrink-0">
+                          Claimed ✓
+                        </span>
+                      ) : (
+                        <button 
+                          onClick={() => {
+                            if (!q.completed) {
+                              showToast(`Task progress: ${q.progress}. Complete task to claim!`);
+                              return;
+                            }
+                            setUserCoins(prev => prev + q.reward);
+                            setDailyQuests(prev => prev.map(item => item.id === q.id ? { ...item, claimed: true } : item));
+                            showToast(`🎉 Claimed +${q.reward} free coins reward!`);
+                          }}
+                          className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition ${q.completed ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-black shadow-lg animate-pulse' : 'bg-slate-800 text-slate-400 cursor-not-allowed'}`}
+                        >
+                          {q.completed ? 'Claim Reward' : 'In Progress'}
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -2693,6 +2999,34 @@ export default function App() {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* In-Stream Sound FX Soundboard & Mystery Box Toolbar */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                <button 
+                  onClick={() => playSoundEffect('applause')}
+                  className="px-2.5 py-1 rounded-xl bg-purple-950/80 border border-purple-500/40 text-purple-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-purple-900"
+                >
+                  👏 Applause
+                </button>
+                <button 
+                  onClick={() => playSoundEffect('cheer')}
+                  className="px-2.5 py-1 rounded-xl bg-pink-950/80 border border-pink-500/40 text-pink-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-pink-900"
+                >
+                  🎉 Cheer
+                </button>
+                <button 
+                  onClick={() => playSoundEffect('horn')}
+                  className="px-2.5 py-1 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-cyan-900"
+                >
+                  🎺 Horn
+                </button>
+                <button 
+                  onClick={handleOpenLuckyBox}
+                  className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 text-slate-950 text-[10px] font-black shrink-0 flex items-center gap-1 shadow-md hover:brightness-110"
+                >
+                  🎁 Mystery Box (100c)
+                </button>
               </div>
 
               <div className="flex items-center gap-2">
