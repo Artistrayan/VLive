@@ -237,16 +237,64 @@ function VerifiedBadge({ className = "w-4 h-4", showLabel = false }) {
   );
 }
 
+// SAFE LOCAL STORAGE HELPER TO PREVENT TELEGRAM/RENDER WEBVIEW CRASHES
+const safeStorage = {
+  getItem: (key) => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.warn('Storage access warning:', e);
+      return null;
+    }
+  },
+  setItem: (key, val) => {
+    try {
+      localStorage.setItem(key, val);
+    } catch (e) {
+      console.warn('Storage write warning:', e);
+    }
+  },
+  getParsed: (key, defaultValue) => {
+    try {
+      const saved = safeStorage.getItem(key);
+      if (!saved) return defaultValue;
+      return JSON.parse(saved);
+    } catch (e) {
+      return defaultValue;
+    }
+  }
+};
+
 export default function App() {
   // Registered Users Storage
   const [usersList, setUsersList] = useState(() => {
-    const saved = localStorage.getItem('vlive_app_users_v7');
-    return saved ? JSON.parse(saved) : DEFAULT_REAL_USERS;
+    return safeStorage.getParsed('vlive_app_users_v7', DEFAULT_REAL_USERS);
   });
 
   useEffect(() => {
-    localStorage.setItem('vlive_app_users_v7', JSON.stringify(usersList));
+    safeStorage.setItem('vlive_app_users_v7', JSON.stringify(usersList));
   }, [usersList]);
+
+  // Telegram WebApp Auto Ready & Init
+  useEffect(() => {
+    try {
+      if (window.Telegram?.WebApp) {
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+        
+        const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
+        if (tgUser && tgUser.first_name) {
+          const fullName = `${tgUser.first_name}${tgUser.last_name ? ' ' + tgUser.last_name : ''}`;
+          setUserName(fullName);
+          if (tgUser.username) {
+            setCurrentUsername(tgUser.username);
+          }
+        }
+      }
+    } catch (e) {
+      console.log('Telegram WebApp init notice:', e);
+    }
+  }, []);
 
   // Terms and Conditions Acceptance State - Always true for instant application access
   const [isTermsAccepted, setIsTermsAccepted] = useState(true);
@@ -271,33 +319,33 @@ export default function App() {
   
   // Current User State
   const [userName, setUserName] = useState(() => {
-    return localStorage.getItem('vlive_user_name') || 'Sara Maleki';
+    return safeStorage.getItem('vlive_user_name') || 'Sara Maleki';
   });
   const [currentUsername, setCurrentUsername] = useState(() => {
-    return localStorage.getItem('vlive_current_username') || 'Sara_Maleki';
+    return safeStorage.getItem('vlive_current_username') || 'Sara_Maleki';
   });
   const [userCoins, setUserCoins] = useState(() => {
-    const saved = localStorage.getItem('vlive_user_coins');
+    const saved = safeStorage.getItem('vlive_user_coins');
     return saved ? parseInt(saved, 10) : 45000;
   });
   const [userGender, setUserGender] = useState(() => {
-    return localStorage.getItem('vlive_user_gender') || 'female';
+    return safeStorage.getItem('vlive_user_gender') || 'female';
   });
   const [userRank, setUserRank] = useState('VIP Streamer');
   const [userAvatar, setUserAvatar] = useState(() => {
-    return localStorage.getItem('vlive_user_avatar') || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80';
+    return safeStorage.getItem('vlive_user_avatar') || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80';
   });
   const [userBio, setUserBio] = useState(() => {
-    return localStorage.getItem('vlive_user_bio') || 'Official Live Streamer | Private video calls & interactive 4K streams';
+    return safeStorage.getItem('vlive_user_bio') || 'Official Live Streamer | Private video calls & interactive 4K streams';
   });
   const [isVerified, setIsVerified] = useState(true);
   
   // Host Crypto Wallet State for Female Streamers
   const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
-    return localStorage.getItem('vlive_host_usdt_address') || 'TKh8zXpQ7yM3vN1L9R2W4b6K8a0C';
+    return safeStorage.getItem('vlive_host_usdt_address') || 'TKh8zXpQ7yM3vN1L9R2W4b6K8a0C';
   });
   const [lastWithdrawalDate, setLastWithdrawalDate] = useState(() => {
-    return localStorage.getItem('vlive_last_withdrawal_date') || '';
+    return safeStorage.getItem('vlive_last_withdrawal_date') || '';
   });
 
   // Edit Profile Settings Form State
@@ -311,11 +359,10 @@ export default function App() {
 
   // App Suggestions & Improvements Box State
   const [suggestionsList, setSuggestionsList] = useState(() => {
-    const saved = localStorage.getItem('vlive_app_suggestions_v1');
-    return saved ? JSON.parse(saved) : [
+    return safeStorage.getParsed('vlive_app_suggestions_v1', [
       { id: 1, user: 'Sara_Maleki', text: 'Add interactive mini-games during live streams for VIP viewers', date: '2024-05-12', status: 'In Review' },
       { id: 2, user: 'Elnaz_Karimi', text: 'Add 3D animated virtual gifts for high-level sponsors', date: '2024-05-14', status: 'Approved' }
-    ];
+    ]);
   });
   const [newSuggestionInput, setNewSuggestionInput] = useState('');
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
@@ -356,7 +403,7 @@ export default function App() {
 
     const updated = [newSuggestion, ...suggestionsList];
     setSuggestionsList(updated);
-    localStorage.setItem('vlive_app_suggestions_v1', JSON.stringify(updated));
+    safeStorage.setItem('vlive_app_suggestions_v1', JSON.stringify(updated));
     setNewSuggestionInput('');
     setIsSuggestionModalOpen(false);
     showToast('Thank you! Your suggestion was submitted to app management');
@@ -364,12 +411,11 @@ export default function App() {
 
   // Direct Messages State
   const [conversations, setConversations] = useState(() => {
-    const saved = localStorage.getItem('vlive_direct_conversations_v3');
-    return saved ? JSON.parse(saved) : INITIAL_CONVERSATIONS;
+    return safeStorage.getParsed('vlive_direct_conversations_v3', INITIAL_CONVERSATIONS);
   });
 
   useEffect(() => {
-    localStorage.setItem('vlive_direct_conversations_v3', JSON.stringify(conversations));
+    safeStorage.setItem('vlive_direct_conversations_v3', JSON.stringify(conversations));
   }, [conversations]);
 
   const [activeConversationId, setActiveConversationId] = useState(null);
@@ -384,22 +430,20 @@ export default function App() {
 
   // Transactions State for Admin & Payouts
   const [transactionsList, setTransactionsList] = useState(() => {
-    const saved = localStorage.getItem('vlive_app_transactions_v3');
-    return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
+    return safeStorage.getParsed('vlive_app_transactions_v3', INITIAL_TRANSACTIONS);
   });
 
   useEffect(() => {
-    localStorage.setItem('vlive_app_transactions_v3', JSON.stringify(transactionsList));
+    safeStorage.setItem('vlive_app_transactions_v3', JSON.stringify(transactionsList));
   }, [transactionsList]);
 
   // Verifications State for Admin
   const [verificationsList, setVerificationsList] = useState(() => {
-    const saved = localStorage.getItem('vlive_app_verifications_v3');
-    return saved ? JSON.parse(saved) : INITIAL_VERIFICATIONS;
+    return safeStorage.getParsed('vlive_app_verifications_v3', INITIAL_VERIFICATIONS);
   });
 
   useEffect(() => {
-    localStorage.setItem('vlive_app_verifications_v3', JSON.stringify(verificationsList));
+    safeStorage.setItem('vlive_app_verifications_v3', JSON.stringify(verificationsList));
   }, [verificationsList]);
 
   // Admin Panel Modal State
@@ -838,7 +882,7 @@ export default function App() {
       return;
     }
     setHostUsdtAddress(withdrawUsdtAddressInput.trim());
-    localStorage.setItem('vlive_host_usdt_address', withdrawUsdtAddressInput.trim());
+    safeStorage.setItem('vlive_host_usdt_address', withdrawUsdtAddressInput.trim());
     showToast('USDT TRC20 wallet address saved successfully');
   };
 
@@ -861,11 +905,11 @@ export default function App() {
     setUserBio(cleanBio);
     setUserGender(editGender);
 
-    localStorage.setItem('vlive_user_name', cleanName);
-    localStorage.setItem('vlive_current_username', cleanUsername);
-    localStorage.setItem('vlive_user_avatar', cleanAvatar);
-    localStorage.setItem('vlive_user_bio', cleanBio);
-    localStorage.setItem('vlive_user_gender', editGender);
+    safeStorage.setItem('vlive_user_name', cleanName);
+    safeStorage.setItem('vlive_current_username', cleanUsername);
+    safeStorage.setItem('vlive_user_avatar', cleanAvatar);
+    safeStorage.setItem('vlive_user_bio', cleanBio);
+    safeStorage.setItem('vlive_user_gender', editGender);
 
     setUsersList(prev => prev.map(u => {
       if (u.username.toLowerCase() === currentUsername.toLowerCase()) {
@@ -1009,7 +1053,7 @@ export default function App() {
   // Terms Acceptance Handler
   const handleAcceptTerms = () => {
     setIsTermsAccepted(true);
-    localStorage.setItem('vlive_terms_accepted', 'true');
+    safeStorage.setItem('vlive_terms_accepted', 'true');
     showToast('V.Live+ Terms & Regulations accepted');
   };
 
@@ -1062,12 +1106,12 @@ export default function App() {
       setIsVerified(false);
       setIsLoggedIn(true);
 
-      localStorage.setItem('vlive_user_logged_in', 'true');
-      localStorage.setItem('vlive_user_name', newUser.name);
-      localStorage.setItem('vlive_current_username', newUser.username);
-      localStorage.setItem('vlive_user_gender', newUser.gender);
-      localStorage.setItem('vlive_user_avatar', newUser.avatar);
-      localStorage.setItem('vlive_user_bio', newUser.bio);
+      safeStorage.setItem('vlive_user_logged_in', 'true');
+      safeStorage.setItem('vlive_user_name', newUser.name);
+      safeStorage.setItem('vlive_current_username', newUser.username);
+      safeStorage.setItem('vlive_user_gender', newUser.gender);
+      safeStorage.setItem('vlive_user_avatar', newUser.avatar);
+      safeStorage.setItem('vlive_user_bio', newUser.bio);
 
       showToast(`Account created for @${newUser.username}`);
     } else {
@@ -1087,9 +1131,9 @@ export default function App() {
         if (existingUser.usdtAddress) setHostUsdtAddress(existingUser.usdtAddress);
         setIsLoggedIn(true);
 
-        localStorage.setItem('vlive_user_logged_in', 'true');
-        localStorage.setItem('vlive_user_name', existingUser.name);
-        localStorage.setItem('vlive_current_username', existingUser.username);
+        safeStorage.setItem('vlive_user_logged_in', 'true');
+        safeStorage.setItem('vlive_user_name', existingUser.name);
+        safeStorage.setItem('vlive_current_username', existingUser.username);
 
         showToast(`Welcome back, ${existingUser.name}`);
       } else {
@@ -1099,9 +1143,9 @@ export default function App() {
         setIsLoggedIn(true);
         setIsVerified(true);
 
-        localStorage.setItem('vlive_user_logged_in', 'true');
-        localStorage.setItem('vlive_user_name', finalName);
-        localStorage.setItem('vlive_current_username', cleanUsername);
+        safeStorage.setItem('vlive_user_logged_in', 'true');
+        safeStorage.setItem('vlive_user_name', finalName);
+        safeStorage.setItem('vlive_current_username', cleanUsername);
 
         showToast(`Logged in as @${cleanUsername}`);
       }
@@ -1233,7 +1277,7 @@ export default function App() {
 
     setUserCoins(prev => prev - coinsToWithdraw);
     setLastWithdrawalDate(today);
-    localStorage.setItem('vlive_last_withdrawal_date', today);
+    safeStorage.setItem('vlive_last_withdrawal_date', today);
 
     const newTx = {
       id: `TX-${Math.floor(100 + Math.random() * 900)}`,
