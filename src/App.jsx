@@ -457,7 +457,7 @@ export default function App() {
   const [partyRoomsList, setPartyRoomsList] = useState([
     {
       id: 'party_1',
-      title: '👑 Royal Persian Lounge & Music',
+      title: 'Royal Persian Lounge & Music',
       hostName: 'Sara Maleki',
       hostAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
       totalSeats: 9,
@@ -476,7 +476,7 @@ export default function App() {
     },
     {
       id: 'party_2',
-      title: '🔥 VIP Night Chat & Chill Party',
+      title: 'VIP Night Chat & Chill Party',
       hostName: 'Elnaz Karimi',
       hostAvatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
       totalSeats: 6,
@@ -497,7 +497,7 @@ export default function App() {
 
   // 3. VIP LEVELS & ENTRANCE EFFECTS STATE
   const [userVipLevel, setUserVipLevel] = useState(5); // Level 5 Crown VIP
-  const [entranceVehicle, setEntranceVehicle] = useState('Golden Dragon 🐲');
+  const [entranceVehicle, setEntranceVehicle] = useState('Golden Dragon');
   const [showEntranceBanner, setShowEntranceBanner] = useState(false);
 
   // 4. AI MULTI-LANGUAGE AUTO-TRANSLATOR STATE
@@ -525,7 +525,7 @@ export default function App() {
       leader: 'Sara_Maleki',
       membersCount: 42,
       monthlyCoins: 850000,
-      badge: '🏆 Top Agency',
+      badge: 'Top Agency',
       description: 'Official Premier Agency for Top Female Hosts & Stream Stars'
     },
     {
@@ -534,7 +534,7 @@ export default function App() {
       leader: 'Elnaz_Karimi',
       membersCount: 28,
       monthlyCoins: 620000,
-      badge: '💎 Diamond Guild',
+      badge: 'Diamond Guild',
       description: 'Exclusive Family Guild for Live Performers & Content Creators'
     }
   ]);
@@ -546,14 +546,14 @@ export default function App() {
   // 8. WEEKLY HALL OF FAME & LEADERBOARD STATE
   const [leaderboardTab, setLeaderboardTab] = useState('donors'); // 'donors' or 'earners'
   const [topDonorsList] = useState([
-    { rank: 1, user: 'Arash_VIP', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', score: '185,000 Coins', badge: '👑 VIP Sponsor' },
-    { rank: 2, user: 'Rayan_Admin', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', score: '142,000 Coins', badge: '💎 Master Sponsor' },
-    { rank: 3, user: 'Kian_Royal', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80', score: '98,000 Coins', badge: '🏆 Gold Donor' }
+    { rank: 1, user: 'Arash_VIP', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', score: '185,000 Coins', badge: 'VIP Sponsor' },
+    { rank: 2, user: 'Rayan_Admin', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', score: '142,000 Coins', badge: 'Master Sponsor' },
+    { rank: 3, user: 'Kian_Royal', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80', score: '98,000 Coins', badge: 'Gold Donor' }
   ]);
   const [topEarnersList] = useState([
-    { rank: 1, user: 'Sara_Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', score: '380,000 Coins', badge: '🔥 #1 Top Host' },
-    { rank: 2, user: 'Elnaz_Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', score: '295,000 Coins', badge: '💎 Diamond Host' },
-    { rank: 3, user: 'Sahar_Star', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80', score: '210,000 Coins', badge: '⭐ Rising Star' }
+    { rank: 1, user: 'Sara_Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', score: '380,000 Coins', badge: '#1 Top Host' },
+    { rank: 2, user: 'Elnaz_Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', score: '295,000 Coins', badge: 'Diamond Host' },
+    { rank: 3, user: 'Sahar_Star', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80', score: '210,000 Coins', badge: 'Rising Star' }
   ]);
 
   // 9. MOMENTS & SHORT CLIPS REELS STATE
@@ -562,7 +562,7 @@ export default function App() {
       id: 'm_1',
       host: 'Sara_Maleki',
       hostAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
-      caption: 'Singing live Persian song for my VIP sponsors! 🎤✨ Thank you all for the love!',
+      caption: 'Singing live Persian song for my VIP sponsors! Thank you all for the love!',
       mediaUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
       likes: 1240,
       isLiked: false,
@@ -573,7 +573,7 @@ export default function App() {
       id: 'm_2',
       host: 'Elnaz_Karimi',
       hostAvatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
-      caption: 'Crazy victory in PK battle tonight! Supercar animation was insane 🏎️🔥',
+      caption: 'Crazy victory in PK battle tonight! Supercar animation was insane',
       mediaUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
       likes: 2150,
       isLiked: true,
@@ -611,9 +611,9 @@ export default function App() {
       }
       osc.start();
       osc.stop(ctx.currentTime + 0.5);
-      showToast(`🎵 Sound FX Triggered: ${type.toUpperCase()}`);
+      showToast(`Sound FX Triggered: ${type.toUpperCase()}`);
     } catch (e) {
-      showToast(`🎵 Sound FX Played: ${type.toUpperCase()}`);
+      showToast(`Sound FX Played: ${type.toUpperCase()}`);
     }
   };
 
@@ -627,7 +627,7 @@ export default function App() {
     setUserCoins(prev => prev - 100);
     const winAmount = Math.floor(Math.random() * 400) + 50; // win 50 to 450 coins
     setUserCoins(prev => prev + winAmount);
-    showToast(`🎁 Mystery Box Opened! You won ${winAmount} Coins!`);
+    showToast(`Mystery Box Opened! You won ${winAmount} Coins!`);
   };
 
   // PK BATTLE TIMER EFFECT
@@ -639,9 +639,9 @@ export default function App() {
           if (prev <= 1) {
             clearInterval(timer);
             setIsPkBattleActive(false);
-            const winner = pkRedScore >= pkBlueScore ? userName : pkOpponent.name;
+            const winner = pkRedScore >= pkBlueScore ? userName : (pkOpponent?.name || 'Blue Streamer');
             setPkWinner(winner);
-            showToast(`🎉 PK Battle Finished! Winner: ${winner}`);
+            showToast(`PK Battle Finished! Winner: ${winner}`);
             return 0;
           }
           return prev - 1;
@@ -649,7 +649,7 @@ export default function App() {
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [isPkBattleActive, pkTimeLeft, pkRedScore, pkBlueScore, userName, pkOpponent.name]);
+  }, [isPkBattleActive, pkTimeLeft, pkRedScore, pkBlueScore, userName, pkOpponent]);
 
   // TRIGGER ENTRANCE BANNER WHEN JOINING LIVE STREAM
   useEffect(() => {
@@ -680,14 +680,14 @@ export default function App() {
 
     // 8 PRIZES IN WHEEL: 45deg per slice
     const prizes = [
-      { text: '100 Coins', coins: 100, icon: '💰' },
-      { text: 'Red Rose Gift 🌹', coins: 0, gift: 'Red Rose', icon: '🌹' },
-      { text: '50 Coins', coins: 50, icon: '🪙' },
-      { text: '1-Day VIP Badge 👑', coins: 0, vip: true, icon: '👑' },
-      { text: '500 Coins 💎', coins: 500, icon: '💎' },
-      { text: 'Supercar Gift 🏎️', coins: 0, gift: 'Sports Car', icon: '🏎️' },
-      { text: '10 Coins', coins: 10, icon: '🪙' },
-      { text: '1000 Coins JackPot! 🎉', coins: 1000, icon: '🔥' }
+      { text: '100 Coins', coins: 100, iconName: 'Coins' },
+      { text: 'Red Rose Gift', coins: 0, gift: 'Red Rose', iconName: 'Flower' },
+      { text: '50 Coins', coins: 50, iconName: 'Coins' },
+      { text: '1-Day VIP Badge', coins: 0, vip: true, iconName: 'Crown' },
+      { text: '500 Coins', coins: 500, iconName: 'Gem' },
+      { text: 'Supercar Gift', coins: 0, gift: 'Sports Car', iconName: 'Zap' },
+      { text: '10 Coins', coins: 10, iconName: 'Coins' },
+      { text: '1000 Coins JackPot!', coins: 1000, iconName: 'Sparkles' }
     ];
 
     const prizeIndex = Math.floor(Math.random() * prizes.length);
@@ -704,7 +704,7 @@ export default function App() {
       if (prize.coins > 0) {
         setUserCoins(prev => prev + prize.coins);
       }
-      showToast(`🎉 Congratulations! You won ${prize.text}`);
+      showToast(`Congratulations! You won ${prize.text}`);
     }, 4000);
   };
 
@@ -756,7 +756,7 @@ export default function App() {
       leader: currentUsername,
       membersCount: 1,
       monthlyCoins: 0,
-      badge: '🌟 New Guild',
+      badge: 'New Guild',
       description: newAgencyDesc.trim() || 'Official Streamer Guild'
     };
 
@@ -1697,7 +1697,7 @@ export default function App() {
                     onClick={() => {
                       const newRoom = {
                         id: `party_${Date.now()}`,
-                        title: `🎉 ${userName}'s VIP Lounge`,
+                        title: `${userName}'s VIP Lounge`,
                         hostName: userName,
                         hostAvatar: userAvatar,
                         totalSeats: 9,
@@ -1838,7 +1838,7 @@ export default function App() {
                               return;
                             }
                             setUserCoins(prev => prev - 20);
-                            showToast(`🌹 Sent Rose Gift (20 coins) to @${item.host} for Moment!`);
+                            showToast(`Sent Rose Gift (20 coins) to @${item.host} for Moment!`);
                           }}
                           className="px-3 py-1 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-[10px] flex items-center gap-1 shadow-md"
                         >
@@ -1954,7 +1954,7 @@ export default function App() {
                             }
                             setUserCoins(prev => prev + q.reward);
                             setDailyQuests(prev => prev.map(item => item.id === q.id ? { ...item, claimed: true } : item));
-                            showToast(`🎉 Claimed +${q.reward} free coins reward!`);
+                            showToast(`Claimed +${q.reward} free coins reward!`);
                           }}
                           className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition ${q.completed ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-black shadow-lg animate-pulse' : 'bg-slate-800 text-slate-400 cursor-not-allowed'}`}
                         >
@@ -2512,23 +2512,26 @@ export default function App() {
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
-                    { name: 'Golden Dragon 🐲', icon: '🐲' },
-                    { name: 'Supercar VIP 🏎️', icon: '🏎️' },
-                    { name: 'Private Jet ✈️', icon: '✈️' },
-                    { name: 'Space Rocket 🚀', icon: '🚀' }
-                  ].map(v => (
-                    <button 
-                      key={v.name}
-                      onClick={() => {
-                        setEntranceVehicle(v.name);
-                        showToast(`Selected Entrance Effect: ${v.name}`);
-                      }}
-                      className={`p-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1.5 ${entranceVehicle === v.name ? 'border-amber-500 bg-amber-500/20 text-amber-300 shadow-md' : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'}`}
-                    >
-                      <span>{v.icon}</span>
-                      <span className="text-[10px] truncate">{v.name.split(' ')[0]}</span>
-                    </button>
-                  ))}
+                    { name: 'Golden Dragon', icon: Flame },
+                    { name: 'Supercar VIP', icon: Zap },
+                    { name: 'Private Jet', icon: Send },
+                    { name: 'Space Rocket', icon: Rocket }
+                  ].map(v => {
+                    const IconComp = v.icon;
+                    return (
+                      <button 
+                        key={v.name}
+                        onClick={() => {
+                          setEntranceVehicle(v.name);
+                          showToast(`Selected Entrance Effect: ${v.name}`);
+                        }}
+                        className={`p-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1.5 ${entranceVehicle === v.name ? 'border-amber-500 bg-amber-500/20 text-amber-300 shadow-md' : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'}`}
+                      >
+                        <IconComp className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="text-[10px] truncate">{v.name}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -2936,10 +2939,12 @@ export default function App() {
             {/* 3D VIP Entrance Vehicle Banner */}
             {showEntranceBanner && (
               <div className="absolute top-16 left-4 right-4 z-30 bg-gradient-to-r from-amber-600/90 via-purple-600/90 to-pink-600/90 p-3 rounded-2xl border-2 border-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.8)] backdrop-blur-md flex items-center gap-3 animate-pulse">
-                <div className="text-2xl">{entranceVehicle.split(' ')[1] || '🐲'}</div>
+                <div className="w-9 h-9 rounded-xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center text-amber-200">
+                  <Crown className="w-5 h-5" />
+                </div>
                 <div className="flex-1">
                   <p className="text-xs font-black text-amber-200">
-                    👑 VIP Level {userVipLevel} @{currentUsername} entered with {entranceVehicle}!
+                    VIP Level {userVipLevel} @{currentUsername} entered with {entranceVehicle}!
                   </p>
                   <p className="text-[9px] text-white/90">Royal Crown VIP Member in Room</p>
                 </div>
@@ -2961,11 +2966,11 @@ export default function App() {
                 <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex border border-slate-700">
                   <div 
                     className="bg-gradient-to-r from-red-600 to-pink-500 h-full transition-all duration-500" 
-                    style={{ width: `${(pkRedScore / (pkRedScore + pkBlueScore)) * 100}%` }}
+                    style={{ width: `${(pkRedScore / ((pkRedScore + pkBlueScore) || 1)) * 100}%` }}
                   />
                   <div 
                     className="bg-gradient-to-r from-cyan-500 to-blue-600 h-full transition-all duration-500" 
-                    style={{ width: `${(pkBlueScore / (pkRedScore + pkBlueScore)) * 100}%` }}
+                    style={{ width: `${(pkBlueScore / ((pkRedScore + pkBlueScore) || 1)) * 100}%` }}
                   />
                 </div>
               </div>
@@ -2986,12 +2991,12 @@ export default function App() {
                     setIsPkBattleActive(!isPkBattleActive);
                     if (!isPkBattleActive) {
                       setPkTimeLeft(180);
-                      showToast('🔥 PK Battle Mode Launched! Send gifts to boost scores!');
+                      showToast('PK Battle Mode Launched! Send gifts to boost scores!');
                     }
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-black border transition ${isPkBattleActive ? 'bg-red-600 text-white border-red-400 shadow-[0_0_12px_rgba(220,38,38,0.8)]' : 'bg-slate-900 text-pink-300 border-pink-500/40'}`}
                 >
-                  {isPkBattleActive ? 'Stop PK' : '🔥 Start PK'}
+                  {isPkBattleActive ? 'Stop PK' : 'Start PK'}
                 </button>
 
                 <button onClick={handleLeaveStream} className="p-2 rounded-2xl bg-slate-950/80 border border-slate-800 text-slate-300">
@@ -3023,25 +3028,29 @@ export default function App() {
                   onClick={() => playSoundEffect('applause')}
                   className="px-2.5 py-1 rounded-xl bg-purple-950/80 border border-purple-500/40 text-purple-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-purple-900"
                 >
-                  👏 Applause
+                  <ThumbsUp className="w-3 h-3 text-purple-300" />
+                  Applause
                 </button>
                 <button 
                   onClick={() => playSoundEffect('cheer')}
                   className="px-2.5 py-1 rounded-xl bg-pink-950/80 border border-pink-500/40 text-pink-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-pink-900"
                 >
-                  🎉 Cheer
+                  <Sparkles className="w-3 h-3 text-pink-300" />
+                  Cheer
                 </button>
                 <button 
                   onClick={() => playSoundEffect('horn')}
                   className="px-2.5 py-1 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-cyan-900"
                 >
-                  🎺 Horn
+                  <Radio className="w-3 h-3 text-cyan-300" />
+                  Horn
                 </button>
                 <button 
                   onClick={handleOpenLuckyBox}
                   className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 text-slate-950 text-[10px] font-black shrink-0 flex items-center gap-1 shadow-md hover:brightness-110"
                 >
-                  🎁 Mystery Box (100c)
+                  <Gift className="w-3 h-3 text-slate-950" />
+                  Mystery Box (100c)
                 </button>
               </div>
 
@@ -3192,15 +3201,16 @@ export default function App() {
 
                 {/* Center Hub */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-950 border-2 border-yellow-400 flex items-center justify-center text-xs">
-                  💎
+                  <Gem className="w-5 h-5 text-amber-400" />
                 </div>
               </div>
             </div>
 
             {/* Won Prize Banner */}
             {wonPrize && (
-              <div className="p-3 bg-amber-500/20 border border-amber-500/50 rounded-2xl text-amber-300 font-bold text-xs animate-bounce">
-                {wonPrize.icon} Won Prize: {wonPrize.text}!
+              <div className="p-3 bg-amber-500/20 border border-amber-500/50 rounded-2xl text-amber-300 font-bold text-xs animate-bounce flex items-center justify-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                Won Prize: {wonPrize.text}!
               </div>
             )}
 
