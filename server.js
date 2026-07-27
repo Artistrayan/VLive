@@ -2,11 +2,25 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 10000;
+
+// Ensure dist directory exists before serving on platforms like Render
+const distDir = path.join(__dirname, 'dist');
+const indexHtmlPath = path.join(distDir, 'index.html');
+
+if (!fs.existsSync(indexHtmlPath)) {
+  console.log('dist/index.html missing. Triggering production build...');
+  try {
+    execSync('npm run build', { stdio: 'inherit' });
+  } catch (err) {
+    console.error('Build execution failed:', err);
+  }
+}
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
