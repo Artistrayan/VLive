@@ -358,6 +358,23 @@ export default function App() {
     }
   }, []);
 
+  // Auto-Show Daily Lucky Wheel Popup Once Per Day
+  useEffect(() => {
+    try {
+      const lastAutoShow = safeStorage.getItem('vlive_wheel_last_autoshow_date');
+      const today = new Date().toDateString();
+      if (lastAutoShow !== today) {
+        const timer = setTimeout(() => {
+          setIsLuckyWheelOpen(true);
+          safeStorage.setItem('vlive_wheel_last_autoshow_date', today);
+        }, 1200);
+        return () => clearTimeout(timer);
+      }
+    } catch (e) {
+      console.log('Wheel auto-show notice:', e);
+    }
+  }, []);
+
   // Edit Profile Settings Form State
   const [editFullName, setEditFullName] = useState(userName);
   const [editUsername, setEditUsername] = useState(currentUsername);
@@ -719,7 +736,7 @@ export default function App() {
     if (isWheelSpinning) return;
 
     if (dailyFreeSpins <= 0 && userCoins < 50) {
-      showToast('Insufficient coins for extra spin (50 coins required)');
+      showToast('سکه کافی برای چرخش مجدد ندارید (نیازمند ۵۰ سکه)');
       return;
     }
 
@@ -734,14 +751,14 @@ export default function App() {
 
     // 8 PRIZES IN WHEEL: 45deg per slice
     const prizes = [
-      { text: '100 Coins', coins: 100, iconName: 'Coins' },
-      { text: 'Red Rose Gift', coins: 0, gift: 'Red Rose', iconName: 'Flower' },
-      { text: '50 Coins', coins: 50, iconName: 'Coins' },
-      { text: '1-Day VIP Badge', coins: 0, vip: true, iconName: 'Crown' },
-      { text: '500 Coins', coins: 500, iconName: 'Gem' },
-      { text: 'Supercar Gift', coins: 0, gift: 'Sports Car', iconName: 'Zap' },
-      { text: '10 Coins', coins: 10, iconName: 'Coins' },
-      { text: '1000 Coins JackPot!', coins: 1000, iconName: 'Sparkles' }
+      { text: '۱۰۰ سکه رایگان 🪙', coins: 100, iconName: 'Coins' },
+      { text: 'کادو رز قرمز 🌹', coins: 0, gift: 'Red Rose', iconName: 'Flower' },
+      { text: '۵۰ سکه 🪙', coins: 50, iconName: 'Coins' },
+      { text: 'نشان VIP (۱ روزه) ✨', coins: 0, vip: true, iconName: 'Crown' },
+      { text: '۵۰۰ سکه 💎', coins: 500, iconName: 'Gem' },
+      { text: 'کادو ماشین سوپراسپرت 🏎️', coins: 0, gift: 'Sports Car', iconName: 'Zap' },
+      { text: '۱۰ سکه 🪙', coins: 10, iconName: 'Coins' },
+      { text: '۱۰۰۰ سکه جک‌پات! 🏆', coins: 1000, iconName: 'Sparkles' }
     ];
 
     const prizeIndex = Math.floor(Math.random() * prizes.length);
@@ -758,7 +775,7 @@ export default function App() {
       if (prize.coins > 0) {
         setUserCoins(prev => prev + prize.coins);
       }
-      showToast(`Congratulations! You won ${prize.text}`);
+      showToast(`تبریک! شما برنده ${prize.text} شدید 🎉`);
     }, 4000);
   };
 
@@ -1600,11 +1617,16 @@ export default function App() {
           {/* Lucky Wheel Quick Spin Button */}
           <button 
             onClick={() => setIsLuckyWheelOpen(true)}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-[0_0_12px_rgba(168,85,247,0.4)] animate-pulse"
-            title="Spin Lucky Wheel for Coin Rewards"
+            className="bg-gradient-to-r from-amber-500 via-pink-600 to-purple-600 hover:brightness-110 text-white px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-yellow-400/50 transition-transform active:scale-95"
+            title="گردونه شانس روزانه"
           >
-            <Disc className="w-3.5 h-3.5 text-yellow-300" />
-            <span className="hidden sm:inline">Lucky Wheel</span>
+            <Disc className="w-4 h-4 text-yellow-300 animate-spin" style={{ animationDuration: '4s' }} />
+            <span className="font-extrabold text-yellow-100 text-[11px] sm:text-xs">گردونه شانس</span>
+            {dailyFreeSpins > 0 && (
+              <span className="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-black animate-pulse">
+                رایگان
+              </span>
+            )}
           </button>
 
           {/* Admin Panel Button */}
@@ -2809,6 +2831,29 @@ export default function App() {
         </button>
       </nav>
 
+      {/* FLOATING LUCKY WHEEL WIDGET - CLEARLY VISIBLE & ANIMATED */}
+      <button 
+        onClick={() => setIsLuckyWheelOpen(true)}
+        className="fixed bottom-20 left-4 z-40 bg-gradient-to-r from-amber-500 via-pink-600 to-purple-600 text-white px-3.5 py-2.5 rounded-2xl shadow-[0_0_22px_rgba(234,179,8,0.7)] border-2 border-yellow-300 flex items-center gap-2 hover:scale-105 active:scale-95 transition group animate-bounce"
+        style={{ animationDuration: '3.5s' }}
+        title="گردونه شانس روزانه"
+      >
+        <div className="relative">
+          <Disc className="w-6 h-6 text-yellow-300 animate-spin" style={{ animationDuration: '5s' }} />
+          {dailyFreeSpins > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full border border-yellow-200 animate-pulse">
+              ۱
+            </span>
+          )}
+        </div>
+        <div className="flex flex-col text-right">
+          <span className="text-[11px] font-black text-yellow-200 leading-none">گردونه شانس</span>
+          <span className="text-[9px] text-pink-100 font-bold leading-tight mt-0.5">
+            {dailyFreeSpins > 0 ? '۱ شانس رایگان' : '۵۰ سکه'}
+          </span>
+        </div>
+      </button>
+
       {/* MODAL 1: POST-CALL & POST-STREAM RATING */}
       {isRatingModalOpen && ratingTargetHost && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -3255,33 +3300,35 @@ export default function App() {
 
       {/* MODAL FOR LUCKY WHEEL (GARDONE SHANS) */}
       {isLuckyWheelOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 dir-ltr">
-          <div className="w-full max-w-sm card-3d p-6 border border-purple-500/50 bg-slate-900 rounded-3xl space-y-5 text-center relative overflow-hidden">
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-sm card-3d p-6 border-2 border-amber-400/60 bg-slate-900 rounded-3xl space-y-4 text-center relative overflow-hidden shadow-[0_0_50px_rgba(234,179,8,0.3)]">
             <button 
               onClick={() => setIsLuckyWheelOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+              className="absolute top-4 left-4 text-slate-400 hover:text-white bg-slate-800/60 p-1.5 rounded-full"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div>
-              <h2 className="text-base font-black text-white flex items-center justify-center gap-2">
-                <Disc className="w-5 h-5 text-yellow-400 animate-spin" />
-                Lucky Wheel of Fortune
+              <h2 className="text-lg font-black text-white flex items-center justify-center gap-2">
+                <Disc className="w-6 h-6 text-yellow-400 animate-spin" style={{ animationDuration: '4s' }} />
+                🎯 گردونه شانس روزانه
               </h2>
-              <p className="text-xs text-purple-300">Spin to win coins, roses, VIP badges & supercars!</p>
+              <p className="text-xs text-yellow-200/90 font-medium mt-1">
+                گردونه را بچرخانید و سکه، کادو رز، نشان VIP و ماشین‌های لوکس برنده شوید!
+              </p>
             </div>
 
             {/* SVG Interactive Wheel */}
-            <div className="relative w-56 h-56 mx-auto flex items-center justify-center my-2">
+            <div className="relative w-60 h-60 mx-auto flex items-center justify-center my-1">
               {/* Pointer Indicator */}
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 text-yellow-400 text-2xl drop-shadow-[0_0_10px_rgba(234,179,8,0.8)]">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 text-yellow-300 text-3xl drop-shadow-[0_0_12px_rgba(234,179,8,1)] animate-pulse">
                 ▼
               </div>
 
               {/* Wheel Container */}
               <div 
-                className="w-full h-full rounded-full border-4 border-yellow-400 shadow-[0_0_25px_rgba(168,85,247,0.6)] overflow-hidden relative"
+                className="w-full h-full rounded-full border-4 border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.5)] overflow-hidden relative"
                 style={{
                   transform: `rotate(${wheelRotationDeg}deg)`,
                   transition: isWheelSpinning ? 'transform 4s cubic-bezier(0.15, 0.85, 0.35, 1.2)' : 'none'
@@ -3298,33 +3345,55 @@ export default function App() {
                     <path d="M 50 50 L 0 50 A 50 50 0 0 1 14.64 14.64 Z" fill="#06b6d4" />
                     <path d="M 50 50 L 14.64 14.64 A 50 50 0 0 1 50 0 Z" fill="#6366f1" />
                   </g>
+                  <g fill="#ffffff" fontSize="4.5" fontWeight="900" textAnchor="middle" dominantBaseline="middle">
+                    <text x="76" y="32" transform="rotate(22.5 76 32)">100🪙</text>
+                    <text x="64" y="18" transform="rotate(67.5 64 18)">🌹</text>
+                    <text x="36" y="18" transform="rotate(112.5 36 18)">50🪙</text>
+                    <text x="24" y="32" transform="rotate(157.5 24 32)">VIP✨</text>
+                    <text x="24" y="68" transform="rotate(202.5 24 68)">500💎</text>
+                    <text x="36" y="82" transform="rotate(247.5 36 82)">🏎️</text>
+                    <text x="64" y="82" transform="rotate(292.5 64 82)">10🪙</text>
+                    <text x="76" y="68" transform="rotate(337.5 76 68)">1000🏆</text>
+                  </g>
                 </svg>
 
                 {/* Center Hub */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-950 border-2 border-yellow-400 flex items-center justify-center text-xs">
-                  <Gem className="w-5 h-5 text-amber-400" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-slate-950 border-2 border-yellow-400 flex items-center justify-center shadow-lg">
+                  <Gem className="w-6 h-6 text-amber-400 animate-pulse" />
                 </div>
               </div>
             </div>
 
+            {/* Prize Legend Badges */}
+            <div className="grid grid-cols-4 gap-1.5 text-[10px] font-bold text-slate-300 bg-slate-950/60 p-2 rounded-2xl border border-slate-800">
+              <span className="bg-pink-900/40 text-pink-300 p-1 rounded-lg">۱۰۰ سکه</span>
+              <span className="bg-purple-900/40 text-purple-300 p-1 rounded-lg">رز قرمز 🌹</span>
+              <span className="bg-blue-900/40 text-blue-300 p-1 rounded-lg">۵۰ سکه</span>
+              <span className="bg-emerald-900/40 text-emerald-300 p-1 rounded-lg">نشان VIP ✨</span>
+              <span className="bg-amber-900/40 text-amber-300 p-1 rounded-lg">۵۰۰ سکه</span>
+              <span className="bg-orange-900/40 text-orange-300 p-1 rounded-lg">سوپراسپرت 🏎️</span>
+              <span className="bg-cyan-900/40 text-cyan-300 p-1 rounded-lg">۱۰ سکه</span>
+              <span className="bg-yellow-900/40 text-yellow-300 p-1 rounded-lg font-black">۱۰۰۰ جک‌پات</span>
+            </div>
+
             {/* Won Prize Banner */}
             {wonPrize && (
-              <div className="p-3 bg-amber-500/20 border border-amber-500/50 rounded-2xl text-amber-300 font-bold text-xs animate-bounce flex items-center justify-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                Won Prize: {wonPrize.text}!
+              <div className="p-3 bg-amber-500/20 border-2 border-amber-400/80 rounded-2xl text-amber-300 font-extrabold text-xs animate-bounce flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.4)]">
+                <Sparkles className="w-5 h-5 text-amber-300 animate-spin" />
+                تبریک! جایزه شما: {wonPrize.text}
               </div>
             )}
 
             {/* Spin Button & Daily Free Spin Tracker */}
-            <div className="space-y-2">
+            <div className="space-y-2 pt-1">
               <button 
                 onClick={handleSpinLuckyWheel}
                 disabled={isWheelSpinning}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-yellow-500 via-pink-600 to-purple-600 text-white font-black text-xs shadow-xl hover:brightness-110 active:scale-95 transition disabled:opacity-50"
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-yellow-500 via-pink-600 to-purple-600 text-white font-black text-sm shadow-xl hover:brightness-110 active:scale-95 transition disabled:opacity-50 border border-yellow-300/40"
               >
-                {isWheelSpinning ? 'Spinning Wheel...' : (dailyFreeSpins > 0 ? 'SPIN FREE (1 Left)' : 'Spin for 50 Coins')}
+                {isWheelSpinning ? 'در حال چرخش گردونه...' : (dailyFreeSpins > 0 ? '🎯 چرخش رایگان امروز (۱ شانس باقی‌مانده)' : '🎯 چرخش مجدد با ۵۰ سکه')}
               </button>
-              <p className="text-[10px] text-slate-400">Daily Free Spin resets every 24 hours</p>
+              <p className="text-[10px] text-slate-400 font-medium">شانس رایگان روزانه هر ۲۴ ساعت یک بار فعال می‌شود</p>
             </div>
           </div>
         </div>
