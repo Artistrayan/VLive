@@ -1036,6 +1036,22 @@ export default function App() {
     }
   };
 
+  // START MY OWN LIVE STREAM
+  const handleStartLiveStream = () => {
+    showToast('در حال آماده‌سازی پخش زنده...');
+    const myStream = {
+      id: Date.now(),
+      title: `پخش زنده ${userName}`,
+      host: userName,
+      viewers: 12,
+      likes: 5,
+      thumbnail: userAvatar,
+      isVip18: false,
+      isPvtCallAvailable: true
+    };
+    setViewingStream(myStream);
+  };
+
   // SUBMIT POST-CALL / POST-STREAM RATING
   const handleSubmitRating = () => {
     if (!ratingTargetHost) return;
@@ -1639,7 +1655,7 @@ export default function App() {
 
               {/* Start Live Stream Button */}
               <button 
-                onClick={startLiveStream}
+                onClick={handleStartLiveStream}
                 className="btn-neon-pink px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg"
               >
                 <Camera className="w-4 h-4" />
