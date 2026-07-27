@@ -830,6 +830,12 @@ export default function App() {
   const recordedChunksRef = useRef([]);
   const [isRecordingLive, setIsRecordingLive] = useState(false);
 
+  useEffect(() => {
+    if (videoRef.current && mediaStream) {
+      videoRef.current.srcObject = mediaStream;
+    }
+  }, [mediaStream, viewingStream]);
+
   // Streams Data
   const [streamsList] = useState([
     { 
@@ -1028,6 +1034,10 @@ export default function App() {
 
   // LEAVE LIVE STREAM & OPEN POST-STREAM RATING MODAL
   const handleLeaveStream = () => {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(track => track.stop());
+      setMediaStream(null);
+    }
     const currentStream = viewingStream;
     setViewingStream(null);
     if (currentStream) {
@@ -1037,19 +1047,38 @@ export default function App() {
   };
 
   // START MY OWN LIVE STREAM
-  const handleStartLiveStream = () => {
-    showToast('در حال آماده‌سازی پخش زنده...');
-    const myStream = {
-      id: Date.now(),
-      title: `پخش زنده ${userName}`,
-      host: userName,
-      viewers: 12,
-      likes: 5,
-      thumbnail: userAvatar,
-      isVip18: false,
-      isPvtCallAvailable: true
-    };
-    setViewingStream(myStream);
+  const handleStartLiveStream = async () => {
+    showToast('در حال درخواست دسترسی به دوربین و میکروفون...');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showToast('خطا: مرورگر یا دستگاه شما از دسترسی آنلاین به دوربین پشتیبانی نمی‌کند. پخش زنده لغو گردید.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setMediaStream(stream);
+
+      const myStream = {
+        id: Date.now(),
+        title: `پخش زنده ${userName}`,
+        host: userName,
+        viewers: 1,
+        likes: 0,
+        thumbnail: userAvatar,
+        isVip18: false,
+        isPvtCallAvailable: true,
+        isSelfStream: true
+      };
+      setViewingStream(myStream);
+      showToast('پخش زنده با دوربین واقعی فعال شد (پشتیبانی فقط آنلاین)');
+    } catch (err) {
+      console.error('Camera access denied or failed:', err);
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        setMediaStream(null);
+      }
+      showToast('عدم تایید یا عدم دسترسی به دوربین/میکروفون؛ پخش زنده لغو گردید.');
+    }
   };
 
   // SUBMIT POST-CALL / POST-STREAM RATING
@@ -3000,6 +3029,8 @@ export default function App() {
                   VS
                 </div>
               </div>
+            ) : viewingStream.isSelfStream && mediaStream ? (
+              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
             ) : (
               <img src={viewingStream.thumbnail} alt="Stream" className="w-full h-full object-cover" />
             )}
