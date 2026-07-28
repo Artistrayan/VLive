@@ -586,7 +586,526 @@ export default function App() {
   };
 
   // Direct Messages State & Enhanced Chat System
-  const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 'groups' | 'calls' | 'archived'
+  
+  // ==================== ADVANCED COMPREHENSIVE CALL SYSTEM STATE ====================
+  const callVideoRef = useRef(null);
+  const [callMainSubTab, setCallMainSubTab] = useState('recent'); // 'recent' | 'contacts' | 'favorites' | 'scheduled' | 'tariffs'
+  const [callSearchQuery, setCallSearchQuery] = useState('');
+  const [callLogFilter, setCallLogFilter] = useState('all'); // 'all' | 'voice' | 'video' | 'missed' | 'rejected' | 'paid'
+  const [userPresenceStatus, setUserPresenceStatus] = useState('available'); // 'available' | 'busy' | 'in_call' | 'offline'
+  const [isDndActive, setIsDndActive] = useState(false);
+
+  // Call History List
+  const [callHistoryList, setCallHistoryList] = useState(() => {
+    return safeStorage.getParsed('vlive_call_history_v1', [
+      {
+        id: 'call_log_1',
+        type: 'video',
+        direction: 'incoming',
+        user: {
+          username: 'Sara_Maleki',
+          name: 'Sara Maleki',
+          avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
+          isVip: true,
+          role: 'VIP Streamer',
+          online: true
+        },
+        time: '10:45 AM',
+        date: 'Today',
+        duration: '08:24',
+        isPaid: true,
+        tariffRate: 20,
+        coinsSpent: 160,
+        quality: '1080p Full HD',
+        rating: 5,
+        encrypted: true
+      },
+      {
+        id: 'call_log_2',
+        type: 'voice',
+        direction: 'missed',
+        user: {
+          username: 'Elnaz_Karimi',
+          name: 'Elnaz Karimi',
+          avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
+          isVip: true,
+          role: 'Online Model',
+          online: true
+        },
+        time: '09:12 AM',
+        date: 'Today',
+        duration: '00:00',
+        isPaid: false,
+        tariffRate: 0,
+        coinsSpent: 0,
+        quality: 'HD Voice',
+        rating: 0,
+        encrypted: true
+      },
+      {
+        id: 'call_log_3',
+        type: 'video',
+        direction: 'outgoing',
+        user: {
+          username: 'Arash_VIP',
+          name: 'Arash VIP Host',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+          isVip: true,
+          role: 'Top Streamer',
+          online: false
+        },
+        time: 'Yesterday',
+        date: '2026-07-27',
+        duration: '15:10',
+        isPaid: true,
+        tariffRate: 20,
+        coinsSpent: 300,
+        quality: '1080p Full HD',
+        rating: 5,
+        encrypted: true
+      },
+      {
+        id: 'call_log_4',
+        type: 'voice',
+        direction: 'rejected',
+        user: {
+          username: 'Niloofar',
+          name: 'Niloofar S.',
+          avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80',
+          isVip: false,
+          role: 'Community Member',
+          online: false
+        },
+        time: '2 days ago',
+        date: '2026-07-26',
+        duration: '00:00',
+        isPaid: false,
+        tariffRate: 0,
+        coinsSpent: 0,
+        quality: 'Auto',
+        rating: 0,
+        encrypted: true
+      }
+    ]);
+  });
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_call_history_v1', JSON.stringify(callHistoryList));
+  }, [callHistoryList]);
+
+  // Scheduled Calls List
+  const [scheduledCallsList, setScheduledCallsList] = useState(() => {
+    return safeStorage.getParsed('vlive_scheduled_calls_v1', [
+      {
+        id: 'sch_1',
+        user: {
+          username: 'Sara_Maleki',
+          name: 'Sara Maleki',
+          avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
+          role: 'VIP Streamer'
+        },
+        type: 'video',
+        dateTime: '2026-07-29 20:30',
+        note: 'VIP Live Consultation & Q&A',
+        isPaid: true,
+        tariffRate: 20,
+        status: 'pending'
+      }
+    ]);
+  });
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_scheduled_calls_v1', JSON.stringify(scheduledCallsList));
+  }, [scheduledCallsList]);
+
+  // Contacts & Favorites
+  const [favoriteContacts, setFavoriteContacts] = useState(() => {
+    return safeStorage.getParsed('vlive_favorite_contacts_v1', ['Sara_Maleki', 'Elnaz_Karimi']);
+  });
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_favorite_contacts_v1', JSON.stringify(favoriteContacts));
+  }, [favoriteContacts]);
+
+  // Blocked Call Users
+  const [blockedCallUsers, setBlockedCallUsers] = useState(() => {
+    return safeStorage.getParsed('vlive_blocked_call_users_v1', []);
+  });
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_blocked_call_users_v1', JSON.stringify(blockedCallUsers));
+  }, [blockedCallUsers]);
+
+  // Streamer Tariff & Call Privacy
+  const [streamerPaidCallEnabled, setStreamerPaidCallEnabled] = useState(true);
+  const [streamerCallTariffPerMin, setStreamerCallTariffPerMin] = useState(20);
+  const [streamerCallTariff10Min, setStreamerCallTariff10Min] = useState(150);
+
+  // Active Call Engine State
+  const [activeCall, setActiveCall] = useState(null);
+  const [preCallConfirmHost, setPreCallConfirmHost] = useState(null);
+  const [postCallRatingData, setPostCallRatingData] = useState(null);
+  const [ratingStarsCall, setRatingStarsCall] = useState(5);
+  const [ratingCommentCall, setRatingCommentCall] = useState('');
+  const [selectedCallFeedbackTags, setSelectedCallFeedbackTags] = useState(['کیفیت صدا عالی', 'تصویر کریستالی']);
+
+  // Call Modals
+  const [isScheduleCallModalOpen, setIsScheduleCallModalOpen] = useState(false);
+  const [scheduleTargetUser, setScheduleTargetUser] = useState(null);
+  const [scheduleDateTime, setScheduleDateTime] = useState('2026-07-29 20:00');
+  const [scheduleNote, setScheduleNote] = useState('');
+  const [scheduleType, setScheduleType] = useState('video');
+
+  const [isAddParticipantModalOpen, setIsAddParticipantModalOpen] = useState(false);
+  const [isRecordConsentModalOpen, setIsRecordConsentModalOpen] = useState(false);
+  const [isEncryptedCertModalOpen, setIsEncryptedCertModalOpen] = useState(false);
+  const [inCallFloatingGifts, setInCallFloatingGifts] = useState([]);
+  const [showInCallQualityMenu, setShowInCallQualityMenu] = useState(false);
+  const [showInCallEffectsMenu, setShowInCallEffectsMenu] = useState(false);
+
+  // ==================== ADVANCED CALL HANDLERS ====================
+  const handleInitiateCall = (targetUser, type = 'video', mode = '1on1') => {
+    if (!targetUser) return;
+
+    if (isDndActive) {
+      showToast('⚠️ حالت "مزاحم نشوید" فعال است. ابتدا آن را غیرفعال کنید.');
+      return;
+    }
+
+    if (blockedCallUsers.includes(targetUser.username)) {
+      showToast(`⚠️ کاربر ${targetUser.name} در لیست مسدودشده‌ها است.`);
+      return;
+    }
+
+    if (privacyWhoCall === 'VIP Only' && !targetUser.isVip) {
+      showToast('👑 تنظیمات تماس فقط برای کاربران VIP فعال است.');
+      return;
+    }
+
+    const isPaid = streamerPaidCallEnabled || targetUser.isVip || targetUser.role?.includes('Streamer') || targetUser.role?.includes('Model');
+    const tariffRate = targetUser.tariffPerMin || streamerCallTariffPerMin || 20;
+
+    if (isPaid) {
+      setPreCallConfirmHost({
+        user: targetUser,
+        type,
+        mode,
+        tariffRate
+      });
+    } else {
+      handleStartCallDirect(targetUser, type, mode, false, 0);
+    }
+  };
+
+  const handleStartCallDirect = (targetUser, type = 'video', mode = '1on1', isPaid = false, tariffRate = 20) => {
+    setPreCallConfirmHost(null);
+
+    const initialParticipants = mode === 'group' ? [
+      targetUser,
+      { username: 'Elnaz_Karimi', name: 'Elnaz Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', isVip: true, role: 'Online Model', isMuted: false },
+      { username: 'Arash_VIP', name: 'Arash VIP Host', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', isVip: true, role: 'Top Streamer', isMuted: false }
+    ] : [targetUser];
+
+    const newCall = {
+      id: 'call_' + Date.now(),
+      type,
+      mode,
+      user: targetUser,
+      participants: initialParticipants,
+      isPaid,
+      tariffPerMin: tariffRate,
+      consumedCoins: 0,
+      seconds: 0,
+      isMuted: false,
+      isSpeakerOn: true,
+      isOnHold: false,
+      isRecording: false,
+      recordingPermissionGranted: false,
+      isCameraOn: type === 'video',
+      facingMode: 'user',
+      beautyFilter: true,
+      activeEffect: 'none',
+      isBgBlurred: false,
+      quality: '1080p Full HD',
+      isPiP: false,
+      translationLang: 'fa',
+      translatedSubtitles: 'ارتباط رمزنگاری‌شده 256 بیتی برقرار شد. آماده گفتگو 🔒',
+      securityEncrypted: true
+    };
+
+    setActiveCall(newCall);
+    setUserPresenceStatus('in_call');
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: type === 'video', audio: true })
+        .then(stream => {
+          if (callVideoRef.current) {
+            callVideoRef.current.srcObject = stream;
+          }
+        })
+        .catch(err => {
+          console.log('Using high-definition simulated video feed:', err);
+        });
+    }
+
+    showToast(`📞 تماس ${type === 'video' ? 'تصویری' : 'صوتی'} با ${targetUser.name} برقرار شد`);
+  };
+
+  const handleEndActiveCall = () => {
+    if (!activeCall) return;
+
+    const minutes = Math.floor(activeCall.seconds / 60);
+    const secs = activeCall.seconds % 60;
+    const durationStr = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+    const newLog = {
+      id: 'call_log_' + Date.now(),
+      type: activeCall.type,
+      direction: 'outgoing',
+      user: activeCall.user,
+      time: 'هم‌اکنون',
+      date: 'امروز',
+      duration: durationStr,
+      isPaid: activeCall.isPaid,
+      tariffRate: activeCall.tariffPerMin,
+      coinsSpent: activeCall.consumedCoins,
+      quality: activeCall.quality,
+      rating: 5,
+      encrypted: true
+    };
+
+    setCallHistoryList(prev => [newLog, ...prev]);
+
+    setPostCallRatingData({
+      user: activeCall.user,
+      type: activeCall.type,
+      duration: durationStr,
+      coinsSpent: activeCall.consumedCoins,
+      quality: activeCall.quality
+    });
+
+    if (callVideoRef.current && callVideoRef.current.srcObject) {
+      const tracks = callVideoRef.current.srcObject.getTracks();
+      tracks.forEach(t => t.stop());
+      callVideoRef.current.srcObject = null;
+    }
+
+    setActiveCall(null);
+    setUserPresenceStatus('available');
+  };
+
+  // Live Timer & Coin Deduction Effect for Active Call
+  useEffect(() => {
+    let interval = null;
+    if (activeCall && !activeCall.isOnHold) {
+      interval = setInterval(() => {
+        setActiveCall(prev => {
+          if (!prev) return null;
+          const nextSec = prev.seconds + 1;
+          let nextCoins = prev.consumedCoins;
+
+          if (prev.isPaid && nextSec % 60 === 0 && nextSec > 0) {
+            if (userCoins >= prev.tariffPerMin) {
+              setUserCoins(c => Math.max(0, c - prev.tariffPerMin));
+              nextCoins += prev.tariffPerMin;
+              setTotalEarnings(e => e + (prev.tariffPerMin * 0.8));
+              showToast(`🪙 ${prev.tariffPerMin} سکه بابت زمان تماس کسر شد`);
+            } else {
+              showToast('⚠️ اعتبار سکه شما برای ادامه تماس پولی کافی نیست!');
+              setTimeout(() => {
+                handleEndActiveCall();
+              }, 500);
+            }
+          }
+
+          let nextSubtitle = prev.translatedSubtitles;
+          if (prev.translationLang !== 'off' && nextSec % 4 === 0) {
+            const subtitlesFA = [
+              'سلام! صدای من رو به خوبی داری؟ 🎙️',
+              'بله تصویر بسیار شفاف و 1080p هست ✨',
+              'ممنون بابت حمایتت در V.Live Pro! 💖',
+              'می‌تونیم نظرات کاربرها رو هم بررسی کنیم 🚀'
+            ];
+            const subtitlesEN = [
+              'Hello! Can you hear me clearly? 🎙️',
+              'Yes, video is crystal clear in 1080p Full HD ✨',
+              'Thank you for your support in V.Live Pro! 💖',
+              'Let’s check the live community feedback 🚀'
+            ];
+            const list = prev.translationLang === 'en' ? subtitlesEN : subtitlesFA;
+            nextSubtitle = list[Math.floor(Math.random() * list.length)];
+          }
+
+          return {
+            ...prev,
+            seconds: nextSec,
+            consumedCoins: nextCoins,
+            translatedSubtitles: nextSubtitle
+          };
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [activeCall, userCoins]);
+
+  const handleToggleMuteCall = () => {
+    setActiveCall(prev => prev ? { ...prev, isMuted: !prev.isMuted } : null);
+    showToast(activeCall?.isMuted ? '🎙️ میکروفون روشن شد' : '🔇 میکروفون قطع شد');
+  };
+
+  const handleToggleSpeakerCall = () => {
+    setActiveCall(prev => prev ? { ...prev, isSpeakerOn: !prev.isSpeakerOn } : null);
+    showToast(activeCall?.isSpeakerOn ? '🔈 حالت گوشی' : '🔊 اسپیکر فعال شد');
+  };
+
+  const handleToggleHoldCall = () => {
+    setActiveCall(prev => prev ? { ...prev, isOnHold: !prev.isOnHold } : null);
+    showToast(activeCall?.isOnHold ? '▶️ تماس ادامه یافت' : '⏸️ تماس در حالت انتظار قرار گرفت');
+  };
+
+  const handleToggleCameraCall = () => {
+    setActiveCall(prev => prev ? { ...prev, isCameraOn: !prev.isCameraOn } : null);
+    showToast(activeCall?.isCameraOn ? '📷 دوربین خاموش شد' : '📹 دوربین روشن شد');
+  };
+
+  const handleSwitchCameraFacing = () => {
+    setActiveCall(prev => prev ? { ...prev, facingMode: prev.facingMode === 'user' ? 'environment' : 'user' } : null);
+    showToast('🔄 تغییر دوربین جلو / عقب انجام شد');
+  };
+
+  const handleToggleBeautyFilter = () => {
+    setActiveCall(prev => prev ? { ...prev, beautyFilter: !prev.beautyFilter } : null);
+    showToast(activeCall?.beautyFilter ? '✨ فیلتر زیبایی غیرفعال شد' : '✨ فیلتر زیبایی فعال شد');
+  };
+
+  const handleSelectEffect = (effect) => {
+    setActiveCall(prev => prev ? { ...prev, activeEffect: effect } : null);
+    setShowInCallEffectsMenu(false);
+    showToast(`🎨 افکت ${effect} اعمال شد`);
+  };
+
+  const handleToggleBgBlur = () => {
+    setActiveCall(prev => prev ? { ...prev, isBgBlurred: !prev.isBgBlurred } : null);
+    showToast(activeCall?.isBgBlurred ? '🌫️ پس‌زمینه عادی شد' : '🌫️ پس‌زمینه تار شد');
+  };
+
+  const handleSelectCallQuality = (q) => {
+    setActiveCall(prev => prev ? { ...prev, quality: q } : null);
+    setShowInCallQualityMenu(false);
+    showToast(`⚙️ کیفیت تماس به ${q} تغییر یافت`);
+  };
+
+  const handleToggleRecordCall = () => {
+    if (!activeCall) return;
+    if (!activeCall.recordingPermissionGranted) {
+      setIsRecordConsentModalOpen(true);
+    } else {
+      setActiveCall(prev => ({ ...prev, isRecording: !prev.isRecording }));
+      showToast(activeCall.isRecording ? '⏺️ ضبط تماس متوقف شد' : '🔴 ضبط مکالمه آغاز شد');
+    }
+  };
+
+  const handleConfirmRecordConsent = () => {
+    setIsRecordConsentModalOpen(false);
+    setActiveCall(prev => prev ? { ...prev, recordingPermissionGranted: true, isRecording: true } : null);
+    showToast('🔴 اجازه ضبط تایید شد. ضبط مکالمه فعال است.');
+  };
+
+  const handleSendInCallGift = (gift) => {
+    if (userCoins < gift.coins) {
+      showToast('⚠️ موجودی سکه شما کافی نیست!');
+      return;
+    }
+    setUserCoins(c => c - gift.coins);
+    setTotalEarnings(e => e + Math.round(gift.coins * 0.8));
+
+    const anim = {
+      id: Date.now() + Math.random(),
+      gift,
+      x: Math.random() * 60 + 20,
+      y: Math.random() * 40 + 20
+    };
+    setInCallFloatingGifts(prev => [...prev, anim]);
+
+    setTimeout(() => {
+      setInCallFloatingGifts(prev => prev.filter(g => g.id !== anim.id));
+    }, 3500);
+
+    showToast(`🎁 هدیه ${gift.name} ارسال شد!`);
+  };
+
+  const handleAddParticipantToCall = (newUser) => {
+    if (!activeCall) return;
+    if (activeCall.participants.some(p => p.username === newUser.username)) {
+      showToast('این کاربر قبلاً در تماس حضور دارد.');
+      return;
+    }
+    const updatedList = [...activeCall.participants, { ...newUser, isMuted: false }];
+    setActiveCall({
+      ...activeCall,
+      mode: 'group',
+      participants: updatedList
+    });
+    setIsAddParticipantModalOpen(false);
+    showToast(`👥 ${newUser.name} به تماس اضافه شد`);
+  };
+
+  const handleTogglePiPCall = () => {
+    setActiveCall(prev => prev ? { ...prev, isPiP: !prev.isPiP } : null);
+    showToast(activeCall?.isPiP ? '🔳 تماس به حالت تمام‌صفحه بازگشت' : '🔳 تماس در حالت پنجره کوچک (PiP) قرار گرفت');
+  };
+
+  const handleToggleFavoriteContact = (username) => {
+    setFavoriteContacts(prev => {
+      if (prev.includes(username)) {
+        showToast('از علاقه‌مندی‌ها حذف شد');
+        return prev.filter(u => u !== username);
+      } else {
+        showToast('به لیست علاقه‌مندی‌ها اضافه شد ⭐');
+        return [...prev, username];
+      }
+    });
+  };
+
+  const handleSaveScheduledCall = () => {
+    if (!scheduleTargetUser) {
+      showToast('لطفاً یک کاربر را انتخاب کنید');
+      return;
+    }
+    const newSch = {
+      id: 'sch_' + Date.now(),
+      user: scheduleTargetUser,
+      type: scheduleType,
+      dateTime: scheduleDateTime,
+      note: scheduleNote || 'تماس برنامه‌ریزی‌شده',
+      isPaid: streamerPaidCallEnabled,
+      tariffRate: streamerCallTariffPerMin,
+      status: 'pending'
+    };
+    setScheduledCallsList(prev => [newSch, ...prev]);
+    setIsScheduleCallModalOpen(false);
+    setScheduleNote('');
+    showToast('📅 تماس با موفقیت رزرو و زمان‌بندی شد!');
+  };
+
+  const handleSubmitPostCallRating = () => {
+    showToast(`⭐ امتیاز ${ratingStarsCall} ستاره با موفقیت ثبت شد!`);
+    setPostCallRatingData(null);
+    setRatingCommentCall('');
+  };
+
+  const handleReportUserInCall = (reason) => {
+    showToast(`🚩 گزارش با علت "${reason}" ثبت شد و توسط تیم نظارت V.Live بررسی می‌شود.`);
+    setPostCallRatingData(null);
+  };
+
+  const handleBlockUserInCall = (username) => {
+    setBlockedCallUsers(prev => [...prev, username]);
+    showToast(`🚫 کاربر ${username} مسدود شد.`);
+    setPostCallRatingData(null);
+  };
+
+const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 'groups' | 'calls' | 'archived'
   const [msgSearchQuery, setMsgSearchQuery] = useState('');
   const [msgSearchField, setMsgSearchField] = useState('all'); // 'all' | 'name' | 'id' | 'city' | 'phone'
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
@@ -3776,6 +4295,414 @@ export default function App() {
           </div>
         )}
 
+        
+        {/* TAB 1.5: ADVANCED COMPREHENSIVE CALL HUB SYSTEM */}
+        {activeTab === 'call' && (
+          <div className="space-y-4 animate-fadeIn" dir="rtl">
+            {/* 1. HEADER & PRESENCE STATUS BAR */}
+            <div className="card-3d p-4 rounded-3xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3 flex-wrap backdrop-blur-xl">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <img src={userAvatar} alt={userName} className="w-12 h-12 rounded-2xl object-cover ring-2 ring-pink-500/50 shadow-md" />
+                  <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full ring-2 ring-slate-950 flex items-center justify-center ${userPresenceStatus === 'available' ? 'bg-emerald-500' : userPresenceStatus === 'busy' ? 'bg-rose-500' : userPresenceStatus === 'in_call' ? 'bg-amber-500' : 'bg-slate-500'}`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                  </span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-2">
+                      📞 مرکز تماس پرو V.Live (Call Hub)
+                    </h2>
+                    <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-[9px] shadow-sm">
+                      HD 4K & E2E Encrypted
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
+                    <span>ارتباط امن، تماس صوتی و تصویری پولی با کیفیت عالی</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick Status & DND Switch */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Presence Dropdown */}
+                <div className="relative bg-slate-950/80 border border-slate-800 rounded-2xl px-3 py-1.5 flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full ${userPresenceStatus === 'available' ? 'bg-emerald-500' : userPresenceStatus === 'busy' ? 'bg-rose-500' : userPresenceStatus === 'in_call' ? 'bg-amber-500' : 'bg-slate-500'}`} />
+                  <select
+                    value={userPresenceStatus}
+                    onChange={e => setUserPresenceStatus(e.target.value)}
+                    className="bg-transparent text-xs font-bold text-white outline-none cursor-pointer"
+                  >
+                    <option value="available" className="bg-slate-900 text-emerald-400">🟢 آنلاین و آماده (Available)</option>
+                    <option value="busy" className="bg-slate-900 text-rose-400">🔴 مشغول (Busy)</option>
+                    <option value="in_call" className="bg-slate-900 text-amber-400">📞 در حال مکالمه (In Call)</option>
+                    <option value="offline" className="bg-slate-900 text-slate-400">⚪ آفلاین (Offline)</option>
+                  </select>
+                </div>
+
+                {/* DND Button */}
+                <button
+                  onClick={() => {
+                    setIsDndActive(!isDndActive);
+                    showToast(isDndActive ? 'حالت "مزاحم نشوید" غیرفعال شد' : '🔕 حالت "مزاحم نشوید" (DND) فعال شد');
+                  }}
+                  className={`px-3 py-1.5 rounded-2xl border text-xs font-bold flex items-center gap-1.5 transition ${isDndActive ? 'bg-rose-600 text-white border-rose-500 shadow-lg shadow-rose-500/20' : 'bg-slate-950 text-slate-300 border-slate-800 hover:border-pink-500/40'}`}
+                >
+                  <VolumeX className="w-4 h-4" />
+                  <span>{isDndActive ? 'DND فعال' : 'مزاحم نشوید'}</span>
+                </button>
+
+                {/* Schedule Button */}
+                <button
+                  onClick={() => setIsScheduleCallModalOpen(true)}
+                  className="px-3.5 py-1.5 rounded-2xl bg-purple-600/20 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 hover:bg-purple-600/30 transition shadow-sm"
+                >
+                  <Calendar className="w-4 h-4 text-purple-400" />
+                  <span>رزرو تماس</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 2. SUBTABS NAVIGATION BAR */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar border-b border-slate-800/80">
+              <button
+                onClick={() => setCallMainSubTab('recent')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'recent' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
+              >
+                <Clock className="w-4 h-4" />
+                <span>تاریخچه اخیر (Recent Calls)</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono">{callHistoryList.length}</span>
+              </button>
+
+              <button
+                onClick={() => setCallMainSubTab('contacts')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'contacts' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
+              >
+                <Users className="w-4 h-4" />
+                <span>مخاطبین (Contacts)</span>
+              </button>
+
+              <button
+                onClick={() => setCallMainSubTab('favorites')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'favorites' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
+              >
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+                <span>علاقه‌مندی‌ها (Favorites)</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono">{favoriteContacts.length}</span>
+              </button>
+
+              <button
+                onClick={() => setCallMainSubTab('scheduled')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'scheduled' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
+              >
+                <Calendar className="w-4 h-4 text-cyan-400" />
+                <span>تماس‌های برنامه‌ریزی‌شده</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono">{scheduledCallsList.length}</span>
+              </button>
+
+              <button
+                onClick={() => setCallMainSubTab('tariffs')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'tariffs' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
+              >
+                <DollarSign className="w-4 h-4 text-amber-400" />
+                <span>تعرفه و تنظیمات پولی</span>
+              </button>
+            </div>
+
+            {/* SUBTAB 1: RECENT CALLS */}
+            {callMainSubTab === 'recent' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                    {['all', 'voice', 'video', 'missed', 'rejected', 'paid'].map(f => (
+                      <button
+                        key={f}
+                        onClick={() => setCallLogFilter(f)}
+                        className={`px-3 py-1 rounded-xl text-xs font-bold capitalize transition ${callLogFilter === f ? 'bg-pink-500 text-white shadow-md' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700'}`}
+                      >
+                        {f === 'all' ? 'همه' : f === 'voice' ? 'صوتی 📞' : f === 'video' ? 'تصویری 📹' : f === 'missed' ? 'از دست رفته 🔴' : f === 'rejected' ? 'رد شده 🚫' : 'پولی 🪙'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 flex-1 max-w-xs">
+                    <Search className="w-3.5 h-3.5 text-slate-500" />
+                    <input
+                      type="text"
+                      value={callSearchQuery}
+                      onChange={e => setCallSearchQuery(e.target.value)}
+                      placeholder="جستجو در تاریخچه تماس..."
+                      className="w-full bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {callHistoryList
+                    .filter(item => {
+                      if (callLogFilter === 'voice' && item.type !== 'voice') return false;
+                      if (callLogFilter === 'video' && item.type !== 'video') return false;
+                      if (callLogFilter === 'missed' && item.direction !== 'missed') return false;
+                      if (callLogFilter === 'rejected' && item.direction !== 'rejected') return false;
+                      if (callLogFilter === 'paid' && !item.isPaid) return false;
+                      if (callSearchQuery && !item.user.name.toLowerCase().includes(callSearchQuery.toLowerCase())) return false;
+                      return true;
+                    })
+                    .map(log => (
+                      <div key={log.id} className="card-3d p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-pink-500/40 flex items-center justify-between gap-3 transition">
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <img src={log.user.avatar} alt={log.user.name} className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-700" />
+                            <span className={`absolute -bottom-1 -left-1 p-1 rounded-full border border-slate-950 text-[10px] ${log.type === 'video' ? 'bg-purple-600 text-white' : 'bg-cyan-600 text-white'}`}>
+                              {log.type === 'video' ? <Video className="w-2.5 h-2.5" /> : <PhoneCall className="w-2.5 h-2.5" />}
+                            </span>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="text-xs font-bold text-white">{log.user.name}</h4>
+                              {log.user.isVip && <Crown className="w-3 h-3 text-amber-400 fill-amber-400/20" />}
+                              {log.isPaid && <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/30">پولی</span>}
+                            </div>
+
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                              <span className="flex items-center gap-1">
+                                {log.direction === 'missed' ? <PhoneMissed className="w-3 h-3 text-rose-500" /> : log.direction === 'incoming' ? <PhoneIncoming className="w-3 h-3 text-emerald-400" /> : <PhoneOutgoing className="w-3 h-3 text-cyan-400" />}
+                                <span className={log.direction === 'missed' ? 'text-rose-400 font-bold' : ''}>
+                                  {log.direction === 'missed' ? 'از دست رفته' : log.direction === 'rejected' ? 'رد شده' : log.direction === 'incoming' ? 'ورودی' : 'خروجی'}
+                                </span>
+                              </span>
+                              <span>•</span>
+                              <span>{log.time} ({log.duration})</span>
+                              {log.coinsSpent > 0 && (
+                                <span className="text-amber-400 font-mono flex items-center gap-0.5">
+                                  <Coins className="w-2.5 h-2.5" /> {log.coinsSpent} سکه
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleInitiateCall(log.user, 'voice', '1on1')}
+                            className="p-2 rounded-xl bg-slate-950 border border-slate-800 text-cyan-400 hover:bg-cyan-600 hover:text-white transition"
+                            title="تماس صوتی"
+                          >
+                            <PhoneCall className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleInitiateCall(log.user, 'video', '1on1')}
+                            className="p-2 rounded-xl bg-pink-500/20 border border-pink-500/40 text-pink-300 hover:bg-pink-500 hover:text-white transition"
+                            title="تماس تصویری"
+                          >
+                            <Video className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* SUBTAB 2: CONTACTS */}
+            {callMainSubTab === 'contacts' && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {conversations.map(conv => (
+                    <div key={conv.id} className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <img src={conv.user.avatar} alt={conv.user.name} className="w-12 h-12 rounded-2xl object-cover ring-2 ring-pink-500/30" />
+                          <span className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full ring-2 ring-slate-950 ${conv.user.online ? 'bg-emerald-500' : 'bg-slate-500'}`} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="text-xs font-bold text-white">{conv.user.name}</h4>
+                            {conv.user.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400 fill-cyan-400/20" />}
+                            {conv.user.isVip && <Crown className="w-3.5 h-3.5 text-amber-400" />}
+                          </div>
+                          <p className="text-[10px] text-slate-400">{conv.user.role || 'کاربر رسمی'} • {conv.user.city || 'ایران'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleToggleFavoriteContact(conv.user.username)}
+                          className={`p-2 rounded-xl border transition ${favoriteContacts.includes(conv.user.username) ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-slate-950 text-slate-500 border-slate-800'}`}
+                        >
+                          <Star className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleInitiateCall(conv.user, 'voice', '1on1')}
+                          className="p-2 rounded-xl bg-slate-950 border border-slate-800 text-cyan-400 hover:bg-cyan-600 hover:text-white transition"
+                          title="Voice Call"
+                        >
+                          <PhoneCall className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleInitiateCall(conv.user, 'video', '1on1')}
+                          className="px-3 py-2 rounded-xl btn-neon-pink text-xs font-bold flex items-center gap-1"
+                        >
+                          <Video className="w-3.5 h-3.5" />
+                          <span>تماس</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SUBTAB 3: FAVORITES */}
+            {callMainSubTab === 'favorites' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {conversations.filter(c => favoriteContacts.includes(c.user.username)).map(c => (
+                  <div key={c.id} className="card-3d p-4 rounded-3xl bg-slate-900 border border-amber-500/30 flex flex-col items-center text-center space-y-3 relative overflow-hidden">
+                    <span className="absolute top-2 right-2 text-amber-400">
+                      <Star className="w-4 h-4 fill-amber-400" />
+                    </span>
+                    <img src={c.user.avatar} alt={c.user.name} className="w-16 h-16 rounded-3xl object-cover ring-2 ring-amber-400/50 shadow-lg" />
+                    <div>
+                      <h4 className="text-sm font-black text-white">{c.user.name}</h4>
+                      <p className="text-[10px] text-amber-300 font-semibold">{c.user.role || 'مخاطب ویژه'}</p>
+                    </div>
+                    <div className="flex items-center gap-2 w-full pt-1">
+                      <button
+                        onClick={() => handleInitiateCall(c.user, 'voice', '1on1')}
+                        className="flex-1 py-2 rounded-2xl bg-slate-950 text-cyan-300 border border-slate-800 text-xs font-bold flex items-center justify-center gap-1"
+                      >
+                        <PhoneCall className="w-3.5 h-3.5" /> صوتی
+                      </button>
+                      <button
+                        onClick={() => handleInitiateCall(c.user, 'video', '1on1')}
+                        className="flex-1 py-2 rounded-2xl btn-neon-pink text-xs font-bold flex items-center justify-center gap-1"
+                      >
+                        <Video className="w-3.5 h-3.5" /> تصویری
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* SUBTAB 4: SCHEDULED CALLS */}
+            {callMainSubTab === 'scheduled' && (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-bold text-white">تماس‌های رزرو شده آینده</h3>
+                  <button
+                    onClick={() => setIsScheduleCallModalOpen(true)}
+                    className="px-3 py-1.5 rounded-xl btn-neon-pink text-xs font-bold flex items-center gap-1"
+                  >
+                    <Plus className="w-4 h-4" /> افزودن رزرو جدید
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {scheduledCallsList.map(sch => (
+                    <div key={sch.id} className="card-3d p-4 rounded-2xl bg-slate-900 border border-purple-500/30 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img src={sch.user.avatar} alt={sch.user.name} className="w-12 h-12 rounded-2xl object-cover ring-2 ring-purple-500/40" />
+                        <div>
+                          <h4 className="text-xs font-bold text-white">{sch.user.name}</h4>
+                          <p className="text-[10px] text-purple-300 font-medium">{sch.note}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-cyan-400" /> {sch.dateTime}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleInitiateCall(sch.user, sch.type, '1on1')}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                      >
+                        <Video className="w-4 h-4" />
+                        <span>ورود به لابی</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SUBTAB 5: TARIFFS & CALL PRIVACY SETTINGS */}
+            {callMainSubTab === 'tariffs' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-amber-500/40 space-y-4">
+                  <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+                    <DollarSign className="w-5 h-5 text-amber-400" />
+                    <div>
+                      <h3 className="text-sm font-black text-white">تعرفه تماس پولی اختصاصی</h3>
+                      <p className="text-[10px] text-slate-400">تنظیم نرخ دریافت سکه از کاربران برای تماس‌های خصوصی 1 در 1</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                    <span className="text-xs font-bold text-white">فعال‌سازی تماس‌های پولی</span>
+                    <input
+                      type="checkbox"
+                      checked={streamerPaidCallEnabled}
+                      onChange={e => setStreamerPaidCallEnabled(e.target.checked)}
+                      className="w-4 h-4 accent-pink-500 cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-300">نرخ تماس (سکه در هر دقیقه):</label>
+                    <div className="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-2xl border border-slate-800">
+                      <Coins className="w-4 h-4 text-amber-400" />
+                      <input
+                        type="number"
+                        value={streamerCallTariffPerMin}
+                        onChange={e => setStreamerCallTariffPerMin(Number(e.target.value))}
+                        className="w-full bg-transparent text-xs font-bold text-amber-300 outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs">
+                    💡 درآمد حاصل از تماس‌های پولی به بخش Earnings و کیف پول شما منتقل می‌شود (سهم ۸۰٪ استریمر).
+                  </div>
+                </div>
+
+                <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-cyan-500/40 space-y-4">
+                  <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+                    <ShieldCheck className="w-5 h-5 text-cyan-400" />
+                    <div>
+                      <h3 className="text-sm font-black text-white">حریم خصوصی و امنیت تماس</h3>
+                      <p className="text-[10px] text-slate-400">مدیریت افراد مجاز برای برقراری تماس و رمزنگاری 256 بیتی</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-300">دریافت تماس فقط از:</label>
+                    <select
+                      value={privacyWhoCall}
+                      onChange={e => setPrivacyWhoCall(e.target.value)}
+                      className="w-full bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs text-white outline-none cursor-pointer"
+                    >
+                      <option value="Everyone">همه کاربران (Everyone)</option>
+                      <option value="Friends">فقط دوستان (Friends Only)</option>
+                      <option value="Followers">فقط دنبال‌کنندگان (Followers Only)</option>
+                      <option value="VIP Only">فقط اعضای VIP 👑</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-cyan-400" />
+                      <span className="text-xs font-bold text-white">رمزنگاری سرتاسری (256-Bit E2E)</span>
+                    </div>
+                    <span className="text-xs font-bold text-emerald-400">فعال 🔒</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+
         {/* TAB 2: COMPLETE REDESIGNED MESSAGES & DIRECT CHAT SYSTEM */}
         {activeTab === 'messages' && (
           <div className="space-y-4">
@@ -4033,7 +4960,7 @@ export default function App() {
                           <div className="flex items-center gap-1.5 shrink-0">
                             <button
                               onClick={() => {
-                                setActiveChatCall({ type: 'voice', user: currentConv.user });
+                                handleInitiateCall(currentConv.user, 'voice', '1on1');
                                 showToast("Initiating Voice Call with " + currentConv.user.name + "...");
                               }}
                               className="p-2 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-slate-950 font-bold transition shadow-md"
@@ -4044,7 +4971,7 @@ export default function App() {
 
                             <button
                               onClick={() => {
-                                setActiveChatCall({ type: 'video', user: currentConv.user });
+                                handleInitiateCall(currentConv.user, 'video', '1on1');
                                 showToast("Initiating 4K Video Call with " + currentConv.user.name + "...");
                               }}
                               className="p-2 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-600 hover:text-white font-bold transition shadow-md"
@@ -6837,6 +7764,21 @@ export default function App() {
           <span className="text-[9px]">Home</span>
         </button>
 
+        
+        {/* 2. Calls (📞) */}
+        <button 
+          onClick={() => {
+            setViewingStream(null);
+            setIsHostLiveOpen(false);
+            setActivePartyRoom(null);
+            setActiveTab('call');
+          }}
+          className={`flex flex-col items-center gap-0.5 ${activeTab === 'call' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
+        >
+          <PhoneCall className="w-5 h-5" />
+          <span className="text-[9px]">Calls</span>
+        </button>
+
         {/* 2. Discover (🔍) */}
         <button 
           onClick={() => {
@@ -8999,6 +9941,414 @@ export default function App() {
           </div>
         </div>
       )}
+
+      
+      {/* ==================== ACTIVE CALL OVERLAY & PIP FLOATING CARD ==================== */}
+      {activeCall && (
+        <div className={activeCall.isPiP ? "fixed bottom-20 right-4 z-50 w-80 h-52 rounded-3xl bg-slate-950 border-2 border-pink-500 shadow-[0_0_40px_rgba(236,72,153,0.6)] overflow-hidden animate-fadeIn flex flex-col dir-rtl" : "fixed inset-0 z-50 bg-slate-950 flex flex-col dir-rtl"}>
+          
+          {/* TOP HEADER STATUS BAR */}
+          <div className="absolute top-0 left-0 right-0 z-30 p-3 bg-gradient-to-b from-slate-950/90 to-transparent flex items-center justify-between gap-2 backdrop-blur-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="relative">
+                <img src={activeCall.user.avatar} alt={activeCall.user.name} className="w-10 h-10 rounded-2xl object-cover ring-2 ring-pink-500/60 shadow-lg" />
+                {activeCall.isRecording && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-rose-600 animate-ping ring-2 ring-slate-950" />
+                )}
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-xs sm:text-sm font-black text-white">{activeCall.user.name}</h3>
+                  {activeCall.user.isVip && <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />}
+                  {activeCall.isRecording && <span className="px-1.5 py-0.2 rounded bg-rose-600 text-white text-[9px] font-mono animate-pulse">REC</span>}
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-emerald-400 font-mono">
+                  <span>{activeCall.type === 'video' ? '📹 ویدیو HD' : '📞 صوتی کریستالی'}</span>
+                  <span>•</span>
+                  <span>{Math.floor(activeCall.seconds / 60).toString().padStart(2, '0')}:{(activeCall.seconds % 60).toString().padStart(2, '0')}</span>
+                  {activeCall.isPaid && (
+                    <span className="text-amber-300 flex items-center gap-0.5">
+                      <Coins className="w-2.5 h-2.5" /> {activeCall.consumedCoins} سکه
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Security & PiP Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsEncryptedCertModalOpen(true)}
+                className="px-2.5 py-1 rounded-xl bg-slate-900/80 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold flex items-center gap-1"
+                title="مشاهده گواهی امنیت 256 بیتی"
+              >
+                <Lock className="w-3 h-3 text-emerald-400" />
+                <span className="hidden sm:inline">E2E Encrypted</span>
+              </button>
+
+              <button
+                onClick={handleTogglePiPCall}
+                className="p-2 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-200 hover:text-white transition"
+                title={activeCall.isPiP ? "تمام‌صفحه" : "پنجره کوچک (PiP)"}
+              >
+                {activeCall.isPiP ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* MAIN VIDEO & PARTICIPANTS CONTAINER */}
+          <div className="relative flex-1 bg-slate-900 overflow-hidden flex items-center justify-center">
+            {/* Real Camera Feed or High-Tech Simulated Visualizer */}
+            {activeCall.isCameraOn ? (
+              <video
+                ref={callVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className={`w-full h-full object-cover ${activeCall.facingMode === 'user' ? 'scale-x-[-1]' : ''} ${activeCall.beautyFilter ? 'brightness-105 saturate-110' : ''} ${activeCall.isBgBlurred ? 'blur-md' : ''}`}
+              />
+            ) : (
+              <div className="w-full h-full bg-slate-950 flex flex-col items-center justify-center p-6 space-y-4">
+                <div className="relative">
+                  <div className="w-28 h-28 rounded-full ring-4 ring-pink-500/50 overflow-hidden shadow-[0_0_60px_rgba(236,72,153,0.5)] animate-pulse">
+                    <img src={activeCall.user.avatar} alt={activeCall.user.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-36 h-36 rounded-full border-2 border-pink-500/30 animate-ping pointer-events-none" />
+                  </div>
+                </div>
+                <div className="text-center">
+                  <h4 className="text-lg font-black text-white">{activeCall.user.name}</h4>
+                  <p className="text-xs text-cyan-400 font-mono mt-1">HD Voice Connection • 256-Bit Encrypted</p>
+                </div>
+              </div>
+            )}
+
+            {/* FLOATING GIFT ANIMATION OVERLAY */}
+            <div className="absolute inset-0 pointer-events-none z-20">
+              {inCallFloatingGifts.map(g => (
+                <div
+                  key={g.id}
+                  className="absolute text-4xl animate-bounce transition-all duration-1000 flex flex-col items-center"
+                  style={{ top: `${g.y}%`, left: `${g.x}%` }}
+                >
+                  <span className="drop-shadow-[0_0_20px_rgba(245,158,11,0.9)]">🎁</span>
+                  <span className="text-[10px] font-black bg-slate-900/90 text-amber-300 px-2 py-0.5 rounded-full border border-amber-400 shadow-xl">
+                    {g.gift.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* LIVE AI SPEECH TRANSLATION SUBTITLE BAR */}
+            {activeCall.translatedSubtitles && (
+              <div className="absolute bottom-24 left-4 right-4 z-20 bg-slate-950/85 backdrop-blur-md p-3 rounded-2xl border border-cyan-500/40 text-center shadow-2xl">
+                <div className="flex items-center justify-center gap-1.5 text-[10px] font-black text-cyan-400 mb-0.5">
+                  <Globe className="w-3 h-3" />
+                  <span>ترجمه همزمان هوشمند (AI Translation)</span>
+                </div>
+                <p className="text-xs font-bold text-white leading-relaxed">{activeCall.translatedSubtitles}</p>
+              </div>
+            )}
+          </div>
+
+          {/* BOTTOM CONTROLS BAR */}
+          <div className="z-30 p-4 bg-slate-950/95 border-t border-slate-800/80 backdrop-blur-xl flex flex-col gap-3">
+            {/* Control Buttons Row */}
+            <div className="flex items-center justify-around gap-2 flex-wrap">
+              {/* Mute Button */}
+              <button
+                onClick={handleToggleMuteCall}
+                className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isMuted ? 'bg-rose-600 text-white border-rose-500' : 'bg-slate-900 text-slate-200 border-slate-700 hover:border-pink-500/50'}`}
+                title="Mute/Unmute"
+              >
+                {activeCall.isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              </button>
+
+              {/* Speaker Button */}
+              <button
+                onClick={handleToggleSpeakerCall}
+                className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isSpeakerOn ? 'bg-cyan-600 text-white border-cyan-500' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
+                title="Speaker"
+              >
+                {activeCall.isSpeakerOn ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              </button>
+
+              {/* Camera Switch */}
+              <button
+                onClick={handleToggleCameraCall}
+                className={`p-3.5 rounded-2xl border transition shadow-lg ${!activeCall.isCameraOn ? 'bg-rose-600 text-white border-rose-500' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
+                title="Turn Camera On/Off"
+              >
+                {!activeCall.isCameraOn ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
+              </button>
+
+              {/* Switch Facing Camera */}
+              {activeCall.type === 'video' && (
+                <button
+                  onClick={handleSwitchCameraFacing}
+                  className="p-3.5 rounded-2xl bg-slate-900 text-slate-200 border border-slate-700 hover:border-pink-500/50 transition shadow-lg"
+                  title="تغییر دوربین جلو / عقب"
+                >
+                  <SwitchCamera className="w-5 h-5" />
+                </button>
+              )}
+
+              {/* Beauty Filter */}
+              <button
+                onClick={handleToggleBeautyFilter}
+                className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.beautyFilter ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
+                title="فیلتر زیبایی"
+              >
+                <Sparkles className="w-5 h-5 text-amber-300" />
+              </button>
+
+              {/* In-Call Gift Shop Button */}
+              <button
+                onClick={() => setIsSendGiftInChatOpen(true)}
+                className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/50 text-amber-300 hover:text-white transition shadow-lg"
+                title="ارسال هدیه وسط تماس"
+              >
+                <Gift className="w-5 h-5" />
+              </button>
+
+              {/* Record Call Button */}
+              <button
+                onClick={handleToggleRecordCall}
+                className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isRecording ? 'bg-rose-600 text-white border-rose-500 animate-pulse' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
+                title="ضبط مکالمه"
+              >
+                <Disc className="w-5 h-5 text-rose-400" />
+              </button>
+
+              {/* End Call Button */}
+              <button
+                onClick={handleEndActiveCall}
+                className="p-4 rounded-3xl bg-rose-600 text-white shadow-[0_0_30px_rgba(225,29,72,0.8)] hover:bg-rose-700 active:scale-95 transition"
+                title="پایان تماس"
+              >
+                <PhoneCall className="w-6 h-6 rotate-[135deg]" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== PRE-CALL PAID TARIFF CONFIRMATION MODAL ==================== */}
+      {preCallConfirmHost && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+          <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-amber-500/50 max-w-sm w-full space-y-4 shadow-[0_0_50px_rgba(245,158,11,0.25)] text-center">
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-500 to-yellow-400 p-0.5 mx-auto shadow-lg">
+              <img src={preCallConfirmHost.user.avatar} alt={preCallConfirmHost.user.name} className="w-full h-full object-cover rounded-[22px]" />
+            </div>
+
+            <div>
+              <h3 className="text-base font-black text-white">تایید تماس خصوصی پولی با {preCallConfirmHost.user.name}</h3>
+              <p className="text-xs text-slate-400 mt-1">این استریمر برای پاسخگویی به تماس، هزینه تعیین کرده است.</p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-right">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-400">نرخ تماس:</span>
+                <span className="font-bold text-amber-400 flex items-center gap-1">
+                  <Coins className="w-3.5 h-3.5 text-amber-400" /> {preCallConfirmHost.tariffRate} سکه در هر دقیقه
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-400">موجودی کیف پول شما:</span>
+                <span className="font-bold text-emerald-400">{userCoins.toLocaleString()} سکه</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setPreCallConfirmHost(null)}
+                className="flex-1 py-2.5 rounded-2xl bg-slate-800 text-slate-300 font-bold text-xs"
+              >
+                انصراف
+              </button>
+              <button
+                onClick={() => handleStartCallDirect(preCallConfirmHost.user, preCallConfirmHost.type, preCallConfirmHost.mode, true, preCallConfirmHost.tariffRate)}
+                className="flex-1 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-lg"
+              >
+                تایید و اتصال تماس
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== POST-CALL RATING & FEEDBACK MODAL ==================== */}
+      {postCallRatingData && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+          <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-pink-500/50 max-w-sm w-full space-y-4 shadow-[0_0_50px_rgba(236,72,153,0.3)] text-center">
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-pink-500 to-purple-600 p-0.5 mx-auto shadow-lg">
+              <img src={postCallRatingData.user.avatar} alt={postCallRatingData.user.name} className="w-full h-full object-cover rounded-[22px]" />
+            </div>
+
+            <div>
+              <h3 className="text-base font-black text-white">ثبت امتیاز کیفیت تماس با {postCallRatingData.user.name}</h3>
+              <p className="text-xs text-slate-400 mt-1">مدت زمان: {postCallRatingData.duration} • کیفیت: {postCallRatingData.quality}</p>
+            </div>
+
+            {/* Stars Rating */}
+            <div className="flex items-center justify-center gap-2">
+              {[1, 2, 3, 4, 5].map(s => (
+                <button
+                  key={s}
+                  onClick={() => setRatingStarsCall(s)}
+                  className="p-1 hover:scale-125 transition duration-200 cursor-pointer"
+                >
+                  <Star className={`w-7 h-7 ${s <= ratingStarsCall ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`} />
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={ratingCommentCall}
+                onChange={e => setRatingCommentCall(e.target.value)}
+                placeholder="نظر شما درباره این تماس (اختیاری)..."
+                className="w-full bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs text-white outline-none placeholder:text-slate-600"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                onClick={() => handleReportUserInCall('محتوای نامناسب')}
+                className="px-3 py-2 rounded-2xl bg-rose-600/20 text-rose-300 border border-rose-500/40 text-xs font-bold flex items-center gap-1"
+              >
+                <Flag className="w-3.5 h-3.5" /> گزارش
+              </button>
+              <button
+                onClick={() => handleBlockUserInCall(postCallRatingData.user.username)}
+                className="px-3 py-2 rounded-2xl bg-slate-800 text-slate-300 text-xs font-bold flex items-center gap-1"
+              >
+                <Ban className="w-3.5 h-3.5" /> مسدودسازی
+              </button>
+              <button
+                onClick={handleSubmitPostCallRating}
+                className="flex-1 py-2 rounded-2xl btn-neon-pink text-xs font-black shadow-lg"
+              >
+                ثبت امتیاز
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== SCHEDULE CALL MODAL ==================== */}
+      {isScheduleCallModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+          <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-purple-500/40 max-w-sm w-full space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+              <h3 className="text-sm font-black text-white flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-purple-400" />
+                رزرو و برنامه‌ریزی تماس
+              </h3>
+              <button onClick={() => setIsScheduleCallModalOpen(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-slate-300 font-bold">انتخاب کاربر:</label>
+                <select
+                  onChange={e => {
+                    const u = conversations.find(c => c.user.username === e.target.value)?.user;
+                    setScheduleTargetUser(u);
+                  }}
+                  className="w-full bg-slate-950 p-2.5 rounded-2xl border border-slate-800 text-xs text-white outline-none mt-1 cursor-pointer"
+                >
+                  <option value="">انتخاب از مخاطبین...</option>
+                  {conversations.map(c => (
+                    <option key={c.id} value={c.user.username}>{c.user.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-300 font-bold">تاریخ و زمان تماس:</label>
+                <input
+                  type="datetime-local"
+                  value={scheduleDateTime}
+                  onChange={e => setScheduleDateTime(e.target.value)}
+                  className="w-full bg-slate-950 p-2.5 rounded-2xl border border-slate-800 text-xs text-white outline-none mt-1"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-300 font-bold">توضیحات و موضوع تماس:</label>
+                <input
+                  type="text"
+                  value={scheduleNote}
+                  onChange={e => setScheduleNote(e.target.value)}
+                  placeholder="مثلا: مشاوره اختصاصی استریم..."
+                  className="w-full bg-slate-950 p-2.5 rounded-2xl border border-slate-800 text-xs text-white outline-none mt-1"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleSaveScheduledCall}
+              className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 text-white font-black text-xs shadow-lg"
+            >
+              ثبت نهایی رزرو تماس
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== RECORD CONSENT MODAL ==================== */}
+      {isRecordConsentModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+          <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-rose-500/50 max-w-sm w-full space-y-4 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-rose-600/20 text-rose-400 border border-rose-500/40 flex items-center justify-center mx-auto">
+              <Disc className="w-6 h-6 animate-spin" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white">اجازه ضبط مکالمه</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                بر طبق قوانین حریم خصوصی، جهت ضبط مکالمه صوتی و تصویری تایید کاربر و سیستم‌عامل الزامی است.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setIsRecordConsentModalOpen(false)} className="flex-1 py-2 rounded-2xl bg-slate-800 text-slate-300 font-bold text-xs">
+                انصراف
+              </button>
+              <button onClick={handleConfirmRecordConsent} className="flex-1 py-2 rounded-2xl bg-rose-600 text-white font-bold text-xs shadow-lg">
+                تایید و شروع ضبط
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== SECURITY ENCRYPTED CERTIFICATE MODAL ==================== */}
+      {isEncryptedCertModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+          <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-emerald-500/50 max-w-sm w-full space-y-4 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto">
+              <Lock className="w-6 h-6 text-emerald-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white">ارتباط رمزشده 256 بیتی (E2E Encrypted)</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                این تماس به‌صورت مستقیم (Peer-to-Peer) رمزشده است و هیچ شخص ثالثی امکان شنود یا ضبط آن را ندارد.
+              </p>
+            </div>
+            <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-[10px] font-mono text-emerald-400">
+              Fingerprint: 8F:9A:31:C4:02:BE:78:E1
+            </div>
+            <button onClick={() => setIsEncryptedCertModalOpen(false)} className="w-full py-2.5 rounded-2xl bg-slate-800 text-white font-bold text-xs">
+              بستن
+            </button>
+          </div>
+        </div>
+      )}
+
 
       {/* MODAL 5: ACTIVE PRIVATE 1-ON-1 VIDEO CALL VIEW */}
       {activePrivateCallHost && (
