@@ -425,6 +425,23 @@ export default function App() {
 
   // Security & Account Management Modal State
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+
+  // REAL 3-TIER + ELITE VIP SYSTEM STATES
+  const [vipPlan, setVipPlan] = useState(() => {
+    return safeStorage.getItem('vlive_vip_plan') || 'gold'; // 'none' | 'silver' | 'gold' | 'diamond' | 'elite'
+  });
+  const [vipExpireDays, setVipExpireDays] = useState(() => {
+    return parseInt(safeStorage.getItem('vlive_vip_expire_days') || '23', 10);
+  });
+  const [isVipMonthlyClaimed, setIsVipMonthlyClaimed] = useState(() => {
+    return safeStorage.getItem('vlive_vip_monthly_claimed') === 'true';
+  });
+  const [isVipModalOpen, setIsVipModalOpen] = useState(false);
+  const [selectedVipPlan, setSelectedVipPlan] = useState('gold'); // 'silver' | 'gold' | 'diamond' | 'elite'
+  const [selectedVipDuration, setSelectedVipDuration] = useState(1); // 1 | 3 | 6 | 12
+  const [selectedVipPayMethod, setSelectedVipPayMethod] = useState('in_app'); // 'in_app' | 'usdt' | 'coins'
+  const [isVipCelebrationOpen, setIsVipCelebrationOpen] = useState(false);
+  const [vipEliteRequested, setVipEliteRequested] = useState(false);
   const [securityTab, setSecurityTab] = useState('password'); // 'password' | 'accounts' | 'devices'
   const [telegramConnected, setTelegramConnected] = useState(true);
   const [googleConnected, setGoogleConnected] = useState(true);
@@ -3098,6 +3115,16 @@ export default function App() {
             <span className="text-amber-300">{userCoins.toLocaleString()}</span>
           </button>
 
+          {/* VIP Premium Crown Button */}
+          <button 
+            onClick={() => setIsVipModalOpen(true)}
+            className="p-2 rounded-xl bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-600/20 border border-amber-500/50 text-amber-300 hover:text-white hover:border-amber-400 transition shadow-[0_0_15px_rgba(245,158,11,0.2)] flex items-center gap-1.5 group"
+            title="VIP Premium Membership"
+          >
+            <Crown className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform fill-amber-400/30" />
+            <span className="hidden md:inline text-xs font-black bg-gradient-to-r from-amber-300 to-yellow-200 bg-clip-text text-transparent">VIP</span>
+          </button>
+
           {/* Notification Bell */}
           <button 
             onClick={() => setIsNotificationsOpen(true)}
@@ -4778,11 +4805,11 @@ export default function App() {
                     <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
                       <Coins className="w-4 h-4 text-amber-400" /> 🪙 Coins (سکه)
                     </span>
-                    <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">ارز مصرفی</span>
+                    <span className="text-xs bg-amber-500/25 text-amber-200 border border-amber-400/40 font-bold px-2 py-0.5 rounded-full border border-amber-500/30">ارز مصرفی</span>
                   </div>
                   <div>
                     <p className="text-2xl font-black text-white font-mono">{userCoins.toLocaleString()}</p>
-                    <span className="text-[10px] text-slate-400 block mt-0.5">معادل تقریبی: ≈ ${(userCoins / 500).toFixed(2)} USDT</span>
+                    <span className="text-xs text-slate-200 block mt-0.5">معادل تقریبی: ≈ ${(userCoins / 500).toFixed(2)} USDT</span>
                   </div>
                   <button 
                     onClick={() => setWalletSubTab('buy')}
@@ -4798,11 +4825,11 @@ export default function App() {
                     <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-cyan-400" /> 💎 Diamonds (الماس)
                     </span>
-                    <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/30">درآمد استریمر</span>
+                    <span className="text-xs bg-cyan-500/25 text-cyan-200 border border-cyan-400/40 font-bold px-2 py-0.5 rounded-full border border-cyan-500/30">درآمد استریمر</span>
                   </div>
                   <div>
                     <p className="text-2xl font-black text-white font-mono">{userDiamonds.toLocaleString()}</p>
-                    <span className="text-[10px] text-slate-400 block mt-0.5">ارزش تبدیل نقد: ≈ ${(userDiamonds / 100).toFixed(2)} USDT</span>
+                    <span className="text-xs text-slate-200 block mt-0.5">ارزش تبدیل نقد: ≈ ${(userDiamonds / 100).toFixed(2)} USDT</span>
                   </div>
                   <button 
                     onClick={() => setWalletSubTab('convert')}
@@ -4818,11 +4845,11 @@ export default function App() {
                     <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
                       <DollarSign className="w-4 h-4 text-emerald-400" /> 💵 Cash Balance (موجودی نقد)
                     </span>
-                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">قابل برداشت</span>
+                    <span className="text-xs bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">قابل برداشت</span>
                   </div>
                   <div>
                     <p className="text-2xl font-black text-emerald-400 font-mono">${userCashBalance.toFixed(2)} <span className="text-xs font-bold text-slate-300">USDT</span></p>
-                    <span className="text-[10px] text-slate-400 block mt-0.5">آماده واریز مستقیم به TRC20</span>
+                    <span className="text-xs text-slate-200 block mt-0.5">آماده واریز مستقیم به TRC20</span>
                   </div>
                   <button 
                     onClick={() => setWalletSubTab('withdraw')}
@@ -4845,7 +4872,7 @@ export default function App() {
                   <Plus className="w-6 h-6" />
                 </div>
                 <span className="font-black text-sm">➕ Buy Coins</span>
-                <span className="text-[10px] text-slate-400">خرید سکه برای هدیه و خدمات</span>
+                <span className="text-xs text-slate-200">خرید سکه برای هدیه و خدمات</span>
               </button>
 
               <button
@@ -4856,7 +4883,7 @@ export default function App() {
                   <Gift className="w-6 h-6" />
                 </div>
                 <span className="font-black text-sm">🎁 Send Gift</span>
-                <span className="text-[10px] text-slate-400">ارسال هدیه به استریمرها</span>
+                <span className="text-xs text-slate-200">ارسال هدیه به استریمرها</span>
               </button>
 
               <button
@@ -4867,7 +4894,7 @@ export default function App() {
                   <ArrowUpRight className="w-6 h-6" />
                 </div>
                 <span className="font-black text-sm">💸 Withdraw</span>
-                <span className="text-[10px] text-slate-400">تسویه و برداشت درآمد به TRC20</span>
+                <span className="text-xs text-slate-200">تسویه و برداشت درآمد به TRC20</span>
               </button>
 
               <button
@@ -4878,7 +4905,7 @@ export default function App() {
                   <Clock className="w-6 h-6" />
                 </div>
                 <span className="font-black text-sm">📜 History</span>
-                <span className="text-[10px] text-slate-400">تاریخچه کامل تراکنش‌ها</span>
+                <span className="text-xs text-slate-200">تاریخچه کامل تراکنش‌ها</span>
               </button>
             </div>
 
@@ -4892,13 +4919,14 @@ export default function App() {
                 { id: 'history', label: '📜 Transactions (تاریخچه)' },
                 { id: 'creator', label: '🏆 Creator Earnings (درآمد)' },
                 { id: 'referral', label: '👥 Referral (دعوت دوستان)' },
-                { id: 'security', label: '🔒 Security & VIP (امنیت)' },
+                { id: 'vip', label: '👑 VIP Premium (اشتراک VIP)' },
+                { id: 'security', label: '🔒 Security (امنیت و برداشت)' },
                 { id: 'giftshop', label: '🎁 Gift Shop (فروشگاه)' }
               ].map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setWalletSubTab(tab.id)}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition border ${walletSubTab === tab.id ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 border-amber-300 font-black shadow-md scale-105' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition border ${walletSubTab === tab.id ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 border-amber-300 font-black shadow-md scale-105' : 'bg-slate-900 border-slate-700 text-slate-200 hover:text-white font-bold text-xs shadow-sm'}`}
                 >
                   {tab.label}
                 </button>
@@ -4916,7 +4944,7 @@ export default function App() {
                       <TrendingUp className="w-4 h-4 text-emerald-400" />
                       📈 نمودار روند درآمدزایی هفتگی (Weekly Earnings Trend)
                     </h3>
-                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
                       +۲۴٪ رشد نسبت به هفته قبل
                     </span>
                   </div>
@@ -4933,9 +4961,9 @@ export default function App() {
                       { day: 'جمعه', coins: 2900, height: 'h-26', color: 'bg-amber-500/70' }
                     ].map((item, idx) => (
                       <div key={idx} className="flex flex-col items-center justify-end h-full gap-1">
-                        <span className="text-[9px] font-mono text-amber-300 font-bold">{item.coins}</span>
+                        <span className="text-[11px] font-mono text-amber-300 font-bold">{item.coins}</span>
                         <div className={`w-full rounded-t-xl transition-all duration-500 ${item.height} ${item.color}`} />
-                        <span className="text-[10px] text-slate-400 block mt-1">{item.day}</span>
+                        <span className="text-xs text-slate-200 block mt-1">{item.day}</span>
                       </div>
                     ))}
                   </div>
@@ -4948,22 +4976,22 @@ export default function App() {
                       <ShieldCheck className="w-4 h-4 text-amber-400" />
                       ۹. کمیسیون و سهم درآمد برنامه (Platform Fee Transparency)
                     </h3>
-                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
                       سهم استریمر: ۸۰٪ خالص
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] pt-1">
                     <div className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-center">
-                      <span className="text-[10px] text-slate-400">ارزش هدیه دریافتی</span>
+                      <span className="text-xs text-slate-200">ارزش هدیه دریافتی</span>
                       <p className="font-bold text-white mt-0.5">1,000 Coins</p>
                     </div>
                     <div className="p-2.5 rounded-2xl bg-slate-900 border border-rose-500/30 text-center">
-                      <span className="text-[10px] text-rose-300">کمیسیون پلتفرم (20%)</span>
+                      <span className="text-xs text-rose-300">کمیسیون پلتفرم (20%)</span>
                       <p className="font-bold text-rose-400 mt-0.5">-200 Coins</p>
                     </div>
                     <div className="p-2.5 rounded-2xl bg-slate-900 border border-emerald-500/30 text-center">
-                      <span className="text-[10px] text-emerald-300">درآمد خالص استریمر (80%)</span>
+                      <span className="text-xs text-emerald-300">درآمد خالص استریمر (80%)</span>
                       <p className="font-bold text-emerald-400 mt-0.5">+800 Diamonds</p>
                     </div>
                   </div>
@@ -5027,12 +5055,12 @@ export default function App() {
                           <span className="text-xl">{tx.icon}</span>
                           <div>
                             <p className="font-bold text-white text-[11px]">{tx.description}</p>
-                            <span className="text-[10px] text-slate-400">{tx.time} • کد: {tx.id}</span>
+                            <span className="text-xs text-slate-200">{tx.time} • کد: {tx.id}</span>
                           </div>
                         </div>
                         <div className="text-left">
                           <p className={`font-black font-mono text-xs ${tx.color}`}>{tx.amount}</p>
-                          <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold ${tx.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>{tx.status}</span>
+                          <span className={`text-[11px] px-1.5 py-0.2 rounded font-bold ${tx.status === 'Completed' ? 'bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 font-bold' : 'bg-amber-500/25 text-amber-200 border border-amber-400/40 font-bold'}`}>{tx.status}</span>
                         </div>
                       </div>
                     ))}
@@ -5047,14 +5075,14 @@ export default function App() {
               <div className="space-y-4 text-xs">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-white text-sm">۳. فروشگاه خرید سکه (Coin Store)</h3>
-                  <span className="text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+                  <span className="text-xs text-amber-300 font-bold bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
                     موجودی فعلی: {userCoins.toLocaleString()} سکه
                   </span>
                 </div>
 
                 {/* PAYMENT METHOD SELECTOR */}
                 <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <label className="text-[10px] text-slate-400 font-bold block">انتخاب روش پرداخت:</label>
+                  <label className="text-xs text-slate-200 font-bold block">انتخاب روش پرداخت:</label>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <button
                       onClick={() => setSelectedCoinPackPayment('In-App')}
@@ -5088,14 +5116,14 @@ export default function App() {
                   ].map((pack, i) => (
                     <div key={i} className="p-4 rounded-3xl bg-slate-950 border border-amber-500/30 hover:border-amber-400 transition space-y-3 flex flex-col justify-between text-center relative overflow-hidden group">
                       {pack.badge && (
-                        <span className="absolute top-2 left-2 text-[9px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full shadow">
+                        <span className="absolute top-2 left-2 text-[11px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full shadow">
                           {pack.badge}
                         </span>
                       )}
                       <div className="pt-3">
                         <span className="text-3xl block">🪙</span>
                         <h4 className="text-xl font-black text-white mt-1 font-mono">{pack.coins.toLocaleString()} <span className="text-xs text-amber-300">Coins</span></h4>
-                        {pack.bonus && <span className="text-[10px] text-emerald-400 font-bold block mt-0.5">{pack.bonus}</span>}
+                        {pack.bonus && <span className="text-xs text-emerald-400 font-bold block mt-0.5">{pack.bonus}</span>}
                       </div>
 
                       <div className="space-y-2">
@@ -5122,7 +5150,7 @@ export default function App() {
                       <Sparkles className="w-4 h-4 text-cyan-400" />
                       ۴. تبدیل درآمد استریمر (Convert Diamonds to Cash)
                     </h3>
-                    <span className="text-[10px] text-slate-400">نرخ تبدیل: ۱۰۰ الماس = $۱.۰۰ USDT</span>
+                    <span className="text-xs text-slate-200">نرخ تبدیل: ۱۰۰ الماس = $۱.۰۰ USDT</span>
                   </div>
 
                   <p className="text-slate-300 text-[11px] leading-relaxed">
@@ -5131,12 +5159,12 @@ export default function App() {
 
                   <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-400">موجودی فعلی الماس:</span>
+                      <span className="text-slate-200">موجودی فعلی الماس:</span>
                       <span className="font-black text-cyan-300 text-sm font-mono">{userDiamonds.toLocaleString()} 💎</span>
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 block font-bold">مقدار الماس جهت تبدیل:</label>
+                      <label className="text-xs text-slate-200 block font-bold">مقدار الماس جهت تبدیل:</label>
                       <div className="flex items-center gap-2">
                         <input
                           type="number"
@@ -5147,7 +5175,7 @@ export default function App() {
                         />
                         <button
                           onClick={() => setConvertDiamondsInput(userDiamonds.toString())}
-                          className="px-3 py-2 rounded-xl bg-slate-800 text-cyan-300 font-bold text-[10px]"
+                          className="px-3 py-2 rounded-xl bg-slate-800 text-cyan-300 font-bold text-xs"
                         >
                           حداکثر (All)
                         </button>
@@ -5191,7 +5219,7 @@ export default function App() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 block font-bold">مبلغ برداشت (USD):</label>
+                      <label className="text-xs text-slate-200 block font-bold">مبلغ برداشت (USD):</label>
                       <input
                         type="number"
                         value={withdrawAmountInput}
@@ -5202,7 +5230,7 @@ export default function App() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 block font-bold">روش برداشت:</label>
+                      <label className="text-xs text-slate-200 block font-bold">روش برداشت:</label>
                       <select
                         value={withdrawMethodInput}
                         onChange={e => setWithdrawMethodInput(e.target.value)}
@@ -5216,7 +5244,7 @@ export default function App() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] text-slate-400 block font-bold">آدرس کیف پول مقصد (Wallet Address):</label>
+                    <label className="text-xs text-slate-200 block font-bold">آدرس کیف پول مقصد (Wallet Address):</label>
                     <input
                       type="text"
                       value={withdrawAddressInput}
@@ -5227,7 +5255,7 @@ export default function App() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] text-slate-400 block font-bold">رمز برداشت امنیتی (Security PIN):</label>
+                    <label className="text-xs text-slate-200 block font-bold">رمز برداشت امنیتی (Security PIN):</label>
                     <input
                       type="password"
                       maxLength={4}
@@ -5259,13 +5287,13 @@ export default function App() {
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-black text-white text-xs">{item.amount}</span>
-                            <span className="text-[10px] text-slate-400">({item.method})</span>
+                            <span className="text-xs text-slate-200">({item.method})</span>
                           </div>
-                          <span className="text-[10px] text-slate-400 block font-mono">آدرس: {item.address} • تاریخ: {item.date}</span>
-                          {item.reason && <p className="text-[10px] text-rose-300 mt-0.5">دلیل رد: {item.reason}</p>}
+                          <span className="text-xs text-slate-200 block font-mono">آدرس: {item.address} • تاریخ: {item.date}</span>
+                          {item.reason && <p className="text-xs text-rose-300 mt-0.5">دلیل رد: {item.reason}</p>}
                         </div>
 
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold self-start sm:self-auto ${item.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : item.status === 'Pending' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold self-start sm:self-auto ${item.status === 'Completed' ? 'bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 font-bold border border-emerald-500/30' : item.status === 'Pending' ? 'bg-amber-500/25 text-amber-200 border border-amber-400/40 font-bold border border-amber-500/30' : 'bg-rose-500/25 text-rose-200 border border-rose-400/40 font-bold border border-rose-500/30'}`}>
                           {item.status === 'Completed' ? '🟢 Completed (تکمیل شده)' : item.status === 'Pending' ? '🟡 Pending (در حال بررسی)' : '🔴 Rejected (رد شده)'}
                         </span>
                       </div>
@@ -5281,7 +5309,7 @@ export default function App() {
               <div className="space-y-4 text-xs">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-white text-sm">۷. تاریخچه جامع تراکنش‌ها (Transactions Ledger)</h3>
-                  <span className="text-[10px] text-slate-400">{txHistoryList.length} تراکنش ثبت شده</span>
+                  <span className="text-xs text-slate-200">{txHistoryList.length} تراکنش ثبت شده</span>
                 </div>
 
                 {/* CATEGORY FILTER CHIPS */}
@@ -5290,7 +5318,7 @@ export default function App() {
                     <button
                       key={cat}
                       onClick={() => setTxCategoryFilter(cat)}
-                      className={`px-3 py-1 rounded-xl text-[10px] font-bold transition ${txCategoryFilter === cat ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-950 border border-slate-800 text-slate-400'}`}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold transition ${txCategoryFilter === cat ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-950 border border-slate-800 text-slate-200'}`}
                     >
                       {cat}
                     </button>
@@ -5306,12 +5334,12 @@ export default function App() {
                           <span className="text-2xl">{tx.icon}</span>
                           <div>
                             <p className="font-bold text-white text-xs">{tx.description}</p>
-                            <span className="text-[10px] text-slate-400 block font-mono">{tx.time} • کد تراکنش: {tx.id}</span>
+                            <span className="text-xs text-slate-200 block font-mono">{tx.time} • کد تراکنش: {tx.id}</span>
                           </div>
                         </div>
                         <div className="text-left">
                           <p className={`font-black font-mono text-xs ${tx.color}`}>{tx.amount}</p>
-                          <span className="text-[9px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded font-bold">{tx.status}</span>
+                          <span className="text-[11px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded font-bold">{tx.status}</span>
                         </div>
                       </div>
                     ))}
@@ -5327,7 +5355,7 @@ export default function App() {
                     <Crown className="w-4 h-4 text-amber-400" />
                     ۸. داشبورد اختصاصی استریمر (Creator Wallet Analytics)
                   </h3>
-                  <span className="text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                  <span className="text-xs text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
                     Host Partner Level: Gold 🥇
                   </span>
                 </div>
@@ -5335,27 +5363,27 @@ export default function App() {
                 {/* CREATOR STATS GRID */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
-                    <span className="text-[10px] text-slate-400 block">درآمد امروز</span>
+                    <span className="text-xs text-slate-200 block">درآمد امروز</span>
                     <p className="text-base font-black text-amber-400 font-mono">$48.20 USD</p>
-                    <span className="text-[9px] text-emerald-400">4,820 Diamonds</span>
+                    <span className="text-[11px] text-emerald-400">4,820 Diamonds</span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
-                    <span className="text-[10px] text-slate-400 block">درآمد هفته</span>
+                    <span className="text-xs text-slate-200 block">درآمد هفته</span>
                     <p className="text-base font-black text-white font-mono">$340.00 USD</p>
-                    <span className="text-[9px] text-emerald-400">34,000 Diamonds</span>
+                    <span className="text-[11px] text-emerald-400">34,000 Diamonds</span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
-                    <span className="text-[10px] text-slate-400 block">درآمد ماه جاری</span>
+                    <span className="text-xs text-slate-200 block">درآمد ماه جاری</span>
                     <p className="text-base font-black text-cyan-300 font-mono">$1,420.00 USD</p>
-                    <span className="text-[9px] text-cyan-400">142,000 Diamonds</span>
+                    <span className="text-[11px] text-cyan-400">142,000 Diamonds</span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
-                    <span className="text-[10px] text-slate-400 block">کل درآمد کل دوره</span>
+                    <span className="text-xs text-slate-200 block">کل درآمد کل دوره</span>
                     <p className="text-base font-black text-emerald-400 font-mono">$5,890.00 USD</p>
-                    <span className="text-[9px] text-slate-400">تعداد هدایا: ۱,۸۴۰</span>
+                    <span className="text-[11px] text-slate-200">تعداد هدایا: ۱,۸۴۰</span>
                   </div>
                 </div>
 
@@ -5366,7 +5394,7 @@ export default function App() {
                       <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80" alt="top gifter" className="w-full h-full object-cover rounded-2xl" />
                     </div>
                     <div>
-                      <span className="text-[10px] text-amber-300 font-bold flex items-center gap-1">
+                      <span className="text-xs text-amber-300 font-bold flex items-center gap-1">
                         <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> بیشترین هدیه‌دهنده این ماه (Top Gifter)
                       </span>
                       <h4 className="text-sm font-black text-white mt-0.5">Soren 🔥 (@soren_top)</h4>
@@ -5388,7 +5416,7 @@ export default function App() {
                       <Users className="w-4 h-4 text-cyan-400" />
                       ۱۰. درآمد از دعوت دوستان (Referral Wallet)
                     </h3>
-                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                    <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
                       پاداش کسب‌شده: +2,500 Coins
                     </span>
                   </div>
@@ -5415,6 +5443,513 @@ export default function App() {
             )}
 
             {/* SUB-TAB 8: SECURITY & VIP */}
+            {walletSubTab === 'vip' && (
+              <div className="space-y-6" dir="rtl">
+                
+                {/* 1. VIP HEADER BANNER (👑 V.Live Premium - Neon Gold) */}
+                <div className="relative p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-950 via-yellow-950/90 to-amber-900 border-2 border-amber-400/60 shadow-[0_0_40px_rgba(245,158,11,0.25)] overflow-hidden">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+                  
+                  <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-4 text-right">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 via-yellow-300 to-amber-600 p-0.5 flex items-center justify-center shadow-lg shrink-0 animate-pulse">
+                        <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                          <Crown className="w-8 h-8 text-amber-400 fill-amber-400/20" />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h2 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 bg-clip-text text-transparent">
+                            V.Live Premium
+                          </h2>
+                          <span className="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 font-mono text-xs font-black">
+                            VIP Club 👑
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-slate-200 font-bold mt-1">
+                          Unlock Exclusive Features • تجربه شاهانه و ارتقای کامل امکانات
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* VIP Status Card */}
+                    <div className="w-full md:w-auto p-4 rounded-2xl bg-slate-950/90 border border-amber-500/40 flex items-center justify-between gap-4 shadow-inner">
+                      <div className="space-y-1">
+                        <p className="text-[11px] text-slate-400 font-bold">وضعیت اشتراک (VIP Status)</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-black text-amber-300 capitalize flex items-center gap-1">
+                            {vipPlan === 'silver' && '🥉 Silver VIP'}
+                            {vipPlan === 'gold' && '🥈 Gold VIP'}
+                            {vipPlan === 'diamond' && '🥇 Diamond VIP'}
+                            {vipPlan === 'elite' && '💠 Elite VIP'}
+                            {vipPlan === 'none' && 'غیرفعال (Free Member)'}
+                          </span>
+                          {vipPlan !== 'none' && (
+                            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 font-bold">
+                              {vipExpireDays} روز باقی‌مانده
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setIsVipModalOpen(true);
+                          showToast('صفحه تمدید و ارتقای اشتراک VIP باز شد');
+                        }}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs shadow-md transition transform active:scale-95 shrink-0 flex items-center gap-1.5"
+                      >
+                        <Crown className="w-3.5 h-3.5 fill-slate-950" />
+                        <span>{vipPlan === 'none' ? 'خرید VIP' : 'Renew VIP (تمدید)'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* MONTHLY REWARD CLAIM BOX FOR ACTIVE VIPS */}
+                  {vipPlan !== 'none' && (
+                    <div className="mt-5 pt-4 border-t border-amber-500/30 flex items-center justify-between flex-wrap gap-3 bg-slate-950/60 p-3.5 rounded-2xl border border-amber-500/20">
+                      <div className="flex items-center gap-2 text-xs">
+                        <Gift className="w-5 h-5 text-amber-400 animate-bounce" />
+                        <div>
+                          <span className="font-black text-amber-300">هدایای ماهانه VIP (Monthly Gift): </span>
+                          <span className="text-slate-200">۵۰۰ سکه رایگان + ۵۰ الماس + قاب طلایی اختصاصی</span>
+                        </div>
+                      </div>
+
+                      {isVipMonthlyClaimed ? (
+                        <span className="px-3 py-1 rounded-xl bg-emerald-950 text-emerald-300 text-xs font-bold border border-emerald-500/30 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          هدیه این ماه دریافت شد
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setUserCoins(prev => prev + 500);
+                            setIsVipMonthlyClaimed(true);
+                            safeStorage.setItem('vlive_vip_monthly_claimed', 'true');
+                            showToast('🎁 ۵۰۰ سکه + ۵۰ الماس + قاب طلایی ماهانه به شما اهدا شد!');
+                          }}
+                          className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition flex items-center gap-1.5"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          دریافت هدیه ماهانه
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. VIP PLANS SELECTOR (پلن‌ها) */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-black text-amber-300 flex items-center gap-2">
+                      <Crown className="w-4 h-4 text-amber-400" />
+                      ۲. انتخاب سطح اشتراک VIP (Subscription Tiers)
+                    </h3>
+                    <span className="text-xs text-slate-300 font-medium">سطح دلخواه خود را انتخاب کنید</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    
+                    {/* SILVER PLAN */}
+                    <div 
+                      onClick={() => setSelectedVipPlan('silver')}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'silver' ? 'bg-slate-900 border-slate-300 shadow-[0_0_20px_rgba(203,213,225,0.25)]' : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'}`}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-lg">🥉</span>
+                          <span className="text-xs font-mono font-black text-slate-300 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700">
+                            300 Coins / mo
+                          </span>
+                        </div>
+                        <h4 className="text-base font-black text-slate-200">Silver VIP</h4>
+                        <p className="text-[11px] text-slate-300 font-medium">مناسب برای شروع و مرور بدون تبلیغات</p>
+                        <ul className="text-xs text-slate-200 space-y-1.5 pt-1 border-t border-slate-800">
+                          <li className="flex items-center gap-1.5">🚫 بدون تبلیغات (No Ads)</li>
+                          <li className="flex items-center gap-1.5">👑 نشان VIP نقره‌ای</li>
+                          <li className="flex items-center gap-1.5">📞 تماس تصویری HD</li>
+                          <li className="flex items-center gap-1.5">🎧 اولویت در پشتیبانی</li>
+                        </ul>
+                      </div>
+
+                      <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'silver' ? 'bg-slate-200 text-slate-950 font-black' : 'bg-slate-900 text-slate-400'}`}>
+                        {selectedVipPlan === 'silver' ? 'انتخاب شده ✓' : 'انتخاب Silver'}
+                      </div>
+                    </div>
+
+                    {/* GOLD PLAN (POPULAR) */}
+                    <div 
+                      onClick={() => setSelectedVipPlan('gold')}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'gold' ? 'bg-slate-900 border-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.3)]' : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'}`}
+                    >
+                      <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-[10px] shadow-md">
+                        محبوب‌ترین ⭐
+                      </span>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-lg">🥈</span>
+                          <span className="text-xs font-mono font-black text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-400/40">
+                            500 Coins / mo
+                          </span>
+                        </div>
+                        <h4 className="text-base font-black text-amber-300">Gold VIP</h4>
+                        <p className="text-[11px] text-slate-300 font-medium">بهترین گزینه برای کاربران فعال و استریمرها</p>
+                        <ul className="text-xs text-slate-200 space-y-1.5 pt-1 border-t border-slate-800">
+                          <li className="flex items-center gap-1.5 text-amber-200 font-bold">✅ همه امکانات Silver +</li>
+                          <li className="flex items-center gap-1.5">🎁 ارسال هدایای ویژه VIP</li>
+                          <li className="flex items-center gap-1.5">🚪 ورود به اتاق‌های VIP</li>
+                          <li className="flex items-center gap-1.5">🎥 افزایش کیفیت لایو (1080p)</li>
+                          <li className="flex items-center gap-1.5">🖼️ فریم اختصاصی طلایی</li>
+                        </ul>
+                      </div>
+
+                      <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'gold' ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black shadow-md' : 'bg-slate-900 text-slate-400'}`}>
+                        {selectedVipPlan === 'gold' ? 'انتخاب شده ✓' : 'انتخاب Gold'}
+                      </div>
+                    </div>
+
+                    {/* DIAMOND PLAN */}
+                    <div 
+                      onClick={() => setSelectedVipPlan('diamond')}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'diamond' ? 'bg-slate-900 border-cyan-400 shadow-[0_0_25px_rgba(6,182,212,0.3)]' : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'}`}
+                    >
+                      <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-cyan-500 text-slate-950 font-black text-[10px] shadow-md">
+                        ارزش فوق‌العاده 💎
+                      </span>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-lg">🥇</span>
+                          <span className="text-xs font-mono font-black text-cyan-300 bg-cyan-500/20 px-2.5 py-0.5 rounded-full border border-cyan-400/40">
+                            1,000 Coins / mo
+                          </span>
+                        </div>
+                        <h4 className="text-base font-black text-cyan-300">Diamond VIP</h4>
+                        <p className="text-[11px] text-slate-300 font-medium">تجربه شاهانه با بیشترین پروموت و بوست</p>
+                        <ul className="text-xs text-slate-200 space-y-1.5 pt-1 border-t border-slate-800">
+                          <li className="flex items-center gap-1.5 text-cyan-200 font-bold">✅ همه امکانات Gold +</li>
+                          <li className="flex items-center gap-1.5">📞 تماس خصوصی اختصاصی</li>
+                          <li className="flex items-center gap-1.5">🔥 ۵X دیده شدن در Discover</li>
+                          <li className="flex items-center gap-1.5">🚀 Boost لایو در بالای لیست</li>
+                          <li className="flex items-center gap-1.5">💎 نشان و Badge Diamond</li>
+                        </ul>
+                      </div>
+
+                      <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'diamond' ? 'bg-gradient-to-r from-cyan-500 to-blue-400 text-slate-950 font-black shadow-md' : 'bg-slate-900 text-slate-400'}`}>
+                        {selectedVipPlan === 'diamond' ? 'انتخاب شده ✓' : 'انتخاب Diamond'}
+                      </div>
+                    </div>
+
+                    {/* ELITE VIP (EXCLUSIVE BY INVITATION) */}
+                    <div 
+                      onClick={() => setSelectedVipPlan('elite')}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'elite' ? 'bg-gradient-to-br from-purple-950/80 via-slate-900 to-indigo-950/80 border-purple-400 shadow-[0_0_25px_rgba(168,85,247,0.3)]' : 'bg-slate-950/80 border-purple-900/60 hover:border-purple-600'}`}
+                    >
+                      <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 text-white font-black text-[10px] shadow-md">
+                        خاص با دعوت 💠
+                      </span>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-lg">💠</span>
+                          <span className="text-xs font-mono font-black text-purple-300 bg-purple-500/20 px-2.5 py-0.5 rounded-full border border-purple-400/40">
+                            ادمین / دعوت
+                          </span>
+                        </div>
+                        <h4 className="text-base font-black text-purple-300">Elite VIP</h4>
+                        <p className="text-[11px] text-slate-300 font-medium">سطح فوق‌العاده اختصاصی مدیران و سفیران</p>
+                        <ul className="text-xs text-slate-200 space-y-1.5 pt-1 border-t border-purple-900/60">
+                          <li className="flex items-center gap-1.5 text-purple-200 font-bold">💠 نشان و تگ اختصاصی Elite</li>
+                          <li className="flex items-center gap-1.5">☎️ پشتیبانی اختصاصی ۲۴/۷</li>
+                          <li className="flex items-center gap-1.5">🚀 دسترسی زودتر به قابلیت‌ها</li>
+                          <li className="flex items-center gap-1.5">🖼️ قاب‌های نایاب پروفایل</li>
+                        </ul>
+                      </div>
+
+                      <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'elite' ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white font-black shadow-md' : 'bg-slate-900 text-slate-400'}`}>
+                        {selectedVipPlan === 'elite' ? 'انتخاب شده ✓' : 'درخواست Elite'}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* 3. DURATION & PAYMENT OPTIONS */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  {/* DURATION SELECTOR */}
+                  <div className="p-5 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                    <h4 className="text-xs font-black text-amber-300 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-400" />
+                      ۳. مدت زمان اشتراک (Subscription Duration)
+                    </h4>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {[
+                        { duration: 1, label: '۱ ماهه', discount: '0%', badge: 'عادی' },
+                        { duration: 3, label: '۳ ماهه', discount: '15%', badge: '۱۵٪ تخفیف' },
+                        { duration: 6, label: '۶ ماهه', discount: '25%', badge: '۲۵٪ تخفیف' },
+                        { duration: 12, label: '۱۲ ماهه (سالانه)', discount: '40%', badge: '۴۰٪ تخفیف ویژه 🔥' }
+                      ].map(item => (
+                        <button
+                          key={item.duration}
+                          onClick={() => setSelectedVipDuration(item.duration)}
+                          className={`p-3 rounded-2xl border text-right transition flex flex-col justify-between space-y-1 ${selectedVipDuration === item.duration ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold shadow-md' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'}`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-black text-white">{item.label}</span>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              {item.badge}
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-slate-400 font-mono">
+                            {item.duration * 30} روز اعتبار
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* PAYMENT METHOD SELECTOR */}
+                  <div className="p-5 rounded-3xl bg-slate-950 border border-slate-800 space-y-3 flex flex-col justify-between">
+                    <div>
+                      <h4 className="text-xs font-black text-amber-300 flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-amber-400" />
+                        ۴. روش پرداخت (Payment Method)
+                      </h4>
+
+                      <div className="grid grid-cols-3 gap-2 text-xs mt-3">
+                        <button
+                          onClick={() => setSelectedVipPayMethod('in_app')}
+                          className={`p-3 rounded-2xl border text-center transition space-y-1 ${selectedVipPayMethod === 'in_app' ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold shadow-md' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                        >
+                          <CreditCard className="w-5 h-5 mx-auto text-amber-400" />
+                          <span className="block text-[11px] font-bold">پرداخت در برنامه‌ای</span>
+                        </button>
+
+                        <button
+                          onClick={() => setSelectedVipPayMethod('usdt')}
+                          className={`p-3 rounded-2xl border text-center transition space-y-1 ${selectedVipPayMethod === 'usdt' ? 'bg-emerald-500/10 border-emerald-400 text-emerald-300 font-bold shadow-md' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                        >
+                          <DollarSign className="w-5 h-5 mx-auto text-emerald-400" />
+                          <span className="block text-[11px] font-bold">USDT (TRC20)</span>
+                        </button>
+
+                        <button
+                          onClick={() => setSelectedVipPayMethod('coins')}
+                          className={`p-3 rounded-2xl border text-center transition space-y-1 ${selectedVipPayMethod === 'coins' ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold shadow-md' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                        >
+                          <CoinsIcon className="w-5 h-5 mx-auto text-amber-400" />
+                          <span className="block text-[11px] font-bold">سکه‌های من</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* FINAL PAYMENT CTA BUTTON */}
+                    <div className="pt-3 border-t border-slate-800 space-y-2">
+                      {selectedVipPlan === 'elite' ? (
+                        <button
+                          onClick={() => {
+                            setVipEliteRequested(true);
+                            showToast('درخواست فعال‌سازی Elite VIP برای مدیریت ارسال شد');
+                          }}
+                          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white font-black text-xs shadow-lg hover:brightness-110 transition active:scale-95 flex items-center justify-center gap-2"
+                        >
+                          <Shield className="w-4 h-4" />
+                          <span>{vipEliteRequested ? 'درخواست در حال بررسی مدیران...' : 'ارسال درخواست فعال‌سازی Elite VIP'}</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            const basePrices = { silver: 300, gold: 500, diamond: 1000 };
+                            const discountMultipliers = { 1: 1.0, 3: 0.85, 6: 0.75, 12: 0.60 };
+                            const monthlyCost = basePrices[selectedVipPlan] || 500;
+                            const totalBaseCoins = monthlyCost * selectedVipDuration;
+                            const finalCoinsCost = Math.round(totalBaseCoins * (discountMultipliers[selectedVipDuration] || 1.0));
+
+                            if (selectedVipPayMethod === 'coins') {
+                              if (userCoins < finalCoinsCost) {
+                                showToast(`موجودی سکه کافی نیست! هزینه: ${finalCoinsCost} سکه`);
+                                return;
+                              }
+                              setUserCoins(prev => prev - finalCoinsCost);
+                            }
+
+                            setVipPlan(selectedVipPlan);
+                            setVipExpireDays(selectedVipDuration * 30);
+                            setIsVipMonthlyClaimed(false);
+                            safeStorage.setItem('vlive_vip_plan', selectedVipPlan);
+                            safeStorage.setItem('vlive_vip_expire_days', (selectedVipDuration * 30).toString());
+                            safeStorage.setItem('vlive_vip_monthly_claimed', 'false');
+
+                            setIsVipCelebrationOpen(true);
+                            showToast(`👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت فعال شد!`);
+                          }}
+                          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-[0_0_25px_rgba(245,158,11,0.4)] hover:brightness-110 transition active:scale-95 flex items-center justify-center gap-2 animate-pulse"
+                        >
+                          <Crown className="w-4 h-4 fill-slate-950" />
+                          <span>تایید و فعال‌سازی اشتراک {selectedVipPlan.toUpperCase()} ({selectedVipDuration} ماهه)</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* 4. 10 VIP BENEFITS GRID (مزایای ۱۰ گانه) */}
+                <div className="p-5 rounded-3xl bg-slate-950 border border-slate-800 space-y-4">
+                  <div className="border-b border-slate-800 pb-2.5">
+                    <h3 className="text-sm font-black text-amber-300 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      ۴. لیست کامل مزایا و امکانات VIP (10 Privileges)
+                    </h3>
+                    <p className="text-xs text-slate-300 font-medium">تمامی قابلیت‌هایی که بلافاصله بعد از خرید در کل برنامه فعال می‌شوند</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
+                    {[
+                      { icon: Crown, title: 'Badge اختصاصی', desc: 'نشان طلایی کنار نام در تمام چت‌ها و لایوها' },
+                      { icon: Sparkles, title: 'افکت ویژه پروفایل', desc: 'فریم‌های متحرک نئونی و طلایی' },
+                      { icon: Radio, title: 'کیفیت بالاتر لایو', desc: 'پخش استریم با وضوح 1080p / 4K' },
+                      { icon: PhoneCall, title: 'تماس تصویری HD', desc: 'مکالمات تصویری بدون تاخیر با بالاترین کیفیت' },
+                      { icon: ShieldCheck, title: 'حذف کامل تبلیغات', desc: 'تجربه کاملا روان بدون اسپم و تبلیغ' },
+                      { icon: Flame, title: 'نمایش بیشتر در Discover', desc: '۲X تا ۵X دیده شدن بیشتر در تب کشف' },
+                      { icon: Star, title: 'اولویت در نتایج', desc: 'بالانشینی در نتایج جستجو و لیست اعضا' },
+                      { icon: Gift, title: 'هدایای انحصاری', desc: 'دسترسی به ۵+ هدیه اختصاصی VIP' },
+                      { icon: Palette, title: 'تم‌های اختصاصی', desc: 'پوسته‌ها و تم‌های طلایی و نئونی' },
+                      { icon: Gift, title: 'هدیه ماهانه', desc: '۵۰۰ سکه + ۵۰ الماس + قاب رایگان هر ماه' }
+                    ].map((item, idx) => (
+                      <div key={idx} className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1.5 hover:border-amber-500/40 transition">
+                        <item.icon className="w-5 h-5 text-amber-400" />
+                        <h5 className="font-black text-white text-xs">{item.title}</h5>
+                        <p className="text-[10px] text-slate-300 leading-relaxed">{item.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 5. STREAMERS VS VIEWERS BENEFITS CARDS */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  {/* STREAMERS BENEFITS */}
+                  <div className="p-5 rounded-3xl bg-gradient-to-br from-amber-950/40 via-slate-950 to-slate-900 border border-amber-500/30 space-y-3">
+                    <div className="flex items-center gap-2 border-b border-amber-500/20 pb-2">
+                      <Radio className="w-5 h-5 text-amber-400" />
+                      <h4 className="text-xs font-black text-amber-300">مزایای اختصاصی استریمرهای VIP</h4>
+                    </div>
+                    <ul className="text-xs text-slate-200 space-y-2">
+                      <li className="flex items-center gap-2">⭐ <strong>لایو در اولویت نمایش:</strong> سنجاق شدن استریم در بالای صفحه اول</li>
+                      <li className="flex items-center gap-2">💰 <strong>کارمزد کمتر روی هدایا:</strong> فقط ۱۰٪ کارمزد پلتفرم به جای ۲۰٪</li>
+                      <li className="flex items-center gap-2">🔒 <strong>امکان ایجاد لایو خصوصی:</strong> اتاق‌های اختصاصی فقط برای VIPها</li>
+                      <li className="flex items-center gap-2">📊 <strong>ابزارهای حرفه‌ای‌تر:</strong> آنالیتیکس پیشرفته و ابزار مدیریت چت</li>
+                    </ul>
+                  </div>
+
+                  {/* VIEWERS BENEFITS */}
+                  <div className="p-5 rounded-3xl bg-gradient-to-br from-purple-950/40 via-slate-950 to-slate-900 border border-purple-500/30 space-y-3">
+                    <div className="flex items-center gap-2 border-b border-purple-500/20 pb-2">
+                      <UserCheck className="w-5 h-5 text-purple-400" />
+                      <h4 className="text-xs font-black text-purple-300">مزایای اختصاصی کاربران VIP</h4>
+                    </div>
+                    <ul className="text-xs text-slate-200 space-y-2">
+                      <li className="flex items-center gap-2">💬 <strong>پیام بدون محدودیت:</strong> گفتگو با استریمرها بدون فیلتر اسپم</li>
+                      <li className="flex items-center gap-2">📞 <strong>تماس تصویری با کیفیت بالاتر:</strong> تماس 4K با شفافیت کریستالی</li>
+                      <li className="flex items-center gap-2">✨ <strong>استیکرها و ایموجی‌های اختصاصی:</strong> پکیج ایموجی‌های نایاب VIP</li>
+                      <li className="flex items-center gap-2">🖼️ <strong>قاب و پس‌زمینه اختصاصی:</strong> تزیینات نئونی پروفایل و چت</li>
+                    </ul>
+                  </div>
+
+                </div>
+
+                {/* 6. PLAN COMPARISON MATRIX TABLE (جدول مقایسه) */}
+                <div className="p-5 rounded-3xl bg-slate-950 border border-slate-800 space-y-3 overflow-x-auto">
+                  <h3 className="text-xs font-black text-amber-300 flex items-center gap-2">
+                    <BarChart2 className="w-4 h-4 text-amber-400" />
+                    ۶. جدول مقایسه کامل قابلیت‌های پلن‌های VIP
+                  </h3>
+
+                  <table className="w-full text-right text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-300 font-black">
+                        <th className="p-2.5">قابلیت</th>
+                        <th className="p-2.5 text-center text-slate-300">Silver 🥉</th>
+                        <th className="p-2.5 text-center text-amber-300">Gold 🥈</th>
+                        <th className="p-2.5 text-center text-cyan-300">Diamond 🥇</th>
+                        <th className="p-2.5 text-center text-purple-300">Elite 💠</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 text-slate-200">
+                      <tr>
+                        <td className="p-2.5 font-bold">حذف تبلیغات</td>
+                        <td className="p-2.5 text-center text-emerald-400">✅</td>
+                        <td className="p-2.5 text-center text-emerald-400">✅</td>
+                        <td className="p-2.5 text-center text-emerald-400">✅</td>
+                        <td className="p-2.5 text-center text-emerald-400">✅</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold">Badge VIP</td>
+                        <td className="p-2.5 text-center text-slate-300">✅ Silver</td>
+                        <td className="p-2.5 text-center text-amber-300 font-bold">✅ Gold</td>
+                        <td className="p-2.5 text-center text-cyan-300 font-bold">✅ Diamond</td>
+                        <td className="p-2.5 text-center text-purple-300 font-bold">✅ Elite 💠</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold">Boost Profile</td>
+                        <td className="p-2.5 text-center text-rose-400">❌</td>
+                        <td className="p-2.5 text-center text-amber-300 font-bold">✅ 2X</td>
+                        <td className="p-2.5 text-center text-cyan-300 font-bold">✅ 5X</td>
+                        <td className="p-2.5 text-center text-purple-300 font-bold">✅ 10X Top</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold">Boost Live Stream</td>
+                        <td className="p-2.5 text-center text-rose-400">❌</td>
+                        <td className="p-2.5 text-center text-amber-300">✅</td>
+                        <td className="p-2.5 text-center text-cyan-300 font-bold">✅ Pinned Top</td>
+                        <td className="p-2.5 text-center text-purple-300 font-bold">✅ Always #1</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold">هدیه ماهانه (Coins)</td>
+                        <td className="p-2.5 text-center text-rose-400">❌</td>
+                        <td className="p-2.5 text-center text-amber-300 font-mono">500 Coins</td>
+                        <td className="p-2.5 text-center text-cyan-300 font-mono font-bold">1,000 Coins</td>
+                        <td className="p-2.5 text-center text-purple-300 font-mono font-bold">2,500 Coins</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold">پشتیبانی ویژه</td>
+                        <td className="p-2.5 text-center text-slate-300">اولویت عادی</td>
+                        <td className="p-2.5 text-center text-amber-300">✅ سریع</td>
+                        <td className="p-2.5 text-center text-cyan-300 font-bold">✅ آنی VIP</td>
+                        <td className="p-2.5 text-center text-purple-300 font-bold">✅ ۲۴/۷ Concierge</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold">تم و قاب اختصاصی</td>
+                        <td className="p-2.5 text-center text-rose-400">❌</td>
+                        <td className="p-2.5 text-center text-slate-300">قاب طلایی</td>
+                        <td className="p-2.5 text-center text-cyan-300 font-bold">✅ قاب و تم اختصاصی</td>
+                        <td className="p-2.5 text-center text-purple-300 font-bold">✅ نایاب نئونی</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 7. FULL APP INTEGRATION CALLOUT BANNER */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-950/40 via-purple-950/40 to-slate-900 border border-pink-500/30 text-xs space-y-2">
+                  <p className="font-black text-pink-300 flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 text-pink-400" />
+                    اتصال فعال VIP در تمام بخش‌های V.Live:
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-[11px] text-slate-300 pt-1">
+                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">🏠 Home: نمایش بیشتر</div>
+                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">🔍 Discover: اولویت جستجو</div>
+                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">🎥 Live: اولویت استریم</div>
+                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">💬 Messages: پیام نامحدود</div>
+                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">👤 Profile: قاب نئونی 👑</div>
+                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">👛 Wallet: هدیه ماهانه</div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
             {walletSubTab === 'security' && (
               <div className="space-y-4 text-xs">
                 
@@ -5429,23 +5964,23 @@ export default function App() {
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
                         <h4 className="font-bold text-white">تأیید هویت KYC</h4>
-                        <span className="text-[10px] text-slate-400">الزامی جهت برداشت درآمد</span>
+                        <span className="text-xs text-slate-200">الزامی جهت برداشت درآمد</span>
                       </div>
-                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full">تأیید شده 🟢</span>
+                      <span className="text-xs font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full">تأیید شده 🟢</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
                         <h4 className="font-bold text-white">رمز برداشت ۴ رقمی</h4>
-                        <span className="text-[10px] text-slate-400">تأیید برداشت‌های مالی</span>
+                        <span className="text-xs text-slate-200">تأیید برداشت‌های مالی</span>
                       </div>
-                      <span className="text-[10px] font-bold text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded-full">فعال 🔒</span>
+                      <span className="text-xs font-bold text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded-full">فعال 🔒</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between sm:col-span-2">
                       <div>
                         <h4 className="font-bold text-white">محدودیت برداشت روزانه (Daily Limit)</h4>
-                        <span className="text-[10px] text-slate-400">حداکثر سقف برداشت روزانه</span>
+                        <span className="text-xs text-slate-200">حداکثر سقف برداشت روزانه</span>
                       </div>
                       <span className="font-bold text-amber-400 font-mono text-xs">$5,000 USDT / روزانه</span>
                     </div>
@@ -5519,7 +6054,7 @@ export default function App() {
                       <Gift className="w-4 h-4 text-pink-400" />
                       ۱۴. فروشگاه مستقیم هدایا (Gift Shop)
                     </h3>
-                    <span className="text-[10px] text-pink-300 font-bold bg-pink-500/10 px-2.5 py-1 rounded-full border border-pink-500/20">
+                    <span className="text-xs text-pink-300 font-bold bg-pink-500/10 px-2.5 py-1 rounded-full border border-pink-500/20">
                       مسیر مستقیم: خرید سکه ➔ انتخاب هدیه ➔ ارسال
                     </span>
                   </div>
@@ -5549,7 +6084,7 @@ export default function App() {
                             setUserCoins(p => p - g.coins);
                             showToast(`🎁 هدیه ${g.name} با موفقیت ارسال شد!`);
                           }}
-                          className="w-full py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-[10px] shadow"
+                          className="w-full py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs shadow"
                         >
                           ارسال هدیه
                         </button>
@@ -6236,7 +6771,7 @@ export default function App() {
                   </button>
 
                   <button 
-                    onClick={() => showToast('VIP upgrade screen opened')}
+                    onClick={() => setIsVipModalOpen(true)}
                     className="py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-md"
                   >
                     <Crown className="w-4 h-4 fill-slate-950" />
@@ -6357,52 +6892,52 @@ export default function App() {
 
       {/* MODAL: REDESIGNED NOTIFICATIONS SYSTEM */}
       {isNotificationsOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
-          <div className="w-full max-w-xl card-3d p-4 sm:p-6 border border-pink-500/40 bg-slate-900/95 rounded-3xl space-y-4 max-h-[88vh] flex flex-col shadow-[0_0_50px_rgba(236,72,153,0.25)]">
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 animate-fadeIn" dir="rtl">
+          <div className="w-full max-w-xl card-3d p-4 sm:p-6 border border-pink-500/40 bg-slate-900/98 rounded-3xl space-y-4 max-h-[90vh] flex flex-col shadow-[0_0_50px_rgba(236,72,153,0.25)]">
             
             {/* 1. HEADER (عنوان + دکمه‌ها) */}
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3.5">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-400 p-0.5 flex items-center justify-center shadow-lg">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3.5 gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-400 p-0.5 flex items-center justify-center shadow-lg shrink-0">
                   <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
                     <Bell className="w-5 h-5 text-pink-400 animate-pulse" />
                   </div>
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base sm:text-lg font-black bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300 bg-clip-text text-transparent">
-                      Notifications
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-black bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300 bg-clip-text text-transparent truncate">
+                      اعلان‌ها (Notifications)
                     </h2>
                     {notificationsList.filter(n => n.unread).length > 0 && (
-                      <span className="px-2 py-0.5 rounded-full bg-pink-600 text-white font-black text-[10px] shadow-md animate-bounce">
-                        {notificationsList.filter(n => n.unread).length} New
+                      <span className="px-2.5 py-0.5 rounded-full bg-pink-600 text-white font-black text-xs shadow-md animate-bounce shrink-0">
+                        {notificationsList.filter(n => n.unread).length} جدید
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-slate-400 font-medium">Real-time alerts, gifts, messages & lives</p>
+                  <p className="text-xs text-slate-300 font-medium truncate">هشدارها، هدایا، پیام‌ها و لایو استریم‌ها</p>
                 </div>
               </div>
 
               {/* Header Right Action Buttons */}
-              <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="flex items-center gap-1.5 shrink-0">
                 {/* Mark All as Read Button */}
                 <button 
                   onClick={() => {
                     setNotificationsList(prev => prev.map(n => ({ ...n, unread: false })));
-                    showToast('All notifications marked as read');
+                    showToast('تمام اعلان‌ها به عنوان خوانده‌شده علامت زده شدند');
                   }}
-                  className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-bold transition flex items-center gap-1 border border-slate-700/60"
-                  title="Mark all as read"
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 hover:text-white text-xs font-bold transition flex items-center gap-1 border border-slate-700/80 shadow-sm"
+                  title="علامت زدن به عنوان خوانده‌شده"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="hidden sm:inline">Mark read</span>
+                  <span className="hidden sm:inline">خواندن همه</span>
                 </button>
 
                 {/* Notification Settings Toggle Button */}
                 <button 
                   onClick={() => setIsNotifSettingsOpen(true)}
-                  className="p-2 sm:p-2 rounded-xl bg-slate-800 hover:bg-purple-900/60 text-slate-300 hover:text-white border border-slate-700/60 transition"
-                  title="Notification Settings"
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-purple-900/60 text-purple-300 hover:text-white border border-slate-700/80 transition"
+                  title="تنظیمات اعلان‌ها"
                 >
                   <Settings className="w-4 h-4 text-purple-400" />
                 </button>
@@ -6410,7 +6945,7 @@ export default function App() {
                 {/* Close Button */}
                 <button 
                   onClick={() => setIsNotificationsOpen(false)}
-                  className="p-2 rounded-xl bg-slate-800 hover:bg-rose-900/60 text-slate-400 hover:text-white transition"
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-rose-900/60 text-rose-300 hover:text-white transition border border-slate-700/80"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -6418,25 +6953,25 @@ export default function App() {
             </div>
 
             {/* 2. CATEGORY TABS (دسته‌بندی اعلان‌ها) */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-slate-800/60">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar border-b border-slate-800/80">
               {[
-                { id: 'all', label: '📋 All', count: notificationsList.length },
-                { id: 'likes', label: '❤️ Likes', count: notificationsList.filter(n => n.type === 'likes').length },
-                { id: 'follows', label: '👥 Follows', count: notificationsList.filter(n => n.type === 'follows').length },
-                { id: 'messages', label: '💬 Messages', count: notificationsList.filter(n => n.type === 'messages').length },
-                { id: 'live', label: '🎥 Live', count: notificationsList.filter(n => n.type === 'live').length },
-                { id: 'gifts', label: '🎁 Gifts', count: notificationsList.filter(n => n.type === 'gifts').length },
-                { id: 'earnings', label: '💰 Earnings', count: notificationsList.filter(n => n.type === 'earnings').length },
-                { id: 'system', label: '⚙️ System', count: notificationsList.filter(n => n.type === 'system').length }
+                { id: 'all', label: '📋 همه', count: notificationsList.length },
+                { id: 'likes', label: '❤️ لایک‌ها', count: notificationsList.filter(n => n.type === 'likes').length },
+                { id: 'follows', label: '👥 فالوها', count: notificationsList.filter(n => n.type === 'follows').length },
+                { id: 'messages', label: '💬 پیام‌ها', count: notificationsList.filter(n => n.type === 'messages').length },
+                { id: 'live', label: '🎥 لایو', count: notificationsList.filter(n => n.type === 'live').length },
+                { id: 'gifts', label: '🎁 هدایا', count: notificationsList.filter(n => n.type === 'gifts').length },
+                { id: 'earnings', label: '💰 درآمد', count: notificationsList.filter(n => n.type === 'earnings').length },
+                { id: 'system', label: '⚙️ سیستم', count: notificationsList.filter(n => n.type === 'system').length }
               ].map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setNotificationFilterTab(tab.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 ${notificationFilterTab === tab.id ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md border border-pink-400' : 'bg-slate-950/80 text-slate-400 hover:text-white border border-slate-800'}`}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 ${notificationFilterTab === tab.id ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md border border-pink-400' : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-800'}`}
                 >
                   <span>{tab.label}</span>
                   {tab.count > 0 && (
-                    <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${notificationFilterTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${notificationFilterTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'}`}>
                       {tab.count}
                     </span>
                   )}
@@ -6445,7 +6980,7 @@ export default function App() {
             </div>
 
             {/* NOTIFICATIONS CONTENT LIST GROUPED BY TIMELINE */}
-            <div className="flex-1 overflow-y-auto space-y-5 pr-1 no-scrollbar">
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 pl-1 no-scrollbar">
               {['today', 'yesterday', 'older'].map(groupKey => {
                 const groupItems = notificationsList.filter(n => {
                   const matchesFilter = notificationFilterTab === 'all' || n.type === notificationFilterTab;
@@ -6454,64 +6989,63 @@ export default function App() {
 
                 if (groupItems.length === 0) return null;
 
-                const groupTitle = groupKey === 'today' ? '🌟 Today (امروز)' : (groupKey === 'yesterday' ? '📅 Yesterday (دیروز)' : '📜 Older (قدیمی‌تر)');
+                const groupTitle = groupKey === 'today' ? '🌟 امروز (Today)' : (groupKey === 'yesterday' ? '📅 دیروز (Yesterday)' : '📜 قدیمی‌تر (Older)');
 
                 return (
                   <div key={groupKey} className="space-y-2.5">
-                    {/* Timeline Header */}
-                    <div className="flex items-center justify-between text-[11px] font-black text-slate-400 uppercase tracking-wider px-1">
+                    {/* Group Header */}
+                    <div className="flex items-center justify-between text-xs font-black text-slate-200 bg-slate-950/90 px-3 py-1.5 rounded-xl border border-slate-800/80">
                       <span>{groupTitle}</span>
-                      <span className="text-pink-400 font-mono text-[10px]">{groupItems.length} alerts</span>
+                      <span className="text-pink-300 font-mono text-xs bg-pink-500/20 px-2 py-0.5 rounded-full border border-pink-500/30">{groupItems.length} اعلان</span>
                     </div>
 
                     {/* Group Items */}
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       {groupItems.map(item => {
                         // Helper Icon & Colors for Each Type
                         let IconComponent = Bell;
-                        let badgeBg = 'bg-pink-500/10 text-pink-400 border-pink-500/30';
+                        let badgeBg = 'bg-pink-500/20 text-pink-300 border-pink-500/40';
 
                         if (item.type === 'messages') {
                           IconComponent = MessageSquare;
-                          badgeBg = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30';
+                          badgeBg = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40';
                         } else if (item.type === 'likes') {
                           IconComponent = Heart;
-                          badgeBg = 'bg-rose-500/10 text-rose-400 border-rose-500/30';
+                          badgeBg = 'bg-rose-500/20 text-rose-300 border-rose-500/40';
                         } else if (item.type === 'follows') {
                           IconComponent = UserPlus;
-                          badgeBg = 'bg-purple-500/10 text-purple-400 border-purple-500/30';
+                          badgeBg = 'bg-purple-500/20 text-purple-300 border-purple-500/40';
                         } else if (item.type === 'live') {
                           IconComponent = Radio;
-                          badgeBg = 'bg-red-500/10 text-red-400 border-red-500/30';
+                          badgeBg = 'bg-red-500/20 text-red-300 border-red-500/40';
                         } else if (item.type === 'gifts') {
                           IconComponent = Gift;
-                          badgeBg = 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+                          badgeBg = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
                         } else if (item.type === 'earnings') {
                           IconComponent = DollarSign;
-                          badgeBg = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+                          badgeBg = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
                         } else if (item.type === 'system') {
                           IconComponent = ShieldCheck;
-                          badgeBg = 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+                          badgeBg = 'bg-blue-500/20 text-blue-300 border-blue-500/40';
                         }
 
                         return (
                           <div 
                             key={item.id}
                             onClick={() => {
-                              // Click Handler for Notifications
                               setNotificationsList(prev => prev.map(n => n.id === item.id ? { ...n, unread: false } : n));
                               if (item.actionType === 'chat') {
                                 setActiveTab('messages');
                                 setIsNotificationsOpen(false);
-                                showToast(`Opened chat with @${item.sender || 'User'}`);
+                                showToast(`گفتگو با @${item.sender || 'کاربر'} باز شد`);
                               } else if (item.actionType === 'join_live') {
                                 setStreamSubTab('lives');
                                 setActiveTab('streams');
                                 setIsNotificationsOpen(false);
-                                showToast(`Opening live stream...`);
+                                showToast(`در حال ورود به لایو استریم...`);
                               }
                             }}
-                            className={`p-3.5 rounded-2xl border text-xs space-y-2 transition-all cursor-pointer card-3d ${item.unread ? 'bg-gradient-to-r from-pink-950/30 via-slate-900 to-purple-950/30 border-pink-500/50 shadow-[0_0_15px_rgba(236,72,153,0.15)]' : 'bg-slate-950/80 border-slate-800/80 hover:border-slate-700'}`}
+                            className={`p-4 rounded-2xl border text-xs space-y-2.5 transition-all cursor-pointer card-3d ${item.unread ? 'bg-gradient-to-r from-pink-950/40 via-slate-900 to-purple-950/40 border-pink-500/60 shadow-[0_0_20px_rgba(236,72,153,0.2)]' : 'bg-slate-950/90 border-slate-800 hover:border-slate-700'}`}
                           >
                             <div className="flex items-start gap-3">
                               {/* Avatar or Icon Badge */}
@@ -6520,42 +7054,42 @@ export default function App() {
                                   <img 
                                     src={item.avatar} 
                                     alt="User" 
-                                    className="w-10 h-10 rounded-2xl object-cover border border-slate-700 shadow-md" 
+                                    className="w-11 h-11 rounded-2xl object-cover border border-slate-700 shadow-md" 
                                   />
                                 ) : (
-                                  <div className={`w-10 h-10 rounded-2xl border ${badgeBg} flex items-center justify-center shadow-md`}>
+                                  <div className={`w-11 h-11 rounded-2xl border ${badgeBg} flex items-center justify-center shadow-md`}>
                                     <IconComponent className="w-5 h-5" />
                                   </div>
                                 )}
 
                                 {/* Badge overlay on avatar */}
                                 {item.avatar && (
-                                  <span className={`absolute -bottom-1 -right-1 p-1 rounded-full border ${badgeBg} bg-slate-950`}>
+                                  <span className={`absolute -bottom-1 -left-1 p-1 rounded-full border ${badgeBg} bg-slate-950`}>
                                     <IconComponent className="w-2.5 h-2.5" />
                                   </span>
                                 )}
                               </div>
 
                               {/* Notification Title & Body */}
-                              <div className="flex-1 min-w-0 space-y-1">
-                                <div className="flex items-center justify-between gap-2">
-                                  <h4 className="text-xs font-black text-white truncate flex items-center gap-1.5">
+                              <div className="flex-1 min-w-0 space-y-1.5">
+                                <div className="flex items-center justify-between gap-2 border-b border-slate-800/60 pb-1">
+                                  <h4 className="text-xs font-black text-white truncate flex items-center gap-1.5 min-w-0 flex-1">
                                     <span>{item.title}</span>
                                     {item.unread && (
-                                      <span className="w-2 h-2 rounded-full bg-pink-500 animate-ping inline-block" />
+                                      <span className="w-2.5 h-2.5 rounded-full bg-pink-500 animate-ping inline-block shrink-0" />
                                     )}
                                   </h4>
-                                  <span className="text-[10px] text-slate-400 font-mono shrink-0">{item.time}</span>
+                                  <span className="text-[11px] text-amber-300 font-mono bg-slate-900 px-2 py-0.5 rounded-lg border border-slate-800 shrink-0">{item.time}</span>
                                 </div>
 
-                                <p className="text-[11px] text-slate-300 leading-snug">{item.body}</p>
+                                <p className="text-xs text-slate-200 leading-relaxed font-medium">{item.body}</p>
 
                                 {/* GIFT ITEM SPECIAL EMBEDDED BADGE */}
                                 {item.type === 'gifts' && item.giftName && (
-                                  <div className="mt-2 p-2 rounded-xl bg-slate-900/90 border border-amber-500/30 text-[10px] text-amber-300 font-bold flex items-center justify-between">
-                                    <span>Sender: @{item.sender}</span>
-                                    <span>Gift: {item.giftName}</span>
-                                    <span className="text-emerald-400 font-mono">{item.giftValue}</span>
+                                  <div className="mt-2 p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-xs text-amber-200 font-bold flex items-center justify-between flex-wrap gap-1.5">
+                                    <span>فرستنده: @{item.sender}</span>
+                                    <span>هدیه: {item.giftName}</span>
+                                    <span className="text-emerald-400 font-black font-mono">{item.giftValue}</span>
                                   </div>
                                 )}
 
@@ -6566,12 +7100,12 @@ export default function App() {
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setNotificationsList(prev => prev.map(n => n.id === item.id ? { ...n, isFollowing: !n.isFollowing } : n));
-                                        showToast(item.isFollowing ? `Unfollowed @${item.sender}` : `You are now following @${item.sender}`);
+                                        showToast(item.isFollowing ? `آنفالو شد @${item.sender}` : `اکنون @${item.sender} را دنبال می‌کنید`);
                                       }}
-                                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${item.isFollowing ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md'}`}
+                                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${item.isFollowing ? 'bg-slate-800 text-slate-200 border border-slate-700' : 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md'}`}
                                     >
                                       {item.isFollowing ? <UserCheck className="w-3.5 h-3.5 text-emerald-400" /> : <UserPlus className="w-3.5 h-3.5" />}
-                                      <span>{item.isFollowing ? 'Following' : 'Follow Back'}</span>
+                                      <span>{item.isFollowing ? 'دنبال شده' : 'فالو متقابل'}</span>
                                     </button>
                                   </div>
                                 )}
@@ -6584,12 +7118,12 @@ export default function App() {
                                         setStreamSubTab('lives');
                                         setActiveTab('streams');
                                         setIsNotificationsOpen(false);
-                                        showToast(`Joined @${item.streamHost}'s live broadcast!`);
+                                        showToast('در حال ورود به لایو استریم...');
                                       }}
-                                      className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-md flex items-center gap-1.5 animate-pulse"
+                                      className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-md flex items-center gap-1.5 animate-pulse"
                                     >
                                       <Play className="w-3.5 h-3.5 fill-white" />
-                                      <span>Join Live Stream</span>
+                                      <span>ورود به لایو استریم</span>
                                     </button>
                                   </div>
                                 )}
@@ -6601,15 +7135,15 @@ export default function App() {
                                         e.stopPropagation();
                                         setActiveChatCall({
                                           type: item.title.includes('Video') ? 'video' : 'voice',
-                                          user: { name: item.sender || 'Sara', avatar: item.avatar }
+                                          user: { name: item.sender || 'سارا', avatar: item.avatar }
                                         });
                                         setIsNotificationsOpen(false);
-                                        showToast(`Calling @${item.sender || 'User'}...`);
+                                        showToast(`تماس با @${item.sender || 'کاربر'}...`);
                                       }}
-                                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5"
+                                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5"
                                     >
                                       <PhoneCall className="w-3.5 h-3.5" />
-                                      <span>Call Back</span>
+                                      <span>تماس مجدد</span>
                                     </button>
                                   </div>
                                 )}
@@ -6621,25 +7155,24 @@ export default function App() {
                                         e.stopPropagation();
                                         setIsNotificationsOpen(false);
                                         setIsSettingsModalOpen(true);
-                                        showToast('VIP Renewal process opened!');
+                                        showToast('فرآیند تمدید اشتراک VIP باز شد!');
                                       }}
-                                      className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5"
+                                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5"
                                     >
                                       <Crown className="w-3.5 h-3.5 text-slate-950" />
-                                      <span>Renew VIP Pass</span>
+                                      <span>تمدید اشتراک VIP</span>
                                     </button>
                                   </div>
                                 )}
 
                                 {item.actionType === 'claimed_mission' && (
                                   <div className="pt-1.5 flex items-center gap-2">
-                                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1">
-                                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                                      Reward Claimed (+200 Coins)
+                                    <span className="text-xs text-emerald-300 font-bold bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-500/40 flex items-center gap-1.5">
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                      پاداش دریافت شد (+۲۰۰ سکه)
                                     </span>
                                   </div>
                                 )}
-
                               </div>
                             </div>
                           </div>
@@ -6652,20 +7185,19 @@ export default function App() {
 
               {/* EMPTY STATE */}
               {notificationsList.filter(n => notificationFilterTab === 'all' || n.type === notificationFilterTab).length === 0 && (
-                <div className="py-12 text-center space-y-3 bg-slate-950/60 rounded-3xl border border-slate-800">
+                <div className="py-12 text-center space-y-3 bg-slate-950/80 rounded-3xl border border-slate-800">
                   <Bell className="w-10 h-10 text-slate-600 mx-auto animate-bounce" />
-                  <p className="text-xs text-slate-400 font-bold">No notifications found in this category</p>
+                  <p className="text-xs text-slate-300 font-bold">هیچ اعلانی در این دسته‌بندی یافت نشد</p>
                 </div>
               )}
             </div>
-
           </div>
         </div>
       )}
 
       {/* MODAL: 20. NOTIFICATION SETTINGS (تنظیمات اعلان‌ها) */}
       {isNotifSettingsOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+        <div className="fixed inset-0 z-[70] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
           <div className="w-full max-w-md card-3d p-6 border border-purple-500/40 bg-slate-900 rounded-3xl space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
@@ -6673,14 +7205,14 @@ export default function App() {
                   <Settings className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">Notification Settings</h3>
-                  <p className="text-[10px] text-slate-400">Customize your push & in-app alerts</p>
+                  <h3 className="text-base font-black text-white">تنظیمات دریافت اعلان‌ها</h3>
+                  <p className="text-xs text-slate-300 font-medium">سفارشی‌سازی هشدارهای پوش و درون‌برنامه‌ای</p>
                 </div>
               </div>
 
               <button 
                 onClick={() => setIsNotifSettingsOpen(false)}
-                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+                className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -6702,7 +7234,7 @@ export default function App() {
                 <div key={toggle.key} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3 hover:border-slate-700 transition">
                   <div className="space-y-0.5 min-w-0">
                     <p className="font-bold text-white text-xs">{toggle.label}</p>
-                    <p className="text-[10px] text-slate-400 truncate">{toggle.desc}</p>
+                    <p className="text-xs text-slate-300 truncate">{toggle.desc}</p>
                   </div>
 
                   <button
@@ -6718,11 +7250,11 @@ export default function App() {
             <button
               onClick={() => {
                 setIsNotifSettingsOpen(false);
-                showToast('Notification preferences saved!');
+                showToast('تنظیمات اعلان‌ها با موفقیت ذخیره شد!');
               }}
               className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition"
             >
-              Save Preferences
+              ذخیره تنظیمات اعلان‌ها
             </button>
           </div>
         </div>
@@ -7957,6 +8489,347 @@ export default function App() {
                 <span>Log Out of Account</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: HIGH-Z-INDEX VIP SYSTEM MODAL */}
+      {isVipModalOpen && (
+        <div className="fixed inset-0 z-[80] bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-5 animate-fadeIn" dir="rtl">
+          <div className="w-full max-w-4xl card-3d p-4 sm:p-6 border-2 border-amber-500/50 bg-slate-900/98 rounded-3xl space-y-4 max-h-[90vh] overflow-y-auto shadow-[0_0_50px_rgba(245,158,11,0.3)]">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-amber-500/30 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-sm">
+                  <Crown className="w-6 h-6 text-amber-400 fill-amber-400/20" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 bg-clip-text text-transparent">
+                    V.Live Premium VIP Club
+                  </h2>
+                  <p className="text-xs text-slate-300 font-medium">سفارشی‌سازی و مدیریت اشتراک شاهانه</p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setIsVipModalOpen(false)}
+                className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Render full VIP view in modal */}
+            <div className="space-y-6 pt-2">
+              
+              {/* 1. VIP HEADER BANNER */}
+              <div className="relative p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-950 via-yellow-950/90 to-amber-900 border-2 border-amber-400/60 shadow-[0_0_40px_rgba(245,158,11,0.25)] overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+                
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="flex items-center gap-4 text-right">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 via-yellow-300 to-amber-600 p-0.5 flex items-center justify-center shadow-lg shrink-0 animate-pulse">
+                      <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                        <Crown className="w-8 h-8 text-amber-400 fill-amber-400/20" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 bg-clip-text text-transparent">
+                          V.Live Premium
+                        </h2>
+                        <span className="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 font-mono text-xs font-black">
+                          VIP Club 👑
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-200 font-bold mt-1">
+                        Unlock Exclusive Features • ارتقای کامل امکانات
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Status Card */}
+                  <div className="w-full md:w-auto p-4 rounded-2xl bg-slate-950/90 border border-amber-500/40 flex items-center justify-between gap-4 shadow-inner">
+                    <div className="space-y-1">
+                      <p className="text-[11px] text-slate-400 font-bold">وضعیت کنونی VIP</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black text-amber-300 capitalize flex items-center gap-1">
+                          {vipPlan === 'silver' && '🥉 Silver VIP'}
+                          {vipPlan === 'gold' && '🥈 Gold VIP'}
+                          {vipPlan === 'diamond' && '🥇 Diamond VIP'}
+                          {vipPlan === 'elite' && '💠 Elite VIP'}
+                          {vipPlan === 'none' && 'غیرفعال (Free Member)'}
+                        </span>
+                        {vipPlan !== 'none' && (
+                          <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 font-bold">
+                            {vipExpireDays} روز
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* MONTHLY REWARD CLAIM BOX */}
+                {vipPlan !== 'none' && (
+                  <div className="mt-5 pt-4 border-t border-amber-500/30 flex items-center justify-between flex-wrap gap-3 bg-slate-950/60 p-3.5 rounded-2xl border border-amber-500/20">
+                    <div className="flex items-center gap-2 text-xs">
+                      <Gift className="w-5 h-5 text-amber-400 animate-bounce" />
+                      <div>
+                        <span className="font-black text-amber-300">هدایای ماهانه VIP: </span>
+                        <span className="text-slate-200">۵۰۰ سکه رایگان + ۵۰ الماس + قاب طلایی</span>
+                      </div>
+                    </div>
+
+                    {isVipMonthlyClaimed ? (
+                      <span className="px-3 py-1 rounded-xl bg-emerald-950 text-emerald-300 text-xs font-bold border border-emerald-500/30 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        هدیه این ماه دریافت شد
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setUserCoins(prev => prev + 500);
+                          setIsVipMonthlyClaimed(true);
+                          safeStorage.setItem('vlive_vip_monthly_claimed', 'true');
+                          showToast('🎁 ۵۰۰ سکه + ۵۰ الماس + قاب طلایی ماهانه به شما اهدا شد!');
+                        }}
+                        className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition flex items-center gap-1.5"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        دریافت هدیه ماهانه
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 2. PLANS SELECTOR */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-black text-amber-300 flex items-center gap-2">
+                  <Crown className="w-4 h-4 text-amber-400" />
+                  انتخاب سطح اشتراک VIP
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  
+                  {/* SILVER PLAN */}
+                  <div 
+                    onClick={() => setSelectedVipPlan('silver')}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'silver' ? 'bg-slate-900 border-slate-300 shadow-[0_0_20px_rgba(203,213,225,0.25)]' : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'}`}
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg">🥉</span>
+                        <span className="text-xs font-mono font-black text-slate-300 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700">
+                          300 Coins
+                        </span>
+                      </div>
+                      <h4 className="text-base font-black text-slate-200">Silver VIP</h4>
+                      <p className="text-[11px] text-slate-300 font-medium">بدون تبلیغات + نشان VIP</p>
+                    </div>
+                    <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'silver' ? 'bg-slate-200 text-slate-950 font-black' : 'bg-slate-900 text-slate-400'}`}>
+                      {selectedVipPlan === 'silver' ? 'انتخاب شده ✓' : 'انتخاب Silver'}
+                    </div>
+                  </div>
+
+                  {/* GOLD PLAN */}
+                  <div 
+                    onClick={() => setSelectedVipPlan('gold')}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'gold' ? 'bg-slate-900 border-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.3)]' : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'}`}
+                  >
+                    <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-[10px] shadow-md">
+                      محبوب‌ترین ⭐
+                    </span>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-lg">🥈</span>
+                        <span className="text-xs font-mono font-black text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-400/40">
+                          500 Coins
+                        </span>
+                      </div>
+                      <h4 className="text-base font-black text-amber-300">Gold VIP</h4>
+                      <p className="text-[11px] text-slate-300 font-medium">کیفیت 1080p + هدایای ویژه + فریم طلایی</p>
+                    </div>
+                    <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'gold' ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black shadow-md' : 'bg-slate-900 text-slate-400'}`}>
+                      {selectedVipPlan === 'gold' ? 'انتخاب شده ✓' : 'انتخاب Gold'}
+                    </div>
+                  </div>
+
+                  {/* DIAMOND PLAN */}
+                  <div 
+                    onClick={() => setSelectedVipPlan('diamond')}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'diamond' ? 'bg-slate-900 border-cyan-400 shadow-[0_0_25px_rgba(6,182,212,0.3)]' : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'}`}
+                  >
+                    <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-cyan-500 text-slate-950 font-black text-[10px] shadow-md">
+                      ارزش فوق‌العاده 💎
+                    </span>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-lg">🥇</span>
+                        <span className="text-xs font-mono font-black text-cyan-300 bg-cyan-500/20 px-2.5 py-0.5 rounded-full border border-cyan-400/40">
+                          1,000 Coins
+                        </span>
+                      </div>
+                      <h4 className="text-base font-black text-cyan-300">Diamond VIP</h4>
+                      <p className="text-[11px] text-slate-300 font-medium">۵X بوست پروفایل + لایو Pinned + نشان Diamond</p>
+                    </div>
+                    <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'diamond' ? 'bg-gradient-to-r from-cyan-500 to-blue-400 text-slate-950 font-black shadow-md' : 'bg-slate-900 text-slate-400'}`}>
+                      {selectedVipPlan === 'diamond' ? 'انتخاب شده ✓' : 'انتخاب Diamond'}
+                    </div>
+                  </div>
+
+                  {/* ELITE VIP */}
+                  <div 
+                    onClick={() => setSelectedVipPlan('elite')}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'elite' ? 'bg-gradient-to-br from-purple-950/80 via-slate-900 to-indigo-950/80 border-purple-400 shadow-[0_0_25px_rgba(168,85,247,0.3)]' : 'bg-slate-950/80 border-purple-900/60 hover:border-purple-600'}`}
+                  >
+                    <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 text-white font-black text-[10px] shadow-md">
+                      خاص با دعوت 💠
+                    </span>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-lg">💠</span>
+                        <span className="text-xs font-mono font-black text-purple-300 bg-purple-500/20 px-2.5 py-0.5 rounded-full border border-purple-400/40">
+                          ادمین / دعوت
+                        </span>
+                      </div>
+                      <h4 className="text-base font-black text-purple-300">Elite VIP</h4>
+                      <p className="text-[11px] text-slate-300 font-medium">پشتیبانی ۲۴/۷ + قاب‌های کمیاب</p>
+                    </div>
+                    <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'elite' ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white font-black shadow-md' : 'bg-slate-900 text-slate-400'}`}>
+                      {selectedVipPlan === 'elite' ? 'انتخاب شده ✓' : 'درخواست Elite'}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* DURATION & CTA */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                  <h4 className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-amber-400" />
+                    مدت زمان اشتراک
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {[
+                      { duration: 1, label: '۱ ماهه', badge: 'عادی' },
+                      { duration: 3, label: '۳ ماهه', badge: '۱۵٪ تخفیف' },
+                      { duration: 6, label: '۶ ماهه', badge: '۲۵٪ تخفیف' },
+                      { duration: 12, label: '۱۲ ماهه', badge: '۴۰٪ تخفیف 🔥' }
+                    ].map(item => (
+                      <button
+                        key={item.duration}
+                        onClick={() => setSelectedVipDuration(item.duration)}
+                        className={`p-2.5 rounded-xl border text-right transition flex items-center justify-between ${selectedVipDuration === item.duration ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                      >
+                        <span className="font-bold text-white">{item.label}</span>
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300">{item.badge}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col justify-between space-y-3">
+                  <h4 className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                    <CreditCard className="w-4 h-4 text-amber-400" />
+                    روش پرداخت
+                  </h4>
+
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <button
+                      onClick={() => setSelectedVipPayMethod('in_app')}
+                      className={`p-2.5 rounded-xl border text-center transition ${selectedVipPayMethod === 'in_app' ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                    >
+                      پرداخت درون‌برنامه‌ای
+                    </button>
+                    <button
+                      onClick={() => setSelectedVipPayMethod('usdt')}
+                      className={`p-2.5 rounded-xl border text-center transition ${selectedVipPayMethod === 'usdt' ? 'bg-emerald-500/10 border-emerald-400 text-emerald-300 font-bold' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                    >
+                      USDT
+                    </button>
+                    <button
+                      onClick={() => setSelectedVipPayMethod('coins')}
+                      className={`p-2.5 rounded-xl border text-center transition ${selectedVipPayMethod === 'coins' ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                    >
+                      سکه‌ها
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const basePrices = { silver: 300, gold: 500, diamond: 1000 };
+                      const discountMultipliers = { 1: 1.0, 3: 0.85, 6: 0.75, 12: 0.60 };
+                      const monthlyCost = basePrices[selectedVipPlan] || 500;
+                      const totalBaseCoins = monthlyCost * selectedVipDuration;
+                      const finalCoinsCost = Math.round(totalBaseCoins * (discountMultipliers[selectedVipDuration] || 1.0));
+
+                      if (selectedVipPayMethod === 'coins') {
+                        if (userCoins < finalCoinsCost) {
+                          showToast(`موجودی سکه کافی نیست! هزینه: ${finalCoinsCost} سکه`);
+                          return;
+                        }
+                        setUserCoins(prev => prev - finalCoinsCost);
+                      }
+
+                      setVipPlan(selectedVipPlan);
+                      setVipExpireDays(selectedVipDuration * 30);
+                      setIsVipMonthlyClaimed(false);
+                      setIsVipModalOpen(false);
+                      setIsVipCelebrationOpen(true);
+                      showToast(`👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت فعال شد!`);
+                    }}
+                    className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition"
+                  >
+                    تایید و فعال‌سازی اشتراک {selectedVipPlan.toUpperCase()} ({selectedVipDuration} ماهه)
+                  </button>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: VIP CELEBRATION CONGRATULATIONS MODAL */}
+      {isVipCelebrationOpen && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+          <div className="w-full max-w-md card-3d p-6 sm:p-8 border-2 border-amber-400 bg-slate-900 rounded-3xl text-center space-y-5 shadow-[0_0_60px_rgba(245,158,11,0.5)] relative overflow-hidden">
+            <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-500 p-0.5 shadow-xl animate-bounce">
+              <div className="w-full h-full bg-slate-950 rounded-[22px] flex items-center justify-center">
+                <Crown className="w-10 h-10 text-amber-400 fill-amber-400/30" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-xl font-black bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 bg-clip-text text-transparent">
+                تبریک! شما عضو VIP شُدید 👑
+              </h2>
+              <p className="text-xs text-slate-200 font-bold leading-relaxed">
+                اشتراک <span className="text-amber-300 font-black capitalize">{vipPlan} VIP</span> به مدت <span className="text-emerald-400 font-mono font-black">{vipExpireDays} روز</span> برای حساب شما فعال شد.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-950 border border-amber-500/30 text-xs text-slate-300 text-right space-y-1.5">
+              <p className="font-bold text-amber-300">امکانات فعال شده:</p>
+              <p className="flex items-center gap-1.5">✅ نشان 👑 روی نام شما در تمام چت‌ها و لایوها</p>
+              <p className="flex items-center gap-1.5">✅ بوست دیده شدن پروفایل در Discover</p>
+              <p className="flex items-center gap-1.5">✅ استریم و تماس با کیفیت HD 1080p</p>
+              <p className="flex items-center gap-1.5">✅ حذف کامل تمامی تبلیغات</p>
+            </div>
+
+            <button
+              onClick={() => setIsVipCelebrationOpen(false)}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition"
+            >
+              ورود به دنیای VIP 🚀
+            </button>
           </div>
         </div>
       )}
