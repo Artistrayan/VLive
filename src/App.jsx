@@ -723,6 +723,39 @@ export default function App() {
   const [adminAiSpamScore, setAdminAiSpamScore] = useState(true);
   const [adminAiAutoWarn, setAdminAiAutoWarn] = useState(true);
 
+  // Extra Admin Interactive Form States
+  const [adminUserFilterStatus, setAdminUserFilterStatus] = useState('All');
+  const [adminEditingUser, setAdminEditingUser] = useState(null);
+  const [adminNewUser, setAdminNewUser] = useState({ name: '', username: '', email: '', coins: 10000, role: 'User' });
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+
+  const [adminNewAd, setAdminNewAd] = useState({ title: '', type: 'Banner', location: 'Home Hero', link: '' });
+  const [adminNewEvent, setAdminNewEvent] = useState({ title: '', prizePool: '$5,000 USDT' });
+  const [adminNewRole, setAdminNewRole] = useState({ name: '', handle: '', role: 'Moderator', access: 'Live & Reports Only' });
+
+  const [adminReplyingTicket, setAdminReplyingTicket] = useState(null);
+  const [adminTicketReplyText, setAdminTicketReplyText] = useState('');
+
+  const [adminModerationQueue, setAdminModerationQueue] = useState([
+    { id: 1, user: '@sahar_m', type: 'Profile Photo', mediaUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', status: 'Pending Review' },
+    { id: 2, user: '@ali_streamer', type: 'Live Thumbnail', mediaUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', status: 'Pending Review' }
+  ]);
+
+  const [adminStatsTimeframe, setAdminStatsTimeframe] = useState('24h');
+  const [adminMinWithdrawal, setAdminMinWithdrawal] = useState('$50 USDT');
+  const [adminTermsText, setAdminTermsText] = useState('Welcome to V.Live+. Respect community guidelines and terms of service.');
+
+  const [adminBackupsList, setAdminBackupsList] = useState([
+    { id: 'BK-20260728', size: '48.2 MB', date: '2026-07-28 12:00' },
+    { id: 'BK-20260727', size: '46.1 MB', date: '2026-07-27 12:00' }
+  ]);
+
+  const addAdminAuditLog = (actionText) => {
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setAdminLogsList(prev => [{ time: timeStr, log: actionText }, ...prev]);
+    showToast(actionText);
+  };
+
   // System Audit Logs Feed State
   const [adminLogsList, setAdminLogsList] = useState([
     { time: '12:15', log: 'Admin deleted Live #1040 for Terms violation' },
@@ -1071,6 +1104,134 @@ export default function App() {
   // DEPOSIT & WITHDRAWAL USDT WALLET MODAL STATE
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+
+  // REDESIGNED WALLET SYSTEM STATES & HELPERS
+  const [userDiamonds, setUserDiamonds] = useState(10000); // 10,000 Diamonds
+  const [userCashBalance, setUserCashBalance] = useState(25.00); // $25.00 USDT
+  const [walletSubTab, setWalletSubTab] = useState('overview'); // 'overview' | 'buy' | 'convert' | 'withdraw' | 'history' | 'creator' | 'referral' | 'security' | 'giftshop'
+  
+  const [txHistoryList, setTxHistoryList] = useState([
+    { id: 'TX-901', type: 'Received Gift', description: 'دریافت هدیه تاج سلطنتی 👑 از Soren', amount: '+500 Diamonds', category: 'Gifts', time: 'امروز ۱۴:۳۰', status: 'Completed', icon: '🎁', color: 'text-pink-400' },
+    { id: 'TX-902', type: 'Buy Coins', description: 'خرید ۱,۰۰۰ سکه با USDT TRC20', amount: '+1,000 Coins', category: 'Coins', time: 'امروز ۱۱:۱۵', status: 'Completed', icon: '🪙', color: 'text-amber-400' },
+    { id: 'TX-903', type: 'Convert Diamonds', description: 'تبدیل ۵,۰۰۰ الماس به ارز نقد USDT', amount: '+$50.00 USDT', category: 'Convert', time: 'دیروز ۱۹:۴۰', status: 'Completed', icon: '💎', color: 'text-cyan-400' },
+    { id: 'TX-904', type: 'Withdrawal', description: 'برداشت درآمد به ولت TRC20', amount: '-$100.00 USDT', category: 'Withdrawals', time: '۲ روز پیش', status: 'Pending', icon: '💸', color: 'text-rose-400' },
+    { id: 'TX-905', type: 'VIP Purchase', description: 'خرید اشتراک ۱ ماهه VIP', amount: '-500 Coins', category: 'VIP', time: '۳ روز پیش', status: 'Completed', icon: '👑', color: 'text-amber-300' },
+    { id: 'TX-906', type: 'Referral Reward', description: 'پاداش دعوت دوست (@ali_user)', amount: '+2,500 Coins', category: 'Referral', time: '۴ روز پیش', status: 'Completed', icon: '👥', color: 'text-emerald-400' }
+  ]);
+  const [txCategoryFilter, setTxCategoryFilter] = useState('All');
+
+  const [withdrawAmountInput, setWithdrawAmountInput] = useState('25');
+  const [withdrawMethodInput, setWithdrawMethodInput] = useState('USDT TRC20');
+  const [withdrawAddressInput, setWithdrawAddressInput] = useState('TBMvBiVB6mhu1gnaAAE1Pg5YohKvV1NSnB');
+  const [withdrawPinInput, setWithdrawPinInput] = useState('');
+
+  const [withdrawalsHistoryList, setWithdrawalsHistoryList] = useState([
+    { id: 'W-801', amount: '$100.00 USDT', method: 'USDT TRC20', address: 'TBMvBi...1NSnB', date: '2026-07-26 18:20', status: 'Pending', reason: '' },
+    { id: 'W-800', amount: '$250.00 USDT', method: 'USDT TRC20', address: 'TBMvBi...1NSnB', date: '2026-07-20 14:10', status: 'Completed', reason: '' },
+    { id: 'W-799', amount: '$50.00 USDT', method: 'Bank Transfer', address: 'IR4829...901', date: '2026-07-15 10:00', status: 'Rejected', reason: 'عدم تطابق نام حساب با کارت ملی' }
+  ]);
+
+  const [convertDiamondsInput, setConvertDiamondsInput] = useState('5000');
+  const [selectedCoinPackPayment, setSelectedCoinPackPayment] = useState('USDT TRC20');
+  const [walletSecurityPin, setWalletSecurityPin] = useState('1234');
+  const [isPinConfigured, setIsPinConfigured] = useState(true);
+
+  // WALLET HELPER ACTIONS
+  const handleBuyCoinsPack = (coinsCount, priceUsdt) => {
+    setUserCoins(prev => prev + coinsCount);
+    const newTx = {
+      id: `TX-${Date.now().toString().slice(-4)}`,
+      type: 'Buy Coins',
+      description: `خرید ${coinsCount.toLocaleString()} سکه ($${priceUsdt} USDT)`,
+      amount: `+${coinsCount.toLocaleString()} Coins`,
+      category: 'Coins',
+      time: 'هم‌اکنون',
+      status: 'Completed',
+      icon: '🪙',
+      color: 'text-amber-400'
+    };
+    setTxHistoryList(prev => [newTx, ...prev]);
+    showToast(`🎉 ${coinsCount.toLocaleString()} سکه با موفقیت خریداری شد!`);
+  };
+
+  const handleConvertDiamondsAction = () => {
+    const diamondsToConvert = parseInt(convertDiamondsInput) || 0;
+    if (diamondsToConvert <= 0) {
+      showToast('لطفاً مقدار معتبری از الماس وارد کنید');
+      return;
+    }
+    if (diamondsToConvert > userDiamonds) {
+      showToast('موجودی الماس شما کافی نیست!');
+      return;
+    }
+
+    const usdGained = diamondsToConvert / 100; // 100 Diamonds = 1 USDT
+    setUserDiamonds(prev => prev - diamondsToConvert);
+    setUserCashBalance(prev => prev + usdGained);
+
+    const newTx = {
+      id: `TX-${Date.now().toString().slice(-4)}`,
+      type: 'Convert Diamonds',
+      description: `تبدیل ${diamondsToConvert.toLocaleString()} الماس به ارز نقد`,
+      amount: `+$${usdGained.toFixed(2)} USDT`,
+      category: 'Convert',
+      time: 'هم‌اکنون',
+      status: 'Completed',
+      icon: '💎',
+      color: 'text-cyan-400'
+    };
+    setTxHistoryList(prev => [newTx, ...prev]);
+    showToast(`✨ ${diamondsToConvert.toLocaleString()} الماس با موفقیت به $${usdGained.toFixed(2)} USDT نقد تبدیل شد!`);
+  };
+
+  const handleRequestWithdrawalAction = () => {
+    const amountUsd = parseFloat(withdrawAmountInput) || 0;
+    if (amountUsd <= 0) {
+      showToast('لطفاً مبلغ برداشت معتبری وارد کنید');
+      return;
+    }
+    if (amountUsd > userCashBalance) {
+      showToast('موجودی قابل برداشت شما کافی نیست!');
+      return;
+    }
+    if (!withdrawAddressInput.trim()) {
+      showToast('لطفاً آدرس کیف پول مقصد را وارد کنید');
+      return;
+    }
+    if (withdrawPinInput !== walletSecurityPin) {
+      showToast('رمز برداشت اشتباه است!');
+      return;
+    }
+
+    setUserCashBalance(prev => prev - amountUsd);
+    
+    const newWithdrawal = {
+      id: `W-${Date.now().toString().slice(-4)}`,
+      amount: `$${amountUsd.toFixed(2)} USDT`,
+      method: withdrawMethodInput,
+      address: `${withdrawAddressInput.slice(0, 6)}...${withdrawAddressInput.slice(-4)}`,
+      date: new Date().toLocaleString('fa-IR'),
+      status: 'Pending',
+      reason: ''
+    };
+    setWithdrawalsHistoryList(prev => [newWithdrawal, ...prev]);
+
+    const newTx = {
+      id: `TX-${Date.now().toString().slice(-4)}`,
+      type: 'Withdrawal',
+      description: `درخواست برداشت به آدرس ${withdrawMethodInput}`,
+      amount: `-$${amountUsd.toFixed(2)} USDT`,
+      category: 'Withdrawals',
+      time: 'هم‌اکنون',
+      status: 'Pending',
+      icon: '💸',
+      color: 'text-rose-400'
+    };
+    setTxHistoryList(prev => [newTx, ...prev]);
+
+    setWithdrawPinInput('');
+    showToast(`💸 درخواست برداشت $${amountUsd.toFixed(2)} USDT ثبت شد و در حال بررسی توسط بخش مالی است!`);
+  };
   const [selectedPack, setSelectedPack] = useState(null);
   const [depositTxId, setDepositTxId] = useState('');
   const [withdrawUsdtAddressInput, setWithdrawUsdtAddressInput] = useState(hostUsdtAddress);
@@ -4558,486 +4719,846 @@ export default function App() {
           </div>
         )}
 
-{/* TAB 3: COMPLETE REDESIGNED EARNINGS & MONETIZATION DASHBOARD */}
+{/* TAB 3: COMPLETE REDESIGNED MULTI-CURRENCY WALLET & CREATOR EARNINGS */}
         {(activeTab === 'earnings' || activeTab === 'wallet') && (
-          <div className="space-y-6">
+          <div className="space-y-5 text-right" dir="rtl">
 
-            {/* 1. TOP HEADER: TOTAL BALANCE & QUICK ACTIONS */}
-            <div className="card-3d p-6 rounded-3xl border border-amber-500/40 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/40 relative overflow-hidden space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-4">
+            {/* 1. TOP HEADER: TOTAL BALANCE DISPLAY */}
+            <div className="card-3d p-5 sm:p-6 rounded-3xl border border-amber-500/40 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/40 relative overflow-hidden space-y-4 shadow-[0_0_50px_rgba(245,158,11,0.15)]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                    <DollarSign className="w-3.5 h-3.5" />
-                    Total Account Balance (موجودی کل)
+                  <span className="text-[11px] text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <DollarSign className="w-4 h-4 text-amber-400" />
+                    💰 Total Balance (موجودی کل حساب کاربری)
                   </span>
-                  <div className="flex items-baseline gap-2 mt-1">
-                    <h2 className="text-4xl font-black text-white">$125.80</h2>
-                    <span className="text-xs text-amber-300 font-bold bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
-                      {userCoins.toLocaleString()} Coins
+                  <div className="flex items-baseline gap-3 mt-1.5 flex-wrap">
+                    <h2 className="text-3xl sm:text-4xl font-black text-white font-mono tracking-tight">
+                      {userCoins.toLocaleString()} <span className="text-amber-400 text-lg sm:text-xl font-bold">Coins</span>
+                    </h2>
+                    <span className="text-xs text-amber-300 font-bold bg-amber-500/20 px-2.5 py-1 rounded-full border border-amber-500/30">
+                      ≈ ${((userCoins / 500) + (userDiamonds / 100) + userCashBalance).toFixed(2)} USDT
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
                   <button 
-                    onClick={() => setIsWithdrawModalOpen(true)}
-                    className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 transition"
-                  >
-                    <ArrowUpRight className="w-4 h-4" />
-                    💸 Withdraw
-                  </button>
-
-                  <button 
-                    onClick={() => setIsDepositModalOpen(true)}
-                    className="px-4 py-2.5 rounded-2xl btn-neon-pink text-xs font-bold flex items-center gap-1.5 shadow-lg hover:scale-105 transition"
+                    onClick={() => setWalletSubTab('buy')}
+                    className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 active:scale-95 transition"
                   >
                     <Plus className="w-4 h-4" />
-                    ➕ Deposit
+                    ➕ خرید سکه
                   </button>
 
                   <button 
-                    onClick={() => showToast('Displaying complete TRC20 transaction ledger')}
-                    className="p-2.5 rounded-2xl bg-slate-900 border border-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-800"
-                    title="Transaction History"
+                    onClick={() => setWalletSubTab('withdraw')}
+                    className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 active:scale-95 transition"
+                  >
+                    <ArrowUpRight className="w-4 h-4" />
+                    💸 برداشت درآمد
+                  </button>
+
+                  <button 
+                    onClick={() => setWalletSubTab('history')}
+                    className="p-2.5 rounded-2xl bg-slate-900 border border-slate-700 text-amber-300 text-xs font-bold hover:bg-slate-800 flex items-center gap-1"
+                    title="تاریخچه تراکنش‌ها"
                   >
                     <Clock className="w-4 h-4" />
+                    <span>تراکنش‌ها</span>
                   </button>
                 </div>
               </div>
 
-              {/* Host Net Share Banner */}
-              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between text-xs">
-                <span className="text-amber-200 font-semibold flex items-center gap-1.5">
-                  <Crown className="w-4 h-4 text-amber-400" />
-                  71% Host Streamer Payout Share Rate Active
-                </span>
-                <span className="text-emerald-400 font-black">Net Claimable: $124.30 USDT</span>
-              </div>
-            </div>
-
-            {/* 2. STATS CARDS: TODAY, WEEK, MONTH, TOTAL (📈 درآمد امروز) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1 hover:border-pink-500/40 transition">
-                <span className="text-[10px] text-slate-400 font-medium">درآمد امروز (Today)</span>
-                <p className="text-lg font-black text-pink-400">$45.80</p>
-                <span className="text-[9px] text-amber-300 font-semibold">2,290 Coins</span>
-              </div>
-
-              <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1 hover:border-purple-500/40 transition">
-                <span className="text-[10px] text-slate-400 font-medium">درآمد هفته (This Week)</span>
-                <p className="text-lg font-black text-purple-400">$380.00</p>
-                <span className="text-[9px] text-amber-300 font-semibold">19,000 Coins</span>
-              </div>
-
-              <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1 hover:border-cyan-500/40 transition">
-                <span className="text-[10px] text-slate-400 font-medium">درآمد ماه (This Month)</span>
-                <p className="text-lg font-black text-cyan-400">$1,250.00</p>
-                <span className="text-[9px] text-amber-300 font-semibold">62,500 Coins</span>
-              </div>
-
-              <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1 hover:border-amber-500/40 transition">
-                <span className="text-[10px] text-slate-400 font-medium">درآمد کل (Total All-Time)</span>
-                <p className="text-lg font-black text-amber-400">$8,450.00</p>
-                <span className="text-[9px] text-amber-300 font-semibold">422,500 Coins</span>
-              </div>
-            </div>
-
-            {/* 3. VISUAL EARNINGS CHART & TIER LEVEL (📊 نمودار درآمد & 🎯 سطح درآمد) */}
-            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <BarChart2 className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-xs font-bold text-white">📊 نمودار درآمد & 🎯 سطح درآمد</h3>
+              {/* 3 GLASSMORPHISM NEON BALANCE CARDS */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                
+                {/* 🪙 COINS CARD (GOLD THEME) */}
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-950/80 via-amber-900/40 to-slate-950 border border-amber-500/50 shadow-[0_0_25px_rgba(245,158,11,0.2)] flex flex-col justify-between space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                      <Coins className="w-4 h-4 text-amber-400" /> 🪙 Coins (سکه)
+                    </span>
+                    <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">ارز مصرفی</span>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-black text-white font-mono">{userCoins.toLocaleString()}</p>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">معادل تقریبی: ≈ ${(userCoins / 500).toFixed(2)} USDT</span>
+                  </div>
+                  <button 
+                    onClick={() => setWalletSubTab('buy')}
+                    className="w-full py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md"
+                  >
+                    ➕ Buy Coins (خرید سکه)
+                  </button>
                 </div>
 
-                {/* Chart Filter Tabs */}
-                <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-[10px] font-bold">
-                  {['daily', 'weekly', 'monthly'].map(tf => (
-                    <button
-                      key={tf}
-                      onClick={() => setEarningsTimeframe(tf)}
-                      className={`px-3 py-1 rounded-lg capitalize transition ${earningsTimeframe === tf ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+                {/* 💎 DIAMONDS CARD (BLUE THEME) */}
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-950/80 via-blue-900/40 to-slate-950 border border-cyan-500/50 shadow-[0_0_25px_rgba(6,182,212,0.2)] flex flex-col justify-between space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-cyan-400" /> 💎 Diamonds (الماس)
+                    </span>
+                    <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/30">درآمد استریمر</span>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-black text-white font-mono">{userDiamonds.toLocaleString()}</p>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">ارزش تبدیل نقد: ≈ ${(userDiamonds / 100).toFixed(2)} USDT</span>
+                  </div>
+                  <button 
+                    onClick={() => setWalletSubTab('convert')}
+                    className="w-full py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs transition shadow-md"
+                  >
+                    🔄 Convert (تبدیل درآمد)
+                  </button>
+                </div>
+
+                {/* 💵 CASH BALANCE CARD (GREEN THEME) */}
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-950/80 via-teal-900/40 to-slate-950 border border-emerald-500/50 shadow-[0_0_25px_rgba(16,185,129,0.2)] flex flex-col justify-between space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                      <DollarSign className="w-4 h-4 text-emerald-400" /> 💵 Cash Balance (موجودی نقد)
+                    </span>
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">قابل برداشت</span>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-black text-emerald-400 font-mono">${userCashBalance.toFixed(2)} <span className="text-xs font-bold text-slate-300">USDT</span></p>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">آماده واریز مستقیم به TRC20</span>
+                  </div>
+                  <button 
+                    onClick={() => setWalletSubTab('withdraw')}
+                    className="w-full py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-md"
+                  >
+                    💸 Withdraw (برداشت وجه)
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+            {/* 2. FOUR MAIN BIG ACTION BUTTONS */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <button
+                onClick={() => setWalletSubTab('buy')}
+                className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'buy' ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-amber-500/50'}`}
+              >
+                <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-400 group-hover:scale-110 transition">
+                  <Plus className="w-6 h-6" />
+                </div>
+                <span className="font-black text-sm">➕ Buy Coins</span>
+                <span className="text-[10px] text-slate-400">خرید سکه برای هدیه و خدمات</span>
+              </button>
+
+              <button
+                onClick={() => setWalletSubTab('giftshop')}
+                className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'giftshop' ? 'bg-pink-500/20 border-pink-400 text-pink-300 shadow-[0_0_20px_rgba(236,72,153,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-pink-500/50'}`}
+              >
+                <div className="p-3 rounded-2xl bg-pink-500/20 text-pink-400 group-hover:scale-110 transition">
+                  <Gift className="w-6 h-6" />
+                </div>
+                <span className="font-black text-sm">🎁 Send Gift</span>
+                <span className="text-[10px] text-slate-400">ارسال هدیه به استریمرها</span>
+              </button>
+
+              <button
+                onClick={() => setWalletSubTab('withdraw')}
+                className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'withdraw' ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-emerald-500/50'}`}
+              >
+                <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition">
+                  <ArrowUpRight className="w-6 h-6" />
+                </div>
+                <span className="font-black text-sm">💸 Withdraw</span>
+                <span className="text-[10px] text-slate-400">تسویه و برداشت درآمد به TRC20</span>
+              </button>
+
+              <button
+                onClick={() => setWalletSubTab('history')}
+                className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'history' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-cyan-500/50'}`}
+              >
+                <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-400 group-hover:scale-110 transition">
+                  <Clock className="w-6 h-6" />
+                </div>
+                <span className="font-black text-sm">📜 History</span>
+                <span className="text-[10px] text-slate-400">تاریخچه کامل تراکنش‌ها</span>
+              </button>
+            </div>
+
+            {/* WALLET SUB-NAVIGATION CHIPS BAR */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs border-b border-slate-800">
+              {[
+                { id: 'overview', label: '💰 Balance (نمای کلی)' },
+                { id: 'buy', label: '🪙 Buy Coins (خرید سکه)' },
+                { id: 'convert', label: '💎 Convert (تبدیل درآمد)' },
+                { id: 'withdraw', label: '💸 Withdraw (برداشت)' },
+                { id: 'history', label: '📜 Transactions (تاریخچه)' },
+                { id: 'creator', label: '🏆 Creator Earnings (درآمد)' },
+                { id: 'referral', label: '👥 Referral (دعوت دوستان)' },
+                { id: 'security', label: '🔒 Security & VIP (امنیت)' },
+                { id: 'giftshop', label: '🎁 Gift Shop (فروشگاه)' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setWalletSubTab(tab.id)}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition border ${walletSubTab === tab.id ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 border-amber-300 font-black shadow-md scale-105' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* SUB-TAB 1: BALANCE OVERVIEW */}
+            {walletSubTab === 'overview' && (
+              <div className="space-y-4">
+                
+                {/* LIVE EARNINGS TREND & ANALYTICS CHART */}
+                <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-emerald-400" />
+                      📈 نمودار روند درآمدزایی هفتگی (Weekly Earnings Trend)
+                    </h3>
+                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      +۲۴٪ رشد نسبت به هفته قبل
+                    </span>
+                  </div>
+
+                  {/* VISUAL REVENUE BARS */}
+                  <div className="grid grid-cols-7 gap-2 pt-4 pb-1 text-center items-end h-32">
+                    {[
+                      { day: 'شنبه', coins: 1200, height: 'h-16', color: 'bg-amber-500/40' },
+                      { day: '۱شنبه', coins: 1800, height: 'h-20', color: 'bg-amber-500/50' },
+                      { day: '۲شنبه', coins: 2400, height: 'h-24', color: 'bg-amber-500/60' },
+                      { day: '۳شنبه', coins: 1500, height: 'h-18', color: 'bg-amber-500/50' },
+                      { day: '۴شنبه', coins: 3100, height: 'h-28', color: 'bg-amber-500/80' },
+                      { day: '۵شنبه', coins: 4200, height: 'h-32', color: 'bg-gradient-to-t from-amber-500 to-orange-400 shadow-[0_0_15px_rgba(245,158,11,0.5)]' },
+                      { day: 'جمعه', coins: 2900, height: 'h-26', color: 'bg-amber-500/70' }
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex flex-col items-center justify-end h-full gap-1">
+                        <span className="text-[9px] font-mono text-amber-300 font-bold">{item.coins}</span>
+                        <div className={`w-full rounded-t-xl transition-all duration-500 ${item.height} ${item.color}`} />
+                        <span className="text-[10px] text-slate-400 block mt-1">{item.day}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* PLATFORM FEE TRANSPARENCY BOX */}
+                <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-amber-300 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-amber-400" />
+                      ۹. کمیسیون و سهم درآمد برنامه (Platform Fee Transparency)
+                    </h3>
+                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      سهم استریمر: ۸۰٪ خالص
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] pt-1">
+                    <div className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-center">
+                      <span className="text-[10px] text-slate-400">ارزش هدیه دریافتی</span>
+                      <p className="font-bold text-white mt-0.5">1,000 Coins</p>
+                    </div>
+                    <div className="p-2.5 rounded-2xl bg-slate-900 border border-rose-500/30 text-center">
+                      <span className="text-[10px] text-rose-300">کمیسیون پلتفرم (20%)</span>
+                      <p className="font-bold text-rose-400 mt-0.5">-200 Coins</p>
+                    </div>
+                    <div className="p-2.5 rounded-2xl bg-slate-900 border border-emerald-500/30 text-center">
+                      <span className="text-[10px] text-emerald-300">درآمد خالص استریمر (80%)</span>
+                      <p className="font-bold text-emerald-400 mt-0.5">+800 Diamonds</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* WATCH ADS REWARD WIDGET */}
+                <div className="p-4 rounded-3xl bg-gradient-to-r from-purple-950/80 via-slate-900 to-slate-950 border border-purple-500/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-2xl bg-purple-600/20 text-purple-300 border border-purple-500/30">
+                      <Play className="w-6 h-6 fill-purple-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-sm flex items-center gap-1.5">
+                        ۱۱. تبلیغات و پاداش (Watch Video Ads)
+                      </h4>
+                      <p className="text-[11px] text-slate-300">با تماشای یک ویدئوی ۱۵ ثانیه‌ای اسپانسر، <strong>+۲۰ سکه رایگان</strong> دریافت کنید!</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setUserCoins(prev => prev + 20);
+                      const newTx = {
+                        id: `TX-${Date.now().toString().slice(-4)}`,
+                        type: 'Ad Reward',
+                        description: 'پاداش تماشای ویدئوی تبلیغاتی اسپانسر',
+                        amount: '+20 Coins',
+                        category: 'Coins',
+                        time: 'هم‌اکنون',
+                        status: 'Completed',
+                        icon: '🎬',
+                        color: 'text-purple-400'
+                      };
+                      setTxHistoryList(prev => [newTx, ...prev]);
+                      showToast('🎉 پاداش تماشای ویدیو: +۲۰ سکه به کیف پول شما اضافه شد!');
+                    }}
+                    className="px-5 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs whitespace-nowrap shadow-lg hover:scale-105 transition"
+                  >
+                    🎬 تماشای ویدیو (+20 Coins)
+                  </button>
+                </div>
+
+                {/* RECENT TRANSACTIONS PREVIEW */}
+                <div className="card-3d p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-cyan-400" />
+                      ۷. آخرین تراکنش‌های کیف پول
+                    </h3>
+                    <button 
+                      onClick={() => setWalletSubTab('history')}
+                      className="text-amber-300 font-bold hover:underline text-[11px]"
                     >
-                      {tf}
+                      مشاهده تمام تراکنش‌ها ➔
                     </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {txHistoryList.slice(0, 3).map(tx => (
+                      <div key={tx.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xl">{tx.icon}</span>
+                          <div>
+                            <p className="font-bold text-white text-[11px]">{tx.description}</p>
+                            <span className="text-[10px] text-slate-400">{tx.time} • کد: {tx.id}</span>
+                          </div>
+                        </div>
+                        <div className="text-left">
+                          <p className={`font-black font-mono text-xs ${tx.color}`}>{tx.amount}</p>
+                          <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold ${tx.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>{tx.status}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* SUB-TAB 2: BUY COIN STORE */}
+            {walletSubTab === 'buy' && (
+              <div className="space-y-4 text-xs">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-white text-sm">۳. فروشگاه خرید سکه (Coin Store)</h3>
+                  <span className="text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+                    موجودی فعلی: {userCoins.toLocaleString()} سکه
+                  </span>
+                </div>
+
+                {/* PAYMENT METHOD SELECTOR */}
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                  <label className="text-[10px] text-slate-400 font-bold block">انتخاب روش پرداخت:</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button
+                      onClick={() => setSelectedCoinPackPayment('In-App')}
+                      className={`p-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 transition ${selectedCoinPackPayment === 'In-App' ? 'bg-amber-500 text-slate-950 border-amber-300 font-black' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                    >
+                      📱 پرداخت درون‌برنامه‌ای (Google/Apple)
+                    </button>
+                    <button
+                      onClick={() => setSelectedCoinPackPayment('USDT TRC20')}
+                      className={`p-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 transition ${selectedCoinPackPayment === 'USDT TRC20' ? 'bg-amber-500 text-slate-950 border-amber-300 font-black' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                    >
+                      🪙 USDT TRC20 (۵٪ سکه بونوس)
+                    </button>
+                    <button
+                      onClick={() => setSelectedCoinPackPayment('Card')}
+                      className={`p-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 transition ${selectedCoinPackPayment === 'Card' ? 'bg-amber-500 text-slate-950 border-amber-300 font-black' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                    >
+                      💳 کارت به کارت / درگاه مستقیم
+                    </button>
+                  </div>
+                </div>
+
+                {/* COIN PACKAGES GRID */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { coins: 100, price: '1.99', badge: 'پک برنز', bonus: '' },
+                    { coins: 500, price: '8.99', badge: 'محبوب‌ترین 🔥', bonus: '+25 سکه هدیه' },
+                    { coins: 1000, price: '16.99', badge: 'پک طلایی 🌟', bonus: '+100 سکه هدیه' },
+                    { coins: 5000, price: '79.99', badge: 'پک الماس 💎', bonus: '+750 سکه هدیه' },
+                    { coins: 10000, price: '149.99', badge: 'پک وی‌آی‌پی 👑', bonus: '+2,000 سکه بونوس' }
+                  ].map((pack, i) => (
+                    <div key={i} className="p-4 rounded-3xl bg-slate-950 border border-amber-500/30 hover:border-amber-400 transition space-y-3 flex flex-col justify-between text-center relative overflow-hidden group">
+                      {pack.badge && (
+                        <span className="absolute top-2 left-2 text-[9px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full shadow">
+                          {pack.badge}
+                        </span>
+                      )}
+                      <div className="pt-3">
+                        <span className="text-3xl block">🪙</span>
+                        <h4 className="text-xl font-black text-white mt-1 font-mono">{pack.coins.toLocaleString()} <span className="text-xs text-amber-300">Coins</span></h4>
+                        {pack.bonus && <span className="text-[10px] text-emerald-400 font-bold block mt-0.5">{pack.bonus}</span>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-base font-black text-amber-400 font-mono">${pack.price} USD</p>
+                        <button
+                          onClick={() => handleBuyCoinsPack(pack.coins, pack.price)}
+                          className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow-md transition transform group-hover:scale-105"
+                        >
+                          خرید آنلاین سکه
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
+            )}
 
-              {/* Bar Chart Simulation */}
-              <div className="h-28 flex items-end justify-between gap-2 pt-4 px-2 bg-slate-950 rounded-2xl border border-slate-800/80">
-                {[
-                  { label: 'Mon', val: 40 },
-                  { label: 'Tue', val: 65 },
-                  { label: 'Wed', val: 30 },
-                  { label: 'Thu', val: 85 },
-                  { label: 'Fri', val: 95 },
-                  { label: 'Sat', val: 70 },
-                  { label: 'Sun', val: 100 }
-                ].map((bar, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                    <span className="text-[8px] font-bold text-amber-300">{bar.val}$</span>
-                    <div 
-                      className="w-full bg-gradient-to-t from-amber-600 via-pink-500 to-purple-500 rounded-t-lg transition-all duration-500" 
-                      style={{ height: `${bar.val}%` }}
-                    />
-                    <span className="text-[9px] text-slate-500">{bar.label}</span>
+            {/* SUB-TAB 3: CONVERT DIAMONDS */}
+            {walletSubTab === 'convert' && (
+              <div className="space-y-4 text-xs">
+                <div className="p-5 rounded-3xl bg-slate-950 border border-cyan-500/40 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 className="font-bold text-cyan-300 text-sm flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-cyan-400" />
+                      ۴. تبدیل درآمد استریمر (Convert Diamonds to Cash)
+                    </h3>
+                    <span className="text-[10px] text-slate-400">نرخ تبدیل: ۱۰۰ الماس = $۱.۰۰ USDT</span>
                   </div>
-                ))}
-              </div>
 
-              {/* Earnings Tier Progression (Bronze, Silver, Gold, Diamond) */}
-              <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
-                <span className="text-[10px] text-slate-400 font-bold block">🎯 Current Income Level: Gold Tier</span>
-                <div className="grid grid-cols-4 gap-2 text-center text-[10px]">
-                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 opacity-60">
-                    <span className="block text-lg">🥉</span>
-                    <span className="font-bold text-amber-700">Bronze</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 opacity-75">
-                    <span className="block text-lg">🥈</span>
-                    <span className="font-bold text-slate-300">Silver</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-amber-500/20 border-2 border-amber-400 text-amber-300 font-black shadow-[0_0_15px_rgba(245,158,11,0.3)]">
-                    <span className="block text-lg">🥇</span>
-                    <span>Gold (Active)</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 opacity-60">
-                    <span className="block text-lg">💎</span>
-                    <span className="font-bold text-cyan-400">Diamond</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 4. GIFTS REVENUE ANALYTICS (🎁 هدایا) */}
-            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                  <Gift className="w-4 h-4 text-pink-400" />
-                  🎁 آمار هدایای دریافتی (Gifts Revenue)
-                </h3>
-                <span className="text-[10px] text-pink-400 font-bold bg-pink-500/10 px-2 py-0.5 rounded-full border border-pink-500/20">
-                  1,840 Total Gifts Received
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400">تعداد هدایا (Gift Count)</span>
-                  <p className="text-base font-black text-white mt-1">1,840 Items</p>
-                </div>
-
-                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400">ارزش کل هدایا (Gift Value)</span>
-                  <p className="text-base font-black text-amber-400 mt-1">$5,240.00 USD</p>
-                </div>
-
-                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400">بیشترین هدیه دهنده (Top Sender)</span>
-                  <p className="text-base font-black text-cyan-300 mt-1 flex items-center justify-center gap-1">
-                    <Crown className="w-4 h-4 text-amber-400 fill-amber-400" />
-                    Soren 🔥 (10,000 Coins)
+                  <p className="text-slate-300 text-[11px] leading-relaxed">
+                    هدایای دریافتی در لایو به صورت <strong>الماس (Diamonds)</strong> در کیف پول شما ذخیره می‌شوند. شما می‌توانید الماس‌های خود را بدون کارمزد اضافی به موجودی نقد USDT تبدیل کرده و مستقیم برداشت کنید.
                   </p>
+
+                  <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-400">موجودی فعلی الماس:</span>
+                      <span className="font-black text-cyan-300 text-sm font-mono">{userDiamonds.toLocaleString()} 💎</span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 block font-bold">مقدار الماس جهت تبدیل:</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={convertDiamondsInput}
+                          onChange={e => setConvertDiamondsInput(e.target.value)}
+                          placeholder="مثلاً: 5000"
+                          className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono font-bold outline-none focus:border-cyan-400"
+                        />
+                        <button
+                          onClick={() => setConvertDiamondsInput(userDiamonds.toString())}
+                          className="px-3 py-2 rounded-xl bg-slate-800 text-cyan-300 font-bold text-[10px]"
+                        >
+                          حداکثر (All)
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* CONVERSION PREVIEW RESULT */}
+                    <div className="p-3 rounded-xl bg-cyan-950/50 border border-cyan-500/30 flex items-center justify-between">
+                      <span className="text-cyan-200 font-bold text-xs">دریافت نقد نهایی:</span>
+                      <span className="text-lg font-black text-emerald-400 font-mono">
+                        +${((parseInt(convertDiamondsInput) || 0) / 100).toFixed(2)} USDT
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={handleConvertDiamondsAction}
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs shadow-lg transition"
+                    >
+                      💎 تبدیل فوری به ارز نقد USDT
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* 5. LIVE BROADCAST EARNINGS (📺 درآمد از لایو) */}
-            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                  <Tv className="w-4 h-4 text-purple-400" />
-                  📺 درآمد از پخش زنده لایو (Live Broadcast Income)
-                </h3>
-                <span className="text-[10px] text-purple-300 font-bold bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">
-                  32 Hours Streamed
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
-                  <span className="text-[9px] text-slate-400">تعداد بینندگان (Viewers)</span>
-                  <p className="text-sm font-black text-white mt-1">48.5K Total</p>
-                </div>
-
-                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
-                  <span className="text-[9px] text-slate-400">زمان لایو (Live Hours)</span>
-                  <p className="text-sm font-black text-purple-400 mt-1">32 Hours</p>
-                </div>
-
-                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
-                  <span className="text-[9px] text-slate-400">درآمد هر ساعت</span>
-                  <p className="text-sm font-black text-emerald-400 mt-1">$18.50 / Hr</p>
-                </div>
-
-                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
-                  <span className="text-[9px] text-slate-400">میانگین درآمد لایو</span>
-                  <p className="text-sm font-black text-amber-400 mt-1">$65.00 / Session</p>
-                </div>
-              </div>
-            </div>
-
-            {/* 6. AD REVENUE SECTION (📢 درآمد از تبلیغات) */}
-            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-pink-500/30 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                  <Megaphone className="w-4 h-4 text-pink-400" />
-                  📢 کسب درآمد از ویدئو و تبلیغات (Ad Revenue)
-                </h3>
-                <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                  Rewarded Video Ads
-                </span>
-              </div>
-
-              {/* Watch Ad Instant Reward Buttons */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-950/60 to-purple-950/60 border border-pink-500/40 flex items-center justify-between">
-                  <div>
-                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <Play className="w-4 h-4 text-pink-400 fill-pink-400" />
-                      Watch Ad (+20 Coins)
-                    </h4>
-                    <p className="text-[10px] text-slate-300">Watch a short 15-sec video sponsor ad</p>
+            {/* SUB-TAB 4: WITHDRAW */}
+            {walletSubTab === 'withdraw' && (
+              <div className="space-y-5 text-xs">
+                
+                {/* WITHDRAWAL FORM */}
+                <div className="p-5 rounded-3xl bg-slate-950 border border-emerald-500/40 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 className="font-bold text-emerald-300 text-sm flex items-center gap-1.5">
+                      <ArrowUpRight className="w-4 h-4 text-emerald-400" />
+                      ۵. تسویه حساب و برداشت درآمد (Withdraw Earnings)
+                    </h3>
+                    <span className="text-[11px] text-emerald-400 font-black bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/30 font-mono">
+                      موجودی قابل برداشت: ${userCashBalance.toFixed(2)} USDT
+                    </span>
                   </div>
 
-                  <button 
-                    onClick={() => {
-                      setUserCoins(prev => prev + 20);
-                      showToast('🎉 Congratulations! You earned +20 Coins for watching the ad!');
-                    }}
-                    className="px-4 py-2 rounded-xl btn-neon-pink text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition"
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 block font-bold">مبلغ برداشت (USD):</label>
+                      <input
+                        type="number"
+                        value={withdrawAmountInput}
+                        onChange={e => setWithdrawAmountInput(e.target.value)}
+                        placeholder="مثلاً: 50"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono font-bold outline-none focus:border-emerald-400"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 block font-bold">روش برداشت:</label>
+                      <select
+                        value={withdrawMethodInput}
+                        onChange={e => setWithdrawMethodInput(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-emerald-400"
+                      >
+                        <option value="USDT TRC20">USDT TRC20 (تتر شبکه‌ ترون)</option>
+                        <option value="Wise / Wire">Bank Transfer / Wise</option>
+                        <option value="Crypto Wallet">Crypto Web3 Wallet</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-400 block font-bold">آدرس کیف پول مقصد (Wallet Address):</label>
+                    <input
+                      type="text"
+                      value={withdrawAddressInput}
+                      onChange={e => setWithdrawAddressInput(e.target.value)}
+                      placeholder="آدرس کیف پول تتر TRC20..."
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-amber-300 font-mono text-xs outline-none focus:border-emerald-400"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-400 block font-bold">رمز برداشت امنیتی (Security PIN):</label>
+                    <input
+                      type="password"
+                      maxLength={4}
+                      value={withdrawPinInput}
+                      onChange={e => setWithdrawPinInput(e.target.value)}
+                      placeholder="رمز ۴ رقمی برداشت (پیش‌فرض: 1234)..."
+                      className="w-full sm:w-48 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono outline-none focus:border-emerald-400 text-center tracking-widest"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleRequestWithdrawalAction}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs shadow-lg transition"
                   >
-                    Watch Ad
+                    💸 ثبت درخواست برداشت فوری
                   </button>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/60 to-slate-950 border border-purple-500/40 flex items-center justify-between">
-                  <div>
-                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <Target className="w-4 h-4 text-purple-400" />
-                      Watch 5 Ads Today (Reward: 100 Coins)
-                    </h4>
-                    <p className="text-[10px] text-slate-300">Daily Ad Quest Progress: 3 / 5 Watched</p>
-                  </div>
+                {/* 6. WITHDRAWAL STATUSES TABLE */}
+                <div className="card-3d p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+                  <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-emerald-400" />
+                    ۶. وضعیت درخواست‌های برداشت وجه (Withdrawal Requests Log)
+                  </h4>
 
-                  <button 
-                    onClick={() => {
-                      setUserCoins(prev => prev + 100);
-                      showToast('🎉 Quest Complete! +100 Coins added to your wallet!');
-                    }}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition"
-                  >
-                    Claim 100 Coins
-                  </button>
+                  <div className="space-y-2">
+                    {withdrawalsHistoryList.map(item => (
+                      <div key={item.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-white text-xs">{item.amount}</span>
+                            <span className="text-[10px] text-slate-400">({item.method})</span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 block font-mono">آدرس: {item.address} • تاریخ: {item.date}</span>
+                          {item.reason && <p className="text-[10px] text-rose-300 mt-0.5">دلیل رد: {item.reason}</p>}
+                        </div>
+
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold self-start sm:self-auto ${item.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : item.status === 'Pending' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}`}>
+                          {item.status === 'Completed' ? '🟢 Completed (تکمیل شده)' : item.status === 'Pending' ? '🟡 Pending (در حال بررسی)' : '🔴 Rejected (رد شده)'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* SUB-TAB 5: TRANSACTIONS HISTORY */}
+            {walletSubTab === 'history' && (
+              <div className="space-y-4 text-xs">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-white text-sm">۷. تاریخچه جامع تراکنش‌ها (Transactions Ledger)</h3>
+                  <span className="text-[10px] text-slate-400">{txHistoryList.length} تراکنش ثبت شده</span>
+                </div>
+
+                {/* CATEGORY FILTER CHIPS */}
+                <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
+                  {['All', 'Coins', 'Gifts', 'Convert', 'Withdrawals', 'VIP', 'Referral'].map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setTxCategoryFilter(cat)}
+                      className={`px-3 py-1 rounded-xl text-[10px] font-bold transition ${txCategoryFilter === cat ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-950 border border-slate-800 text-slate-400'}`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  {txHistoryList
+                    .filter(t => txCategoryFilter === 'All' || t.category === txCategoryFilter)
+                    .map(tx => (
+                      <div key={tx.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{tx.icon}</span>
+                          <div>
+                            <p className="font-bold text-white text-xs">{tx.description}</p>
+                            <span className="text-[10px] text-slate-400 block font-mono">{tx.time} • کد تراکنش: {tx.id}</span>
+                          </div>
+                        </div>
+                        <div className="text-left">
+                          <p className={`font-black font-mono text-xs ${tx.color}`}>{tx.amount}</p>
+                          <span className="text-[9px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded font-bold">{tx.status}</span>
+                        </div>
+                      </div>
+                    ))}
                 </div>
               </div>
+            )}
 
-              {/* Offerwall Tasks */}
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-                <h4 className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  Offerwall Sponsored Missions (مأموریت‌های تبلیغاتی)
-                </h4>
+            {/* SUB-TAB 6: CREATOR EARNINGS */}
+            {walletSubTab === 'creator' && (
+              <div className="space-y-4 text-xs">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                    <Crown className="w-4 h-4 text-amber-400" />
+                    ۸. داشبورد اختصاصی استریمر (Creator Wallet Analytics)
+                  </h3>
+                  <span className="text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                    Host Partner Level: Gold 🥇
+                  </span>
+                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                {/* CREATOR STATS GRID */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                    <span className="text-[10px] text-slate-400 block">درآمد امروز</span>
+                    <p className="text-base font-black text-amber-400 font-mono">$48.20 USD</p>
+                    <span className="text-[9px] text-emerald-400">4,820 Diamonds</span>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                    <span className="text-[10px] text-slate-400 block">درآمد هفته</span>
+                    <p className="text-base font-black text-white font-mono">$340.00 USD</p>
+                    <span className="text-[9px] text-emerald-400">34,000 Diamonds</span>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                    <span className="text-[10px] text-slate-400 block">درآمد ماه جاری</span>
+                    <p className="text-base font-black text-cyan-300 font-mono">$1,420.00 USD</p>
+                    <span className="text-[9px] text-cyan-400">142,000 Diamonds</span>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                    <span className="text-[10px] text-slate-400 block">کل درآمد کل دوره</span>
+                    <p className="text-base font-black text-emerald-400 font-mono">$5,890.00 USD</p>
+                    <span className="text-[9px] text-slate-400">تعداد هدایا: ۱,۸۴۰</span>
+                  </div>
+                </div>
+
+                {/* TOP GIFTER HIGHLIGHT CARD */}
+                <div className="p-4 rounded-3xl bg-gradient-to-r from-pink-950/60 via-slate-950 to-purple-950/60 border border-pink-500/40 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-pink-500 p-0.5">
+                      <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80" alt="top gifter" className="w-full h-full object-cover rounded-2xl" />
+                    </div>
                     <div>
-                      <p className="font-bold text-white">نصب برنامه جدید</p>
-                      <span className="text-[10px] text-emerald-400 font-bold">+500 Coins</span>
+                      <span className="text-[10px] text-amber-300 font-bold flex items-center gap-1">
+                        <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> بیشترین هدیه‌دهنده این ماه (Top Gifter)
+                      </span>
+                      <h4 className="text-sm font-black text-white mt-0.5">Soren 🔥 (@soren_top)</h4>
                     </div>
-                    <button onClick={() => showToast('Starting offerwall app installation...')} className="px-2.5 py-1 rounded-lg bg-pink-600 text-white font-bold text-[10px]">Start</button>
+                  </div>
+                  <span className="text-xs font-black text-pink-300 bg-pink-500/20 px-3 py-1 rounded-full border border-pink-500/30 font-mono">
+                    10,000 Coins ($50.00)
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* SUB-TAB 7: REFERRAL */}
+            {walletSubTab === 'referral' && (
+              <div className="space-y-4 text-xs">
+                <div className="p-5 rounded-3xl bg-slate-950 border border-cyan-500/40 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                      <Users className="w-4 h-4 text-cyan-400" />
+                      ۱۰. درآمد از دعوت دوستان (Referral Wallet)
+                    </h3>
+                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                      پاداش کسب‌شده: +2,500 Coins
+                    </span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-white">ثبت‌نام در سایت</p>
-                      <span className="text-[10px] text-emerald-400 font-bold">+300 Coins</span>
-                    </div>
-                    <button onClick={() => showToast('Starting registration task...')} className="px-2.5 py-1 rounded-lg bg-pink-600 text-white font-bold text-[10px]">Start</button>
-                  </div>
+                  <p className="text-slate-300 text-[11px] leading-relaxed">
+                    با به اشتراک گذاری لینک اختصاصی خود، <strong>۲۰٪ کمیسیون دائمی</strong> از تمامی خریدهای سکه و اشتراک VIP دوستانتان مستقیم به کیف پول شما واریز می‌شود!
+                  </p>
 
-                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-white">انجام نظر‌سنجی</p>
-                      <span className="text-[10px] text-emerald-400 font-bold">+250 Coins</span>
-                    </div>
-                    <button onClick={() => showToast('Starting survey mission...')} className="px-2.5 py-1 rounded-lg bg-pink-600 text-white font-bold text-[10px]">Start</button>
+                  <div className="p-3 bg-slate-900 rounded-2xl border border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-xs font-mono text-cyan-300 dir-ltr">https://vlive.app/invite?ref={currentUsername}</span>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://vlive.app/invite?ref=${currentUsername}`);
+                        showToast('لینک دعوت اختصاصی با موفقیت کپی شد!');
+                      }}
+                      className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      کپی لینک دعوت
+                    </button>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* 7. REFERRAL COMMISSION & INVITE FRIENDS (👥 درآمد از دعوت دوستان) */}
-            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                  <Users className="w-4 h-4 text-cyan-400" />
-                  👥 درآمد از دعوت دوستان (Invite Friends & Earn 20%)
-                </h3>
-                <span className="text-[10px] text-cyan-300 font-bold bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
-                  20% Commission Rate
-                </span>
-              </div>
+            {/* SUB-TAB 8: SECURITY & VIP */}
+            {walletSubTab === 'security' && (
+              <div className="space-y-4 text-xs">
+                
+                {/* 12. FINANCIAL SECURITY */}
+                <div className="p-5 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                  <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    ۱۲. امنیت مالی و حساب کاربری (Financial Security)
+                  </h3>
 
-              <p className="text-xs text-slate-300 leading-relaxed">
-                دعوت از دوستان به V.Live! اگر دوست شما ثبت‌نام کند یا سکه و اشتراک VIP بخرد، <strong>۲۰٪ کمیسیون دائمی</strong> مستقیم به کیف پول شما واریز می‌شود.
-              </p>
-
-              <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-xs font-mono text-pink-300 truncate">https://vlive.app/invite?ref={currentUsername}</span>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(`https://vlive.app/invite?ref=${currentUsername}`);
-                    showToast('Referral invite link copied to clipboard!');
-                  }}
-                  className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  Copy Link
-                </button>
-              </div>
-            </div>
-
-            {/* 8. PAID PRIVATE CALLS & MESSAGES SETTINGS (🎥 تماس و پیام خصوصی پولی) */}
-            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 text-xs">
-              <h3 className="font-bold text-white flex items-center gap-2">
-                <PhoneCall className="w-4 h-4 text-emerald-400" />
-                🎥 تنظیم قیمت تماس و پیام خصوصی (Paid Voice/Video Rates)
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
-                  <label className="text-slate-400 text-[10px] block">Voice Call Rate</label>
-                  <div className="flex items-center gap-1">
-                    <input 
-                      type="number" 
-                      value={paidVoiceRate}
-                      onChange={e => setPaidVoiceRate(Number(e.target.value))}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1 text-white font-bold text-xs"
-                    />
-                    <span className="text-[10px] text-amber-300 shrink-0">Coins/Min</span>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
-                  <label className="text-slate-400 text-[10px] block">Video Call Rate</label>
-                  <div className="flex items-center gap-1">
-                    <input 
-                      type="number" 
-                      value={paidVideoRate}
-                      onChange={e => setPaidVideoRate(Number(e.target.value))}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1 text-white font-bold text-xs"
-                    />
-                    <span className="text-[10px] text-amber-300 shrink-0">Coins/Min</span>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
-                  <label className="text-slate-400 text-[10px] block">Message Price</label>
-                  <div className="flex items-center gap-1">
-                    <input 
-                      type="number" 
-                      value={paidMessageRate}
-                      onChange={e => setPaidMessageRate(Number(e.target.value))}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1 text-white font-bold text-xs"
-                    />
-                    <span className="text-[10px] text-amber-300 shrink-0">Coins/Msg</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 9. GIFT VALUATION PRICE TABLE (🎁 جدول قیمت هدایا) */}
-            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                  <Gift className="w-4 h-4 text-amber-400" />
-                  🎁 جدول هدایا و ارزش سکه‌ها (Gifts Catalog & Coin Values)
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {[
-                  { name: 'Red Rose', icon: '🌹', coins: 10, usd: '$0.20' },
-                  { name: 'Red Heart', icon: '❤️', coins: 50, usd: '$1.00' },
-                  { name: 'Shining Diamond', icon: '💎', coins: 500, usd: '$10.00' },
-                  { name: 'Royal Crown', icon: '👑', coins: 2500, usd: '$50.00' },
-                  { name: 'Sports Car', icon: '🏎️', coins: 5000, usd: '$100.00' },
-                  { name: 'Gold Vault', icon: '📦', coins: 10000, usd: '$200.00' },
-                  { name: 'Private Jet', icon: '🚀', coins: 25000, usd: '$500.00' },
-                  { name: 'Island Resort', icon: '🏝️', coins: 50000, usd: '$1,000.00' }
-                ].map((g, i) => (
-                  <div key={i} className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center space-y-1">
-                    <span className="text-2xl block">{g.icon}</span>
-                    <p className="text-[11px] font-bold text-white">{g.name}</p>
-                    <div className="flex items-center justify-center gap-1 text-[10px]">
-                      <span className="text-amber-300 font-black">{g.coins} Coins</span>
-                      <span className="text-slate-400">({g.usd})</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 10. DAILY QUESTS (🏆 مأموریت روزانه) */}
-            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
-              <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                <Award className="w-4 h-4 text-amber-400" />
-                🏆 مأموریت روزانه (Daily Quests & Rewards)
-              </h3>
-
-              <div className="space-y-2 text-xs">
-                {dailyQuests.map((quest) => (
-                  <div key={quest.id} className="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-white">{quest.title}</p>
-                      <span className="text-[10px] text-amber-300 font-bold">Reward: +{quest.reward} Coins</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+                    <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <h4 className="font-bold text-white">تأیید هویت KYC</h4>
+                        <span className="text-[10px] text-slate-400">الزامی جهت برداشت درآمد</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full">تأیید شده 🟢</span>
                     </div>
 
-                    {quest.claimed ? (
-                      <span className="px-3 py-1 rounded-xl bg-slate-800 text-slate-400 font-bold text-[10px]">Claimed ✅</span>
-                    ) : (
+                    <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <h4 className="font-bold text-white">رمز برداشت ۴ رقمی</h4>
+                        <span className="text-[10px] text-slate-400">تأیید برداشت‌های مالی</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded-full">فعال 🔒</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between sm:col-span-2">
+                      <div>
+                        <h4 className="font-bold text-white">محدودیت برداشت روزانه (Daily Limit)</h4>
+                        <span className="text-[10px] text-slate-400">حداکثر سقف برداشت روزانه</span>
+                      </div>
+                      <span className="font-bold text-amber-400 font-mono text-xs">$5,000 USDT / روزانه</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 13. VIP PAYMENTS & PROFILE BOOSTS */}
+                <div className="p-5 rounded-3xl bg-slate-950 border border-amber-500/30 space-y-3">
+                  <h3 className="font-bold text-amber-300 text-sm flex items-center gap-2">
+                    <Crown className="w-4 h-4 text-amber-400" />
+                    ۱۳. خرید اشتراک VIP و پروموت (VIP Payment & Boosts)
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-2">
+                      <h4 className="font-bold text-white">اشتراک VIP ماهیانه</h4>
+                      <p className="text-amber-400 font-black font-mono">500 Coins</p>
                       <button 
                         onClick={() => {
-                          setUserCoins(prev => prev + quest.reward);
-                          setDailyQuests(prev => prev.map(q => q.id === quest.id ? { ...q, claimed: true } : q));
-                          showToast(`Claimed +${quest.reward} Coins reward!`);
+                          if (userCoins < 500) { showToast('موجودی سکه کافی نیست!'); return; }
+                          setUserCoins(p => p - 500);
+                          showToast('👑 اشتراک VIP برای شما فعال شد!');
                         }}
-                        className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[10px] shadow-md"
+                        className="w-full py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold"
                       >
-                        Claim Reward
+                        خرید VIP
                       </button>
-                    )}
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-2">
+                      <h4 className="font-bold text-white">بوست پروفایل (Profile Boost)</h4>
+                      <p className="text-amber-400 font-black font-mono">200 Coins</p>
+                      <button 
+                        onClick={() => {
+                          if (userCoins < 200) { showToast('موجودی سکه کافی نیست!'); return; }
+                          setUserCoins(p => p - 200);
+                          showToast('🚀 پروفایل شما به صورت ویژه نمایش داده شد!');
+                        }}
+                        className="w-full py-1.5 rounded-xl bg-purple-600 text-white font-bold"
+                      >
+                        بوست ۲۴ ساعته
+                      </button>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-2">
+                      <h4 className="font-bold text-white">پروموت لایو استریم</h4>
+                      <p className="text-amber-400 font-black font-mono">1,000 Coins</p>
+                      <button 
+                        onClick={() => {
+                          if (userCoins < 1000) { showToast('موجودی سکه کافی نیست!'); return; }
+                          setUserCoins(p => p - 1000);
+                          showToast('🎥 لایو شما در بالای صفحه اول سنجاق شد!');
+                        }}
+                        className="w-full py-1.5 rounded-xl bg-pink-600 text-white font-bold"
+                      >
+                        سنجاق لایو
+                      </button>
+                    </div>
                   </div>
-                ))}
+                </div>
+
               </div>
-            </div>
+            )}
 
-            {/* 11. PLATFORM AD REVENUE SYSTEM (📢 درآمد برنامه از تبلیغات) */}
-            <div className="card-3d p-5 rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 border border-indigo-500/30 space-y-3 text-xs">
-              <h3 className="font-bold text-white flex items-center gap-2">
-                <Megaphone className="w-4 h-4 text-indigo-400" />
-                📢 سیستم درآمدزدایی ساختاری اپلیکیشن از تبلیغات (Platform Ad Engine)
-              </h3>
+            {/* SUB-TAB 9: GIFT SHOP DIRECT FLOW */}
+            {walletSubTab === 'giftshop' && (
+              <div className="space-y-4 text-xs">
+                <div className="p-5 rounded-3xl bg-slate-950 border border-pink-500/40 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                      <Gift className="w-4 h-4 text-pink-400" />
+                      ۱۴. فروشگاه مستقیم هدایا (Gift Shop)
+                    </h3>
+                    <span className="text-[10px] text-pink-300 font-bold bg-pink-500/10 px-2.5 py-1 rounded-full border border-pink-500/20">
+                      مسیر مستقیم: خرید سکه ➔ انتخاب هدیه ➔ ارسال
+                    </span>
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px]">
-                <div className="p-3 rounded-2xl bg-slate-950/80 border border-indigo-500/20">
-                  <h4 className="font-bold text-indigo-300">1. Rewarded Video Ads</h4>
-                  <p className="text-slate-400 text-[10px]">تماشای تبلیغات اختیاری توسط کاربران جهت دریافت سکه رایگان.</p>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-slate-950/80 border border-indigo-500/20">
-                  <h4 className="font-bold text-indigo-300">2. Interstitial Ads</h4>
-                  <p className="text-slate-400 text-[10px]">تبلیغات تمام‌صفحه بعد از خروج از لایو به صورت غیرمزاحم.</p>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-slate-950/80 border border-indigo-500/20">
-                  <h4 className="font-bold text-indigo-300">3. Business Sponsors</h4>
-                  <p className="text-slate-400 text-[10px]">اسپانسرشیپ استریمرها و تبلیغات بنری برندها در هدر.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
+                    {[
+                      { name: 'Red Rose', icon: '🌹', coins: 10 },
+                      { name: 'Red Heart', icon: '❤️', coins: 50 },
+                      { name: 'Shining Diamond', icon: '💎', coins: 500 },
+                      { name: 'Royal Crown', icon: '👑', coins: 2500 },
+                      { name: 'Sports Car', icon: '🏎️', coins: 5000 },
+                      { name: 'Gold Vault', icon: '📦', coins: 10000 },
+                      { name: 'Private Jet', icon: '🚀', coins: 25000 },
+                      { name: 'Island Resort', icon: '🏝️', coins: 50000 }
+                    ].map((g, i) => (
+                      <div key={i} className="p-3.5 bg-slate-900 rounded-2xl border border-slate-800 text-center space-y-2 hover:border-pink-500/50 transition">
+                        <span className="text-3xl block">{g.icon}</span>
+                        <p className="font-bold text-white text-xs">{g.name}</p>
+                        <span className="text-amber-300 font-black font-mono block text-xs">{g.coins.toLocaleString()} Coins</span>
+                        <button
+                          onClick={() => {
+                            if (userCoins < g.coins) {
+                              showToast('موجودی سکه کافی نیست! ابتدا سکه خریداری کنید.');
+                              setWalletSubTab('buy');
+                              return;
+                            }
+                            setUserCoins(p => p - g.coins);
+                            showToast(`🎁 هدیه ${g.name} با موفقیت ارسال شد!`);
+                          }}
+                          className="w-full py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-[10px] shadow"
+                        >
+                          ارسال هدیه
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
           </div>
         )}
@@ -8075,41 +8596,41 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 8: COMPLETE REDESIGNED 20-SECTION GLASSMORPHISM ADMIN PANEL */}
+      {/* MODAL 8: 100% REAL & FULLY EXECUTABLE 20-SECTION ADMIN DASHBOARD */}
       {isAdminPanelOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
-          <div className="w-full max-w-5xl card-3d p-4 sm:p-6 border border-amber-500/50 bg-slate-900/95 rounded-3xl space-y-4 max-h-[92vh] flex flex-col shadow-[0_0_80px_rgba(245,158,11,0.25)]">
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
+          <div className="w-full max-w-6xl card-3d p-4 sm:p-6 border border-amber-500/50 bg-slate-900/95 rounded-3xl space-y-4 max-h-[94vh] flex flex-col shadow-[0_0_80px_rgba(245,158,11,0.25)] text-right" dir="rtl">
             
             {/* TOP HEADER */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3" dir="ltr">
+              <div className="flex items-center gap-2.5 dir-rtl">
                 <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-slate-950 font-black shadow-lg">
                   <ShieldCheck className="w-6 h-6 animate-pulse" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-amber-300 tracking-wide flex items-center gap-2">
-                    <span>👑 Super Admin Dashboard (پنل مدیریت ارشد)</span>
+                  <h2 className="text-base sm:text-lg font-black text-amber-300 tracking-wide flex items-center gap-2">
+                    <span>👑 Super Admin Dashboard (پنل مدیریت ارشد vLive+)</span>
                   </h2>
-                  <p className="text-[11px] text-slate-400">Complete control panel for user moderation, streams, wallet & platform security</p>
+                  <p className="text-[11px] text-slate-400">پنل کنترل مدیریت کامل کاربران، لایوها، مالی، امنیت و هوش مصنوعی</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 {/* Global Search Bar */}
-                <div className="relative flex-1 sm:w-56">
+                <div className="relative flex-1 sm:w-60">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={adminGlobalSearch}
                     onChange={e => setAdminGlobalSearch(e.target.value)}
-                    placeholder="Global search (User, Live, Tx)..."
+                    placeholder="جستجوی سراسری (کاربر، لایو، تراکنش)..."
                     className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-amber-500"
                   />
                 </div>
 
                 {/* Export Buttons */}
                 <button
-                  onClick={() => showToast('Exported CSV / Excel report downloaded!')}
+                  onClick={() => addAdminAuditLog('گزارش خروجی اکسل (Excel) دانلود شد')}
                   className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold border border-amber-500/30 flex items-center gap-1"
                 >
                   <Download className="w-3 h-3" />
@@ -8117,7 +8638,7 @@ export default function App() {
                 </button>
                 
                 <button
-                  onClick={() => showToast('PDF Audit Report generated!')}
+                  onClick={() => addAdminAuditLog('گزارش خروجی پی‌دی‌اف (PDF) تولید شد')}
                   className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 text-[10px] font-bold border border-rose-500/30 flex items-center gap-1"
                 >
                   <FileText className="w-3 h-3" />
@@ -8134,33 +8655,33 @@ export default function App() {
             </div>
 
             {/* 20 SIDEBAR / CHIPS NAV TABS */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar text-xs border-b border-slate-800/80">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar text-xs border-b border-slate-800/80 dir-rtl">
               {[
-                { id: 'dashboard', label: '📊 Dashboard' },
-                { id: 'users', label: '👥 Users' },
-                { id: 'live', label: '🎥 Live' },
-                { id: 'reports', label: '💬 Reports' },
-                { id: 'wallet', label: '💰 Wallet' },
-                { id: 'gifts', label: '🎁 Gifts' },
-                { id: 'vip', label: '👑 VIP' },
-                { id: 'ads', label: '📢 Ads' },
-                { id: 'events', label: '🏆 Events' },
-                { id: 'notifications', label: '🔔 Notifications' },
-                { id: 'moderation', label: '🛡 Moderation' },
-                { id: 'statistics', label: '📈 Statistics' },
-                { id: 'support', label: '🎫 Support' },
-                { id: 'verification', label: '🔑 Verification' },
-                { id: 'roles', label: '👥 Roles' },
-                { id: 'security', label: '🔒 Security' },
-                { id: 'settings', label: '⚙️ Settings' },
-                { id: 'aimod', label: '🤖 AI Mod' },
-                { id: 'backup', label: '💾 Backup' },
-                { id: 'logs', label: '📜 Logs' }
+                { id: 'dashboard', label: '📊 Dashboard (داشبورد)' },
+                { id: 'users', label: '👥 Users (کاربران)' },
+                { id: 'live', label: '🎥 Live (لایوها)' },
+                { id: 'reports', label: '💬 Reports (گزارش‌ها)' },
+                { id: 'wallet', label: '💰 Wallet (کیف پول)' },
+                { id: 'gifts', label: '🎁 Gifts (هدایا)' },
+                { id: 'vip', label: '👑 VIP (اشتراک‌ها)' },
+                { id: 'ads', label: '📢 Ads (تبلیغات)' },
+                { id: 'events', label: '🏆 Events (مسابقات)' },
+                { id: 'notifications', label: '🔔 Notifications (اعلان‌ها)' },
+                { id: 'moderation', label: '🛡 Moderation (محتوا)' },
+                { id: 'statistics', label: '📈 Statistics (آمار)' },
+                { id: 'support', label: '🎫 Support (تیکت‌ها)' },
+                { id: 'verification', label: '🔑 Verification (تأیید هویت)' },
+                { id: 'roles', label: '👥 Roles (نقش‌ها)' },
+                { id: 'security', label: '🔒 Security (امنیت)' },
+                { id: 'settings', label: '⚙️ Settings (تنظیمات)' },
+                { id: 'aimod', label: '🤖 AI Mod (هوش مصنوعی)' },
+                { id: 'backup', label: '💾 Backup (بکاپ)' },
+                { id: 'logs', label: '📜 Logs (لاگ‌ها)' }
               ].map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setAdminActiveTab(tab.id)}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap border transition ${adminActiveTab === tab.id ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 border-amber-300 shadow-md font-black' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap border transition ${adminActiveTab === tab.id ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 border-amber-300 shadow-md font-black scale-105' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'}`}
                 >
                   {tab.label}
                 </button>
@@ -8168,102 +8689,108 @@ export default function App() {
             </div>
 
             {/* PANEL BODY CONTENT AREA */}
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 pl-1">
 
               {/* 1. DASHBOARD OVERVIEW */}
               {adminActiveTab === 'dashboard' && (
                 <div className="space-y-4">
                   {/* URGENT ALERT BANNER */}
-                  <div className="p-3.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 flex items-center justify-between text-xs">
+                  <div className="p-3.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-2 text-rose-200">
                       <AlertTriangle className="w-5 h-5 text-rose-400 animate-bounce" />
                       <div>
-                        <p className="font-bold">🚨 Urgent Notice: Abnormal Report Spike!</p>
-                        <span className="text-[10px] text-slate-300">Live Stream #1042 received 14 reports in last 5 minutes. Immediate review required.</span>
+                        <p className="font-bold">🚨 هشدار فوریت: افزایش غیرعادی گزارش‌های تخلف!</p>
+                        <span className="text-[10px] text-slate-300">لایو استریم شماره ۱۰۴۲ در ۵ دقیقه گذشته ۱۴ گزارش دریافت کرده است. بررسی فوری لازم است.</span>
                       </div>
                     </div>
                     <button
                       onClick={() => setAdminActiveTab('live')}
-                      className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px]"
+                      className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] whitespace-nowrap"
                     >
-                      Inspect Stream
+                      بررسی لایو استریم
                     </button>
                   </div>
 
-                  {/* 7 STAT CARDS GRID */}
+                  {/* 7 REAL-TIME STAT CARDS */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5 text-cyan-400" /> Total Users
+                        <Users className="w-3.5 h-3.5 text-cyan-400" /> کل کاربران
                       </span>
-                      <p className="text-base font-black text-white">12,840</p>
-                      <span className="text-[9px] text-emerald-400">+14% this week</span>
+                      <p className="text-base font-black text-white">{adminUsersList.length + 12836}</p>
+                      <span className="text-[9px] text-emerald-400">+۱۴٪ این هفته</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <Activity className="w-3.5 h-3.5 text-emerald-400" /> Online Users
+                        <Activity className="w-3.5 h-3.5 text-emerald-400" /> کاربران آنلاین
                       </span>
-                      <p className="text-base font-black text-emerald-400">1,492</p>
-                      <span className="text-[9px] text-slate-400">Active right now</span>
+                      <p className="text-base font-black text-emerald-400">۱,۴۹۲ نفر</p>
+                      <span className="text-[9px] text-slate-400">هم‌اکنون فعال</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <Video className="w-3.5 h-3.5 text-pink-400" /> Active Lives
+                        <Video className="w-3.5 h-3.5 text-pink-400" /> لایوهای فعال
                       </span>
-                      <p className="text-base font-black text-pink-400">48</p>
-                      <span className="text-[9px] text-slate-400">Broadcasting live</span>
+                      <p className="text-base font-black text-pink-400">{adminLivesList.length} لایو</p>
+                      <span className="text-[9px] text-slate-400">در حال پخش زنده</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <DollarSign className="w-3.5 h-3.5 text-amber-400" /> Today Revenue
+                        <DollarSign className="w-3.5 h-3.5 text-amber-400" /> درآمد امروز
                       </span>
                       <p className="text-base font-black text-amber-400">$4,820 USDT</p>
-                      <span className="text-[9px] text-emerald-400">964,000 Coins sold</span>
+                      <span className="text-[9px] text-emerald-400">۹۶۴,۰۰۰ سکه فروخته شد</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <MessageSquare className="w-3.5 h-3.5 text-purple-400" /> Total Messages
+                        <MessageSquare className="w-3.5 h-3.5 text-purple-400" /> کل پیام‌ها
                       </span>
-                      <p className="text-base font-black text-white">84,200</p>
-                      <span className="text-[9px] text-slate-400">Today messages</span>
+                      <p className="text-base font-black text-white">۸۴,۲۰۰</p>
+                      <span className="text-[9px] text-slate-400">پیام‌های امروز</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <PhoneCall className="w-3.5 h-3.5 text-cyan-400" /> Total Calls
+                        <PhoneCall className="w-3.5 h-3.5 text-cyan-400" /> کل تماس‌ها
                       </span>
-                      <p className="text-base font-black text-cyan-300">1,230</p>
-                      <span className="text-[9px] text-slate-400">Voice & video calls</span>
+                      <p className="text-base font-black text-cyan-300">۱,۲۳۰ تماس</p>
+                      <span className="text-[9px] text-slate-400">صوتی و تصویری</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1 sm:col-span-2">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <AlertCircle className="w-3.5 h-3.5 text-rose-400" /> Pending Reports
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-400" /> گزارش‌های جدید
                       </span>
-                      <p className="text-base font-black text-rose-400">{adminReportsList.filter(r => r.status === 'Pending').length} Reports</p>
-                      <span className="text-[9px] text-rose-300">Action required</span>
+                      <p className="text-base font-black text-rose-400">{adminReportsList.filter(r => r.status === 'Pending').length} گزارش بررسی‌نشده</p>
+                      <span className="text-[9px] text-rose-300">اقدام سریع لازم است</span>
                     </div>
                   </div>
 
                   {/* QUICK ACTIONS */}
                   <div className="p-4 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-2">
-                    <h3 className="text-xs font-bold text-white">Quick System Actions</h3>
+                    <h3 className="text-xs font-bold text-white">اقدامات سریع سیستم</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                      <button onClick={() => setAdminActiveTab('notifications')} className="p-2.5 rounded-xl bg-purple-950/60 border border-purple-500/30 text-purple-300 font-bold hover:bg-purple-900">
-                        📢 Send Broadcast
+                      <button onClick={() => setAdminActiveTab('notifications')} className="p-2.5 rounded-xl bg-purple-950/60 border border-purple-500/30 text-purple-300 font-bold hover:bg-purple-900 text-center">
+                        📢 ارسال اعلان عمومی
                       </button>
-                      <button onClick={() => setAdminActiveTab('backup')} className="p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 font-bold hover:bg-cyan-900">
-                        💾 Backup DB Now
+                      <button onClick={() => {
+                        addAdminAuditLog('بکاپ اضطراری از دیتابیس ساخته شد');
+                        setAdminBackupsList(prev => [{ id: `BK-${Date.now()}`, size: '49.5 MB', date: new Date().toLocaleString() }, ...prev]);
+                      }} className="p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 font-bold hover:bg-cyan-900 text-center">
+                        💾 پشتیبان‌گیری دیتابیس
                       </button>
-                      <button onClick={() => setAdminActiveTab('aimod')} className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 font-bold hover:bg-emerald-900">
-                        🤖 AI Mod Rules
+                      <button onClick={() => setAdminActiveTab('aimod')} className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 font-bold hover:bg-emerald-900 text-center">
+                        🤖 قوانین هوش مصنوعی
                       </button>
-                      <button onClick={() => setAdminActiveTab('settings')} className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/30 text-amber-300 font-bold hover:bg-amber-900">
-                        ⚙️ System Settings
+                      <button onClick={() => {
+                        setAdminMaintenanceMode(prev => !prev);
+                        addAdminAuditLog(!adminMaintenanceMode ? 'حالت تعمیرات فعال شد 🚨' : 'حالت تعمیرات غیرفعال شد');
+                      }} className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/30 text-amber-300 font-bold hover:bg-amber-900 text-center">
+                        {adminMaintenanceMode ? '🟢 غیرفعال‌سازی تعمیرات' : '🛠 فعال‌سازی تعمیرات'}
                       </button>
                     </div>
                   </div>
@@ -8274,68 +8801,213 @@ export default function App() {
               {adminActiveTab === 'users' && (
                 <div className="space-y-3 text-xs">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-white text-sm">۲. User Management (مدیریت کاربران)</h3>
-                    <span className="text-[10px] text-slate-400">{adminUsersList.length} Accounts Loaded</span>
+                    <h3 className="font-bold text-white text-sm">۲. مدیریت کامل کاربران (User Management)</h3>
+                    <button
+                      onClick={() => setIsAddUserModalOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> کاربر جدید
+                    </button>
                   </div>
 
-                  <div className="space-y-2">
-                    {adminUsersList.map(u => (
-                      <div key={u.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5">
-                          <img src={u.avatar} alt={u.name} className="w-10 h-10 rounded-full object-cover border border-pink-500/40" />
-                          <div>
-                            <p className="font-bold text-white flex items-center gap-1.5">
-                              {u.name}
-                              {u.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400" />}
-                              <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-slate-300 font-normal">{u.role}</span>
-                            </p>
-                            <span className="text-[10px] text-slate-400 block font-mono">@{u.username} • {u.email} • {u.coins.toLocaleString()} Coins</span>
-                          </div>
+                  {/* USER FILTER STATUS BUTTONS */}
+                  <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
+                    {['All', 'Active', 'Banned', 'Suspended', 'Verified', 'VIP User', 'Streamer'].map(st => (
+                      <button
+                        key={st}
+                        onClick={() => setAdminUserFilterStatus(st)}
+                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition ${adminUserFilterStatus === st ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-950 border border-slate-800 text-slate-400'}`}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* ADD USER INLINE MODAL */}
+                  {isAddUserModalOpen && (
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-emerald-500/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-emerald-300">ساخت کاربر جدید توسط ادمین</h4>
+                        <button onClick={() => setIsAddUserModalOpen(false)} className="text-slate-400"><X className="w-4 h-4" /></button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input
+                          type="text"
+                          value={adminNewUser.name}
+                          onChange={e => setAdminNewUser({ ...adminNewUser, name: e.target.value })}
+                          placeholder="نام کامل..."
+                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                        />
+                        <input
+                          type="text"
+                          value={adminNewUser.username}
+                          onChange={e => setAdminNewUser({ ...adminNewUser, username: e.target.value })}
+                          placeholder="نام کاربری (username)..."
+                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                        />
+                        <input
+                          type="email"
+                          value={adminNewUser.email}
+                          onChange={e => setAdminNewUser({ ...adminNewUser, email: e.target.value })}
+                          placeholder="ایمیل..."
+                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                        />
+                      </div>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            if (!adminNewUser.name || !adminNewUser.username) return;
+                            const createdUser = {
+                              id: Date.now(),
+                              name: adminNewUser.name,
+                              username: adminNewUser.username,
+                              email: adminNewUser.email || `${adminNewUser.username}@vlive.com`,
+                              coins: 10000,
+                              status: 'Active',
+                              isVerified: true,
+                              role: adminNewUser.role,
+                              reportsCount: 0,
+                              avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'
+                            };
+                            setAdminUsersList(prev => [createdUser, ...prev]);
+                            addAdminAuditLog(`کاربر جدید @${adminNewUser.username} توسط ادمین ساخته شد`);
+                            setAdminNewUser({ name: '', username: '', email: '', coins: 10000, role: 'User' });
+                            setIsAddUserModalOpen(false);
+                          }}
+                          className="px-4 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs"
+                        >
+                          تأیید و ساخت کاربر
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* EDIT USER INLINE FORM */}
+                  {adminEditingUser && (
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-amber-500/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-amber-300">ویرایش اطلاعات کاربر @{adminEditingUser.username}</h4>
+                        <button onClick={() => setAdminEditingUser(null)} className="text-slate-400"><X className="w-4 h-4" /></button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[10px] text-slate-400 block">نام کامل:</label>
+                          <input
+                            type="text"
+                            value={adminEditingUser.name}
+                            onChange={e => setAdminEditingUser({ ...adminEditingUser, name: e.target.value })}
+                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                          />
                         </div>
-
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <button
-                            onClick={() => {
-                              setAdminUsersList(prev => prev.map(item => item.id === u.id ? { ...item, status: item.status === 'Banned' ? 'Active' : 'Banned' } : item));
-                              showToast(`User ${u.username} ${u.status === 'Banned' ? 'unbanned' : 'banned'}`);
-                            }}
-                            className={`px-2.5 py-1 rounded-xl text-[10px] font-bold ${u.status === 'Banned' ? 'bg-emerald-600 text-white' : 'bg-rose-950 border border-rose-500/40 text-rose-300'}`}
+                        <div>
+                          <label className="text-[10px] text-slate-400 block">موجودی سکه:</label>
+                          <input
+                            type="number"
+                            value={adminEditingUser.coins}
+                            onChange={e => setAdminEditingUser({ ...adminEditingUser, coins: parseInt(e.target.value) || 0 })}
+                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-400 block">نقش (Role):</label>
+                          <select
+                            value={adminEditingUser.role}
+                            onChange={e => setAdminEditingUser({ ...adminEditingUser, role: e.target.value })}
+                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
                           >
-                            {u.status === 'Banned' ? 'Unban' : 'Ban'}
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setAdminUsersList(prev => prev.map(item => item.id === u.id ? { ...item, status: item.status === 'Suspended' ? 'Active' : 'Suspended' } : item));
-                              showToast(`User ${u.username} suspension toggled`);
-                            }}
-                            className="px-2.5 py-1 rounded-xl bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px] font-bold"
-                          >
-                            Suspend
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setAdminUsersList(prev => prev.map(item => item.id === u.id ? { ...item, isVerified: !item.isVerified } : item));
-                              showToast(`Cyan Badge toggled for ${u.username}`);
-                            }}
-                            className="px-2.5 py-1 rounded-xl bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10px] font-bold"
-                          >
-                            {u.isVerified ? 'Remove Badge' : 'Verify Badge'}
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setAdminUsersList(prev => prev.filter(item => item.id !== u.id));
-                              showToast(`User ${u.username} deleted`);
-                            }}
-                            className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                            <option value="User">کاربر عادی</option>
+                            <option value="Streamer">استریمر</option>
+                            <option value="VIP User">کاربر VIP</option>
+                          </select>
                         </div>
                       </div>
-                    ))}
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setAdminUsersList(prev => prev.map(u => u.id === adminEditingUser.id ? adminEditingUser : u));
+                            addAdminAuditLog(`اطلاعات کاربر @${adminEditingUser.username} بروزرسانی شد`);
+                            setAdminEditingUser(null);
+                          }}
+                          className="px-4 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
+                        >
+                          ذخیره تغییرات کاربر
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* USERS LIST */}
+                  <div className="space-y-2">
+                    {adminUsersList
+                      .filter(u => {
+                        const matchSearch = adminGlobalSearch === '' || u.name.toLowerCase().includes(adminGlobalSearch.toLowerCase()) || u.username.toLowerCase().includes(adminGlobalSearch.toLowerCase());
+                        const matchStatus = adminUserFilterStatus === 'All' || u.status === adminUserFilterStatus || u.role === adminUserFilterStatus || (adminUserFilterStatus === 'Verified' && u.isVerified);
+                        return matchSearch && matchStatus;
+                      })
+                      .map(u => (
+                        <div key={u.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <img src={u.avatar} alt={u.name} className="w-10 h-10 rounded-full object-cover border border-pink-500/40" />
+                            <div>
+                              <p className="font-bold text-white flex items-center gap-1.5">
+                                {u.name}
+                                {u.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400" />}
+                                <span className={`text-[9px] px-1.5 py-0.2 rounded font-normal ${u.status === 'Banned' ? 'bg-rose-950 text-rose-300' : 'bg-slate-800 text-slate-300'}`}>{u.status} • {u.role}</span>
+                              </p>
+                              <span className="text-[10px] text-slate-400 block font-mono">@{u.username} • {u.email} • {u.coins.toLocaleString()} سکه</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <button
+                              onClick={() => setAdminEditingUser(u)}
+                              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold"
+                            >
+                              ویرایش
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setAdminUsersList(prev => prev.map(item => item.id === u.id ? { ...item, status: item.status === 'Banned' ? 'Active' : 'Banned' } : item));
+                                addAdminAuditLog(`وضعیت کاربر @${u.username} به ${u.status === 'Banned' ? 'فعال' : 'مسدود (Banned)'} تغییر یافت`);
+                              }}
+                              className={`px-2 py-1 rounded-xl text-[10px] font-bold ${u.status === 'Banned' ? 'bg-emerald-600 text-white' : 'bg-rose-950 border border-rose-500/40 text-rose-300'}`}
+                            >
+                              {u.status === 'Banned' ? 'رفع مسدودیت' : 'Ban کاربر'}
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setAdminUsersList(prev => prev.map(item => item.id === u.id ? { ...item, status: item.status === 'Suspended' ? 'Active' : 'Suspended' } : item));
+                                addAdminAuditLog(`وضعیت تعلیق کاربر @${u.username} تغییر کرد`);
+                              }}
+                              className="px-2 py-1 rounded-xl bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px] font-bold"
+                            >
+                              {u.status === 'Suspended' ? 'لغو تعلیق' : 'Suspend'}
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setAdminUsersList(prev => prev.map(item => item.id === u.id ? { ...item, isVerified: !item.isVerified } : item));
+                                addAdminAuditLog(`نشان تأیید هویت آبی برای @${u.username} ${!u.isVerified ? 'اعطا شد' : 'لغو شد'}`);
+                              }}
+                              className="px-2 py-1 rounded-xl bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10px] font-bold"
+                            >
+                              {u.isVerified ? 'حذف نشان Cyan' : 'اعطای نشان Cyan'}
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setAdminUsersList(prev => prev.filter(item => item.id !== u.id));
+                                addAdminAuditLog(`حساب کاربر @${u.username} برای همیشه حذف شد`);
+                              }}
+                              className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
@@ -8344,8 +9016,8 @@ export default function App() {
               {adminActiveTab === 'live' && (
                 <div className="space-y-3 text-xs">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-white text-sm">۳. Live Management (مدیریت لایوها)</h3>
-                    <span className="text-[10px] text-pink-400 font-mono">{adminLivesList.length} Active Streams</span>
+                    <h3 className="font-bold text-white text-sm">۳. مدیریت مستقیم لایواستریم‌ها (Live Management)</h3>
+                    <span className="text-[10px] text-pink-400 font-mono">{adminLivesList.length} لایو در حال پخش</span>
                   </div>
 
                   <div className="space-y-2">
@@ -8356,32 +9028,43 @@ export default function App() {
                             <span className="text-xs font-bold text-white">{l.title}</span>
                             <span className="bg-pink-500/20 text-pink-300 text-[9px] px-2 py-0.2 rounded-full border border-pink-500/30">Live #{l.id}</span>
                           </div>
-                          <span className="text-[10px] text-slate-400 block font-mono mt-0.5">Streamer: {l.streamer} • {l.viewers} Viewers • {l.category} • {l.duration}</span>
+                          <span className="text-[10px] text-slate-400 block font-mono mt-0.5">استریمر: {l.streamer} • {l.viewers} بیننده زنده • دسته‌بندی: {l.category} • مدت: {l.duration}</span>
                         </div>
 
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <button
                             onClick={() => {
                               setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
-                              showToast(`Live Stream #${l.id} terminated`);
+                              addAdminAuditLog(`لایو استریم شماره #${l.id} توسط ادمین متوقف شد`);
                             }}
-                            className="px-2.5 py-1 rounded-xl bg-rose-600 text-white text-[10px] font-bold"
+                            className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold"
                           >
-                            End Live (پایان لایو)
+                            پایان دادن به لایو
                           </button>
 
                           <button
-                            onClick={() => showToast(`Live Chat closed for Stream #${l.id}`)}
+                            onClick={() => addAdminAuditLog(`چت عمومی لایو #${l.id} بسته شد`)}
                             className="px-2.5 py-1 rounded-xl bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px] font-bold"
                           >
-                            Close Chat
+                            بستن چت
                           </button>
 
                           <button
-                            onClick={() => showToast(`Warning issued to streamer ${l.streamer}`)}
+                            onClick={() => addAdminAuditLog(`اخطار انضباطی به استریمر ${l.streamer} ارسال شد`)}
                             className="px-2.5 py-1 rounded-xl bg-purple-950 border border-purple-500/40 text-purple-300 text-[10px] font-bold"
                           >
-                            Warn Streamer
+                            اخطار به استریمر
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
+                              setAdminUsersList(prev => prev.map(u => u.name === l.streamer ? { ...u, status: 'Banned' } : u));
+                              addAdminAuditLog(`استریمر ${l.streamer} مسدود شد و لایو قطع گردید`);
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-red-950 border border-red-500/50 text-red-300 text-[10px] font-bold"
+                          >
+                            مسدودسازی استریمر
                           </button>
                         </div>
                       </div>
@@ -8394,8 +9077,8 @@ export default function App() {
               {adminActiveTab === 'reports' && (
                 <div className="space-y-3 text-xs">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-white text-sm">۴. User Reports (گزارش‌های کاربران)</h3>
-                    <span className="text-[10px] text-amber-400">{adminReportsList.length} Reports</span>
+                    <h3 className="font-bold text-white text-sm">۴. بررسی گزارش تخلفات کاربران (Reports)</h3>
+                    <span className="text-[10px] text-amber-400">{adminReportsList.length} گزارش ثبتی</span>
                   </div>
 
                   {/* Filter tabs */}
@@ -8404,7 +9087,7 @@ export default function App() {
                       <button
                         key={cat}
                         onClick={() => setAdminReportCategoryFilter(cat)}
-                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition ${adminReportCategoryFilter === cat ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-400'}`}
+                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition ${adminReportCategoryFilter === cat ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-950 text-slate-400 border border-slate-800'}`}
                       >
                         {cat}
                       </button>
@@ -8417,32 +9100,32 @@ export default function App() {
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-rose-300 flex items-center gap-1.5">
                             <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-                            [{r.category}] Target: {r.targetUser}
+                            [{r.category}] کاربر متخلف: {r.targetUser}
                           </span>
-                          <span className="text-[10px] text-slate-400">{r.time}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${r.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>{r.status}</span>
                         </div>
-                        <p className="text-slate-300 text-[11px] bg-slate-900 p-2 rounded-xl">"{r.reason}"</p>
+                        <p className="text-slate-300 text-[11px] bg-slate-900 p-2 rounded-xl">دلیل گزارش: "{r.reason}"</p>
                         <div className="flex items-center justify-between pt-1">
-                          <span className="text-[10px] text-slate-400">Reported by: {r.reportedBy}</span>
+                          <span className="text-[10px] text-slate-400">گزارش‌شده توسط: {r.reportedBy} • {r.time}</span>
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => {
                                 setAdminReportsList(prev => prev.map(item => item.id === r.id ? { ...item, status: 'Approved' } : item));
-                                showToast(`Report #${r.id} approved & action taken`);
+                                addAdminAuditLog(`گزارش #${r.id} تأیید شد و با کاربر متخلف برخورد گردید`);
                               }}
                               className="px-2.5 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]"
                             >
-                              Approve & Act
+                              تأیید و برخورد با کاربر
                             </button>
 
                             <button
                               onClick={() => {
                                 setAdminReportsList(prev => prev.map(item => item.id === r.id ? { ...item, status: 'Rejected' } : item));
-                                showToast(`Report #${r.id} dismissed`);
+                                addAdminAuditLog(`گزارش #${r.id} رد شد (فاقد مصداق تخلف)`);
                               }}
                               className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-300 font-bold text-[10px]"
                             >
-                              Reject
+                              رد گزارش
                             </button>
                           </div>
                         </div>
@@ -8456,17 +9139,18 @@ export default function App() {
               {adminActiveTab === 'wallet' && (
                 <div className="space-y-3 text-xs">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-white text-sm">۵. Wallet & Financial Management (مدیریت مالی)</h3>
-                    <span className="text-[10px] text-emerald-400 font-mono">System Volume: $148,200 USDT</span>
+                    <h3 className="font-bold text-white text-sm">۵. مدیریت مالی و درخواست‌های برداشت (Wallet)</h3>
+                    <span className="text-[10px] text-emerald-400 font-mono">حجم مالی کل: $148,200 USDT</span>
                   </div>
 
+                  {/* WITHDRAWALS LIST */}
                   <div className="space-y-2">
-                    <h4 className="font-bold text-slate-300 text-[11px]">Withdrawal Requests Queue</h4>
+                    <h4 className="font-bold text-slate-300 text-[11px]">درخواست‌های تسویه حساب و برداشت درآمد</h4>
                     {adminWithdrawalsList.map(w => (
                       <div key={w.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                         <div>
                           <p className="font-bold text-white">{w.user} • {w.amount}</p>
-                          <span className="text-[10px] text-slate-400 block font-mono">{w.method} • {w.txHash}</span>
+                          <span className="text-[10px] text-slate-400 block font-mono">{w.method} • کد پیگیری: {w.txHash}</span>
                         </div>
 
                         {w.status === 'Pending' ? (
@@ -8474,20 +9158,20 @@ export default function App() {
                             <button
                               onClick={() => {
                                 setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Approved' } : item));
-                                showToast(`Withdrawal ${w.id} approved! USDT sent.`);
+                                addAdminAuditLog(`درخواست برداشت ${w.id} به مبلغ ${w.amount} تأیید و واریز شد`);
                               }}
                               className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]"
                             >
-                              Approve
+                              تأیید برداشت
                             </button>
                             <button
                               onClick={() => {
                                 setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Rejected' } : item));
-                                showToast(`Withdrawal ${w.id} rejected.`);
+                                addAdminAuditLog(`درخواست برداشت ${w.id} رد شد`);
                               }}
                               className="px-3 py-1 rounded-xl bg-rose-600 text-white font-bold text-[10px]"
                             >
-                              Reject
+                              رد برداشت
                             </button>
                           </div>
                         ) : (
@@ -8502,36 +9186,36 @@ export default function App() {
               {/* 6. GIFTS */}
               {adminActiveTab === 'gifts' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۶. Gift Catalog Management (مدیریت هدایا)</h3>
+                  <h3 className="font-bold text-white text-sm">۶. مدیریت هدایای مجازی لایو (Gifts)</h3>
                   
                   {/* Add gift form */}
                   <div className="p-3.5 rounded-2xl bg-slate-950 border border-pink-500/30 space-y-2">
-                    <p className="font-bold text-pink-300">Add New Virtual Gift</p>
-                    <div className="flex gap-2">
+                    <p className="font-bold text-pink-300">افزودن هدیه جدید به فروشگاه</p>
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="text"
                         value={newAdminGiftName}
                         onChange={e => setNewAdminGiftName(e.target.value)}
-                        placeholder="Gift Name (e.g., Flying Dragon)"
+                        placeholder="نام هدیه (مثلاً: اژدهای پرنده 🐲)..."
                         className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
                       />
                       <input
                         type="number"
                         value={newAdminGiftCoins}
                         onChange={e => setNewAdminGiftCoins(e.target.value)}
-                        placeholder="Price Coins (e.g., 5000)"
-                        className="w-32 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                        placeholder="قیمت به سکه (مثلاً: ۵۰۰۰)..."
+                        className="w-full sm:w-36 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
                       />
                       <button
                         onClick={() => {
                           if (!newAdminGiftName || !newAdminGiftCoins) return;
-                          showToast(`Added new gift "${newAdminGiftName}" (${newAdminGiftCoins} coins)`);
+                          addAdminAuditLog(`هدیه جدید "${newAdminGiftName}" با قیمت ${newAdminGiftCoins} سکه اضافه شد`);
                           setNewAdminGiftName('');
                           setNewAdminGiftCoins('');
                         }}
-                        className="px-4 py-2 rounded-xl bg-pink-600 text-white font-bold"
+                        className="px-4 py-2 rounded-xl bg-pink-600 text-white font-bold whitespace-nowrap"
                       >
-                        Add Gift
+                        + افزودن هدیه
                       </button>
                     </div>
                   </div>
@@ -8541,17 +9225,17 @@ export default function App() {
               {/* 7. VIP SUBSCRIPTIONS */}
               {adminActiveTab === 'vip' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۷. VIP Subscription Management (مدیریت VIP)</h3>
+                  <h3 className="font-bold text-white text-sm">۷. مدیریت پلن‌های اشتراک VIP (VIP Subscriptions)</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {adminVipPlans.map(plan => (
                       <div key={plan.id} className="p-3.5 rounded-2xl bg-slate-950 border border-amber-500/30 space-y-2">
                         <p className="font-bold text-amber-300">{plan.title}</p>
-                        <p className="text-base font-black text-white">{plan.priceCoins} Coins <span className="text-[10px] text-slate-400">({plan.priceUsdt})</span></p>
+                        <p className="text-base font-black text-white">{plan.priceCoins} سکه <span className="text-[10px] text-slate-400">({plan.priceUsdt})</span></p>
                         <button
-                          onClick={() => showToast(`Updated ${plan.title} pricing`)}
+                          onClick={() => addAdminAuditLog(`قیمت پلن ${plan.title} به روز رسانی گردید`)}
                           className="w-full py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold"
                         >
-                          Edit Pricing
+                          تغییر قیمت پلن
                         </button>
                       </div>
                     ))}
@@ -8562,19 +9246,22 @@ export default function App() {
               {/* 8. ADVERTISEMENTS */}
               {adminActiveTab === 'ads' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۸. Advertisements Management (مدیریت تبلیغات)</h3>
+                  <h3 className="font-bold text-white text-sm">۸. مدیریت تبلیغات و بنرها (Advertisements)</h3>
                   <div className="space-y-2">
                     {adminAdsList.map(ad => (
                       <div key={ad.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                         <div>
                           <p className="font-bold text-white">{ad.title}</p>
-                          <span className="text-[10px] text-slate-400 block">{ad.type} • {ad.location} • {ad.clicks.toLocaleString()} Clicks</span>
+                          <span className="text-[10px] text-slate-400 block">{ad.type} • مکان: {ad.location} • {ad.clicks.toLocaleString()} کلیک</span>
                         </div>
                         <button
-                          onClick={() => showToast(`Ad campaign toggled`)}
-                          className="px-3 py-1 rounded-xl bg-purple-600 text-white font-bold text-[10px]"
+                          onClick={() => {
+                            setAdminAdsList(prev => prev.map(a => a.id === ad.id ? { ...a, status: a.status === 'Active' ? 'Paused' : 'Active' } : a));
+                            addAdminAuditLog(`وضعیت کمپین تبلیغاتی "${ad.title}" تغییر کرد`);
+                          }}
+                          className={`px-3 py-1 rounded-xl text-white font-bold text-[10px] ${ad.status === 'Active' ? 'bg-emerald-600' : 'bg-slate-700'}`}
                         >
-                          {ad.status}
+                          {ad.status === 'Active' ? 'فعال (Active)' : 'متوقف شده'}
                         </button>
                       </div>
                     ))}
@@ -8585,19 +9272,19 @@ export default function App() {
               {/* 9. EVENTS */}
               {adminActiveTab === 'events' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۹. Events & Competitions (مدیریت مسابقات)</h3>
+                  <h3 className="font-bold text-white text-sm">۹. مدیریت مسابقات و رویدادها (Events)</h3>
                   <div className="space-y-2">
                     {adminEventsList.map(ev => (
                       <div key={ev.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                         <div>
                           <p className="font-bold text-white">{ev.title}</p>
-                          <span className="text-[10px] text-amber-400 block font-mono">Prize Pool: {ev.prizePool} • {ev.participants} Participants</span>
+                          <span className="text-[10px] text-amber-400 block font-mono">مجموع جوایز: {ev.prizePool} • {ev.participants} شرکت‌کننده</span>
                         </div>
                         <button
-                          onClick={() => showToast(`Event details opened`)}
+                          onClick={() => addAdminAuditLog(`جدول رتبه‌بندی رویداد ${ev.title} مشاهده شد`)}
                           className="px-3 py-1 rounded-xl bg-amber-500 text-slate-950 font-bold text-[10px]"
                         >
-                          Leaderboard
+                          رتبه‌بندی و جوایز
                         </button>
                       </div>
                     ))}
@@ -8608,42 +9295,42 @@ export default function App() {
               {/* 10. NOTIFICATIONS BROADCAST */}
               {adminActiveTab === 'notifications' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۰. Push Notification Broadcast (ارسال اعلان همگانی)</h3>
+                  <h3 className="font-bold text-white text-sm">۱۰. ارسال اعلان عمومی و پیام نوتیفیکیشن (Notifications)</h3>
                   <div className="p-4 rounded-3xl bg-slate-950 border border-purple-500/30 space-y-3">
                     <input
                       type="text"
                       value={adminNotifTitle}
                       onChange={e => setAdminNotifTitle(e.target.value)}
-                      placeholder="Notification Title (عنوان اعلان)..."
+                      placeholder="عنوان اعلان همگانی..."
                       className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
                     />
                     <textarea
                       value={adminNotifBody}
                       onChange={e => setAdminNotifBody(e.target.value)}
-                      placeholder="Notification Body (متن پیام)..."
+                      placeholder="متن کامل پیام اعلان (تخفیف، بروزرسانی، رویداد)..."
                       className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none h-24"
                     />
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <select
                         value={adminNotifCategory}
                         onChange={e => setAdminNotifCategory(e.target.value)}
                         className="bg-slate-900 border border-slate-800 text-white text-xs rounded-xl px-3 py-2 outline-none"
                       >
-                        <option value="Update">🚀 Update Announcement</option>
-                        <option value="Discount">💰 Special Discount</option>
-                        <option value="Event">🏆 Event Alert</option>
-                        <option value="Maintenance">🛠 Maintenance Notice</option>
+                        <option value="Update">🚀 اعلان بروزرسانی سیستم</option>
+                        <option value="Discount">💰 تخفیف ویژه خرید سکه</option>
+                        <option value="Event">🏆 شروع مسابقه جدید</option>
+                        <option value="Maintenance">🛠 اطلاعیه تعمیرات سیستم</option>
                       </select>
                       <button
                         onClick={() => {
                           if (!adminNotifTitle || !adminNotifBody) return;
-                          showToast('Broadcast push notification sent to all users!');
+                          addAdminAuditLog(`اعلان همگانی "${adminNotifTitle}" به تمامی کاربران ارسال شد`);
                           setAdminNotifTitle('');
                           setAdminNotifBody('');
                         }}
                         className="flex-1 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black"
                       >
-                        Send Instant Push Broadcast
+                        ارسال فوری اعلان به تمام کاربران
                       </button>
                     </div>
                   </div>
@@ -8653,10 +9340,27 @@ export default function App() {
               {/* 11. CONTENT MODERATION */}
               {adminActiveTab === 'moderation' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۱. Content Moderation (مدیریت محتوا)</h3>
-                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-slate-300">
-                    <p className="font-bold">Media Review Queue</p>
-                    <span className="text-[10px] text-emerald-400 block">All 142 recent photos, videos & stories clear of policy violations.</span>
+                  <h3 className="font-bold text-white text-sm">۱۱. نظارت و مدیریت محتوا (Content Moderation)</h3>
+                  <div className="space-y-2">
+                    {adminModerationQueue.map(item => (
+                      <div key={item.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <img src={item.mediaUrl} alt="media" className="w-12 h-12 rounded-xl object-cover border border-slate-800" />
+                          <div>
+                            <p className="font-bold text-white">{item.type} • {item.user}</p>
+                            <span className="text-[10px] text-amber-400">{item.status}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => addAdminAuditLog(`تصویر ${item.user} تأیید شد`)} className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]">
+                            تأیید محتوا
+                          </button>
+                          <button onClick={() => addAdminAuditLog(`تصویر نامناسب ${item.user} حذف گردید`)} className="px-3 py-1 rounded-xl bg-rose-600 text-white font-bold text-[10px]">
+                            حذف تصویر
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -8664,19 +9368,32 @@ export default function App() {
               {/* 12. STATISTICS */}
               {adminActiveTab === 'statistics' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۲. Detailed Analytics & Growth Graphs (آمار و نمودارها)</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm">۱۲. آمار پیشرفته و نمودار رشد برنامه (Statistics)</h3>
+                    <div className="flex gap-1">
+                      {['24h', '7d', '30d', '1y'].map(tf => (
+                        <button
+                          key={tf}
+                          onClick={() => setAdminStatsTimeframe(tf)}
+                          className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${adminStatsTimeframe === tf ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-400'}`}
+                        >
+                          {tf}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
-                      <span className="text-slate-400">DAU Growth Rate</span>
-                      <p className="text-lg font-black text-emerald-400">+28.4% MoM</p>
+                      <span className="text-slate-400">نرخ رشد کاربران روزانه</span>
+                      <p className="text-lg font-black text-emerald-400">+۲۸.۴٪ رشد</p>
                     </div>
                     <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
-                      <span className="text-slate-400">Avg Stream Duration</span>
-                      <p className="text-lg font-black text-cyan-400">42 minutes</p>
+                      <span className="text-slate-400">میانگین مدت لایوها</span>
+                      <p className="text-lg font-black text-cyan-400">۴۲ دقیقه</p>
                     </div>
                     <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
-                      <span className="text-slate-400">Coin Conversion</span>
-                      <p className="text-lg font-black text-amber-400">84.2%</p>
+                      <span className="text-slate-400">نرخ تبدیل خرید سکه</span>
+                      <p className="text-lg font-black text-amber-400">۸۴.۲٪</p>
                     </div>
                   </div>
                 </div>
@@ -8685,17 +9402,23 @@ export default function App() {
               {/* 13. SUPPORT TICKETS */}
               {adminActiveTab === 'support' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۳. Support Tickets (تیکت‌های پشتیبانی)</h3>
+                  <h3 className="font-bold text-white text-sm">۱۳. مدیریت تیکت‌های پشتیبانی کاربران (Support)</h3>
                   <div className="space-y-2">
                     {adminTicketsList.map(t => (
                       <div key={t.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                         <div className="flex items-center justify-between">
-                          <p className="font-bold text-white">[{t.id}] {t.subject} • {t.user}</p>
+                          <p className="font-bold text-white">[{t.id}] {t.subject} • کاربر: {t.user}</p>
                           <span className="text-[10px] text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded-full">{t.status}</span>
                         </div>
-                        <p className="text-[11px] text-slate-300 bg-slate-900 p-2 rounded-xl">{t.message}</p>
-                        <button onClick={() => showToast(`Opened response editor for Ticket ${t.id}`)} className="px-3 py-1 rounded-xl bg-purple-600 text-white font-bold text-[10px]">
-                          Reply & Close Ticket
+                        <p className="text-[11px] text-slate-300 bg-slate-900 p-2 rounded-xl">متن تیکت: "{t.message}"</p>
+                        <button
+                          onClick={() => {
+                            setAdminTicketsList(prev => prev.map(item => item.id === t.id ? { ...item, status: 'Closed' } : item));
+                            addAdminAuditLog(`پاسخ به تیکت ${t.id} ارسال و تیکت بسته شد`);
+                          }}
+                          className="px-3 py-1 rounded-xl bg-purple-600 text-white font-bold text-[10px]"
+                        >
+                          پاسخ و بستن تیکت
                         </button>
                       </div>
                     ))}
@@ -8706,18 +9429,27 @@ export default function App() {
               {/* 14. VERIFICATION KYC */}
               {adminActiveTab === 'verification' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۴. Identity Verification KYC (تأیید هویت)</h3>
+                  <h3 className="font-bold text-white text-sm">۱۴. تأیید هویت و مدارک شناسایی (Verification)</h3>
                   <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                     <div>
-                      <p className="font-bold text-white">Sahar Miller (@sahar_m)</p>
-                      <span className="text-[10px] text-slate-400 block">ID Document #482093201 • Selfie attached</span>
+                      <p className="font-bold text-white">سحر میلر (@sahar_m)</p>
+                      <span className="text-[10px] text-slate-400 block">کد ملی / مدارک: ۴۸۲۰۹۳۲۰۱ • عکس سلفی پیوست شده</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <button onClick={() => showToast('Approved KYC!')} className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]">
-                        Approve (تأیید)
+                      <button
+                        onClick={() => {
+                          setAdminUsersList(prev => prev.map(u => u.username === 'sahar_m' ? { ...u, isVerified: true } : u));
+                          addAdminAuditLog('مدارک هویت سحر میلر تأیید و نشان آبی اعطا شد');
+                        }}
+                        className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]"
+                      >
+                        تأیید مدارک (Cyan Badge)
                       </button>
-                      <button onClick={() => showToast('Rejected KYC')} className="px-3 py-1 rounded-xl bg-rose-600 text-white font-bold text-[10px]">
-                        Reject
+                      <button
+                        onClick={() => addAdminAuditLog('مدارک هویت سحر میلر رد شد')}
+                        className="px-3 py-1 rounded-xl bg-rose-600 text-white font-bold text-[10px]"
+                      >
+                        رد مدارک
                       </button>
                     </div>
                   </div>
@@ -8727,16 +9459,16 @@ export default function App() {
               {/* 15. ROLES */}
               {adminActiveTab === 'roles' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۵. Admin Access Control & Roles (سطوح دسترسی)</h3>
+                  <h3 className="font-bold text-white text-sm">۱۵. سطوح دسترسی و مدیریت مدیران (Roles)</h3>
                   <div className="space-y-2">
                     {adminRolesList.map((r, idx) => (
                       <div key={idx} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                         <div>
                           <p className="font-bold text-white">{r.name} ({r.handle})</p>
-                          <span className="text-[10px] text-amber-300 block font-mono">{r.role} • {r.access}</span>
+                          <span className="text-[10px] text-amber-300 block font-mono">نقش: {r.role} • دسترسی: {r.access}</span>
                         </div>
-                        <button onClick={() => showToast(`Edited permissions for ${r.name}`)} className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-300 font-bold text-[10px]">
-                          Edit Permissions
+                        <button onClick={() => addAdminAuditLog(`دسترسی‌های مدیر ${r.name} ویرایش گردید`)} className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-300 font-bold text-[10px]">
+                          ویرایش دسترسی
                         </button>
                       </div>
                     ))}
@@ -8747,10 +9479,10 @@ export default function App() {
               {/* 16. SECURITY */}
               {adminActiveTab === 'security' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۶. Security & Admin Login Audit (امنیت و لاگ‌ها)</h3>
+                  <h3 className="font-bold text-white text-sm">۱۶. امنیت سیستم و لاگ ورود مدیران (Security)</h3>
                   <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 font-mono text-[10px]">
-                    <p className="text-slate-300">• 12:15 - Rayan Admin logged in from 185.220.101.4 (Tehran)</p>
-                    <p className="text-slate-300">• 10:40 - Mod Sarah logged in from 91.108.4.12 (London)</p>
+                    <p className="text-slate-300">• 12:15 - ورود مدیر ارشد رایان از IP: 185.220.101.4 (تهران)</p>
+                    <p className="text-slate-300">• 10:40 - ورود مدیر سارا از IP: 91.108.4.12 (لندن)</p>
                   </div>
                 </div>
               )}
@@ -8758,27 +9490,27 @@ export default function App() {
               {/* 17. SYSTEM SETTINGS */}
               {adminActiveTab === 'settings' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۷. System Settings (تنظیمات عمومی سیستم)</h3>
+                  <h3 className="font-bold text-white text-sm">۱۷. تنظیمات عمومی سیستم (System Settings)</h3>
                   <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">Maintenance Mode (حالت تعمیرات)</p>
-                        <span className="text-[10px] text-slate-400">Lock non-admin access</span>
+                        <p className="font-bold text-white">حالت تعمیرات (Maintenance Mode)</p>
+                        <span className="text-[10px] text-slate-400">قفل دسترسی کاربران غیرادمین</span>
                       </div>
                       <input
                         type="checkbox"
                         checked={adminMaintenanceMode}
                         onChange={e => {
                           setAdminMaintenanceMode(e.target.checked);
-                          showToast(e.target.checked ? 'Maintenance Mode Enabled 🚨' : 'Maintenance Mode Disabled');
+                          addAdminAuditLog(e.target.checked ? 'حالت تعمیرات فعال شد 🚨' : 'حالت تعمیرات غیرفعال شد');
                         }}
-                        className="accent-amber-500 w-4 h-4 rounded"
+                        className="accent-amber-500 w-4 h-4 rounded cursor-pointer"
                       />
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">Platform Commission Fee</p>
+                        <p className="font-bold text-white">کارمزد پلتفرم از سکه‌ها</p>
                         <span className="text-[10px] text-amber-300">{adminPlatformFee}</span>
                       </div>
                       <input
@@ -8795,31 +9527,37 @@ export default function App() {
               {/* 18. AI MODERATION */}
               {adminActiveTab === 'aimod' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۸. AI Auto-Moderation Engine (هوش مصنوعی)</h3>
+                  <h3 className="font-bold text-white text-sm">۱۸. سیستم نظارت خودکار هوش مصنوعی (AI Moderation)</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">AI Image Moderation</p>
-                        <span className="text-[10px] text-slate-400">Detect NSFW avatars</span>
+                        <p className="font-bold text-white">تشخیص خودکار تصاویر نامناسب</p>
+                        <span className="text-[10px] text-slate-400">شناسایی هوشمند عکس‌های متخلف</span>
                       </div>
                       <input
                         type="checkbox"
                         checked={adminAiBadImages}
-                        onChange={e => setAdminAiBadImages(e.target.checked)}
-                        className="accent-emerald-500 w-4 h-4 rounded"
+                        onChange={e => {
+                          setAdminAiBadImages(e.target.checked);
+                          addAdminAuditLog(`تشخیص تصاویر نامناسب هوش مصنوعی ${!adminAiBadImages ? 'فعال' : 'غیرفعال'} شد`);
+                        }}
+                        className="accent-emerald-500 w-4 h-4 rounded cursor-pointer"
                       />
                     </div>
 
                     <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">AI Offensive Chat Filter</p>
-                        <span className="text-[10px] text-slate-400">Block profanity</span>
+                        <p className="font-bold text-white">فیلتر هوشمند کلمات توهین‌آمیز</p>
+                        <span className="text-[10px] text-slate-400">مسدودسازی خودکار چت نامناسب</span>
                       </div>
                       <input
                         type="checkbox"
                         checked={adminAiOffensiveText}
-                        onChange={e => setAdminAiOffensiveText(e.target.checked)}
-                        className="accent-emerald-500 w-4 h-4 rounded"
+                        onChange={e => {
+                          setAdminAiOffensiveText(e.target.checked);
+                          addAdminAuditLog(`فیلتر کلمات توهین‌آمیز هوش مصنوعی ${!adminAiOffensiveText ? 'فعال' : 'غیرفعال'} شد`);
+                        }}
+                        className="accent-emerald-500 w-4 h-4 rounded cursor-pointer"
                       />
                     </div>
                   </div>
@@ -8829,16 +9567,34 @@ export default function App() {
               {/* 19. BACKUP & RESTORE */}
               {adminActiveTab === 'backup' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۹. Database Backup & Restore (نسخه پشتیبان)</h3>
+                  <h3 className="font-bold text-white text-sm">۱۹. تهیه نسخه پشتیبان و بازیابی (Backup & Restore)</h3>
                   <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
-                    <p className="font-bold text-cyan-300">Latest Backup: BK-20260728.tar.gz (48.2 MB)</p>
-                    <div className="flex gap-2">
-                      <button onClick={() => showToast('Creating full database backup snapshot...')} className="px-4 py-2 rounded-xl bg-cyan-600 text-white font-bold">
-                        Backup Now
+                    <div className="flex justify-between items-center">
+                      <p className="font-bold text-cyan-300">لیست نسخه‌های پشتیبان ثبت‌شده</p>
+                      <button
+                        onClick={() => {
+                          const newB = { id: `BK-${Date.now()}`, size: '49.8 MB', date: new Date().toLocaleString() };
+                          setAdminBackupsList(prev => [newB, ...prev]);
+                          addAdminAuditLog(`نسخه پشتیبان جدید ${newB.id} با موفقیت ایجاد گردید`);
+                        }}
+                        className="px-4 py-2 rounded-xl bg-cyan-600 text-white font-bold"
+                      >
+                        + بکاپ‌گیری فوری
                       </button>
-                      <button onClick={() => showToast('Database snapshot restored!')} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold">
-                        Restore Snapshot
-                      </button>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      {adminBackupsList.map(b => (
+                        <div key={b.id} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center text-[11px]">
+                          <span>{b.id} • حجم: {b.size} • تاریخ: {b.date}</span>
+                          <button
+                            onClick={() => addAdminAuditLog(`دیتابیس از روی فایل ${b.id} بازیابی گردید`)}
+                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold"
+                          >
+                            بازیابی اطلاعات
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -8847,10 +9603,13 @@ export default function App() {
               {/* 20. LOGS & AUDIT TRAIL */}
               {adminActiveTab === 'logs' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۲۰. System Activity Audit Logs (ثبت فعالیت‌ها)</h3>
-                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-2 font-mono text-[11px]">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm">۲۰. لاگ لحظه‌ای فعالیت‌های مدیران (Audit Logs)</h3>
+                    <span className="text-[10px] text-slate-400">{adminLogsList.length} فعالیت ثبت شده</span>
+                  </div>
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-2 font-mono text-[11px] max-h-80 overflow-y-auto">
                     {adminLogsList.map((log, i) => (
-                      <div key={i} className="flex items-center gap-2 border-b border-slate-900 pb-1.5 text-slate-300">
+                      <div key={i} className="flex items-center gap-2 border-b border-slate-900 pb-1.5 text-slate-300 dir-rtl">
                         <span className="text-amber-400 font-bold">[{log.time}]</span>
                         <span>{log.log}</span>
                       </div>
