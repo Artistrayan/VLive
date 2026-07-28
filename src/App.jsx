@@ -9,7 +9,7 @@ import {
   TrendingUp, UserCheck, UserX, Ban, DollarSign, Activity, Filter, Users,
   ThumbsUp, UserPlus, Download, Disc, Gem, CircleDot, Wine, Car, Zap, Box, 
   Anchor, Rocket, Smile, Flower, AlertTriangle, Edit3, HeartHandshake,
-  CheckCircle2, BadgeCheck, Languages, Clock, ArrowUpRight, CheckCircle2 as CheckIcon
+  CheckCircle2, BadgeCheck, Languages, Clock, ArrowUpRight, Bell, Share2, Compass, MapPin, CheckCircle2 as CheckIcon
 } from 'lucide-react';
 
 // PRESET HIGH-RES AVATARS FOR PROFILE EDITING
@@ -481,6 +481,32 @@ export default function App() {
   const [isKycModalOpen, setIsKycModalOpen] = useState(false);
   const [kycNationalId, setKycNationalId] = useState('');
   const [kycDescription, setKycDescription] = useState('');
+
+  // HOME SCREEN & NAVIGATION REDESIGN STATES
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [homeSearchQuery, setHomeSearchQuery] = useState('');
+  const [homeCityFilter, setHomeCityFilter] = useState('All');
+  const [homeGenderFilter, setHomeGenderFilter] = useState('all');
+  const [followedUsers, setFollowedUsers] = useState([1, 2]);
+  const [notificationsList, setNotificationsList] = useState([
+    { id: 1, title: 'Welcome to V.Live+!', body: 'Your account has been allocated 1,000 free starter coins.', time: '10m ago', unread: true },
+    { id: 2, title: 'Sara Maleki went live!', body: 'Sara started a 4K VIP live broadcast in Tehran stage.', time: '1h ago', unread: true },
+    { id: 3, title: 'Weekly Ranking Live', body: 'Double Coins event is now active for all live streamers.', time: '3h ago', unread: false }
+  ]);
+  const [storiesList, setStoriesList] = useState([
+    { id: 1, name: 'Sara', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', hasUnseen: true },
+    { id: 2, name: 'Elnaz', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', hasUnseen: true },
+    { id: 3, name: 'Mina', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80', hasUnseen: false },
+    { id: 4, name: 'Ali', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', hasUnseen: true },
+    { id: 5, name: 'Niloofar', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80', hasUnseen: false },
+    { id: 6, name: 'Rayan', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', hasUnseen: true }
+  ]);
+  const [hotGiftsList, setHotGiftsList] = useState([
+    { id: 1, sender: 'Arash_VIP', gift: 'Supercar 🏎️', coins: 5000, recipient: 'Sara Maleki' },
+    { id: 2, sender: 'Omid', gift: 'Royal Crown 👑', coins: 2500, recipient: 'Elnaz Karimi' },
+    { id: 3, sender: 'Soren', gift: 'Gold Vault 📦', coins: 10000, recipient: 'Sara Maleki' }
+  ]);
 
   // 20+ GIFTS MODAL STATE
   const [isGiftCatalogOpen, setIsGiftCatalogOpen] = useState(false);
@@ -1756,45 +1782,76 @@ export default function App() {
       )}
 
       {/* HEADER NAVBAR */}
-      <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 p-0.5 shadow-[0_0_15px_rgba(255,0,127,0.4)] flex items-center justify-center">
+      <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80 px-4 py-2.5 flex items-center justify-between">
+        {/* Logo & Brand */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 p-0.5 shadow-[0_0_15px_rgba(255,0,127,0.5)] flex items-center justify-center">
             <Video className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h1 className="font-black text-sm tracking-tight text-white">V.Live+</h1>
-              <span className="bg-pink-500/20 text-pink-400 border border-pink-500/40 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                71% Payout Rate
+              <h1 className="font-black text-base tracking-wider text-white">V.LIVE</h1>
+              <span className="bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow">
+                PRO
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 flex items-center gap-1">
-              <span>Logged in as:</span>
-              <strong className="text-pink-300">@{currentUsername}</strong>
-              {isVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
+            <p className="text-[9px] text-emerald-400 font-semibold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              14,280 Online
             </p>
           </div>
         </div>
 
+        {/* Header Actions */}
         <div className="flex items-center gap-2">
           {/* Admin Panel Button */}
           {isUserRayan && (
             <button 
               onClick={() => setIsAdminPanelOpen(true)}
-              className="bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg"
+              className="bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm"
             >
               <Shield className="w-3.5 h-3.5 text-amber-400" />
               Admin
             </button>
           )}
 
-          {/* User Wallet Balance Badge */}
+          {/* Wallet Balance Chip */}
           <button 
             onClick={() => setActiveTab('wallet')}
-            className="bg-slate-900 border border-slate-800 hover:border-pink-500/50 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
+            className="bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
           >
             <CoinsIcon className="w-4 h-4 text-amber-400" />
             <span className="text-amber-300">{userCoins.toLocaleString()}</span>
+          </button>
+
+          {/* Notification Bell */}
+          <button 
+            onClick={() => setIsNotificationsOpen(true)}
+            className="relative p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-pink-500/50 transition"
+            title="Notifications"
+          >
+            <Bell className="w-4 h-4" />
+            {notificationsList.some(n => n.unread) && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
+            )}
+          </button>
+
+          {/* Settings Button */}
+          <button 
+            onClick={() => setIsSettingsModalOpen(true)}
+            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-pink-500/50 transition"
+            title="Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+
+          {/* User Avatar */}
+          <button 
+            onClick={() => setActiveTab('profile')}
+            className="relative w-8 h-8 rounded-full overflow-hidden border border-pink-500/60 p-0.5 hover:scale-105 transition"
+          >
+            <img src={userAvatar} alt={userName} className="w-full h-full object-cover rounded-full" />
+            <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 border border-slate-950" />
           </button>
         </div>
       </header>
@@ -1802,153 +1859,529 @@ export default function App() {
       {/* BODY CONTENT AREA */}
       <main className="flex-1 p-4 max-w-4xl mx-auto w-full space-y-6">
 
-        {/* TAB 1: STREAMS & USERS */}
+        {/* TAB 1: HOME & LIVE STREAMS */}
         {activeTab === 'streams' && (
           <div className="space-y-6">
-            {/* Sub-tab Navigation */}
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3 flex-wrap gap-2">
-              <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-2xl border border-slate-800 overflow-x-auto">
+
+            {/* IF LIVES SUBTAB (DEFAULT HOME SCREEN) */}
+            {streamSubTab === 'lives' && (
+              <div className="space-y-6">
+                {/* 1. HERO BANNER */}
+            <div className="relative rounded-3xl overflow-hidden p-6 bg-gradient-to-r from-pink-950 via-purple-950 to-slate-950 border border-pink-500/30 shadow-[0_0_30px_rgba(236,72,153,0.15)]">
+              <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1.5 max-w-md">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/40 text-[10px] font-black uppercase tracking-wider">
+                    <Sparkles className="w-3 h-3 text-pink-400 animate-spin" />
+                    High Payout Rates • 71%
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                    🔥 Go Live & Earn Money
+                  </h2>
+                  <p className="text-xs text-slate-300">
+                    Start your 4K stream, collect virtual gifts from fans & cash out USDT directly!
+                  </p>
+                </div>
+
                 <button 
-                  onClick={() => setStreamSubTab('lives')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 ${streamSubTab === 'lives' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                  onClick={handleStartLiveStream}
+                  className="btn-neon-pink px-6 py-3.5 rounded-2xl text-xs font-black flex items-center gap-2 shadow-xl shrink-0 hover:scale-105 transition active:scale-95"
                 >
-                  <Flame className="w-3.5 h-3.5 text-pink-400" />
-                  Live Broadcasts
+                  <Camera className="w-4 h-4 text-white" />
+                  🎥 Start Live
                 </button>
+              </div>
+              <div className="absolute top-0 right-0 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl pointer-events-none" />
+            </div>
+
+            {/* 2. STORIES BAR */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+                  User Stories
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
+                {/* + Your Story */}
                 <button 
-                  onClick={() => setStreamSubTab('party')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 ${streamSubTab === 'party' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                  onClick={handleStartLiveStream}
+                  className="flex flex-col items-center gap-1.5 shrink-0 group"
                 >
-                  <Users className="w-3.5 h-3.5 text-purple-400" />
-                  Party Stage
+                  <div className="relative w-14 h-14 rounded-full p-0.5 border-2 border-dashed border-pink-500/60 flex items-center justify-center bg-slate-900 group-hover:scale-105 transition">
+                    <img src={userAvatar} alt="Your Story" className="w-full h-full object-cover rounded-full opacity-60" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-6 h-6 rounded-full bg-pink-600 text-white flex items-center justify-center shadow-lg">
+                        <Plus className="w-4 h-4 font-bold" />
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-semibold text-slate-300">Your Story</span>
                 </button>
-                <button 
-                  onClick={() => setStreamSubTab('moments')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 ${streamSubTab === 'moments' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-                >
-                  <Video className="w-3.5 h-3.5 text-amber-400" />
-                  Moments & Reels
-                </button>
-                <button 
-                  onClick={() => setStreamSubTab('leaderboard')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 ${streamSubTab === 'leaderboard' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-                >
-                  <Crown className="w-3.5 h-3.5 text-yellow-400" />
-                  Hall of Fame
-                </button>
-                <button 
-                  onClick={() => setStreamSubTab('quests')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 ${streamSubTab === 'quests' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                  Daily Quests
-                </button>
+
+                {/* Story Circles */}
+                {storiesList.map(story => (
+                  <button 
+                    key={story.id}
+                    onClick={() => showToast(`Viewing @${story.name}'s story`)}
+                    className="flex flex-col items-center gap-1.5 shrink-0 group"
+                  >
+                    <div className={`w-14 h-14 rounded-full p-0.5 transition group-hover:scale-105 ${story.hasUnseen ? 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 shadow-[0_0_12px_rgba(236,72,153,0.5)]' : 'bg-slate-800'}`}>
+                      <img src={story.avatar} alt={story.name} className="w-full h-full object-cover rounded-full border border-slate-950" />
+                    </div>
+                    <span className="text-[10px] font-semibold text-slate-300 truncate max-w-[60px]">{story.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. HOT GIFTS TICKER */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-2.5 flex items-center gap-3 overflow-hidden text-xs">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-pink-500/20 text-pink-300 font-bold shrink-0 text-[10px]">
+                <Flame className="w-3.5 h-3.5 text-pink-400 animate-pulse" />
+                Hot Gifts
+              </div>
+              <div className="flex items-center gap-4 overflow-x-auto no-scrollbar whitespace-nowrap text-[11px]">
+                {hotGiftsList.map(g => (
+                  <div key={g.id} className="flex items-center gap-1.5 shrink-0 text-slate-300">
+                    <strong className="text-pink-400">@{g.sender}</strong>
+                    <span>sent</span>
+                    <span className="text-amber-300 font-bold">{g.gift}</span>
+                    <span>to</span>
+                    <strong className="text-purple-300">@{g.recipient}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 4. ONLINE HOSTS HORIZONTAL CARDS */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-purple-400" />
+                    Online Hosts
+                  </h3>
+                  <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    🟢 Live Now
+                  </span>
+                </div>
                 <button 
                   onClick={() => setStreamSubTab('users')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 ${streamSubTab === 'users' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                  className="text-[11px] text-pink-400 hover:underline font-bold"
                 >
-                  <Star className="w-3.5 h-3.5 text-emerald-400" />
-                  Streamers
+                  View All
                 </button>
               </div>
 
-              {/* Start Live Stream Button */}
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
+                {usersList.filter(u => u.online).map(host => (
+                  <div 
+                    key={host.id} 
+                    className="w-40 shrink-0 card-3d p-3 rounded-2xl border border-slate-800 bg-slate-900/90 flex flex-col items-center text-center space-y-2 group hover:border-pink-500/50 transition"
+                  >
+                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-pink-500/40 shadow-md">
+                      <img src={host.avatar} alt={host.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-300" />
+                      <span className="absolute bottom-1 right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-950" />
+                    </div>
+
+                    <div className="w-full">
+                      <h4 className="text-xs font-bold text-white truncate flex items-center justify-center gap-1">
+                        {host.name}
+                        {host.isVerified && <VerifiedBadge className="w-3 h-3" />}
+                      </h4>
+                      <p className="text-[9px] text-slate-400 flex items-center justify-center gap-1 mt-0.5">
+                        <MapPin className="w-2.5 h-2.5 text-pink-400" />
+                        {host.city || 'Tehran'}
+                      </p>
+                      <p className="text-[9px] text-cyan-400 font-semibold flex items-center justify-center gap-1 mt-0.5">
+                        <Eye className="w-2.5 h-2.5" />
+                        {(Math.floor(Math.random() * 2000) + 300).toLocaleString()} viewers
+                      </p>
+                    </div>
+
+                    <button 
+                      onClick={() => handleStartPrivateCall(host)}
+                      className="w-full py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-[10px] shadow-sm active:scale-95 transition"
+                    >
+                      Join
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 5. TRENDING LIVE STREAMS */}
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Flame className="w-4 h-4 text-pink-500 animate-pulse" />
+                  Trending Live Streams
+                </h3>
+
+                {/* Live vs Party Switch */}
+                <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[10px] font-bold">
+                  <button 
+                    onClick={() => setStreamSubTab('lives')}
+                    className={`px-2.5 py-1 rounded-lg transition ${streamSubTab === 'lives' ? 'bg-pink-600 text-white' : 'text-slate-400'}`}
+                  >
+                    🎥 Live Streams
+                  </button>
+                  <button 
+                    onClick={() => setStreamSubTab('party')}
+                    className={`px-2.5 py-1 rounded-lg transition ${streamSubTab === 'party' ? 'bg-purple-600 text-white' : 'text-slate-400'}`}
+                  >
+                    🎉 Party Stage
+                  </button>
+                </div>
+              </div>
+
+              {/* Fast Search & Filters Bar */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {/* Fast Search */}
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input 
+                    type="text" 
+                    value={homeSearchQuery}
+                    onChange={e => setHomeSearchQuery(e.target.value)}
+                    placeholder="Quick search streamer or city..."
+                    className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                  />
+                </div>
+
+                {/* City Filter */}
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                  {['All', 'Tehran', 'Istanbul', 'Dubai', 'LA'].map(city => (
+                    <button 
+                      key={city}
+                      onClick={() => setHomeCityFilter(city)}
+                      className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold shrink-0 border transition ${homeCityFilter === city ? 'bg-pink-500/20 text-pink-300 border-pink-500/50' : 'bg-slate-900 text-slate-400 border-slate-800'}`}
+                    >
+                      {city}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Gender / VIP Filter */}
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                  {[
+                    { id: 'all', label: 'All' },
+                    { id: 'female', label: 'Female 👩' },
+                    { id: 'male', label: 'Male 👨' },
+                    { id: 'vip', label: 'VIP 👑' }
+                  ].map(g => (
+                    <button 
+                      key={g.id}
+                      onClick={() => setHomeGenderFilter(g.id)}
+                      className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold shrink-0 border transition ${homeGenderFilter === g.id ? 'bg-purple-500/20 text-purple-300 border-purple-500/50' : 'bg-slate-900 text-slate-400 border-slate-800'}`}
+                    >
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Streams Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {streamsList
+                  .filter(s => {
+                    if (homeSearchQuery) {
+                      const q = homeSearchQuery.toLowerCase();
+                      return s.title.toLowerCase().includes(q) || s.host.toLowerCase().includes(q);
+                    }
+                    if (homeGenderFilter === 'vip') return s.isVip18;
+                    return true;
+                  })
+                  .map(stream => (
+                    <div key={stream.id} className="card-3d rounded-3xl overflow-hidden border border-slate-800/80 bg-slate-900/60 group hover:border-pink-500/40 transition">
+                      <div className="relative aspect-video overflow-hidden">
+                        <img src={stream.thumbnail} alt={stream.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                        
+                        <div className="absolute top-3 left-3 flex items-center gap-2">
+                          <span className="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-lg">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                            LIVE
+                          </span>
+                          {stream.isVip18 && (
+                            <span className="bg-purple-900/90 border border-purple-500/50 text-purple-300 text-[10px] font-black px-2 py-0.5 rounded-full">
+                              VIP +18
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-300 flex items-center gap-1 border border-slate-800">
+                          <Eye className="w-3 h-3 text-cyan-400" />
+                          {stream.viewers.toLocaleString()}
+                        </div>
+
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <div className="flex items-center gap-1 text-xs font-bold text-white mb-1">
+                            <span>{stream.host}</span>
+                            <VerifiedBadge className="w-3.5 h-3.5" />
+                            <span className="ml-auto text-amber-300 text-[10px] flex items-center gap-0.5 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
+                              <Gift className="w-3 h-3 text-amber-400" />
+                              1,420 Gifts
+                            </span>
+                          </div>
+                          <h3 className="text-xs text-slate-300 font-medium line-clamp-1">{stream.title}</h3>
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-slate-950/80 border-t border-slate-800/80 flex items-center justify-between">
+                        <span className="text-[10px] text-slate-400">
+                          Entry: {stream.entryFee > 0 ? `${stream.entryFee} coins` : 'Free'}
+                        </span>
+
+                        <button 
+                          onClick={() => handleTryEnterStream(stream)}
+                          className="btn-neon-pink px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md"
+                        >
+                          <Play className="w-3.5 h-3.5 fill-white" />
+                          Watch Stream
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* 6. SUGGESTED FRIENDS */}
+            <div className="space-y-2.5">
+              <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                <UserPlus className="w-3.5 h-3.5 text-pink-400" />
+                Suggested Streamers
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {usersList.slice(0, 4).map(u => (
+                  <div key={u.id} className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <img src={u.avatar} alt={u.name} className="w-10 h-10 rounded-full object-cover border border-pink-500/40" />
+                      <div>
+                        <h4 className="text-xs font-bold text-white flex items-center gap-1">
+                          {u.name}
+                          {u.isVerified && <VerifiedBadge className="w-3 h-3" />}
+                        </h4>
+                        <p className="text-[10px] text-slate-400">@{u.username} • {u.role}</p>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        setFollowedUsers(prev => prev.includes(u.id) ? prev.filter(id => id !== u.id) : [...prev, u.id]);
+                        showToast(followedUsers.includes(u.id) ? `Unfollowed @${u.username}` : `Following @${u.username}`);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition ${followedUsers.includes(u.id) ? 'bg-slate-800 text-slate-300' : 'bg-pink-600 hover:bg-pink-500 text-white shadow-sm'}`}
+                    >
+                      {followedUsers.includes(u.id) ? 'Following' : 'Follow'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 7. VIP SPOTLIGHT CARD */}
+            <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-950 via-slate-900 to-purple-950 border border-amber-500/40 shadow-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-2xl bg-amber-500/20 border border-amber-500/50 text-amber-300">
+                    <Crown className="w-5 h-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-amber-200">⭐ VIP Membership</h3>
+                    <p className="text-[10px] text-amber-400/80">Unlock exclusive streaming privileges & 0% commission</p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => showToast('VIP Membership upgrade page')}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition"
+                >
+                  Upgrade
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-[10px] text-amber-100 font-medium">
+                <div className="p-2 rounded-xl bg-amber-950/40 border border-amber-500/20 text-center">
+                  ✨ Unlimited Calls
+                </div>
+                <div className="p-2 rounded-xl bg-purple-950/40 border border-purple-500/20 text-center">
+                  🔒 Adult Rooms
+                </div>
+                <div className="p-2 rounded-xl bg-pink-950/40 border border-pink-500/20 text-center">
+                  🚀 Premium Features
+                </div>
+              </div>
+            </div>
+
+            {/* 8. EARNINGS DASHBOARD */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                  Host Earnings Overview
+                </h3>
+                <span className="text-[10px] text-slate-400">71% Streamer Payout</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+                  <span className="text-[10px] text-slate-400 font-medium">Today's Revenue</span>
+                  <p className="text-sm font-black text-emerald-400 mt-1">$45.00</p>
+                  <span className="text-[9px] text-amber-300">2,250 Coins</span>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+                  <span className="text-[10px] text-slate-400 font-medium">This Week</span>
+                  <p className="text-sm font-black text-cyan-400 mt-1">$280.00</p>
+                  <span className="text-[9px] text-amber-300">14,000 Coins</span>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+                  <span className="text-[10px] text-slate-400 font-medium">Total Cashout</span>
+                  <p className="text-sm font-black text-purple-400 mt-1">$1,450.00</p>
+                  <span className="text-[9px] text-amber-300">72,500 Coins</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 9. WALLET QUICK ACTIONS */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                <Wallet className="w-3.5 h-3.5 text-amber-400" />
+                Wallet & Crypto USDT
+              </h3>
+
+              <div className="grid grid-cols-4 gap-2">
+                <button 
+                  onClick={() => setIsDepositModalOpen(true)}
+                  className="p-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-center transition flex flex-col items-center gap-1 group"
+                >
+                  <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 group-hover:scale-110 transition">
+                    <CoinsIcon className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-200">Charge</span>
+                </button>
+
+                <button 
+                  onClick={() => setIsWithdrawModalOpen(true)}
+                  className="p-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-center transition flex flex-col items-center gap-1 group"
+                >
+                  <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-200">Withdraw</span>
+                </button>
+
+                <button 
+                  onClick={() => showToast('Coin transfer feature opened')}
+                  className="p-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-center transition flex flex-col items-center gap-1 group"
+                >
+                  <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400 group-hover:scale-110 transition">
+                    <RefreshCw className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-200">Transfer</span>
+                </button>
+
+                <button 
+                  onClick={() => setIsDepositModalOpen(true)}
+                  className="p-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-center transition flex flex-col items-center gap-1 group"
+                >
+                  <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 group-hover:scale-110 transition">
+                    <QrCode className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-200">USDT Pay</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 10. WEEKLY RANKING LEADERBOARD */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Crown className="w-4 h-4 text-amber-400" />
+                  🏆 Weekly Leaderboard Ranking
+                </h3>
+                <span className="text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                  Top 10 Streamers
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {usersList.slice(0, 3).map((u, idx) => (
+                  <div key={u.id} className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className={`w-6 h-6 rounded-full font-black text-xs flex items-center justify-center ${idx === 0 ? 'bg-amber-400 text-slate-950' : idx === 1 ? 'bg-slate-300 text-slate-950' : 'bg-amber-700 text-white'}`}>
+                        #{idx + 1}
+                      </span>
+                      <img src={u.avatar} alt={u.name} className="w-9 h-9 rounded-full object-cover" />
+                      <div>
+                        <h4 className="text-xs font-bold text-white flex items-center gap-1">
+                          {u.name}
+                          {u.isVerified && <VerifiedBadge className="w-3 h-3" />}
+                        </h4>
+                        <span className="text-[10px] text-amber-300 flex items-center gap-1">
+                          <CoinsIcon className="w-3 h-3" />
+                          {(u.coins || 45000).toLocaleString()} coins earned
+                        </span>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => handleStartPrivateCall(u)}
+                      className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-[10px] shadow-sm"
+                    >
+                      Call
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 11. EVENTS & PROMOTIONS */}
+            <div className="p-4 rounded-3xl bg-gradient-to-r from-pink-900/60 via-purple-900/40 to-slate-900 border border-pink-500/40 flex items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-yellow-300 animate-spin" />
+                  <h3 className="text-xs font-black text-white">🎁 Double Coins Event Active!</h3>
+                </div>
+                <p className="text-[10px] text-pink-200">Get 2x coins on all live stream gifts for the next 24 hours.</p>
+              </div>
+
               <button 
-                onClick={handleStartLiveStream}
-                className="btn-neon-pink px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg"
+                onClick={() => setIsDepositModalOpen(true)}
+                className="px-4 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-black text-xs shrink-0 shadow-lg"
               >
-                <Camera className="w-4 h-4" />
-                Go Live
+                Claim 2x
               </button>
             </div>
 
-            {/* IF STREAMS SUBTAB */}
-            {streamSubTab === 'lives' && (
-              <div className="space-y-4">
-                {/* Mode Filter Bar */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-                  <button 
-                    onClick={() => setStreamModeFilter('all')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border shrink-0 transition ${streamModeFilter === 'all' ? 'border-pink-500 bg-pink-500/20 text-pink-300' : 'border-slate-800 bg-slate-900 text-slate-400'}`}
-                  >
-                    All Streams
-                  </button>
-                  <button 
-                    onClick={() => setStreamModeFilter('vip18')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border shrink-0 transition ${streamModeFilter === 'vip18' ? 'border-purple-500 bg-purple-500/20 text-purple-300' : 'border-slate-800 bg-slate-900 text-slate-400'}`}
-                  >
-                    VIP +18 Live
-                  </button>
-                  <button 
-                    onClick={() => setStreamModeFilter('free')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border shrink-0 transition ${streamModeFilter === 'free' ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300' : 'border-slate-800 bg-slate-900 text-slate-400'}`}
-                  >
-                    Free Access
-                  </button>
-                </div>
-
-                {/* Streams Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {streamsList
-                    .filter(s => {
-                      if (streamModeFilter === 'vip18') return s.isVip18;
-                      if (streamModeFilter === 'free') return !s.isVip18;
-                      return true;
-                    })
-                    .map(stream => (
-                      <div key={stream.id} className="card-3d rounded-3xl overflow-hidden border border-slate-800/80 bg-slate-900/60 group hover:border-pink-500/40 transition">
-                        <div className="relative aspect-video overflow-hidden">
-                          <img src={stream.thumbnail} alt={stream.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
-                          
-                          <div className="absolute top-3 left-3 flex items-center gap-2">
-                            <span className="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-lg">
-                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                              LIVE
-                            </span>
-                            {stream.isVip18 && (
-                              <span className="bg-purple-900/90 border border-purple-500/50 text-purple-300 text-[10px] font-black px-2 py-0.5 rounded-full">
-                                VIP +18
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-300 flex items-center gap-1 border border-slate-800">
-                            <Eye className="w-3 h-3 text-cyan-400" />
-                            {stream.viewers.toLocaleString()}
-                          </div>
-
-                          <div className="absolute bottom-3 left-3 right-3">
-                            <div className="flex items-center gap-1 text-xs font-bold text-white mb-1">
-                              <span>{stream.host}</span>
-                              <VerifiedBadge className="w-3.5 h-3.5" />
-                              <span className="ml-auto text-amber-300 text-[10px] flex items-center gap-0.5">
-                                <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                                {stream.rating}
-                              </span>
-                            </div>
-                            <h3 className="text-xs text-slate-300 font-medium line-clamp-1">{stream.title}</h3>
-                          </div>
-                        </div>
-
-                        <div className="p-3 bg-slate-950/80 border-t border-slate-800/80 flex items-center justify-between">
-                          <span className="text-[10px] text-slate-400">
-                            Entry: {stream.entryFee > 0 ? `${stream.entryFee} coins` : 'Free'}
-                          </span>
-
-                          <button 
-                            onClick={() => handleTryEnterStream(stream)}
-                            className="btn-neon-pink px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md"
-                          >
-                            <Play className="w-3.5 h-3.5 fill-white" />
-                            Watch Stream
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
+            {/* 12. INVITE FRIENDS */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Share2 className="w-3.5 h-3.5 text-cyan-400" />
+                  Invite Friends & Earn Rewards
+                </h3>
+                <p className="text-[10px] text-slate-400">Get 500 bonus coins + 10% lifetime commission for every friend.</p>
               </div>
-            )}
+
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(`https://vlive.app/invite?ref=${userName}`);
+                  showToast('Invite referral link copied to clipboard!');
+                }}
+                className="px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1 shrink-0"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                Copy
+              </button>
+            </div>
+
+          </div>
+        )}
 
             {/* IF MULTI-GUEST PARTY ROOMS SUBTAB */}
             {streamSubTab === 'party' && (
@@ -2940,21 +3373,44 @@ export default function App() {
       </main>
 
       {/* BOTTOM NAVIGATION BAR */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/90 backdrop-blur-xl border-t border-slate-800/80 px-4 py-2 flex items-center justify-around">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/80 px-4 py-2 flex items-center justify-around">
+        {/* 1. Home */}
         <button 
           onClick={() => setActiveTab('streams')}
-          className={`flex flex-col items-center gap-1 ${activeTab === 'streams' ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'}`}
+          className={`flex flex-col items-center gap-0.5 ${activeTab === 'streams' ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'}`}
         >
           <Video className="w-5 h-5" />
-          <span className="text-[9px] font-bold">Streams</span>
+          <span className="text-[9px] font-bold">Home</span>
         </button>
 
+        {/* 2. Discover */}
+        <button 
+          onClick={() => {
+            setActiveTab('streams');
+            setStreamSubTab('users');
+          }}
+          className={`flex flex-col items-center gap-0.5 ${activeTab === 'streams' && streamSubTab === 'users' ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'}`}
+        >
+          <Compass className="w-5 h-5" />
+          <span className="text-[9px] font-bold">Discover</span>
+        </button>
+
+        {/* 3. CENTER NEON FLOATING ACTION BUTTON (FAB) */}
+        <button 
+          onClick={handleStartLiveStream}
+          className="relative -top-5 w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition group"
+          title="Go Live"
+        >
+          <Plus className="w-7 h-7 font-black group-hover:rotate-90 transition duration-300" />
+        </button>
+
+        {/* 4. Messages */}
         <button 
           onClick={() => setActiveTab('messages')}
-          className={`flex flex-col items-center gap-1 relative ${activeTab === 'messages' ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'}`}
+          className={`flex flex-col items-center gap-0.5 relative ${activeTab === 'messages' ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'}`}
         >
           <MessageSquare className="w-5 h-5" />
-          <span className="text-[9px] font-bold">Direct</span>
+          <span className="text-[9px] font-bold">Messages</span>
           {totalUnreadMessages > 0 && (
             <span className="absolute -top-1 -right-2 bg-pink-600 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center">
               {totalUnreadMessages}
@@ -2962,36 +3418,121 @@ export default function App() {
           )}
         </button>
 
-        {/* Lucky Wheel Item in Bottom Nav */}
-        <button 
-          onClick={() => setIsLuckyWheelOpen(true)}
-          className="flex flex-col items-center gap-1 relative text-amber-400 hover:text-amber-300 active:scale-95 transition"
-        >
-          <Disc className="w-5 h-5 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
-          <span className="text-[9px] font-bold text-amber-300">Wheel</span>
-          {dailyFreeSpins > 0 && (
-            <span className="absolute -top-1 -right-1.5 bg-red-600 text-white text-[8px] font-black px-1 rounded-full animate-pulse border border-yellow-300/50">
-              1
-            </span>
-          )}
-        </button>
-
-        <button 
-          onClick={() => setActiveTab('wallet')}
-          className={`flex flex-col items-center gap-1 ${activeTab === 'wallet' ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'}`}
-        >
-          <Wallet className="w-5 h-5" />
-          <span className="text-[9px] font-bold">Wallet</span>
-        </button>
-
+        {/* 5. Profile */}
         <button 
           onClick={() => setActiveTab('profile')}
-          className={`flex flex-col items-center gap-1 ${activeTab === 'profile' ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'}`}
+          className={`flex flex-col items-center gap-0.5 ${activeTab === 'profile' ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'}`}
         >
           <User className="w-5 h-5" />
           <span className="text-[9px] font-bold">Profile</span>
         </button>
       </nav>
+
+      {/* MODAL: NOTIFICATIONS DRAWER */}
+      {isNotificationsOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md card-3d p-6 border border-pink-500/40 bg-slate-900 rounded-3xl space-y-4 max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-pink-400" />
+                <h2 className="text-base font-bold text-white">Notifications</h2>
+              </div>
+              <button 
+                onClick={() => setIsNotificationsOpen(false)}
+                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+              {notificationsList.map(item => (
+                <div key={item.id} className={`p-3.5 rounded-2xl border text-xs space-y-1 transition ${item.unread ? 'bg-pink-950/20 border-pink-500/40' : 'bg-slate-950 border-slate-800'}`}>
+                  <div className="flex items-center justify-between">
+                    <strong className="text-white font-bold">{item.title}</strong>
+                    <span className="text-[10px] text-slate-400">{item.time}</span>
+                  </div>
+                  <p className="text-slate-300 text-[11px]">{item.body}</p>
+                </div>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => {
+                setNotificationsList(prev => prev.map(n => ({ ...n, unread: false })));
+                showToast('All notifications marked as read');
+              }}
+              className="w-full py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
+            >
+              Mark All as Read
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: SETTINGS */}
+      {isSettingsModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md card-3d p-6 border border-pink-500/40 bg-slate-900 rounded-3xl space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Settings className="w-5 h-5 text-pink-400" />
+                <h2 className="text-base font-bold text-white">App Settings</h2>
+              </div>
+              <button 
+                onClick={() => setIsSettingsModalOpen(false)}
+                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-white">Push Notifications</p>
+                  <span className="text-[10px] text-slate-400">Stream alerts, messages & gifts</span>
+                </div>
+                <input type="checkbox" defaultChecked className="toggle-checkbox" />
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-white">Video Stream Quality</p>
+                  <span className="text-[10px] text-slate-400">Automatic 4K Ultra HD</span>
+                </div>
+                <span className="text-[10px] font-bold text-pink-400 bg-pink-500/20 px-2 py-0.5 rounded-full border border-pink-500/30">4K HD</span>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-white">Language</p>
+                  <span className="text-[10px] text-slate-400">Default app language</span>
+                </div>
+                <span className="text-[10px] font-bold text-cyan-400">English (US)</span>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-white">Privacy & Security</p>
+                  <span className="text-[10px] text-slate-400">Screenshot protection: Off</span>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-400">Unrestricted</span>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => {
+                setIsSettingsModalOpen(false);
+                showToast('Settings saved successfully');
+              }}
+              className="w-full py-3 rounded-2xl btn-neon-pink font-bold text-xs"
+            >
+              Save & Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* MODAL 1: POST-CALL & POST-STREAM RATING */}
       {isRatingModalOpen && ratingTargetHost && (
