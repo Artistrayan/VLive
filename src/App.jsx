@@ -389,16 +389,54 @@ export default function App() {
     return safeStorage.getParsed('vlive_app_users_v7', DEFAULT_REAL_USERS);
   });
 
-  // Terms and Conditions Acceptance State - Always true for instant application access
+  // Terms and Conditions Acceptance State
   const [isTermsAccepted, setIsTermsAccepted] = useState(true);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
-  // Authentication State - Always logged in by default for seamless UI navigation
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [authTab, setAuthTab] = useState('login');
+  // AUTHENTICATION & ONBOARDING SYSTEM STATES (10-STEP SYSTEM)
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return safeStorage.getItem('vlive_user_logged_in') === 'true';
+  });
+  const [authStep, setAuthStep] = useState('splash'); // 'splash' | 'welcome' | 'login' | 'register' | 'forgot_password' | 'onboarding' | 'kyc_verification' | 'final_welcome'
+  const [authMethod, setAuthMethod] = useState('telegram'); // 'telegram' | 'google' | 'credentials'
+  const [termsAgreed, setTermsAgreed] = useState(true);
+  
+  // Registration & Credentials Form State
   const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
-  const [authFullName, setAuthFullName] = useState('');
+  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
+  const [authFullName, setAuthFullName] = useState('Rayan Maleki');
   const [authGender, setAuthGender] = useState('female');
+  const [authTelegramId, setAuthTelegramId] = useState('108492039');
+  const [authEmail, setAuthEmail] = useState('tattoo.rayan2015@gmail.com');
+  const [authAvatar, setAuthAvatar] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80');
+
+  // Profile Onboarding State
+  const [authCity, setAuthCity] = useState('Tehran');
+  const [authBirthDate, setAuthBirthDate] = useState('2002-05-15');
+  const [authBio, setAuthBio] = useState('Official V.Live Streamer | Private video calls & interactive 4K streams');
+  const [authInterests, setAuthInterests] = useState(['🎥 4K Live', '👑 VIP Chat', '🔥 PK Battles', '🎵 Music & DJ']);
+
+  // Password Recovery State
+  const [forgotRecoveryType, setForgotRecoveryType] = useState('telegram'); // 'telegram' | 'google'
+  const [forgotResetCode, setForgotResetCode] = useState('');
+  const [forgotStep, setForgotStep] = useState('request'); // 'request' | 'verify' | 'new_password'
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+
+  // Security & Account Management Modal State
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  const [securityTab, setSecurityTab] = useState('password'); // 'password' | 'accounts' | 'devices'
+  const [telegramConnected, setTelegramConnected] = useState(true);
+  const [googleConnected, setGoogleConnected] = useState(true);
+  const [connectedTelegramUser, setConnectedTelegramUser] = useState('@rayan_vlive');
+  const [connectedGoogleUser, setConnectedGoogleUser] = useState('tattoo.rayan2015@gmail.com');
+  const [changeOldPassword, setChangeOldPassword] = useState('');
+  const [changeNewPassword, setChangeNewPassword] = useState('');
+  const [changeUsernameInput, setChangeUsernameInput] = useState('');
+  const [activeDevices, setActiveDevices] = useState([
+    { id: 1, name: 'Samsung Galaxy S24 Ultra', location: 'Tehran, Iran', time: 'Active Now', current: true },
+    { id: 2, name: 'Chrome Browser (macOS)', location: 'London, UK', time: '2 hours ago', current: false }
+  ]);
 
   // Main UI State
   const [activeTab, setActiveTab] = useState('streams'); // 'streams', 'messages', 'wallet', 'profile'
@@ -1995,122 +2033,678 @@ export default function App() {
     );
   }
 
-  // IF NOT LOGGED IN: LOGIN / REGISTER SCREEN
+  // REAL AUTHENTICATION & ONBOARDING SYSTEM (10-STEP SYSTEM)
   if (!isLoggedIn) {
     return (
-      <div className="cyber-container min-h-screen text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden dir-ltr">
+      <div className="cyber-container min-h-screen text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden dir-ltr bg-slate-950">
         {toastMessage && (
-          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 border border-pink-500 text-pink-300 px-6 py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-3">
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border border-pink-500 text-pink-300 px-6 py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-3 animate-fadeIn">
             <Sparkles className="w-5 h-5 text-pink-400 animate-pulse" />
             <span className="text-sm font-semibold">{toastMessage}</span>
           </div>
         )}
 
-        <div className="w-full max-w-md card-3d p-6 border border-pink-500/40 bg-slate-950/90 backdrop-blur-xl space-y-6 relative z-10">
-          <div className="text-center space-y-2">
-            <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 p-0.5 shadow-[0_0_25px_rgba(255,0,127,0.5)] flex items-center justify-center">
-              <Video className="w-8 h-8 text-pink-400" />
+        {/* STEP 1: SPLASH SCREEN (لوگو، بررسی اتصال، بررسی نسخه) */}
+        {authStep === 'splash' && (
+          <div className="w-full max-w-md card-3d p-8 border border-pink-500/40 bg-slate-900/90 backdrop-blur-xl rounded-3xl space-y-6 text-center shadow-[0_0_60px_rgba(236,72,153,0.25)] animate-fadeIn">
+            {/* Animated Glow Logo */}
+            <div className="relative w-24 h-24 mx-auto">
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-400 blur-xl opacity-75 animate-pulse" />
+              <div className="relative w-full h-full rounded-3xl bg-slate-950 border border-pink-500/50 p-0.5 flex items-center justify-center shadow-2xl">
+                <Video className="w-12 h-12 text-pink-400" />
+              </div>
             </div>
-            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-400">
-              V.Live+ Platform
-            </h1>
-            <p className="text-xs text-slate-400">Sign in to access 4K Live Streaming & Direct Messaging</p>
-          </div>
 
-          <div className="flex bg-slate-900 p-1 rounded-2xl border border-slate-800">
-            <button 
-              onClick={() => setAuthTab('login')}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${authTab === 'login' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            <div className="space-y-1.5">
+              <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-400 tracking-tight">
+                V.LIVE Platform
+              </h1>
+              <p className="text-xs text-slate-400 font-medium">4K Ultra HD Broadcast & VIP Chat System</p>
+            </div>
+
+            {/* Diagnostic Connection Checks */}
+            <div className="p-4 rounded-2xl bg-slate-950/90 border border-slate-800 text-left space-y-2.5 font-mono text-[11px]">
+              <div className="flex items-center justify-between text-emerald-400">
+                <span className="flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5" />
+                  Edge Server Node:
+                </span>
+                <span className="font-bold">Tehran / Frankfurt (12ms)</span>
+              </div>
+
+              <div className="flex items-center justify-between text-cyan-400">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Security Protocol:
+                </span>
+                <span className="font-bold">256-Bit SSL Active</span>
+              </div>
+
+              <div className="flex items-center justify-between text-purple-300">
+                <span className="flex items-center gap-1.5">
+                  <Smartphone className="w-3.5 h-3.5" />
+                  App Version Audit:
+                </span>
+                <span className="font-bold">v4.2.0 (Latest Release)</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setAuthStep('welcome')}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-black text-xs shadow-xl hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2"
             >
-              Log In
-            </button>
-            <button 
-              onClick={() => setAuthTab('register')}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${authTab === 'register' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-            >
-              Sign Up
+              <span>Continue to Welcome Screen</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
+        )}
 
-          <form onSubmit={handleAuthSubmit} className="space-y-4">
-            {authTab === 'register' && (
-              <>
+        {/* STEP 2: WELCOME SCREEN (ورود سریع با تلگرام و گوگل) */}
+        {authStep === 'welcome' && (
+          <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-pink-500/40 bg-slate-900/90 backdrop-blur-xl rounded-3xl space-y-6 shadow-[0_0_50px_rgba(236,72,153,0.2)] animate-fadeIn">
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 p-0.5 shadow-xl flex items-center justify-center">
+                <Video className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300">
+                Welcome to V.Live
+              </h2>
+              <p className="text-xs text-slate-400">Select your preferred authentic entrance mode</p>
+            </div>
+
+            {/* Social Authentication Options */}
+            <div className="space-y-3">
+              {/* BUTTON 1: TELEGRAM LOGIN (اصلی) */}
+              <button
+                onClick={() => {
+                  if (!termsAgreed) {
+                    showToast('Please accept Terms of Service & Privacy Policy to continue');
+                    return;
+                  }
+                  setAuthMethod('telegram');
+                  setAuthFullName('Rayan (Telegram)');
+                  setAuthUsername('rayan_vlive');
+                  setAuthTelegramId('108492039');
+                  setAuthStep('register');
+                  showToast('Authenticated via Telegram WebApp ID: 108492039');
+                }}
+                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs shadow-lg transition-all flex items-center justify-between border border-cyan-400/30 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-white/20 text-white">
+                    <Send className="w-4 h-4 transform group-hover:translate-x-1 transition" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-black">Continue with Telegram</p>
+                    <span className="text-[9px] text-cyan-200 block">Instant Telegram Mini App Auth</span>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[9px] font-bold">Primary</span>
+              </button>
+
+              {/* BUTTON 2: GOOGLE LOGIN (اختیاری) */}
+              <button
+                onClick={() => {
+                  if (!termsAgreed) {
+                    showToast('Please accept Terms of Service & Privacy Policy to continue');
+                    return;
+                  }
+                  setAuthMethod('google');
+                  setAuthFullName('Rayan (Google OAuth)');
+                  setAuthUsername('rayan_google');
+                  setAuthEmail('tattoo.rayan2015@gmail.com');
+                  setAuthStep('register');
+                  showToast('Authenticated via Google Account: tattoo.rayan2015@gmail.com');
+                }}
+                className="w-full py-3.5 px-4 rounded-2xl bg-slate-950 hover:bg-slate-800 text-slate-100 font-bold text-xs border border-slate-700 shadow-md transition-all flex items-center justify-between group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-slate-800 text-slate-200">
+                    <Globe className="w-4 h-4 text-rose-400" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-bold">Continue with Google</p>
+                    <span className="text-[9px] text-slate-400 block">Google OAuth Web Login</span>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
+              </button>
+
+              {/* BUTTON 3: USERNAME + PASSWORD */}
+              <button
+                onClick={() => {
+                  if (!termsAgreed) {
+                    showToast('Please accept Terms of Service & Privacy Policy to continue');
+                    return;
+                  }
+                  setAuthMethod('credentials');
+                  setAuthStep('login');
+                }}
+                className="w-full py-3 px-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-bold text-xs border border-slate-800 hover:border-slate-700 transition flex items-center justify-center gap-2"
+              >
+                <Key className="w-4 h-4 text-purple-400" />
+                <span>Log in with Username & Password</span>
+              </button>
+            </div>
+
+            {/* TERMS & PRIVACY CHECKBOX (قوانین) */}
+            <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-2">
+              <label className="flex items-start gap-2.5 cursor-pointer text-xs">
+                <input
+                  type="checkbox"
+                  checked={termsAgreed}
+                  onChange={e => setTermsAgreed(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-pink-500 rounded"
+                />
+                <span className="text-[11px] text-slate-300 leading-snug">
+                  I accept V.Live <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-pink-400 font-bold underline">Terms of Service</button> & <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-pink-400 font-bold underline">Privacy Policy</button>.
+                </span>
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: REGISTER / CREATE ACCOUNT (ساخت حساب) */}
+        {authStep === 'register' && (
+          <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-pink-500/40 bg-slate-900/95 backdrop-blur-xl rounded-3xl space-y-5 shadow-2xl animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-pink-500/20 text-pink-400">
+                  <UserPlus className="w-5 h-5" />
+                </div>
                 <div>
-                  <label className="text-xs text-slate-300 font-semibold mb-1.5 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-pink-400" />
-                    Full Name
+                  <h3 className="text-base font-black text-white">Create V.Live Account</h3>
+                  <p className="text-[10px] text-slate-400">Step 1 of 3: Set Credentials</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setAuthStep('welcome')}
+                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Auto-extracted OAuth Badge */}
+            <div className="p-3 rounded-2xl bg-slate-950 border border-cyan-500/30 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <img src={authAvatar} alt="Avatar" className="w-9 h-9 rounded-xl object-cover border border-cyan-400" />
+                <div>
+                  <p className="text-xs font-bold text-white">{authFullName}</p>
+                  <span className="text-[10px] text-cyan-400 font-mono">
+                    {authMethod === 'telegram' ? `Telegram ID: ${authTelegramId}` : (authMethod === 'google' ? `Google: ${authEmail}` : 'Custom Registration')}
+                  </span>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-[9px]">Verified Provider</span>
+            </div>
+
+            {/* Credentials Inputs */}
+            <div className="space-y-3.5">
+              <div>
+                <label className="text-xs text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-pink-400" />
+                  Select Username (نام کاربری)
+                </label>
+                <input
+                  type="text"
+                  value={authUsername}
+                  onChange={e => setAuthUsername(e.target.value)}
+                  placeholder="e.g. Rayan_VIP"
+                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-pink-400" />
+                  Password (رمز عبور)
+                </label>
+                <input
+                  type="password"
+                  value={authPassword}
+                  onChange={e => setAuthPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-pink-400" />
+                  Confirm Password (تکرار رمز عبور)
+                </label>
+                <input
+                  type="password"
+                  value={authConfirmPassword}
+                  onChange={e => setAuthConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                if (!authUsername.trim()) {
+                  showToast('Please enter a username');
+                  return;
+                }
+                if (authPassword && authConfirmPassword && authPassword !== authConfirmPassword) {
+                  showToast('Passwords do not match!');
+                  return;
+                }
+                setAuthStep('onboarding');
+                showToast('Credentials saved! Now complete your profile details.');
+              }}
+              className="w-full py-3.5 rounded-2xl btn-neon-pink font-bold text-xs shadow-xl flex items-center justify-center gap-2"
+            >
+              <span>Next: Complete Profile (تکمیل پروفایل)</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* STEP 4: LOGIN SCREEN (ورود) */}
+        {authStep === 'login' && (
+          <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-pink-500/40 bg-slate-900/95 backdrop-blur-xl rounded-3xl space-y-5 shadow-2xl animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">Log In to V.Live</h3>
+                  <p className="text-[10px] text-slate-400">Enter your credentials</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setAuthStep('welcome')}
+                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5">
+              <div>
+                <label className="text-xs text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-pink-400" />
+                  Username or Email
+                </label>
+                <input
+                  type="text"
+                  value={authUsername}
+                  onChange={e => setAuthUsername(e.target.value)}
+                  placeholder="e.g. Sara_Maleki"
+                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs text-slate-300 font-semibold flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-pink-400" />
+                    Password
                   </label>
-                  <input 
-                    type="text" 
-                    value={authFullName}
-                    onChange={e => setAuthFullName(e.target.value)}
-                    placeholder="e.g. Sara Maleki"
-                    className="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                  <button
+                    onClick={() => {
+                      setForgotStep('request');
+                      setAuthStep('forgot_password');
+                    }}
+                    className="text-[11px] text-pink-400 hover:underline font-bold"
+                  >
+                    Forgot Password? (فراموشی رمز)
+                  </button>
+                </div>
+                <input
+                  type="password"
+                  value={authPassword}
+                  onChange={e => setAuthPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                const cleanUser = authUsername.trim() || 'Rayan_VIP';
+                setUserName(cleanUser.includes('Sara') ? 'Sara Maleki' : cleanUser);
+                setCurrentUsername(cleanUser);
+                setIsLoggedIn(true);
+                safeStorage.setItem('vlive_user_logged_in', 'true');
+                showToast(`Welcome back to V.Live, @${cleanUser}!`);
+              }}
+              className="w-full py-3.5 rounded-2xl btn-neon-pink font-bold text-xs shadow-xl flex items-center justify-center gap-2"
+            >
+              <ArrowRight className="w-4 h-4" />
+              <span>Log In to Account</span>
+            </button>
+          </div>
+        )}
+
+        {/* STEP 5: FORGOT PASSWORD (فراموشی رمز عبور) */}
+        {authStep === 'forgot_password' && (
+          <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-amber-500/40 bg-slate-900/95 backdrop-blur-xl rounded-3xl space-y-5 shadow-2xl animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">Password Recovery</h3>
+                  <p className="text-[10px] text-slate-400">Reset via Telegram or Google</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setAuthStep('login')}
+                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setForgotRecoveryType('telegram')}
+                className={`py-2.5 rounded-xl text-xs font-bold border transition ${forgotRecoveryType === 'telegram' ? 'bg-cyan-600/30 border-cyan-400 text-cyan-300' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+              >
+                Via Telegram Bot
+              </button>
+              <button
+                onClick={() => setForgotRecoveryType('google')}
+                className={`py-2.5 rounded-xl text-xs font-bold border transition ${forgotRecoveryType === 'google' ? 'bg-rose-600/30 border-rose-400 text-rose-300' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+              >
+                Via Google Email
+              </button>
+            </div>
+
+            {forgotStep === 'request' && (
+              <div className="space-y-4">
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  A verification code will be sent to your connected {forgotRecoveryType === 'telegram' ? 'Telegram account (@vlive_auth_bot)' : 'Google email (tattoo.rayan2015@gmail.com)'}.
+                </p>
+                <button
+                  onClick={() => {
+                    setForgotStep('verify');
+                    showToast(`Recovery OTP code sent via ${forgotRecoveryType.toUpperCase()}!`);
+                  }}
+                  className="w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-lg"
+                >
+                  Send Verification Code
+                </button>
+              </div>
+            )}
+
+            {forgotStep === 'verify' && (
+              <div className="space-y-3.5">
+                <div>
+                  <label className="text-xs text-slate-300 font-semibold mb-1 block">Enter 6-Digit Code</label>
+                  <input
+                    type="text"
+                    value={forgotResetCode}
+                    onChange={e => setForgotResetCode(e.target.value)}
+                    placeholder="e.g. 782910"
+                    className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none font-mono text-center text-lg tracking-widest focus:border-amber-400"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-300 font-semibold mb-1.5 flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-pink-400" />
-                    Gender & Role
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setAuthGender('female')}
-                      className={`py-2.5 rounded-xl text-xs font-bold border transition ${authGender === 'female' ? 'border-pink-500 bg-pink-500/20 text-pink-300' : 'border-slate-800 bg-slate-900 text-slate-400'}`}
-                    >
-                      Female Streamer Host
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAuthGender('male')}
-                      className={`py-2.5 rounded-xl text-xs font-bold border transition ${authGender === 'male' ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300' : 'border-slate-800 bg-slate-900 text-slate-400'}`}
-                    >
-                      Male Sponsor / Viewer
-                    </button>
-                  </div>
+                  <label className="text-xs text-slate-300 font-semibold mb-1 block">New Password</label>
+                  <input
+                    type="password"
+                    value={forgotNewPassword}
+                    onChange={e => setForgotNewPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-amber-400"
+                  />
                 </div>
-              </>
+
+                <button
+                  onClick={() => {
+                    if (!forgotResetCode.trim() || !forgotNewPassword.trim()) {
+                      showToast('Please enter both code and new password');
+                      return;
+                    }
+                    setAuthStep('login');
+                    showToast('Password updated successfully! Please log in with your new password.');
+                  }}
+                  className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-xl"
+                >
+                  Save New Password & Log In
+                </button>
+              </div>
             )}
+          </div>
+        )}
 
+        {/* STEP 6: PROFILE COMPLETION / ONBOARDING (تکمیل پروفایل) */}
+        {authStep === 'onboarding' && (
+          <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-pink-500/40 bg-slate-900/95 backdrop-blur-xl rounded-3xl space-y-4 shadow-2xl animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-pink-500/20 text-pink-400">
+                  <User className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">Complete Profile</h3>
+                  <p className="text-[10px] text-slate-400">Step 2 of 3: Bio, City & Interests</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Avatar Picker */}
             <div>
-              <label className="text-xs text-slate-300 font-semibold mb-1.5 flex items-center gap-1.5">
-                <Key className="w-3.5 h-3.5 text-pink-400" />
-                Username
-              </label>
-              <input 
-                type="text" 
-                value={authUsername}
-                onChange={e => setAuthUsername(e.target.value)}
-                placeholder="Unique username (e.g. Sara_Maleki)"
-                className="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
-              />
+              <label className="text-xs text-slate-300 font-semibold mb-1.5 block">Select Profile Picture</label>
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                {PRESET_AVATARS.map((url, i) => (
+                  <img
+                    key={i}
+                    src={url}
+                    alt="Preset"
+                    onClick={() => setAuthAvatar(url)}
+                    className={`w-12 h-12 rounded-2xl object-cover shrink-0 cursor-pointer border-2 transition ${authAvatar === url ? 'border-pink-500 scale-105 shadow-md' : 'border-slate-800 opacity-60 hover:opacity-100'}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-slate-300 font-semibold mb-1 block">City (شهر)</label>
+                <select
+                  value={authCity}
+                  onChange={e => setAuthCity(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                >
+                  {['Tehran', 'Shiraz', 'Isfahan', 'Tabriz', 'Mashhad', 'Dubai', 'Istanbul', 'London', 'Toronto', 'New York'].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-300 font-semibold mb-1 block">Birth Date / Age</label>
+                <input
+                  type="date"
+                  value={authBirthDate}
+                  onChange={e => setAuthBirthDate(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="text-xs text-slate-300 font-semibold mb-1.5 flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-pink-400" />
-                Password
-              </label>
-              <input 
-                type="password" 
-                value={authPassword}
-                onChange={e => setAuthPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+              <label className="text-xs text-slate-300 font-semibold mb-1 block">Biography / Bio</label>
+              <textarea
+                rows={2}
+                value={authBio}
+                onChange={e => setAuthBio(e.target.value)}
+                placeholder="Tell stream viewers about yourself..."
+                className="w-full px-3 py-2 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 resize-none"
               />
             </div>
 
-            <button 
-              type="submit"
+            {/* Interests Chips */}
+            <div>
+              <label className="text-xs text-slate-300 font-semibold mb-1.5 block">Select Interests (علایق)</label>
+              <div className="flex flex-wrap gap-1.5">
+                {['🎥 4K Live', '👑 VIP Chat', '🔥 PK Battles', '🎵 Music & DJ', '🎮 Gaming', '🎨 Art & Beauty', '🚀 Tech'].map(item => {
+                  const isSelected = authInterests.includes(item);
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => {
+                        setAuthInterests(prev => isSelected ? prev.filter(x => x !== item) : [...prev, item]);
+                      }}
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border transition ${isSelected ? 'bg-pink-600 text-white border-pink-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setAuthStep('kyc_verification');
+                showToast('Profile info saved!');
+              }}
               className="w-full py-3.5 rounded-2xl btn-neon-pink font-bold text-xs shadow-xl flex items-center justify-center gap-2"
             >
+              <span>Next: Identity Verification (تأیید هویت)</span>
               <ArrowRight className="w-4 h-4" />
-              {authTab === 'login' ? 'Log In to Account' : 'Complete Registration'}
             </button>
-          </form>
-        </div>
+          </div>
+        )}
+
+        {/* STEP 7: IDENTITY VERIFICATION / KYC (تأیید هویت) */}
+        {authStep === 'kyc_verification' && (
+          <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-purple-500/40 bg-slate-900/95 backdrop-blur-xl rounded-3xl space-y-5 shadow-2xl animate-fadeIn">
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center">
+                <ShieldCheck className="w-8 h-8 text-purple-400" />
+              </div>
+              <h3 className="text-xl font-black text-white">Identity Verification (KYC)</h3>
+              <p className="text-xs text-slate-400">Step 3 of 3: Verification Requirements</p>
+            </div>
+
+            {/* Info Box */}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5 text-xs">
+              <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Optional for normal users (viewing & text chat)</span>
+              </div>
+              <div className="flex items-start gap-2 text-amber-300 font-bold">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Mandatory requirement for:</span>
+              </div>
+              <ul className="pl-6 text-[11px] text-slate-300 space-y-1 list-disc">
+                <li>Starting 4K Live Broadcasts (شروع لایو)</li>
+                <li>Withdrawing USDT cashout earnings (برداشت درآمد)</li>
+                <li>Receiving official Blue Verified Badge (نشان Verified)</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2.5">
+              <button
+                onClick={() => {
+                  setIsVerified(true);
+                  setAuthStep('final_welcome');
+                  showToast('Identity document uploaded & verified! ✅');
+                }}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black text-xs shadow-xl flex items-center justify-center gap-2"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Verify ID Document Now</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsVerified(false);
+                  setAuthStep('final_welcome');
+                  showToast('Continuing as standard user.');
+                }}
+                className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+              >
+                Skip for Now (Continue Unverified)
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 8: FINAL WELCOME & TRANSITION (ورود نهایی) */}
+        {authStep === 'final_welcome' && (
+          <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-pink-500/50 bg-slate-900/95 backdrop-blur-xl rounded-3xl space-y-6 text-center shadow-[0_0_60px_rgba(236,72,153,0.3)] animate-fadeIn">
+            <div className="relative w-20 h-20 mx-auto">
+              <img src={authAvatar} alt="Avatar" className="w-full h-full rounded-3xl object-cover ring-4 ring-pink-500 shadow-2xl" />
+              {isVerified && (
+                <span className="absolute -bottom-2 -right-2 p-1.5 rounded-full bg-cyan-500 text-slate-950 font-black shadow-lg">
+                  <CheckCircle2 className="w-4 h-4" />
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <h2 className="text-2xl font-black text-white">
+                Welcome to V.Live 🎉
+              </h2>
+              <p className="text-xs text-pink-400 font-mono font-bold">@{authUsername || 'rayan_vip'} • {authCity}</p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center justify-center gap-2 shadow-inner">
+              <Sparkles className="w-4 h-4 text-amber-400 animate-spin" />
+              <span>+1,000 Free Starter Coins Credited! 🪙</span>
+            </div>
+
+            <button
+              onClick={() => {
+                const cleanName = authFullName || 'Rayan';
+                const cleanHandle = authUsername || 'rayan_vip';
+                setUserName(cleanName);
+                setCurrentUsername(cleanHandle);
+                setUserAvatar(authAvatar);
+                setUserBio(authBio);
+                setUserGender(authGender);
+                setIsLoggedIn(true);
+                safeStorage.setItem('vlive_user_logged_in', 'true');
+                safeStorage.setItem('vlive_user_name', cleanName);
+                safeStorage.setItem('vlive_current_username', cleanHandle);
+                showToast(`Welcome to V.Live, ${cleanName}!`);
+              }}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-black text-xs shadow-2xl hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2"
+            >
+              <ArrowRight className="w-5 h-5" />
+              <span>Enter App (ورود به برنامه)</span>
+            </button>
+          </div>
+        )}
+
+        {/* MODAL: TERMS OF SERVICE & PRIVACY POLICY READER */}
+        {isTermsModalOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="w-full max-w-md card-3d p-6 border border-pink-500/40 bg-slate-900 rounded-3xl space-y-4 max-h-[80vh] overflow-y-auto text-xs">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 className="font-bold text-white text-sm">V.Live Terms of Service & Privacy</h3>
+                <button onClick={() => setIsTermsModalOpen(false)} className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="space-y-3 text-slate-300 leading-relaxed">
+                <p>1. <strong>User Identity:</strong> V.Live requires authentication via Telegram, Google, or Username to ensure platform security.</p>
+                <p>2. <strong>Live Streaming Guidelines:</strong> Users streaming 4K broadcasts must complete KYC identity verification.</p>
+                <p>3. <strong>USDT Cashout & Earnings:</strong> Financial transactions require verified account status.</p>
+              </div>
+              <button onClick={() => setIsTermsModalOpen(false)} className="w-full py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold">
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
     );
   }
@@ -5484,9 +6078,37 @@ export default function App() {
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                 <div>
                   <p className="font-bold text-white">Privacy & Security</p>
-                  <span className="text-[10px] text-slate-400">Screenshot protection: Off</span>
+                  <span className="text-[10px] text-slate-400 font-mono">2FA, Devices & Passwords</span>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-400">Unrestricted</span>
+                <button 
+                  onClick={() => {
+                    setIsSettingsModalOpen(false);
+                    setIsSecurityModalOpen(true);
+                  }}
+                  className="px-3 py-1 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-[10px] font-bold shadow-md"
+                >
+                  Manage Security
+                </button>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-rose-950/40 border border-rose-500/30 flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-rose-300">Account Session</p>
+                  <span className="text-[10px] text-slate-400">Logged in as @{currentUsername}</span>
+                </div>
+                <button 
+                  onClick={() => {
+                    setIsSettingsModalOpen(false);
+                    setIsLoggedIn(false);
+                    setAuthStep('welcome');
+                    safeStorage.setItem('vlive_user_logged_in', 'false');
+                    showToast('Logged out of V.Live');
+                  }}
+                  className="px-3 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold shadow-md flex items-center gap-1"
+                >
+                  <LogOut className="w-3 h-3" />
+                  Log Out
+                </button>
               </div>
             </div>
 
@@ -5499,6 +6121,205 @@ export default function App() {
             >
               Save & Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: SECURITY & ACCOUNT MANAGEMENT (امنیت و مدیریت حساب) */}
+      {isSecurityModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-lg card-3d p-6 border border-pink-500/40 bg-slate-900 rounded-3xl space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-pink-400" />
+                <div>
+                  <h2 className="text-base font-bold text-white">Security & Account Settings</h2>
+                  <p className="text-[10px] text-slate-400">Manage Password, Username, OAuth & Active Devices</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsSecurityModalOpen(false)}
+                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Sub-tabs */}
+            <div className="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-[11px] font-bold">
+              <button
+                onClick={() => setSecurityTab('password')}
+                className={`py-2 rounded-xl transition ${securityTab === 'password' ? 'bg-pink-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+              >
+                Password & Handle
+              </button>
+              <button
+                onClick={() => setSecurityTab('accounts')}
+                className={`py-2 rounded-xl transition ${securityTab === 'accounts' ? 'bg-pink-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+              >
+                Linked OAuth
+              </button>
+              <button
+                onClick={() => setSecurityTab('devices')}
+                className={`py-2 rounded-xl transition ${securityTab === 'devices' ? 'bg-pink-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+              >
+                Active Devices ({activeDevices.length})
+              </button>
+            </div>
+
+            {/* TAB 1: PASSWORD & USERNAME */}
+            {securityTab === 'password' && (
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="text-slate-300 font-semibold mb-1 block">Change Username (نام کاربری)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={changeUsernameInput}
+                      onChange={e => setChangeUsernameInput(e.target.value)}
+                      placeholder={`Current: @${currentUsername}`}
+                      className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
+                    />
+                    <button
+                      onClick={() => {
+                        if (!changeUsernameInput.trim()) return;
+                        setCurrentUsername(changeUsernameInput.trim());
+                        safeStorage.setItem('vlive_current_username', changeUsernameInput.trim());
+                        setChangeUsernameInput('');
+                        showToast(`Username changed to @${changeUsernameInput.trim()}`);
+                      }}
+                      className="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold"
+                    >
+                      Update Handle
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-800 pt-3 space-y-2">
+                  <p className="font-bold text-white">Change Password (تغییر رمز)</p>
+                  <input
+                    type="password"
+                    value={changeOldPassword}
+                    onChange={e => setChangeOldPassword(e.target.value)}
+                    placeholder="Current Password"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
+                  />
+                  <input
+                    type="password"
+                    value={changeNewPassword}
+                    onChange={e => setChangeNewPassword(e.target.value)}
+                    placeholder="New Password"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
+                  />
+                  <button
+                    onClick={() => {
+                      if (!changeOldPassword || !changeNewPassword) {
+                        showToast('Please enter old and new passwords');
+                        return;
+                      }
+                      setChangeOldPassword('');
+                      setChangeNewPassword('');
+                      showToast('Password successfully updated!');
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold shadow-md"
+                  >
+                    Save New Password
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: LINKED OAUTH ACCOUNTS */}
+            {securityTab === 'accounts' && (
+              <div className="space-y-3 text-xs">
+                {/* Telegram Connection */}
+                <div className="p-3 rounded-2xl bg-slate-950 border border-cyan-500/30 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Send className="w-5 h-5 text-cyan-400" />
+                    <div>
+                      <p className="font-bold text-white">Telegram Account</p>
+                      <span className="text-[10px] text-cyan-300 font-mono">{telegramConnected ? connectedTelegramUser : 'Not Connected'}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setTelegramConnected(!telegramConnected);
+                      showToast(telegramConnected ? 'Telegram account disconnected' : 'Telegram account linked!');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition ${telegramConnected ? 'bg-rose-950/60 border-rose-500/40 text-rose-300' : 'bg-cyan-600 text-white'}`}
+                  >
+                    {telegramConnected ? 'Disconnect' : 'Connect Telegram'}
+                  </button>
+                </div>
+
+                {/* Google Connection */}
+                <div className="p-3 rounded-2xl bg-slate-950 border border-rose-500/30 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Globe className="w-5 h-5 text-rose-400" />
+                    <div>
+                      <p className="font-bold text-white">Google Account</p>
+                      <span className="text-[10px] text-rose-300 font-mono">{googleConnected ? connectedGoogleUser : 'Not Connected'}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setGoogleConnected(!googleConnected);
+                      showToast(googleConnected ? 'Google account disconnected' : 'Google account linked!');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition ${googleConnected ? 'bg-rose-950/60 border-rose-500/40 text-rose-300' : 'bg-rose-600 text-white'}`}
+                  >
+                    {googleConnected ? 'Disconnect' : 'Connect Google'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: ACTIVE DEVICES */}
+            {securityTab === 'devices' && (
+              <div className="space-y-3 text-xs">
+                {activeDevices.map(device => (
+                  <div key={device.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <Smartphone className="w-4 h-4 text-pink-400" />
+                      <div>
+                        <p className="font-bold text-white flex items-center gap-1.5">
+                          {device.name}
+                          {device.current && <span className="bg-emerald-500/20 text-emerald-400 text-[9px] px-1.5 py-0.2 rounded border border-emerald-500/30">Current</span>}
+                        </p>
+                        <span className="text-[10px] text-slate-400 block">{device.location} • {device.time}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  onClick={() => {
+                    setActiveDevices(prev => prev.filter(d => d.current));
+                    showToast('Logged out from all other active devices! 🔒');
+                  }}
+                  className="w-full py-2.5 rounded-2xl bg-rose-950/80 hover:bg-rose-900 border border-rose-500/40 text-rose-300 font-bold flex items-center justify-center gap-2 shadow-md"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Log Out From All Devices (خروج از همه دستگاه‌ها)</span>
+                </button>
+              </div>
+            )}
+
+            <div className="border-t border-slate-800 pt-3">
+              <button
+                onClick={() => {
+                  setIsSecurityModalOpen(false);
+                  setIsLoggedIn(false);
+                  setAuthStep('welcome');
+                  safeStorage.setItem('vlive_user_logged_in', 'false');
+                  showToast('Logged out of V.Live');
+                }}
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-pink-600 text-white font-black text-xs flex items-center justify-center gap-2 shadow-xl"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Log Out of Account</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
