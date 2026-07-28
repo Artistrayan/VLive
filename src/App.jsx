@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Video, Shield, Star, Wallet, User, Lock, Award, Calendar, 
+  Video, Shield, ShieldCheck, Star, Wallet, User, Lock, Award, Calendar, 
   MessageSquare, Send, Camera, Mic, MicOff, Settings, Search, Check, 
   RefreshCw, LogOut, Flame, Heart, Crown, Plus, X, Globe, Sparkles, 
   Sliders, ChevronLeft, ChevronRight, Eye, Radio, CreditCard, Gift, 
@@ -4119,6 +4119,9 @@ export default function App() {
         {/* 1. Home (🏠) */}
         <button 
           onClick={() => {
+            setViewingStream(null);
+            setIsHostLiveOpen(false);
+            setActivePartyRoom(null);
             setActiveTab('streams');
             setStreamSubTab('lives');
           }}
@@ -4131,6 +4134,9 @@ export default function App() {
         {/* 2. Discover (🔍) */}
         <button 
           onClick={() => {
+            setViewingStream(null);
+            setIsHostLiveOpen(false);
+            setActivePartyRoom(null);
             setActiveTab('streams');
             setStreamSubTab('users');
           }}
@@ -4151,7 +4157,12 @@ export default function App() {
 
         {/* 4. Earnings (💰) */}
         <button 
-          onClick={() => setActiveTab('earnings')}
+          onClick={() => {
+            setViewingStream(null);
+            setIsHostLiveOpen(false);
+            setActivePartyRoom(null);
+            setActiveTab('earnings');
+          }}
           className={`flex flex-col items-center gap-0.5 ${activeTab === 'earnings' || activeTab === 'wallet' ? 'text-amber-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
         >
           <DollarSign className="w-5 h-5" />
@@ -4160,7 +4171,12 @@ export default function App() {
 
         {/* 5. Profile (👤) */}
         <button 
-          onClick={() => setActiveTab('profile')}
+          onClick={() => {
+            setViewingStream(null);
+            setIsHostLiveOpen(false);
+            setActivePartyRoom(null);
+            setActiveTab('profile');
+          }}
           className={`flex flex-col items-center gap-0.5 ${activeTab === 'profile' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
         >
           <User className="w-5 h-5" />
