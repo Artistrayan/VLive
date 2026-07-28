@@ -607,18 +607,229 @@ export default function App() {
   const [kycNationalId, setKycNationalId] = useState('');
   const [kycDescription, setKycDescription] = useState('');
 
-  // HOME SCREEN & NAVIGATION REDESIGN STATES
+  // HOME SCREEN & NOTIFICATIONS REDESIGN STATES
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isNotifSettingsOpen, setIsNotifSettingsOpen] = useState(false);
+  const [notificationFilterTab, setNotificationFilterTab] = useState('all'); // 'all' | 'likes' | 'follows' | 'messages' | 'live' | 'gifts' | 'earnings' | 'system'
+  const [notifSettings, setNotifSettings] = useState({
+    messages: true,
+    likes: true,
+    follows: true,
+    lives: true,
+    gifts: true,
+    calls: true,
+    earnings: true,
+    competitions: true,
+    system: true
+  });
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [homeSearchQuery, setHomeSearchQuery] = useState('');
   const [homeCityFilter, setHomeCityFilter] = useState('All');
   const [homeGenderFilter, setHomeGenderFilter] = useState('all');
   const [followedUsers, setFollowedUsers] = useState([1, 2]);
+
   const [notificationsList, setNotificationsList] = useState([
-    { id: 1, title: 'Welcome to V.Live+!', body: 'Your account has been allocated 1,000 free starter coins.', time: '10m ago', unread: true },
-    { id: 2, title: 'Sara Maleki went live!', body: 'Sara started a 4K VIP live broadcast in Tehran stage.', time: '1h ago', unread: true },
-    { id: 3, title: 'Weekly Ranking Live', body: 'Double Coins event is now active for all live streamers.', time: '3h ago', unread: false }
+    // TODAY GROUP
+    { 
+      id: 1, 
+      type: 'messages', 
+      group: 'today', 
+      title: '💬 Ali sent you a message', 
+      body: 'Hey! Are you hosting a live stream tonight? We need to prepare the stage.', 
+      time: '2 min ago', 
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', 
+      unread: true, 
+      actionType: 'chat',
+      sender: 'Ali'
+    },
+    { 
+      id: 2, 
+      type: 'follows', 
+      group: 'today', 
+      title: '❤️ Sara started following you.', 
+      body: 'Sara Maleki is now following your V.LIVE profile.', 
+      time: '15 min ago', 
+      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', 
+      unread: true, 
+      actionType: 'follow', 
+      isFollowing: false,
+      sender: 'Sara Maleki'
+    },
+    { 
+      id: 3, 
+      type: 'likes', 
+      group: 'today', 
+      title: '👍 12 people liked your photo.', 
+      body: 'Your latest stage photo in VIP gallery is gaining popularity.', 
+      time: '1h ago', 
+      avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', 
+      unread: true 
+    },
+    { 
+      id: 4, 
+      type: 'live', 
+      group: 'today', 
+      title: '🔴 Ali is now LIVE', 
+      body: 'Ali started a 4K PK Battle live broadcast in Tehran stage.', 
+      time: '2h ago', 
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', 
+      unread: true, 
+      actionType: 'join_live',
+      streamHost: 'Ali'
+    },
+    { 
+      id: 5, 
+      type: 'gifts', 
+      group: 'today', 
+      title: '🎁 You received a Diamond Gift', 
+      body: 'From: @Arash_VIP | Gift: Diamond Crown 💎 | Value: 1,000 Coins ($20.00)', 
+      time: '3h ago', 
+      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80', 
+      unread: false,
+      sender: 'Arash_VIP',
+      giftName: 'Diamond Crown 💎',
+      giftValue: '1,000 Coins'
+    },
+    { 
+      id: 6, 
+      type: 'earnings', 
+      group: 'today', 
+      title: '💰 You earned 500 Coins today.', 
+      body: 'Your stream viewers sent 5 gifts during your live session.', 
+      time: '5h ago', 
+      unread: false 
+    },
+    { 
+      id: 7, 
+      type: 'earnings', 
+      group: 'today', 
+      title: '✅ Withdrawal completed.', 
+      body: 'USDT payout of $150.00 has been successfully credited to your TRC20 wallet.', 
+      time: '6h ago', 
+      unread: false 
+    },
+
+    // YESTERDAY GROUP
+    { 
+      id: 8, 
+      type: 'earnings', 
+      group: 'yesterday', 
+      title: '⏳ Withdrawal is under review.', 
+      body: 'Your request for $50.00 USDT cashout is being verified by finance team.', 
+      time: 'Yesterday', 
+      unread: false 
+    },
+    { 
+      id: 9, 
+      type: 'messages', 
+      group: 'yesterday', 
+      title: '📞 Missed Voice Call', 
+      body: 'You missed a 1-on-1 private voice call from @Elnaz', 
+      time: 'Yesterday', 
+      avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', 
+      unread: false, 
+      actionType: 'call_back',
+      sender: 'Elnaz'
+    },
+    { 
+      id: 10, 
+      type: 'messages', 
+      group: 'yesterday', 
+      title: '📹 Missed Video Call', 
+      body: 'You missed a 4K VIP video call from @Sara', 
+      time: 'Yesterday', 
+      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', 
+      unread: false, 
+      actionType: 'call_back',
+      sender: 'Sara'
+    },
+    { 
+      id: 11, 
+      type: 'system', 
+      group: 'yesterday', 
+      title: '📢 New App Version v4.2.0 Released', 
+      body: 'Includes PK Battles 2.0, 4K camera filters, and faster USDT payouts!', 
+      time: 'Yesterday', 
+      unread: false 
+    },
+    { 
+      id: 12, 
+      type: 'system', 
+      group: 'yesterday', 
+      title: '🛠️ Scheduled System Maintenance', 
+      body: 'Server maintenance completed smoothly. Enjoy ultra-fast zero latency streaming.', 
+      time: 'Yesterday', 
+      unread: false 
+    },
+    { 
+      id: 13, 
+      type: 'system', 
+      group: 'yesterday', 
+      title: '🔒 Security Alert: Login from New Device', 
+      body: 'Device: Samsung Galaxy S24 Ultra (Tehran, Iran) at 14:22 UTC.', 
+      time: 'Yesterday', 
+      unread: false 
+    },
+
+    // OLDER GROUP
+    { 
+      id: 14, 
+      type: 'system', 
+      group: 'older', 
+      title: '👑 Your VIP expires in 3 days.', 
+      body: 'Renew now to maintain your 3D Entrance effects and Gold Crown badge.', 
+      time: '2 days ago', 
+      unread: false, 
+      actionType: 'renew_vip' 
+    },
+    { 
+      id: 15, 
+      type: 'earnings', 
+      group: 'older', 
+      title: '🏆 You reached Rank #5', 
+      body: 'Congratulations! You are in Top 5 Streamers of the Weekly Leaderboard.', 
+      time: '3 days ago', 
+      unread: false 
+    },
+    { 
+      id: 16, 
+      type: 'earnings', 
+      group: 'older', 
+      title: '🎯 Daily Mission Completed', 
+      body: 'Reward: +200 Coins added to your account balance.', 
+      time: '4 days ago', 
+      unread: false,
+      actionType: 'claimed_mission'
+    },
+    { 
+      id: 17, 
+      type: 'earnings', 
+      group: 'older', 
+      title: '🎁 Reward Received', 
+      body: 'Watched sponsored video ad: +20 Coins credited.', 
+      time: '5 days ago', 
+      unread: false 
+    },
+    { 
+      id: 18, 
+      type: 'system', 
+      group: 'older', 
+      title: '✅ Your identity has been verified.', 
+      body: 'Your KYC badge is now active. You can now cash out USDT directly.', 
+      time: '6 days ago', 
+      unread: false 
+    },
+    { 
+      id: 19, 
+      type: 'system', 
+      group: 'older', 
+      title: '⚠️ Your report has been reviewed.', 
+      body: 'Our moderation team reviewed your report and took safety action.', 
+      time: '1 week ago', 
+      unread: false 
+    }
   ]);
+  
   const [storiesList, setStoriesList] = useState([
     { id: 1, name: 'Sara', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', hasUnseen: true },
     { id: 2, name: 'Elnaz', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', hasUnseen: true },
@@ -4855,43 +5066,374 @@ export default function App() {
         </button>
       </nav>
 
-      {/* MODAL: NOTIFICATIONS DRAWER */}
+      {/* MODAL: REDESIGNED NOTIFICATIONS SYSTEM */}
       {isNotificationsOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md card-3d p-6 border border-pink-500/40 bg-slate-900 rounded-3xl space-y-4 max-h-[80vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <Bell className="w-5 h-5 text-pink-400" />
-                <h2 className="text-base font-bold text-white">Notifications</h2>
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+          <div className="w-full max-w-xl card-3d p-4 sm:p-6 border border-pink-500/40 bg-slate-900/95 rounded-3xl space-y-4 max-h-[88vh] flex flex-col shadow-[0_0_50px_rgba(236,72,153,0.25)]">
+            
+            {/* 1. HEADER (عنوان + دکمه‌ها) */}
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-400 p-0.5 flex items-center justify-center shadow-lg">
+                  <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                    <Bell className="w-5 h-5 text-pink-400 animate-pulse" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base sm:text-lg font-black bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300 bg-clip-text text-transparent">
+                      Notifications
+                    </h2>
+                    {notificationsList.filter(n => n.unread).length > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-pink-600 text-white font-black text-[10px] shadow-md animate-bounce">
+                        {notificationsList.filter(n => n.unread).length} New
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-medium">Real-time alerts, gifts, messages & lives</p>
+                </div>
               </div>
+
+              {/* Header Right Action Buttons */}
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                {/* Mark All as Read Button */}
+                <button 
+                  onClick={() => {
+                    setNotificationsList(prev => prev.map(n => ({ ...n, unread: false })));
+                    showToast('All notifications marked as read');
+                  }}
+                  className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-bold transition flex items-center gap-1 border border-slate-700/60"
+                  title="Mark all as read"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden sm:inline">Mark read</span>
+                </button>
+
+                {/* Notification Settings Toggle Button */}
+                <button 
+                  onClick={() => setIsNotifSettingsOpen(true)}
+                  className="p-2 sm:p-2 rounded-xl bg-slate-800 hover:bg-purple-900/60 text-slate-300 hover:text-white border border-slate-700/60 transition"
+                  title="Notification Settings"
+                >
+                  <Settings className="w-4 h-4 text-purple-400" />
+                </button>
+
+                {/* Close Button */}
+                <button 
+                  onClick={() => setIsNotificationsOpen(false)}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-rose-900/60 text-slate-400 hover:text-white transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* 2. CATEGORY TABS (دسته‌بندی اعلان‌ها) */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-slate-800/60">
+              {[
+                { id: 'all', label: '📋 All', count: notificationsList.length },
+                { id: 'likes', label: '❤️ Likes', count: notificationsList.filter(n => n.type === 'likes').length },
+                { id: 'follows', label: '👥 Follows', count: notificationsList.filter(n => n.type === 'follows').length },
+                { id: 'messages', label: '💬 Messages', count: notificationsList.filter(n => n.type === 'messages').length },
+                { id: 'live', label: '🎥 Live', count: notificationsList.filter(n => n.type === 'live').length },
+                { id: 'gifts', label: '🎁 Gifts', count: notificationsList.filter(n => n.type === 'gifts').length },
+                { id: 'earnings', label: '💰 Earnings', count: notificationsList.filter(n => n.type === 'earnings').length },
+                { id: 'system', label: '⚙️ System', count: notificationsList.filter(n => n.type === 'system').length }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setNotificationFilterTab(tab.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 ${notificationFilterTab === tab.id ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md border border-pink-400' : 'bg-slate-950/80 text-slate-400 hover:text-white border border-slate-800'}`}
+                >
+                  <span>{tab.label}</span>
+                  {tab.count > 0 && (
+                    <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${notificationFilterTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* NOTIFICATIONS CONTENT LIST GROUPED BY TIMELINE */}
+            <div className="flex-1 overflow-y-auto space-y-5 pr-1 no-scrollbar">
+              {['today', 'yesterday', 'older'].map(groupKey => {
+                const groupItems = notificationsList.filter(n => {
+                  const matchesFilter = notificationFilterTab === 'all' || n.type === notificationFilterTab;
+                  return matchesFilter && n.group === groupKey;
+                });
+
+                if (groupItems.length === 0) return null;
+
+                const groupTitle = groupKey === 'today' ? '🌟 Today (امروز)' : (groupKey === 'yesterday' ? '📅 Yesterday (دیروز)' : '📜 Older (قدیمی‌تر)');
+
+                return (
+                  <div key={groupKey} className="space-y-2.5">
+                    {/* Timeline Header */}
+                    <div className="flex items-center justify-between text-[11px] font-black text-slate-400 uppercase tracking-wider px-1">
+                      <span>{groupTitle}</span>
+                      <span className="text-pink-400 font-mono text-[10px]">{groupItems.length} alerts</span>
+                    </div>
+
+                    {/* Group Items */}
+                    <div className="space-y-2">
+                      {groupItems.map(item => {
+                        // Helper Icon & Colors for Each Type
+                        let IconComponent = Bell;
+                        let badgeBg = 'bg-pink-500/10 text-pink-400 border-pink-500/30';
+
+                        if (item.type === 'messages') {
+                          IconComponent = MessageSquare;
+                          badgeBg = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30';
+                        } else if (item.type === 'likes') {
+                          IconComponent = Heart;
+                          badgeBg = 'bg-rose-500/10 text-rose-400 border-rose-500/30';
+                        } else if (item.type === 'follows') {
+                          IconComponent = UserPlus;
+                          badgeBg = 'bg-purple-500/10 text-purple-400 border-purple-500/30';
+                        } else if (item.type === 'live') {
+                          IconComponent = Radio;
+                          badgeBg = 'bg-red-500/10 text-red-400 border-red-500/30';
+                        } else if (item.type === 'gifts') {
+                          IconComponent = Gift;
+                          badgeBg = 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+                        } else if (item.type === 'earnings') {
+                          IconComponent = DollarSign;
+                          badgeBg = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+                        } else if (item.type === 'system') {
+                          IconComponent = ShieldCheck;
+                          badgeBg = 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+                        }
+
+                        return (
+                          <div 
+                            key={item.id}
+                            onClick={() => {
+                              // Click Handler for Notifications
+                              setNotificationsList(prev => prev.map(n => n.id === item.id ? { ...n, unread: false } : n));
+                              if (item.actionType === 'chat') {
+                                setActiveTab('messages');
+                                setIsNotificationsOpen(false);
+                                showToast(`Opened chat with @${item.sender || 'User'}`);
+                              } else if (item.actionType === 'join_live') {
+                                setStreamSubTab('lives');
+                                setActiveTab('streams');
+                                setIsNotificationsOpen(false);
+                                showToast(`Opening live stream...`);
+                              }
+                            }}
+                            className={`p-3.5 rounded-2xl border text-xs space-y-2 transition-all cursor-pointer card-3d ${item.unread ? 'bg-gradient-to-r from-pink-950/30 via-slate-900 to-purple-950/30 border-pink-500/50 shadow-[0_0_15px_rgba(236,72,153,0.15)]' : 'bg-slate-950/80 border-slate-800/80 hover:border-slate-700'}`}
+                          >
+                            <div className="flex items-start gap-3">
+                              {/* Avatar or Icon Badge */}
+                              <div className="relative shrink-0">
+                                {item.avatar ? (
+                                  <img 
+                                    src={item.avatar} 
+                                    alt="User" 
+                                    className="w-10 h-10 rounded-2xl object-cover border border-slate-700 shadow-md" 
+                                  />
+                                ) : (
+                                  <div className={`w-10 h-10 rounded-2xl border ${badgeBg} flex items-center justify-center shadow-md`}>
+                                    <IconComponent className="w-5 h-5" />
+                                  </div>
+                                )}
+
+                                {/* Badge overlay on avatar */}
+                                {item.avatar && (
+                                  <span className={`absolute -bottom-1 -right-1 p-1 rounded-full border ${badgeBg} bg-slate-950`}>
+                                    <IconComponent className="w-2.5 h-2.5" />
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Notification Title & Body */}
+                              <div className="flex-1 min-w-0 space-y-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <h4 className="text-xs font-black text-white truncate flex items-center gap-1.5">
+                                    <span>{item.title}</span>
+                                    {item.unread && (
+                                      <span className="w-2 h-2 rounded-full bg-pink-500 animate-ping inline-block" />
+                                    )}
+                                  </h4>
+                                  <span className="text-[10px] text-slate-400 font-mono shrink-0">{item.time}</span>
+                                </div>
+
+                                <p className="text-[11px] text-slate-300 leading-snug">{item.body}</p>
+
+                                {/* GIFT ITEM SPECIAL EMBEDDED BADGE */}
+                                {item.type === 'gifts' && item.giftName && (
+                                  <div className="mt-2 p-2 rounded-xl bg-slate-900/90 border border-amber-500/30 text-[10px] text-amber-300 font-bold flex items-center justify-between">
+                                    <span>Sender: @{item.sender}</span>
+                                    <span>Gift: {item.giftName}</span>
+                                    <span className="text-emerald-400 font-mono">{item.giftValue}</span>
+                                  </div>
+                                )}
+
+                                {/* ACTION BUTTONS */}
+                                {item.actionType === 'follow' && (
+                                  <div className="pt-1.5 flex items-center gap-2">
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setNotificationsList(prev => prev.map(n => n.id === item.id ? { ...n, isFollowing: !n.isFollowing } : n));
+                                        showToast(item.isFollowing ? `Unfollowed @${item.sender}` : `You are now following @${item.sender}`);
+                                      }}
+                                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${item.isFollowing ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md'}`}
+                                    >
+                                      {item.isFollowing ? <UserCheck className="w-3.5 h-3.5 text-emerald-400" /> : <UserPlus className="w-3.5 h-3.5" />}
+                                      <span>{item.isFollowing ? 'Following' : 'Follow Back'}</span>
+                                    </button>
+                                  </div>
+                                )}
+
+                                {item.actionType === 'join_live' && (
+                                  <div className="pt-1.5 flex items-center gap-2">
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setStreamSubTab('lives');
+                                        setActiveTab('streams');
+                                        setIsNotificationsOpen(false);
+                                        showToast(`Joined @${item.streamHost}'s live broadcast!`);
+                                      }}
+                                      className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-md flex items-center gap-1.5 animate-pulse"
+                                    >
+                                      <Play className="w-3.5 h-3.5 fill-white" />
+                                      <span>Join Live Stream</span>
+                                    </button>
+                                  </div>
+                                )}
+
+                                {item.actionType === 'call_back' && (
+                                  <div className="pt-1.5 flex items-center gap-2">
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveChatCall({
+                                          type: item.title.includes('Video') ? 'video' : 'voice',
+                                          user: { name: item.sender || 'Sara', avatar: item.avatar }
+                                        });
+                                        setIsNotificationsOpen(false);
+                                        showToast(`Calling @${item.sender || 'User'}...`);
+                                      }}
+                                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5"
+                                    >
+                                      <PhoneCall className="w-3.5 h-3.5" />
+                                      <span>Call Back</span>
+                                    </button>
+                                  </div>
+                                )}
+
+                                {item.actionType === 'renew_vip' && (
+                                  <div className="pt-1.5 flex items-center gap-2">
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsNotificationsOpen(false);
+                                        setIsSettingsModalOpen(true);
+                                        showToast('VIP Renewal process opened!');
+                                      }}
+                                      className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5"
+                                    >
+                                      <Crown className="w-3.5 h-3.5 text-slate-950" />
+                                      <span>Renew VIP Pass</span>
+                                    </button>
+                                  </div>
+                                )}
+
+                                {item.actionType === 'claimed_mission' && (
+                                  <div className="pt-1.5 flex items-center gap-2">
+                                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1">
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                      Reward Claimed (+200 Coins)
+                                    </span>
+                                  </div>
+                                )}
+
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* EMPTY STATE */}
+              {notificationsList.filter(n => notificationFilterTab === 'all' || n.type === notificationFilterTab).length === 0 && (
+                <div className="py-12 text-center space-y-3 bg-slate-950/60 rounded-3xl border border-slate-800">
+                  <Bell className="w-10 h-10 text-slate-600 mx-auto animate-bounce" />
+                  <p className="text-xs text-slate-400 font-bold">No notifications found in this category</p>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: 20. NOTIFICATION SETTINGS (تنظیمات اعلان‌ها) */}
+      {isNotifSettingsOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="w-full max-w-md card-3d p-6 border border-purple-500/40 bg-slate-900 rounded-3xl space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                  <Settings className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">Notification Settings</h3>
+                  <p className="text-[10px] text-slate-400">Customize your push & in-app alerts</p>
+                </div>
+              </div>
+
               <button 
-                onClick={() => setIsNotificationsOpen(false)}
+                onClick={() => setIsNotifSettingsOpen(false)}
                 className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
-              {notificationsList.map(item => (
-                <div key={item.id} className={`p-3.5 rounded-2xl border text-xs space-y-1 transition ${item.unread ? 'bg-pink-950/20 border-pink-500/40' : 'bg-slate-950 border-slate-800'}`}>
-                  <div className="flex items-center justify-between">
-                    <strong className="text-white font-bold">{item.title}</strong>
-                    <span className="text-[10px] text-slate-400">{item.time}</span>
+            {/* Toggle Switches for Categories */}
+            <div className="space-y-2.5 text-xs">
+              {[
+                { key: 'messages', label: '💬 Messages (پیام‌ها)', desc: 'Direct chat messages & group mentions' },
+                { key: 'likes', label: '❤️ Likes (لایک‌ها)', desc: 'Likes on your stage photos & moments' },
+                { key: 'follows', label: '👥 Follows (فالوها)', desc: 'New followers & profile visits' },
+                { key: 'lives', label: '🎥 Live Broadcasts (لایوها)', desc: 'When your favorite streamers go live' },
+                { key: 'gifts', label: '🎁 Gifts (هدایا)', desc: 'When someone sends you gifts' },
+                { key: 'calls', label: '📞 Calls (تماس‌ها)', desc: 'Private voice & video call requests' },
+                { key: 'earnings', label: '💰 Earnings (درآمد)', desc: 'Coin deposits & USDT cashout status' },
+                { key: 'competitions', label: '🏆 Competitions (مسابقات)', desc: 'Rankings, PK Battles & leaderboard updates' },
+                { key: 'system', label: '📢 System Announcements (اطلاعیه‌ها)', desc: 'App updates, maintenance & security alerts' }
+              ].map(toggle => (
+                <div key={toggle.key} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3 hover:border-slate-700 transition">
+                  <div className="space-y-0.5 min-w-0">
+                    <p className="font-bold text-white text-xs">{toggle.label}</p>
+                    <p className="text-[10px] text-slate-400 truncate">{toggle.desc}</p>
                   </div>
-                  <p className="text-slate-300 text-[11px]">{item.body}</p>
+
+                  <button
+                    onClick={() => setNotifSettings(prev => ({ ...prev, [toggle.key]: !prev[toggle.key] }))}
+                    className={`w-11 h-6 rounded-full transition-colors p-0.5 shrink-0 flex items-center ${notifSettings[toggle.key] ? 'bg-pink-600 justify-end' : 'bg-slate-800 justify-start'}`}
+                  >
+                    <span className="w-5 h-5 rounded-full bg-white shadow-md transform transition-transform" />
+                  </button>
                 </div>
               ))}
             </div>
 
-            <button 
+            <button
               onClick={() => {
-                setNotificationsList(prev => prev.map(n => ({ ...n, unread: false })));
-                showToast('All notifications marked as read');
+                setIsNotifSettingsOpen(false);
+                showToast('Notification preferences saved!');
               }}
-              className="w-full py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
+              className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition"
             >
-              Mark All as Read
+              Save Preferences
             </button>
           </div>
         </div>
