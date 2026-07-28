@@ -5,7 +5,7 @@ import {
   RefreshCw, LogOut, Flame, Heart, Crown, Plus, X, Globe, Sparkles, 
   Sliders, ChevronLeft, ChevronRight, Eye, Radio, CreditCard, Gift, 
   PhoneCall, Play, Image, Layers, CheckCircle, AlertCircle, Bot,
-  Key, Mail, Phone, Copy, QrCode, ArrowRight, ExternalLink, SwitchCamera,
+  Key, Mail, Phone, Smartphone, Copy, QrCode, ArrowRight, ExternalLink, SwitchCamera,
   TrendingUp, UserCheck, UserX, Ban, DollarSign, Activity, Filter, Users,
   ThumbsUp, UserPlus, Download, Disc, Gem, CircleDot, Wine, Car, Zap, Box, 
   Anchor, Rocket, Smile, Flower, AlertTriangle, Edit3, HeartHandshake,
@@ -507,6 +507,15 @@ export default function App() {
     { id: 2, sender: 'Omid', gift: 'Royal Crown 👑', coins: 2500, recipient: 'Elnaz Karimi' },
     { id: 3, sender: 'Soren', gift: 'Gold Vault 📦', coins: 10000, recipient: 'Sara Maleki' }
   ]);
+
+  // PROFILE REDESIGN STATES
+  const [profileGalleryTab, setProfileGalleryTab] = useState('photos'); // 'photos' | 'videos'
+  const [profilePreviewMode, setProfilePreviewMode] = useState('self'); // 'self' | 'other'
+  const [privacyShowCity, setPrivacyShowCity] = useState(true);
+  const [privacyShowAge, setPrivacyShowAge] = useState(true);
+  const [privacyShowLastSeen, setPrivacyShowLastSeen] = useState(true);
+  const [privacyWhoMessage, setPrivacyWhoMessage] = useState('Everyone');
+  const [privacyWhoCall, setPrivacyWhoCall] = useState('VIP Only');
 
   // 20+ GIFTS MODAL STATE
   const [isGiftCatalogOpen, setIsGiftCatalogOpen] = useState(false);
@@ -3017,356 +3026,723 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 4: PROFILE & HOST WITHDRAWAL OPTION */}
+                {/* TAB 4: REDESIGNED COMPLETE PROFILE */}
         {activeTab === 'profile' && (
           <div className="space-y-6">
-            {/* Profile Overview Header Card */}
-            <div className="card-3d p-6 rounded-3xl border border-slate-800 bg-slate-950/80 space-y-4">
-              <div className="flex items-center gap-4">
-                <img src={userAvatar} alt={userName} className="w-16 h-16 rounded-3xl object-cover border-2 border-pink-500/50" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold text-white">{userName}</h2>
-                    {isVerified && <VerifiedBadge className="w-4 h-4" showLabel={true} />}
-                  </div>
-                  <p className="text-xs text-pink-400 font-semibold">@{currentUsername} • {userRank}</p>
-                  <p className="text-xs text-slate-400 mt-1">{userBio}</p>
-                </div>
 
+            {/* PROFILE PREVIEW MODE SWITCHER (MY PROFILE VS OTHER STREAMER PROFILE) */}
+            <div className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <Eye className="w-4 h-4 text-pink-400" />
+                Profile Mode Preview:
+              </span>
+              <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
                 <button 
-                  onClick={() => setIsEditingProfile(!isEditingProfile)}
-                  className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-pink-500 text-pink-400"
+                  onClick={() => setProfilePreviewMode('self')}
+                  className={`px-3 py-1 rounded-lg transition ${profilePreviewMode === 'self' ? 'bg-pink-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
                 >
-                  <Edit3 className="w-4 h-4" />
+                  My Profile 👤
+                </button>
+                <button 
+                  onClick={() => setProfilePreviewMode('other')}
+                  className={`px-3 py-1 rounded-lg transition ${profilePreviewMode === 'other' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Other User View 👁️
                 </button>
               </div>
             </div>
 
-            {/* EDIT PROFILE FORM WITH GALLERY PHOTO PICKER */}
+            {/* 1. COVER PHOTO & PROFILE HEADER */}
+            <div className="relative rounded-3xl overflow-hidden card-3d border border-pink-500/30 bg-slate-900">
+              {/* Cover Photo */}
+              <div className="relative h-44 w-full bg-gradient-to-r from-pink-900 via-purple-900 to-indigo-950 overflow-hidden">
+                <img 
+                  src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80" 
+                  alt="Profile Cover" 
+                  className="w-full h-full object-cover opacity-50"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+                
+                {profilePreviewMode === 'self' && (
+                  <button 
+                    onClick={() => setIsEditingProfile(!isEditingProfile)}
+                    className="absolute top-3 right-3 p-2 rounded-xl bg-slate-950/80 backdrop-blur-md border border-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1 hover:text-white"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-pink-400" />
+                    Edit Cover
+                  </button>
+                )}
+              </div>
+
+              {/* Main Profile Info Row */}
+              <div className="px-5 pb-5 pt-0 relative flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 -mt-16">
+                {/* Large Avatar + VIP Frame */}
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-3xl p-1 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 shadow-[0_0_25px_rgba(236,72,153,0.6)]">
+                    <img src={userAvatar} alt={userName} className="w-full h-full object-cover rounded-[22px] border-2 border-slate-950" />
+                  </div>
+                  {/* VIP / Level Badge */}
+                  <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] shadow-lg border border-yellow-200 flex items-center gap-0.5">
+                    <Crown className="w-3 h-3 fill-slate-950" />
+                    LVL 48
+                  </span>
+                </div>
+
+                {/* Profile Actions */}
+                <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
+                  {profilePreviewMode === 'self' ? (
+                    <>
+                      <button 
+                        onClick={() => setIsEditingProfile(!isEditingProfile)}
+                        className="btn-neon-pink px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 shadow-md"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        Edit Profile
+                      </button>
+
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(`https://vlive.app/profile/${currentUsername}`);
+                          showToast('Profile link copied to clipboard!');
+                        }}
+                        className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200"
+                        title="Share Profile"
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button 
+                        onClick={() => showToast(`Starting chat with @${currentUsername}`)}
+                        className="px-3 py-2 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1 shadow-md"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        Chat
+                      </button>
+
+                      <button 
+                        onClick={() => showToast(`Initiating voice call with @${currentUsername}`)}
+                        className="px-3 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow-md"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        Voice
+                      </button>
+
+                      <button 
+                        onClick={() => handleStartPrivateCall({ name: userName, avatar: userAvatar, pricePerMin: 100 })}
+                        className="px-3 py-2 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1 shadow-md"
+                      >
+                        <Video className="w-3.5 h-3.5" />
+                        Video
+                      </button>
+
+                      <button 
+                        onClick={() => setIsGiftCatalogOpen(true)}
+                        className="p-2.5 rounded-2xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400"
+                        title="Send Gift"
+                      >
+                        <Gift className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 2. MAIN USER INFORMATION */}
+              <div className="px-5 pb-5 space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-lg font-black text-white">{userName}</h2>
+                  {isVerified && <VerifiedBadge className="w-4 h-4" showLabel={true} />}
+                  <span className="bg-purple-900/80 text-purple-300 border border-purple-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Crown className="w-3 h-3 text-amber-400" />
+                    VIP Member
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
+                  <span className="text-pink-300 font-semibold">@{currentUsername}</span>
+                  {privacyShowAge && <span>• 24 Yrs</span>}
+                  {privacyShowCity && (
+                    <span className="flex items-center gap-1 text-slate-300">
+                      <MapPin className="w-3 h-3 text-pink-400" />
+                      Tehran, Iran
+                    </span>
+                  )}
+                  {privacyShowLastSeen && (
+                    <span className="flex items-center gap-1 text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 text-[10px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Online Now
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* EDIT PROFILE FORM */}
             {isEditingProfile && (
               <form onSubmit={handleSaveProfileSettings} className="card-3d p-5 rounded-3xl border border-pink-500/40 bg-slate-900/90 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                    <Image className="w-4 h-4 text-pink-400" />
-                    Edit Profile Photo & Details
+                    <Edit3 className="w-4 h-4 text-pink-400" />
+                    Edit Profile Details & Avatar
                   </h3>
-                  <span className="text-[10px] text-pink-300 font-mono">Upload or Presets</span>
+                  <button type="button" onClick={() => setIsEditingProfile(false)} className="text-slate-400 hover:text-white">
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
 
                 {/* 1. UPLOAD FROM PHONE GALLERY */}
-                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <label className="text-[10px] text-slate-300 font-bold block">
-                    Choose Profile Picture from Phone Gallery
-                  </label>
-                  
-                  <div className="flex items-center gap-3">
-                    <img 
-                      src={editAvatarUrl} 
-                      alt="Current Avatar" 
-                      className="w-14 h-14 rounded-2xl object-cover border-2 border-pink-500 shadow-[0_0_12px_rgba(255,0,127,0.5)] shrink-0" 
-                    />
-
-                    <div className="flex-1 space-y-1">
-                      <input 
-                        type="file" 
-                        ref={galleryFileInputRef}
-                        accept="image/*" 
-                        onChange={handleGalleryImageUpload}
-                        className="hidden" 
-                      />
-
-                      <button 
-                        type="button"
-                        onClick={() => galleryFileInputRef.current?.click()}
-                        className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg hover:brightness-110 active:scale-95 transition"
-                      >
-                        <Image className="w-4 h-4 text-white" />
-                        Select Photo from Gallery
-                      </button>
-                      <p className="text-[9px] text-slate-400 text-center">Tap to open phone photo gallery</p>
-                    </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-dashed border-pink-500/50 flex flex-col items-center justify-center text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-pink-500/20 text-pink-400 flex items-center justify-center">
+                    <Camera className="w-5 h-5" />
                   </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">Upload Avatar Image</p>
+                    <p className="text-[10px] text-slate-400">Select any image file from your phone storage</p>
+                  </div>
+
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    id="profile-avatar-upload"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files && e.target.files[0];
+                      if (file) {
+                        const fileUrl = URL.createObjectURL(file);
+                        setUserAvatar(fileUrl);
+                        showToast(`Uploaded ${file.name} as your avatar!`);
+                      }
+                    }}
+                  />
+
+                  <label 
+                    htmlFor="profile-avatar-upload"
+                    className="cursor-pointer px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition"
+                  >
+                    <Image className="w-3.5 h-3.5" />
+                    Choose Photo from Phone
+                  </label>
                 </div>
 
-                {/* 2. OR SELECT PRESET AVATAR */}
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Or Choose Preset Avatar</label>
-                  <div className="flex gap-2 overflow-x-auto pb-1">
-                    {PRESET_AVATARS.map((url, idx) => (
-                      <img 
-                        key={idx}
-                        src={url}
-                        alt="Preset"
-                        onClick={() => setEditAvatarUrl(url)}
-                        className={`w-12 h-12 rounded-xl object-cover cursor-pointer border-2 transition ${editAvatarUrl === url ? 'border-pink-500 scale-105 shadow-[0_0_8px_rgba(255,0,127,0.6)]' : 'border-transparent opacity-70 hover:opacity-100'}`}
-                      />
+                {/* Preset Avatars Selection */}
+                <div className="space-y-2">
+                  <label className="text-[11px] text-slate-400 font-medium">Or Select Preset Avatar</label>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                    {PRESET_AVATARS.map((avatarUrl, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => setUserAvatar(avatarUrl)}
+                        className={`relative w-12 h-12 rounded-2xl overflow-hidden shrink-0 border-2 transition ${userAvatar === avatarUrl ? 'border-pink-500 scale-105 shadow-[0_0_10px_rgba(236,72,153,0.8)]' : 'border-slate-800 hover:border-slate-600'}`}
+                      >
+                        <img src={avatarUrl} alt={`Avatar ${index + 1}`} className="w-full h-full object-cover" />
+                      </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="text-[10px] text-slate-400 block mb-1">Full Name</label>
+                    <label className="text-slate-400 mb-1 block">Display Name</label>
                     <input 
                       type="text" 
-                      value={editFullName}
-                      onChange={e => setEditFullName(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                      value={userName} 
+                      onChange={e => setUserName(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
                     />
                   </div>
+
                   <div>
-                    <label className="text-[10px] text-slate-400 block mb-1">Bio</label>
+                    <label className="text-slate-400 mb-1 block">Username</label>
                     <input 
                       type="text" 
-                      value={editBio}
-                      onChange={e => setEditBio(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                      value={currentUsername} 
+                      onChange={e => setCurrentUsername(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-slate-400 mb-1 block">Bio Statement</label>
+                    <textarea 
+                      value={userBio} 
+                      onChange={e => setUserBio(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500 h-20"
                     />
                   </div>
                 </div>
 
-                <button type="submit" className="w-full py-3 rounded-xl btn-neon-pink text-xs font-bold shadow-xl">
+                <button type="submit" className="w-full py-2.5 rounded-xl btn-neon-pink font-bold text-xs">
                   Save Changes
                 </button>
               </form>
             )}
 
-            {/* FEMALE HOST PROFILE WITHDRAWAL & WALLET CONNECT SECTION */}
-            <div className="card-3d p-5 rounded-3xl border border-emerald-500/40 bg-slate-900/80 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-                    <Wallet className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-white">Female Streamer Wallet Connection & Payout</h3>
-                    <p className="text-[10px] text-emerald-300">Connect Tether TRC20 Wallet for daily payouts</p>
+            {/* 3. FOUR STATISTICS CARDS */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
+                <span className="text-[10px] text-slate-400 font-medium">Followers</span>
+                <p className="text-base font-black text-pink-400">14.8K</p>
+              </div>
+
+              <div className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
+                <span className="text-[10px] text-slate-400 font-medium">Following</span>
+                <p className="text-base font-black text-purple-400">342</p>
+              </div>
+
+              <div className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
+                <span className="text-[10px] text-slate-400 font-medium">Total Lives</span>
+                <p className="text-base font-black text-cyan-400">128</p>
+              </div>
+
+              <div className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
+                <span className="text-[10px] text-slate-400 font-medium">Popularity Score</span>
+                <p className="text-base font-black text-amber-400 flex items-center justify-center gap-0.5">
+                  <Star className="w-4 h-4 fill-amber-400" />
+                  98.4K
+                </p>
+              </div>
+            </div>
+
+            {/* 4. BIOGRAPHY & ATTRIBUTES */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 text-xs">
+              <h3 className="font-bold text-white flex items-center gap-1.5 text-xs">
+                <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+                About & Bio
+              </h3>
+
+              <p className="text-slate-300 leading-relaxed text-[11px]">{userBio}</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800/80 text-[11px]">
+                <div>
+                  <span className="text-slate-400 block text-[10px] mb-1">Occupation</span>
+                  <span className="text-white font-medium">Official V.Live 4K Host</span>
+                </div>
+
+                <div>
+                  <span className="text-slate-400 block text-[10px] mb-1">Languages</span>
+                  <span className="text-white font-medium">Persian 🇮🇷, English 🇬🇧</span>
+                </div>
+
+                <div>
+                  <span className="text-slate-400 block text-[10px] mb-1">Interests</span>
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30 text-[9px] font-bold">Music 🎵</span>
+                    <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[9px] font-bold">Live Host 🎥</span>
+                    <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[9px] font-bold">Gaming 🎮</span>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* USDT Address Input & Connect */}
-              <div className="space-y-2">
-                <label className="text-[10px] text-slate-300 font-semibold block">
-                  Connected USDT TRC20 Wallet Address
-                </label>
-                <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    value={withdrawUsdtAddressInput}
-                    onChange={e => setWithdrawUsdtAddressInput(e.target.value)}
-                    placeholder="e.g. TKh8zXpQ7yM3vN1L9R2W4b6K8a0C"
-                    className="flex-1 px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white font-mono outline-none focus:border-emerald-500"
-                  />
+            {/* 5. MEDIA GALLERY (PHOTOS & VIDEOS TABS) */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Image className="w-3.5 h-3.5 text-purple-400" />
+                  Media Gallery
+                </h3>
+
+                <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[10px] font-bold">
                   <button 
-                    onClick={handleSaveHostWalletAddress}
-                    className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shrink-0"
+                    onClick={() => setProfileGalleryTab('photos')}
+                    className={`px-3 py-1 rounded-lg transition ${profileGalleryTab === 'photos' ? 'bg-pink-600 text-white' : 'text-slate-400 hover:text-white'}`}
                   >
-                    Save Wallet
+                    Photos (4)
+                  </button>
+                  <button 
+                    onClick={() => setProfileGalleryTab('videos')}
+                    className={`px-3 py-1 rounded-lg transition ${profileGalleryTab === 'videos' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    Videos (3)
                   </button>
                 </div>
               </div>
 
-              <div className="pt-2">
-                <button 
-                  onClick={() => setIsWithdrawModalOpen(true)}
-                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold shadow-lg hover:brightness-110 flex items-center justify-center gap-2"
-                >
-                  <ArrowUpRight className="w-4 h-4" />
-                  Withdraw Funds ($50 USDT Minimum)
-                </button>
-              </div>
-            </div>
-
-            {/* VIP LEVEL & CUSTOM ENTRANCE ANIMATION VEHICLE CARD */}
-            <div className="card-3d p-5 rounded-3xl border border-amber-500/40 bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-950 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-                    <Crown className="w-5 h-5 text-amber-300" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                      VIP Level {userVipLevel} Royalty Status
-                      <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold px-2 py-0.5 rounded-full">
-                        Crown VIP
-                      </span>
-                    </h3>
-                    <p className="text-[10px] text-amber-200">Custom 3D entrance banner when entering live streams</p>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => {
-                    setUserVipLevel(prev => Math.min(6, prev + 1));
-                    showToast(`VIP Status upgraded to Level ${Math.min(6, userVipLevel + 1)}!`);
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition"
-                >
-                  Upgrade VIP
-                </button>
-              </div>
-
-              {/* Entrance Vehicle Selector */}
-              <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
-                <label className="text-[10px] text-slate-300 font-bold block">
-                  Select Your Stream Entrance Vehicle / Effect
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {profileGalleryTab === 'photos' ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   {[
-                    { name: 'Golden Dragon', icon: Flame },
-                    { name: 'Supercar VIP', icon: Zap },
-                    { name: 'Private Jet', icon: Send },
-                    { name: 'Space Rocket', icon: Rocket }
-                  ].map(v => {
-                    const IconComp = v.icon;
-                    return (
-                      <button 
-                        key={v.name}
-                        onClick={() => {
-                          setEntranceVehicle(v.name);
-                          showToast(`Selected Entrance Effect: ${v.name}`);
-                        }}
-                        className={`p-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1.5 ${entranceVehicle === v.name ? 'border-amber-500 bg-amber-500/20 text-amber-300 shadow-md' : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'}`}
-                      >
-                        <IconComp className="w-3.5 h-3.5 text-amber-400" />
-                        <span className="text-[10px] truncate">{v.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* AGENCIES & FAMILY GUILDS SYSTEM CARD */}
-            <div className="card-3d p-5 rounded-3xl border border-indigo-500/40 bg-slate-900/90 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
-                    <Shield className="w-5 h-5 text-indigo-300" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-white">Agency & Streamer Guilds System</h3>
-                    <p className="text-[10px] text-indigo-300">Join top streamer agencies & receive +5% earnings bonus</p>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setIsCreateAgencyModalOpen(true)}
-                  className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md flex items-center gap-1"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Create Agency
-                </button>
-              </div>
-
-              {/* Joined Agency Badge or List */}
-              <div className="space-y-2">
-                {agenciesList.map(ag => (
-                  <div key={ag.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-xs font-bold text-white truncate">{ag.name}</h4>
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-500/30 shrink-0">
-                          {ag.badge}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-slate-400 mt-0.5">{ag.description}</p>
-                      <p className="text-[9px] text-slate-500 mt-1">Leader: @{ag.leader} • {ag.membersCount} Members • Monthly: {ag.monthlyCoins.toLocaleString()} coins</p>
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+                    'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
+                    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
+                    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80'
+                  ].map((img, i) => (
+                    <div key={i} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-800 group hover:border-pink-500/50 transition">
+                      <img src={img} alt={`Gallery photo ${i+1}`} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
                     </div>
-
-                    <button 
-                      onClick={() => {
-                        setUserAgency(ag.name);
-                        showToast(`You joined ${ag.name}!`);
-                      }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition ${userAgency === ag.name ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 hover:bg-slate-700 text-white'}`}
-                    >
-                      {userAgency === ag.name ? 'Member ✓' : 'Join Guild'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* KYC Identity Verification Badge Request */}
-            <div className="card-3d p-4 rounded-3xl border border-slate-800 bg-slate-900/60 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <h3 className="text-xs font-bold text-white">Cyan Verified Badge & Host Status</h3>
-                  <VerifiedBadge className="w-4 h-4" />
+                  ))}
                 </div>
-                <p className="text-[10px] text-slate-400 mt-0.5">
-                  {isVerified ? 'Official Verified Streamer Status Active' : 'Verification pending review'}
-                </p>
-              </div>
-
-              {!isVerified && (
-                <button 
-                  onClick={() => setIsKycModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-pink-500/20 text-pink-300 border border-pink-500/40 text-xs font-bold"
-                >
-                  Apply Verification
-                </button>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { title: 'Tehran Live Highlights', views: '12.4K', thumb: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=400&q=80' },
+                    { title: 'VIP Party Stage Moments', views: '8.9K', thumb: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=400&q=80' },
+                    { title: 'Singer Performance Live', views: '24.1K', thumb: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80' }
+                  ].map((vid, i) => (
+                    <div key={i} className="relative aspect-video rounded-2xl overflow-hidden border border-slate-800 group hover:border-purple-500/50 transition">
+                      <img src={vid.thumb} alt={vid.title} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+                      <div className="absolute top-2 right-2 bg-slate-950/80 px-2 py-0.5 rounded-full text-[9px] text-cyan-400 font-bold flex items-center gap-1">
+                        <Eye className="w-2.5 h-2.5" />
+                        {vid.views}
+                      </div>
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <p className="text-[10px] font-bold text-white truncate">{vid.title}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
-            {/* SCREENSHOT & SCREEN RECORDING PROTECTION STATUS CARD */}
-            <div className="card-3d p-4 rounded-3xl border border-emerald-500/40 bg-slate-900/80 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-                  <Shield className="w-5 h-5" />
+            {/* 6. STREAMER EARNINGS OVERVIEW */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                  Streamer Earnings & Payout (71% Rate)
+                </h3>
+                <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  USDT Cashout Available
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+                  <span className="text-[9px] text-slate-400">Today</span>
+                  <p className="text-sm font-black text-emerald-400 mt-0.5">$45.00</p>
+                  <span className="text-[8px] text-amber-300">2,250 Coins</span>
                 </div>
-                <div>
-                  <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                    Screenshot & Privacy Policy
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                      Unrestricted
-                    </span>
-                  </h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
-                    Screenshot restrictions are completely disabled. All live streams and profile pages are fully transparent and accessible.
-                  </p>
+
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+                  <span className="text-[9px] text-slate-400">This Month</span>
+                  <p className="text-sm font-black text-cyan-400 mt-0.5">$1,280.00</p>
+                  <span className="text-[8px] text-amber-300">64,000 Coins</span>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+                  <span className="text-[9px] text-slate-400">Total All-Time</span>
+                  <p className="text-sm font-black text-purple-400 mt-0.5">$8,450.00</p>
+                  <span className="text-[8px] text-amber-300">422,500 Coins</span>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+                  <span className="text-[9px] text-slate-400">Gifts Received</span>
+                  <p className="text-sm font-black text-pink-400 mt-0.5">1,840</p>
+                  <span className="text-[8px] text-pink-300">Gifts Total</span>
                 </div>
               </div>
             </div>
 
-            {/* APP SUGGESTIONS & FEEDBACK BOX CARD ("App Suggestions / Feedback") */}
-            <div className="card-3d p-5 rounded-3xl border border-purple-500/40 bg-slate-900/80 space-y-3">
+            {/* 7. GIFT SHOWCASE (ویترین هدایا) */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
-                    <Sparkles className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-white">Platform Suggestions & Feedback Box</h3>
-                    <p className="text-[10px] text-purple-300">Submit feature requests & app improvements</p>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setIsSuggestionModalOpen(true)}
-                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md flex items-center gap-1.5"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  New Suggestion
-                </button>
+                <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Gift className="w-4 h-4 text-amber-400" />
+                  Gift Showcase Window
+                </h3>
+                <span className="text-[10px] text-slate-400">Collected from live fans</span>
               </div>
 
-              <div className="space-y-2 pt-1">
-                {suggestionsList.slice(0, 3).map(item => (
-                  <div key={item.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs flex items-center justify-between">
-                    <div className="flex-1 pr-2">
-                      <p className="text-slate-200 font-medium text-[11px]">{item.text}</p>
-                      <span className="text-[9px] text-slate-500">Submitted by @{item.user} • {item.date}</span>
-                    </div>
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-950 text-purple-300 border border-purple-500/30 shrink-0">
-                      {item.status}
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
+                {[
+                  { name: 'Supercar', icon: '🏎️', count: 12, coins: '5,000' },
+                  { name: 'Royal Crown', icon: '👑', count: 45, coins: '2,500' },
+                  { name: 'Gold Vault', icon: '📦', count: 8, coins: '10,000' },
+                  { name: 'Diamond Ring', icon: '💎', count: 120, coins: '1,000' },
+                  { name: 'Rose Bouquet', icon: '🌹', count: 950, coins: '10' }
+                ].map((gift, i) => (
+                  <div key={i} className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1 hover:border-amber-500/50 transition">
+                    <span className="text-2xl block">{gift.icon}</span>
+                    <p className="text-[10px] font-bold text-white truncate">{gift.name}</p>
+                    <span className="inline-block px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-black border border-amber-500/30">
+                      x{gift.count}
                     </span>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* 8. BADGES & MEDALS */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+              <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                <Crown className="w-4 h-4 text-amber-400" />
+                Badges & Achievements
+              </h3>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                <div className="p-2.5 rounded-2xl bg-slate-950 border border-amber-500/30 flex items-center gap-2">
+                  <span className="text-xl">👑</span>
+                  <div>
+                    <h4 className="text-[10px] font-bold text-amber-300">VIP Member</h4>
+                    <p className="text-[8px] text-slate-400">Unlimited access</p>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-2xl bg-slate-950 border border-cyan-500/30 flex items-center gap-2">
+                  <span className="text-xl">✅</span>
+                  <div>
+                    <h4 className="text-[10px] font-bold text-cyan-300">Verified Host</h4>
+                    <p className="text-[8px] text-slate-400">Official Blue Tick</p>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-2xl bg-slate-950 border border-pink-500/30 flex items-center gap-2">
+                  <span className="text-xl">🔥</span>
+                  <div>
+                    <h4 className="text-[10px] font-bold text-pink-300">Top Streamer</h4>
+                    <p className="text-[8px] text-slate-400">Weekly #1 Host</p>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-2xl bg-slate-950 border border-purple-500/30 flex items-center gap-2">
+                  <span className="text-xl">💎</span>
+                  <div>
+                    <h4 className="text-[10px] font-bold text-purple-300">Premium Creator</h4>
+                    <p className="text-[8px] text-slate-400">4K Live Enabled</p>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-2xl bg-slate-950 border border-yellow-500/30 flex items-center gap-2 sm:col-span-2">
+                  <span className="text-xl">🏆</span>
+                  <div>
+                    <h4 className="text-[10px] font-bold text-yellow-300">Top Gift Receiver</h4>
+                    <p className="text-[8px] text-slate-400">Over 1,000+ gifts collected</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 9. PRIVACY SETTINGS */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 text-xs">
+              <h3 className="font-bold text-white flex items-center gap-1.5">
+                <Lock className="w-4 h-4 text-pink-400" />
+                Privacy Controls
+              </h3>
+
+              <div className="space-y-2">
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span>Show City on Profile</span>
+                  <button 
+                    onClick={() => setPrivacyShowCity(!privacyShowCity)}
+                    className={`px-3 py-1 rounded-xl text-[10px] font-bold transition ${privacyShowCity ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                  >
+                    {privacyShowCity ? 'Visible' : 'Hidden'}
+                  </button>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span>Show Age on Profile</span>
+                  <button 
+                    onClick={() => setPrivacyShowAge(!privacyShowAge)}
+                    className={`px-3 py-1 rounded-xl text-[10px] font-bold transition ${privacyShowAge ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                  >
+                    {privacyShowAge ? 'Visible' : 'Hidden'}
+                  </button>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span>Show Online Status / Last Seen</span>
+                  <button 
+                    onClick={() => setPrivacyShowLastSeen(!privacyShowLastSeen)}
+                    className={`px-3 py-1 rounded-xl text-[10px] font-bold transition ${privacyShowLastSeen ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                  >
+                    {privacyShowLastSeen ? 'Visible' : 'Hidden'}
+                  </button>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span>Who Can Send Direct Messages</span>
+                  <button 
+                    onClick={() => setPrivacyWhoMessage(privacyWhoMessage === 'Everyone' ? 'Followers Only' : 'Everyone')}
+                    className="px-3 py-1 rounded-xl text-[10px] font-bold bg-purple-900 text-purple-200 border border-purple-500/30"
+                  >
+                    {privacyWhoMessage}
+                  </button>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span>Who Can Video/Voice Call Me</span>
+                  <button 
+                    onClick={() => setPrivacyWhoCall(privacyWhoCall === 'VIP Only' ? 'Everyone' : 'VIP Only')}
+                    className="px-3 py-1 rounded-xl text-[10px] font-bold bg-amber-900 text-amber-200 border border-amber-500/30"
+                  >
+                    {privacyWhoCall}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 10. ACCOUNT SETTINGS */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 text-xs">
+              <h3 className="font-bold text-white flex items-center gap-1.5">
+                <Settings className="w-4 h-4 text-cyan-400" />
+                Account Settings
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button 
+                  onClick={() => setIsEditingProfile(true)}
+                  className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition"
+                >
+                  <span className="text-slate-200 font-medium">Edit Info & Avatar</span>
+                  <Edit3 className="w-3.5 h-3.5 text-pink-400" />
+                </button>
+
+                <button 
+                  onClick={() => showToast('Change Password dialog opened')}
+                  className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition"
+                >
+                  <span className="text-slate-200 font-medium">Change Password</span>
+                  <Key className="w-3.5 h-3.5 text-purple-400" />
+                </button>
+
+                <button 
+                  onClick={() => showToast('Managing active device sessions')}
+                  className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition"
+                >
+                  <span className="text-slate-200 font-medium">Manage Active Devices</span>
+                  <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
+                </button>
+
+                <button 
+                  onClick={() => setIsSettingsModalOpen(true)}
+                  className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition"
+                >
+                  <span className="text-slate-200 font-medium">App Language (English / Farsi)</span>
+                  <Languages className="w-3.5 h-3.5 text-amber-400" />
+                </button>
+              </div>
+            </div>
+
+            {/* 11. WALLET SUMMARY & USDT TRANSACTIONS */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 text-xs">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-white flex items-center gap-1.5">
+                  <Wallet className="w-4 h-4 text-amber-400" />
+                  Wallet Balance & TRC20 History
+                </h3>
+                <span className="text-amber-300 font-black">{userCoins.toLocaleString()} Coins</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setIsDepositModalOpen(true)}
+                  className="flex-1 py-2 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md"
+                >
+                  Deposit / Charge
+                </button>
+                <button 
+                  onClick={() => setIsWithdrawModalOpen(true)}
+                  className="flex-1 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md"
+                >
+                  Withdraw USDT
+                </button>
+              </div>
+            </div>
+
+            {/* 12. SECURITY & IDENTITY (KYC) */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 text-xs">
+              <h3 className="font-bold text-white flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                Security & KYC Status
+              </h3>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 text-center">
+                  <span className="text-[9px] text-slate-400 block">Identity KYC</span>
+                  <span className="text-[10px] font-bold text-emerald-400">Verified ✅</span>
+                </div>
+
+                <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 text-center">
+                  <span className="text-[9px] text-slate-400 block">Phone Number</span>
+                  <span className="text-[10px] font-bold text-emerald-400">Verified ✅</span>
+                </div>
+
+                <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 text-center">
+                  <span className="text-[9px] text-slate-400 block">Email Address</span>
+                  <span className="text-[10px] font-bold text-emerald-400">Verified ✅</span>
+                </div>
+
+                <div className="p-2.5 rounded-2xl bg-slate-950 border border-purple-500/30 text-center">
+                  <span className="text-[9px] text-slate-400 block">2FA Auth</span>
+                  <span className="text-[10px] font-bold text-purple-300">Active 🔒</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 13. BOTTOM PROFILE QUICK ACTIONS */}
+            <div className="p-4 rounded-3xl bg-gradient-to-r from-pink-950/80 via-purple-950/80 to-slate-950 border border-pink-500/30 space-y-3">
+              <h3 className="text-xs font-bold text-white">Quick Actions</h3>
+
+              {profilePreviewMode === 'self' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button 
+                    onClick={handleStartLiveStream}
+                    className="btn-neon-pink py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 shadow-lg"
+                  >
+                    <Camera className="w-4 h-4" />
+                    Start Live
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(`https://vlive.app/invite?ref=${userName}`);
+                      showToast('Invite link copied!');
+                    }}
+                    className="py-3 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    Invite Friends
+                  </button>
+
+                  <button 
+                    onClick={() => showToast('VIP upgrade screen opened')}
+                    className="py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-md"
+                  >
+                    <Crown className="w-4 h-4 fill-slate-950" />
+                    Become VIP
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <button 
+                    onClick={() => showToast(`Following @${currentUsername}`)}
+                    className="py-2.5 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center justify-center gap-1.5"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Follow
+                  </button>
+
+                  <button 
+                    onClick={() => setIsGiftCatalogOpen(true)}
+                    className="py-2.5 rounded-2xl bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Gift className="w-4 h-4" />
+                    Send Gift
+                  </button>
+
+                  <button 
+                    onClick={() => showToast(`Blocked @${currentUsername}`)}
+                    className="py-2.5 rounded-2xl bg-slate-800 hover:bg-red-900/60 text-slate-300 hover:text-red-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Ban className="w-4 h-4" />
+                    Block
+                  </button>
+
+                  <button 
+                    onClick={() => showToast(`Report submitted for @${currentUsername}`)}
+                    className="py-2.5 rounded-2xl bg-slate-800 hover:bg-amber-900/60 text-slate-300 hover:text-amber-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5"
+                  >
+                    <AlertTriangle className="w-4 h-4" />
+                    Report
+                  </button>
+                </div>
+              )}
+            </div>
+
           </div>
         )}
 
