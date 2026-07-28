@@ -1993,531 +1993,299 @@ export default function App() {
       {/* BODY CONTENT AREA */}
       <main className="flex-1 p-4 max-w-4xl mx-auto w-full space-y-6">
 
-        {/* TAB 1: HOME & LIVE STREAMS */}
+        {/* TAB 1: HOME & LIVE STREAMS - COMPLETELY REDESIGNED LIVE SECTION */}
         {activeTab === 'streams' && (
-          <div className="space-y-6">
+          <div className="space-y-6 dir-ltr">
 
-            {/* IF LIVES SUBTAB (DEFAULT HOME SCREEN) */}
-            {streamSubTab === 'lives' && (
-              <div className="space-y-6">
-                {/* 1. HERO BANNER */}
-            <div className="relative rounded-3xl overflow-hidden p-6 bg-gradient-to-r from-pink-950 via-purple-950 to-slate-950 border border-pink-500/30 shadow-[0_0_30px_rgba(236,72,153,0.15)]">
-              <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="space-y-1.5 max-w-md">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/40 text-[10px] font-black uppercase tracking-wider">
-                    <Sparkles className="w-3 h-3 text-pink-400 animate-spin" />
-                    High Payout Rates • 71%
+            {/* 1. HEADER (نوار بالا) */}
+            <div className="flex items-center justify-between bg-slate-900/90 p-3.5 sm:p-4 rounded-3xl border border-pink-500/30 shadow-[0_0_25px_rgba(236,72,153,0.15)]">
+              {/* Brand Logo */}
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-400 p-0.5 flex items-center justify-center shadow-lg animate-pulse">
+                  <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                    <Radio className="w-5 h-5 text-pink-400" />
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                    🔥 Go Live & Earn Money
-                  </h2>
-                  <p className="text-xs text-slate-300">
-                    Start your 4K stream, collect virtual gifts from fans & cash out USDT directly!
-                  </p>
                 </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h1 className="text-base sm:text-lg font-black bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300 bg-clip-text text-transparent">
+                      V.LIVE
+                    </h1>
+                    <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/40">
+                      PRO 4K
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span>2,840 Online Lives</span>
+                  </div>
+                </div>
+              </div>
 
+              {/* Header Right Actions */}
+              <div className="flex items-center gap-2">
+                {/* Search Toggle */}
                 <button 
-                  onClick={handleStartLiveStream}
-                  className="btn-neon-pink px-6 py-3.5 rounded-2xl text-xs font-black flex items-center gap-2 shadow-xl shrink-0 hover:scale-105 transition active:scale-95"
+                  onClick={() => setIsChatSearchOpen(!isChatSearchOpen)}
+                  className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-white hover:border-pink-500/50 transition active:scale-95"
+                  title="Search Live Streams"
+                >
+                  <Search className="w-4 h-4 text-slate-300" />
+                </button>
+
+                {/* Notifications Bell */}
+                <button 
+                  onClick={() => setIsNotificationsOpen(true)}
+                  className="relative p-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-white hover:border-pink-500/50 transition active:scale-95"
+                  title="Notifications"
+                >
+                  <Bell className="w-4 h-4 text-amber-400" />
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-pink-600 text-white text-[9px] font-black flex items-center justify-center border-2 border-slate-950">
+                    3
+                  </span>
+                </button>
+
+                {/* Start Live Stream Header Button */}
+                <button 
+                  onClick={() => setIsHostLiveOpen(true)}
+                  className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white text-xs font-black shadow-lg hover:scale-105 transition active:scale-95 flex items-center gap-1.5"
                 >
                   <Camera className="w-4 h-4 text-white" />
-                  🎥 Start Live
+                  <span className="hidden sm:inline">Go Live</span>
                 </button>
               </div>
-              <div className="absolute top-0 right-0 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl pointer-events-none" />
             </div>
 
-            {/* 2. STORIES BAR */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-pink-400" />
-                  User Stories
-                </h3>
+            {/* Quick Live Search Bar (If Toggled) */}
+            {(isChatSearchOpen || homeSearchQuery) && (
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input 
+                  type="text"
+                  value={homeSearchQuery}
+                  onChange={e => setHomeSearchQuery(e.target.value)}
+                  placeholder="Search live streamer name, ID, city, or topic..."
+                  className="w-full pl-10 pr-10 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 shadow-inner"
+                />
+                {homeSearchQuery && (
+                  <button 
+                    onClick={() => setHomeSearchQuery('')}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* 2. HORIZONTAL CATEGORY SCROLL (دسته‌بندی لایوها) */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 px-1">
+                <span>Categories & Tags</span>
+                <span className="text-pink-400 font-mono">10 Channels</span>
               </div>
 
-              <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
-                {/* + Your Story */}
-                <button 
-                  onClick={handleStartLiveStream}
-                  className="flex flex-col items-center gap-1.5 shrink-0 group"
-                >
-                  <div className="relative w-14 h-14 rounded-full p-0.5 border-2 border-dashed border-pink-500/60 flex items-center justify-center bg-slate-900 group-hover:scale-105 transition">
-                    <img src={userAvatar} alt="Your Story" className="w-full h-full object-cover rounded-full opacity-60" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-6 h-6 rounded-full bg-pink-600 text-white flex items-center justify-center shadow-lg">
-                        <Plus className="w-4 h-4 font-bold" />
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-semibold text-slate-300">Your Story</span>
-                </button>
-
-                {/* Story Circles */}
-                {storiesList.map(story => (
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                {[
+                  { id: 'all', label: '🌍 All', count: '2.8k' },
+                  { id: 'trending', label: '🔥 Trending', count: '940' },
+                  { id: 'gaming', label: '🎮 Gaming', count: '410' },
+                  { id: 'music', label: '🎵 Music', count: '320' },
+                  { id: 'dance', label: '💃 Dance', count: '280' },
+                  { id: 'singing', label: '🎤 Singing', count: '210' },
+                  { id: 'chat', label: '💬 Chat', count: '550' },
+                  { id: 'education', label: '🎓 Education', count: '130' },
+                  { id: 'dating', label: '❤️ Dating', count: '380' },
+                  { id: 'vip', label: '👑 VIP 18+', count: '180' }
+                ].map(cat => (
                   <button 
-                    key={story.id}
-                    onClick={() => showToast(`Viewing @${story.name}'s story`)}
-                    className="flex flex-col items-center gap-1.5 shrink-0 group"
+                    key={cat.id}
+                    onClick={() => setStreamModeFilter(cat.id)}
+                    className={`px-3.5 py-2 rounded-2xl text-xs font-bold shrink-0 border transition-all flex items-center gap-1.5 ${streamModeFilter === cat.id ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.5)] scale-105' : 'bg-slate-900/90 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200'}`}
                   >
-                    <div className={`w-14 h-14 rounded-full p-0.5 transition group-hover:scale-105 ${story.hasUnseen ? 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 shadow-[0_0_12px_rgba(236,72,153,0.5)]' : 'bg-slate-800'}`}>
-                      <img src={story.avatar} alt={story.name} className="w-full h-full object-cover rounded-full border border-slate-950" />
-                    </div>
-                    <span className="text-[10px] font-semibold text-slate-300 truncate max-w-[60px]">{story.name}</span>
+                    <span>{cat.label}</span>
+                    <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${streamModeFilter === cat.id ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                      {cat.count}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* 3. HOT GIFTS TICKER */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-2.5 flex items-center gap-3 overflow-hidden text-xs">
-              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-pink-500/20 text-pink-300 font-bold shrink-0 text-[10px]">
-                <Flame className="w-3.5 h-3.5 text-pink-400 animate-pulse" />
-                Hot Gifts
-              </div>
-              <div className="flex items-center gap-4 overflow-x-auto no-scrollbar whitespace-nowrap text-[11px]">
-                {hotGiftsList.map(g => (
-                  <div key={g.id} className="flex items-center gap-1.5 shrink-0 text-slate-300">
-                    <strong className="text-pink-400">@{g.sender}</strong>
-                    <span>sent</span>
-                    <span className="text-amber-300 font-bold">{g.gift}</span>
-                    <span>to</span>
-                    <strong className="text-purple-300">@{g.recipient}</strong>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 4. ONLINE HOSTS HORIZONTAL CARDS */}
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-purple-400" />
-                    Online Hosts
-                  </h3>
-                  <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                    🟢 Live Now
-                  </span>
-                </div>
-                <button 
-                  onClick={() => setStreamSubTab('users')}
-                  className="text-[11px] text-pink-400 hover:underline font-bold"
-                >
-                  View All
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
-                {usersList.filter(u => u.online).map(host => (
-                  <div 
-                    key={host.id} 
-                    className="w-40 shrink-0 card-3d p-3 rounded-2xl border border-slate-800 bg-slate-900/90 flex flex-col items-center text-center space-y-2 group hover:border-pink-500/50 transition"
-                  >
-                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-pink-500/40 shadow-md">
-                      <img src={host.avatar} alt={host.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-300" />
-                      <span className="absolute bottom-1 right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-950" />
-                    </div>
-
-                    <div className="w-full">
-                      <h4 className="text-xs font-bold text-white truncate flex items-center justify-center gap-1">
-                        {host.name}
-                        {host.isVerified && <VerifiedBadge className="w-3 h-3" />}
-                      </h4>
-                      <p className="text-[9px] text-slate-400 flex items-center justify-center gap-1 mt-0.5">
-                        <MapPin className="w-2.5 h-2.5 text-pink-400" />
-                        {host.city || 'Tehran'}
-                      </p>
-                      <p className="text-[9px] text-cyan-400 font-semibold flex items-center justify-center gap-1 mt-0.5">
-                        <Eye className="w-2.5 h-2.5" />
-                        {(Math.floor(Math.random() * 2000) + 300).toLocaleString()} viewers
-                      </p>
-                    </div>
-
-                    <button 
-                      onClick={() => handleStartPrivateCall(host)}
-                      className="w-full py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-[10px] shadow-sm active:scale-95 transition"
-                    >
-                      Join
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 5. TRENDING LIVE STREAMS */}
-            <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <Flame className="w-4 h-4 text-pink-500 animate-pulse" />
-                  Trending Live Streams
-                </h3>
-
-                {/* Live vs Party Switch */}
-                <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[10px] font-bold">
-                  <button 
-                    onClick={() => setStreamSubTab('lives')}
-                    className={`px-2.5 py-1 rounded-lg transition ${streamSubTab === 'lives' ? 'bg-pink-600 text-white' : 'text-slate-400'}`}
-                  >
-                    🎥 Live Streams
-                  </button>
-                  <button 
-                    onClick={() => setStreamSubTab('party')}
-                    className={`px-2.5 py-1 rounded-lg transition ${streamSubTab === 'party' ? 'bg-purple-600 text-white' : 'text-slate-400'}`}
-                  >
-                    🎉 Party Stage
-                  </button>
-                </div>
-              </div>
-
-              {/* Fast Search & Filters Bar */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {/* Fast Search */}
-                <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input 
-                    type="text" 
-                    value={homeSearchQuery}
-                    onChange={e => setHomeSearchQuery(e.target.value)}
-                    placeholder="Quick search streamer or city..."
-                    className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
-                  />
-                </div>
-
-                {/* City Filter */}
-                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-                  {['All', 'Tehran', 'Istanbul', 'Dubai', 'LA'].map(city => (
-                    <button 
-                      key={city}
-                      onClick={() => setHomeCityFilter(city)}
-                      className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold shrink-0 border transition ${homeCityFilter === city ? 'bg-pink-500/20 text-pink-300 border-pink-500/50' : 'bg-slate-900 text-slate-400 border-slate-800'}`}
-                    >
-                      {city}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Gender / VIP Filter */}
-                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-                  {[
-                    { id: 'all', label: 'All' },
-                    { id: 'female', label: 'Female 👩' },
-                    { id: 'male', label: 'Male 👨' },
-                    { id: 'vip', label: 'VIP 👑' }
-                  ].map(g => (
-                    <button 
-                      key={g.id}
-                      onClick={() => setHomeGenderFilter(g.id)}
-                      className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold shrink-0 border transition ${homeGenderFilter === g.id ? 'bg-purple-500/20 text-purple-300 border-purple-500/50' : 'bg-slate-900 text-slate-400 border-slate-800'}`}
-                    >
-                      {g.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Streams Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {streamsList
-                  .filter(s => {
-                    if (homeSearchQuery) {
-                      const q = homeSearchQuery.toLowerCase();
-                      return s.title.toLowerCase().includes(q) || s.host.toLowerCase().includes(q);
-                    }
-                    if (homeGenderFilter === 'vip') return s.isVip18;
-                    return true;
-                  })
-                  .map(stream => (
-                    <div key={stream.id} className="card-3d rounded-3xl overflow-hidden border border-slate-800/80 bg-slate-900/60 group hover:border-pink-500/40 transition">
-                      <div className="relative aspect-video overflow-hidden">
-                        <img src={stream.thumbnail} alt={stream.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
-                        
-                        <div className="absolute top-3 left-3 flex items-center gap-2">
-                          <span className="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-lg">
-                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                            LIVE
-                          </span>
-                          {stream.isVip18 && (
-                            <span className="bg-purple-900/90 border border-purple-500/50 text-purple-300 text-[10px] font-black px-2 py-0.5 rounded-full">
-                              VIP +18
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-300 flex items-center gap-1 border border-slate-800">
-                          <Eye className="w-3 h-3 text-cyan-400" />
-                          {stream.viewers.toLocaleString()}
-                        </div>
-
-                        <div className="absolute bottom-3 left-3 right-3">
-                          <div className="flex items-center gap-1 text-xs font-bold text-white mb-1">
-                            <span>{stream.host}</span>
-                            <VerifiedBadge className="w-3.5 h-3.5" />
-                            <span className="ml-auto text-amber-300 text-[10px] flex items-center gap-0.5 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
-                              <Gift className="w-3 h-3 text-amber-400" />
-                              1,420 Gifts
-                            </span>
-                          </div>
-                          <h3 className="text-xs text-slate-300 font-medium line-clamp-1">{stream.title}</h3>
-                        </div>
-                      </div>
-
-                      <div className="p-3 bg-slate-950/80 border-t border-slate-800/80 flex items-center justify-between">
-                        <span className="text-[10px] text-slate-400">
-                          Entry: {stream.entryFee > 0 ? `${stream.entryFee} coins` : 'Free'}
-                        </span>
-
-                        <button 
-                          onClick={() => handleTryEnterStream(stream)}
-                          className="btn-neon-pink px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md"
-                        >
-                          <Play className="w-3.5 h-3.5 fill-white" />
-                          Watch Stream
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-
-            {/* 6. SUGGESTED FRIENDS */}
-            <div className="space-y-2.5">
-              <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                <UserPlus className="w-3.5 h-3.5 text-pink-400" />
-                Suggested Streamers
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {usersList.slice(0, 4).map(u => (
-                  <div key={u.id} className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <img src={u.avatar} alt={u.name} className="w-10 h-10 rounded-full object-cover border border-pink-500/40" />
-                      <div>
-                        <h4 className="text-xs font-bold text-white flex items-center gap-1">
-                          {u.name}
-                          {u.isVerified && <VerifiedBadge className="w-3 h-3" />}
-                        </h4>
-                        <p className="text-[10px] text-slate-400">@{u.username} • {u.role}</p>
-                      </div>
-                    </div>
-
-                    <button 
-                      onClick={() => {
-                        setFollowedUsers(prev => prev.includes(u.id) ? prev.filter(id => id !== u.id) : [...prev, u.id]);
-                        showToast(followedUsers.includes(u.id) ? `Unfollowed @${u.username}` : `Following @${u.username}`);
-                      }}
-                      className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition ${followedUsers.includes(u.id) ? 'bg-slate-800 text-slate-300' : 'bg-pink-600 hover:bg-pink-500 text-white shadow-sm'}`}
-                    >
-                      {followedUsers.includes(u.id) ? 'Following' : 'Follow'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 7. VIP SPOTLIGHT CARD */}
-            <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-950 via-slate-900 to-purple-950 border border-amber-500/40 shadow-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-2xl bg-amber-500/20 border border-amber-500/50 text-amber-300">
-                    <Crown className="w-5 h-5 text-amber-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-amber-200">⭐ VIP Membership</h3>
-                    <p className="text-[10px] text-amber-400/80">Unlock exclusive streaming privileges & 0% commission</p>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => showToast('VIP Membership upgrade page')}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition"
-                >
-                  Upgrade
-                </button>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 text-[10px] text-amber-100 font-medium">
-                <div className="p-2 rounded-xl bg-amber-950/40 border border-amber-500/20 text-center">
-                  ✨ Unlimited Calls
-                </div>
-                <div className="p-2 rounded-xl bg-purple-950/40 border border-purple-500/20 text-center">
-                  🔒 Adult Rooms
-                </div>
-                <div className="p-2 rounded-xl bg-pink-950/40 border border-pink-500/20 text-center">
-                  🚀 Premium Features
-                </div>
-              </div>
-            </div>
-
-            {/* 8. EARNINGS DASHBOARD */}
-            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <DollarSign className="w-4 h-4 text-emerald-400" />
-                  Host Earnings Overview
-                </h3>
-                <span className="text-[10px] text-slate-400">71% Streamer Payout</span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400 font-medium">Today's Revenue</span>
-                  <p className="text-sm font-black text-emerald-400 mt-1">$45.00</p>
-                  <span className="text-[9px] text-amber-300">2,250 Coins</span>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400 font-medium">This Week</span>
-                  <p className="text-sm font-black text-cyan-400 mt-1">$280.00</p>
-                  <span className="text-[9px] text-amber-300">14,000 Coins</span>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400 font-medium">Total Cashout</span>
-                  <p className="text-sm font-black text-purple-400 mt-1">$1,450.00</p>
-                  <span className="text-[9px] text-amber-300">72,500 Coins</span>
-                </div>
-              </div>
-            </div>
-
-            {/* 9. WALLET QUICK ACTIONS */}
-            <div className="space-y-2">
-              <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                <Wallet className="w-3.5 h-3.5 text-amber-400" />
-                Wallet & Crypto USDT
-              </h3>
-
-              <div className="grid grid-cols-4 gap-2">
-                <button 
-                  onClick={() => setIsDepositModalOpen(true)}
-                  className="p-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-center transition flex flex-col items-center gap-1 group"
-                >
-                  <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 group-hover:scale-110 transition">
-                    <CoinsIcon className="w-5 h-5" />
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-200">Charge</span>
-                </button>
-
-                <button 
-                  onClick={() => setIsWithdrawModalOpen(true)}
-                  className="p-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-center transition flex flex-col items-center gap-1 group"
-                >
-                  <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition">
-                    <DollarSign className="w-5 h-5" />
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-200">Withdraw</span>
-                </button>
-
-                <button 
-                  onClick={() => showToast('Coin transfer feature opened')}
-                  className="p-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-center transition flex flex-col items-center gap-1 group"
-                >
-                  <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400 group-hover:scale-110 transition">
-                    <RefreshCw className="w-5 h-5" />
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-200">Transfer</span>
-                </button>
-
-                <button 
-                  onClick={() => setIsDepositModalOpen(true)}
-                  className="p-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-center transition flex flex-col items-center gap-1 group"
-                >
-                  <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 group-hover:scale-110 transition">
-                    <QrCode className="w-5 h-5" />
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-200">USDT Pay</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 10. WEEKLY RANKING LEADERBOARD */}
-            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <Crown className="w-4 h-4 text-amber-400" />
-                  🏆 Weekly Leaderboard Ranking
-                </h3>
-                <span className="text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-                  Top 10 Streamers
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                {usersList.slice(0, 3).map((u, idx) => (
-                  <div key={u.id} className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className={`w-6 h-6 rounded-full font-black text-xs flex items-center justify-center ${idx === 0 ? 'bg-amber-400 text-slate-950' : idx === 1 ? 'bg-slate-300 text-slate-950' : 'bg-amber-700 text-white'}`}>
-                        #{idx + 1}
-                      </span>
-                      <img src={u.avatar} alt={u.name} className="w-9 h-9 rounded-full object-cover" />
-                      <div>
-                        <h4 className="text-xs font-bold text-white flex items-center gap-1">
-                          {u.name}
-                          {u.isVerified && <VerifiedBadge className="w-3 h-3" />}
-                        </h4>
-                        <span className="text-[10px] text-amber-300 flex items-center gap-1">
-                          <CoinsIcon className="w-3 h-3" />
-                          {(u.coins || 45000).toLocaleString()} coins earned
-                        </span>
-                      </div>
-                    </div>
-
-                    <button 
-                      onClick={() => handleStartPrivateCall(u)}
-                      className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-[10px] shadow-sm"
-                    >
-                      Call
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 11. EVENTS & PROMOTIONS */}
-            <div className="p-4 rounded-3xl bg-gradient-to-r from-pink-900/60 via-purple-900/40 to-slate-900 border border-pink-500/40 flex items-center justify-between gap-3">
-              <div className="space-y-1">
-                <div className="flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-yellow-300 animate-spin" />
-                  <h3 className="text-xs font-black text-white">🎁 Double Coins Event Active!</h3>
-                </div>
-                <p className="text-[10px] text-pink-200">Get 2x coins on all live stream gifts for the next 24 hours.</p>
-              </div>
-
+            {/* LIVE SUBTABS SELECTOR (Lives | PK Battles | Party Stage | Quests | Leaderboard) */}
+            <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 text-xs font-bold overflow-x-auto no-scrollbar">
               <button 
-                onClick={() => setIsDepositModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-black text-xs shrink-0 shadow-lg"
+                onClick={() => setStreamSubTab('lives')}
+                className={`flex-1 min-w-[100px] py-2 rounded-xl transition text-center flex items-center justify-center gap-1.5 ${streamSubTab === 'lives' ? 'bg-pink-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
               >
-                Claim 2x
+                <Radio className="w-3.5 h-3.5" />
+                <span>Live Streams</span>
               </button>
-            </div>
-
-            {/* 12. INVITE FRIENDS */}
-            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3">
-              <div className="space-y-0.5">
-                <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <Share2 className="w-3.5 h-3.5 text-cyan-400" />
-                  Invite Friends & Earn Rewards
-                </h3>
-                <p className="text-[10px] text-slate-400">Get 500 bonus coins + 10% lifetime commission for every friend.</p>
-              </div>
 
               <button 
                 onClick={() => {
-                  navigator.clipboard.writeText(`https://vlive.app/invite?ref=${userName}`);
-                  showToast('Invite referral link copied to clipboard!');
+                  setStreamSubTab('lives');
+                  setIsPkBattleActive(true);
+                  showToast('PK Battle Mode active! Select stream to join battle.');
                 }}
-                className="px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1 shrink-0"
+                className={`flex-1 min-w-[100px] py-2 rounded-xl transition text-center flex items-center justify-center gap-1.5 ${isPkBattleActive ? 'bg-gradient-to-r from-red-600 to-blue-600 text-white shadow-md font-black animate-pulse' : 'text-slate-400 hover:text-white'}`}
               >
-                <Copy className="w-3.5 h-3.5" />
-                Copy
+                <Zap className="w-3.5 h-3.5 text-amber-400" />
+                <span>PK Battle</span>
+              </button>
+
+              <button 
+                onClick={() => setStreamSubTab('party')}
+                className={`flex-1 min-w-[100px] py-2 rounded-xl transition text-center flex items-center justify-center gap-1.5 ${streamSubTab === 'party' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Multi-Guest</span>
+              </button>
+
+              <button 
+                onClick={() => setStreamSubTab('quests')}
+                className={`flex-1 min-w-[100px] py-2 rounded-xl transition text-center flex items-center justify-center gap-1.5 ${streamSubTab === 'quests' ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+              >
+                <Target className="w-3.5 h-3.5 text-cyan-300" />
+                <span>Quests</span>
+              </button>
+
+              <button 
+                onClick={() => setStreamSubTab('leaderboard')}
+                className={`flex-1 min-w-[100px] py-2 rounded-xl transition text-center flex items-center justify-center gap-1.5 ${streamSubTab === 'leaderboard' ? 'bg-amber-500 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'}`}
+              >
+                <Crown className="w-3.5 h-3.5 text-amber-400" />
+                <span>Leaderboard</span>
               </button>
             </div>
 
-          </div>
-        )}
+            {/* 3. ONLINE LIVES GRID (لایوهای آنلاین با فرمت خواسته شده) */}
+            {streamSubTab === 'lives' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black text-white flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+                    Active 4K Streams
+                  </h3>
+                  <span className="text-[10px] text-slate-400">Showing {streamsList.length} streams</span>
+                </div>
 
-            {/* IF MULTI-GUEST PARTY ROOMS SUBTAB */}
+                {/* Stream Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {streamsList
+                    .filter(s => {
+                      if (homeSearchQuery) {
+                        const q = homeSearchQuery.toLowerCase();
+                        return s.title.toLowerCase().includes(q) || s.host.toLowerCase().includes(q);
+                      }
+                      if (streamModeFilter === 'vip') return s.isVip18;
+                      return true;
+                    })
+                    .map(stream => (
+                      <div 
+                        key={stream.id} 
+                        className="card-3d rounded-3xl overflow-hidden border border-slate-800 bg-slate-900/90 group hover:border-pink-500/50 transition duration-300 flex flex-col"
+                      >
+                        {/* Thumbnail Container */}
+                        <div className="relative aspect-video overflow-hidden bg-slate-950">
+                          <img 
+                            src={stream.thumbnail} 
+                            alt={stream.title} 
+                            className="w-full h-full object-cover group-hover:scale-110 transition duration-700" 
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+
+                          {/* Top Left: LIVE Badge */}
+                          <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                            <span className="bg-red-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg border border-red-400/50">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                              LIVE
+                            </span>
+                            {stream.isVip18 && (
+                              <span className="bg-purple-900/90 text-purple-200 text-[10px] font-black px-2 py-0.5 rounded-full border border-purple-500/50">
+                                VIP 18+
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Top Right: Viewers Count */}
+                          <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-200 flex items-center gap-1 border border-slate-800 shadow-md">
+                            <Eye className="w-3 h-3 text-cyan-400" />
+                            <span>👁 {(stream.viewers || 2300).toLocaleString()}</span>
+                          </div>
+
+                          {/* Bottom Left / Details Overlay */}
+                          <div className="absolute bottom-3 left-3 right-3 space-y-1">
+                            <div className="flex items-center justify-between text-xs font-bold text-white">
+                              <div className="flex items-center gap-1">
+                                <span>👤 {stream.host}</span>
+                                <VerifiedBadge className="w-3.5 h-3.5" />
+                              </div>
+                              <span className="text-[10px] text-pink-300 font-mono flex items-center gap-0.5 bg-slate-950/80 px-2 py-0.5 rounded-full border border-slate-800">
+                                <Clock className="w-2.5 h-2.5 text-pink-400" />
+                                ⏱ 45m
+                              </span>
+                            </div>
+
+                            <p className="text-[10px] text-slate-300 font-medium line-clamp-1">
+                              {stream.title}
+                            </p>
+
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+                              <span className="flex items-center gap-1 text-pink-400 font-semibold">
+                                <MapPin className="w-3 h-3" />
+                                📍 Tehran
+                              </span>
+                              <span>•</span>
+                              <span className="text-amber-300 flex items-center gap-0.5">
+                                <Gift className="w-3 h-3 text-amber-400" />
+                                1.4K Gifts
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Card Bottom Actions */}
+                        <div className="p-3 bg-slate-950/90 border-t border-slate-800/80 flex items-center justify-between gap-2 mt-auto">
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            Fee: {stream.entryFee > 0 ? `${stream.entryFee} coins` : 'FREE'}
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            {/* Boost Stream Button */}
+                            <button 
+                              onClick={() => {
+                                if (userCoins < 100) {
+                                  showToast('100 coins required to Boost live stream');
+                                  return;
+                                }
+                                setUserCoins(prev => prev - 100);
+                                showToast(`Live stream by ${stream.host} Boosted to top!`);
+                              }}
+                              className="p-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-500/40 text-purple-300 text-[10px] font-bold flex items-center gap-1"
+                              title="Boost Live to Top (100 coins)"
+                            >
+                              <Zap className="w-3.5 h-3.5 text-amber-400" />
+                              Boost
+                            </button>
+
+                            {/* Watch Live Button */}
+                            <button 
+                              onClick={() => handleTryEnterStream(stream)}
+                              className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-xs shadow-md flex items-center gap-1.5 hover:brightness-110 active:scale-95 transition"
+                            >
+                              <Play className="w-3.5 h-3.5 fill-white" />
+                              Enter Live
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* MULTI-GUEST PARTY STAGE SUBTAB */}
             {streamSubTab === 'party' && (
               <div className="space-y-4">
                 <div className="p-4 rounded-3xl bg-gradient-to-r from-purple-900/40 via-slate-900 to-pink-900/40 border border-purple-500/40 flex items-center justify-between flex-wrap gap-3">
@@ -2605,90 +2373,58 @@ export default function App() {
               </div>
             )}
 
-            {/* IF MOMENTS & REELS SUBTAB */}
-            {streamSubTab === 'moments' && (
+            {/* DAILY QUESTS & REWARDS SUBTAB */}
+            {streamSubTab === 'quests' && (
               <div className="space-y-4">
-                <div className="p-4 rounded-3xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-purple-950/40 border border-amber-500/40 flex items-center justify-between flex-wrap gap-2">
+                <div className="p-4 rounded-3xl bg-gradient-to-r from-cyan-950/40 via-slate-900 to-purple-950/40 border border-cyan-500/40 flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                      <Video className="w-4 h-4 text-amber-400" />
-                      Streamer Moments & Short Clips Feed
+                      <Target className="w-4 h-4 text-cyan-400" />
+                      Daily Mission & Stream Quests
                     </h3>
-                    <p className="text-[10px] text-amber-200">Watch highlight reels, like clips & gift coins directly to hosts</p>
+                    <p className="text-[10px] text-cyan-200">Complete tasks to claim coin rewards & level up!</p>
                   </div>
-                  <button 
-                    onClick={() => showToast('Clip upload camera opened')}
-                    className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md flex items-center gap-1"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    Post Moment
-                  </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {momentsFeed.map(item => (
-                    <div key={item.id} className="card-3d rounded-3xl border border-slate-800 bg-slate-900/90 overflow-hidden space-y-3 p-4">
-                      <div className="flex items-center gap-3">
-                        <img src={item.hostAvatar} alt={item.host} className="w-10 h-10 rounded-2xl object-cover border border-amber-500 shadow-md shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-xs font-bold text-white truncate">@{item.host}</h4>
-                          <span className="text-[9px] text-amber-300 font-mono">Official Host Moment</span>
+                <div className="space-y-3">
+                  {[
+                    { id: 'q_1', title: '🎯 Reach 100 Viewers in Live', reward: 500, progress: '85/100 Viewers', completed: true, claimed: false },
+                    { id: 'q_2', title: 'Watch Live Broadcasts for 5 Mins', reward: 50, progress: '5/5 Mins', completed: true, claimed: false },
+                    { id: 'q_3', title: 'Send 1 Gift to Any Streamer', reward: 100, progress: '1/1 Gift', completed: true, claimed: false },
+                    { id: 'q_4', title: 'Share Stream Link with Friends', reward: 30, progress: '0/1 Share', completed: false, claimed: false }
+                  ].map(q => (
+                    <div key={q.id} className="card-3d p-4 rounded-3xl border border-slate-800 bg-slate-900/90 flex items-center justify-between gap-3">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <h4 className="text-xs font-bold text-white truncate">{q.title}</h4>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-amber-300 font-bold flex items-center gap-1">
+                            <CoinsIcon className="w-3 h-3 text-amber-400" />
+                            +{q.reward} Coins
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">Status: {q.progress}</span>
                         </div>
                       </div>
 
-                      <p className="text-xs text-slate-200 leading-relaxed">{item.caption}</p>
-
-                      <div className="relative rounded-2xl overflow-hidden h-48 bg-slate-950 border border-slate-800">
-                        <img src={item.mediaUrl} alt="Moment Reel" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-slate-950/30 flex items-center justify-center">
-                          <div className="w-12 h-12 rounded-full bg-pink-600/90 text-white flex items-center justify-center shadow-2xl backdrop-blur-sm">
-                            <Play className="w-6 h-6 fill-white ml-0.5" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-1 text-xs">
-                        <button 
-                          onClick={() => {
-                            const updated = momentsFeed.map(m => m.id === item.id ? { ...m, likes: m.isLiked ? m.likes - 1 : m.likes + 1, isLiked: !m.isLiked } : m);
-                            setMomentsFeed(updated);
-                          }}
-                          className={`flex items-center gap-1.5 font-bold ${item.isLiked ? 'text-pink-500' : 'text-slate-400 hover:text-white'}`}
-                        >
-                          <Heart className={`w-4 h-4 ${item.isLiked ? 'fill-pink-500' : ''}`} />
-                          <span>{item.likes.toLocaleString()}</span>
-                        </button>
-
-                        <button 
-                          onClick={() => showToast('Comments drawer opened')}
-                          className="flex items-center gap-1.5 text-slate-400 hover:text-white font-bold"
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                          <span>{item.commentsCount}</span>
-                        </button>
-
-                        <button 
-                          onClick={() => {
-                            if (userCoins < 20) {
-                              showToast('20 coins required to send clip gift');
-                              return;
-                            }
-                            setUserCoins(prev => prev - 20);
-                            showToast(`Sent Rose Gift (20 coins) to @${item.host} for Moment!`);
-                          }}
-                          className="px-3 py-1 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-[10px] flex items-center gap-1 shadow-md"
-                        >
-                          <Gift className="w-3.5 h-3.5" />
-                          Gift Clip
-                        </button>
-                      </div>
+                      <button 
+                        onClick={() => {
+                          if (!q.completed) {
+                            showToast(`Quest task in progress: ${q.progress}`);
+                            return;
+                          }
+                          setUserCoins(prev => prev + q.reward);
+                          showToast(`Claimed +${q.reward} Coins for completing quest!`);
+                        }}
+                        className={`px-3.5 py-2 rounded-2xl text-xs font-bold shrink-0 transition ${q.completed ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-black shadow-lg animate-pulse' : 'bg-slate-800 text-slate-400 cursor-not-allowed'}`}
+                      >
+                        {q.completed ? 'Claim Reward' : 'In Progress'}
+                      </button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* IF HALL OF FAME LEADERBOARD SUBTAB */}
+            {/* LEADERBOARD RANKING SUBTAB */}
             {streamSubTab === 'leaderboard' && (
               <div className="space-y-4">
                 <div className="p-4 rounded-3xl bg-gradient-to-r from-yellow-950/40 via-slate-900 to-amber-950/40 border border-yellow-500/40 flex items-center justify-between flex-wrap gap-2">
@@ -2703,20 +2439,19 @@ export default function App() {
                   <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-2xl border border-slate-800">
                     <button 
                       onClick={() => setLeaderboardTab('donors')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${leaderboardTab === 'donors' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${leaderboardTab === 'donors' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'}`}
                     >
                       Top Donors
                     </button>
                     <button 
                       onClick={() => setLeaderboardTab('earners')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${leaderboardTab === 'earners' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${leaderboardTab === 'earners' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'}`}
                     >
                       Top Hosts
                     </button>
                   </div>
                 </div>
 
-                {/* Leaderboard Ranking Cards */}
                 <div className="space-y-3">
                   {(leaderboardTab === 'donors' ? topDonorsList : topEarnersList).map((item, idx) => (
                     <div key={idx} className="card-3d p-4 rounded-3xl border border-yellow-500/30 bg-slate-900/90 flex items-center justify-between gap-3">
@@ -2739,7 +2474,7 @@ export default function App() {
                       </div>
 
                       <button 
-                        onClick={() => showToast(`View profile of @${item.user}`)}
+                        onClick={() => showToast(`Profile of @${item.user}`)}
                         className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs shrink-0"
                       >
                         Profile
@@ -2750,149 +2485,127 @@ export default function App() {
               </div>
             )}
 
-            {/* IF DAILY QUESTS SUBTAB */}
-            {streamSubTab === 'quests' && (
-              <div className="space-y-4">
-                <div className="p-4 rounded-3xl bg-gradient-to-r from-cyan-950/40 via-slate-900 to-purple-950/40 border border-cyan-500/40 flex items-center justify-between flex-wrap gap-2">
+            {/* 4. GO LIVE PROMINENT BUTTON (دکمه شروع لایو) */}
+            <div className="sticky bottom-20 z-30 flex justify-center py-2 pointer-events-none">
+              <button 
+                onClick={() => setIsHostLiveOpen(true)}
+                className="pointer-events-auto px-8 py-4 rounded-3xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-black text-sm shadow-[0_0_35px_rgba(236,72,153,0.8)] border-2 border-white/40 flex items-center gap-3 hover:scale-105 active:scale-95 transition duration-300 animate-bounce"
+              >
+                <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+                  <Camera className="w-4 h-4 text-white" />
+                </div>
+                <span>🎥 GO LIVE NOW</span>
+              </button>
+            </div>
+
+            {/* 5. STREAMER CONTROL PANEL & EARNINGS DASHBOARD (بخش مخصوص استریمر) */}
+            <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300">
+                    <Crown className="w-5 h-5 text-amber-400" />
+                  </div>
                   <div>
-                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-cyan-400" />
-                      Daily Mission Reward Center
+                    <h3 className="text-xs font-black text-white flex items-center gap-1.5">
+                      Streamer Dashboard & Metrics
+                      <span className="text-[9px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
+                        👑 Level 12 Gold
+                      </span>
                     </h3>
-                    <p className="text-[10px] text-cyan-200">Complete daily stream tasks to claim free coin rewards!</p>
+                    <p className="text-[10px] text-slate-400">Track your live stream performance & 71% USDT payouts</p>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  {dailyQuests.map(q => (
-                    <div key={q.id} className="card-3d p-4 rounded-3xl border border-slate-800 bg-slate-900/90 flex items-center justify-between gap-3">
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <h4 className="text-xs font-bold text-white truncate">{q.title}</h4>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-amber-300 font-bold flex items-center gap-1">
-                            <CoinsIcon className="w-3 h-3 text-amber-400" />
-                            +{q.reward} Coins
-                          </span>
-                          <span className="text-[10px] text-slate-400">Progress: {q.progress}</span>
-                        </div>
-                      </div>
+                <button 
+                  onClick={() => setIsWithdrawModalOpen(true)}
+                  className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs shadow-lg flex items-center gap-1 hover:brightness-110 active:scale-95 transition"
+                >
+                  <DollarSign className="w-4 h-4 text-slate-950" />
+                  Cashout USDT
+                </button>
+              </div>
 
-                      {q.claimed ? (
-                        <span className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-400 text-xs font-bold shrink-0">
-                          Claimed ✓
-                        </span>
-                      ) : (
-                        <button 
-                          onClick={() => {
-                            if (!q.completed) {
-                              showToast(`Task progress: ${q.progress}. Complete task to claim!`);
-                              return;
-                            }
-                            setUserCoins(prev => prev + q.reward);
-                            setDailyQuests(prev => prev.map(item => item.id === q.id ? { ...item, claimed: true } : item));
-                            showToast(`Claimed +${q.reward} free coins reward!`);
-                          }}
-                          className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition ${q.completed ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-black shadow-lg animate-pulse' : 'bg-slate-800 text-slate-400 cursor-not-allowed'}`}
-                        >
-                          {q.completed ? 'Claim Reward' : 'In Progress'}
-                        </button>
-                      )}
-                    </div>
-                  ))}
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {/* Today Earnings */}
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                  <span className="text-[10px] text-slate-400 font-medium">Today Earnings</span>
+                  <p className="text-sm font-black text-emerald-400">$45.00</p>
+                  <span className="text-[9px] text-amber-300 font-mono">2,250 Coins</span>
+                </div>
+
+                {/* Current Live Earnings */}
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                  <span className="text-[10px] text-slate-400 font-medium">Live Earnings</span>
+                  <p className="text-sm font-black text-pink-400">$18.50</p>
+                  <span className="text-[9px] text-amber-300 font-mono">925 Coins</span>
+                </div>
+
+                {/* Followers */}
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                  <span className="text-[10px] text-slate-400 font-medium">Followers</span>
+                  <p className="text-sm font-black text-cyan-400">14.2K</p>
+                  <span className="text-[9px] text-emerald-400 font-mono">+128 Today</span>
+                </div>
+
+                {/* Gifts Received */}
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                  <span className="text-[10px] text-slate-400 font-medium">Total Gifts</span>
+                  <p className="text-sm font-black text-amber-400">3,890</p>
+                  <span className="text-[9px] text-purple-300 font-mono">20+ Types</span>
+                </div>
+
+                {/* Average Viewers */}
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1 col-span-2 sm:col-span-1">
+                  <span className="text-[10px] text-slate-400 font-medium">Avg Viewers</span>
+                  <p className="text-sm font-black text-purple-400">1.8K</p>
+                  <span className="text-[9px] text-amber-300 font-mono">Peak 3.4K</span>
                 </div>
               </div>
-            )}
-            {streamSubTab === 'users' && (
-              <div className="space-y-4">
-                {/* Horizontal Scrollable Filter Bar for Streamers & Hosts */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800/60 no-scrollbar">
-                  <button 
-                    onClick={() => setUserFilter('all')}
-                    className={`px-4 py-2 rounded-2xl text-xs font-bold border shrink-0 transition flex items-center gap-1.5 ${userFilter === 'all' ? 'border-pink-500 bg-pink-500/20 text-pink-300 shadow-[0_0_12px_rgba(255,0,127,0.3)]' : 'border-slate-800 bg-slate-900/80 text-slate-400 hover:text-white'}`}
-                  >
-                    <Users className="w-3.5 h-3.5 text-pink-400" />
-                    All Users
-                  </button>
-                  <button 
-                    onClick={() => setUserFilter('online')}
-                    className={`px-4 py-2 rounded-2xl text-xs font-bold border shrink-0 transition flex items-center gap-1.5 ${userFilter === 'online' ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.3)]' : 'border-slate-800 bg-slate-900/80 text-slate-400 hover:text-white'}`}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Online Users
-                  </button>
-                  <button 
-                    onClick={() => setUserFilter('top')}
-                    className={`px-4 py-2 rounded-2xl text-xs font-bold border shrink-0 transition flex items-center gap-1.5 ${userFilter === 'top' ? 'border-amber-500 bg-amber-500/20 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)]' : 'border-slate-800 bg-slate-900/80 text-slate-400 hover:text-white'}`}
-                  >
-                    <Crown className="w-3.5 h-3.5 text-amber-400" />
-                    Top Streamers
-                  </button>
-                  <button 
-                    onClick={() => setUserFilter('verified')}
-                    className={`px-4 py-2 rounded-2xl text-xs font-bold border shrink-0 transition flex items-center gap-1.5 ${userFilter === 'verified' ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300 shadow-[0_0_12px_rgba(0,243,255,0.3)]' : 'border-slate-800 bg-slate-900/80 text-slate-400 hover:text-white'}`}
-                  >
-                    <BadgeCheck className="w-3.5 h-3.5 text-cyan-400" />
-                    Verified Badges
-                  </button>
+            </div>
+
+            {/* 6. EXCLUSIVE V.LIVE FEATURES (ویژگی‌های متمایز) */}
+            <div className="p-5 rounded-3xl bg-gradient-to-r from-purple-950 via-slate-900 to-pink-950 border border-purple-500/40 space-y-3 shadow-xl">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-400 animate-spin" />
+                <h3 className="text-xs font-black text-white">V.Live Exclusive Features</h3>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-bold text-slate-200">
+                <div className="p-3 rounded-2xl bg-slate-950/80 border border-purple-500/30 flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-pink-400 shrink-0" />
+                  <div>
+                    <p className="text-[11px] text-pink-300">Paid Private Live</p>
+                    <span className="text-[9px] text-slate-400 font-normal">Charge coins/min</span>
+                  </div>
                 </div>
 
-                {/* Users List Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredUsersList.map(user => (
-                    <div key={user.id} className="card-3d p-4 rounded-2xl border border-slate-800 bg-slate-900/80 space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-2xl object-cover border border-slate-700" />
-                          {user.online && (
-                            <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
-                          )}
-                        </div>
+                <div className="p-3 rounded-2xl bg-slate-950/80 border border-cyan-500/30 flex items-center gap-2">
+                  <PhoneCall className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <div>
+                    <p className="text-[11px] text-cyan-300">Paid Video Call</p>
+                    <span className="text-[9px] text-slate-400 font-normal">Instant 1-on-1 call</span>
+                  </div>
+                </div>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <h3 className="text-xs font-bold text-white truncate">{user.name}</h3>
-                            {user.isVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
-                          </div>
-                          <p className="text-[10px] text-slate-400">@{user.username} • <span className="text-pink-400 font-medium">{user.role}</span></p>
-                          <p className="text-[10px] text-slate-500 truncate mt-0.5">{user.bio}</p>
-                        </div>
+                <div className="p-3 rounded-2xl bg-slate-950/80 border border-amber-500/30 flex items-center gap-2">
+                  <Gift className="w-4 h-4 text-amber-400 shrink-0" />
+                  <div>
+                    <p className="text-[11px] text-amber-300">3D Animated Gifts</p>
+                    <span className="text-[9px] text-slate-400 font-normal">Supercars & Jets</span>
+                  </div>
+                </div>
 
-                        {/* Rating Display */}
-                        <div className="text-right shrink-0">
-                          <div className="bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-lg text-[10px] font-bold text-amber-300 flex items-center gap-1">
-                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                            {user.rating || 4.8}
-                          </div>
-                          <p className="text-[9px] text-slate-500 mt-0.5">{user.ratingCount || 12} ratings</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 pt-2 border-t border-slate-800/60">
-                        {/* Direct Chat Button */}
-                        <button 
-                          onClick={() => handleStartNewChatWithUser(user)}
-                          className="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center justify-center gap-1.5 transition"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5 text-pink-400" />
-                          Message
-                        </button>
-
-                        {/* Private Video Call Button for Female Streamers */}
-                        {user.gender === 'female' && (
-                          <button 
-                            onClick={() => handleStartPrivateCall(user)}
-                            className="flex-1 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold text-white flex items-center justify-center gap-1.5 shadow-md hover:brightness-110 transition"
-                          >
-                            <PhoneCall className="w-3.5 h-3.5 text-white" />
-                            Private Call ({user.rate})
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                <div className="p-3 rounded-2xl bg-slate-950/80 border border-emerald-500/30 flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div>
+                    <p className="text-[11px] text-emerald-300">AI Translator</p>
+                    <span className="text-[9px] text-slate-400 font-normal">Live chat translation</span>
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
+
           </div>
         )}
 
