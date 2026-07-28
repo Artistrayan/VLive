@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Video, Shield, ShieldCheck, Star, Wallet, User, Lock, Award, Calendar, 
   MessageSquare, Send, Camera, Mic, MicOff, Settings, Search, Check, 
-  RefreshCw, LogOut, Flame, Heart, Crown, Plus, X, Globe, Sparkles, 
+  RefreshCw, LogOut, Flame, Heart, Crown, Plus, X, Globe, Sparkles, Coins,
   Sliders, ChevronLeft, ChevronRight, Eye, Radio, CreditCard, Gift, 
   PhoneCall, Play, Image, Layers, CheckCircle, AlertCircle, Bot,
   Key, Mail, Phone, Smartphone, Copy, QrCode, ArrowRight, ExternalLink, SwitchCamera,
