@@ -9,7 +9,8 @@ import {
   TrendingUp, UserCheck, UserX, Ban, DollarSign, Activity, Filter, Users,
   ThumbsUp, UserPlus, Download, Disc, Gem, CircleDot, Wine, Car, Zap, Box, 
   Anchor, Rocket, Smile, Flower, AlertTriangle, Edit3, HeartHandshake,
-  CheckCircle2, BadgeCheck, Languages, Clock, ArrowUpRight, Bell, Share2, Compass, MapPin, CheckCircle2 as CheckIcon
+  CheckCircle2, BadgeCheck, Languages, Clock, ArrowUpRight, Bell, Share2, Compass, MapPin, CheckCircle2 as CheckIcon,
+  Home, BarChart2, Tv, Megaphone, Target
 } from 'lucide-react';
 
 // PRESET HIGH-RES AVATARS FOR PROFILE EDITING
@@ -319,6 +320,10 @@ export default function App() {
   const [userFilter, setUserFilter] = useState('all');
   
   const [toastMessage, setToastMessage] = useState(null);
+  const [earningsTimeframe, setEarningsTimeframe] = useState('daily');
+  const [paidVoiceRate, setPaidVoiceRate] = useState(5);
+  const [paidVideoRate, setPaidVideoRate] = useState(10);
+  const [paidMessageRate, setPaidMessageRate] = useState(3);
 
   // Host Crypto Wallet State for Female Streamers
   const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
@@ -2903,130 +2908,491 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 3: WALLET & USDT PAYOUTS */}
-        {activeTab === 'wallet' && (
+                {/* TAB 3: COMPLETE REDESIGNED EARNINGS & MONETIZATION DASHBOARD */}
+        {(activeTab === 'earnings' || activeTab === 'wallet') && (
           <div className="space-y-6">
-            {/* Wallet Overview Header */}
-            <div className="card-3d p-6 rounded-3xl border border-pink-500/40 bg-slate-950/90 relative overflow-hidden space-y-4">
-              <div className="flex items-center justify-between">
+
+            {/* 1. TOP HEADER: TOTAL BALANCE & QUICK ACTIONS */}
+            <div className="card-3d p-6 rounded-3xl border border-amber-500/40 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/40 relative overflow-hidden space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Account Balance</span>
-                  <div className="flex items-center gap-2 mt-1">
-                    <CoinsIcon className="w-7 h-7 text-amber-400" />
-                    <h2 className="text-3xl font-black text-amber-300">{userCoins.toLocaleString()}</h2>
-                    <span className="text-xs text-slate-400">coins</span>
+                  <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                    <DollarSign className="w-3.5 h-3.5" />
+                    Total Account Balance (موجودی کل)
+                  </span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <h2 className="text-4xl font-black text-white">$125.80</h2>
+                    <span className="text-xs text-amber-300 font-bold bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
+                      {userCoins.toLocaleString()} Coins
+                    </span>
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">USD Value</span>
-                  <p className="text-xl font-bold text-emerald-400 mt-1">${(userCoins / 50).toFixed(2)} USDT</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button 
+                    onClick={() => setIsWithdrawModalOpen(true)}
+                    className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 transition"
+                  >
+                    <ArrowUpRight className="w-4 h-4" />
+                    💸 Withdraw
+                  </button>
+
+                  <button 
+                    onClick={() => setIsDepositModalOpen(true)}
+                    className="px-4 py-2.5 rounded-2xl btn-neon-pink text-xs font-bold flex items-center gap-1.5 shadow-lg hover:scale-105 transition"
+                  >
+                    <Plus className="w-4 h-4" />
+                    ➕ Deposit
+                  </button>
+
+                  <button 
+                    onClick={() => showToast('Displaying complete TRC20 transaction ledger')}
+                    className="p-2.5 rounded-2xl bg-slate-900 border border-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-800"
+                    title="Transaction History"
+                  >
+                    <Clock className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800">
-                <button 
-                  onClick={() => setIsDepositModalOpen(true)}
-                  className="py-3 rounded-2xl btn-neon-pink text-xs font-bold flex items-center justify-center gap-2 shadow-lg"
-                >
-                  <Plus className="w-4 h-4" />
-                  Deposit Tether USDT
-                </button>
-
-                <button 
-                  onClick={() => setIsWithdrawModalOpen(true)}
-                  className="py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg hover:brightness-110"
-                >
-                  <ArrowUpRight className="w-4 h-4" />
-                  Request USDT Payout
-                </button>
+              {/* Host Net Share Banner */}
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between text-xs">
+                <span className="text-amber-200 font-semibold flex items-center gap-1.5">
+                  <Crown className="w-4 h-4 text-amber-400" />
+                  71% Host Streamer Payout Share Rate Active
+                </span>
+                <span className="text-emerald-400 font-black">Net Claimable: $124.30 USDT</span>
               </div>
             </div>
 
-            {/* FEMALE HOST EARNINGS CALCULATOR & 71% PAYOUT BREAKDOWN */}
-            <div className="card-3d p-5 rounded-3xl border border-cyan-500/40 bg-slate-900/80 space-y-4">
-              <div className="flex items-center justify-between">
+            {/* 2. STATS CARDS: TODAY, WEEK, MONTH, TOTAL (📈 درآمد امروز) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1 hover:border-pink-500/40 transition">
+                <span className="text-[10px] text-slate-400 font-medium">درآمد امروز (Today)</span>
+                <p className="text-lg font-black text-pink-400">$45.80</p>
+                <span className="text-[9px] text-amber-300 font-semibold">2,290 Coins</span>
+              </div>
+
+              <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1 hover:border-purple-500/40 transition">
+                <span className="text-[10px] text-slate-400 font-medium">درآمد هفته (This Week)</span>
+                <p className="text-lg font-black text-purple-400">$380.00</p>
+                <span className="text-[9px] text-amber-300 font-semibold">19,000 Coins</span>
+              </div>
+
+              <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1 hover:border-cyan-500/40 transition">
+                <span className="text-[10px] text-slate-400 font-medium">درآمد ماه (This Month)</span>
+                <p className="text-lg font-black text-cyan-400">$1,250.00</p>
+                <span className="text-[9px] text-amber-300 font-semibold">62,500 Coins</span>
+              </div>
+
+              <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1 hover:border-amber-500/40 transition">
+                <span className="text-[10px] text-slate-400 font-medium">درآمد کل (Total All-Time)</span>
+                <p className="text-lg font-black text-amber-400">$8,450.00</p>
+                <span className="text-[9px] text-amber-300 font-semibold">422,500 Coins</span>
+              </div>
+            </div>
+
+            {/* 3. VISUAL EARNINGS CHART & TIER LEVEL (📊 نمودار درآمد & 🎯 سطح درآمد) */}
+            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
-                    <DollarSign className="w-5 h-5" />
+                  <BarChart2 className="w-5 h-5 text-amber-400" />
+                  <h3 className="text-xs font-bold text-white">📊 نمودار درآمد & 🎯 سطح درآمد</h3>
+                </div>
+
+                {/* Chart Filter Tabs */}
+                <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-[10px] font-bold">
+                  {['daily', 'weekly', 'monthly'].map(tf => (
+                    <button
+                      key={tf}
+                      onClick={() => setEarningsTimeframe(tf)}
+                      className={`px-3 py-1 rounded-lg capitalize transition ${earningsTimeframe === tf ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      {tf}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bar Chart Simulation */}
+              <div className="h-28 flex items-end justify-between gap-2 pt-4 px-2 bg-slate-950 rounded-2xl border border-slate-800/80">
+                {[
+                  { label: 'Mon', val: 40 },
+                  { label: 'Tue', val: 65 },
+                  { label: 'Wed', val: 30 },
+                  { label: 'Thu', val: 85 },
+                  { label: 'Fri', val: 95 },
+                  { label: 'Sat', val: 70 },
+                  { label: 'Sun', val: 100 }
+                ].map((bar, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                    <span className="text-[8px] font-bold text-amber-300">{bar.val}$</span>
+                    <div 
+                      className="w-full bg-gradient-to-t from-amber-600 via-pink-500 to-purple-500 rounded-t-lg transition-all duration-500" 
+                      style={{ height: `${bar.val}%` }}
+                    />
+                    <span className="text-[9px] text-slate-500">{bar.label}</span>
                   </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-white">Female Streamer Host Earnings Dashboard</h3>
-                    <p className="text-[10px] text-cyan-300">Competitive 71% Payout Rate (1% Higher than competitors!)</p>
+                ))}
+              </div>
+
+              {/* Earnings Tier Progression (Bronze, Silver, Gold, Diamond) */}
+              <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
+                <span className="text-[10px] text-slate-400 font-bold block">🎯 Current Income Level: Gold Tier</span>
+                <div className="grid grid-cols-4 gap-2 text-center text-[10px]">
+                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 opacity-60">
+                    <span className="block text-lg">🥉</span>
+                    <span className="font-bold text-amber-700">Bronze</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 opacity-75">
+                    <span className="block text-lg">🥈</span>
+                    <span className="font-bold text-slate-300">Silver</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-amber-500/20 border-2 border-amber-400 text-amber-300 font-black shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                    <span className="block text-lg">🥇</span>
+                    <span>Gold (Active)</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 opacity-60">
+                    <span className="block text-lg">💎</span>
+                    <span className="font-bold text-cyan-400">Diamond</span>
                   </div>
                 </div>
-                <span className="bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  71% Host Share
+              </div>
+            </div>
+
+            {/* 4. GIFTS REVENUE ANALYTICS (🎁 هدایا) */}
+            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                  <Gift className="w-4 h-4 text-pink-400" />
+                  🎁 آمار هدایای دریافتی (Gifts Revenue)
+                </h3>
+                <span className="text-[10px] text-pink-400 font-bold bg-pink-500/10 px-2 py-0.5 rounded-full border border-pink-500/20">
+                  1,840 Total Gifts Received
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800">
-                  <span className="text-[9px] text-slate-400">Gross Coins Earned</span>
-                  <p className="text-sm font-bold text-amber-300 mt-0.5">{grossCoinsEarned.toLocaleString()}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
+                  <span className="text-[10px] text-slate-400">تعداد هدایا (Gift Count)</span>
+                  <p className="text-base font-black text-white mt-1">1,840 Items</p>
                 </div>
-                <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800">
-                  <span className="text-[9px] text-slate-400">Host Net Share (71%)</span>
-                  <p className="text-sm font-bold text-emerald-400 mt-0.5">{hostNetCoins.toLocaleString()} coins</p>
-                </div>
-                <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800">
-                  <span className="text-[9px] text-slate-400">Gross USD Value</span>
-                  <p className="text-sm font-bold text-white mt-0.5">${hostUsdtGrossValue} USDT</p>
-                </div>
-                <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800">
-                  <span className="text-[9px] text-slate-400">Net Claimable (After Gas)</span>
-                  <p className="text-sm font-bold text-cyan-300 mt-0.5">${hostUsdtNetClaimable} USDT</p>
-                </div>
-              </div>
 
-              <div className="p-3 bg-cyan-950/40 border border-cyan-500/30 rounded-2xl text-[10px] text-cyan-200 space-y-1">
-                <p className="font-bold flex items-center gap-1">
-                  <CheckIcon className="w-3.5 h-3.5 text-cyan-400" />
-                  Host Withdrawal Rules:
-                </p>
-                <ul className="list-disc list-inside space-y-0.5 text-slate-300">
-                  <li>Minimum Withdrawal: <strong>$50 USDT (2,500 coins)</strong></li>
-                  <li>Frequency: <strong>1 Payout Request per Day</strong></li>
-                  <li>Blockchain Gas Fee: <strong>$1.50 TRC20 fee</strong> deducted upon payout dispatch</li>
-                  <li>Admin Review: Approval by management before wallet transfer</li>
-                </ul>
+                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
+                  <span className="text-[10px] text-slate-400">ارزش کل هدایا (Gift Value)</span>
+                  <p className="text-base font-black text-amber-400 mt-1">$5,240.00 USD</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
+                  <span className="text-[10px] text-slate-400">بیشترین هدیه دهنده (Top Sender)</span>
+                  <p className="text-base font-black text-cyan-300 mt-1 flex items-center justify-center gap-1">
+                    <Crown className="w-4 h-4 text-amber-400 fill-amber-400" />
+                    Soren 🔥 (10,000 Coins)
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Recent Wallet Transactions */}
-            <div className="card-3d p-4 rounded-3xl border border-slate-800 bg-slate-900/60 space-y-3">
-              <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                <Clock className="w-4 h-4 text-pink-400" />
-                Recent Wallet Transactions
+            {/* 5. LIVE BROADCAST EARNINGS (📺 درآمد از لایو) */}
+            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                  <Tv className="w-4 h-4 text-purple-400" />
+                  📺 درآمد از پخش زنده لایو (Live Broadcast Income)
+                </h3>
+                <span className="text-[10px] text-purple-300 font-bold bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">
+                  32 Hours Streamed
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
+                  <span className="text-[9px] text-slate-400">تعداد بینندگان (Viewers)</span>
+                  <p className="text-sm font-black text-white mt-1">48.5K Total</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
+                  <span className="text-[9px] text-slate-400">زمان لایو (Live Hours)</span>
+                  <p className="text-sm font-black text-purple-400 mt-1">32 Hours</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
+                  <span className="text-[9px] text-slate-400">درآمد هر ساعت</span>
+                  <p className="text-sm font-black text-emerald-400 mt-1">$18.50 / Hr</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
+                  <span className="text-[9px] text-slate-400">میانگین درآمد لایو</span>
+                  <p className="text-sm font-black text-amber-400 mt-1">$65.00 / Session</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 6. AD REVENUE SECTION (📢 درآمد از تبلیغات) */}
+            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-pink-500/30 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                  <Megaphone className="w-4 h-4 text-pink-400" />
+                  📢 کسب درآمد از ویدئو و تبلیغات (Ad Revenue)
+                </h3>
+                <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  Rewarded Video Ads
+                </span>
+              </div>
+
+              {/* Watch Ad Instant Reward Buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-950/60 to-purple-950/60 border border-pink-500/40 flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Play className="w-4 h-4 text-pink-400 fill-pink-400" />
+                      Watch Ad (+20 Coins)
+                    </h4>
+                    <p className="text-[10px] text-slate-300">Watch a short 15-sec video sponsor ad</p>
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      setUserCoins(prev => prev + 20);
+                      showToast('🎉 Congratulations! You earned +20 Coins for watching the ad!');
+                    }}
+                    className="px-4 py-2 rounded-xl btn-neon-pink text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition"
+                  >
+                    Watch Ad
+                  </button>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/60 to-slate-950 border border-purple-500/40 flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Target className="w-4 h-4 text-purple-400" />
+                      Watch 5 Ads Today (Reward: 100 Coins)
+                    </h4>
+                    <p className="text-[10px] text-slate-300">Daily Ad Quest Progress: 3 / 5 Watched</p>
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      setUserCoins(prev => prev + 100);
+                      showToast('🎉 Quest Complete! +100 Coins added to your wallet!');
+                    }}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition"
+                  >
+                    Claim 100 Coins
+                  </button>
+                </div>
+              </div>
+
+              {/* Offerwall Tasks */}
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                <h4 className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  Offerwall Sponsored Missions (مأموریت‌های تبلیغاتی)
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">نصب برنامه جدید</p>
+                      <span className="text-[10px] text-emerald-400 font-bold">+500 Coins</span>
+                    </div>
+                    <button onClick={() => showToast('Starting offerwall app installation...')} className="px-2.5 py-1 rounded-lg bg-pink-600 text-white font-bold text-[10px]">Start</button>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">ثبت‌نام در سایت</p>
+                      <span className="text-[10px] text-emerald-400 font-bold">+300 Coins</span>
+                    </div>
+                    <button onClick={() => showToast('Starting registration task...')} className="px-2.5 py-1 rounded-lg bg-pink-600 text-white font-bold text-[10px]">Start</button>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">انجام نظر‌سنجی</p>
+                      <span className="text-[10px] text-emerald-400 font-bold">+250 Coins</span>
+                    </div>
+                    <button onClick={() => showToast('Starting survey mission...')} className="px-2.5 py-1 rounded-lg bg-pink-600 text-white font-bold text-[10px]">Start</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 7. REFERRAL COMMISSION & INVITE FRIENDS (👥 درآمد از دعوت دوستان) */}
+            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                  <Users className="w-4 h-4 text-cyan-400" />
+                  👥 درآمد از دعوت دوستان (Invite Friends & Earn 20%)
+                </h3>
+                <span className="text-[10px] text-cyan-300 font-bold bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
+                  20% Commission Rate
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-300 leading-relaxed">
+                دعوت از دوستان به V.Live! اگر دوست شما ثبت‌نام کند یا سکه و اشتراک VIP بخرد، <strong>۲۰٪ کمیسیون دائمی</strong> مستقیم به کیف پول شما واریز می‌شود.
+              </p>
+
+              <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+                <span className="text-xs font-mono text-pink-300 truncate">https://vlive.app/invite?ref={currentUsername}</span>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://vlive.app/invite?ref=${currentUsername}`);
+                    showToast('Referral invite link copied to clipboard!');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  Copy Link
+                </button>
+              </div>
+            </div>
+
+            {/* 8. PAID PRIVATE CALLS & MESSAGES SETTINGS (🎥 تماس و پیام خصوصی پولی) */}
+            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 text-xs">
+              <h3 className="font-bold text-white flex items-center gap-2">
+                <PhoneCall className="w-4 h-4 text-emerald-400" />
+                🎥 تنظیم قیمت تماس و پیام خصوصی (Paid Voice/Video Rates)
               </h3>
 
-              <div className="space-y-2">
-                {transactionsList.map(tx => (
-                  <div key={tx.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between text-xs">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className={`font-bold capitalize ${tx.type === 'deposit' ? 'text-emerald-400' : 'text-pink-400'}`}>
-                          {tx.type}
-                        </span>
-                        <span className="text-slate-400 text-[10px]">({tx.method})</span>
-                      </div>
-                      <p className="text-[9px] text-slate-500 mt-0.5">{tx.date} • TX: {tx.txHash}</p>
-                    </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
+                  <label className="text-slate-400 text-[10px] block">Voice Call Rate</label>
+                  <div className="flex items-center gap-1">
+                    <input 
+                      type="number" 
+                      value={paidVoiceRate}
+                      onChange={e => setPaidVoiceRate(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1 text-white font-bold text-xs"
+                    />
+                    <span className="text-[10px] text-amber-300 shrink-0">Coins/Min</span>
+                  </div>
+                </div>
 
-                    <div className="text-right">
-                      <span className="font-bold text-white">{tx.amount}</span>
-                      <p className={`text-[9px] font-bold mt-0.5 capitalize ${tx.status === 'approved' ? 'text-emerald-400' : tx.status === 'rejected' ? 'text-red-400' : 'text-amber-400'}`}>
-                        {tx.status}
-                      </p>
+                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
+                  <label className="text-slate-400 text-[10px] block">Video Call Rate</label>
+                  <div className="flex items-center gap-1">
+                    <input 
+                      type="number" 
+                      value={paidVideoRate}
+                      onChange={e => setPaidVideoRate(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1 text-white font-bold text-xs"
+                    />
+                    <span className="text-[10px] text-amber-300 shrink-0">Coins/Min</span>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
+                  <label className="text-slate-400 text-[10px] block">Message Price</label>
+                  <div className="flex items-center gap-1">
+                    <input 
+                      type="number" 
+                      value={paidMessageRate}
+                      onChange={e => setPaidMessageRate(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1 text-white font-bold text-xs"
+                    />
+                    <span className="text-[10px] text-amber-300 shrink-0">Coins/Msg</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 9. GIFT VALUATION PRICE TABLE (🎁 جدول قیمت هدایا) */}
+            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                  <Gift className="w-4 h-4 text-amber-400" />
+                  🎁 جدول هدایا و ارزش سکه‌ها (Gifts Catalog & Coin Values)
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {[
+                  { name: 'Red Rose', icon: '🌹', coins: 10, usd: '$0.20' },
+                  { name: 'Red Heart', icon: '❤️', coins: 50, usd: '$1.00' },
+                  { name: 'Shining Diamond', icon: '💎', coins: 500, usd: '$10.00' },
+                  { name: 'Royal Crown', icon: '👑', coins: 2500, usd: '$50.00' },
+                  { name: 'Sports Car', icon: '🏎️', coins: 5000, usd: '$100.00' },
+                  { name: 'Gold Vault', icon: '📦', coins: 10000, usd: '$200.00' },
+                  { name: 'Private Jet', icon: '🚀', coins: 25000, usd: '$500.00' },
+                  { name: 'Island Resort', icon: '🏝️', coins: 50000, usd: '$1,000.00' }
+                ].map((g, i) => (
+                  <div key={i} className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center space-y-1">
+                    <span className="text-2xl block">{g.icon}</span>
+                    <p className="text-[11px] font-bold text-white">{g.name}</p>
+                    <div className="flex items-center justify-center gap-1 text-[10px]">
+                      <span className="text-amber-300 font-black">{g.coins} Coins</span>
+                      <span className="text-slate-400">({g.usd})</span>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* 10. DAILY QUESTS (🏆 مأموریت روزانه) */}
+            <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+              <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                <Award className="w-4 h-4 text-amber-400" />
+                🏆 مأموریت روزانه (Daily Quests & Rewards)
+              </h3>
+
+              <div className="space-y-2 text-xs">
+                {dailyQuests.map((quest) => (
+                  <div key={quest.id} className="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">{quest.title}</p>
+                      <span className="text-[10px] text-amber-300 font-bold">Reward: +{quest.reward} Coins</span>
+                    </div>
+
+                    {quest.claimed ? (
+                      <span className="px-3 py-1 rounded-xl bg-slate-800 text-slate-400 font-bold text-[10px]">Claimed ✅</span>
+                    ) : (
+                      <button 
+                        onClick={() => {
+                          setUserCoins(prev => prev + quest.reward);
+                          setDailyQuests(prev => prev.map(q => q.id === quest.id ? { ...q, claimed: true } : q));
+                          showToast(`Claimed +${quest.reward} Coins reward!`);
+                        }}
+                        className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[10px] shadow-md"
+                      >
+                        Claim Reward
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 11. PLATFORM AD REVENUE SYSTEM (📢 درآمد برنامه از تبلیغات) */}
+            <div className="card-3d p-5 rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 border border-indigo-500/30 space-y-3 text-xs">
+              <h3 className="font-bold text-white flex items-center gap-2">
+                <Megaphone className="w-4 h-4 text-indigo-400" />
+                📢 سیستم درآمدزدایی ساختاری اپلیکیشن از تبلیغات (Platform Ad Engine)
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px]">
+                <div className="p-3 rounded-2xl bg-slate-950/80 border border-indigo-500/20">
+                  <h4 className="font-bold text-indigo-300">1. Rewarded Video Ads</h4>
+                  <p className="text-slate-400 text-[10px]">تماشای تبلیغات اختیاری توسط کاربران جهت دریافت سکه رایگان.</p>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-950/80 border border-indigo-500/20">
+                  <h4 className="font-bold text-indigo-300">2. Interstitial Ads</h4>
+                  <p className="text-slate-400 text-[10px]">تبلیغات تمام‌صفحه بعد از خروج از لایو به صورت غیرمزاحم.</p>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-950/80 border border-indigo-500/20">
+                  <h4 className="font-bold text-indigo-300">3. Business Sponsors</h4>
+                  <p className="text-slate-400 text-[10px]">اسپانسرشیپ استریمرها و تبلیغات بنری برندها در هدر.</p>
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
 
-                {/* TAB 4: REDESIGNED COMPLETE PROFILE */}
+{/* TAB 4: REDESIGNED COMPLETE PROFILE */}
         {activeTab === 'profile' && (
           <div className="space-y-6">
 
@@ -3748,59 +4114,57 @@ export default function App() {
 
       </main>
 
-      {/* BOTTOM NAVIGATION BAR */}
+            {/* BOTTOM NAVIGATION BAR (5 MAIN TABS) */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/80 px-4 py-2 flex items-center justify-around">
-        {/* 1. Home */}
+        {/* 1. Home (🏠) */}
         <button 
-          onClick={() => setActiveTab('streams')}
-          className={`flex flex-col items-center gap-0.5 ${activeTab === 'streams' ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'}`}
+          onClick={() => {
+            setActiveTab('streams');
+            setStreamSubTab('lives');
+          }}
+          className={`flex flex-col items-center gap-0.5 ${activeTab === 'streams' && streamSubTab === 'lives' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
         >
-          <Video className="w-5 h-5" />
-          <span className="text-[9px] font-bold">Home</span>
+          <Home className="w-5 h-5" />
+          <span className="text-[9px]">Home</span>
         </button>
 
-        {/* 2. Discover */}
+        {/* 2. Discover (🔍) */}
         <button 
           onClick={() => {
             setActiveTab('streams');
             setStreamSubTab('users');
           }}
-          className={`flex flex-col items-center gap-0.5 ${activeTab === 'streams' && streamSubTab === 'users' ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'}`}
+          className={`flex flex-col items-center gap-0.5 ${activeTab === 'streams' && streamSubTab === 'users' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
         >
           <Compass className="w-5 h-5" />
-          <span className="text-[9px] font-bold">Discover</span>
+          <span className="text-[9px]">Discover</span>
         </button>
 
-        {/* 3. CENTER NEON FLOATING ACTION BUTTON (FAB) */}
+        {/* 3. Live Broadcast Center FAB (🎥) */}
         <button 
           onClick={handleStartLiveStream}
           className="relative -top-5 w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition group"
           title="Go Live"
         >
-          <Plus className="w-7 h-7 font-black group-hover:rotate-90 transition duration-300" />
+          <Video className="w-6 h-6 font-black group-hover:scale-110 transition duration-300" />
         </button>
 
-        {/* 4. Messages */}
+        {/* 4. Earnings (💰) */}
         <button 
-          onClick={() => setActiveTab('messages')}
-          className={`flex flex-col items-center gap-0.5 relative ${activeTab === 'messages' ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'}`}
+          onClick={() => setActiveTab('earnings')}
+          className={`flex flex-col items-center gap-0.5 ${activeTab === 'earnings' || activeTab === 'wallet' ? 'text-amber-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
         >
-          <MessageSquare className="w-5 h-5" />
-          <span className="text-[9px] font-bold">Messages</span>
-          {totalUnreadMessages > 0 && (
-            <span className="absolute -top-1 -right-2 bg-pink-600 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center">
-              {totalUnreadMessages}
-            </span>
-          )}
+          <DollarSign className="w-5 h-5" />
+          <span className="text-[9px]">Earnings</span>
         </button>
 
-        {/* 5. Profile */}
+        {/* 5. Profile (👤) */}
         <button 
           onClick={() => setActiveTab('profile')}
-          className={`flex flex-col items-center gap-0.5 ${activeTab === 'profile' ? 'text-pink-400' : 'text-slate-500 hover:text-slate-300'}`}
+          className={`flex flex-col items-center gap-0.5 ${activeTab === 'profile' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
         >
           <User className="w-5 h-5" />
-          <span className="text-[9px] font-bold">Profile</span>
+          <span className="text-[9px]">Profile</span>
         </button>
       </nav>
 
