@@ -638,7 +638,98 @@ export default function App() {
 
   // Admin Panel Modal State
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
-  const [adminActiveTab, setAdminActiveTab] = useState('overview');
+  const [adminActiveTab, setAdminActiveTab] = useState('dashboard'); // 20 sections
+
+  // REDESIGNED ADMIN DASHBOARD STATES
+  const [adminGlobalSearch, setAdminGlobalSearch] = useState('');
+  
+  // Users Management State
+  const [adminUsersList, setAdminUsersList] = useState([
+    { id: 1, name: 'Sahar Miller', username: 'sahar_m', email: 'sahar@vlive.com', coins: 142000, status: 'Active', isVerified: true, role: 'User', reportsCount: 0, avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80' },
+    { id: 2, name: 'Ali Reza', username: 'ali_streamer', email: 'ali@vlive.com', coins: 89000, status: 'Active', isVerified: true, role: 'Streamer', reportsCount: 1, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80' },
+    { id: 3, name: 'Spam Account 99', username: 'spambot99', email: 'spam@bot.com', coins: 0, status: 'Banned', isVerified: false, role: 'User', reportsCount: 12, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80' },
+    { id: 4, name: 'Elena Rostova', username: 'elena_r', email: 'elena@vlive.com', coins: 250000, status: 'Active', isVerified: true, role: 'VIP User', reportsCount: 0, avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80' }
+  ]);
+
+  // Live Streams Management State
+  const [adminLivesList, setAdminLivesList] = useState([
+    { id: 1042, streamer: 'Elena Rostova', title: 'Late Night Acoustic Music Session 🎵', viewers: 1840, category: 'Music', duration: '1h 24m', status: 'Live' },
+    { id: 1043, streamer: 'Ali Reza', title: 'Gaming Championship Finals 🎮', viewers: 920, category: 'Gaming', duration: '45m', status: 'Live' },
+    { id: 1044, streamer: 'Sahar Miller', title: 'Chat & Chill Coffee Time ☕', viewers: 410, category: 'Talk', duration: '12m', status: 'Live' }
+  ]);
+
+  // Reports Management State
+  const [adminReportsList, setAdminReportsList] = useState([
+    { id: 801, category: 'Harassment', reason: 'Abusive language in live chat', targetUser: '@spambot99', reportedBy: '@user_102', time: '10 min ago', status: 'Pending' },
+    { id: 802, category: 'Inappropriate Content', reason: 'NSFW image avatar', targetUser: '@unknown_99', reportedBy: '@sahar_m', time: '25 min ago', status: 'Pending' },
+    { id: 803, category: 'Spam', reason: 'Repeated promotional link spamming', targetUser: '@spambot99', reportedBy: '@ali_streamer', time: '1 hr ago', status: 'Approved' }
+  ]);
+  const [adminReportCategoryFilter, setAdminReportCategoryFilter] = useState('All');
+
+  // Wallet & Withdrawals State
+  const [adminWithdrawalsList, setAdminWithdrawalsList] = useState([
+    { id: 'W-901', user: 'Ali Reza (@ali_streamer)', amount: '$500 USDT', method: 'Tether TRC20', txHash: '0x8f9a...3b21', time: '15 min ago', status: 'Pending' },
+    { id: 'W-902', user: 'Elena Rostova (@elena_r)', amount: '$1,200 USDT', method: 'Tether TRC20', txHash: '0x1c4d...9a04', time: '2 hrs ago', status: 'Approved' }
+  ]);
+
+  // Gifts Catalog Admin State
+  const [newAdminGiftName, setNewAdminGiftName] = useState('');
+  const [newAdminGiftCoins, setNewAdminGiftCoins] = useState('');
+
+  // VIP Subscription Plans Admin State
+  const [adminVipPlans, setAdminVipPlans] = useState([
+    { id: 'monthly', title: 'VIP Monthly', priceCoins: 500, priceUsdt: '$2.50', status: 'Active' },
+    { id: 'quarterly', title: 'VIP 3 Months', priceCoins: 1200, priceUsdt: '$6.00', status: 'Active' },
+    { id: 'annual', title: 'VIP Annual', priceCoins: 4000, priceUsdt: '$20.00', status: 'Active' }
+  ]);
+
+  // Ads & Banners Admin State
+  const [adminAdsList, setAdminAdsList] = useState([
+    { id: 1, title: 'Summer Coin Discount 30%', type: 'Banner', location: 'Home Hero', clicks: 4820, status: 'Active' },
+    { id: 2, title: 'Watch Video & Get 50 Free Coins', type: 'Rewarded Video', location: 'Wallet Page', clicks: 12900, status: 'Active' }
+  ]);
+
+  // Events & Competitions Admin State
+  const [adminEventsList, setAdminEventsList] = useState([
+    { id: 1, title: 'Summer Streamer Cup 2026 🏆', prizePool: '$10,000 USDT', participants: 48, status: 'Ongoing' },
+    { id: 2, title: 'Top Gifter Leaderboard Challenge 🎁', prizePool: '500,000 Coins', participants: 120, status: 'Upcoming' }
+  ]);
+
+  // Notification Broadcast State
+  const [adminNotifTitle, setAdminNotifTitle] = useState('');
+  const [adminNotifBody, setAdminNotifBody] = useState('');
+  const [adminNotifCategory, setAdminNotifCategory] = useState('Update');
+
+  // Support Tickets State
+  const [adminTicketsList, setAdminTicketsList] = useState([
+    { id: 'T-101', user: 'Sahar Miller', subject: 'Coin Purchase Not Credited', category: 'Wallet', status: 'Open', message: 'I bought 5000 coins via TRC20 but balance did not update automatically.' },
+    { id: 'T-102', user: 'Ali Reza', subject: 'Stream Key Connection Drop', category: 'Live', status: 'Open', message: 'Live stream disconnected twice during last broadcast.' }
+  ]);
+
+  // Admin Roles & Permissions State
+  const [adminRolesList, setAdminRolesList] = useState([
+    { name: 'Rayan Admin', handle: '@tattoo_rayan', role: 'Super Admin', access: 'All Modules' },
+    { name: 'Mod Sarah', handle: '@sarah_mod', role: 'Moderator', access: 'Live & Reports Only' },
+    { name: 'Finance Agent', handle: '@finance_vlive', role: 'Finance Manager', access: 'Wallet & Payouts Only' }
+  ]);
+
+  // System Settings State
+  const [adminMaintenanceMode, setAdminMaintenanceMode] = useState(false);
+  const [adminPlatformFee, setAdminPlatformFee] = useState('15%');
+
+  // AI Moderation Rules State
+  const [adminAiBadImages, setAdminAiBadImages] = useState(true);
+  const [adminAiOffensiveText, setAdminAiOffensiveText] = useState(true);
+  const [adminAiSpamScore, setAdminAiSpamScore] = useState(true);
+  const [adminAiAutoWarn, setAdminAiAutoWarn] = useState(true);
+
+  // System Audit Logs Feed State
+  const [adminLogsList, setAdminLogsList] = useState([
+    { time: '12:15', log: 'Admin deleted Live #1040 for Terms violation' },
+    { time: '12:30', log: 'User @spambot99 banned by Rayan Admin' },
+    { time: '13:05', log: 'Withdrawal #W-902 approved ($1,200 USDT)' },
+    { time: '13:40', log: 'System Backup #BK-20260728 successfully stored' }
+  ]);
 
   // KYC & Gender Verification Modal State
   const [isKycModalOpen, setIsKycModalOpen] = useState(false);
@@ -7984,45 +8075,790 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 8: ADMIN MANAGEMENT PANEL */}
+      {/* MODAL 8: COMPLETE REDESIGNED 20-SECTION GLASSMORPHISM ADMIN PANEL */}
       {isAdminPanelOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl card-3d p-6 border border-amber-500/50 bg-slate-900 rounded-3xl space-y-4 max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h2 className="text-sm font-bold text-amber-300 flex items-center gap-2">
-                <Shield className="w-5 h-5 text-amber-400" />
-                Super Admin Management Dashboard
-              </h2>
-              <button onClick={() => setIsAdminPanelOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
+          <div className="w-full max-w-5xl card-3d p-4 sm:p-6 border border-amber-500/50 bg-slate-900/95 rounded-3xl space-y-4 max-h-[92vh] flex flex-col shadow-[0_0_80px_rgba(245,158,11,0.25)]">
+            
+            {/* TOP HEADER */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-slate-950 font-black shadow-lg">
+                  <ShieldCheck className="w-6 h-6 animate-pulse" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-amber-300 tracking-wide flex items-center gap-2">
+                    <span>👑 Super Admin Dashboard (پنل مدیریت ارشد)</span>
+                  </h2>
+                  <p className="text-[11px] text-slate-400">Complete control panel for user moderation, streams, wallet & platform security</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Global Search Bar */}
+                <div className="relative flex-1 sm:w-56">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={adminGlobalSearch}
+                    onChange={e => setAdminGlobalSearch(e.target.value)}
+                    placeholder="Global search (User, Live, Tx)..."
+                    className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {/* Export Buttons */}
+                <button
+                  onClick={() => showToast('Exported CSV / Excel report downloaded!')}
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold border border-amber-500/30 flex items-center gap-1"
+                >
+                  <Download className="w-3 h-3" />
+                  Excel
+                </button>
+                
+                <button
+                  onClick={() => showToast('PDF Audit Report generated!')}
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 text-[10px] font-bold border border-rose-500/30 flex items-center gap-1"
+                >
+                  <FileText className="w-3 h-3" />
+                  PDF
+                </button>
+
+                <button 
+                  onClick={() => setIsAdminPanelOpen(false)} 
+                  className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-4">
-              <div className="space-y-2">
-                <h3 className="text-xs font-bold text-white">Pending Transactions & Payouts</h3>
-                {transactionsList.map(tx => (
-                  <div key={tx.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold text-white">{tx.user} • {tx.amount}</p>
-                      <p className="text-[10px] text-slate-400">{tx.method} • {tx.txHash}</p>
+            {/* 20 SIDEBAR / CHIPS NAV TABS */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar text-xs border-b border-slate-800/80">
+              {[
+                { id: 'dashboard', label: '📊 Dashboard' },
+                { id: 'users', label: '👥 Users' },
+                { id: 'live', label: '🎥 Live' },
+                { id: 'reports', label: '💬 Reports' },
+                { id: 'wallet', label: '💰 Wallet' },
+                { id: 'gifts', label: '🎁 Gifts' },
+                { id: 'vip', label: '👑 VIP' },
+                { id: 'ads', label: '📢 Ads' },
+                { id: 'events', label: '🏆 Events' },
+                { id: 'notifications', label: '🔔 Notifications' },
+                { id: 'moderation', label: '🛡 Moderation' },
+                { id: 'statistics', label: '📈 Statistics' },
+                { id: 'support', label: '🎫 Support' },
+                { id: 'verification', label: '🔑 Verification' },
+                { id: 'roles', label: '👥 Roles' },
+                { id: 'security', label: '🔒 Security' },
+                { id: 'settings', label: '⚙️ Settings' },
+                { id: 'aimod', label: '🤖 AI Mod' },
+                { id: 'backup', label: '💾 Backup' },
+                { id: 'logs', label: '📜 Logs' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setAdminActiveTab(tab.id)}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap border transition ${adminActiveTab === tab.id ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 border-amber-300 shadow-md font-black' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* PANEL BODY CONTENT AREA */}
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+
+              {/* 1. DASHBOARD OVERVIEW */}
+              {adminActiveTab === 'dashboard' && (
+                <div className="space-y-4">
+                  {/* URGENT ALERT BANNER */}
+                  <div className="p-3.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 text-rose-200">
+                      <AlertTriangle className="w-5 h-5 text-rose-400 animate-bounce" />
+                      <div>
+                        <p className="font-bold">🚨 Urgent Notice: Abnormal Report Spike!</p>
+                        <span className="text-[10px] text-slate-300">Live Stream #1042 received 14 reports in last 5 minutes. Immediate review required.</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setAdminActiveTab('live')}
+                      className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px]"
+                    >
+                      Inspect Stream
+                    </button>
+                  </div>
+
+                  {/* 7 STAT CARDS GRID */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5 text-cyan-400" /> Total Users
+                      </span>
+                      <p className="text-base font-black text-white">12,840</p>
+                      <span className="text-[9px] text-emerald-400">+14% this week</span>
                     </div>
 
-                    {tx.status === 'pending' ? (
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => handleApproveTransaction(tx.id)} className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]">
-                          Approve
-                        </button>
-                        <button onClick={() => handleRejectTransaction(tx.id)} className="px-3 py-1 rounded-xl bg-red-600 text-white font-bold text-[10px]">
-                          Reject
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <Activity className="w-3.5 h-3.5 text-emerald-400" /> Online Users
+                      </span>
+                      <p className="text-base font-black text-emerald-400">1,492</p>
+                      <span className="text-[9px] text-slate-400">Active right now</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <Video className="w-3.5 h-3.5 text-pink-400" /> Active Lives
+                      </span>
+                      <p className="text-base font-black text-pink-400">48</p>
+                      <span className="text-[9px] text-slate-400">Broadcasting live</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <DollarSign className="w-3.5 h-3.5 text-amber-400" /> Today Revenue
+                      </span>
+                      <p className="text-base font-black text-amber-400">$4,820 USDT</p>
+                      <span className="text-[9px] text-emerald-400">964,000 Coins sold</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <MessageSquare className="w-3.5 h-3.5 text-purple-400" /> Total Messages
+                      </span>
+                      <p className="text-base font-black text-white">84,200</p>
+                      <span className="text-[9px] text-slate-400">Today messages</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <PhoneCall className="w-3.5 h-3.5 text-cyan-400" /> Total Calls
+                      </span>
+                      <p className="text-base font-black text-cyan-300">1,230</p>
+                      <span className="text-[9px] text-slate-400">Voice & video calls</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1 sm:col-span-2">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-400" /> Pending Reports
+                      </span>
+                      <p className="text-base font-black text-rose-400">{adminReportsList.filter(r => r.status === 'Pending').length} Reports</p>
+                      <span className="text-[9px] text-rose-300">Action required</span>
+                    </div>
+                  </div>
+
+                  {/* QUICK ACTIONS */}
+                  <div className="p-4 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-2">
+                    <h3 className="text-xs font-bold text-white">Quick System Actions</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      <button onClick={() => setAdminActiveTab('notifications')} className="p-2.5 rounded-xl bg-purple-950/60 border border-purple-500/30 text-purple-300 font-bold hover:bg-purple-900">
+                        📢 Send Broadcast
+                      </button>
+                      <button onClick={() => setAdminActiveTab('backup')} className="p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 font-bold hover:bg-cyan-900">
+                        💾 Backup DB Now
+                      </button>
+                      <button onClick={() => setAdminActiveTab('aimod')} className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 font-bold hover:bg-emerald-900">
+                        🤖 AI Mod Rules
+                      </button>
+                      <button onClick={() => setAdminActiveTab('settings')} className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/30 text-amber-300 font-bold hover:bg-amber-900">
+                        ⚙️ System Settings
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. USER MANAGEMENT */}
+              {adminActiveTab === 'users' && (
+                <div className="space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm">۲. User Management (مدیریت کاربران)</h3>
+                    <span className="text-[10px] text-slate-400">{adminUsersList.length} Accounts Loaded</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {adminUsersList.map(u => (
+                      <div key={u.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <img src={u.avatar} alt={u.name} className="w-10 h-10 rounded-full object-cover border border-pink-500/40" />
+                          <div>
+                            <p className="font-bold text-white flex items-center gap-1.5">
+                              {u.name}
+                              {u.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400" />}
+                              <span className="text-[9px] bg-slate-800 px-1.5 py-0.2 rounded text-slate-300 font-normal">{u.role}</span>
+                            </p>
+                            <span className="text-[10px] text-slate-400 block font-mono">@{u.username} • {u.email} • {u.coins.toLocaleString()} Coins</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            onClick={() => {
+                              setAdminUsersList(prev => prev.map(item => item.id === u.id ? { ...item, status: item.status === 'Banned' ? 'Active' : 'Banned' } : item));
+                              showToast(`User ${u.username} ${u.status === 'Banned' ? 'unbanned' : 'banned'}`);
+                            }}
+                            className={`px-2.5 py-1 rounded-xl text-[10px] font-bold ${u.status === 'Banned' ? 'bg-emerald-600 text-white' : 'bg-rose-950 border border-rose-500/40 text-rose-300'}`}
+                          >
+                            {u.status === 'Banned' ? 'Unban' : 'Ban'}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setAdminUsersList(prev => prev.map(item => item.id === u.id ? { ...item, status: item.status === 'Suspended' ? 'Active' : 'Suspended' } : item));
+                              showToast(`User ${u.username} suspension toggled`);
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px] font-bold"
+                          >
+                            Suspend
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setAdminUsersList(prev => prev.map(item => item.id === u.id ? { ...item, isVerified: !item.isVerified } : item));
+                              showToast(`Cyan Badge toggled for ${u.username}`);
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10px] font-bold"
+                          >
+                            {u.isVerified ? 'Remove Badge' : 'Verify Badge'}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setAdminUsersList(prev => prev.filter(item => item.id !== u.id));
+                              showToast(`User ${u.username} deleted`);
+                            }}
+                            className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 3. LIVE MANAGEMENT */}
+              {adminActiveTab === 'live' && (
+                <div className="space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm">۳. Live Management (مدیریت لایوها)</h3>
+                    <span className="text-[10px] text-pink-400 font-mono">{adminLivesList.length} Active Streams</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {adminLivesList.map(l => (
+                      <div key={l.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-white">{l.title}</span>
+                            <span className="bg-pink-500/20 text-pink-300 text-[9px] px-2 py-0.2 rounded-full border border-pink-500/30">Live #{l.id}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 block font-mono mt-0.5">Streamer: {l.streamer} • {l.viewers} Viewers • {l.category} • {l.duration}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            onClick={() => {
+                              setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
+                              showToast(`Live Stream #${l.id} terminated`);
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-rose-600 text-white text-[10px] font-bold"
+                          >
+                            End Live (پایان لایو)
+                          </button>
+
+                          <button
+                            onClick={() => showToast(`Live Chat closed for Stream #${l.id}`)}
+                            className="px-2.5 py-1 rounded-xl bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px] font-bold"
+                          >
+                            Close Chat
+                          </button>
+
+                          <button
+                            onClick={() => showToast(`Warning issued to streamer ${l.streamer}`)}
+                            className="px-2.5 py-1 rounded-xl bg-purple-950 border border-purple-500/40 text-purple-300 text-[10px] font-bold"
+                          >
+                            Warn Streamer
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 4. REPORTS */}
+              {adminActiveTab === 'reports' && (
+                <div className="space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm">۴. User Reports (گزارش‌های کاربران)</h3>
+                    <span className="text-[10px] text-amber-400">{adminReportsList.length} Reports</span>
+                  </div>
+
+                  {/* Filter tabs */}
+                  <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
+                    {['All', 'Harassment', 'Inappropriate Content', 'Spam', 'Fraud', 'Impersonation'].map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => setAdminReportCategoryFilter(cat)}
+                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition ${adminReportCategoryFilter === cat ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-400'}`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="space-y-2">
+                    {adminReportsList.filter(r => adminReportCategoryFilter === 'All' || r.category === adminReportCategoryFilter).map(r => (
+                      <div key={r.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-rose-300 flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                            [{r.category}] Target: {r.targetUser}
+                          </span>
+                          <span className="text-[10px] text-slate-400">{r.time}</span>
+                        </div>
+                        <p className="text-slate-300 text-[11px] bg-slate-900 p-2 rounded-xl">"{r.reason}"</p>
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[10px] text-slate-400">Reported by: {r.reportedBy}</span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setAdminReportsList(prev => prev.map(item => item.id === r.id ? { ...item, status: 'Approved' } : item));
+                                showToast(`Report #${r.id} approved & action taken`);
+                              }}
+                              className="px-2.5 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]"
+                            >
+                              Approve & Act
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setAdminReportsList(prev => prev.map(item => item.id === r.id ? { ...item, status: 'Rejected' } : item));
+                                showToast(`Report #${r.id} dismissed`);
+                              }}
+                              className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-300 font-bold text-[10px]"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 5. WALLET & FINANCIALS */}
+              {adminActiveTab === 'wallet' && (
+                <div className="space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm">۵. Wallet & Financial Management (مدیریت مالی)</h3>
+                    <span className="text-[10px] text-emerald-400 font-mono">System Volume: $148,200 USDT</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-slate-300 text-[11px]">Withdrawal Requests Queue</h4>
+                    {adminWithdrawalsList.map(w => (
+                      <div key={w.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-white">{w.user} • {w.amount}</p>
+                          <span className="text-[10px] text-slate-400 block font-mono">{w.method} • {w.txHash}</span>
+                        </div>
+
+                        {w.status === 'Pending' ? (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Approved' } : item));
+                                showToast(`Withdrawal ${w.id} approved! USDT sent.`);
+                              }}
+                              className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => {
+                                setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Rejected' } : item));
+                                showToast(`Withdrawal ${w.id} rejected.`);
+                              }}
+                              className="px-3 py-1 rounded-xl bg-rose-600 text-white font-bold text-[10px]"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">{w.status}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 6. GIFTS */}
+              {adminActiveTab === 'gifts' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۶. Gift Catalog Management (مدیریت هدایا)</h3>
+                  
+                  {/* Add gift form */}
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-pink-500/30 space-y-2">
+                    <p className="font-bold text-pink-300">Add New Virtual Gift</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newAdminGiftName}
+                        onChange={e => setNewAdminGiftName(e.target.value)}
+                        placeholder="Gift Name (e.g., Flying Dragon)"
+                        className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                      />
+                      <input
+                        type="number"
+                        value={newAdminGiftCoins}
+                        onChange={e => setNewAdminGiftCoins(e.target.value)}
+                        placeholder="Price Coins (e.g., 5000)"
+                        className="w-32 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                      />
+                      <button
+                        onClick={() => {
+                          if (!newAdminGiftName || !newAdminGiftCoins) return;
+                          showToast(`Added new gift "${newAdminGiftName}" (${newAdminGiftCoins} coins)`);
+                          setNewAdminGiftName('');
+                          setNewAdminGiftCoins('');
+                        }}
+                        className="px-4 py-2 rounded-xl bg-pink-600 text-white font-bold"
+                      >
+                        Add Gift
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 7. VIP SUBSCRIPTIONS */}
+              {adminActiveTab === 'vip' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۷. VIP Subscription Management (مدیریت VIP)</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {adminVipPlans.map(plan => (
+                      <div key={plan.id} className="p-3.5 rounded-2xl bg-slate-950 border border-amber-500/30 space-y-2">
+                        <p className="font-bold text-amber-300">{plan.title}</p>
+                        <p className="text-base font-black text-white">{plan.priceCoins} Coins <span className="text-[10px] text-slate-400">({plan.priceUsdt})</span></p>
+                        <button
+                          onClick={() => showToast(`Updated ${plan.title} pricing`)}
+                          className="w-full py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold"
+                        >
+                          Edit Pricing
                         </button>
                       </div>
-                    ) : (
-                      <span className="text-[10px] font-bold capitalize text-slate-400">{tx.status}</span>
-                    )}
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
+
+              {/* 8. ADVERTISEMENTS */}
+              {adminActiveTab === 'ads' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۸. Advertisements Management (مدیریت تبلیغات)</h3>
+                  <div className="space-y-2">
+                    {adminAdsList.map(ad => (
+                      <div key={ad.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-white">{ad.title}</p>
+                          <span className="text-[10px] text-slate-400 block">{ad.type} • {ad.location} • {ad.clicks.toLocaleString()} Clicks</span>
+                        </div>
+                        <button
+                          onClick={() => showToast(`Ad campaign toggled`)}
+                          className="px-3 py-1 rounded-xl bg-purple-600 text-white font-bold text-[10px]"
+                        >
+                          {ad.status}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 9. EVENTS */}
+              {adminActiveTab === 'events' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۹. Events & Competitions (مدیریت مسابقات)</h3>
+                  <div className="space-y-2">
+                    {adminEventsList.map(ev => (
+                      <div key={ev.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-white">{ev.title}</p>
+                          <span className="text-[10px] text-amber-400 block font-mono">Prize Pool: {ev.prizePool} • {ev.participants} Participants</span>
+                        </div>
+                        <button
+                          onClick={() => showToast(`Event details opened`)}
+                          className="px-3 py-1 rounded-xl bg-amber-500 text-slate-950 font-bold text-[10px]"
+                        >
+                          Leaderboard
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 10. NOTIFICATIONS BROADCAST */}
+              {adminActiveTab === 'notifications' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۰. Push Notification Broadcast (ارسال اعلان همگانی)</h3>
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-purple-500/30 space-y-3">
+                    <input
+                      type="text"
+                      value={adminNotifTitle}
+                      onChange={e => setAdminNotifTitle(e.target.value)}
+                      placeholder="Notification Title (عنوان اعلان)..."
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                    />
+                    <textarea
+                      value={adminNotifBody}
+                      onChange={e => setAdminNotifBody(e.target.value)}
+                      placeholder="Notification Body (متن پیام)..."
+                      className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none h-24"
+                    />
+                    <div className="flex gap-2">
+                      <select
+                        value={adminNotifCategory}
+                        onChange={e => setAdminNotifCategory(e.target.value)}
+                        className="bg-slate-900 border border-slate-800 text-white text-xs rounded-xl px-3 py-2 outline-none"
+                      >
+                        <option value="Update">🚀 Update Announcement</option>
+                        <option value="Discount">💰 Special Discount</option>
+                        <option value="Event">🏆 Event Alert</option>
+                        <option value="Maintenance">🛠 Maintenance Notice</option>
+                      </select>
+                      <button
+                        onClick={() => {
+                          if (!adminNotifTitle || !adminNotifBody) return;
+                          showToast('Broadcast push notification sent to all users!');
+                          setAdminNotifTitle('');
+                          setAdminNotifBody('');
+                        }}
+                        className="flex-1 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black"
+                      >
+                        Send Instant Push Broadcast
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 11. CONTENT MODERATION */}
+              {adminActiveTab === 'moderation' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۱. Content Moderation (مدیریت محتوا)</h3>
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-slate-300">
+                    <p className="font-bold">Media Review Queue</p>
+                    <span className="text-[10px] text-emerald-400 block">All 142 recent photos, videos & stories clear of policy violations.</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 12. STATISTICS */}
+              {adminActiveTab === 'statistics' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۲. Detailed Analytics & Growth Graphs (آمار و نمودارها)</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
+                      <span className="text-slate-400">DAU Growth Rate</span>
+                      <p className="text-lg font-black text-emerald-400">+28.4% MoM</p>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
+                      <span className="text-slate-400">Avg Stream Duration</span>
+                      <p className="text-lg font-black text-cyan-400">42 minutes</p>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
+                      <span className="text-slate-400">Coin Conversion</span>
+                      <p className="text-lg font-black text-amber-400">84.2%</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 13. SUPPORT TICKETS */}
+              {adminActiveTab === 'support' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۳. Support Tickets (تیکت‌های پشتیبانی)</h3>
+                  <div className="space-y-2">
+                    {adminTicketsList.map(t => (
+                      <div key={t.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="font-bold text-white">[{t.id}] {t.subject} • {t.user}</p>
+                          <span className="text-[10px] text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded-full">{t.status}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-300 bg-slate-900 p-2 rounded-xl">{t.message}</p>
+                        <button onClick={() => showToast(`Opened response editor for Ticket ${t.id}`)} className="px-3 py-1 rounded-xl bg-purple-600 text-white font-bold text-[10px]">
+                          Reply & Close Ticket
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 14. VERIFICATION KYC */}
+              {adminActiveTab === 'verification' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۴. Identity Verification KYC (تأیید هویت)</h3>
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">Sahar Miller (@sahar_m)</p>
+                      <span className="text-[10px] text-slate-400 block">ID Document #482093201 • Selfie attached</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button onClick={() => showToast('Approved KYC!')} className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]">
+                        Approve (تأیید)
+                      </button>
+                      <button onClick={() => showToast('Rejected KYC')} className="px-3 py-1 rounded-xl bg-rose-600 text-white font-bold text-[10px]">
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 15. ROLES */}
+              {adminActiveTab === 'roles' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۵. Admin Access Control & Roles (سطوح دسترسی)</h3>
+                  <div className="space-y-2">
+                    {adminRolesList.map((r, idx) => (
+                      <div key={idx} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-white">{r.name} ({r.handle})</p>
+                          <span className="text-[10px] text-amber-300 block font-mono">{r.role} • {r.access}</span>
+                        </div>
+                        <button onClick={() => showToast(`Edited permissions for ${r.name}`)} className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-300 font-bold text-[10px]">
+                          Edit Permissions
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 16. SECURITY */}
+              {adminActiveTab === 'security' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۶. Security & Admin Login Audit (امنیت و لاگ‌ها)</h3>
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 font-mono text-[10px]">
+                    <p className="text-slate-300">• 12:15 - Rayan Admin logged in from 185.220.101.4 (Tehran)</p>
+                    <p className="text-slate-300">• 10:40 - Mod Sarah logged in from 91.108.4.12 (London)</p>
+                  </div>
+                </div>
+              )}
+
+              {/* 17. SYSTEM SETTINGS */}
+              {adminActiveTab === 'settings' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۷. System Settings (تنظیمات عمومی سیستم)</h3>
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-white">Maintenance Mode (حالت تعمیرات)</p>
+                        <span className="text-[10px] text-slate-400">Lock non-admin access</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={adminMaintenanceMode}
+                        onChange={e => {
+                          setAdminMaintenanceMode(e.target.checked);
+                          showToast(e.target.checked ? 'Maintenance Mode Enabled 🚨' : 'Maintenance Mode Disabled');
+                        }}
+                        className="accent-amber-500 w-4 h-4 rounded"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-white">Platform Commission Fee</p>
+                        <span className="text-[10px] text-amber-300">{adminPlatformFee}</span>
+                      </div>
+                      <input
+                        type="text"
+                        value={adminPlatformFee}
+                        onChange={e => setAdminPlatformFee(e.target.value)}
+                        className="w-20 px-2 py-1 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 18. AI MODERATION */}
+              {adminActiveTab === 'aimod' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۸. AI Auto-Moderation Engine (هوش مصنوعی)</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-white">AI Image Moderation</p>
+                        <span className="text-[10px] text-slate-400">Detect NSFW avatars</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={adminAiBadImages}
+                        onChange={e => setAdminAiBadImages(e.target.checked)}
+                        className="accent-emerald-500 w-4 h-4 rounded"
+                      />
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-white">AI Offensive Chat Filter</p>
+                        <span className="text-[10px] text-slate-400">Block profanity</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={adminAiOffensiveText}
+                        onChange={e => setAdminAiOffensiveText(e.target.checked)}
+                        className="accent-emerald-500 w-4 h-4 rounded"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 19. BACKUP & RESTORE */}
+              {adminActiveTab === 'backup' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۹. Database Backup & Restore (نسخه پشتیبان)</h3>
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                    <p className="font-bold text-cyan-300">Latest Backup: BK-20260728.tar.gz (48.2 MB)</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => showToast('Creating full database backup snapshot...')} className="px-4 py-2 rounded-xl bg-cyan-600 text-white font-bold">
+                        Backup Now
+                      </button>
+                      <button onClick={() => showToast('Database snapshot restored!')} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold">
+                        Restore Snapshot
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 20. LOGS & AUDIT TRAIL */}
+              {adminActiveTab === 'logs' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۲۰. System Activity Audit Logs (ثبت فعالیت‌ها)</h3>
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-2 font-mono text-[11px]">
+                    {adminLogsList.map((log, i) => (
+                      <div key={i} className="flex items-center gap-2 border-b border-slate-900 pb-1.5 text-slate-300">
+                        <span className="text-amber-400 font-bold">[{log.time}]</span>
+                        <span>{log.log}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
         </div>
