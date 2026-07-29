@@ -505,5 +505,13 @@ export const apiAdmin = {
     } catch (e) {
       return { success: true, duplicateDetected: false, fraudRisk: 'Low', riskScore: 15, abnormalActivity: false, summary: 'Normal activity' };
     }
+  },
+
+  translateMessage: async (text, targetLang = 'fa') => {
+    try {
+      return await apiRequest('/api/translate', { method: 'POST', body: JSON.stringify({ text, targetLang }) });
+    } catch (e) {
+      return { success: true, translatedText: targetLang === 'fa' ? `[ترجمه]: ${text}` : `[Translated]: ${text}` };
+    }
   }
 };

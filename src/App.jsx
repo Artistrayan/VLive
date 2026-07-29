@@ -57,6 +57,183 @@ const GIFTS_CATALOG = [
   { id: 'vip_star', name: 'Platinum Star', coins: 100000, category: 'Legendary', icon: Star, color: 'text-amber-200', bg: 'bg-amber-300/20' }
 ];
 
+// APP MULTI-LANGUAGE LIST & INTERNATIONALIZATION DICTIONARY
+const APP_LANGUAGES = [
+  { code: 'fa', name: 'فارسی', flag: '🇮🇷', dir: 'rtl' },
+  { code: 'en', name: 'English', flag: '🇺🇸', dir: 'ltr' },
+  { code: 'ar', name: 'العربية', flag: '🇸🇦', dir: 'rtl' },
+  { code: 'tr', name: 'Türkçe', flag: '🇹🇷', dir: 'ltr' },
+  { code: 'ru', name: 'Русский', flag: '🇷🇺', dir: 'ltr' }
+];
+
+const I18N_DICTIONARY = {
+  fa: {
+    appName: "وی.لایو پلاس",
+    explore: "کشف و جستجو",
+    lives: "پخش زنده",
+    home: "خانه",
+    discover: "کشف",
+    goLive: "لایو شو",
+    messages: "پیام‌ها",
+    wallet: "کیف پول تتر",
+    vip: "کلوپ VIP",
+    profile: "پروفایل من",
+    settings: "تنظیمات",
+    adminPanel: "پنل مدیریت",
+    aiSecurity: "مرکز امنیت AI",
+    searchPlaceholder: "جستجوی استریمر، آیدی یا نام...",
+    activeStreams: "استریم‌های فعال",
+    viewAll: "مشاهده همه",
+    online: "آنلاین",
+    coins: "سکه",
+    send: "ارسال",
+    translate: "ترجمه پیام",
+    autoTranslate: "ترجمه خودکار",
+    appLanguage: "زبان برنامه",
+    selectLanguage: "انتخاب زبان برنامه",
+    translating: "در حال ترجمه...",
+    translated: "ترجمه‌شده",
+    changeLangSuccess: "زبان برنامه تغییر یافت به",
+    giftShop: "فروشگاه هدیه",
+    dailySpin: "گردونه شانس",
+    verifiedBadge: "تایید شده",
+    notifications: "اعلان‌ها",
+    security: "امنیتی"
+  },
+  en: {
+    appName: "V.Live+",
+    explore: "Explore",
+    lives: "Live Streams",
+    home: "Home",
+    discover: "Discover",
+    goLive: "Go Live",
+    messages: "Messages",
+    wallet: "Tether Wallet",
+    vip: "VIP Club",
+    profile: "My Profile",
+    settings: "Settings",
+    adminPanel: "Admin Panel",
+    aiSecurity: "AI Security Center",
+    searchPlaceholder: "Search streamer, ID, or name...",
+    activeStreams: "Active Streams",
+    viewAll: "View All",
+    online: "Online",
+    coins: "Coins",
+    send: "Send",
+    translate: "Translate Message",
+    autoTranslate: "Auto Translate",
+    appLanguage: "App Language",
+    selectLanguage: "Select App Language",
+    translating: "Translating...",
+    translated: "Translated",
+    changeLangSuccess: "App language changed to",
+    giftShop: "Gift Shop",
+    dailySpin: "Lucky Wheel",
+    verifiedBadge: "Verified",
+    notifications: "Notifications",
+    security: "Security"
+  },
+  ar: {
+    appName: "V.Live+",
+    explore: "استكشاف",
+    lives: "بث مباشر",
+    home: "الرئيسية",
+    discover: "اكتشف",
+    goLive: "بدء البث",
+    messages: "الرسائل",
+    wallet: "محفظة تتر",
+    vip: "نادي VIP",
+    profile: "الملف الشخصي",
+    settings: "الإعدادات",
+    adminPanel: "لوحة التحكم",
+    aiSecurity: "مركز أمان AI",
+    searchPlaceholder: "البحث عن ستريمر، معرف أو اسم...",
+    activeStreams: "البث المباشر النشط",
+    viewAll: "عرض الكل",
+    online: "متصل",
+    coins: "عملات",
+    send: "إرسال",
+    translate: "ترجمة الرسالة",
+    autoTranslate: "ترجمة تلقائية",
+    appLanguage: "لغة التطبيق",
+    selectLanguage: "اختر لغة التطبيق",
+    translating: "جارٍ الترجمة...",
+    translated: "مترجم",
+    changeLangSuccess: "تم تغيير لغة التطبيق إلى",
+    giftShop: "متجر الهدايا",
+    dailySpin: "عجلة الحظ",
+    verifiedBadge: "موثق",
+    notifications: "الإشعارات",
+    security: "الأمان"
+  },
+  tr: {
+    appName: "V.Live+",
+    explore: "Keşfet",
+    lives: "Canlı Yayınlar",
+    home: "Ana Sayfa",
+    discover: "Keşfet",
+    goLive: "Yayın Aç",
+    messages: "Mesajlar",
+    wallet: "Tether Cüzdan",
+    vip: "VIP Kulübü",
+    profile: "Profilim",
+    settings: "Ayarlar",
+    adminPanel: "Yönetim Paneli",
+    aiSecurity: "AI Güvenlik Merkezi",
+    searchPlaceholder: "Yayıncı, ID veya isim ara...",
+    activeStreams: "Aktif Yayınlar",
+    viewAll: "Hepsini Gör",
+    online: "Çevrimiçi",
+    coins: "Jeton",
+    send: "Gönder",
+    translate: "Mesajı Çevir",
+    autoTranslate: "Otomatik Çeviri",
+    appLanguage: "Uygulama Dili",
+    selectLanguage: "Uygulama Dilini Seç",
+    translating: "Çevriliyor...",
+    translated: "Çevrildi",
+    changeLangSuccess: "Uygulama dili değiştirildi:",
+    giftShop: "Hediye Mağazası",
+    dailySpin: "Şans Çarkı",
+    verifiedBadge: "Onaylı",
+    notifications: "Bildirimler",
+    security: "Güvenlik"
+  },
+  ru: {
+    appName: "V.Live+",
+    explore: "Обзор",
+    lives: "Прямые эфиры",
+    home: "Главная",
+    discover: "Поиск",
+    goLive: "В эфир",
+    messages: "Сообщения",
+    wallet: "Tether Кошелек",
+    vip: "VIP Клуб",
+    profile: "Мой Профиль",
+    settings: "Настройки",
+    adminPanel: "Админ Панель",
+    aiSecurity: "Центр ИИ Безопасности",
+    searchPlaceholder: "Поиск стримера, ID یا имени...",
+    activeStreams: "Активные стримы",
+    viewAll: "Все",
+    online: "Онлайн",
+    coins: "Монеты",
+    send: "Отправить",
+    translate: "Перевести",
+    autoTranslate: "Автоперевод",
+    appLanguage: "Язык приложения",
+    selectLanguage: "Выберите язык приложения",
+    translating: "Переводится...",
+    translated: "Переведено",
+    changeLangSuccess: "Язык приложения изменен на",
+    giftShop: "Магазин подарков",
+    dailySpin: "Колесо удачи",
+    verifiedBadge: "Проверено",
+    notifications: "Уведомления",
+    security: "Безопасность"
+  }
+};
+
 // Default Real Users seed stored in local storage
 const DEFAULT_REAL_USERS = [
   { 
@@ -1650,8 +1827,35 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [appFontSize, setAppFontSize] = useState('Medium');
   const [appAnimations, setAppAnimations] = useState(true);
 
-  // 6. Language
-  const [currentAppLang, setCurrentAppLang] = useState('English');
+  // 6. Language & Real-time Translation System
+  const [currentAppLang, setCurrentAppLang] = useState(() => {
+    return safeStorage.getItem('vlive_app_lang') || 'فارسی';
+  });
+  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
+
+  const getLangCode = (langName) => {
+    if (langName === 'فارسی' || langName === 'fa' || langName === 'Farsi' || langName === 'Persian') return 'fa';
+    if (langName === 'English' || langName === 'en') return 'en';
+    if (langName === 'العربية' || langName === 'ar' || langName === 'Arabic') return 'ar';
+    if (langName === 'Türkçe' || langName === 'tr' || langName === 'Turkish') return 'tr';
+    if (langName === 'Русский' || langName === 'ru' || langName === 'Russian') return 'ru';
+    return 'fa';
+  };
+
+  const currentLangObj = APP_LANGUAGES.find(l => l.name === currentAppLang || l.code === currentAppLang) || APP_LANGUAGES[0];
+  const langCode = currentLangObj.code;
+  const isRtl = currentLangObj.dir === 'rtl';
+
+  const t = (key, fallback = '') => {
+    return I18N_DICTIONARY[langCode]?.[key] || fallback || key;
+  };
+
+  const handleSelectLanguage = (lang) => {
+    setCurrentAppLang(lang.name);
+    safeStorage.setItem('vlive_app_lang', lang.name);
+    setIsLanguageModalOpen(false);
+    showToast(`${t('changeLangSuccess', 'زبان برنامه تغییر یافت به')} ${lang.flag} ${lang.name}`);
+  };
 
   // 7. Live Settings
   const [liveDefaultQuality, setLiveDefaultQuality] = useState('4K Ultra HD');
@@ -2862,6 +3066,47 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   // 4. AI MULTI-LANGUAGE AUTO-TRANSLATOR STATE
   const [isAutoTranslateActive, setIsAutoTranslateActive] = useState(true);
   const [translatedMessages, setTranslatedMessages] = useState({});
+
+  const handleTranslateChatMessage = async (msgId, messageText) => {
+    const currentConv = conversations.find(c => c.id === activeConversationId);
+    const targetMsg = currentConv?.messages?.find(m => m.id === msgId);
+
+    if (targetMsg?.translated) {
+      setConversations(prev => prev.map(c => c.id === activeConversationId ? {
+        ...c,
+        messages: c.messages.map(m => m.id === msgId ? { ...m, translated: false } : m)
+      } : c));
+      return;
+    }
+
+    if (targetMsg?.translation && targetMsg?.translationLang === langCode) {
+      setConversations(prev => prev.map(c => c.id === activeConversationId ? {
+        ...c,
+        messages: c.messages.map(m => m.id === msgId ? { ...m, translated: true } : m)
+      } : c));
+      return;
+    }
+
+    showToast('🌐 در حال ترجمه پیام با AI...');
+    try {
+      const res = await apiAdmin.translateMessage(messageText, langCode);
+      const translatedText = res?.translatedText || messageText;
+
+      setConversations(prev => prev.map(c => c.id === activeConversationId ? {
+        ...c,
+        messages: c.messages.map(m => m.id === msgId ? {
+          ...m,
+          translation: translatedText,
+          translationLang: langCode,
+          translated: true
+        } : m)
+      } : c));
+
+      showToast('✨ ترجمه پیام تکمیل شد');
+    } catch (e) {
+      showToast('⚠️ خطا در ترجمه پیام');
+    }
+  };
 
   // 5. CAMERA BEAUTY FILTERS & 3D FACE MASKS STATE
   const [beautySmooth, setBeautySmooth] = useState(70);
@@ -4498,7 +4743,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // MAIN APPLICATION SCREEN
   return (
-    <div className="cyber-container min-h-screen text-slate-100 flex flex-col relative pb-20 dir-ltr">
+    <div className={`cyber-container min-h-screen text-slate-100 flex flex-col relative pb-20 ${isRtl ? 'dir-rtl' : 'dir-ltr'}`}>
       {/* Toast Notification Banner */}
       {toastMessage && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border border-pink-500 text-pink-300 px-6 py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-3">
@@ -4551,9 +4796,19 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           <button 
             onClick={() => setIsSettingsModalOpen(true)}
             className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-pink-500/50 transition"
-            title="Settings"
+            title={t('settings', 'Settings')}
           >
             <Settings className="w-4 h-4 text-amber-400" />
+          </button>
+
+          {/* 🌐 Quick Language Switcher Button */}
+          <button 
+            onClick={() => setIsLanguageModalOpen(true)}
+            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 hover:text-white hover:border-cyan-500/50 transition flex items-center gap-1 font-bold text-xs"
+            title={t('appLanguage', 'App Language')}
+          >
+            <Globe className="w-4 h-4 text-cyan-400" />
+            <span className="text-xs">{currentLangObj.flag}</span>
           </button>
 
           {/* 👤 User Avatar / Profile */}
@@ -6382,8 +6637,18 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                                       </div>
                                     ) : (
                                       <p className="leading-relaxed whitespace-pre-wrap">
-                                        {msg.translated && msg.translation ? msg.translation : msg.text}
+                                        {msg.translated && msg.translation ? (
+                                          <span className="block">{msg.translation}</span>
+                                        ) : (
+                                          msg.text
+                                        )}
                                       </p>
+                                      {msg.translated && msg.translation && (
+                                        <span className="inline-flex items-center gap-1 text-[9px] text-cyan-300 font-mono bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-500/30 w-fit mt-1">
+                                          <Globe className="w-2.5 h-2.5 text-cyan-400" />
+                                          🌐 {t('translated', 'ترجمه‌شده')} ({msg.translationLang || langCode})
+                                        </span>
+                                      )}
                                     )}
 
                                     {msg.reactions && msg.reactions.length > 0 && (
@@ -6436,21 +6701,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                                       🔥
                                     </button>
                                     <button 
-                                      onClick={() => {
-                                        setConversations(prev => prev.map(c => {
-                                          if (c.id === activeConversationId) {
-                                            return {
-                                              ...c,
-                                              messages: c.messages.map(m => m.id === msg.id ? { ...m, translated: !m.translated } : m)
-                                            };
-                                          }
-                                          return c;
-                                        }));
-                                      }}
-                                      className="text-cyan-400 hover:text-white font-bold ml-1"
+                                      onClick={() => handleTranslateChatMessage(msg.id, msg.text)}
+                                      className="text-cyan-400 hover:text-white font-bold ml-1 flex items-center gap-0.5"
                                       title="Translate Message"
                                     >
-                                      🌍
+                                      🌍 {msg.translated ? 'Original' : 'Translate'}
                                     </button>
                                     <button 
                                       onClick={() => setPinnedMessage(msg)}
@@ -11628,25 +11883,16 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
-                    {[
-                      { code: 'fa', name: 'فارسی', flag: '🇮🇷' },
-                      { code: 'en', name: 'English', flag: '🇺🇸' },
-                      { code: 'ar', name: 'العربية', flag: '🇸🇦' },
-                      { code: 'tr', name: 'Türkçe', flag: '🇹🇷' },
-                      { code: 'ru', name: 'Русский', flag: '🇷🇺' }
-                    ].map(lang => (
-                      <button
-                        key={lang.code}
-                        onClick={() => {
-                          setCurrentAppLang(lang.name);
-                          showToast(`App language set to ${lang.name}`);
-                        }}
-                        className={`p-2.5 rounded-2xl border font-bold flex flex-col items-center gap-1 transition ${currentAppLang === lang.name ? 'bg-emerald-600/30 border-emerald-400 text-emerald-300 shadow-md' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'}`}
-                      >
-                        <span className="text-base">{lang.flag}</span>
-                        <span className="text-[11px]">{lang.name}</span>
-                      </button>
-                    ))}
+                      { APP_LANGUAGES.map(lang => (
+                        <button
+                          key={lang.code}
+                          onClick={() => handleSelectLanguage(lang)}
+                          className={`p-2.5 rounded-2xl border font-bold flex flex-col items-center gap-1 transition ${currentAppLang === lang.name || currentAppLang === lang.code ? 'bg-emerald-600/30 border-emerald-400 text-emerald-300 shadow-md scale-105' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'}`}
+                        >
+                          <span className="text-base">{lang.flag}</span>
+                          <span className="text-[11px]">{lang.name}</span>
+                        </button>
+                      ))}
                   </div>
                 </div>
               )}
@@ -15737,6 +15983,49 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               >
                 Submit Suggestion to Admin
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 11: GLOBAL APP LANGUAGE SELECTOR */}
+      {isLanguageModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="w-full max-w-sm card-3d p-6 border border-cyan-500/50 bg-slate-900 rounded-3xl space-y-4 shadow-[0_0_50px_rgba(6,182,212,0.3)]">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                <Globe className="w-5 h-5 text-cyan-400" />
+                <span>{t('selectLanguage', 'انتخاب زبان برنامه')}</span>
+              </h2>
+              <button onClick={() => setIsLanguageModalOpen(false)} className="text-slate-400 hover:text-white p-1 rounded-full bg-slate-800">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              زبان مورد نظر خود را برای تمام بخش‌های برنامه انتخاب کنید:
+            </p>
+
+            <div className="grid grid-cols-1 gap-2.5 pt-1">
+              {APP_LANGUAGES.map(lang => {
+                const isSelected = currentAppLang === lang.name || currentAppLang === lang.code;
+                return (
+                  <button
+                    key={lang.code}
+                    onClick={() => handleSelectLanguage(lang)}
+                    className={`p-3.5 rounded-2xl border font-bold flex items-center justify-between transition ${isSelected ? 'bg-cyan-600/30 border-cyan-400 text-cyan-300 shadow-lg scale-[1.02]' : 'bg-slate-950 border-slate-800 text-slate-200 hover:border-slate-700'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{lang.flag}</span>
+                      <div className="text-left">
+                        <p className="text-xs font-bold">{lang.name}</p>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono">{lang.code} • {lang.dir.toUpperCase()}</span>
+                      </div>
+                    </div>
+                    {isSelected && <Check className="w-5 h-5 text-cyan-400" />}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
