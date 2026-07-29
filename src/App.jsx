@@ -13,7 +13,7 @@ import {
   Home, BarChart2, Tv, Megaphone, Target, Paperclip, Pin, Reply, MoreVertical,
   VolumeX, Trash2, Archive, FileText, CheckCheck, Laugh, Forward, SmilePlus,
   LockKeyhole, SendHorizontal, MessageCircle, Info, PhoneIncoming, PhoneOutgoing,
-  PhoneMissed
+  PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, 
 } from 'lucide-react';
 
 // PRESET HIGH-RES AVATARS FOR PROFILE EDITING
@@ -1615,14 +1615,169 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     }
   ]);
   
-  const [storiesList, setStoriesList] = useState([
-    { id: 1, name: 'Sara', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', hasUnseen: true },
-    { id: 2, name: 'Elnaz', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', hasUnseen: true },
-    { id: 3, name: 'Mina', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80', hasUnseen: false },
-    { id: 4, name: 'Ali', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', hasUnseen: true },
-    { id: 5, name: 'Niloofar', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80', hasUnseen: false },
-    { id: 6, name: 'Rayan', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', hasUnseen: true }
+  
+  // ==================== ADVANCED STORIES SYSTEM STATE ====================
+  const [activeStoryView, setActiveStoryView] = useState(null); // The story currently being viewed
+  const [isCreateStoryOpen, setIsCreateStoryOpen] = useState(false);
+  const [isStoryArchiveOpen, setIsStoryArchiveOpen] = useState(false);
+  
+  // Create Story States
+  const [storyMediaType, setStoryMediaType] = useState('photo'); // 'photo' | 'video' | 'audio' | 'text'
+  const [storyPrivacy, setStoryPrivacy] = useState('everyone'); // 'everyone' | 'followers' | 'friends' | 'custom'
+  const [storyText, setStoryText] = useState('');
+  const [storyElements, setStoryElements] = useState([]); // texts, stickers, polls, links
+  const [storyMusic, setStoryMusic] = useState(null);
+  const [storyFilter, setStoryFilter] = useState('none');
+  const [storyLink, setStoryLink] = useState(null); // { type: 'live' | 'vip' | 'event' | 'giftshop', url: string }
+
+  // Viewing Story States
+  const [storyReplyText, setStoryReplyText] = useState('');
+  const [isStoryViewersOpen, setIsStoryViewersOpen] = useState(false);
+
+  const [advancedStories, setAdvancedStories] = useState([
+    {
+      id: 'my_story',
+      isMe: true,
+      hasUnseen: false,
+      user: { name: userName, avatar: userAvatar, isVip: userIsVip },
+      items: [
+        { id: 's1', type: 'photo', url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=400&q=80', duration: 5, views: 120, likes: 45, time: '2h ago' },
+        { id: 's2', type: 'video', url: 'https://www.w3schools.com/html/mov_bbb.mp4', duration: 15, views: 80, likes: 20, time: '1h ago', hasPoll: true, pollQuestion: 'Next stream game?', pollOptions: ['Valorant', 'CS2'] }
+      ]
+    },
+    {
+      id: 'story_sara',
+      isMe: false,
+      hasUnseen: true,
+      user: { name: 'Sara Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', isVip: true, role: 'VIP Streamer' },
+      items: [
+        { id: 's3', type: 'photo', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', duration: 5, time: '5m ago', link: { type: 'live', text: 'Join My Live!' } },
+      ]
+    },
+    {
+      id: 'story_promo',
+      isMe: false,
+      hasUnseen: true,
+      user: { name: 'V.Live Official', avatar: 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?auto=format&fit=crop&w=300&q=80', isVip: false, isPromo: true },
+      items: [
+        { id: 's4', type: 'promo', url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=400&q=80', duration: 8, time: '1h ago', link: { type: 'event', text: 'Summer Event 2026' } }
+      ]
+    },
+    {
+      id: 'story_elnaz',
+      isMe: false,
+      hasUnseen: true,
+      user: { name: 'Elnaz Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', isVip: true },
+      items: [
+        { id: 's5', type: 'photo', url: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=400&q=80', duration: 5, time: '3h ago' }
+      ]
+    },
+    {
+      id: 'story_ali',
+      isMe: false,
+      hasUnseen: false,
+      user: { name: 'Ali', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', isVip: false },
+      items: [
+        { id: 's6', type: 'photo', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80', duration: 5, time: '10h ago' }
+      ]
+    }
   ]);
+
+  const [storyArchive, setStoryArchive] = useState([
+    { id: 'arc1', date: 'Yesterday', url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=200&q=80', views: 350 },
+    { id: 'arc2', date: 'Last Week', url: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=200&q=80', views: 820 },
+  ]);
+
+  const [highlights, setHighlights] = useState([
+    { id: 'h1', title: 'Travel ✈️', cover: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=200&q=80' },
+    { id: 'h2', title: 'Live Moments 🔴', cover: 'https://images.unsplash.com/photo-1516280440502-861159f81792?auto=format&fit=crop&w=200&q=80' }
+  ]);
+
+  const handleOpenStory = (storyGroup) => {
+    setActiveStoryView({ group: storyGroup, currentIndex: 0, progress: 0 });
+    // Mark as seen
+    setAdvancedStories(prev => prev.map(s => s.id === storyGroup.id ? { ...s, hasUnseen: false } : s));
+  };
+
+  const handleCloseStory = () => {
+    setActiveStoryView(null);
+    setStoryReplyText('');
+  };
+
+  const handleNextStoryItem = () => {
+    if (!activeStoryView) return;
+    const { group, currentIndex } = activeStoryView;
+    if (currentIndex < group.items.length - 1) {
+      setActiveStoryView({ group, currentIndex: currentIndex + 1, progress: 0 });
+    } else {
+      // Find next user's story
+      const currentUserIndex = advancedStories.findIndex(s => s.id === group.id);
+      if (currentUserIndex < advancedStories.length - 1) {
+        handleOpenStory(advancedStories[currentUserIndex + 1]);
+      } else {
+        handleCloseStory();
+      }
+    }
+  };
+
+  const handlePrevStoryItem = () => {
+    if (!activeStoryView) return;
+    const { group, currentIndex } = activeStoryView;
+    if (currentIndex > 0) {
+      setActiveStoryView({ group, currentIndex: currentIndex - 1, progress: 0 });
+    } else {
+      // Find prev user's story
+      const currentUserIndex = advancedStories.findIndex(s => s.id === group.id);
+      if (currentUserIndex > 0) {
+        handleOpenStory(advancedStories[currentUserIndex - 1]);
+      }
+    }
+  };
+
+  const handlePublishStory = () => {
+    showToast('استوری با موفقیت منتشر شد و تا ۲۴ ساعت فعال خواهد بود.');
+    setIsCreateStoryOpen(false);
+  };
+
+  const handleLikeStory = () => {
+    showToast('❤️ استوری لایک شد');
+  };
+
+  const handleSendStoryReply = () => {
+    if (!storyReplyText) return;
+    showToast(`پاسخ شما به استوری ${activeStoryView?.group?.user?.name} ارسال شد.`);
+    setStoryReplyText('');
+  };
+
+  const handleStoryLinkClick = (link) => {
+    showToast(`انتقال به: ${link.text}`);
+  };
+
+  // Live Timer for Story Progress
+  useEffect(() => {
+    let timer;
+    if (activeStoryView && !isGiftCatalogOpen && !isStoryViewersOpen) {
+      const currentItem = activeStoryView.group.items[activeStoryView.currentIndex];
+      const duration = currentItem.duration * 1000;
+      const step = 50; // update every 50ms
+      const increment = (step / duration) * 100;
+
+      timer = setInterval(() => {
+        setActiveStoryView(prev => {
+          if (!prev) return null;
+          if (prev.progress >= 100) {
+            clearInterval(timer);
+            setTimeout(handleNextStoryItem, 0);
+            return prev;
+          }
+          return { ...prev, progress: prev.progress + increment };
+        });
+      }, step);
+    }
+    return () => clearInterval(timer);
+  }, [activeStoryView, isGiftCatalogOpen, isStoryViewersOpen]);
+
+
   const [hotGiftsList, setHotGiftsList] = useState([
     { id: 1, sender: 'Arash_VIP', gift: 'Supercar 🏎️', coins: 5000, recipient: 'Sara Maleki' },
     { id: 2, sender: 'Omid', gift: 'Royal Crown 👑', coins: 2500, recipient: 'Elnaz Karimi' },
