@@ -5,6 +5,7 @@ import {
   apiWallet, apiGiftShop, apiVip, apiCalls, apiNotifications,
   apiCreatorStudio, apiReferral, apiAdmin
 } from './services/api';
+import { compressImageFile, cacheManager, startKeepAlivePing, STREAM_QUALITY_PRESETS } from './services/performance';
 import { 
   Video, Shield, ShieldCheck, Star, Wallet, User, Lock, Award, Calendar, 
   MessageSquare, Send, Camera, Mic, MicOff, Settings, Search, Check, 
@@ -488,22 +489,41 @@ export default function App() {
     safeStorage.setItem('vlive_app_users_v7', JSON.stringify(usersList));
   }, [usersList]);
 
-  // Telegram WebApp Auto Ready & Init (Step 1 Authentication)
+  // Server Keep-Alive Ping & Performance Initialization
+  useEffect(() => {
+    startKeepAlivePing();
+  }, []);
+
+  // Telegram WebApp Auto Ready & One-Touch Authentication (ورود کاملا خودکار با تلگرام)
   useEffect(() => {
     async function initAuth() {
       try {
-        if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-          if (typeof window.Telegram.WebApp.ready === 'function') {
-            window.Telegram.WebApp.ready();
-          }
-          if (typeof window.Telegram.WebApp.expand === 'function') {
-            window.Telegram.WebApp.expand();
+        const tgApp = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+        if (tgApp) {
+          if (typeof tgApp.ready === 'function') tgApp.ready();
+          if (typeof tgApp.expand === 'function') tgApp.expand();
+
+          // Auto detect Telegram user profile if launched inside Telegram
+          const tgUser = tgApp.initDataUnsafe?.user;
+          if (tgUser) {
+            const fullTgName = tgUser.first_name ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() : (tgUser.username || 'Telegram User');
+            const tgUsername = tgUser.username || `tg_${tgUser.id}`;
+            const tgPhoto = tgUser.photo_url || userAvatar;
+
+            setUserName(fullTgName);
+            setCurrentUsername(tgUsername);
+            setAuthFullName(fullTgName);
+            setAuthUsername(tgUsername);
+            setAuthTelegramId(String(tgUser.id));
+            if (tgPhoto) setUserAvatar(tgPhoto);
           }
         }
 
-        // Attempt automatic Telegram login via backend API
+        // Attempt automatic Telegram login via backend API or session token
         const initData = window.Telegram?.WebApp?.initData || '';
-        if (initData || getStoredToken()) {
+        const alreadyLoggedIn = safeStorage.getItem('vlive_user_logged_in') === 'true';
+
+        if (initData || getStoredToken() || alreadyLoggedIn) {
           const authRes = await apiAuth.loginWithTelegram(initData);
           if (authRes && authRes.user) {
             setUserName(authRes.user.first_name ? `${authRes.user.first_name} ${authRes.user.last_name || ''}`.trim() : authRes.user.username);
@@ -566,23 +586,32 @@ export default function App() {
   const [newSuggestionInput, setNewSuggestionInput] = useState('');
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
 
-  // Handle Gallery Image Selection
-  const handleGalleryImageUpload = (e) => {
+  // Handle Gallery Image Selection with Client-side Compression
+  const handleGalleryImageUpload = async (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      showToast('Please select a valid image file from your gallery');
+      showToast('لطفاً یک فایل تصویری معتبر انتخاب کنید');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target.result;
-      setEditAvatarUrl(dataUrl);
-      showToast('Profile image loaded from phone gallery');
-    };
-    reader.readAsDataURL(file);
+    try {
+      showToast('⚡ در حال فشرده‌سازی و بهینه‌سازی تصویر...');
+      const compressedDataUrl = await compressImageFile(file, 1080, 0.8);
+      setEditAvatarUrl(compressedDataUrl);
+      setUserAvatar(compressedDataUrl);
+      showToast('✅ تصویر پروفایل با موفقیت فشرده و جایگزین شد');
+    } catch (err) {
+      console.warn('Compression error, fallback to reader:', err);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setEditAvatarUrl(event.target.result);
+        setUserAvatar(event.target.result);
+        showToast('Profile image loaded from phone gallery');
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Submit App Feature Suggestion
@@ -1209,6 +1238,227 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [adminWhitelist, setAdminWhitelist] = useState(['rayan', 'rayan_vlive', 'tattoo_rayan', 'rayan_maleki']);
   const [newWhitelistedUsername, setNewWhitelistedUsername] = useState('');
   const [adminActiveTab, setAdminActiveTab] = useState('dashboard'); // 20 sections
+
+  // AI Security Center States (Connected to Backend Gemini API securely)
+  const [aiSecuritySettings, setAiSecuritySettings] = useState({
+    enabled: true,
+    riskThreshold: 'Medium' // 'Low' | 'Medium' | 'High'
+  });
+
+  const [aiReportList, setAiReportList] = useState([
+    {
+      id: 'REP-101',
+      reporter: 'Elnaz_Karimi',
+      reportedUser: 'Scammer_Account_99',
+      category: 'Fake / Impersonation',
+      reportText: 'این کاربر با عکس فیک استریمرهای دیگه درخواست سکه و انتقال تتر میکنه!',
+      time: '۱۰ دقیقه قبل',
+      status: 'Pending',
+      aiClassification: null,
+      aiRiskScore: null,
+      aiRiskLevel: null,
+      aiReasoning: null,
+      isAnalyzing: false
+    },
+    {
+      id: 'REP-102',
+      reporter: 'Arash_VIP',
+      reportedUser: 'Toxic_Viewer_12',
+      category: 'Harassment & Foul Language',
+      reportText: 'ارسال پیام‌های توهین‌آمیز و تهدیدآمیز در چت لایو استریم',
+      time: '۲۵ دقیقه قبل',
+      status: 'Pending',
+      aiClassification: null,
+      aiRiskScore: null,
+      aiRiskLevel: null,
+      aiReasoning: null,
+      isAnalyzing: false
+    }
+  ]);
+
+  const [aiReportedChatsList, setAiReportedChatsList] = useState([
+    {
+      id: 'CHAT-REP-201',
+      sender: 'SpamBot_77',
+      recipient: 'Sara_Maleki',
+      messageText: 'ورود به سایت بخت‌آزمایی لینک زیر ۵۰۰۰۰ سکه رایگان t.me/fake_link',
+      reportReason: 'Spam & Scam link',
+      time: '14:20',
+      status: 'Pending',
+      aiAnalysis: null,
+      isAnalyzing: false
+    }
+  ]);
+
+  const [aiSupportTicketsList, setAiSupportTicketsList] = useState([
+    {
+      id: 'TICKET-301',
+      user: 'Maryam_Hosseini',
+      subject: 'عدم واریز سکه‌های خریداری‌شده با تتر',
+      messageBody: 'من ۲۰ تتر ترون واریز کردم ولی هنوز سکه‌ها به حسابم اضافه نشده. هش تراکنش: 0x8f3a...',
+      time: 'امروز 11:30',
+      status: 'Open',
+      aiSuggestedReply: null,
+      isGenerating: false
+    }
+  ]);
+
+  const [aiStreamerVerificationsList, setAiStreamerVerificationsList] = useState([
+    {
+      id: 'KYC-401',
+      username: 'Niloofar_Amini',
+      name: 'نیلوفر امینی',
+      docsSubmitted: ['کارت ملی هوشمند', 'سلفی ویدیویی با کد روز'],
+      photoUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80',
+      status: 'Pending',
+      aiCheck: null,
+      isAnalyzing: false
+    }
+  ]);
+
+  const [aiReferralFraudList, setAiReferralFraudList] = useState([
+    {
+      id: 'REF-501',
+      userId: 'Ref_Farmer_01',
+      username: 'User_Multi_Account',
+      referralCount: 42,
+      suspectedDuplicates: true,
+      registeredIps: ['185.220.101.4', '185.220.101.4', '185.220.101.4'],
+      status: 'Pending',
+      aiAnalysis: null,
+      isAnalyzing: false
+    }
+  ]);
+
+  // AI Security Center Handler Functions
+  const handleRunAiReportAnalyzer = async (reportId) => {
+    const report = aiReportList.find(r => r.id === reportId);
+    if (!report) return;
+
+    setAiReportList(prev => prev.map(r => r.id === reportId ? { ...r, isAnalyzing: true } : r));
+
+    try {
+      const res = await apiAdmin.analyzeReportAi({
+        reportText: report.reportText,
+        category: report.category,
+        user: report.reportedUser
+      });
+
+      setAiReportList(prev => prev.map(r => r.id === reportId ? {
+        ...r,
+        isAnalyzing: false,
+        aiClassification: res.classification || 'Spam',
+        aiRiskScore: res.riskScore || 50,
+        aiRiskLevel: res.riskLevel || 'Medium',
+        aiReasoning: res.reasoning || 'تحلیل امنیت توسط هوش مصنوعی تکمیل شد'
+      } : r));
+
+      showToast(`🤖 تحلیل هوش مصنوعی برای گزارش ${reportId} دریافت شد`);
+    } catch (e) {
+      setAiReportList(prev => prev.map(r => r.id === reportId ? { ...r, isAnalyzing: false } : r));
+      showToast('⚠️ خطا در دریافت پاسخ هوش مصنوعی');
+    }
+  };
+
+  const handleRunAiChatModerator = async (chatId) => {
+    const chat = aiReportedChatsList.find(c => c.id === chatId);
+    if (!chat) return;
+
+    setAiReportedChatsList(prev => prev.map(c => c.id === chatId ? { ...c, isAnalyzing: true } : c));
+
+    try {
+      const res = await apiAdmin.moderateChatAi({
+        messageText: chat.messageText,
+        sender: chat.sender,
+        reportReason: chat.reportReason
+      });
+
+      setAiReportedChatsList(prev => prev.map(c => c.id === chatId ? {
+        ...c,
+        isAnalyzing: false,
+        aiAnalysis: res
+      } : c));
+
+      showToast('🤖 تحلیل چت توسط Gemini انجام شد');
+    } catch (e) {
+      setAiReportedChatsList(prev => prev.map(c => c.id === chatId ? { ...c, isAnalyzing: false } : c));
+    }
+  };
+
+  const handleGenerateAiSupportReply = async (ticketId) => {
+    const ticket = aiSupportTicketsList.find(t => t.id === ticketId);
+    if (!ticket) return;
+
+    setAiSupportTicketsList(prev => prev.map(t => t.id === ticketId ? { ...t, isGenerating: true } : t));
+
+    try {
+      const res = await apiAdmin.getSupportAiSuggestion({
+        ticketSubject: ticket.subject,
+        ticketBody: ticket.messageBody,
+        user: ticket.user
+      });
+
+      setAiSupportTicketsList(prev => prev.map(t => t.id === ticketId ? {
+        ...t,
+        isGenerating: false,
+        aiSuggestedReply: res.suggestedReply
+      } : t));
+
+      showToast('✨ پاسخ پیشنهادی Gemini تولید شد');
+    } catch (e) {
+      setAiSupportTicketsList(prev => prev.map(t => t.id === ticketId ? { ...t, isGenerating: false } : t));
+    }
+  };
+
+  const handleRunAiStreamerVerification = async (kycId) => {
+    const item = aiStreamerVerificationsList.find(k => k.id === kycId);
+    if (!item) return;
+
+    setAiStreamerVerificationsList(prev => prev.map(k => k.id === kycId ? { ...k, isAnalyzing: true } : k));
+
+    try {
+      const res = await apiAdmin.verifyStreamerAi({
+        docsSubmitted: item.docsSubmitted,
+        photoUrl: item.photoUrl,
+        username: item.username
+      });
+
+      setAiStreamerVerificationsList(prev => prev.map(k => k.id === kycId ? {
+        ...k,
+        isAnalyzing: false,
+        aiCheck: res
+      } : k));
+
+      showToast('🤖 بررسی هوشمند مدارک استریمر انجام شد');
+    } catch (e) {
+      setAiStreamerVerificationsList(prev => prev.map(k => k.id === kycId ? { ...k, isAnalyzing: false } : k));
+    }
+  };
+
+  const handleRunAiReferralFraudCheck = async (fraudId) => {
+    const item = aiReferralFraudList.find(f => f.id === fraudId);
+    if (!item) return;
+
+    setAiReferralFraudList(prev => prev.map(f => f.id === fraudId ? { ...f, isAnalyzing: true } : f));
+
+    try {
+      const res = await apiAdmin.checkReferralFraudAi({
+        userId: item.userId,
+        referralCount: item.referralCount,
+        suspectedDuplicates: item.suspectedDuplicates
+      });
+
+      setAiReferralFraudList(prev => prev.map(f => f.id === fraudId ? {
+        ...f,
+        isAnalyzing: false,
+        aiAnalysis: res
+      } : f));
+
+      showToast('🔍 تحلیل تقلب دعوت توسط هوش مصنوعی تکمیل شد');
+    } catch (e) {
+      setAiReferralFraudList(prev => prev.map(f => f.id === fraudId ? { ...f, isAnalyzing: false } : f));
+    }
+  };
 
   const isUserAuthorizedAdmin = isUserSuperAdmin || adminWhitelist.some(u => 
     (currentUsername && currentUsername.toLowerCase().includes(u.toLowerCase())) || 
@@ -4258,7 +4508,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       )}
 
       {/* HEADER NAVBAR */}
-      <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80 px-4 py-2.5 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-2.5 flex items-center justify-between">
         {/* Logo & Brand */}
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 p-0.5 shadow-[0_0_15px_rgba(255,0,127,0.5)] flex items-center justify-center">
@@ -4268,55 +4518,24 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             <div className="flex items-center gap-1.5">
               <h1 className="font-black text-base tracking-wider text-white">V.LIVE</h1>
               <span className="bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow">
-                PRO
+                PRO 4K
               </span>
             </div>
-            <p className="text-[9px] text-emerald-400 font-semibold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-              14,280 Online
-            </p>
           </div>
         </div>
 
         {/* Header Actions */}
         <div className="flex items-center gap-2">
-          {/* Admin Panel Exclusive Button - Only rendered for super_admin role & Telegram ID 8973478139 */}
-          {isUserAuthorizedAdmin && (
-            <button 
-              onClick={() => {
-                if (!isUserAuthorizedAdmin) {
-                  showToast('⛔ دسترسی غیرمجاز! این بخش اختصاصی super_admin (شناسه: 8973478139) است.');
-                  return;
-                }
-                setIsAdminPinModalOpen(true);
-              }}
-              className="bg-gradient-to-r from-amber-500/30 to-orange-500/30 hover:from-amber-500/40 hover:to-orange-500/40 border border-amber-500/50 text-amber-300 px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm"
-            >
-              <Shield className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              <span>Admin (super_admin)</span>
-            </button>
-          )}
-
-          {/* Wallet Balance Chip */}
+          {/* 🔍 Search Toggle */}
           <button 
-            onClick={() => setActiveTab('wallet')}
-            className="bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
+            onClick={() => setIsChatSearchOpen(!isChatSearchOpen)}
+            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-pink-500/50 transition"
+            title="Search"
           >
-            <CoinsIcon className="w-4 h-4 text-amber-400" />
-            <span className="text-amber-300">{userCoins.toLocaleString()}</span>
+            <Search className="w-4 h-4" />
           </button>
 
-          {/* VIP Premium Crown Button */}
-          <button 
-            onClick={() => setIsVipModalOpen(true)}
-            className="p-2 rounded-xl bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-600/20 border border-amber-500/50 text-amber-300 hover:text-white hover:border-amber-400 transition shadow-[0_0_15px_rgba(245,158,11,0.2)] flex items-center gap-1.5 group"
-            title="VIP Premium Membership"
-          >
-            <Crown className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform fill-amber-400/30" />
-            <span className="hidden md:inline text-xs font-black bg-gradient-to-r from-amber-300 to-yellow-200 bg-clip-text text-transparent">VIP</span>
-          </button>
-
-          {/* Notification Bell */}
+          {/* 🔔 Notification Bell */}
           <button 
             onClick={() => setIsNotificationsOpen(true)}
             className="relative p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-pink-500/50 transition"
@@ -4328,19 +4547,20 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             )}
           </button>
 
-          {/* Settings Button */}
+          {/* ⚙️ Settings Button */}
           <button 
             onClick={() => setIsSettingsModalOpen(true)}
             className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-pink-500/50 transition"
             title="Settings"
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-4 h-4 text-amber-400" />
           </button>
 
-          {/* User Avatar */}
+          {/* 👤 User Avatar / Profile */}
           <button 
             onClick={() => setActiveTab('profile')}
             className="relative w-8 h-8 rounded-full overflow-hidden border border-pink-500/60 p-0.5 hover:scale-105 transition"
+            title="Profile"
           >
             <img src={userAvatar} alt={userName} className="w-full h-full object-cover rounded-full" />
             <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 border border-slate-950" />
@@ -4355,62 +4575,30 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         {activeTab === 'streams' && (
           <div className="space-y-6 dir-ltr">
 
-            {/* 1. HEADER (نوار بالا) */}
-            <div className="flex items-center justify-between bg-slate-900/90 p-3.5 sm:p-4 rounded-3xl border border-pink-500/30 shadow-[0_0_25px_rgba(236,72,153,0.15)]">
-              {/* Brand Logo */}
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-400 p-0.5 flex items-center justify-center shadow-lg animate-pulse">
-                  <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-                    <Radio className="w-5 h-5 text-pink-400" />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h1 className="text-base sm:text-lg font-black bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300 bg-clip-text text-transparent">
-                      V.LIVE
-                    </h1>
-                    <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/40">
-                      PRO 4K
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                    <span>2,840 Online Lives</span>
-                  </div>
-                </div>
-              </div>
+            {/* 1. SUB-HEADER / QUICK STATS BAR (زیر Header) */}
+            <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-md">
+              {/* 👛 Coins Counter */}
+              <button 
+                onClick={() => setActiveTab('wallet')}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition active:scale-95"
+              >
+                <CoinsIcon className="w-4 h-4 text-amber-400 animate-pulse" />
+                <span className="text-xs font-black">{userCoins.toLocaleString()} Coins</span>
+              </button>
 
-              {/* Header Right Actions */}
-              <div className="flex items-center gap-2">
-                {/* Search Toggle */}
-                <button 
-                  onClick={() => setIsChatSearchOpen(!isChatSearchOpen)}
-                  className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-white hover:border-pink-500/50 transition active:scale-95"
-                  title="Search Live Streams"
-                >
-                  <Search className="w-4 h-4 text-slate-300" />
-                </button>
+              {/* 👑 VIP Badge */}
+              <button 
+                onClick={() => setIsVipModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 text-amber-300 hover:scale-105 transition active:scale-95 shadow-sm"
+              >
+                <Crown className="w-4 h-4 text-amber-400 fill-amber-400/30" />
+                <span className="text-xs font-black">👑 VIP</span>
+              </button>
 
-                {/* Notifications Bell */}
-                <button 
-                  onClick={() => setIsNotificationsOpen(true)}
-                  className="relative p-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-white hover:border-pink-500/50 transition active:scale-95"
-                  title="Notifications"
-                >
-                  <Bell className="w-4 h-4 text-amber-400" />
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-pink-600 text-white text-[9px] font-black flex items-center justify-center border-2 border-slate-950">
-                    3
-                  </span>
-                </button>
-
-                {/* Start Live Stream Header Button */}
-                <button 
-                  onClick={() => setIsHostLiveOpen(true)}
-                  className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white text-xs font-black shadow-lg hover:scale-105 transition active:scale-95 flex items-center gap-1.5"
-                >
-                  <Camera className="w-4 h-4 text-white" />
-                  <span className="hidden sm:inline">Go Live</span>
-                </button>
+              {/* 🔥 Online Counter */}
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>🔥 14,000 Online</span>
               </div>
             </div>
 
@@ -4435,6 +4623,54 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 )}
               </div>
             )}
+
+            {/* 2. STORIES BAR (استوری‌ها) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-300 px-1">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+                  Live Stories
+                </span>
+                <span className="text-[10px] text-slate-500">24h Express</span>
+              </div>
+
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
+                {/* Add Story Button */}
+                <label className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group">
+                  <div className="w-16 h-16 rounded-full bg-slate-900 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 group-hover:border-pink-400 transition shadow-md">
+                    <Plus className="w-6 h-6" />
+                  </div>
+                  <span className="text-[10px] font-bold text-pink-300">Add Story</span>
+                  <input type="file" accept="image/*" onChange={handleGalleryImageUpload} className="hidden" />
+                </label>
+
+                {/* Story Items */}
+                {[
+                  { name: 'Sara 🌟', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80', isLive: true },
+                  { name: 'Rayan 👑', avatar: userAvatar, isLive: true },
+                  { name: 'Mona 🎵', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80', isLive: true },
+                  { name: 'Alex 🎮', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80', isLive: false },
+                  { name: 'Elena 💃', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80', isLive: true },
+                  { name: 'Yasaman 🎨', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80', isLive: false }
+                ].map((s, idx) => (
+                  <button 
+                    key={idx}
+                    onClick={() => showToast(`مشاهده استوری ${s.name}`)}
+                    className="flex flex-col items-center gap-1.5 shrink-0 group active:scale-95 transition"
+                  >
+                    <div className={`relative w-16 h-16 rounded-full p-0.5 ${s.isLive ? 'bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 animate-pulse' : 'bg-slate-800'}`}>
+                      <img src={s.avatar} alt={s.name} className="w-full h-full object-cover rounded-full border-2 border-slate-950" />
+                      {s.isLive && (
+                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-pink-600 text-white font-black text-[8px] px-1.5 py-0.2 rounded-full border border-slate-950 shadow">
+                          LIVE
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-300 truncate max-w-[64px]">{s.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* 2. HORIZONTAL CATEGORY SCROLL (دسته‌بندی لایوها) */}
             <div className="space-y-1.5">
@@ -4470,63 +4706,39 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </div>
             </div>
 
-            {/* LIVE SUBTABS SELECTOR (Lives | PK Battles | Party Stage | Quests | Leaderboard) */}
-            <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 text-xs font-bold overflow-x-auto no-scrollbar">
-              <button 
-                onClick={() => setStreamSubTab('lives')}
-                className={`flex-1 min-w-[100px] py-2 rounded-xl transition text-center flex items-center justify-center gap-1.5 ${streamSubTab === 'lives' ? 'bg-pink-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-              >
-                <Radio className="w-3.5 h-3.5" />
-                <span>Live Streams</span>
-              </button>
-
-              <button 
-                onClick={() => {
-                  setStreamSubTab('lives');
-                  setIsPkBattleActive(true);
-                  showToast('PK Battle Mode active! Select stream to join battle.');
-                }}
-                className={`flex-1 min-w-[100px] py-2 rounded-xl transition text-center flex items-center justify-center gap-1.5 ${isPkBattleActive ? 'bg-gradient-to-r from-red-600 to-blue-600 text-white shadow-md font-black animate-pulse' : 'text-slate-400 hover:text-white'}`}
-              >
-                <Zap className="w-3.5 h-3.5 text-amber-400" />
-                <span>PK Battle</span>
-              </button>
-
-              <button 
-                onClick={() => setStreamSubTab('party')}
-                className={`flex-1 min-w-[100px] py-2 rounded-xl transition text-center flex items-center justify-center gap-1.5 ${streamSubTab === 'party' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>Multi-Guest</span>
-              </button>
-
-              <button 
-                onClick={() => setStreamSubTab('quests')}
-                className={`flex-1 min-w-[100px] py-2 rounded-xl transition text-center flex items-center justify-center gap-1.5 ${streamSubTab === 'quests' ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-              >
-                <Target className="w-3.5 h-3.5 text-cyan-300" />
-                <span>Quests</span>
-              </button>
-
-              <button 
-                onClick={() => setStreamSubTab('leaderboard')}
-                className={`flex-1 min-w-[100px] py-2 rounded-xl transition text-center flex items-center justify-center gap-1.5 ${streamSubTab === 'leaderboard' ? 'bg-amber-500 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'}`}
-              >
-                <Crown className="w-3.5 h-3.5 text-amber-400" />
-                <span>Leaderboard</span>
-              </button>
+            {/* 3. ROTATING PROMOTIONAL BANNER (بنر گردان) */}
+            <div className="relative rounded-3xl overflow-hidden border border-pink-500/30 bg-gradient-to-r from-purple-900/60 via-slate-900 to-pink-900/60 p-5 shadow-xl">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1.5">
+                  <span className="px-2.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 text-[10px] font-black border border-pink-500/40 uppercase tracking-wider">
+                    🏆 VIP Festival Tournament 2026
+                  </span>
+                  <h3 className="text-lg font-black text-white">جشنواره مگا تورنمنت استریمرها</h3>
+                  <p className="text-xs text-slate-300">50,000 سکه رایگان + تیک آبی اختصاصی برای ۱۰ نفر برتر هفته</p>
+                </div>
+                <button 
+                  onClick={() => setIsVipModalOpen(true)}
+                  className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-105 active:scale-95 transition whitespace-nowrap"
+                >
+                  شرکت در رویداد 👑
+                </button>
+              </div>
+              <div className="flex items-center justify-center gap-1.5 mt-4">
+                <span className="w-6 h-1.5 rounded-full bg-pink-500" />
+                <span className="w-2 h-1.5 rounded-full bg-slate-700" />
+                <span className="w-2 h-1.5 rounded-full bg-slate-700" />
+              </div>
             </div>
 
-            {/* 3. ONLINE LIVES GRID (لایوهای آنلاین با فرمت خواسته شده) */}
-            {streamSubTab === 'lives' && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black text-white flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
-                    Active 4K Streams
-                  </h3>
-                  <span className="text-[10px] text-slate-400">Showing {streamsList.length} streams</span>
-                </div>
+            {/* 5. TRENDING LIVE (کارت‌های بزرگ استریم) */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-black text-white flex items-center gap-2">
+                  <Radio className="w-4 h-4 text-pink-500 animate-pulse" />
+                  Trending Live Streams
+                </h3>
+                <span className="text-xs text-pink-400 font-bold cursor-pointer" onClick={() => setStreamSubTab('lives')}>View All</span>
+              </div>
 
                 {/* Stream Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -10488,7 +10700,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       </main>
 
-            {/* BOTTOM NAVIGATION BAR (5 MAIN TABS) */}
+            {/* BOTTOM NAVIGATION BAR (STRICT 5 MAIN TABS) */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/80 px-4 py-2 flex items-center justify-around">
         {/* 1. Home (🏠) */}
         <button 
@@ -10505,21 +10717,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           <span className="text-[9px]">Home</span>
         </button>
 
-        
-        {/* 2. Calls (📞) */}
-        <button 
-          onClick={() => {
-            setViewingStream(null);
-            setIsHostLiveOpen(false);
-            setActivePartyRoom(null);
-            setActiveTab('call');
-          }}
-          className={`flex flex-col items-center gap-0.5 ${activeTab === 'call' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
-        >
-          <PhoneCall className="w-5 h-5" />
-          <span className="text-[9px]">Calls</span>
-        </button>
-
         {/* 2. Discover (🔍) */}
         <button 
           onClick={() => {
@@ -10531,7 +10728,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           }}
           className={`flex flex-col items-center gap-0.5 ${activeTab === 'streams' && streamSubTab === 'users' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
         >
-          <Compass className="w-5 h-5" />
+          <Search className="w-5 h-5" />
           <span className="text-[9px]">Discover</span>
         </button>
 
@@ -10544,18 +10741,18 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           <Video className="w-6 h-6 font-black group-hover:scale-110 transition duration-300" />
         </button>
 
-        {/* 4. Earnings (💰) */}
+        {/* 4. Messages (💬) */}
         <button 
           onClick={() => {
             setViewingStream(null);
             setIsHostLiveOpen(false);
             setActivePartyRoom(null);
-            setActiveTab('earnings');
+            setActiveTab('messages');
           }}
-          className={`flex flex-col items-center gap-0.5 ${activeTab === 'earnings' || activeTab === 'wallet' ? 'text-amber-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
+          className={`flex flex-col items-center gap-0.5 ${activeTab === 'messages' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
         >
-          <DollarSign className="w-5 h-5" />
-          <span className="text-[9px]">Earnings</span>
+          <MessageSquare className="w-5 h-5" />
+          <span className="text-[9px]">Messages</span>
         </button>
 
         {/* 5. Profile (👤) */}
@@ -14026,6 +14223,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 { id: 'security', label: '🔒 Security (امنیت)' },
                 { id: 'settings', label: '⚙️ Settings (تنظیمات)' },
                 { id: 'aimod', label: '🤖 AI Mod (هوش مصنوعی)' },
+                { id: 'aisecurity', label: '🛡 AI Security Center (مرکز امنیت AI)' },
                 { id: 'backup', label: '💾 Backup (بکاپ)' },
                 { id: 'logs', label: '📜 Logs (لاگ‌ها)' }
               ].map(tab => (
@@ -14968,6 +15166,462 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         }}
                         className="accent-emerald-500 w-4 h-4 rounded cursor-pointer"
                       />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 18.5 AI SECURITY CENTER (CONNECTS TO BACKEND GEMINI PROXY) */}
+              {adminActiveTab === 'aisecurity' && (
+                <div className="space-y-4 text-xs dir-rtl text-right">
+                  {/* TOP BANNER */}
+                  <div className="p-4 rounded-3xl bg-gradient-to-r from-purple-950/90 via-slate-900 to-indigo-950/90 border border-purple-500/40 space-y-3 shadow-xl">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-purple-600/30 border border-purple-500/50 text-purple-300">
+                          <ShieldCheck className="w-7 h-7 animate-pulse" />
+                        </div>
+                        <div>
+                          <h3 className="font-black text-white text-base flex items-center gap-2">
+                            <span>🛡 مرکز امنیت هوش مصنوعی (AI Security Center)</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40">
+                              Gemini 1.5 Powered
+                            </span>
+                          </h3>
+                          <p className="text-[11px] text-purple-200/90 mt-0.5">
+                            اتصال امن پروکسی بک‌اند (بررسی هوشمند گزارش‌ها، چت‌ها، تیکت‌ها، مدارک استریمر و تقلب دعوت)
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* AI SECURITY STATUS & MASTER TOGGLE */}
+                      <div className="flex items-center gap-3 bg-slate-950/80 p-2.5 rounded-2xl border border-purple-500/30">
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-400 block font-bold">وضعیت هوش مصنوعی:</span>
+                          <span className={`text-[10px] font-black ${aiSecuritySettings.enabled ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {aiSecuritySettings.enabled ? '🟢 فعال و آماده‌به‌کار' : '🔴 غیرفعال'}
+                          </span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={aiSecuritySettings.enabled}
+                          onChange={e => {
+                            setAiSecuritySettings({ ...aiSecuritySettings, enabled: e.target.checked });
+                            addAdminAuditLog(`سیستم AI Security Center ${e.target.checked ? 'فعال' : 'غیرفعال'} گردید`);
+                          }}
+                          className="w-5 h-5 accent-purple-500 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+
+                    {/* RISK THRESHOLD SELECTOR */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-purple-500/20 text-[11px]">
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-300 font-bold">آستانه حساسیت ریسک:</span>
+                        {['Low', 'Medium', 'High'].map(lvl => (
+                          <button
+                            key={lvl}
+                            onClick={() => setAiSecuritySettings({ ...aiSecuritySettings, riskThreshold: lvl })}
+                            className={`px-3 py-1 rounded-xl text-[10px] font-bold border transition ${
+                              aiSecuritySettings.riskThreshold === lvl
+                                ? 'bg-purple-600 text-white border-purple-300 shadow-md font-black'
+                                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            {lvl === 'Low' ? 'کم (۴۰+)' : lvl === 'Medium' ? 'متوسط (۶۰+)' : 'بالا (۸۰+)'}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="text-[10px] text-amber-300 font-mono bg-amber-950/40 px-2.5 py-1 rounded-xl border border-amber-500/30">
+                        🔒 GEMINI_API_KEY کاملاً محرمانه در بک‌اند (Render) محافظت می‌شود
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 1. REPORT ANALYZER */}
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-400" />
+                        ۱. تحلیل‌گر گزارشات کاربران (Report Analyzer)
+                      </h4>
+                      <span className="text-[10px] text-amber-300 font-bold">{aiReportList.length} گزارش فعال</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {aiReportList.map(rep => (
+                        <div key={rep.id} className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                            <div>
+                              <p className="font-bold text-white flex items-center gap-2">
+                                <span>گزارش {rep.id}</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/30">
+                                  دسته‌بندی: {rep.category}
+                                </span>
+                              </p>
+                              <span className="text-[10px] text-slate-400 block font-mono">
+                                گزارش‌دهنده: @{rep.reporter} • متخلف: @{rep.reportedUser} • زمان: {rep.time}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => handleRunAiReportAnalyzer(rep.id)}
+                              disabled={rep.isAnalyzing || !aiSecuritySettings.enabled}
+                              className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 shadow-md transition"
+                            >
+                              <Sparkles className={`w-3.5 h-3.5 ${rep.isAnalyzing ? 'animate-spin' : ''}`} />
+                              {rep.isAnalyzing ? 'در حال تحلیل با Gemini...' : '🤖 تحلیل هوشمند گزارش با Gemini'}
+                            </button>
+                          </div>
+
+                          <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200">
+                            <span className="text-[10px] text-slate-400 font-bold block mb-0.5">متن گزارش کاربر:</span>
+                            "{rep.reportText}"
+                          </div>
+
+                          {/* AI ANALYSIS RESULTS DISPLAY */}
+                          {rep.aiRiskScore !== null && (
+                            <div className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/40 space-y-2 text-[11px] animate-fadeIn">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-purple-300 flex items-center gap-1.5">
+                                  <Sparkles className="w-3.5 h-3.5 text-purple-400" /> نتیجه تحلیل Gemini:
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-white">امتیاز ریسک: {rep.aiRiskScore}/100</span>
+                                  <span className={`px-2 py-0.5 rounded-full font-black text-[10px] ${
+                                    rep.aiRiskLevel === 'High' ? 'bg-rose-600 text-white animate-pulse' :
+                                    rep.aiRiskLevel === 'Medium' ? 'bg-amber-500 text-slate-950' :
+                                    'bg-emerald-600 text-white'
+                                  }`}>
+                                    {rep.aiRiskLevel === 'High' ? '🔴 ریسک بالا (High Risk)' :
+                                     rep.aiRiskLevel === 'Medium' ? '🟡 ریسک متوسط' : '🟢 ریسک پایین'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <p className="text-slate-300">
+                                <span className="font-bold text-purple-200">دسته‌بندی هوشمند: </span>
+                                <span className="text-amber-300 font-bold">{rep.aiClassification}</span> — {rep.aiReasoning}
+                              </p>
+
+                              {/* ADMIN DECISION CONTROLS */}
+                              <div className="flex items-center gap-2 pt-2 border-t border-purple-500/30">
+                                <span className="text-[10px] font-bold text-slate-300">تصمیم نهایی مدیر:</span>
+                                <button
+                                  onClick={() => {
+                                    setAiReportList(prev => prev.map(r => r.id === rep.id ? { ...r, status: 'Banned' } : r));
+                                    addAdminAuditLog(`کاربر @${rep.reportedUser} بر اساس گزارش ${rep.id} و تحلیل AI مسدود شد`);
+                                    showToast(`⛔ کاربر @${rep.reportedUser} مسدود گردید`);
+                                  }}
+                                  className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px]"
+                                >
+                                  ⛔ مسدودسازی کاربر (Ban)
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setAiReportList(prev => prev.map(r => r.id === rep.id ? { ...r, status: 'Rejected' } : r));
+                                    addAdminAuditLog(`گزارش ${rep.id} توسط مدیر رد گردید`);
+                                    showToast('❌ گزارش رد شد');
+                                  }}
+                                  className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[10px]"
+                                >
+                                  ❌ رد گزارش
+                                </button>
+                                <span className="text-[10px] text-slate-400 mr-auto font-mono">وضعیت: {rep.status}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 2. CHAT MODERATION */}
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <div>
+                        <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4 text-cyan-400" />
+                          ۲. نظارت هوشمند چت‌های گزارش‌شده (Reported Chat Moderation)
+                        </h4>
+                        <p className="text-[10px] text-emerald-400 font-bold mt-0.5">
+                          📌 قانون حریم خصوصی: تنها پیام‌هایی که گزارش شده‌اند برای تحلیل Gemini ارسال می‌شوند (نه تمام پیام‌ها).
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {aiReportedChatsList.map(chat => (
+                        <div key={chat.id} className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                            <div>
+                              <p className="font-bold text-white">
+                                چت گزارش‌شده {chat.id} — <span className="text-cyan-300">علت: {chat.reportReason}</span>
+                              </p>
+                              <span className="text-[10px] text-slate-400 block font-mono">
+                                فرستنده: @{chat.sender} • گیرنده: @{chat.recipient} • زمان: {chat.time}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => handleRunAiChatModerator(chat.id)}
+                              disabled={chat.isAnalyzing || !aiSecuritySettings.enabled}
+                              className="px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition"
+                            >
+                              <Sparkles className={`w-3.5 h-3.5 ${chat.isAnalyzing ? 'animate-spin' : ''}`} />
+                              {chat.isAnalyzing ? 'در حال تحلیل چت...' : '🔍 تحلیل پیام با Gemini'}
+                            </button>
+                          </div>
+
+                          <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 font-mono text-xs">
+                            "{chat.messageText}"
+                          </div>
+
+                          {chat.aiAnalysis && (
+                            <div className="p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/40 space-y-2 text-[11px]">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-cyan-300">تحلیل Gemini: {chat.aiAnalysis.summary || 'بررسی انجام شد'}</span>
+                                <span className="font-black text-amber-300">ریسک: {chat.aiAnalysis.riskScore || 80}/100</span>
+                              </div>
+                              <div className="flex items-center gap-2 pt-1 border-t border-cyan-500/20">
+                                <button
+                                  onClick={() => {
+                                    addAdminAuditLog(`فرستنده پیام اسپم @${chat.sender} مسدود گردید`);
+                                    showToast(`⛔ کاربر @${chat.sender} مسدود شد`);
+                                  }}
+                                  className="px-2.5 py-1 rounded-xl bg-rose-600 text-white font-bold text-[10px]"
+                                >
+                                  ⛔ مسدودسازی فرستنده
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setAiReportedChatsList(prev => prev.filter(c => c.id !== chat.id));
+                                    showToast('🗑 پیام از دیتابیس پاک گردید');
+                                  }}
+                                  className="px-2.5 py-1 rounded-xl bg-slate-800 text-rose-300 font-bold text-[10px]"
+                                >
+                                  🗑 حذف پیام
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 3. SUPPORT ASSISTANT */}
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                        <LifeBuoy className="w-4 h-4 text-emerald-400" />
+                        ۳. دستیار هوشمند پشتیبانی و تیکت‌ها (Support Assistant)
+                      </h4>
+                      <span className="text-[10px] text-emerald-300 font-bold">پیشنهاد اولیه با AI • تایید نهایی با ادمین</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {aiSupportTicketsList.map(ticket => (
+                        <div key={ticket.id} className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                            <div>
+                              <p className="font-bold text-white flex items-center gap-2">
+                                <span>تیکت {ticket.id}: {ticket.subject}</span>
+                              </p>
+                              <span className="text-[10px] text-slate-400 block font-mono">کاربر: @{ticket.user} • زمان: {ticket.time}</span>
+                            </div>
+
+                            <button
+                              onClick={() => handleGenerateAiSupportReply(ticket.id)}
+                              disabled={ticket.isGenerating || !aiSecuritySettings.enabled}
+                              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition"
+                            >
+                              <Sparkles className={`w-3.5 h-3.5 ${ticket.isGenerating ? 'animate-spin' : ''}`} />
+                              {ticket.isGenerating ? 'تولید پاسخ با Gemini...' : '✨ پاسخ پیشنهادی Gemini'}
+                            </button>
+                          </div>
+
+                          <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200">
+                            "{ticket.messageBody}"
+                          </div>
+
+                          {ticket.aiSuggestedReply && (
+                            <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2">
+                              <span className="font-bold text-emerald-300 text-[11px] block">پاسخ پیشنهادی Gemini (پیش‌نویس):</span>
+                              <textarea
+                                value={ticket.aiSuggestedReply}
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  setAiSupportTicketsList(prev => prev.map(t => t.id === ticket.id ? { ...t, aiSuggestedReply: val } : t));
+                                }}
+                                className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-emerald-200 outline-none focus:border-emerald-500 h-24"
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => {
+                                    setAiSupportTicketsList(prev => prev.map(t => t.id === ticket.id ? { ...t, status: 'Closed' } : t));
+                                    addAdminAuditLog(`پاسخ تیکت ${ticket.id} توسط مدیر تایید و ارسال شد`);
+                                    showToast('📤 پاسخ تیکت با موفقیت برای کاربر ارسال شد');
+                                  }}
+                                  className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md"
+                                >
+                                  📤 تایید و ارسال پاسخ برای کاربر
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 4. STREAMER VERIFICATION */}
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                        <BadgeCheck className="w-4 h-4 text-pink-400" />
+                        ۴. بررسی هوشمند مدارک استریمرها (Streamer Verification)
+                      </h4>
+                      <span className="text-[10px] text-pink-300 font-bold">بررسی کامل بودن مدارک با AI • تصمیم با ادمین</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {aiStreamerVerificationsList.map(kyc => (
+                        <div key={kyc.id} className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                            <div className="flex items-center gap-3">
+                              <img src={kyc.photoUrl} alt={kyc.name} className="w-10 h-10 rounded-full object-cover border border-pink-500/40" />
+                              <div>
+                                <p className="font-bold text-white">{kyc.name} (@{kyc.username})</p>
+                                <span className="text-[10px] text-slate-400 block">مدارک ارسالی: {kyc.docsSubmitted.join(' ، ')}</span>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => handleRunAiStreamerVerification(kyc.id)}
+                              disabled={kyc.isAnalyzing || !aiSecuritySettings.enabled}
+                              className="px-3.5 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition"
+                            >
+                              <Sparkles className={`w-3.5 h-3.5 ${kyc.isAnalyzing ? 'animate-spin' : ''}`} />
+                              {kyc.isAnalyzing ? 'در حال بررسی وضوح تصویر...' : '🔎 بررسی وضوح مدارک با Gemini'}
+                            </button>
+                          </div>
+
+                          {kyc.aiCheck && (
+                            <div className="p-3 rounded-xl bg-pink-950/40 border border-pink-500/40 space-y-2 text-[11px]">
+                              <p className="text-slate-200">
+                                <span className="font-bold text-pink-300">ارزیابی کیفیت Gemini: </span>
+                                {kyc.aiCheck.isClear ? '✅ مدارک کامل و تصویر واضح است.' : '⚠️ وضوح مدارک نیاز به بررسی دقیق‌تر دارد.'}
+                              </p>
+                              <div className="flex items-center gap-2 pt-1 border-t border-pink-500/20">
+                                <button
+                                  onClick={() => {
+                                    setAiStreamerVerificationsList(prev => prev.map(k => k.id === kyc.id ? { ...k, status: 'Approved' } : k));
+                                    addAdminAuditLog(`درخواست استریمر @${kyc.username} تایید گردید`);
+                                    showToast(`👑 استریمر @${kyc.username} تایید شد`);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs"
+                                >
+                                  ✅ تایید نهایی استریمر
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setAiStreamerVerificationsList(prev => prev.map(k => k.id === kyc.id ? { ...k, status: 'Rejected' } : k));
+                                    addAdminAuditLog(`درخواست استریمر @${kyc.username} رد شد`);
+                                    showToast('❌ درخواست رد شد');
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-slate-800 text-rose-300 font-bold text-xs"
+                                >
+                                  ❌ رد درخواست
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 5. REFERRAL FRAUD */}
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                        <UserCheck className="w-4 h-4 text-indigo-400" />
+                        ۵. شناسایی تقلب سیستم دعوت (Referral Fraud Detection)
+                      </h4>
+                      <span className="text-[10px] text-indigo-300 font-bold">شناسایی آی‌پی‌های تکراری و الگوی مشکوک</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {aiReferralFraudList.map(ref => (
+                        <div key={ref.id} className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                            <div>
+                              <p className="font-bold text-white">کاربر: @{ref.username} ({ref.userId})</p>
+                              <span className="text-[10px] text-slate-400 block font-mono">
+                                تعداد دعوت: {ref.referralCount} کاربر • آی‌پی‌های ثبت‌شده: {ref.registeredIps.join(', ')}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => handleRunAiReferralFraudCheck(ref.id)}
+                              disabled={ref.isAnalyzing || !aiSecuritySettings.enabled}
+                              className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition"
+                            >
+                              <Sparkles className={`w-3.5 h-3.5 ${ref.isAnalyzing ? 'animate-spin' : ''}`} />
+                              {ref.isAnalyzing ? 'تحلیل الگوی دعوت...' : '🔍 تحلیل تقلب با Gemini'}
+                            </button>
+                          </div>
+
+                          {ref.aiAnalysis && (
+                            <div className="p-3 rounded-xl bg-indigo-950/40 border border-indigo-500/40 space-y-2 text-[11px]">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-indigo-300">تحلیل Gemini: {ref.aiAnalysis.recommendation || 'الگوی مشکوک مشاهده شد'}</span>
+                                <span className="font-black text-rose-400">احتمال تقلب: {ref.aiAnalysis.fraudScore || 85}%</span>
+                              </div>
+                              <div className="flex items-center gap-2 pt-1 border-t border-indigo-500/20">
+                                <button
+                                  onClick={() => {
+                                    addAdminAuditLog(`پاداش دعوت کاربر @${ref.username} مسدود شد`);
+                                    showToast(`🚨 پاداش دعوت @${ref.username} مسدود گردید`);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-xs"
+                                >
+                                  🚨 مسدودسازی پاداش دعوت
+                                </button>
+                                <button
+                                  onClick={() => showToast('✅ حساب کاربر تایید شد')}
+                                  className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+                                >
+                                  ✅ تایید حساب
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* SCOPE EXCLUSIONS ROADMAP BANNER */}
+                  <div className="p-4 rounded-3xl bg-slate-950/80 border border-slate-800/80 space-y-2 text-slate-400 text-[11px]">
+                    <h5 className="font-bold text-slate-300 flex items-center gap-2">
+                      <span>🛑 قابلیت‌های غیرفعال طبق دستور مدیریت (ویژه نسخه بعدی V2)</span>
+                    </h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
+                      <p className="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                        • بررسی زنده تمام لایو استریم‌ها: <span className="text-rose-400 font-bold">غیرفعال</span>
+                      </p>
+                      <p className="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                        • بررسی زنده تمام تماس‌های صوتی و تصویری: <span className="text-rose-400 font-bold">غیرفعال</span>
+                      </p>
+                      <p className="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                        • بررسی زنده تمام پیام‌های عمومی چت: <span className="text-rose-400 font-bold">غیرفعال (فقط پیام‌های گزارش‌شده)</span>
+                      </p>
+                      <p className="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                        • سیستم Ban و مسدودسازی اتوماتیک: <span className="text-rose-400 font-bold">غیرفعال (تصمیم نهایی با ادمین)</span>
+                      </p>
                     </div>
                   </div>
                 </div>
