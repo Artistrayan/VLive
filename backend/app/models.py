@@ -14,6 +14,7 @@ class User(Base):
     avatar_url = Column(String, nullable=True)
     role = Column(String, default="USER") # USER, HOST, ADMIN
     gender = Column(String, default="FEMALE") # FEMALE, MALE
+    bio = Column(Text, nullable=True)
     wallet_stars = Column(BigInteger, default=1250)
     wallet_usdt = Column(Float, default=12.5)
     is_vip = Column(Boolean, default=True)

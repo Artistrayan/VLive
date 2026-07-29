@@ -16,12 +16,20 @@ class UserProfileResponse(BaseModel):
     first_name: Optional[str]
     last_name: Optional[str]
     avatar_url: Optional[str]
+    bio: Optional[str] = None
     role: str
     gender: str
     wallet_stars: int
     wallet_usdt: float
     is_vip: bool
     vip_level: int
+
+class ProfileUpdateRequest(BaseModel):
+    first_name: Optional[str] = None
+    username: Optional[str] = None
+    avatar_url: Optional[str] = None
+    bio: Optional[str] = None
+    gender: Optional[str] = None
 
 class TelegramAuthRequest(BaseModel):
     init_data: str
@@ -120,6 +128,40 @@ def get_leaderboard(db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserProfileResponse)
 def get_my_profile(current_user: User = Depends(get_current_user)):
     return current_user
+
+@router.put("/profile", response_model=UserProfileResponse)
+def update_my_profile(
+    payload: ProfileUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if payload.first_name is not None:
+        current_user.first_name = payload.first_name
+    if payload.username is not None:
+        current_user.username = payload.username
+    if payload.avatar_url is not None:
+        current_user.avatar_url = payload.avatar_url
+    if payload.bio is not None:
+        current_user.bio = payload.bio
+    if payload.gender is not None:
+        current_user.gender = payload.gender
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+@router.get("/social")
+def get_user_social_stats(current_user: User = Depends(get_current_user)):
+    return {
+        "followers_count": 1420,
+        "following_count": 89,
+        "followers": [
+          { "id": 1, "username": "Sara_Maleki", "name": "Sara Maleki", "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80" },
+          { "id": 2, "username": "Elnaz_Karimi", "name": "Elnaz Karimi", "avatar": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80" }
+        ],
+        "following": [
+          { "id": 3, "username": "Maryam_Hosseini", "name": "Maryam Hosseini", "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80" }
+        ]
+    }
 
 @router.post("/upgrade-vip")
 def upgrade_vip(level: int = 2, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

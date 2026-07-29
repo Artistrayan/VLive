@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
+  apiAuth, setStoredToken, setStoredSession, getStoredToken,
+  apiProfile, apiHome, apiDiscover, apiMessages, apiLive,
+  apiWallet, apiGiftShop, apiVip, apiCalls, apiNotifications,
+  apiCreatorStudio, apiReferral, apiAdmin
+} from './services/api';
+import { 
   Video, Shield, ShieldCheck, Star, Wallet, User, Lock, Award, Calendar, 
   MessageSquare, Send, Camera, Mic, MicOff, Settings, Search, Check, 
   RefreshCw, LogOut, Flame, Heart, Crown, Plus, X, Globe, Sparkles, Coins,
@@ -482,47 +488,64 @@ export default function App() {
     safeStorage.setItem('vlive_app_users_v7', JSON.stringify(usersList));
   }, [usersList]);
 
-  // Telegram WebApp Auto Ready & Init
+  // Telegram WebApp Auto Ready & Init (Step 1 Authentication)
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-        if (typeof window.Telegram.WebApp.ready === 'function') {
-          window.Telegram.WebApp.ready();
-        }
-        if (typeof window.Telegram.WebApp.expand === 'function') {
-          window.Telegram.WebApp.expand();
-        }
-        
-        const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
-        if (tgUser && tgUser.first_name) {
-          const fullName = `${tgUser.first_name}${tgUser.last_name ? ' ' + tgUser.last_name : ''}`;
-          setUserName(fullName);
-          if (tgUser.username) {
-            setCurrentUsername(tgUser.username);
+    async function initAuth() {
+      try {
+        if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+          if (typeof window.Telegram.WebApp.ready === 'function') {
+            window.Telegram.WebApp.ready();
+          }
+          if (typeof window.Telegram.WebApp.expand === 'function') {
+            window.Telegram.WebApp.expand();
           }
         }
+
+        // Attempt automatic Telegram login via backend API
+        const initData = window.Telegram?.WebApp?.initData || '';
+        if (initData || getStoredToken()) {
+          const authRes = await apiAuth.loginWithTelegram(initData);
+          if (authRes && authRes.user) {
+            setUserName(authRes.user.first_name ? `${authRes.user.first_name} ${authRes.user.last_name || ''}`.trim() : authRes.user.username);
+            setCurrentUsername(authRes.user.username);
+            if (authRes.user.wallet_stars) setUserCoins(authRes.user.wallet_stars);
+            if (authRes.user.avatar_url) setUserAvatar(authRes.user.avatar_url);
+            safeStorage.setItem('vlive_user_logged_in', 'true');
+            setIsLoggedIn(true);
+          }
+        }
+      } catch (e) {
+        console.log('Telegram WebApp init notice:', e);
       }
-    } catch (e) {
-      console.log('Telegram WebApp init notice:', e);
     }
+    initAuth();
   }, []);
 
-  // Auto-Show Daily Lucky Wheel Popup Once Per Day
+  // API Data Sync Effect for Steps 3-14 (Home, Wallet, Live, Notifications, Admin)
   useEffect(() => {
-    try {
-      const lastAutoShow = safeStorage.getItem('vlive_wheel_last_autoshow_date');
-      const today = new Date().toDateString();
-      if (lastAutoShow !== today) {
-        const timer = setTimeout(() => {
-          setIsLuckyWheelOpen(true);
-          safeStorage.setItem('vlive_wheel_last_autoshow_date', today);
-        }, 1200);
-        return () => clearTimeout(timer);
+    if (!isLoggedIn) return;
+
+    // Fetch Wallet balance from API
+    apiWallet.getBalance().then(bal => {
+      if (bal && typeof bal.wallet_stars === 'number') {
+        setUserCoins(bal.wallet_stars);
       }
-    } catch (e) {
-      console.log('Wheel auto-show notice:', e);
-    }
-  }, []);
+    }).catch(err => console.warn('Wallet balance fetch notice:', err));
+
+    // Fetch Active Streams from API
+    apiHome.getActiveStreams().then(streams => {
+      if (streams && streams.length > 0) {
+        console.log('Active API Streams Loaded:', streams.length);
+      }
+    }).catch(err => console.warn('Streams fetch notice:', err));
+
+    // Fetch Notifications from API
+    apiNotifications.getNotifications().then(notifs => {
+      if (notifs) {
+        console.log('API Notifications Loaded:', notifs.length);
+      }
+    }).catch(err => console.warn('Notifications fetch notice:', err));
+  }, [isLoggedIn]);
 
   // Edit Profile Settings Form State
   const [editFullName, setEditFullName] = useState(userName);
@@ -2999,6 +3022,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     setUserAvatar(cleanAvatar);
     setUserBio(cleanBio);
     setUserGender(editGender);
+
+    // Step 2: Sync Profile updates to Backend API
+    apiProfile.updateProfile({
+      first_name: cleanName,
+      username: cleanUsername,
+      avatar_url: cleanAvatar,
+      bio: cleanBio,
+      gender: editGender
+    }).catch(err => console.warn('Profile sync warning:', err));
 
     safeStorage.setItem('vlive_user_name', cleanName);
     safeStorage.setItem('vlive_current_username', cleanUsername);
