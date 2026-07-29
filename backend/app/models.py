@@ -13,7 +13,7 @@ class User(Base):
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
     avatar_url = Column(String, nullable=True)
-    role = Column(String, default="USER") # USER, HOST, ADMIN
+    role = Column(String, default="user") # user, admin, super_admin
     gender = Column(String, default="FEMALE") # FEMALE, MALE
     bio = Column(Text, nullable=True)
     city = Column(String, default="Tehran")

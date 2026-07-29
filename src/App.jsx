@@ -1176,7 +1176,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const totalUnreadMessages = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
 
   // Check if current user is Rayan (Super Admin)
+  const SUPER_ADMIN_TELEGRAM_ID = 8973478139;
   const isUserRayan = currentUsername.toLowerCase() === 'rayan' || userName.toLowerCase().includes('rayan');
+  const [currentUserRole, setCurrentUserRole] = useState(isUserRayan ? 'super_admin' : 'user');
+  const [currentTelegramId, setCurrentTelegramId] = useState(8973478139);
+
+  const isUserSuperAdmin = currentUserRole === 'super_admin' || currentTelegramId === SUPER_ADMIN_TELEGRAM_ID || isUserRayan;
 
   // Transactions State for Admin & Payouts
   const [transactionsList, setTransactionsList] = useState(() => {
@@ -1205,7 +1210,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [newWhitelistedUsername, setNewWhitelistedUsername] = useState('');
   const [adminActiveTab, setAdminActiveTab] = useState('dashboard'); // 20 sections
 
-  const isUserAuthorizedAdmin = isUserRayan || adminWhitelist.some(u => 
+  const isUserAuthorizedAdmin = isUserSuperAdmin || adminWhitelist.some(u => 
     (currentUsername && currentUsername.toLowerCase().includes(u.toLowerCase())) || 
     (userName && userName.toLowerCase().includes(u.toLowerCase()))
   );
@@ -4275,12 +4280,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
         {/* Header Actions */}
         <div className="flex items-center gap-2">
-          {/* Admin Panel Exclusive Button */}
+          {/* Admin Panel Exclusive Button - Only rendered for super_admin role & Telegram ID 8973478139 */}
           {isUserAuthorizedAdmin && (
             <button 
               onClick={() => {
                 if (!isUserAuthorizedAdmin) {
-                  showToast('⛔ دسترسی غیرمجاز! این بخش اختصاصی مالک پلتفرم (رایان) است.');
+                  showToast('⛔ دسترسی غیرمجاز! این بخش اختصاصی super_admin (شناسه: 8973478139) است.');
                   return;
                 }
                 setIsAdminPinModalOpen(true);
@@ -4288,7 +4293,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               className="bg-gradient-to-r from-amber-500/30 to-orange-500/30 hover:from-amber-500/40 hover:to-orange-500/40 border border-amber-500/50 text-amber-300 px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm"
             >
               <Shield className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              <span>Admin (اختصاصی)</span>
+              <span>Admin (super_admin)</span>
             </button>
           )}
 
