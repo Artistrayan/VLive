@@ -6635,21 +6635,23 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                                         </div>
                                         <span className="text-[10px] font-mono text-slate-300">0:12</span>
                                       </div>
-                                    ) : (
-                                      <p className="leading-relaxed whitespace-pre-wrap">
-                                        {msg.translated && msg.translation ? (
-                                          <span className="block">{msg.translation}</span>
-                                        ) : (
-                                          msg.text
-                                        )}
-                                      </p>
-                                      {msg.translated && msg.translation && (
-                                        <span className="inline-flex items-center gap-1 text-[9px] text-cyan-300 font-mono bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-500/30 w-fit mt-1">
-                                          <Globe className="w-2.5 h-2.5 text-cyan-400" />
-                                          🌐 {t('translated', 'ترجمه‌شده')} ({msg.translationLang || langCode})
-                                        </span>
-                                      )}
-                                    )}
+                                     ) : (
+                                       <>
+                                         <p className="leading-relaxed whitespace-pre-wrap">
+                                           {msg.translated && msg.translation ? (
+                                             <span className="block">{msg.translation}</span>
+                                           ) : (
+                                             msg.text
+                                           )}
+                                         </p>
+                                         {msg.translated && msg.translation && (
+                                           <span className="inline-flex items-center gap-1 text-[9px] text-cyan-300 font-mono bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-500/30 w-fit mt-1">
+                                             <Globe className="w-2.5 h-2.5 text-cyan-400" />
+                                             🌐 {t('translated', 'ترجمه‌شده')} ({msg.translationLang || langCode})
+                                           </span>
+                                         )}
+                                       </>
+                                     )}
 
                                     {msg.reactions && msg.reactions.length > 0 && (
                                       <div className="flex items-center gap-1 mt-1 bg-slate-950/80 px-2 py-0.5 rounded-full border border-slate-800 shrink-0 w-fit text-[11px]">
