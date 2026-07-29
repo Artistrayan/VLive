@@ -10971,7 +10971,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           className={`flex flex-col items-center gap-0.5 ${activeTab === 'streams' && streamSubTab === 'lives' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
         >
           <Home className="w-5 h-5" />
-          <span className="text-[9px]">Home</span>
+          <span className="text-[9px]">{t('home', 'Home')}</span>
         </button>
 
         {/* 2. Discover (🔍) */}
@@ -10986,14 +10986,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           className={`flex flex-col items-center gap-0.5 ${activeTab === 'streams' && streamSubTab === 'users' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
         >
           <Search className="w-5 h-5" />
-          <span className="text-[9px]">Discover</span>
+          <span className="text-[9px]">{t('discover', 'Discover')}</span>
         </button>
 
         {/* 3. Live Broadcast Center FAB (🎥) */}
         <button 
           onClick={handleStartLiveStream}
           className="relative -top-5 w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition group"
-          title="Go Live"
+          title={t('goLive', 'Go Live')}
         >
           <Video className="w-6 h-6 font-black group-hover:scale-110 transition duration-300" />
         </button>
@@ -11009,7 +11009,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           className={`flex flex-col items-center gap-0.5 ${activeTab === 'messages' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
         >
           <MessageSquare className="w-5 h-5" />
-          <span className="text-[9px]">Messages</span>
+          <span className="text-[9px]">{t('messages', 'Messages')}</span>
         </button>
 
         {/* 5. Profile (👤) */}
@@ -11023,7 +11023,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           className={`flex flex-col items-center gap-0.5 ${activeTab === 'profile' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
         >
           <User className="w-5 h-5" />
-          <span className="text-[9px]">Profile</span>
+          <span className="text-[9px]">{t('profile', 'Profile')}</span>
         </button>
       </nav>
 
