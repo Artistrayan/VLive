@@ -1196,9 +1196,19 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     safeStorage.setItem('vlive_app_verifications_v3', JSON.stringify(verificationsList));
   }, [verificationsList]);
 
-  // Admin Panel Modal State
+  // Admin Panel Security & Authorization State (Exclusive Access)
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isAdminPinModalOpen, setIsAdminPinModalOpen] = useState(false);
+  const [adminPinCode, setAdminPinCode] = useState('7777');
+  const [enteredAdminPin, setEnteredAdminPin] = useState('');
+  const [adminWhitelist, setAdminWhitelist] = useState(['rayan', 'rayan_vlive', 'tattoo_rayan', 'rayan_maleki']);
+  const [newWhitelistedUsername, setNewWhitelistedUsername] = useState('');
   const [adminActiveTab, setAdminActiveTab] = useState('dashboard'); // 20 sections
+
+  const isUserAuthorizedAdmin = isUserRayan || adminWhitelist.some(u => 
+    (currentUsername && currentUsername.toLowerCase().includes(u.toLowerCase())) || 
+    (userName && userName.toLowerCase().includes(u.toLowerCase()))
+  );
 
   // REDESIGNED ADMIN DASHBOARD STATES
   const [adminGlobalSearch, setAdminGlobalSearch] = useState('');
@@ -4265,14 +4275,20 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
         {/* Header Actions */}
         <div className="flex items-center gap-2">
-          {/* Admin Panel Button */}
-          {isUserRayan && (
+          {/* Admin Panel Exclusive Button */}
+          {isUserAuthorizedAdmin && (
             <button 
-              onClick={() => setIsAdminPanelOpen(true)}
-              className="bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm"
+              onClick={() => {
+                if (!isUserAuthorizedAdmin) {
+                  showToast('⛔ دسترسی غیرمجاز! این بخش اختصاصی مالک پلتفرم (رایان) است.');
+                  return;
+                }
+                setIsAdminPinModalOpen(true);
+              }}
+              className="bg-gradient-to-r from-amber-500/30 to-orange-500/30 hover:from-amber-500/40 hover:to-orange-500/40 border border-amber-500/50 text-amber-300 px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm"
             >
-              <Shield className="w-3.5 h-3.5 text-amber-400" />
-              Admin
+              <Shield className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+              <span>Admin (اختصاصی)</span>
             </button>
           )}
 
@@ -13871,6 +13887,61 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         </div>
       )}
 
+      {/* EXCLUSIVE ADMIN SECURITY AUTHENTICATION MODAL */}
+      {isAdminPinModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md card-3d p-6 border border-amber-500/50 bg-slate-900 rounded-3xl space-y-4 text-center text-right shadow-[0_0_50px_rgba(245,158,11,0.3)]" dir="rtl">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center mx-auto shadow-inner">
+              <ShieldCheck className="w-8 h-8 animate-pulse" />
+            </div>
+            
+            <div>
+              <h3 className="text-base sm:text-lg font-black text-amber-300">👑 ورود به پنل اختصاصی مدیریت ارشد (رایان)</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                این بخش کاملاً شخصی است. لطفا پین امنیتی مدیر را وارد کنید (کد پیش‌فرض: <span className="font-mono text-amber-400 font-bold">7777</span>)
+              </p>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <input
+                type="password"
+                value={enteredAdminPin}
+                onChange={e => setEnteredAdminPin(e.target.value)}
+                placeholder="رمز عبور امنیتی (PIN)..."
+                className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-center font-mono text-lg text-amber-300 outline-none focus:border-amber-500"
+              />
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    if (enteredAdminPin === adminPinCode || enteredAdminPin === '7777') {
+                      setIsAdminPinModalOpen(false);
+                      setIsAdminPanelOpen(true);
+                      setEnteredAdminPin('');
+                      showToast('🔑 با موفقیت به عنوان مدیر ارشد پلتفرم وارد شدید');
+                    } else {
+                      showToast('❌ رمز عبور امنیتی اشتباه است!');
+                    }
+                  }}
+                  className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black text-xs shadow-lg"
+                >
+                  ورود به پنل مدیریت
+                </button>
+                <button
+                  onClick={() => {
+                    setIsAdminPinModalOpen(false);
+                    setEnteredAdminPin('');
+                  }}
+                  className="px-4 py-3 rounded-2xl bg-slate-800 text-slate-400 font-bold text-xs hover:text-white"
+                >
+                  انصراف
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL 8: 100% REAL & FULLY EXECUTABLE 20-SECTION ADMIN DASHBOARD */}
       {isAdminPanelOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
@@ -14731,10 +14802,68 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 </div>
               )}
 
-              {/* 15. ROLES */}
+              {/* 15. ROLES & ACCESS WHITELIST */}
               {adminActiveTab === 'roles' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۵. سطوح دسترسی و مدیریت مدیران (Roles)</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm">۱۵. سطوح دسترسی و مدیریت لیست مجاز (Roles & Access Whitelist)</h3>
+                    <span className="text-[10px] text-amber-400 font-mono">اختصاصی مالک (رایان)</span>
+                  </div>
+
+                  {/* WHITELIST MANAGER */}
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-amber-500/40 space-y-3">
+                    <p className="font-bold text-amber-300">🔒 افزودن کاربر مجاز به لیست دسترسی پنل مدیریت</p>
+                    <span className="text-[10px] text-slate-400 block">فقط کاربرانی که نام کاربری تلگرام یا نام آن‌ها در لیست زیر باشد می‌توانند پنل مدیریت را باز کنند.</span>
+                    
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={newWhitelistedUsername}
+                        onChange={e => setNewWhitelistedUsername(e.target.value)}
+                        placeholder="آیدی یا آیدی تلگرام کاربر (مثلاً: @sara_admin)..."
+                        className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                      />
+                      <button
+                        onClick={() => {
+                          if (!newWhitelistedUsername) return;
+                          const clean = newWhitelistedUsername.replace('@', '').trim();
+                          if (clean && !adminWhitelist.includes(clean)) {
+                            setAdminWhitelist(prev => [...prev, clean]);
+                            addAdminAuditLog(`کاربر @${clean} به لیست مجاز مدیران اضافه گردید`);
+                            showToast(`کاربر @${clean} به لیست مجاز مدیریت اضافه شد`);
+                            setNewWhitelistedUsername('');
+                          }
+                        }}
+                        className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold whitespace-nowrap"
+                      >
+                        + افزودن به لیست مجاز
+                      </button>
+                    </div>
+
+                    <div className="space-y-1.5 pt-2">
+                      <p className="text-[10px] font-bold text-slate-400">کاربران دارای دسترسی مجاز فعلی:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {adminWhitelist.map((handle, i) => (
+                          <div key={i} className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-amber-300 font-mono text-[11px] flex items-center gap-2">
+                            <span>@{handle}</span>
+                            {handle !== 'rayan' && (
+                              <button
+                                onClick={() => {
+                                  setAdminWhitelist(prev => prev.filter(h => h !== handle));
+                                  addAdminAuditLog(`دسترسی مدیریت @${handle} لغو شد`);
+                                  showToast(`دسترسی مدیریت @${handle} لغو گردید`);
+                                }}
+                                className="text-slate-500 hover:text-rose-400 font-bold"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     {adminRolesList.map((r, idx) => (
                       <div key={idx} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
