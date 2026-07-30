@@ -1913,20 +1913,20 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // 6. Language & Real-time Translation System
   const [currentAppLang, setCurrentAppLang] = useState(() => {
-    return safeStorage.getItem('vlive_app_lang') || 'English';
+    return safeStorage.getItem('vlive_app_lang') || 'fa';
   });
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
 
   const getLangCode = (langName) => {
-    if (langName === 'English' || langName === 'en') return 'en';
-    if (langName === 'فارسی' || langName === 'fa' || langName === 'Farsi' || langName === 'Persian') return 'fa';
-    if (langName === 'العربية' || langName === 'ar' || langName === 'Arabic') return 'ar';
-    if (langName === 'Türkçe' || langName === 'tr' || langName === 'Turkish') return 'tr';
-    if (langName === 'Русский' || langName === 'ru' || langName === 'Russian') return 'ru';
-    return 'en';
+    if (langName === 'en' || langName === 'English') return 'en';
+    if (langName === 'fa' || langName === 'فارسی' || langName === 'Farsi' || langName === 'Persian') return 'fa';
+    if (langName === 'ar' || langName === 'العربية' || langName === 'Arabic') return 'ar';
+    if (langName === 'tr' || langName === 'Türkçe' || langName === 'Turkish') return 'tr';
+    if (langName === 'ru' || langName === 'Русский' || langName === 'Russian') return 'ru';
+    return langName || 'fa';
   };
 
-  const currentLangObj = APP_LANGUAGES.find(l => l.name === currentAppLang || l.code === currentAppLang) || APP_LANGUAGES[0];
+  const currentLangObj = APP_LANGUAGES.find(l => l.code === currentAppLang || l.name === currentAppLang) || APP_LANGUAGES[1];
   const langCode = currentLangObj.code;
   const isRtl = currentLangObj.dir === 'rtl';
 
@@ -1938,7 +1938,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   }, [langCode, isRtl]);
 
   const t = (key, fallback = '') => {
-    return I18N_DICTIONARY[langCode]?.[key] || fallback || key;
+    return I18N_DICTIONARY[langCode]?.[key] || I18N_DICTIONARY['fa']?.[key] || fallback || key;
   };
 
   const loc = (faStr, enStr) => {
@@ -1946,8 +1946,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   };
 
   const handleSelectLanguage = (lang) => {
-    setCurrentAppLang(lang.name);
-    safeStorage.setItem('vlive_app_lang', lang.name);
+    setCurrentAppLang(lang.code);
+    safeStorage.setItem('vlive_app_lang', lang.code);
     setIsLanguageModalOpen(false);
     if (typeof document !== 'undefined') {
       document.documentElement.dir = lang.dir === 'rtl' ? 'rtl' : 'ltr';
@@ -3668,7 +3668,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     safeStorage.setItem('vlive_user_gender', editGender);
 
     setUsersList(prev => prev.map(u => {
-      if (u.username.toLowerCase() === currentUsername.toLowerCase()) {
+      if (u.username?.toLowerCase() === currentUsername.toLowerCase() || u.isMe) {
         return {
           ...u,
           name: cleanName,
@@ -3682,7 +3682,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     }));
 
     setIsEditingProfile(false);
-    showToast('Profile information saved successfully');
+    showToast(loc('اطلاعات پروفایل با موفقیت ذخیره و بروز شد', 'Profile information saved and updated successfully'));
   };
 
   // Handle Direct Messages Sending
