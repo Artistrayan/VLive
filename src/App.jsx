@@ -769,6 +769,133 @@ export default function App() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const galleryFileInputRef = useRef(null);
 
+  // User Profile Posts & Stories Management State
+  const [userPhotosList, setUserPhotosList] = useState(() => {
+    return safeStorage.getParsed('vlive_user_photos_v1', [
+      { id: 'p1', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', caption: 'Live Stream Setup 🌟' },
+      { id: 'p2', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80', caption: 'Studio Session 🎙️' },
+      { id: 'p3', url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80', caption: 'VIP Party Night ✨' },
+      { id: 'p4', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80', caption: 'V.Live+ Community Meetup 🚀' }
+    ]);
+  });
+
+  const [userVideosList, setUserVideosList] = useState(() => {
+    return safeStorage.getParsed('vlive_user_videos_v1', [
+      { id: 'v1', title: 'Tehran Live Highlights', views: '12.4K', thumb: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=400&q=80' },
+      { id: 'v2', title: 'VIP Party Stage Moments', views: '8.9K', thumb: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=400&q=80' },
+      { id: 'v3', title: 'Singer Performance Live', views: '24.1K', thumb: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80' }
+    ]);
+  });
+
+  const [isAddPostModalOpen, setIsAddPostModalOpen] = useState(false);
+  const [newPostType, setNewPostType] = useState('photo'); // 'photo' | 'video'
+  const [newPostUrl, setNewPostUrl] = useState('');
+  const [newPostTitle, setNewPostTitle] = useState('');
+
+  const [isAddStoryModalOpen, setIsAddStoryModalOpen] = useState(false);
+  const [newStoryUrl, setNewStoryUrl] = useState('');
+  const [newStoryCaption, setNewStoryCaption] = useState('');
+
+  const handleAddNewPost = () => {
+    if (!newPostUrl.trim() || !newPostTitle.trim()) {
+      showToast(loc('لطفاً لینک تصویر/ویدیو و عنوان را وارد کنید', 'Please enter media URL and title'));
+      return;
+    }
+
+    if (newPostType === 'photo') {
+      const newItem = { id: 'p_' + Date.now(), url: newPostUrl.trim(), caption: newPostTitle.trim() };
+      const updated = [newItem, ...userPhotosList];
+      setUserPhotosList(updated);
+      safeStorage.setItem('vlive_user_photos_v1', JSON.stringify(updated));
+      showToast(loc('عکس با موفقیت به گالری پروفایل اضافه شد', 'Photo added to profile gallery successfully'));
+    } else {
+      const newItem = { id: 'v_' + Date.now(), title: newPostTitle.trim(), views: '1', thumb: newPostUrl.trim() };
+      const updated = [newItem, ...userVideosList];
+      setUserVideosList(updated);
+      safeStorage.setItem('vlive_user_videos_v1', JSON.stringify(updated));
+      showToast(loc('ویدیو با موفقیت به گالری پروفایل اضافه شد', 'Video added to profile gallery successfully'));
+    }
+
+    setNewPostUrl('');
+    setNewPostTitle('');
+    setIsAddPostModalOpen(false);
+  };
+
+  const handleDeletePhotoPost = (id) => {
+    const updated = userPhotosList.filter(p => p.id !== id);
+    setUserPhotosList(updated);
+    safeStorage.setItem('vlive_user_photos_v1', JSON.stringify(updated));
+    showToast(loc('عکس از پروفایل حذف شد', 'Photo deleted from profile'));
+  };
+
+  const handleDeleteVideoPost = (id) => {
+    const updated = userVideosList.filter(v => v.id !== id);
+    setUserVideosList(updated);
+    safeStorage.setItem('vlive_user_videos_v1', JSON.stringify(updated));
+    showToast(loc('ویدیو از پروفایل حذف شد', 'Video deleted from profile'));
+  };
+
+  const handleAddUserStory = () => {
+    if (!newStoryUrl.trim()) {
+      showToast(loc('لطفاً لینک تصویر استوری را وارد کنید', 'Please enter story image URL'));
+      return;
+    }
+
+    const newStoryItem = {
+      id: 's_' + Date.now(),
+      type: 'photo',
+      url: newStoryUrl.trim(),
+      duration: 5,
+      views: 1,
+      likes: 0,
+      time: 'Just now'
+    };
+
+    setAdvancedStories(prev => {
+      const myStoryIndex = prev.findIndex(s => s.isMe);
+      if (myStoryIndex >= 0) {
+        const copy = [...prev];
+        copy[myStoryIndex] = {
+          ...copy[myStoryIndex],
+          items: [newStoryItem, ...copy[myStoryIndex].items]
+        };
+        safeStorage.setItem('vlive_advanced_stories_v1', JSON.stringify(copy));
+        return copy;
+      } else {
+        const newGroup = {
+          id: 'my_story',
+          isMe: true,
+          hasUnseen: false,
+          user: { name: userName, avatar: userAvatar, isVip: true },
+          items: [newStoryItem]
+        };
+        const copy = [newGroup, ...prev];
+        safeStorage.setItem('vlive_advanced_stories_v1', JSON.stringify(copy));
+        return copy;
+      }
+    });
+
+    setNewStoryUrl('');
+    setNewStoryCaption('');
+    setIsAddStoryModalOpen(false);
+    showToast(loc('استوری جدید با موفقیت در پروفایل منتشر شد', 'New story published on profile successfully'));
+  };
+
+  const handleDeleteUserStoryItem = (itemId) => {
+    setAdvancedStories(prev => {
+      const copy = prev.map(group => {
+        if (group.isMe) {
+          const updatedItems = group.items.filter(item => item.id !== itemId);
+          return { ...group, items: updatedItems };
+        }
+        return group;
+      }).filter(group => !group.isMe || group.items.length > 0);
+      safeStorage.setItem('vlive_advanced_stories_v1', JSON.stringify(copy));
+      return copy;
+    });
+    showToast(loc('استوری مورد نظر حذف گردید', 'Story deleted successfully'));
+  };
+
   // App Suggestions & Improvements Box State
   const [suggestionsList, setSuggestionsList] = useState(() => {
     return safeStorage.getParsed('vlive_app_suggestions_v1', [
@@ -11061,62 +11188,136 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </div>
             </div>
 
-            {/* 5. MEDIA GALLERY (PHOTOS & VIDEOS TABS) */}
-            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <Image className="w-3.5 h-3.5 text-purple-400" />
-                  Media Gallery
-                </h3>
+            {/* 5. MEDIA GALLERY & STORIES MANAGEMENT (PHOTOS, VIDEOS & 24H STORIES) */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Image className="w-4 h-4 text-purple-400" />
+                  <h3 className="text-xs font-bold text-white">
+                    {loc('گالری رسانه و استوری‌ها (Posts & Stories)', 'Media Gallery & Stories')}
+                  </h3>
+                </div>
 
+                {profilePreviewMode === 'self' && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsAddPostModalOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold shadow flex items-center gap-1 active:scale-95 transition"
+                    >
+                      <span>➕</span>
+                      <span>{loc('افزودن پست', 'Add Post')}</span>
+                    </button>
+                    <button
+                      onClick={() => setIsAddStoryModalOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow flex items-center gap-1 active:scale-95 transition"
+                    >
+                      <span>📸</span>
+                      <span>{loc('انتشار استوری', 'Publish Story')}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* ACTIVE USER STORIES SECTION */}
+              {profilePreviewMode === 'self' && (
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                  <span className="text-[11px] font-bold text-purple-300 flex items-center gap-1">
+                    <span>⚡</span> {loc('استوری‌های فعال ۲۴ ساعته شما:', 'Your Active 24h Stories:')}
+                  </span>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {advancedStories.find(s => s.isMe)?.items?.length > 0 ? (
+                      advancedStories.find(s => s.isMe).items.map(stItem => (
+                        <div key={stItem.id} className="relative w-16 h-20 rounded-xl overflow-hidden border border-purple-500/40 shrink-0 group">
+                          <img src={stItem.url} alt="Story" className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => handleDeleteUserStoryItem(stItem.id)}
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-slate-950/80 text-red-400 flex items-center justify-center text-[10px] font-black opacity-0 group-hover:opacity-100 transition shadow"
+                            title="Delete Story"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[10px] text-slate-400">{loc('استوری فعالی ندارید. روی دکمه انتشار استوری کلیک کنید.', 'No active stories. Click publish story.')}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-1">
                 <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[10px] font-bold">
                   <button 
                     onClick={() => setProfileGalleryTab('photos')}
                     className={`px-3 py-1 rounded-lg transition ${profileGalleryTab === 'photos' ? 'bg-pink-600 text-white' : 'text-slate-400 hover:text-white'}`}
                   >
-                    Photos (4)
+                    Photos ({userPhotosList.length})
                   </button>
                   <button 
                     onClick={() => setProfileGalleryTab('videos')}
                     className={`px-3 py-1 rounded-lg transition ${profileGalleryTab === 'videos' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'}`}
                   >
-                    Videos (3)
+                    Videos ({userVideosList.length})
                   </button>
                 </div>
               </div>
 
               {profileGalleryTab === 'photos' ? (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {[
-                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-                    'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
-                    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
-                    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80'
-                  ].map((img, i) => (
-                    <div key={i} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-800 group hover:border-pink-500/50 transition">
-                      <img src={img} alt={`Gallery photo ${i+1}`} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                  {userPhotosList.length > 0 ? (
+                    userPhotosList.map((item) => (
+                      <div key={item.id} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-800 group hover:border-pink-500/50 transition">
+                        <img src={item.url} alt={item.caption || 'Photo'} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-2">
+                          <p className="text-[10px] font-bold text-white truncate">{item.caption}</p>
+                        </div>
+                        {profilePreviewMode === 'self' && (
+                          <button
+                            onClick={() => handleDeletePhotoPost(item.id)}
+                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-slate-950/80 text-red-400 flex items-center justify-center text-xs font-black opacity-0 group-hover:opacity-100 transition shadow"
+                            title="Delete Photo"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full py-8 text-center text-xs text-slate-400">
+                      {loc('هیچ عکسی در گالری ثبت نشده است', 'No photos in gallery')}
                     </div>
-                  ))}
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    { title: 'Tehran Live Highlights', views: '12.4K', thumb: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=400&q=80' },
-                    { title: 'VIP Party Stage Moments', views: '8.9K', thumb: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=400&q=80' },
-                    { title: 'Singer Performance Live', views: '24.1K', thumb: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80' }
-                  ].map((vid, i) => (
-                    <div key={i} className="relative aspect-video rounded-2xl overflow-hidden border border-slate-800 group hover:border-purple-500/50 transition">
-                      <img src={vid.thumb} alt={vid.title} className="w-full h-full object-cover group-hover:scale-105 transition" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
-                      <div className="absolute top-2 right-2 bg-slate-950/80 px-2 py-0.5 rounded-full text-[9px] text-cyan-400 font-bold flex items-center gap-1">
-                        <Eye className="w-2.5 h-2.5" />
-                        {vid.views}
+                  {userVideosList.length > 0 ? (
+                    userVideosList.map((item) => (
+                      <div key={item.id} className="relative aspect-video rounded-2xl overflow-hidden border border-slate-800 group hover:border-purple-500/50 transition">
+                        <img src={item.thumb} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+                        <div className="absolute top-2 right-2 bg-slate-950/80 px-2 py-0.5 rounded-full text-[9px] text-cyan-400 font-bold flex items-center gap-1">
+                          <Eye className="w-2.5 h-2.5" />
+                          {item.views}
+                        </div>
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <p className="text-[10px] font-bold text-white truncate">{item.title}</p>
+                        </div>
+                        {profilePreviewMode === 'self' && (
+                          <button
+                            onClick={() => handleDeleteVideoPost(item.id)}
+                            className="absolute top-2 left-2 w-6 h-6 rounded-full bg-slate-950/80 text-red-400 flex items-center justify-center text-xs font-black opacity-0 group-hover:opacity-100 transition shadow"
+                            title="Delete Video"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
-                      <div className="absolute bottom-2 left-2 right-2">
-                        <p className="text-[10px] font-bold text-white truncate">{vid.title}</p>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full py-8 text-center text-xs text-slate-400">
+                      {loc('هیچ ویدیویی ثبت نشده است', 'No videos in gallery')}
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
             </div>
@@ -17721,6 +17922,138 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 className="py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs active:scale-95 transition"
               >
                 {t('deny', 'Deny / Decline')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ADD NEW POST TO PROFILE GALLERY */}
+      {isAddPostModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+          <div className="w-full max-w-md card-3d p-6 border border-pink-500/50 bg-slate-900 rounded-3xl space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>➕</span>
+                <span>{loc('افزودن پست جدید به پروفایل', 'Add New Post to Profile')}</span>
+              </h3>
+              <button onClick={() => setIsAddPostModalOpen(false)} className="text-slate-400 hover:text-white p-1 rounded-full bg-slate-800">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="text-slate-300 font-bold mb-1 block">{loc('نوع پست:', 'Post Type:')}</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewPostType('photo')}
+                    className={`py-2 rounded-xl font-bold border transition ${newPostType === 'photo' ? 'bg-pink-600 border-pink-400 text-white shadow' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+                  >
+                    📷 {loc('عکس (Photo)', 'Photo')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewPostType('video')}
+                    className={`py-2 rounded-xl font-bold border transition ${newPostType === 'video' ? 'bg-purple-600 border-purple-400 text-white shadow' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+                  >
+                    🎥 {loc('ویدیو (Video)', 'Video')}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-slate-300 font-bold mb-1 block">{loc('لینک تصویر یا ویدیو (URL):', 'Media URL:')}</label>
+                <input
+                  type="text"
+                  value={newPostUrl}
+                  onChange={e => setNewPostUrl(e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500 text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-300 font-bold mb-1 block">{loc('عنوان یا کپشن پست:', 'Caption / Title:')}</label>
+                <input
+                  type="text"
+                  value={newPostTitle}
+                  onChange={e => setNewPostTitle(e.target.value)}
+                  placeholder={loc('مثال: لایو جذاب امشب با دوستان...', 'e.g. Awesome live stream...')}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                onClick={handleAddNewPost}
+                className="flex-1 py-3 rounded-xl btn-neon-pink font-bold text-xs shadow-lg"
+              >
+                {loc('انتشار پست در پروفایل 🚀', 'Publish Post to Profile 🚀')}
+              </button>
+              <button
+                onClick={() => setIsAddPostModalOpen(false)}
+                className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+              >
+                {loc('انصراف', 'Cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: PUBLISH NEW 24H STORY */}
+      {isAddStoryModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+          <div className="w-full max-w-md card-3d p-6 border border-purple-500/50 bg-slate-900 rounded-3xl space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>📸</span>
+                <span>{loc('انتشار استوری جدید ۲۴ ساعته', 'Publish New 24h Story')}</span>
+              </h3>
+              <button onClick={() => setIsAddStoryModalOpen(false)} className="text-slate-400 hover:text-white p-1 rounded-full bg-slate-800">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="text-slate-300 font-bold mb-1 block">{loc('لینک تصویر استوری (URL):', 'Story Image URL:')}</label>
+                <input
+                  type="text"
+                  value={newStoryUrl}
+                  onChange={e => setNewStoryUrl(e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-purple-500 text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-300 font-bold mb-1 block">{loc('متن یا موضوع استوری (اختیاری):', 'Story Caption (Optional):')}</label>
+                <input
+                  type="text"
+                  value={newStoryCaption}
+                  onChange={e => setNewStoryCaption(e.target.value)}
+                  placeholder={loc('مثال: پشت صحنه لایو امروز...', 'e.g. Behind the scenes...')}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-purple-500 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                onClick={handleAddUserStory}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:brightness-110 text-white font-bold text-xs shadow-lg"
+              >
+                {loc('انتشار استوری در پروفایل ⚡', 'Publish Story ⚡')}
+              </button>
+              <button
+                onClick={() => setIsAddStoryModalOpen(false)}
+                className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+              >
+                {loc('انصراف', 'Cancel')}
               </button>
             </div>
           </div>
