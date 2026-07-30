@@ -315,122 +315,7 @@ const I18N_DICTIONARY = {
 };
 
 // Default Real Users seed stored in local storage
-const DEFAULT_REAL_USERS = [
-  { 
-    id: 1, 
-    username: 'Sara_Maleki', 
-    name: 'Sara Maleki', 
-    role: 'VIP Streamer', 
-    online: true, 
-    isTop: true, 
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', 
-    rate: '500 coins/min',
-    coins: 45000,
-    gender: 'female',
-    isVerified: true,
-    status: 'active',
-    registeredAt: '2024-01-12',
-    bio: 'Official Live Streamer | Private video calls & interactive 4K streams',
-    rating: 4.9,
-    ratingCount: 142,
-    usdtAddress: 'TKh8zXpQ7yM3vN1L9R2W4b6K8a0C'
-  },
-  { 
-    id: 2, 
-    username: 'Elnaz_Karimi', 
-    name: 'Elnaz Karimi', 
-    role: 'Online Model', 
-    online: true, 
-    isTop: true, 
-    avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', 
-    rate: '750 coins/min',
-    coins: 98000,
-    gender: 'female',
-    isVerified: true,
-    status: 'active',
-    registeredAt: '2024-02-05',
-    bio: 'Online Model & Stream Host | Music, Fashion & Private Chat',
-    rating: 4.8,
-    ratingCount: 98,
-    usdtAddress: 'TLp9yW2k4R7xM1vN8L0b3C5a9D'
-  },
-  { 
-    id: 3, 
-    username: 'Maryam_Hosseini', 
-    name: 'Maryam Hosseini', 
-    role: 'Official Host', 
-    online: false, 
-    isTop: false, 
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80', 
-    rate: '400 coins/min',
-    coins: 12000,
-    gender: 'female',
-    isVerified: true,
-    status: 'active',
-    registeredAt: '2024-03-15',
-    bio: 'Community & Voice Chat Host on V.Live+',
-    rating: 4.7,
-    ratingCount: 45,
-    usdtAddress: ''
-  },
-  { 
-    id: 4, 
-    username: 'Niloofar_Amini', 
-    name: 'Niloofar Amini', 
-    role: 'Streamer', 
-    online: true, 
-    isTop: false, 
-    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80', 
-    rate: '600 coins/min',
-    coins: 23000,
-    gender: 'female',
-    isVerified: false,
-    status: 'active',
-    registeredAt: '2024-04-20',
-    bio: 'New Live Streamer | Verification Pending',
-    rating: 4.6,
-    ratingCount: 22,
-    usdtAddress: ''
-  },
-  { 
-    id: 5, 
-    username: 'Rayan', 
-    name: 'Rayan (Super Admin)', 
-    role: 'Super Admin', 
-    online: true, 
-    isTop: true, 
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', 
-    rate: 'Super Admin',
-    coins: 1000000,
-    gender: 'male',
-    isVerified: true,
-    status: 'active',
-    registeredAt: '2024-01-01',
-    bio: 'Executive Admin of V.Live+ Platform | Technical & Security Lead',
-    rating: 5.0,
-    ratingCount: 310,
-    usdtAddress: ''
-  },
-  { 
-    id: 6, 
-    username: 'Arash_VIP', 
-    name: 'Arash Mohammadi', 
-    role: 'VIP Supporter', 
-    online: true, 
-    isTop: false, 
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', 
-    rate: 'Sponsor',
-    coins: 74500,
-    gender: 'male',
-    isVerified: true,
-    status: 'active',
-    registeredAt: '2024-05-10',
-    bio: 'Senior Sponsor & VIP Gold Member',
-    rating: 4.9,
-    ratingCount: 68,
-    usdtAddress: ''
-  }
-];
+const DEFAULT_REAL_USERS = [];
 
 // Initial Tether USDT Transactions
 const INITIAL_TRANSACTIONS = [
@@ -658,9 +543,7 @@ export default function App() {
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
   // AUTHENTICATION & ONBOARDING SYSTEM STATES (10-STEP SYSTEM)
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return safeStorage.getItem('vlive_user_logged_in') === 'true';
-  });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authStep, setAuthStep] = useState('splash'); // 'splash' | 'welcome' | 'login' | 'register' | 'forgot_password' | 'onboarding' | 'kyc_verification' | 'final_welcome'
   const [authMethod, setAuthMethod] = useState('telegram'); // 'telegram' | 'google' | 'credentials'
   const [termsAgreed, setTermsAgreed] = useState(true);
@@ -10494,16 +10377,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   className="w-full h-full object-cover opacity-50"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
-                
-                {profilePreviewMode === 'self' && (
-                  <button 
-                    onClick={() => setIsEditingProfile(!isEditingProfile)}
-                    className="absolute top-3 right-3 p-2 rounded-xl bg-slate-950/80 backdrop-blur-md border border-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1 hover:text-white"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 text-pink-400" />
-                    Edit Cover
-                  </button>
-                )}
               </div>
 
               {/* Main Profile Info Row */}
@@ -10615,7 +10488,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 </div>
 
                 {/* RECOGNIZED ADMIN PROMINENT PROFILE BUTTON */}
-                {(adminRolesList.some(a => String(a.telegramId).trim() === String(currentTelegramId).trim()) || String(currentTelegramId).trim() === '8973478139' || isUserRayan) && (
+                {String(currentTelegramId).trim() === '8973478139' && (
                   <div className="pt-2">
                     <button
                       onClick={() => setIsAdminPinModalOpen(true)}
@@ -10666,7 +10539,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       const file = e.target.files && e.target.files[0];
                       if (file) {
                         const fileUrl = URL.createObjectURL(file);
-                        setUserAvatar(fileUrl);
+                        setEditAvatarUrl(fileUrl);
                         showToast(`Uploaded ${file.name} as your avatar!`);
                       }
                     }}
@@ -10689,8 +10562,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       <button
                         key={index}
                         type="button"
-                        onClick={() => setUserAvatar(avatarUrl)}
-                        className={`relative w-12 h-12 rounded-2xl overflow-hidden shrink-0 border-2 transition ${userAvatar === avatarUrl ? 'border-pink-500 scale-105 shadow-[0_0_10px_rgba(236,72,153,0.8)]' : 'border-slate-800 hover:border-slate-600'}`}
+                        onClick={() => setEditAvatarUrl(avatarUrl)}
+                        className={`relative w-12 h-12 rounded-2xl overflow-hidden shrink-0 border-2 transition ${editAvatarUrl === avatarUrl ? 'border-pink-500 scale-105 shadow-[0_0_10px_rgba(236,72,153,0.8)]' : 'border-slate-800 hover:border-slate-600'}`}
                       >
                         <img src={avatarUrl} alt={`Avatar ${index + 1}`} className="w-full h-full object-cover" />
                       </button>
@@ -10703,8 +10576,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     <label className="text-slate-400 mb-1 block">Display Name</label>
                     <input 
                       type="text" 
-                      value={userName} 
-                      onChange={e => setUserName(e.target.value)}
+                      value={editFullName} 
+                      onChange={e => setEditFullName(e.target.value)}
                       className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
                     />
                   </div>
@@ -10713,8 +10586,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     <label className="text-slate-400 mb-1 block">Username</label>
                     <input 
                       type="text" 
-                      value={currentUsername} 
-                      onChange={e => setCurrentUsername(e.target.value)}
+                      value={editUsername} 
+                      onChange={e => setEditUsername(e.target.value)}
                       className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
                     />
                   </div>
@@ -10740,8 +10613,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   <div className="sm:col-span-2">
                     <label className="text-slate-400 mb-1 block">Bio Statement</label>
                     <textarea 
-                      value={userBio} 
-                      onChange={e => setUserBio(e.target.value)}
+                      value={editBio} 
+                      onChange={e => setEditBio(e.target.value)}
                       className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500 h-20"
                     />
                   </div>
@@ -15152,18 +15025,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 </div>
               </div>
 
-              {/* HINT FOR SUPER ADMIN ACCESS */}
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 space-y-1 dir-rtl">
-                <div className="font-bold flex items-center gap-1">
-                  <Key className="w-3.5 h-3.5" />
-                  <span>راهنمای ورود مدیر کل (Super Admin):</span>
-                </div>
-                <div className="font-mono text-[10px] text-slate-300 space-y-0.5">
-                  <div>۱. ای‌دی عددی تلگرام: <span className="text-cyan-300 font-bold">8973478139</span></div>
-                  <div>۲. نام کاربری: <span className="text-amber-200 font-bold">Rayan_Super_Admin</span></div>
-                  <div>۳. رمز ورود: <span className="text-amber-200 font-bold">Rayan_0935</span></div>
-                </div>
-              </div>
+
 
               <div className="flex items-center gap-2 pt-2">
                 <button
