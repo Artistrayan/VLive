@@ -1846,6 +1846,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const langCode = currentLangObj.code;
   const isRtl = currentLangObj.dir === 'rtl';
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
+      document.documentElement.lang = langCode;
+    }
+  }, [langCode, isRtl]);
+
   const t = (key, fallback = '') => {
     return I18N_DICTIONARY[langCode]?.[key] || fallback || key;
   };
@@ -1854,6 +1861,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     setCurrentAppLang(lang.name);
     safeStorage.setItem('vlive_app_lang', lang.name);
     setIsLanguageModalOpen(false);
+    if (typeof document !== 'undefined') {
+      document.documentElement.dir = lang.dir === 'rtl' ? 'rtl' : 'ltr';
+      document.documentElement.lang = lang.code;
+    }
     showToast(`${t('changeLangSuccess', 'زبان برنامه تغییر یافت به')} ${lang.flag} ${lang.name}`);
   };
 
@@ -4790,6 +4801,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             {notificationsList.some(n => n.unread) && (
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
             )}
+          </button>
+
+          {/* 👑 Admin Panel Button */}
+          <button 
+            onClick={() => setIsAdminPinModalOpen(true)}
+            className="p-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:text-amber-200 hover:bg-amber-500/30 transition flex items-center gap-1 font-bold text-xs shadow-md"
+            title={t('adminPanel', 'پنل مدیریت (Admin)')}
+          >
+            <ShieldCheck className="w-4 h-4 text-amber-400 animate-pulse" />
           </button>
 
           {/* ⚙️ Settings Button */}
@@ -10502,8 +10522,26 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         </div>
 
                         <button
-                          onClick={() => showToast(`خرید ${item.title} به‌زودی در بروزرسانی فعال خواهد شد!`)}
-                          className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-xs shadow-md"
+                          onClick={() => {
+                            const cost = parseInt(item.price) || 300;
+                            if (userCoins < cost) {
+                              showToast(`موجودی سکه کافی نیست! نیاز به ${cost} سکه دارید.`);
+                              setIsDepositModalOpen(true);
+                              return;
+                            }
+                            setUserCoins(prev => prev - cost);
+                            setUserBadgesList(prev => [...prev, {
+                              id: `badge_${Date.now()}_${idx}`,
+                              name: item.title,
+                              icon: item.title.split(' ')[0],
+                              desc: item.desc,
+                              rarity: 'Legendary',
+                              isUnlocked: true,
+                              isEquipped: false
+                            }]);
+                            showToast(`با موفقیت ${item.title} خریداری شد! 🛍️`);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-xs shadow-md active:scale-95 transition"
                         >
                           خرید 🛍️
                         </button>
@@ -10801,27 +10839,44 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 </button>
 
                 <button 
-                  onClick={() => showToast('Change Password dialog opened')}
+                  onClick={() => {
+                    setIsSettingsModalOpen(true);
+                    setSettingsCategoryFilter('account');
+                  }}
                   className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition"
                 >
-                  <span className="text-slate-200 font-medium">Change Password</span>
+                  <span className="text-slate-200 font-medium">{t('changePassword', 'تغییر رمز عبور (Change Password)')}</span>
                   <Key className="w-3.5 h-3.5 text-purple-400" />
                 </button>
 
                 <button 
-                  onClick={() => showToast('Managing active device sessions')}
+                  onClick={() => {
+                    setIsSettingsModalOpen(true);
+                    setSettingsCategoryFilter('security');
+                  }}
                   className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition"
                 >
-                  <span className="text-slate-200 font-medium">Manage Active Devices</span>
+                  <span className="text-slate-200 font-medium">{t('activeDevices', 'مدیریت دستگاه‌های فعال (Active Devices)')}</span>
                   <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
                 </button>
 
                 <button 
-                  onClick={() => setIsSettingsModalOpen(true)}
+                  onClick={() => setIsLanguageModalOpen(true)}
                   className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition"
                 >
-                  <span className="text-slate-200 font-medium">App Language (English / Farsi)</span>
+                  <span className="text-slate-200 font-medium">{t('selectLanguage', 'انتخاب زبان برنامه (Language)')}</span>
                   <Languages className="w-3.5 h-3.5 text-amber-400" />
+                </button>
+
+                <button 
+                  onClick={() => setIsAdminPinModalOpen(true)}
+                  className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/40 text-left flex items-center justify-between transition col-span-1 sm:col-span-2 shadow-md"
+                >
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-amber-400 animate-pulse" />
+                    <span className="text-amber-300 font-bold">👑 ورود به پنل مدیریت ارشد (Admin Panel)</span>
+                  </div>
+                  <span className="text-[10px] font-mono bg-amber-950 text-amber-400 px-2 py-0.5 rounded-lg border border-amber-500/40">PIN: 7777</span>
                 </button>
               </div>
             </div>

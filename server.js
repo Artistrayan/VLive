@@ -99,8 +99,8 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Handle Backend AI Security API Endpoints securely
-  if (reqUrl.startsWith('/api/ai-security/')) {
+  // Handle Backend AI Security & Translation API Endpoints securely
+  if (reqUrl.startsWith('/api/ai-security/') || reqUrl === '/api/translate') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {

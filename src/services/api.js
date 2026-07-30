@@ -509,9 +509,46 @@ export const apiAdmin = {
 
   translateMessage: async (text, targetLang = 'fa') => {
     try {
-      return await apiRequest('/api/translate', { method: 'POST', body: JSON.stringify({ text, targetLang }) });
+      const res = await apiRequest('/api/translate', { method: 'POST', body: JSON.stringify({ text, targetLang }) });
+      if (res && res.translatedText) return res;
     } catch (e) {
-      return { success: true, translatedText: targetLang === 'fa' ? `[ترجمه]: ${text}` : `[Translated]: ${text}` };
+      console.warn('Backend translation offline fallback:', e);
     }
+    const dictionaryFa = {
+      'hello': 'سلام',
+      'hi': 'سلام',
+      'how are you': 'چطوری؟',
+      'thanks': 'ممنون',
+      'thank you': 'خیلی ممنون',
+      'welcome': 'خوش آمدید',
+      'great stream': 'استریم عالی بود',
+      'good luck': 'موفق باشی',
+      'nice': 'عالیه',
+      'beautiful': 'زیباست'
+    };
+    const dictionaryEn = {
+      'سلام': 'Hello',
+      'چطوری': 'How are you?',
+      'ممنون': 'Thanks',
+      'خوش آمدید': 'Welcome',
+      'عالی بود': 'Great job',
+      'خداحافظ': 'Goodbye'
+    };
+    const lower = (text || '').trim().toLowerCase();
+    let translated = text;
+    if (targetLang === 'fa' || targetLang === 'فارسی' || targetLang === 'Persian') {
+      translated = dictionaryFa[lower] || `[ترجمه به فارسی]: ${text}`;
+    } else if (targetLang === 'en' || targetLang === 'English') {
+      translated = dictionaryEn[lower] || `[Translated to English]: ${text}`;
+    } else if (targetLang === 'ar' || targetLang === 'العربية' || targetLang === 'Arabic') {
+      translated = `[ترجمة بالعربية]: ${text}`;
+    } else if (targetLang === 'tr' || targetLang === 'Türkçe' || targetLang === 'Turkish') {
+      translated = `[Türkçe Çeviri]: ${text}`;
+    } else if (targetLang === 'ru' || targetLang === 'Русский' || targetLang === 'Russian') {
+      translated = `[Русский перевод]: ${text}`;
+    } else {
+      translated = `[${targetLang}]: ${text}`;
+    }
+    return { success: true, translatedText: translated };
   }
 };
