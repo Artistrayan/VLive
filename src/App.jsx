@@ -1835,11 +1835,22 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [newAdminGiftCoins, setNewAdminGiftCoins] = useState('');
 
   // VIP Subscription Plans Admin State
-  const [adminVipPlans, setAdminVipPlans] = useState([
-    { id: 'monthly', title: 'VIP Monthly', priceCoins: 500, priceUsdt: '$2.50', status: 'Active' },
-    { id: 'quarterly', title: 'VIP 3 Months', priceCoins: 1200, priceUsdt: '$6.00', status: 'Active' },
-    { id: 'annual', title: 'VIP Annual', priceCoins: 4000, priceUsdt: '$20.00', status: 'Active' }
-  ]);
+  const [adminVipPlans, setAdminVipPlans] = useState(() => {
+    const saved = safeStorage.getItem('vlive_admin_vip_plans');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [
+      { id: 'monthly', title: 'VIP Monthly (ماهانه)', priceCoins: 500, priceUsdt: '$2.50', status: 'Active' },
+      { id: 'quarterly', title: 'VIP 3 Months (سه ماهه)', priceCoins: 1200, priceUsdt: '$6.00', status: 'Active' },
+      { id: 'annual', title: 'VIP Annual (سالانه)', priceCoins: 4000, priceUsdt: '$20.00', status: 'Active' }
+    ];
+  });
+  const [editingVipPlan, setEditingVipPlan] = useState(null);
+  const [newVipPlanTitle, setNewVipPlanTitle] = useState('');
+  const [newVipPlanCoins, setNewVipPlanCoins] = useState('');
+  const [newVipPlanUsdt, setNewVipPlanUsdt] = useState('');
+  const [isAddVipPlanModalOpen, setIsAddVipPlanModalOpen] = useState(false);
 
   // Ads & Banners Admin State
   const [adminAdsList, setAdminAdsList] = useState([
@@ -1859,10 +1870,17 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [adminNotifCategory, setAdminNotifCategory] = useState('Update');
 
   // Support Tickets State
-  const [adminTicketsList, setAdminTicketsList] = useState([
-    { id: 'T-101', user: 'Sahar Miller', subject: 'Coin Purchase Not Credited', category: 'Wallet', status: 'Open', message: 'I bought 5000 coins via TRC20 but balance did not update automatically.' },
-    { id: 'T-102', user: 'Ali Reza', subject: 'Stream Key Connection Drop', category: 'Live', status: 'Open', message: 'Live stream disconnected twice during last broadcast.' }
-  ]);
+  const [adminTicketsList, setAdminTicketsList] = useState(() => {
+    const saved = safeStorage.getItem('vlive_admin_tickets');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [
+      { id: 'T-101', user: 'Sahar Miller', subject: 'Coin Purchase Not Credited (عدم واریز سکه)', category: 'Wallet', status: 'Open', message: 'I bought 5000 coins via TRC20 but balance did not update automatically.' },
+      { id: 'T-102', user: 'Ali Reza', subject: 'Stream Key Connection Drop (قطع ارتباط لایو)', category: 'Live', status: 'Open', message: 'Live stream disconnected twice during last broadcast.' }
+    ];
+  });
+  const [adminTicketFilter, setAdminTicketFilter] = useState('All');
 
   // Admin Roles & Permissions State
   const [adminRolesList, setAdminRolesList] = useState(() => {
@@ -5393,7 +5411,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
         {/* TAB 1: HOME & LIVE STREAMS - COMPLETELY REDESIGNED LIVE SECTION */}
         {activeTab === 'streams' && (
-          <div className="space-y-6 dir-ltr">
+          <div className="space-y-6">
 
             {/* 1. SUB-HEADER / QUICK STATS BAR (زیر Header) */}
             <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-md">
@@ -5403,7 +5421,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition active:scale-95"
               >
                 <CoinsIcon className="w-4 h-4 text-amber-400 animate-pulse" />
-                <span className="text-xs font-black">{userCoins.toLocaleString()} Coins</span>
+                <span className="text-xs font-black">{userCoins.toLocaleString()} {loc('سکه', 'Coins')}</span>
               </button>
 
               {/* 👑 VIP Badge */}
@@ -5412,31 +5430,31 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 text-amber-300 hover:scale-105 transition active:scale-95 shadow-sm"
               >
                 <Crown className="w-4 h-4 text-amber-400 fill-amber-400/30" />
-                <span className="text-xs font-black">👑 VIP</span>
+                <span className="text-xs font-black">👑 {loc('اشتراک VIP', 'VIP Club')}</span>
               </button>
 
               {/* 🔥 Online Counter */}
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>🔥 14,000 Online</span>
+                <span>🔥 {loc('۱۴,۰۰۰ کاربر آنلاین', '14,000 Online')}</span>
               </div>
             </div>
 
             {/* Quick Live Search Bar (If Toggled) */}
             {(isChatSearchOpen || homeSearchQuery) && (
               <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
                 <input 
                   type="text"
                   value={homeSearchQuery}
                   onChange={e => setHomeSearchQuery(e.target.value)}
-                  placeholder="Search live streamer name, ID, city, or topic..."
-                  className="w-full pl-10 pr-10 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 shadow-inner"
+                  placeholder={loc('جستجوی نام استریمر، شناسه، شهر یا موضوع لایو...', 'Search live streamer name, ID, city, or topic...')}
+                  className="w-full pr-10 pl-10 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 shadow-inner"
                 />
                 {homeSearchQuery && (
                   <button 
                     onClick={() => setHomeSearchQuery('')}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -5449,9 +5467,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <div className="flex items-center justify-between text-xs font-bold text-slate-300 px-1">
                 <span className="flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-pink-400" />
-                  Live Stories
+                  {loc('استوری‌های زنده', 'Live Stories')}
                 </span>
-                <span className="text-[10px] text-slate-500">24h Express</span>
+                <span className="text-[10px] text-slate-500">{loc('۲۴ ساعته', '24h Express')}</span>
               </div>
 
               <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
@@ -5460,22 +5478,22 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   <div className="w-16 h-16 rounded-full bg-slate-900 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 group-hover:border-pink-400 transition shadow-md">
                     <Plus className="w-6 h-6" />
                   </div>
-                  <span className="text-[10px] font-bold text-pink-300">Add Story</span>
+                  <span className="text-[10px] font-bold text-pink-300">{loc('افزودن استوری', 'Add Story')}</span>
                   <input type="file" accept="image/*" onChange={handleGalleryImageUpload} className="hidden" />
                 </label>
 
                 {/* Story Items */}
                 {[
-                  { name: 'Sara 🌟', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80', isLive: true },
-                  { name: 'Rayan 👑', avatar: userAvatar, isLive: true },
-                  { name: 'Mona 🎵', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80', isLive: true },
-                  { name: 'Alex 🎮', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80', isLive: false },
-                  { name: 'Elena 💃', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80', isLive: true },
-                  { name: 'Yasaman 🎨', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80', isLive: false }
+                  { name: 'سحر 🌟', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80', isLive: true },
+                  { name: `${userName} 👑`, avatar: userAvatar, isLive: true },
+                  { name: 'مونا 🎵', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80', isLive: true },
+                  { name: 'الکس 🎮', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80', isLive: false },
+                  { name: 'النا 💃', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80', isLive: true },
+                  { name: 'یاسمن 🎨', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80', isLive: false }
                 ].map((s, idx) => (
                   <button 
                     key={idx}
-                    onClick={() => showToast(`مشاهده استوری ${s.name}`)}
+                    onClick={() => showToast(loc(`مشاهده استوری ${s.name}`, `View story of ${s.name}`))}
                     className="flex flex-col items-center gap-1.5 shrink-0 group active:scale-95 transition"
                   >
                     <div className={`relative w-16 h-16 rounded-full p-0.5 ${s.isLive ? 'bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 animate-pulse' : 'bg-slate-800'}`}>
@@ -5495,22 +5513,22 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             {/* 2. HORIZONTAL CATEGORY SCROLL (دسته‌بندی لایوها) */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 px-1">
-                <span>Categories & Tags</span>
-                <span className="text-pink-400 font-mono">10 Channels</span>
+                <span>{loc('دسته‌بندی‌ها و کانال‌ها', 'Categories & Channels')}</span>
+                <span className="text-pink-400 font-mono">{loc('۱۰ کانال فعال', '10 Channels')}</span>
               </div>
 
               <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
                 {[
-                  { id: 'all', label: '🌍 All', count: '2.8k' },
-                  { id: 'trending', label: '🔥 Trending', count: '940' },
-                  { id: 'gaming', label: '🎮 Gaming', count: '410' },
-                  { id: 'music', label: '🎵 Music', count: '320' },
-                  { id: 'dance', label: '💃 Dance', count: '280' },
-                  { id: 'singing', label: '🎤 Singing', count: '210' },
-                  { id: 'chat', label: '💬 Chat', count: '550' },
-                  { id: 'education', label: '🎓 Education', count: '130' },
-                  { id: 'dating', label: '❤️ Dating', count: '380' },
-                  { id: 'vip', label: '👑 VIP 18+', count: '180' }
+                  { id: 'all', label: loc('🌍 همه', '🌍 All'), count: '۲.۸ هزار' },
+                  { id: 'trending', label: loc('🔥 داغ و پرطرفدار', '🔥 Trending'), count: '۹۴۰' },
+                  { id: 'gaming', label: loc('🎮 گیمینگ', '🎮 Gaming'), count: '۴۱۰' },
+                  { id: 'music', label: loc('🎵 موسیقی', '🎵 Music'), count: '۳۲۰' },
+                  { id: 'dance', label: loc('💃 رقص', '💃 Dance'), count: '۲۸۰' },
+                  { id: 'singing', label: loc('🎤 خوانندگی', '🎤 Singing'), count: '۲۱۰' },
+                  { id: 'chat', label: loc('💬 گفتگو و گپ', '💬 Chat'), count: '۵۵۰' },
+                  { id: 'education', label: loc('🎓 آموزشی', '🎓 Education'), count: '۱۳۰' },
+                  { id: 'dating', label: loc('❤️ دوستیابی', '❤️ Dating'), count: '۳۸۰' },
+                  { id: 'vip', label: loc('👑 اختصاصی VIP', '👑 VIP 18+'), count: '۱۸۰' }
                 ].map(cat => (
                   <button 
                     key={cat.id}
@@ -5531,16 +5549,16 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="space-y-1.5">
                   <span className="px-2.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 text-[10px] font-black border border-pink-500/40 uppercase tracking-wider">
-                    🏆 VIP Festival Tournament 2026
+                    🏆 {loc('تورنمنت بزرگ استریمرها', 'VIP Festival Tournament 2026')}
                   </span>
-                  <h3 className="text-lg font-black text-white">جشنواره مگا تورنمنت استریمرها</h3>
-                  <p className="text-xs text-slate-300">50,000 سکه رایگان + تیک آبی اختصاصی برای ۱۰ نفر برتر هفته</p>
+                  <h3 className="text-lg font-black text-white">{loc('جشنواره مگا تورنمنت استریمرها', 'Mega Streamer Tournament Festival')}</h3>
+                  <p className="text-xs text-slate-300">{loc('۵۰,۰۰۰ سکه رایگان + تیک آبی اختصاصی برای ۱۰ نفر برتر هفته', '50,000 Free Coins + Special Blue Badge for Top 10 Streamers')}</p>
                 </div>
                 <button 
                   onClick={() => setIsVipModalOpen(true)}
                   className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-105 active:scale-95 transition whitespace-nowrap"
                 >
-                  شرکت در رویداد 👑
+                  {loc('شرکت در رویداد 👑', 'Join Event 👑')}
                 </button>
               </div>
               <div className="flex items-center justify-center gap-1.5 mt-4">
@@ -5555,9 +5573,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-black text-white flex items-center gap-2">
                   <Radio className="w-4 h-4 text-pink-500 animate-pulse" />
-                  Trending Live Streams
+                  {loc('استریم‌های زنده داغ', 'Trending Live Streams')}
                 </h3>
-                <span className="text-xs text-pink-400 font-bold cursor-pointer" onClick={() => setStreamSubTab('lives')}>View All</span>
+                <span className="text-xs text-pink-400 font-bold cursor-pointer" onClick={() => setStreamSubTab('lives')}>{loc('مشاهده همه', 'View All')}</span>
               </div>
 
                 {/* Stream Cards Grid */}
@@ -5586,7 +5604,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
 
                           {/* Top Left: LIVE Badge */}
-                          <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5">
                             <span className="bg-red-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg border border-red-400/50">
                               <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                               LIVE
@@ -5599,7 +5617,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                           </div>
 
                           {/* Top Right: Viewers Count */}
-                          <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-200 flex items-center gap-1 border border-slate-800 shadow-md">
+                          <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-200 flex items-center gap-1 border border-slate-800 shadow-md">
                             <Eye className="w-3 h-3 text-cyan-400" />
                             <span>👁 {(stream.viewers || 2300).toLocaleString()}</span>
                           </div>
@@ -5624,12 +5642,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                             <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
                               <span className="flex items-center gap-1 text-pink-400 font-semibold">
                                 <MapPin className="w-3 h-3" />
-                                📍 Tehran
+                                📍 {loc('تهران', 'Tehran')}
                               </span>
                               <span>•</span>
                               <span className="text-amber-300 flex items-center gap-0.5">
                                 <Gift className="w-3 h-3 text-amber-400" />
-                                1.4K Gifts
+                                {loc('۱.۴ هزار هدیه', '1.4K Gifts')}
                               </span>
                             </div>
                           </div>
@@ -5638,7 +5656,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         {/* Card Bottom Actions */}
                         <div className="p-3 bg-slate-950/90 border-t border-slate-800/80 flex items-center justify-between gap-2 mt-auto">
                           <span className="text-[10px] text-slate-400 font-mono">
-                            Fee: {stream.entryFee > 0 ? `${stream.entryFee} coins` : 'FREE'}
+                            {loc('ورودی:', 'Fee:')} {stream.entryFee > 0 ? `${stream.entryFee} ${loc('سکه', 'coins')}` : loc('رایگان', 'FREE')}
                           </span>
 
                           <div className="flex items-center gap-2">
@@ -5646,17 +5664,17 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                             <button 
                               onClick={() => {
                                 if (userCoins < 100) {
-                                  showToast('100 coins required to Boost live stream');
+                                  showToast(loc('برای بوست لایو به ۱۰۰ سکه نیاز دارید', '100 coins required to Boost live stream'));
                                   return;
                                 }
                                 setUserCoins(prev => prev - 100);
-                                showToast(`Live stream by ${stream.host} Boosted to top!`);
+                                showToast(loc(`لایو ${stream.host} با موفقیت بوست شد!`, `Live stream by ${stream.host} Boosted to top!`));
                               }}
-                              className="p-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-500/40 text-purple-300 text-[10px] font-bold flex items-center gap-1"
+                              className="p-1.5 px-2.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-500/40 text-purple-300 text-[10px] font-bold flex items-center gap-1"
                               title="Boost Live to Top (100 coins)"
                             >
                               <Zap className="w-3.5 h-3.5 text-amber-400" />
-                              Boost
+                              {loc('بوست ⚡', 'Boost ⚡')}
                             </button>
 
                             {/* Watch Live Button */}
@@ -5665,7 +5683,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                               className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-xs shadow-md flex items-center gap-1.5 hover:brightness-110 active:scale-95 transition"
                             >
                               <Play className="w-3.5 h-3.5 fill-white" />
-                              Enter Live
+                              {loc('ورود به لایو', 'Enter Live')}
                             </button>
                           </div>
                         </div>
@@ -15712,61 +15730,115 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               {/* 3. LIVE MANAGEMENT */}
               {adminActiveTab === 'live' && (
                 <div className="space-y-3 text-xs">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-white text-sm">۳. مدیریت مستقیم لایواستریم‌ها (Live Management)</h3>
-                    <span className="text-[10px] text-pink-400 font-mono">{adminLivesList.length} لایو در حال پخش</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="font-bold text-white text-sm">۳. مدیریت مستقیم لایواستریم‌ها (Live Management)</h3>
+                      <p className="text-[10px] text-slate-400">نظارت بر لایوهای فعال، قطع استریم، بستن چت و برخورد با متخلفین</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-pink-400 font-mono font-bold">{adminLivesList.length} لایو در حال پخش</span>
+                      <button
+                        onClick={() => {
+                          const demoLive = {
+                            id: Date.now(),
+                            title: 'لایو تست ادمین 🎵 (اجرای موسیقی زنده)',
+                            streamer: 'Rayan Streamer',
+                            viewers: 1450,
+                            category: 'Music',
+                            duration: '12m'
+                          };
+                          setAdminLivesList(prev => [demoLive, ...prev]);
+                          setStreamsList(prev => [{
+                            id: `live_${demoLive.id}`,
+                            title: demoLive.title,
+                            host: demoLive.streamer,
+                            thumbnail: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
+                            viewers: demoLive.viewers,
+                            category: demoLive.category,
+                            isVip18: false,
+                            entryFee: 0
+                          }, ...prev]);
+                          addAdminAuditLog('لایو جدید آزمایشی برای بررسی ساخته شد');
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-[10px] flex items-center gap-1 shadow"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> ساخت لایو آزمایشی
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    {adminLivesList.map(l => (
-                      <div key={l.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-white">{l.title}</span>
-                            <span className="bg-pink-500/20 text-pink-300 text-[9px] px-2 py-0.2 rounded-full border border-pink-500/30">Live #{l.id}</span>
+                  {adminLivesList.length === 0 ? (
+                    <div className="p-8 text-center rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                      <Video className="w-8 h-8 text-slate-600 mx-auto" />
+                      <p className="font-bold text-slate-400">هیچ لایو در حال پخشی وجود ندارد</p>
+                      <button
+                        onClick={() => {
+                          setAdminLivesList([
+                            { id: 1042, title: 'لایو موسیقی شبانه 🎸', streamer: 'Sara Miller', viewers: 3420, category: 'Music', duration: '45m' },
+                            { id: 1043, title: 'چت زنده و گپ شبانه 💬', streamer: 'Ali Streamer', viewers: 890, category: 'Chat', duration: '18m' }
+                          ]);
+                          showToast('لیست لایوهای نمونه بازنشانی شد');
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 text-pink-300 font-bold text-[10px]"
+                      >
+                        بازنشانی لایوهای نمونه
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {adminLivesList.map(l => (
+                        <div key={l.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-white">{l.title}</span>
+                              <span className="bg-pink-500/20 text-pink-300 text-[9px] px-2 py-0.2 rounded-full border border-pink-500/30">Live #{l.id}</span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 block font-mono mt-0.5">استریمر: {l.streamer} • {l.viewers} بیننده زنده • دسته‌بندی: {l.category} • مدت: {l.duration}</span>
                           </div>
-                          <span className="text-[10px] text-slate-400 block font-mono mt-0.5">استریمر: {l.streamer} • {l.viewers} بیننده زنده • دسته‌بندی: {l.category} • مدت: {l.duration}</span>
+
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <button
+                              onClick={() => {
+                                setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
+                                setStreamsList(prev => prev.filter(item => item.host !== l.streamer && item.id !== `live_${l.id}`));
+                                addAdminAuditLog(`لایو استریم شماره #${l.id} (${l.title}) متوقف و از سیستم حذف شد`);
+                              }}
+                              className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold"
+                            >
+                              پایان دادن به لایو
+                            </button>
+
+                            <button
+                              onClick={() => addAdminAuditLog(`چت عمومی لایو #${l.id} قفل گردید`)}
+                              className="px-2.5 py-1 rounded-xl bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px] font-bold"
+                            >
+                              بستن چت
+                            </button>
+
+                            <button
+                              onClick={() => addAdminAuditLog(`اخطار انضباطی به استریمر ${l.streamer} ارسال شد`)}
+                              className="px-2.5 py-1 rounded-xl bg-purple-950 border border-purple-500/40 text-purple-300 text-[10px] font-bold"
+                            >
+                              اخطار به استریمر
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
+                                setStreamsList(prev => prev.filter(item => item.host !== l.streamer));
+                                setAdminUsersList(prev => prev.map(u => (u.name === l.streamer || u.username === l.streamer) ? { ...u, status: 'Banned' } : u));
+                                setUsersList(prev => prev.map(u => (u.name === l.streamer || u.username === l.streamer) ? { ...u, status: 'banned' } : u));
+                                addAdminAuditLog(`استریمر ${l.streamer} مسدود شد و لایو قطع گردید`);
+                              }}
+                              className="px-2.5 py-1 rounded-xl bg-red-950 border border-red-500/50 text-red-300 text-[10px] font-bold"
+                            >
+                              مسدودسازی استریمر
+                            </button>
+                          </div>
                         </div>
-
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <button
-                            onClick={() => {
-                              setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
-                              addAdminAuditLog(`لایو استریم شماره #${l.id} توسط ادمین متوقف شد`);
-                            }}
-                            className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold"
-                          >
-                            پایان دادن به لایو
-                          </button>
-
-                          <button
-                            onClick={() => addAdminAuditLog(`چت عمومی لایو #${l.id} بسته شد`)}
-                            className="px-2.5 py-1 rounded-xl bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px] font-bold"
-                          >
-                            بستن چت
-                          </button>
-
-                          <button
-                            onClick={() => addAdminAuditLog(`اخطار انضباطی به استریمر ${l.streamer} ارسال شد`)}
-                            className="px-2.5 py-1 rounded-xl bg-purple-950 border border-purple-500/40 text-purple-300 text-[10px] font-bold"
-                          >
-                            اخطار به استریمر
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
-                              setAdminUsersList(prev => prev.map(u => u.name === l.streamer ? { ...u, status: 'Banned' } : u));
-                              addAdminAuditLog(`استریمر ${l.streamer} مسدود شد و لایو قطع گردید`);
-                            }}
-                            className="px-2.5 py-1 rounded-xl bg-red-950 border border-red-500/50 text-red-300 text-[10px] font-bold"
-                          >
-                            مسدودسازی استریمر
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -15808,6 +15880,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                             <button
                               onClick={() => {
                                 setAdminReportsList(prev => prev.map(item => item.id === r.id ? { ...item, status: 'Approved' } : item));
+                                setAdminUsersList(prev => prev.map(u => u.username === r.targetUser ? { ...u, reportsCount: (u.reportsCount || 0) + 1 } : u));
                                 addAdminAuditLog(`گزارش #${r.id} تأیید شد و با کاربر متخلف برخورد گردید`);
                               }}
                               className="px-2.5 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]"
@@ -15906,7 +15979,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       <button
                         onClick={() => {
                           if (!newAdminGiftName || !newAdminGiftCoins) return;
-                          addAdminAuditLog(`هدیه جدید "${newAdminGiftName}" با قیمت ${newAdminGiftCoins} سکه اضافه شد`);
+                          addAdminAuditLog(`هدیه جدید "${newAdminGiftName}" با قیمت ${newAdminGiftCoins} سکه به فروشگاه اضافه شد`);
                           setNewAdminGiftName('');
                           setNewAdminGiftCoins('');
                         }}
@@ -15922,18 +15995,169 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               {/* 7. VIP SUBSCRIPTIONS */}
               {adminActiveTab === 'vip' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۷. مدیریت پلن‌های اشتراک VIP (VIP Subscriptions)</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="font-bold text-white text-sm">۷. مدیریت پلن‌های اشتراک VIP (VIP Subscriptions)</h3>
+                      <p className="text-[10px] text-slate-400">تنظیم قیمت پلن‌ها، فعال/غیرفعال‌سازی و ایجاد پلن جدید</p>
+                    </div>
+                    <button
+                      onClick={() => setIsAddVipPlanModalOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-[11px] flex items-center gap-1 shrink-0 shadow"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> + پلن جدید VIP
+                    </button>
+                  </div>
+
+                  {/* Add VIP Plan Inline Modal */}
+                  {isAddVipPlanModalOpen && (
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-amber-500/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-amber-300">افزودن پلن VIP جدید</h4>
+                        <button onClick={() => setIsAddVipPlanModalOpen(false)} className="text-slate-400"><X className="w-4 h-4" /></button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input
+                          type="text"
+                          value={newVipPlanTitle}
+                          onChange={e => setNewVipPlanTitle(e.target.value)}
+                          placeholder="عنوان پلن (مثلاً VIP 6 Months)..."
+                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                        />
+                        <input
+                          type="number"
+                          value={newVipPlanCoins}
+                          onChange={e => setNewVipPlanCoins(e.target.value)}
+                          placeholder="قیمت سکه (مثلاً 2500)..."
+                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                        />
+                        <input
+                          type="text"
+                          value={newVipPlanUsdt}
+                          onChange={e => setNewVipPlanUsdt(e.target.value)}
+                          placeholder="قیمت تتر (مثلاً $12.00)..."
+                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                        />
+                      </div>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            if (!newVipPlanTitle || !newVipPlanCoins) {
+                              showToast(loc('لطفاً عنوان و قیمت سکه را وارد کنید', 'Please fill title and coins'));
+                              return;
+                            }
+                            const newPlan = {
+                              id: `plan_${Date.now()}`,
+                              title: newVipPlanTitle,
+                              priceCoins: parseInt(newVipPlanCoins) || 1000,
+                              priceUsdt: newVipPlanUsdt || `$${((parseInt(newVipPlanCoins) || 1000) / 200).toFixed(2)}`,
+                              status: 'Active'
+                            };
+                            setAdminVipPlans(prev => {
+                              const updated = [...prev, newPlan];
+                              safeStorage.setItem('vlive_admin_vip_plans', JSON.stringify(updated));
+                              return updated;
+                            });
+                            addAdminAuditLog(`پلن VIP جدید "${newVipPlanTitle}" ایجاد گردید`);
+                            setNewVipPlanTitle('');
+                            setNewVipPlanCoins('');
+                            setNewVipPlanUsdt('');
+                            setIsAddVipPlanModalOpen(false);
+                          }}
+                          className="px-4 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
+                        >
+                          تأیید و ساخت پلن
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Edit VIP Plan Form */}
+                  {editingVipPlan && (
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-cyan-500/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-cyan-300">ویرایش پلن VIP ({editingVipPlan.title})</h4>
+                        <button onClick={() => setEditingVipPlan(null)} className="text-slate-400"><X className="w-4 h-4" /></button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[10px] text-slate-400 block">عنوان پلن:</label>
+                          <input
+                            type="text"
+                            value={editingVipPlan.title}
+                            onChange={e => setEditingVipPlan({ ...editingVipPlan, title: e.target.value })}
+                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-400 block">قیمت سکه:</label>
+                          <input
+                            type="number"
+                            value={editingVipPlan.priceCoins}
+                            onChange={e => setEditingVipPlan({ ...editingVipPlan, priceCoins: parseInt(e.target.value) || 0 })}
+                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-400 block">قیمت به USDT:</label>
+                          <input
+                            type="text"
+                            value={editingVipPlan.priceUsdt}
+                            onChange={e => setEditingVipPlan({ ...editingVipPlan, priceUsdt: e.target.value })}
+                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setAdminVipPlans(prev => {
+                              const updated = prev.map(p => p.id === editingVipPlan.id ? editingVipPlan : p);
+                              safeStorage.setItem('vlive_admin_vip_plans', JSON.stringify(updated));
+                              return updated;
+                            });
+                            addAdminAuditLog(`قیمت و اطلاعات پلن ${editingVipPlan.title} بروزرسانی گردید`);
+                            setEditingVipPlan(null);
+                          }}
+                          className="px-4 py-1.5 rounded-xl bg-cyan-600 text-white font-bold text-xs"
+                        >
+                          ذخیره تغییرات پلن
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {adminVipPlans.map(plan => (
                       <div key={plan.id} className="p-3.5 rounded-2xl bg-slate-950 border border-amber-500/30 space-y-2">
-                        <p className="font-bold text-amber-300">{plan.title}</p>
+                        <div className="flex items-center justify-between">
+                          <p className="font-bold text-amber-300">{plan.title}</p>
+                          <span className={`text-[9px] px-2 py-0.2 rounded-full ${plan.status === 'Active' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
+                            {plan.status === 'Active' ? 'فعال' : 'متوقف'}
+                          </span>
+                        </div>
                         <p className="text-base font-black text-white">{plan.priceCoins} سکه <span className="text-[10px] text-slate-400">({plan.priceUsdt})</span></p>
-                        <button
-                          onClick={() => addAdminAuditLog(`قیمت پلن ${plan.title} به روز رسانی گردید`)}
-                          className="w-full py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold"
-                        >
-                          تغییر قیمت پلن
-                        </button>
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <button
+                            onClick={() => setEditingVipPlan(plan)}
+                            className="flex-1 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold hover:brightness-110 transition"
+                          >
+                            تغییر قیمت / ویرایش
+                          </button>
+                          <button
+                            onClick={() => {
+                              const newStatus = plan.status === 'Active' ? 'Paused' : 'Active';
+                              setAdminVipPlans(prev => {
+                                const updated = prev.map(p => p.id === plan.id ? { ...p, status: newStatus } : p);
+                                safeStorage.setItem('vlive_admin_vip_plans', JSON.stringify(updated));
+                                return updated;
+                              });
+                              addAdminAuditLog(`وضعیت پلن ${plan.title} به ${newStatus} تغییر یافت`);
+                            }}
+                            className={`px-2 py-1.5 rounded-xl font-bold ${plan.status === 'Active' ? 'bg-slate-800 text-slate-300' : 'bg-emerald-700 text-white'}`}
+                          >
+                            {plan.status === 'Active' ? 'غیرفعال' : 'فعال‌سازی'}
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -16037,28 +16261,81 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               {/* 11. CONTENT MODERATION */}
               {adminActiveTab === 'moderation' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۱. نظارت و مدیریت محتوا (Content Moderation)</h3>
-                  <div className="space-y-2">
-                    {adminModerationQueue.map(item => (
-                      <div key={item.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <img src={item.mediaUrl} alt="media" className="w-12 h-12 rounded-xl object-cover border border-slate-800" />
-                          <div>
-                            <p className="font-bold text-white">{item.type} • {item.user}</p>
-                            <span className="text-[10px] text-amber-400">{item.status}</span>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-white text-sm">۱۱. نظارت و مدیریت محتوا (Content Moderation)</h3>
+                      <p className="text-[10px] text-slate-400">بررسی تصاویر پروفایل، لایو و محتوای ارسال شده توسط کاربران</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const newModItem = {
+                          id: Date.now(),
+                          user: '@new_streamer',
+                          type: 'Banner Photo',
+                          mediaUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
+                          status: 'Pending Review'
+                        };
+                        setAdminModerationQueue(prev => [newModItem, ...prev]);
+                        showToast(loc('نمونه محتوای جدید برای بررسی اضافه شد', 'Sample media added for moderation'));
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> افزودن نمونه محتوا
+                    </button>
+                  </div>
+
+                  {adminModerationQueue.length === 0 ? (
+                    <div className="p-8 text-center rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                      <ShieldCheck className="w-8 h-8 text-emerald-400 mx-auto" />
+                      <p className="font-bold text-slate-300">تمام محتواها بررسی شدند! هیچ محتوای معلقی وجود ندارد.</p>
+                      <button
+                        onClick={() => {
+                          setAdminModerationQueue([
+                            { id: 1, user: '@sahar_m', type: 'Profile Photo', mediaUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', status: 'Pending Review' },
+                            { id: 2, user: '@ali_streamer', type: 'Live Thumbnail', mediaUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', status: 'Pending Review' }
+                          ]);
+                          showToast('صف نظارت بر محتوا بازنشانی گردید');
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 text-pink-300 font-bold text-[10px]"
+                      >
+                        بازنشانی صف محتوا
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {adminModerationQueue.map(item => (
+                        <div key={item.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <img src={item.mediaUrl} alt="media" className="w-12 h-12 rounded-xl object-cover border border-slate-800" />
+                            <div>
+                              <p className="font-bold text-white">{item.type} • {item.user}</p>
+                              <span className="text-[10px] text-amber-400">{item.status}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setAdminModerationQueue(prev => prev.filter(i => i.id !== item.id));
+                                addAdminAuditLog(`تصویر/محتوای ${item.user} با موفقیت تأیید شد`);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px]"
+                            >
+                              تأیید محتوا
+                            </button>
+                            <button
+                              onClick={() => {
+                                setAdminModerationQueue(prev => prev.filter(i => i.id !== item.id));
+                                addAdminAuditLog(`تصویر/محتوای نامناسب ${item.user} با موفقیت حذف گردید`);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px]"
+                            >
+                              حذف تصویر
+                            </button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <button onClick={() => addAdminAuditLog(`تصویر ${item.user} تأیید شد`)} className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]">
-                            تأیید محتوا
-                          </button>
-                          <button onClick={() => addAdminAuditLog(`تصویر نامناسب ${item.user} حذف گردید`)} className="px-3 py-1 rounded-xl bg-rose-600 text-white font-bold text-[10px]">
-                            حذف تصویر
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -16099,26 +16376,155 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               {/* 13. SUPPORT TICKETS */}
               {adminActiveTab === 'support' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۳. مدیریت تیکت‌های پشتیبانی کاربران (Support)</h3>
-                  <div className="space-y-2">
-                    {adminTicketsList.map(t => (
-                      <div key={t.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <p className="font-bold text-white">[{t.id}] {t.subject} • کاربر: {t.user}</p>
-                          <span className="text-[10px] text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded-full">{t.status}</span>
-                        </div>
-                        <p className="text-[11px] text-slate-300 bg-slate-900 p-2 rounded-xl">متن تیکت: "{t.message}"</p>
-                        <button
-                          onClick={() => {
-                            setAdminTicketsList(prev => prev.map(item => item.id === t.id ? { ...item, status: 'Closed' } : item));
-                            addAdminAuditLog(`پاسخ به تیکت ${t.id} ارسال و تیکت بسته شد`);
-                          }}
-                          className="px-3 py-1 rounded-xl bg-purple-600 text-white font-bold text-[10px]"
-                        >
-                          پاسخ و بستن تیکت
-                        </button>
-                      </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="font-bold text-white text-sm">۱۳. مدیریت تیکت‌های پشتیبانی کاربران (Support)</h3>
+                      <p className="text-[10px] text-slate-400">پاسخ به سوالات، پیگیری مشکلات پرداخت و لایو استریم</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const newT = {
+                          id: `T-${Date.now().toString().slice(-3)}`,
+                          user: 'کاربر تست',
+                          subject: 'سوال درباره نحوه نقد کردن درآمد سکه‌ها',
+                          category: 'Financial',
+                          status: 'Open',
+                          message: 'سلام، پس از رسیدن به 50,000 سکه چگونه درخواست تسویه بدهم؟'
+                        };
+                        setAdminTicketsList(prev => {
+                          const updated = [newT, ...prev];
+                          safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
+                          return updated;
+                        });
+                        showToast(loc('تیکت جدید نمونه اضافه شد', 'New support ticket created'));
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center gap-1 shadow"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> تیکت جدید (تست)
+                    </button>
+                  </div>
+
+                  {/* Filter chips */}
+                  <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
+                    {['All', 'Open', 'Answered', 'Closed'].map(st => (
+                      <button
+                        key={st}
+                        onClick={() => setAdminTicketFilter(st)}
+                        className={`px-3 py-1 rounded-xl text-[10px] font-bold transition ${adminTicketFilter === st ? 'bg-purple-600 text-white font-black' : 'bg-slate-950 border border-slate-800 text-slate-400'}`}
+                      >
+                        {st}
+                      </button>
                     ))}
+                  </div>
+
+                  <div className="space-y-2">
+                    {adminTicketsList
+                      .filter(t => adminTicketFilter === 'All' || t.status === adminTicketFilter)
+                      .map(t => (
+                        <div key={t.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <p className="font-bold text-white flex items-center gap-1.5">
+                              <span className="text-purple-400 font-mono">[{t.id}]</span>
+                              <span>{t.subject}</span>
+                              <span className="text-[10px] text-slate-400 font-normal">• {t.user}</span>
+                            </p>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${t.status === 'Open' ? 'bg-amber-500/20 text-amber-300' : t.status === 'Answered' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-800 text-slate-400'}`}>
+                              {t.status}
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-slate-300 bg-slate-900 p-2.5 rounded-xl border border-slate-800/80">
+                            💬 "{t.message}"
+                          </p>
+
+                          {t.reply && (
+                            <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 text-purple-200 text-[11px]">
+                              <p className="font-bold text-purple-300 text-[10px]">پاسخ ادمین:</p>
+                              <p>{t.reply}</p>
+                            </div>
+                          )}
+
+                          {adminReplyingTicket?.id === t.id && (
+                            <div className="space-y-2 pt-1">
+                              <textarea
+                                value={adminTicketReplyText}
+                                onChange={e => setAdminTicketReplyText(e.target.value)}
+                                placeholder="متن پاسخ ادمین به تیکت کاربر..."
+                                className="w-full p-2.5 rounded-xl bg-slate-900 border border-purple-500/50 text-white text-xs outline-none h-20"
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => setAdminReplyingTicket(null)}
+                                  className="px-3 py-1 rounded-xl bg-slate-800 text-slate-400 font-bold text-[10px]"
+                                >
+                                  انصراف
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (!adminTicketReplyText.trim()) return;
+                                    setAdminTicketsList(prev => {
+                                      const updated = prev.map(item => item.id === t.id ? { ...item, status: 'Answered', reply: adminTicketReplyText.trim() } : item);
+                                      safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
+                                      return updated;
+                                    });
+                                    addAdminAuditLog(`پاسخ ادمین به تیکت #${t.id} ثبت گردید`);
+                                    setAdminReplyingTicket(null);
+                                    setAdminTicketReplyText('');
+                                  }}
+                                  className="px-3.5 py-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px]"
+                                >
+                                  ارسال پاسخ
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[9px] text-slate-500 font-mono">دسته‌بندی: {t.category}</span>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setAdminReplyingTicket(t);
+                                  setAdminTicketReplyText(t.reply || '');
+                                }}
+                                className="px-3 py-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px]"
+                              >
+                                {t.reply ? 'ویرایش پاسخ' : 'پاسخ به تیکت'}
+                              </button>
+
+                              {t.status !== 'Closed' && (
+                                <button
+                                  onClick={() => {
+                                    setAdminTicketsList(prev => {
+                                      const updated = prev.map(item => item.id === t.id ? { ...item, status: 'Closed' } : item);
+                                      safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
+                                      return updated;
+                                    });
+                                    addAdminAuditLog(`تیکت #${t.id} بسته شد`);
+                                  }}
+                                  className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-300 font-bold text-[10px]"
+                                >
+                                  بستن تیکت
+                                </button>
+                              )}
+
+                              <button
+                                onClick={() => {
+                                  setAdminTicketsList(prev => {
+                                    const updated = prev.filter(item => item.id !== t.id);
+                                    safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
+                                    return updated;
+                                  });
+                                  addAdminAuditLog(`تیکت #${t.id} حذف شد`);
+                                }}
+                                className="p-1 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
@@ -16126,30 +16532,98 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               {/* 14. VERIFICATION KYC */}
               {adminActiveTab === 'verification' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۴. تأیید هویت و مدارک شناسایی (Verification)</h3>
-                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <p className="font-bold text-white">سحر میلر (@sahar_m)</p>
-                      <span className="text-[10px] text-slate-400 block">کد ملی / مدارک: ۴۸۲۰۹۳۲۰۱ • عکس سلفی پیوست شده</span>
+                      <h3 className="font-bold text-white text-sm">۱۴. تأیید هویت و مدارک شناسایی (Verification)</h3>
+                      <p className="text-[10px] text-slate-400">بررسی درخواست‌های تیک آبی (Cyan Badge) و احراز هویت کاربران</p>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => {
+                        const newReq = {
+                          id: Date.now(),
+                          username: 'elena_r',
+                          name: 'النا راد',
+                          nationalId: '0082394812',
+                          photo: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
+                          status: 'pending',
+                          date: new Date().toLocaleDateString('fa-IR')
+                        };
+                        setVerificationsList(prev => [newReq, ...prev]);
+                        showToast(loc('درخواست نمونه احراز هویت اضافه شد', 'Sample verification request added'));
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[10px] flex items-center gap-1 shadow shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> + درخواست نمونه (تست)
+                    </button>
+                  </div>
+
+                  {verificationsList.length === 0 ? (
+                    <div className="p-8 text-center rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                      <BadgeCheck className="w-8 h-8 text-cyan-400 mx-auto" />
+                      <p className="font-bold text-slate-300">هیچ درخواست تأیید هویتی در صف انتظار نیست.</p>
                       <button
                         onClick={() => {
-                          setAdminUsersList(prev => prev.map(u => u.username === 'sahar_m' ? { ...u, isVerified: true } : u));
-                          addAdminAuditLog('مدارک هویت سحر میلر تأیید و نشان آبی اعطا شد');
+                          setVerificationsList([
+                            { id: 1, username: 'sahar_m', name: 'سحر میلر', nationalId: '۴۸۲۰۹۳۲۰۱', photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', status: 'pending', date: '۱۴۰۴/۰۵/۱۰' },
+                            { id: 2, username: 'ali_streamer', name: 'علی رضایی', nationalId: '۰۰۷۹۱۲۳۴۵۶', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', status: 'pending', date: '۱۴۰۴/۰۵/۱۱' }
+                          ]);
+                          showToast('درخواست‌های احراز هویت بازنشانی شدند');
                         }}
-                        className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]"
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 text-cyan-300 font-bold text-[10px]"
                       >
-                        تأیید مدارک (Cyan Badge)
-                      </button>
-                      <button
-                        onClick={() => addAdminAuditLog('مدارک هویت سحر میلر رد شد')}
-                        className="px-3 py-1 rounded-xl bg-rose-600 text-white font-bold text-[10px]"
-                      >
-                        رد مدارک
+                        بازنشانی لیست احراز هویت
                       </button>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {verificationsList.map(item => (
+                        <div key={item.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            {item.photo && (
+                              <img src={item.photo} alt={item.name} className="w-12 h-12 rounded-xl object-cover border border-cyan-500/40" />
+                            )}
+                            <div>
+                              <p className="font-bold text-white flex items-center gap-1.5">
+                                <span>{item.name || item.username}</span>
+                                <span className="text-[10px] text-cyan-400 font-mono">@{item.username}</span>
+                              </p>
+                              <span className="text-[10px] text-slate-400 block font-mono">کد ملی / مدارک: {item.nationalId || 'ثبت شده'} • تاریخ: {item.date || 'امروز'}</span>
+                              <span className={`text-[9px] px-2 py-0.2 rounded-full inline-block mt-1 ${item.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300' : item.status === 'rejected' ? 'bg-rose-500/20 text-rose-300' : 'bg-amber-500/20 text-amber-300'}`}>
+                                وضعیت: {item.status === 'approved' ? 'تأیید شده ✅' : item.status === 'rejected' ? 'رد شده ❌' : 'در انتظار بررسی ⏳'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <button
+                              onClick={() => {
+                                setVerificationsList(prev => prev.map(v => v.id === item.id ? { ...v, status: 'approved' } : v));
+                                setAdminUsersList(prev => prev.map(u => u.username === item.username ? { ...u, isVerified: true } : u));
+                                setUsersList(prev => prev.map(u => u.username === item.username ? { ...u, isVerified: true } : u));
+                                if (item.username === currentUsername) setIsVerified(true);
+                                addAdminAuditLog(`مدارک هویت ${item.username} تأیید شد و نشان تیک آبی اعطا گردید`);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[10px] flex items-center gap-1 shadow"
+                            >
+                              <BadgeCheck className="w-3.5 h-3.5" /> تأیید مدارک (Cyan Badge)
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setVerificationsList(prev => prev.map(v => v.id === item.id ? { ...v, status: 'rejected' } : v));
+                                setAdminUsersList(prev => prev.map(u => u.username === item.username ? { ...u, isVerified: false } : u));
+                                setUsersList(prev => prev.map(u => u.username === item.username ? { ...u, isVerified: false } : u));
+                                addAdminAuditLog(`مدارک هویت ${item.username} رد شد`);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px]"
+                            >
+                              رد مدارک
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
