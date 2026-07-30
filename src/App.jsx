@@ -650,7 +650,7 @@ export default function App() {
 
   // Registered Users Storage
   const [usersList, setUsersList] = useState(() => {
-    return safeStorage.getParsed('vlive_app_users_v7', DEFAULT_REAL_USERS);
+    return safeStorage.getParsed('vlive_app_users_v8', safeStorage.getParsed('vlive_app_users_v7', DEFAULT_REAL_USERS));
   });
 
   // Terms and Conditions Acceptance State
@@ -674,6 +674,10 @@ export default function App() {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
   const [showAdminPinModal, setShowAdminPinModal] = useState(false);
+  const [showEditPasswordOld, setShowEditPasswordOld] = useState(false);
+  const [showEditPasswordNew, setShowEditPasswordNew] = useState(false);
+  const [showChangeOldPassword, setShowChangeOldPassword] = useState(false);
+  const [showChangeNewPassword, setShowChangeNewPassword] = useState(false);
   const [authFullName, setAuthFullName] = useState('Rayan Maleki');
   const [authGender, setAuthGender] = useState('female');
   const [authTelegramId, setAuthTelegramId] = useState('108492039');
@@ -746,9 +750,53 @@ export default function App() {
     return safeStorage.getItem('vlive_last_withdrawal_date') || '';
   });
 
-  // Save Users Effect
+  // Automatic Storage Syncing for Profile & App State (مداومت کامل اطلاعات و تنظیمات در برابر به‌روزرسانی‌ها)
   useEffect(() => {
-    safeStorage.setItem('vlive_app_users_v7', JSON.stringify(usersList));
+    safeStorage.setItem('vlive_user_name', userName);
+  }, [userName]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_current_username', currentUsername);
+  }, [currentUsername]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_user_coins', userCoins.toString());
+  }, [userCoins]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_user_gender', userGender);
+  }, [userGender]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_user_avatar', userAvatar);
+  }, [userAvatar]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_user_bio', userBio);
+  }, [userBio]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_is_verified', isVerified ? 'true' : 'false');
+  }, [isVerified]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_user_logged_in', isLoggedIn ? 'true' : 'false');
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_vip_plan', vipPlan);
+  }, [vipPlan]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_vip_expire_days', vipExpireDays.toString());
+  }, [vipExpireDays]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_vip_monthly_claimed', isVipMonthlyClaimed ? 'true' : 'false');
+  }, [isVipMonthlyClaimed]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_app_users_v8', JSON.stringify(usersList));
   }, [usersList]);
 
   // Server Keep-Alive Ping & Performance Initialization
@@ -12147,9 +12195,16 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         />
                         <button
                           onClick={() => {
-                            if (!editUsernameInput.trim()) return;
-                            setCurrentUsername(editUsernameInput.trim());
-                            safeStorage.setItem('vlive_current_username', editUsernameInput.trim());
+                            const cleanNewUser = editUsernameInput.trim();
+                            if (!cleanNewUser) return;
+                            const isDup = usersList.some(u => u.username?.toLowerCase() === cleanNewUser.toLowerCase() && u.username?.toLowerCase() !== currentUsername.toLowerCase()) ||
+                                          adminUsersList.some(u => u.username?.toLowerCase() === cleanNewUser.toLowerCase());
+                            if (isDup) {
+                              showToast(loc('❌ این نام کاربری قبلاً ثبت شده است! هر نام کاربری فقط یکبار امکان ثبت دارد.', '❌ Username already registered! Every username must be unique.'));
+                              return;
+                            }
+                            setCurrentUsername(cleanNewUser);
+                            safeStorage.setItem('vlive_current_username', cleanNewUser);
                             setEditUsernameInput('');
                             showToast('Username updated successfully!');
                           }}
@@ -12163,20 +12218,40 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     <div className="sm:col-span-2 space-y-2 border-t border-slate-800/80 pt-2">
                       <p className="font-bold text-white">Change Password (تغییر رمز عبور)</p>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <input
-                          type="password"
-                          value={editPasswordOld}
-                          onChange={e => setEditPasswordOld(e.target.value)}
-                          placeholder="Current Password"
-                          className="px-3 py-2 rounded-2xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500"
-                        />
-                        <input
-                          type="password"
-                          value={editPasswordNew}
-                          onChange={e => setEditPasswordNew(e.target.value)}
-                          placeholder="New Password"
-                          className="px-3 py-2 rounded-2xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500"
-                        />
+                        <div className="relative">
+                          <input
+                            type={showEditPasswordOld ? "text" : "password"}
+                            value={editPasswordOld}
+                            onChange={e => setEditPasswordOld(e.target.value)}
+                            placeholder="Current Password"
+                            className="w-full px-3 py-2 pr-9 rounded-2xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500 text-xs"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowEditPasswordOld(!showEditPasswordOld)}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition"
+                            title={showEditPasswordOld ? "Hide" : "Show"}
+                          >
+                            {showEditPasswordOld ? <EyeOff className="w-3.5 h-3.5 text-pink-400" /> : <Eye className="w-3.5 h-3.5 text-slate-400" />}
+                          </button>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type={showEditPasswordNew ? "text" : "password"}
+                            value={editPasswordNew}
+                            onChange={e => setEditPasswordNew(e.target.value)}
+                            placeholder="New Password"
+                            className="w-full px-3 py-2 pr-9 rounded-2xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500 text-xs"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowEditPasswordNew(!showEditPasswordNew)}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition"
+                            title={showEditPasswordNew ? "Hide" : "Show"}
+                          >
+                            {showEditPasswordNew ? <EyeOff className="w-3.5 h-3.5 text-pink-400" /> : <Eye className="w-3.5 h-3.5 text-slate-400" />}
+                          </button>
+                        </div>
                         <button
                           onClick={() => {
                             if (!editPasswordOld || !editPasswordNew) {
@@ -13072,11 +13147,18 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     />
                     <button
                       onClick={() => {
-                        if (!changeUsernameInput.trim()) return;
-                        setCurrentUsername(changeUsernameInput.trim());
-                        safeStorage.setItem('vlive_current_username', changeUsernameInput.trim());
+                        const cleanU = changeUsernameInput.trim();
+                        if (!cleanU) return;
+                        const isDup = usersList.some(u => u.username?.toLowerCase() === cleanU.toLowerCase() && u.username?.toLowerCase() !== currentUsername.toLowerCase()) ||
+                                      adminUsersList.some(u => u.username?.toLowerCase() === cleanU.toLowerCase());
+                        if (isDup) {
+                          showToast(loc('❌ این نام کاربری قبلاً ثبت شده است! هر نام کاربری فقط یکبار امکان ثبت دارد.', '❌ Username already registered! Every username must be unique.'));
+                          return;
+                        }
+                        setCurrentUsername(cleanU);
+                        safeStorage.setItem('vlive_current_username', cleanU);
                         setChangeUsernameInput('');
-                        showToast(`Username changed to @${changeUsernameInput.trim()}`);
+                        showToast(loc(`نام کاربری با موفقیت به @${cleanU} تغییر یافت`, `Username changed to @${cleanU}`));
                       }}
                       className="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold"
                     >
@@ -13087,20 +13169,40 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
                 <div className="border-t border-slate-800 pt-3 space-y-2">
                   <p className="font-bold text-white">Change Password (تغییر رمز)</p>
-                  <input
-                    type="password"
-                    value={changeOldPassword}
-                    onChange={e => setChangeOldPassword(e.target.value)}
-                    placeholder="Current Password"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
-                  />
-                  <input
-                    type="password"
-                    value={changeNewPassword}
-                    onChange={e => setChangeNewPassword(e.target.value)}
-                    placeholder="New Password"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showChangeOldPassword ? "text" : "password"}
+                      value={changeOldPassword}
+                      onChange={e => setChangeOldPassword(e.target.value)}
+                      placeholder="Current Password"
+                      className="w-full px-3 py-2 pr-10 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowChangeOldPassword(!showChangeOldPassword)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition"
+                      title={showChangeOldPassword ? "Hide" : "Show"}
+                    >
+                      {showChangeOldPassword ? <EyeOff className="w-4 h-4 text-pink-400" /> : <Eye className="w-4 h-4 text-slate-400" />}
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showChangeNewPassword ? "text" : "password"}
+                      value={changeNewPassword}
+                      onChange={e => setChangeNewPassword(e.target.value)}
+                      placeholder="New Password"
+                      className="w-full px-3 py-2 pr-10 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowChangeNewPassword(!showChangeNewPassword)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition"
+                      title={showChangeNewPassword ? "Hide" : "Show"}
+                    >
+                      {showChangeNewPassword ? <EyeOff className="w-4 h-4 text-pink-400" /> : <Eye className="w-4 h-4 text-slate-400" />}
+                    </button>
+                  </div>
                   <button
                     onClick={() => {
                       if (!changeOldPassword || !changeNewPassword) {
