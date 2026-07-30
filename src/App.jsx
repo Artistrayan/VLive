@@ -2040,7 +2040,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // 6. Language & Real-time Translation System
   const [currentAppLang, setCurrentAppLang] = useState(() => {
-    return safeStorage.getItem('vlive_app_lang') || 'fa';
+    return safeStorage.getItem('vlive_app_lang') || 'en';
   });
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
 
@@ -2050,10 +2050,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     if (langName === 'ar' || langName === 'العربية' || langName === 'Arabic') return 'ar';
     if (langName === 'tr' || langName === 'Türkçe' || langName === 'Turkish') return 'tr';
     if (langName === 'ru' || langName === 'Русский' || langName === 'Russian') return 'ru';
-    return langName || 'fa';
+    return langName || 'en';
   };
 
-  const currentLangObj = APP_LANGUAGES.find(l => l.code === currentAppLang || l.name === currentAppLang) || APP_LANGUAGES[1];
+  const currentLangObj = APP_LANGUAGES.find(l => l.code === currentAppLang || l.name === currentAppLang) || APP_LANGUAGES[0];
   const langCode = currentLangObj.code;
   const isRtl = currentLangObj.dir === 'rtl';
 
