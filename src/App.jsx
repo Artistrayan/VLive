@@ -10,7 +10,7 @@ import {
   Video, Shield, ShieldCheck, Star, Wallet, User, Lock, Award, Calendar, 
   MessageSquare, Send, Camera, Mic, MicOff, Settings, Search, Check, 
   RefreshCw, LogOut, Flame, Heart, Crown, Plus, X, Globe, Sparkles, Coins,
-  Sliders, ChevronLeft, ChevronRight, Eye, Radio, CreditCard, Gift, 
+  Sliders, ChevronLeft, ChevronRight, Eye, EyeOff, Radio, CreditCard, Gift, 
   PhoneCall, Play, Image, Layers, CheckCircle, AlertCircle, Bot,
   Key, Mail, Phone, Smartphone, Copy, QrCode, ArrowRight, ExternalLink, SwitchCamera,
   TrendingUp, UserCheck, UserX, Ban, DollarSign, Activity, Filter, Users,
@@ -669,6 +669,11 @@ export default function App() {
   const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authConfirmPassword, setAuthConfirmPassword] = useState('');
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
+  const [showAdminPinModal, setShowAdminPinModal] = useState(false);
   const [authFullName, setAuthFullName] = useState('Rayan Maleki');
   const [authGender, setAuthGender] = useState('female');
   const [authTelegramId, setAuthTelegramId] = useState('108492039');
@@ -1733,12 +1738,28 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [adminGlobalSearch, setAdminGlobalSearch] = useState('');
   
   // Users Management State
-  const [adminUsersList, setAdminUsersList] = useState([
-    { id: 1, name: 'Sahar Miller', username: 'sahar_m', email: 'sahar@vlive.com', coins: 142000, status: 'Active', isVerified: true, role: 'User', reportsCount: 0, avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80' },
-    { id: 2, name: 'Ali Reza', username: 'ali_streamer', email: 'ali@vlive.com', coins: 89000, status: 'Active', isVerified: true, role: 'Streamer', reportsCount: 1, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80' },
-    { id: 3, name: 'Spam Account 99', username: 'spambot99', email: 'spam@bot.com', coins: 0, status: 'Banned', isVerified: false, role: 'User', reportsCount: 12, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80' },
-    { id: 4, name: 'Elena Rostova', username: 'elena_r', email: 'elena@vlive.com', coins: 250000, status: 'Active', isVerified: true, role: 'VIP User', reportsCount: 0, avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80' }
-  ]);
+  const [adminUsersList, setAdminUsersList] = useState(() => {
+    const saved = safeStorage.getItem('vlive_admin_users_list');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return DEFAULT_REAL_USERS.map(u => ({
+      id: u.id,
+      name: u.name,
+      username: u.username,
+      email: `${u.username.toLowerCase()}@vlive.com`,
+      coins: u.coins || 10000,
+      status: u.status === 'banned' ? 'Banned' : 'Active',
+      isVerified: u.isVerified || false,
+      role: u.role || 'User',
+      reportsCount: 0,
+      avatar: u.avatar,
+      registeredAt: u.registeredAt || '2026-01-01'
+    }));
+  });
 
   // Live Streams Management State
   const [adminLivesList, setAdminLivesList] = useState([
@@ -1969,6 +1990,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   const t = (key, fallback = '') => {
     return I18N_DICTIONARY[langCode]?.[key] || fallback || key;
+  };
+
+  const loc = (faStr, enStr) => {
+    return (langCode === 'fa' || langCode === 'ar') ? faStr : enStr;
   };
 
   const handleSelectLanguage = (lang) => {
@@ -3798,18 +3823,34 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     }
   };
 
-  // LEAVE LIVE STREAM & OPEN POST-STREAM RATING MODAL
+  // LEAVE LIVE STREAM
   const handleLeaveStream = () => {
     if (mediaStream) {
       mediaStream.getTracks().forEach(track => track.stop());
       setMediaStream(null);
     }
-    const currentStream = viewingStream;
     setViewingStream(null);
-    if (currentStream) {
-      setRatingTargetHost({ name: currentStream.host, avatar: currentStream.thumbnail });
-      setIsRatingModalOpen(true);
-    }
+  };
+
+  // SWITCH BETWEEN LIVE STREAMS NEXT / PREVIOUS
+  const handleNextStream = () => {
+    if (!viewingStream || !streamsList || streamsList.length === 0) return;
+    const currentIndex = streamsList.findIndex(s => s.id === viewingStream.id);
+    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % streamsList.length;
+    const nextStream = streamsList[nextIndex];
+    setViewingStream(nextStream);
+    setStreamLikes(Math.floor(Math.random() * 500) + 120);
+    showToast(loc(`انتقال به استریم بعدی: ${nextStream.host}`, `Switched to next stream: ${nextStream.host}`));
+  };
+
+  const handlePrevStream = () => {
+    if (!viewingStream || !streamsList || streamsList.length === 0) return;
+    const currentIndex = streamsList.findIndex(s => s.id === viewingStream.id);
+    const prevIndex = currentIndex === -1 ? 0 : (currentIndex - 1 + streamsList.length) % streamsList.length;
+    const prevStream = streamsList[prevIndex];
+    setViewingStream(prevStream);
+    setStreamLikes(Math.floor(Math.random() * 500) + 120);
+    showToast(loc(`انتقال به استریم قبلی: ${prevStream.host}`, `Switched to previous stream: ${prevStream.host}`));
   };
 
   // START MY OWN LIVE STREAM
@@ -3916,7 +3957,31 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         usdtAddress: ''
       };
 
-      setUsersList(prev => [...prev, newUser]);
+      setUsersList(prev => {
+        const updated = [newUser, ...prev];
+        safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
+        return updated;
+      });
+
+      setAdminUsersList(prev => {
+        const adminUserObj = {
+          id: newUser.id,
+          name: newUser.name,
+          username: newUser.username,
+          email: `${newUser.username.toLowerCase()}@vlive.com`,
+          coins: newUser.coins,
+          status: 'Active',
+          isVerified: false,
+          role: newUser.role,
+          reportsCount: 0,
+          avatar: newUser.avatar,
+          registeredAt: newUser.registeredAt
+        };
+        const updatedAdmin = [adminUserObj, ...prev.filter(u => u.username !== newUser.username)];
+        safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updatedAdmin));
+        return updatedAdmin;
+      });
+
       setUserName(newUser.name);
       setCurrentUsername(newUser.username);
       setUserGender(newUser.gender);
@@ -4275,9 +4340,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </button>
           </div>
         )}
-
-        {/* STEP 2: WELCOME SCREEN (ورود سریع با تلگرام و گوگل) */}
-        {authStep === 'welcome' && (
           <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-pink-500/40 bg-slate-900/90 backdrop-blur-xl rounded-3xl space-y-6 shadow-[0_0_50px_rgba(236,72,153,0.2)] animate-fadeIn">
             <div className="text-center space-y-2">
               <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 p-0.5 shadow-xl flex items-center justify-center">
@@ -4288,6 +4350,41 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </h2>
               <p className="text-xs text-slate-400">Select your preferred authentic entrance mode</p>
             </div>
+
+            {/* QUICK AUTO-LOGIN FOR SAVED USERS */}
+            {safeStorage.getItem('vlive_current_username') && (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/80 via-pink-950/80 to-slate-950 border border-pink-500/50 space-y-3 shadow-xl">
+                <div className="flex items-center gap-3">
+                  <img 
+                    src={safeStorage.getItem('vlive_user_avatar') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'} 
+                    alt="Saved User" 
+                    className="w-11 h-11 rounded-2xl object-cover ring-2 ring-pink-500 shadow-md" 
+                  />
+                  <div className="text-left flex-1 min-w-0">
+                    <p className="text-xs font-black text-white truncate">{safeStorage.getItem('vlive_user_name') || 'Saved User'}</p>
+                    <span className="text-[10px] text-pink-300 font-mono block truncate">@{safeStorage.getItem('vlive_current_username')}</span>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[9px] font-bold">
+                    {loc('حساب تاییدشده', 'Verified Session')}
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    const savedU = safeStorage.getItem('vlive_current_username');
+                    const savedN = safeStorage.getItem('vlive_user_name') || savedU;
+                    setUserName(savedN);
+                    setCurrentUsername(savedU);
+                    setIsLoggedIn(true);
+                    safeStorage.setItem('vlive_user_logged_in', 'true');
+                    showToast(loc(`⚡ ورود سریع با حساب @${savedU} انجام شد!`, `⚡ Quick login as @${savedU} successful!`));
+                  }}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2"
+                >
+                  <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
+                  <span>{loc('⚡ ورود سریع (بدون نیاز به نام کاربری و رمز عبور)', '⚡ Quick Login (No Password Required)')}</span>
+                </button>
+              </div>
+            )}
 
             {/* Social Authentication Options */}
             <div className="space-y-3">
@@ -4382,103 +4479,378 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         )}
 
         {/* STEP 3: REGISTER / CREATE ACCOUNT (ساخت حساب) */}
-        {authStep === 'register' && (
+        {authStep === 'register' && (() => {
+          const cleanUserCheck = authUsername.trim();
+          const isDuplicateUser = cleanUserCheck.length > 0 && (
+            usersList.some(u => u.username?.toLowerCase() === cleanUserCheck.toLowerCase()) ||
+            adminUsersList.some(u => u.username?.toLowerCase() === cleanUserCheck.toLowerCase())
+          );
+
+          return (
+            <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-pink-500/40 bg-slate-900/95 backdrop-blur-xl rounded-3xl space-y-5 shadow-2xl animate-fadeIn">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-pink-500/20 text-pink-400">
+                    <UserPlus className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white">Create V.Live Account</h3>
+                    <p className="text-[10px] text-slate-400">Step 1 of 3: Set Credentials</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setAuthStep('welcome')}
+                  className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Auto-extracted OAuth Badge */}
+              <div className="p-3 rounded-2xl bg-slate-950 border border-cyan-500/30 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <img src={authAvatar} alt="Avatar" className="w-9 h-9 rounded-xl object-cover border border-cyan-400" />
+                  <div>
+                    <p className="text-xs font-bold text-white">{authFullName}</p>
+                    <span className="text-[10px] text-cyan-400 font-mono">
+                      {authMethod === 'telegram' ? `Telegram ID: ${authTelegramId}` : (authMethod === 'google' ? `Google: ${authEmail}` : 'Custom Registration')}
+                    </span>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-[9px]">Verified Provider</span>
+              </div>
+
+              {/* Credentials Inputs */}
+              <div className="space-y-3.5">
+                <div>
+                  <label className="text-xs text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-pink-400" />
+                    Select Unique Username (نام کاربری یکتا)
+                  </label>
+                  <input
+                    type="text"
+                    value={authUsername}
+                    onChange={e => setAuthUsername(e.target.value)}
+                    placeholder="e.g. Rayan_VIP"
+                    className={`w-full px-4 py-3 rounded-2xl bg-slate-950 border text-xs text-white outline-none transition ${isDuplicateUser ? 'border-rose-500 focus:border-rose-400' : 'border-slate-800 focus:border-pink-500'}`}
+                  />
+                  {cleanUserCheck && (
+                    <div className={`text-[10px] mt-1.5 flex items-center gap-1 font-bold ${isDuplicateUser ? 'text-rose-400' : 'text-emerald-400'}`}>
+                      {isDuplicateUser ? (
+                        <>
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          <span>{loc('❌ این نام کاربری قبلاً ثبت شده است! لطفا نام دیگری وارد کنید.', '❌ Username is already registered! Please enter another.')}</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span>{loc('✓ نام کاربری آزاد است و تایید شد', '✓ Username is available')}</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-pink-400" />
+                    Password (رمز عبور)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showRegisterPassword ? "text" : "password"}
+                      value={authPassword}
+                      onChange={e => setAuthPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-4 py-3 pr-11 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition"
+                      title={showRegisterPassword ? "Hide password" : "Show password"}
+                    >
+                      {showRegisterPassword ? <EyeOff className="w-4 h-4 text-pink-400" /> : <Eye className="w-4 h-4 text-slate-400" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-pink-400" />
+                    Confirm Password (تکرار رمز عبور)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showRegisterConfirmPassword ? "text" : "password"}
+                      value={authConfirmPassword}
+                      onChange={e => setAuthConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-4 py-3 pr-11 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisterConfirmPassword(!showRegisterConfirmPassword)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition"
+                      title={showRegisterConfirmPassword ? "Hide password" : "Show password"}
+                    >
+                      {showRegisterConfirmPassword ? <EyeOff className="w-4 h-4 text-pink-400" /> : <Eye className="w-4 h-4 text-slate-400" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  if (!authUsername.trim()) {
+                    showToast(loc('لطفاً نام کاربری را وارد کنید', 'Please enter a username'));
+                    return;
+                  }
+                  if (isDuplicateUser) {
+                    showToast(loc('❌ این نام کاربری قبلاً ثبت شده است! هر نام کاربری فقط یکبار امکان ثبت دارد.', '❌ Username already registered! Every username must be unique.'));
+                    return;
+                  }
+                  if (authPassword && authConfirmPassword && authPassword !== authConfirmPassword) {
+                    showToast(loc('رمز عبور و تکرار آن یکسان نیستند!', 'Passwords do not match!'));
+                    return;
+                  }
+                  setAuthStep('onboarding');
+                  showToast(loc('اطلاعات کاربری ثبت شد! اکنون پروفایل خود را تکمیل کنید.', 'Credentials saved! Now complete your profile details.'));
+                }}
+                className="w-full py-3.5 rounded-2xl btn-neon-pink font-bold text-xs shadow-xl flex items-center justify-center gap-2"
+              >
+                <span>Next: Complete Profile (تکمیل پروفایل)</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          );
+        })()}
+
+        {/* STEP 4: LOGIN SCREEN (ورود) */}
+        {authStep === 'login' && (
           <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-pink-500/40 bg-slate-900/95 backdrop-blur-xl rounded-3xl space-y-5 shadow-2xl animate-fadeIn">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-pink-500/20 text-pink-400">
-                  <UserPlus className="w-5 h-5" />
+                <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400">
+                  <Key className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">Create V.Live Account</h3>
-                  <p className="text-[10px] text-slate-400">Step 1 of 3: Set Credentials</p>
+                  <h3 className="text-base font-black text-white">Log In to V.Live</h3>
+                  <p className="text-[10px] text-slate-400">Enter your credentials</p>
                 </div>
               </div>
               <button 
                 onClick={() => setAuthStep('welcome')}
                 className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Auto-extracted OAuth Badge */}
-            <div className="p-3 rounded-2xl bg-slate-950 border border-cyan-500/30 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <img src={authAvatar} alt="Avatar" className="w-9 h-9 rounded-xl object-cover border border-cyan-400" />
-                <div>
-                  <p className="text-xs font-bold text-white">{authFullName}</p>
-                  <span className="text-[10px] text-cyan-400 font-mono">
-                    {authMethod === 'telegram' ? `Telegram ID: ${authTelegramId}` : (authMethod === 'google' ? `Google: ${authEmail}` : 'Custom Registration')}
-                  </span>
+            {/* QUICK AUTO-LOGIN FOR SAVED SESSION */}
+            {safeStorage.getItem('vlive_current_username') && (
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/80 to-pink-950/80 border border-pink-500/40 space-y-2">
+                <div className="flex items-center gap-2.5">
+                  <img 
+                    src={safeStorage.getItem('vlive_user_avatar') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'} 
+                    alt="Saved User" 
+                    className="w-9 h-9 rounded-xl object-cover border border-pink-400" 
+                  />
+                  <div className="text-left flex-1 min-w-0">
+                    <p className="text-xs font-bold text-white truncate">{safeStorage.getItem('vlive_user_name') || 'Saved User'}</p>
+                    <span className="text-[10px] text-pink-300 font-mono block truncate">@{safeStorage.getItem('vlive_current_username')}</span>
+                  </div>
                 </div>
+                <button
+                  onClick={() => {
+                    const savedU = safeStorage.getItem('vlive_current_username');
+                    const savedN = safeStorage.getItem('vlive_user_name') || savedU;
+                    setUserName(savedN);
+                    setCurrentUsername(savedU);
+                    setIsLoggedIn(true);
+                    safeStorage.setItem('vlive_user_logged_in', 'true');
+                    showToast(loc(`ورود سریع موفق! خوش آمدید @${savedU}`, `Quick login successful! Welcome @${savedU}`));
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-1.5"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                  <span>{loc('ورود سریع بدون رمز عبور', 'Quick Auto-Login')}</span>
+                </button>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-[9px]">Verified Provider</span>
-            </div>
+            )}
 
-            {/* Credentials Inputs */}
             <div className="space-y-3.5">
               <div>
                 <label className="text-xs text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-pink-400" />
-                  Select Username (نام کاربری)
+                  Username or Email
                 </label>
                 <input
                   type="text"
                   value={authUsername}
                   onChange={e => setAuthUsername(e.target.value)}
-                  placeholder="e.g. Rayan_VIP"
+                  placeholder="e.g. Sara_Maleki"
                   className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-pink-400" />
-                  Password (رمز عبور)
-                </label>
-                <input
-                  type="password"
-                  value={authPassword}
-                  onChange={e => setAuthPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-pink-400" />
-                  Confirm Password (تکرار رمز عبور)
-                </label>
-                <input
-                  type="password"
-                  value={authConfirmPassword}
-                  onChange={e => setAuthConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs text-slate-300 font-semibold flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-pink-400" />
+                    Password
+                  </label>
+                  <button
+                    onClick={() => {
+                      setForgotStep('request');
+                      setAuthStep('forgot_password');
+                    }}
+                    className="text-[11px] text-pink-400 hover:underline font-bold"
+                  >
+                    Forgot Password? (فراموشی رمز)
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showLoginPassword ? "text" : "password"}
+                    value={authPassword}
+                    onChange={e => setAuthPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-4 py-3 pr-11 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition"
+                    title={showLoginPassword ? "Hide password" : "Show password"}
+                  >
+                    {showLoginPassword ? <EyeOff className="w-4 h-4 text-pink-400" /> : <Eye className="w-4 h-4 text-slate-400" />}
+                  </button>
+                </div>
               </div>
             </div>
 
             <button
               onClick={() => {
-                if (!authUsername.trim()) {
-                  showToast('Please enter a username');
-                  return;
-                }
-                if (authPassword && authConfirmPassword && authPassword !== authConfirmPassword) {
-                  showToast('Passwords do not match!');
-                  return;
-                }
-                setAuthStep('onboarding');
-                showToast('Credentials saved! Now complete your profile details.');
+                const cleanUser = authUsername.trim() || 'Rayan_VIP';
+                setUserName(cleanUser.includes('Sara') ? 'Sara Maleki' : cleanUser);
+                setCurrentUsername(cleanUser);
+                setIsLoggedIn(true);
+                safeStorage.setItem('vlive_user_logged_in', 'true');
+                safeStorage.setItem('vlive_current_username', cleanUser);
+                safeStorage.setItem('vlive_user_name', cleanUser.includes('Sara') ? 'Sara Maleki' : cleanUser);
+                showToast(`Welcome back to V.Live, @${cleanUser}!`);
               }}
               className="w-full py-3.5 rounded-2xl btn-neon-pink font-bold text-xs shadow-xl flex items-center justify-center gap-2"
             >
-              <span>Next: Complete Profile (تکمیل پروفایل)</span>
               <ArrowRight className="w-4 h-4" />
+              <span>Log In to Account</span>
             </button>
+          </div>
+        )}
+
+        {/* STEP 5: FORGOT PASSWORD (فراموشی رمز عبور) */}
+        {authStep === 'forgot_password' && (
+          <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-amber-500/40 bg-slate-900/95 backdrop-blur-xl rounded-3xl space-y-5 shadow-2xl animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">Password Recovery</h3>
+                  <p className="text-[10px] text-slate-400">Reset via Telegram or Google</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setAuthStep('login')}
+                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setForgotRecoveryType('telegram')}
+                className={`py-2.5 rounded-xl text-xs font-bold border transition ${forgotRecoveryType === 'telegram' ? 'bg-cyan-600/30 border-cyan-400 text-cyan-300' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+              >
+                Via Telegram Bot
+              </button>
+              <button
+                onClick={() => setForgotRecoveryType('google')}
+                className={`py-2.5 rounded-xl text-xs font-bold border transition ${forgotRecoveryType === 'google' ? 'bg-rose-600/30 border-rose-400 text-rose-300' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+              >
+                Via Google Email
+              </button>
+            </div>
+
+            {forgotStep === 'request' && (
+              <div className="space-y-4">
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  A verification code will be sent to your connected {forgotRecoveryType === 'telegram' ? 'Telegram account (@vlive_auth_bot)' : 'Google email (tattoo.rayan2015@gmail.com)'}.
+                </p>
+                <button
+                  onClick={() => {
+                    setForgotStep('verify');
+                    showToast(`Recovery OTP code sent via ${forgotRecoveryType.toUpperCase()}!`);
+                  }}
+                  className="w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-lg"
+                >
+                  Send Verification Code
+                </button>
+              </div>
+            )}
+
+            {forgotStep === 'verify' && (
+              <div className="space-y-3.5">
+                <div>
+                  <label className="text-xs text-slate-300 font-semibold mb-1 block">Enter 6-Digit Code</label>
+                  <input
+                    type="text"
+                    value={forgotResetCode}
+                    onChange={e => setForgotResetCode(e.target.value)}
+                    placeholder="e.g. 782910"
+                    className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none font-mono text-center text-lg tracking-widest focus:border-amber-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-300 font-semibold mb-1 block">New Password</label>
+                  <div className="relative">
+                    <input
+                      type={showForgotNewPassword ? "text" : "password"}
+                      value={forgotNewPassword}
+                      onChange={e => setForgotNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-4 py-3 pr-11 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-amber-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotNewPassword(!showForgotNewPassword)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition"
+                      title={showForgotNewPassword ? "Hide password" : "Show password"}
+                    >
+                      {showForgotNewPassword ? <EyeOff className="w-4 h-4 text-amber-400" /> : <Eye className="w-4 h-4 text-slate-400" />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    if (!forgotResetCode.trim() || !forgotNewPassword.trim()) {
+                      showToast('Please enter both code and new password');
+                      return;
+                    }
+                    setAuthStep('login');
+                    showToast('Password updated successfully! Please log in with your new password.');
+                  }}
+                  className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-xl"
+                >
+                  Reset Password & Continue
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -13283,7 +13655,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* MODAL 2: 20+ GIFTS CATALOG */}
       {isGiftCatalogOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="w-full max-w-md card-3d p-5 border border-pink-500/50 bg-slate-900 rounded-3xl space-y-4 max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
@@ -14191,6 +14563,27 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </div>
             )}
 
+            {/* Side Floating Stream Switcher Arrows */}
+            <div className="absolute top-1/2 left-3 -translate-y-1/2 z-30">
+              <button 
+                onClick={handlePrevStream}
+                className="p-3 rounded-full bg-slate-950/80 border border-slate-700/80 text-white hover:bg-pink-600 hover:border-pink-500 shadow-[0_0_15px_rgba(0,0,0,0.8)] backdrop-blur-md transition active:scale-90 flex items-center justify-center group"
+                title={loc('پخش زنده قبلی', 'Previous Live Stream')}
+              >
+                <ChevronRight className="w-6 h-6 text-pink-400 group-hover:text-white" />
+              </button>
+            </div>
+
+            <div className="absolute top-1/2 right-3 -translate-y-1/2 z-30">
+              <button 
+                onClick={handleNextStream}
+                className="p-3 rounded-full bg-slate-950/80 border border-slate-700/80 text-white hover:bg-pink-600 hover:border-pink-500 shadow-[0_0_15px_rgba(0,0,0,0.8)] backdrop-blur-md transition active:scale-90 flex items-center justify-center group"
+                title={loc('پخش زنده بعدی', 'Next Live Stream')}
+              >
+                <ChevronLeft className="w-6 h-6 text-pink-400 group-hover:text-white" />
+              </button>
+            </div>
+
             {/* Top Bar Controls */}
             <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between">
               <div className="flex items-center gap-2 bg-slate-950/80 p-2 rounded-2xl border border-slate-800">
@@ -14199,7 +14592,23 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <VerifiedBadge className="w-3.5 h-3.5" />
               </div>
 
+              {/* STREAM SWITCHER TOP BUTTONS */}
               <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-slate-950/90 p-1 rounded-2xl border border-slate-800 backdrop-blur-md">
+                  <button 
+                    onClick={handlePrevStream}
+                    className="px-2.5 py-1 rounded-xl bg-slate-900 hover:bg-slate-800 text-pink-300 font-bold text-[10px] flex items-center gap-0.5"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" /> {loc('قبلی', 'Prev')}
+                  </button>
+                  <button 
+                    onClick={handleNextStream}
+                    className="px-2.5 py-1 rounded-xl bg-slate-900 hover:bg-slate-800 text-pink-300 font-bold text-[10px] flex items-center gap-0.5"
+                  >
+                    {loc('بعدی', 'Next')} <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
                 {/* PK Toggle Button */}
                 <button 
                   onClick={() => {
@@ -14214,7 +14623,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   {isPkBattleActive ? 'Stop PK' : 'Start PK'}
                 </button>
 
-                <button onClick={handleLeaveStream} className="p-2 rounded-2xl bg-slate-950/80 border border-slate-800 text-slate-300">
+                <button onClick={handleLeaveStream} className="p-2 rounded-2xl bg-slate-950/80 border border-slate-800 text-slate-300 hover:text-white hover:bg-rose-950/80">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -14605,13 +15014,22 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <label className="block text-slate-300 font-bold mb-1">
                   🔒 رمز عبور ادمین (Admin Password):
                 </label>
-                <input
-                  type="password"
-                  value={enteredAdminPassword}
-                  onChange={e => setEnteredAdminPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-mono text-xs outline-none focus:border-amber-500"
-                />
+                <div className="relative">
+                  <input
+                    type={showAdminPinModal ? "text" : "password"}
+                    value={enteredAdminPassword}
+                    onChange={e => setEnteredAdminPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-4 py-2.5 pr-11 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-mono text-xs outline-none focus:border-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPinModal(!showAdminPinModal)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition"
+                  >
+                    {showAdminPinModal ? <EyeOff className="w-4 h-4 text-amber-400" /> : <Eye className="w-4 h-4 text-slate-400" />}
+                  </button>
+                </div>
               </div>
 
               {/* HINT FOR SUPER ADMIN ACCESS */}
@@ -14693,9 +15111,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 </div>
                 <div>
                   <h2 className="text-base sm:text-lg font-black text-amber-300 tracking-wide flex items-center gap-2">
-                    <span>👑 Super Admin Dashboard (پنل مدیریت ارشد vLive+)</span>
+                    <span>👑 {loc('پنل مدیریت ارشد vLive+', 'vLive+ Super Admin Dashboard')}</span>
                   </h2>
-                  <p className="text-[11px] text-slate-400">پنل کنترل مدیریت کامل کاربران، لایوها، مالی، امنیت و هوش مصنوعی</p>
+                  <p className="text-[11px] text-slate-400">{loc('پنل کنترل مدیریت کامل کاربران، لایوها، مالی، امنیت و هوش مصنوعی', 'Full admin control panel for users, streams, finances, security, and AI')}</p>
                 </div>
               </div>
 
@@ -14739,29 +15157,29 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </div>
 
             {/* 20 SIDEBAR / CHIPS NAV TABS */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar text-xs border-b border-slate-800/80 dir-rtl">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar text-xs border-b border-slate-800/80">
               {[
-                { id: 'dashboard', label: '📊 Dashboard (داشبورد)' },
-                { id: 'users', label: '👥 Users (کاربران)' },
-                { id: 'live', label: '🎥 Live (لایوها)' },
-                { id: 'reports', label: '💬 Reports (گزارش‌ها)' },
-                { id: 'wallet', label: '💰 Wallet (کیف پول)' },
-                { id: 'gifts', label: '🎁 Gifts (هدایا)' },
-                { id: 'vip', label: '👑 VIP (اشتراک‌ها)' },
-                { id: 'ads', label: '📢 Ads (تبلیغات)' },
-                { id: 'events', label: '🏆 Events (مسابقات)' },
-                { id: 'notifications', label: '🔔 Notifications (اعلان‌ها)' },
-                { id: 'moderation', label: '🛡 Moderation (محتوا)' },
-                { id: 'statistics', label: '📈 Statistics (آمار)' },
-                { id: 'support', label: '🎫 Support (تیکت‌ها)' },
-                { id: 'verification', label: '🔑 Verification (تأیید هویت)' },
-                { id: 'roles', label: '👥 Roles (نقش‌ها)' },
-                { id: 'security', label: '🔒 Security (امنیت)' },
-                { id: 'settings', label: '⚙️ Settings (تنظیمات)' },
-                { id: 'aimod', label: '🤖 AI Mod (هوش مصنوعی)' },
-                { id: 'aisecurity', label: '🛡 AI Security Center (مرکز امنیت AI)' },
-                { id: 'backup', label: '💾 Backup (بکاپ)' },
-                { id: 'logs', label: '📜 Logs (لاگ‌ها)' }
+                { id: 'dashboard', label: loc('📊 داشبورد', '📊 Dashboard') },
+                { id: 'users', label: loc('👥 کاربران', '👥 Users') },
+                { id: 'live', label: loc('🎥 لایوها', '🎥 Live Streams') },
+                { id: 'reports', label: loc('💬 گزارش‌ها', '💬 Reports') },
+                { id: 'wallet', label: loc('💰 کیف پول', '💰 Wallet') },
+                { id: 'gifts', label: loc('🎁 هدایا', '🎁 Gifts') },
+                { id: 'vip', label: loc('👑 VIP اشتراک', '👑 VIP Club') },
+                { id: 'ads', label: loc('📢 تبلیغات', '📢 Ads & Banners') },
+                { id: 'events', label: loc('🏆 مسابقات', '🏆 Events') },
+                { id: 'notifications', label: loc('🔔 اعلان‌ها', '🔔 Notifications') },
+                { id: 'moderation', label: loc('🛡 محتوا', '🛡 Moderation') },
+                { id: 'statistics', label: loc('📈 آمار', '📈 Statistics') },
+                { id: 'support', label: loc('🎫 تیکت‌ها', '🎫 Support') },
+                { id: 'verification', label: loc('🔑 تأیید هویت', '🔑 Verification') },
+                { id: 'roles', label: loc('👥 ادمین‌ها', '👥 Admin Roles') },
+                { id: 'security', label: loc('🔒 امنیت', '🔒 Security') },
+                { id: 'settings', label: loc('⚙️ تنظیمات', '⚙️ Settings') },
+                { id: 'aimod', label: loc('🤖 هوش مصنوعی', '🤖 AI Mod') },
+                { id: 'aisecurity', label: loc('🛡 مرکز امنیت AI', '🛡 AI Security') },
+                { id: 'backup', label: loc('💾 بکاپ', '💾 Backups') },
+                { id: 'logs', label: loc('📜 لاگ‌ها', '📜 System Logs') }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -14885,14 +15303,37 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               {/* 2. USER MANAGEMENT */}
               {adminActiveTab === 'users' && (
                 <div className="space-y-3 text-xs">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-white text-sm">۲. مدیریت کامل کاربران (User Management)</h3>
-                    <button
-                      onClick={() => setIsAddUserModalOpen(true)}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> کاربر جدید
-                    </button>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <h3 className="font-bold text-white text-sm">{loc('۲. مدیریت کامل کاربران', '2. User Management')}</h3>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          const mockUsernames = ['sahar_m', 'ali_streamer', 'spambot99', 'elena_r', 'unknown_99'];
+                          setAdminUsersList(prev => {
+                            const cleaned = prev.filter(u => !mockUsernames.includes(u.username.toLowerCase()));
+                            safeStorage.setItem('vlive_admin_users_list', JSON.stringify(cleaned));
+                            return cleaned;
+                          });
+                          setUsersList(prev => {
+                            const cleaned = prev.filter(u => !mockUsernames.includes(u.username.toLowerCase()));
+                            safeStorage.setItem('vlive_app_users_v8', JSON.stringify(cleaned));
+                            return cleaned;
+                          });
+                          addAdminAuditLog('کاربران فیک و دمو با موفقیت پاکسازی شدند');
+                          showToast(loc('✅ کاربران فیک با موفقیت پاکسازی شدند! فقط کاربران واقعی باقی ماندند.', '✅ Fake users cleared! Only real users remain.'));
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-rose-950 hover:bg-rose-900 border border-rose-500/50 text-rose-300 font-bold text-[11px] flex items-center gap-1 shadow-sm"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> {loc('حذف کاربرهای فیک (دمو)', 'Clear Demo Users')}
+                      </button>
+
+                      <button
+                        onClick={() => setIsAddUserModalOpen(true)}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 shadow-sm"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> {loc('کاربر جدید', 'New User')}
+                      </button>
+                    </div>
                   </div>
 
                   {/* USER FILTER STATUS BUTTONS */}
@@ -14941,7 +15382,18 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => {
-                            if (!adminNewUser.name || !adminNewUser.username) return;
+                            const cleanName = adminNewUser.name.trim();
+                            const cleanUsername = adminNewUser.username.trim();
+                            if (!cleanName || !cleanUsername) {
+                              showToast(loc('لطفاً نام و نام کاربری را وارد کنید', 'Please enter name and username'));
+                              return;
+                            }
+                            const isDup = usersList.some(u => u.username?.toLowerCase() === cleanUsername.toLowerCase()) ||
+                                          adminUsersList.some(u => u.username?.toLowerCase() === cleanUsername.toLowerCase());
+                            if (isDup) {
+                              showToast(loc('❌ این نام کاربری قبلاً ثبت شده است! هر نام کاربری فقط یکبار امکان ثبت دارد.', '❌ Username already exists! Every username must be unique.'));
+                              return;
+                            }
                             const createdUser = {
                               id: Date.now(),
                               name: adminNewUser.name,
@@ -14952,16 +15404,30 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                               isVerified: true,
                               role: adminNewUser.role,
                               reportsCount: 0,
-                              avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'
+                              avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+                              registeredAt: new Date().toISOString().slice(0, 10)
                             };
-                            setAdminUsersList(prev => [createdUser, ...prev]);
+
+                            setAdminUsersList(prev => {
+                              const updated = [createdUser, ...prev];
+                              safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
+                              return updated;
+                            });
+
+                            setUsersList(prev => {
+                              const updated = [createdUser, ...prev];
+                              safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
+                              return updated;
+                            });
+
                             addAdminAuditLog(`کاربر جدید @${adminNewUser.username} توسط ادمین ساخته شد`);
+                            showToast(loc(`کاربر جدید @${adminNewUser.username} اضافه شد`, `New user @${adminNewUser.username} created`));
                             setAdminNewUser({ name: '', username: '', email: '', coins: 10000, role: 'User' });
                             setIsAddUserModalOpen(false);
                           }}
                           className="px-4 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs"
                         >
-                          تأیید و ساخت کاربر
+                          {loc('تأیید و ساخت کاربر', 'Confirm & Create User')}
                         </button>
                       </div>
                     </div>
@@ -14971,12 +15437,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   {adminEditingUser && (
                     <div className="p-4 rounded-2xl bg-slate-950 border border-amber-500/50 space-y-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-amber-300">ویرایش اطلاعات کاربر @{adminEditingUser.username}</h4>
+                        <h4 className="font-bold text-amber-300">{loc(`ویرایش اطلاعات کاربر @${adminEditingUser.username}`, `Edit User @${adminEditingUser.username}`)}</h4>
                         <button onClick={() => setAdminEditingUser(null)} className="text-slate-400"><X className="w-4 h-4" /></button>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div>
-                          <label className="text-[10px] text-slate-400 block">نام کامل:</label>
+                          <label className="text-[10px] text-slate-400 block">{loc('نام کامل:', 'Full Name:')}</label>
                           <input
                             type="text"
                             value={adminEditingUser.name}
@@ -14985,7 +15451,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] text-slate-400 block">موجودی سکه:</label>
+                          <label className="text-[10px] text-slate-400 block">{loc('موجودی سکه:', 'Coin Balance:')}</label>
                           <input
                             type="number"
                             value={adminEditingUser.coins}
@@ -14994,28 +15460,37 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] text-slate-400 block">نقش (Role):</label>
+                          <label className="text-[10px] text-slate-400 block">{loc('نقش:', 'Role:')}</label>
                           <select
                             value={adminEditingUser.role}
                             onChange={e => setAdminEditingUser({ ...adminEditingUser, role: e.target.value })}
                             className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
                           >
-                            <option value="User">کاربر عادی</option>
-                            <option value="Streamer">استریمر</option>
-                            <option value="VIP User">کاربر VIP</option>
+                            <option value="User">{loc('کاربر عادی', 'Regular User')}</option>
+                            <option value="Streamer">{loc('استریمر', 'Streamer')}</option>
+                            <option value="VIP User">{loc('کاربر VIP', 'VIP User')}</option>
                           </select>
                         </div>
                       </div>
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => {
-                            setAdminUsersList(prev => prev.map(u => u.id === adminEditingUser.id ? adminEditingUser : u));
+                            setAdminUsersList(prev => {
+                              const updated = prev.map(u => u.id === adminEditingUser.id ? adminEditingUser : u);
+                              safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
+                              return updated;
+                            });
+                            setUsersList(prev => {
+                              const updated = prev.map(u => u.id === adminEditingUser.id ? { ...u, ...adminEditingUser } : u);
+                              safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
+                              return updated;
+                            });
                             addAdminAuditLog(`اطلاعات کاربر @${adminEditingUser.username} بروزرسانی شد`);
                             setAdminEditingUser(null);
                           }}
                           className="px-4 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
                         >
-                          ذخیره تغییرات کاربر
+                          {loc('ذخیره تغییرات کاربر', 'Save User Changes')}
                         </button>
                       </div>
                     </div>
@@ -15039,7 +15514,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                                 {u.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400" />}
                                 <span className={`text-[9px] px-1.5 py-0.2 rounded font-normal ${u.status === 'Banned' ? 'bg-rose-950 text-rose-300' : 'bg-slate-800 text-slate-300'}`}>{u.status} • {u.role}</span>
                               </p>
-                              <span className="text-[10px] text-slate-400 block font-mono">@{u.username} • {u.email} • {u.coins.toLocaleString()} سکه</span>
+                              <span className="text-[10px] text-slate-400 block font-mono">@{u.username} • {u.email} • {u.coins.toLocaleString()} {loc('سکه', 'coins')}</span>
                             </div>
                           </div>
 
@@ -15048,43 +15523,78 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                               onClick={() => setAdminEditingUser(u)}
                               className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold"
                             >
-                              ویرایش
+                              {loc('ویرایش', 'Edit')}
                             </button>
 
                             <button
                               onClick={() => {
-                                setAdminUsersList(prev => prev.map(item => item.id === u.id ? { ...item, status: item.status === 'Banned' ? 'Active' : 'Banned' } : item));
-                                addAdminAuditLog(`وضعیت کاربر @${u.username} به ${u.status === 'Banned' ? 'فعال' : 'مسدود (Banned)'} تغییر یافت`);
+                                const newStatus = u.status === 'Banned' ? 'Active' : 'Banned';
+                                setAdminUsersList(prev => {
+                                  const updated = prev.map(item => item.id === u.id ? { ...item, status: newStatus } : item);
+                                  safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
+                                  return updated;
+                                });
+                                setUsersList(prev => {
+                                  const updated = prev.map(item => item.id === u.id ? { ...item, status: newStatus === 'Banned' ? 'banned' : 'active' } : item);
+                                  safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
+                                  return updated;
+                                });
+                                addAdminAuditLog(`وضعیت کاربر @${u.username} به ${newStatus} تغییر یافت`);
                               }}
                               className={`px-2 py-1 rounded-xl text-[10px] font-bold ${u.status === 'Banned' ? 'bg-emerald-600 text-white' : 'bg-rose-950 border border-rose-500/40 text-rose-300'}`}
                             >
-                              {u.status === 'Banned' ? 'رفع مسدودیت' : 'Ban کاربر'}
+                              {u.status === 'Banned' ? loc('رفع مسدودیت', 'Unban') : loc('مسدودسازی (Ban)', 'Ban User')}
                             </button>
 
                             <button
                               onClick={() => {
-                                setAdminUsersList(prev => prev.map(item => item.id === u.id ? { ...item, status: item.status === 'Suspended' ? 'Active' : 'Suspended' } : item));
+                                const newStatus = u.status === 'Suspended' ? 'Active' : 'Suspended';
+                                setAdminUsersList(prev => {
+                                  const updated = prev.map(item => item.id === u.id ? { ...item, status: newStatus } : item);
+                                  safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
+                                  return updated;
+                                });
                                 addAdminAuditLog(`وضعیت تعلیق کاربر @${u.username} تغییر کرد`);
                               }}
                               className="px-2 py-1 rounded-xl bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px] font-bold"
                             >
-                              {u.status === 'Suspended' ? 'لغو تعلیق' : 'Suspend'}
+                              {u.status === 'Suspended' ? loc('لغو تعلیق', 'Unsuspend') : loc('تعلیق (Suspend)', 'Suspend')}
                             </button>
 
                             <button
                               onClick={() => {
-                                setAdminUsersList(prev => prev.map(item => item.id === u.id ? { ...item, isVerified: !item.isVerified } : item));
-                                addAdminAuditLog(`نشان تأیید هویت آبی برای @${u.username} ${!u.isVerified ? 'اعطا شد' : 'لغو شد'}`);
+                                const newVerified = !u.isVerified;
+                                setAdminUsersList(prev => {
+                                  const updated = prev.map(item => item.id === u.id ? { ...item, isVerified: newVerified } : item);
+                                  safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
+                                  return updated;
+                                });
+                                setUsersList(prev => {
+                                  const updated = prev.map(item => item.id === u.id ? { ...item, isVerified: newVerified } : item);
+                                  safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
+                                  return updated;
+                                });
+                                addAdminAuditLog(`نشان تأیید هویت برای @${u.username} ${newVerified ? 'اعطا شد' : 'لغو شد'}`);
                               }}
                               className="px-2 py-1 rounded-xl bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10px] font-bold"
                             >
-                              {u.isVerified ? 'حذف نشان Cyan' : 'اعطای نشان Cyan'}
+                              {u.isVerified ? loc('حذف نشان Cyan', 'Remove Badge') : loc('اعطای نشان Cyan', 'Give Badge')}
                             </button>
 
                             <button
                               onClick={() => {
-                                setAdminUsersList(prev => prev.filter(item => item.id !== u.id));
+                                setAdminUsersList(prev => {
+                                  const updated = prev.filter(item => item.id !== u.id);
+                                  safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
+                                  return updated;
+                                });
+                                setUsersList(prev => {
+                                  const updated = prev.filter(item => item.id !== u.id);
+                                  safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
+                                  return updated;
+                                });
                                 addAdminAuditLog(`حساب کاربر @${u.username} برای همیشه حذف شد`);
+                                showToast(loc(`کاربر @${u.username} حذف شد`, `User @${u.username} deleted`));
                               }}
                               className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white"
                             >
