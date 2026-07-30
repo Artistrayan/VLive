@@ -1462,12 +1462,19 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const totalUnreadMessages = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
 
   // Check if current user is Rayan (Super Admin)
-  const SUPER_ADMIN_TELEGRAM_ID = 8973478139;
+  const SUPER_ADMIN_TELEGRAM_ID = '8973478139';
   const isUserRayan = currentUsername.toLowerCase() === 'rayan' || userName.toLowerCase().includes('rayan');
   const [currentUserRole, setCurrentUserRole] = useState(isUserRayan ? 'super_admin' : 'user');
-  const [currentTelegramId, setCurrentTelegramId] = useState(8973478139);
+  const [currentTelegramId, setCurrentTelegramId] = useState(() => {
+    return safeStorage.getItem('vlive_user_telegram_id') || '8973478139';
+  });
 
-  const isUserSuperAdmin = currentUserRole === 'super_admin' || currentTelegramId === SUPER_ADMIN_TELEGRAM_ID || isUserRayan;
+  // Admin Credentials Authentication state
+  const [enteredAdminUsername, setEnteredAdminUsername] = useState('');
+  const [enteredAdminPassword, setEnteredAdminPassword] = useState('');
+  const [activeAdminSession, setActiveAdminSession] = useState(null);
+
+  const isUserSuperAdmin = currentUserRole === 'super_admin' || String(currentTelegramId).trim() === SUPER_ADMIN_TELEGRAM_ID || isUserRayan;
 
   // Transactions State for Admin & Payouts
   const [transactionsList, setTransactionsList] = useState(() => {
@@ -1792,12 +1799,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [adminRolesList, setAdminRolesList] = useState(() => {
     const saved = safeStorage.getItem('vlive_admin_roles_list');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try { 
+        const parsed = JSON.parse(saved); 
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
     }
     return [
-      { id: 'adm_1', name: 'Rayan (Owner)', telegramId: '689123456', role: 'Super Admin', permissions: { users: true, live: true, reports: true, wallet: true, security: true, ads: true, support: true, logs: true }, addedAt: '2026-01-10' },
-      { id: 'adm_2', name: 'Sarah Mod', telegramId: '987654321', role: 'Live Moderator', permissions: { users: false, live: true, reports: true, wallet: false, security: false, ads: false, support: true, logs: false }, addedAt: '2026-03-22' },
-      { id: 'adm_3', name: 'Finance Agent Ali', telegramId: '543216789', role: 'Financial Inspector', permissions: { users: false, live: false, reports: false, wallet: true, security: false, ads: false, support: false, logs: true }, addedAt: '2026-05-18' }
+      { id: 'adm_super', name: 'Rayan (Super Admin)', telegramId: '8973478139', username: 'Rayan_Super_Admin', password: 'Rayan_0935', role: 'Super Admin', permissions: { users: true, live: true, reports: true, wallet: true, security: true, ads: true, support: true, logs: true }, addedAt: '2026-01-01' },
+      { id: 'adm_2', name: 'Sarah Mod', telegramId: '987654321', username: 'Mod_Sarah', password: 'Sarah_Pass123', role: 'Live Moderator', permissions: { users: false, live: true, reports: true, wallet: false, security: false, ads: false, support: true, logs: false }, addedAt: '2026-03-22' },
+      { id: 'adm_3', name: 'Finance Agent Ali', telegramId: '543216789', username: 'Finance_Ali', password: 'Ali_Pass456', role: 'Financial Inspector', permissions: { users: false, live: false, reports: false, wallet: true, security: false, ads: false, support: false, logs: true }, addedAt: '2026-05-18' }
     ];
   });
 
@@ -1805,6 +1815,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [editingAdminObj, setEditingAdminObj] = useState(null);
   const [newAdminTelegramId, setNewAdminTelegramId] = useState('');
   const [newAdminName, setNewAdminName] = useState('');
+  const [newAdminUsername, setNewAdminUsername] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
   const [newAdminRole, setNewAdminRole] = useState('Live Moderator');
   const [newAdminPermissions, setNewAdminPermissions] = useState({
     users: false,
@@ -10140,6 +10152,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     <Crown className="w-3 h-3 text-amber-400" />
                     VIP Member
                   </span>
+                  
+                  {/* TELEGRAM NUMERIC ID BADGE */}
+                  <span className="bg-cyan-950/80 text-cyan-300 border border-cyan-800/80 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    🆔 Telegram ID: {currentTelegramId}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
@@ -10158,6 +10175,24 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     </span>
                   )}
                 </div>
+
+                {/* RECOGNIZED ADMIN PROMINENT PROFILE BUTTON */}
+                {(adminRolesList.some(a => String(a.telegramId).trim() === String(currentTelegramId).trim()) || String(currentTelegramId).trim() === '8973478139' || isUserRayan) && (
+                  <div className="pt-2">
+                    <button
+                      onClick={() => setIsAdminPinModalOpen(true)}
+                      className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-between border border-amber-300/40"
+                    >
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 animate-bounce text-slate-950" />
+                        <span>👑 ورود به پنل مدیریت (Admin Panel)</span>
+                      </div>
+                      <span className="bg-slate-950/40 text-amber-200 px-2.5 py-1 rounded-xl text-[10px] font-mono">
+                        ورود با نام‌کاربری و رمز
+                      </span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -10243,6 +10278,24 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       value={currentUsername} 
                       onChange={e => setCurrentUsername(e.target.value)}
                       className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-slate-300 font-bold mb-1 flex items-center justify-between">
+                      <span>🆔 ای‌دی عددی تلگرام (Telegram Numeric ID):</span>
+                      <span className="text-[10px] text-cyan-400 font-mono">جهت شناسایی ادمین (مثال: 8973478139)</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      value={currentTelegramId} 
+                      onChange={e => {
+                        const val = e.target.value.trim();
+                        setCurrentTelegramId(val);
+                        safeStorage.setItem('vlive_user_telegram_id', val);
+                      }}
+                      placeholder="8973478139"
+                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-cyan-300 font-mono text-xs outline-none focus:border-cyan-500"
                     />
                   </div>
 
@@ -14507,52 +14560,119 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* EXCLUSIVE ADMIN SECURITY AUTHENTICATION MODAL */}
       {isAdminPinModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md card-3d p-6 border border-amber-500/50 bg-slate-900 rounded-3xl space-y-4 text-center shadow-[0_0_50px_rgba(245,158,11,0.3)]">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center mx-auto shadow-inner">
-              <ShieldCheck className="w-8 h-8 animate-pulse" />
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="w-full max-w-md card-3d p-6 border border-amber-500/50 bg-slate-900 rounded-3xl space-y-4 shadow-[0_0_50px_rgba(245,158,11,0.3)]">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center mx-auto shadow-inner">
+              <ShieldCheck className="w-8 h-8 animate-pulse text-amber-400" />
             </div>
             
-            <div>
-              <h3 className="text-base sm:text-lg font-black text-amber-300">{t('enterPin', 'Enter Admin Security PIN')}</h3>
+            <div className="text-center">
+              <h3 className="text-base sm:text-lg font-black text-amber-300">
+                🔑 ورود به بخش مدیریت (احراز هویت دو مرحله‌ای)
+              </h3>
               <p className="text-xs text-slate-400 mt-1">
-                {t('adminSecDesc', 'Protected Management Area. Please enter your administrator security PIN code to continue.')}
+                تأیید ای‌دی عددی تلگرام و ورود با نام کاربری و رمز عبور اختصاصی مدیریت
               </p>
             </div>
 
-            <div className="space-y-3 pt-2">
-              <input
-                type="password"
-                value={enteredAdminPin}
-                onChange={e => setEnteredAdminPin(e.target.value)}
-                placeholder="••••••"
-                className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-center font-mono text-lg text-amber-300 outline-none focus:border-amber-500"
-              />
-
+            {/* DETECTED TELEGRAM NUMERIC ID STATUS */}
+            <div className="p-3.5 rounded-2xl bg-slate-950 border border-cyan-800/60 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-cyan-400" />
+                <span className="text-slate-300 font-medium">ای‌دی عددی تلگرام شناسایی‌شده:</span>
+              </div>
+              <span className="font-mono font-bold text-cyan-300 bg-cyan-950 px-2.5 py-1 rounded-xl border border-cyan-500/30">
+                {currentTelegramId || '8973478139'}
+              </span>
+            </div>
+
+            {/* ADMIN CREDENTIALS INPUT FORM */}
+            <div className="space-y-3 pt-1 text-xs text-right">
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">
+                  👤 نام کاربری ادمین (Admin Username):
+                </label>
+                <input
+                  type="text"
+                  value={enteredAdminUsername}
+                  onChange={e => setEnteredAdminUsername(e.target.value)}
+                  placeholder="مثال: Rayan_Super_Admin"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-semibold text-xs outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">
+                  🔒 رمز عبور ادمین (Admin Password):
+                </label>
+                <input
+                  type="password"
+                  value={enteredAdminPassword}
+                  onChange={e => setEnteredAdminPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-mono text-xs outline-none focus:border-amber-500"
+                />
+              </div>
+
+              {/* HINT FOR SUPER ADMIN ACCESS */}
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 space-y-1 dir-rtl">
+                <div className="font-bold flex items-center gap-1">
+                  <Key className="w-3.5 h-3.5" />
+                  <span>راهنمای ورود مدیر کل (Super Admin):</span>
+                </div>
+                <div className="font-mono text-[10px] text-slate-300 space-y-0.5">
+                  <div>۱. ای‌دی عددی تلگرام: <span className="text-cyan-300 font-bold">8973478139</span></div>
+                  <div>۲. نام کاربری: <span className="text-amber-200 font-bold">Rayan_Super_Admin</span></div>
+                  <div>۳. رمز ورود: <span className="text-amber-200 font-bold">Rayan_0935</span></div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
                 <button
                   onClick={() => {
-                    if (enteredAdminPin === adminPinCode || enteredAdminPin === '7777') {
+                    const cleanUser = enteredAdminUsername.trim();
+                    const cleanPass = enteredAdminPassword.trim();
+                    const cleanTg = String(currentTelegramId).trim();
+
+                    if (!cleanUser || !cleanPass) {
+                      showToast('❌ لطفاً نام کاربری و رمز عبور ادمین را وارد کنید');
+                      return;
+                    }
+
+                    // Check matching admin in adminRolesList
+                    const matchedAdmin = adminRolesList.find(a => 
+                      (String(a.telegramId).trim() === cleanTg || cleanTg === '8973478139') &&
+                      (a.username === cleanUser || (cleanUser === 'Rayan_Super_Admin' && cleanPass === 'Rayan_0935')) &&
+                      (a.password === cleanPass || cleanPass === 'Rayan_0935')
+                    );
+
+                    // Super Admin fallback credential match
+                    const isSuperAdminMatch = (cleanTg === '8973478139' || isUserRayan) && cleanUser === 'Rayan_Super_Admin' && cleanPass === 'Rayan_0935';
+
+                    if (matchedAdmin || isSuperAdminMatch) {
+                      setActiveAdminSession(matchedAdmin || { name: 'Rayan Super Admin', role: 'Super Admin', telegramId: '8973478139' });
                       setIsAdminPinModalOpen(false);
                       setIsAdminPanelOpen(true);
-                      setEnteredAdminPin('');
-                      showToast(t('adminLoginSuccess', '🔑 Administrator Panel Unlocked'));
+                      setEnteredAdminUsername('');
+                      setEnteredAdminPassword('');
+                      showToast('👑 ورود موفقیت‌آمیز ادمین! خوش آمدید.');
                     } else {
-                      showToast(t('invalidPin', '❌ Invalid Security PIN'));
+                      showToast('❌ نام کاربری، رمز عبور یا ای‌دی تلگرام اشتباه است');
                     }
                   }}
-                  className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition"
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition"
                 >
-                  {t('adminPanel', 'Admin Panel')}
+                  تأیید و ورود به پنل ادمین
                 </button>
                 <button
                   onClick={() => {
                     setIsAdminPinModalOpen(false);
-                    setEnteredAdminPin('');
+                    setEnteredAdminUsername('');
+                    setEnteredAdminPassword('');
                   }}
-                  className="px-4 py-3 rounded-2xl bg-slate-800 text-slate-400 font-bold text-xs hover:text-white"
+                  className="px-4 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-xs hover:text-white"
                 >
-                  {t('cancel', 'Cancel')}
+                  انصراف
                 </button>
               </div>
             </div>
@@ -15530,11 +15650,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                               type="text"
                               value={newAdminTelegramId}
                               onChange={e => setNewAdminTelegramId(e.target.value)}
-                              placeholder="مثال: 689123456 یا @user_handle..."
+                              placeholder="مثال: 8973478139"
                               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-cyan-300 font-mono text-xs outline-none focus:border-cyan-500"
                             />
                             <p className="text-[10px] text-slate-500 mt-1">
-                              ای‌دی عددی تلگرام کاربری که می‌خواهید دسترسی ادمین به او بدهید را وارد کنید (قابل دریافت از کاربری تلگرام یا ربات userinfobot).
+                              ای‌دی عددی تلگرام کاربری که می‌خواهید دسترسی ادمین به او بدهید را وارد کنید (با ثبت ای‌دی، منوی ادمین در پروفایل او فعال می‌شود).
                             </p>
                           </div>
 
@@ -15547,9 +15667,37 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                               type="text"
                               value={newAdminName}
                               onChange={e => setNewAdminName(e.target.value)}
-                              placeholder="مثال: سارا - ناظر ارشد لایو و گزارشات"
+                              placeholder="مثال: رایان - مدیر ارشد کل"
                               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-amber-500"
                             />
+                          </div>
+
+                          {/* ADMIN USERNAME & PASSWORD FOR LOGIN */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-slate-300 font-bold mb-1">
+                                🔑 نام کاربری ورود (Admin Username):
+                              </label>
+                              <input
+                                type="text"
+                                value={newAdminUsername}
+                                onChange={e => setNewAdminUsername(e.target.value)}
+                                placeholder="مثال: Rayan_Super_Admin"
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-mono text-xs outline-none focus:border-amber-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-300 font-bold mb-1">
+                                🔒 رمز عبور ورود (Admin Password):
+                              </label>
+                              <input
+                                type="text"
+                                value={newAdminPassword}
+                                onChange={e => setNewAdminPassword(e.target.value)}
+                                placeholder="مثال: Rayan_0935"
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-mono text-xs outline-none focus:border-amber-500"
+                              />
+                            </div>
                           </div>
 
                           {/* ASSIGNED ROLE / DUTY */}
@@ -15718,6 +15866,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                               }
 
                               const cleanTelegramId = newAdminTelegramId.trim();
+                              const adminUserVal = newAdminUsername.trim() || 'Admin_' + cleanTelegramId;
+                              const adminPassVal = newAdminPassword.trim() || 'Pass_' + Math.floor(1000 + Math.random() * 9000);
 
                               if (editingAdminObj) {
                                 // Update existing admin
@@ -15727,6 +15877,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                                       ...item,
                                       telegramId: cleanTelegramId,
                                       name: newAdminName.trim(),
+                                      username: adminUserVal,
+                                      password: adminPassVal,
                                       role: newAdminRole,
                                       permissions: newAdminPermissions
                                     };
@@ -15743,6 +15895,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                                   id: 'adm_' + Date.now(),
                                   name: newAdminName.trim(),
                                   telegramId: cleanTelegramId,
+                                  username: adminUserVal,
+                                  password: adminPassVal,
                                   role: newAdminRole,
                                   permissions: newAdminPermissions,
                                   addedAt: new Date().toLocaleDateString('fa-IR')
@@ -15758,13 +15912,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                                 }
 
                                 addAdminAuditLog(`ادمین جدید ${newAdminName} با ای‌دی تلگرام ${cleanTelegramId} و نقش ${newAdminRole} اضافه گردید`);
-                                showToast(`✅ ادمین جدید با موفقیت اضافه شد`);
+                                showToast(`✅ ادمین جدید اضافه شد! منوی ادمین برای ای‌دی تلگرام ${cleanTelegramId} فعال گردید.`);
                               }
 
                               setIsAddAdminModalOpen(false);
                               setEditingAdminObj(null);
                               setNewAdminTelegramId('');
                               setNewAdminName('');
+                              setNewAdminUsername('');
+                              setNewAdminPassword('');
                             }}
                             className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-bold text-xs shadow-md hover:brightness-110 active:scale-95 transition"
                           >
@@ -15800,6 +15956,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                                 <div className="flex flex-wrap items-center gap-2 text-[11px]">
                                   <span className="text-cyan-400 font-mono flex items-center gap-1 bg-cyan-950/60 px-2.5 py-0.5 rounded-lg border border-cyan-800/60">
                                     🆔 Telegram ID: <strong className="text-white font-bold">{admin.telegramId}</strong>
+                                  </span>
+                                  <span className="text-amber-300 font-mono flex items-center gap-1 bg-amber-950/60 px-2.5 py-0.5 rounded-lg border border-amber-800/60">
+                                    🔑 {admin.username || 'Rayan_Super_Admin'} : <strong className="text-amber-200 font-bold">{admin.password || 'Rayan_0935'}</strong>
                                   </span>
                                   {admin.addedAt && (
                                     <span className="text-slate-500 text-[10px]">تاریخ ثبت: {admin.addedAt}</span>
