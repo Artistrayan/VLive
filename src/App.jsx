@@ -5700,16 +5700,16 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   <div>
                     <h3 className="text-xs font-bold text-white flex items-center gap-2">
                       <Users className="w-4 h-4 text-purple-400" />
-                      Multi-Guest Voice & Video Party Stage
+                      {loc('استیج پارتی چندنفره صوتی و تصویری', 'Multi-Guest Voice & Video Party Stage')}
                     </h3>
-                    <p className="text-[10px] text-purple-300">Take a seat on stage, chat with hosts & send group gifts</p>
+                    <p className="text-[10px] text-purple-300">{loc('روی استیج بنشینید، با میزبان چت کنید و هدیه گروهی بفرستید', 'Take a seat on stage, chat with hosts & send group gifts')}</p>
                   </div>
 
                   <button 
                     onClick={() => {
                       const newRoom = {
                         id: `party_${Date.now()}`,
-                        title: `${userName}'s VIP Lounge`,
+                        title: loc(`اتاق VIP ${userName}`, `${userName}'s VIP Lounge`),
                         hostName: userName,
                         hostAvatar: userAvatar,
                         totalSeats: 9,
@@ -5725,12 +5725,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       setPartyRoomsList(prev => [newRoom, ...prev]);
                       setActivePartyRoom(newRoom);
                       setMySeatIndex(0);
-                      showToast('Your Party Lounge has been created!');
+                      showToast(loc('اتاق پارتی شما با موفقیت ساخته شد!', 'Your Party Lounge has been created!'));
                     }}
                     className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white font-bold text-xs shadow-lg flex items-center gap-1.5 shrink-0 hover:brightness-110 active:scale-95 transition"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    Create Party Room
+                    {loc('ساخت اتاق پارتی', 'Create Party Room')}
                   </button>
                 </div>
 
@@ -5742,14 +5742,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         <img src={room.hostAvatar} alt={room.hostName} className="w-12 h-12 rounded-2xl object-cover border-2 border-purple-500 shadow-md shrink-0" />
                         <div className="flex-1 min-w-0">
                           <h4 className="text-xs font-bold text-white truncate">{room.title}</h4>
-                          <p className="text-[10px] text-purple-300">Host: @{room.hostName}</p>
+                          <p className="text-[10px] text-purple-300">{loc('میزبان:', 'Host:')} @{room.hostName}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-500/30 text-[9px] font-bold">
-                              {room.occupiedSeats} / {room.totalSeats} Seats Occupied
+                              {room.occupiedSeats} / {room.totalSeats} {loc('صندلی پر است', 'Seats Occupied')}
                             </span>
                             <span className="text-[9px] text-emerald-400 font-bold flex items-center gap-1">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                              Active Lounge
+                              {loc('اتاق فعال', 'Active Lounge')}
                             </span>
                           </div>
                         </div>
@@ -5773,7 +5773,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white text-xs font-bold shadow-lg flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition"
                       >
                         <Play className="w-3.5 h-3.5 fill-white" />
-                        Enter Stage & Take Seat
+                        {loc('ورود به استیج و نشستن', 'Enter Stage & Take Seat')}
                       </button>
                     </div>
                   ))}
@@ -15620,7 +15620,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   <div className="space-y-2">
                     {adminUsersList
                       .filter(u => {
-                        const matchSearch = adminGlobalSearch === '' || u.name.toLowerCase().includes(adminGlobalSearch.toLowerCase()) || u.username.toLowerCase().includes(adminGlobalSearch.toLowerCase());
+                        const matchSearch = adminGlobalSearch === '' || (u.name || '').toLowerCase().includes(adminGlobalSearch.toLowerCase()) || (u.username || '').toLowerCase().includes(adminGlobalSearch.toLowerCase());
                         const matchStatus = adminUserFilterStatus === 'All' || u.status === adminUserFilterStatus || u.role === adminUserFilterStatus || (adminUserFilterStatus === 'Verified' && u.isVerified);
                         return matchSearch && matchStatus;
                       })
