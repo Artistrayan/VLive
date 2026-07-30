@@ -59,47 +59,14 @@ const GIFTS_CATALOG = [
 
 // APP MULTI-LANGUAGE LIST & INTERNATIONALIZATION DICTIONARY
 const APP_LANGUAGES = [
-  { code: 'fa', name: 'فارسی', flag: '🇮🇷', dir: 'rtl' },
   { code: 'en', name: 'English', flag: '🇺🇸', dir: 'ltr' },
+  { code: 'fa', name: 'فارسی', flag: '🇮🇷', dir: 'rtl' },
   { code: 'ar', name: 'العربية', flag: '🇸🇦', dir: 'rtl' },
   { code: 'tr', name: 'Türkçe', flag: '🇹🇷', dir: 'ltr' },
   { code: 'ru', name: 'Русский', flag: '🇷🇺', dir: 'ltr' }
 ];
 
 const I18N_DICTIONARY = {
-  fa: {
-    appName: "وی.لایو پلاس",
-    explore: "کشف و جستجو",
-    lives: "پخش زنده",
-    home: "خانه",
-    discover: "کشف",
-    goLive: "لایو شو",
-    messages: "پیام‌ها",
-    wallet: "کیف پول تتر",
-    vip: "کلوپ VIP",
-    profile: "پروفایل من",
-    settings: "تنظیمات",
-    adminPanel: "پنل مدیریت",
-    aiSecurity: "مرکز امنیت AI",
-    searchPlaceholder: "جستجوی استریمر، آیدی یا نام...",
-    activeStreams: "استریم‌های فعال",
-    viewAll: "مشاهده همه",
-    online: "آنلاین",
-    coins: "سکه",
-    send: "ارسال",
-    translate: "ترجمه پیام",
-    autoTranslate: "ترجمه خودکار",
-    appLanguage: "زبان برنامه",
-    selectLanguage: "انتخاب زبان برنامه",
-    translating: "در حال ترجمه...",
-    translated: "ترجمه‌شده",
-    changeLangSuccess: "زبان برنامه تغییر یافت به",
-    giftShop: "فروشگاه هدیه",
-    dailySpin: "گردونه شانس",
-    verifiedBadge: "تایید شده",
-    notifications: "اعلان‌ها",
-    security: "امنیتی"
-  },
   en: {
     appName: "V.Live+",
     explore: "Explore",
@@ -131,7 +98,72 @@ const I18N_DICTIONARY = {
     dailySpin: "Lucky Wheel",
     verifiedBadge: "Verified",
     notifications: "Notifications",
-    security: "Security"
+    security: "Security",
+    permissions: "App Permissions",
+    allowAll: "Allow & Accept All",
+    deny: "Deny / Decline",
+    permsTitle: "V.Live+ System Permissions Request",
+    permsDesc: "To enable high-quality 4K live streams, clear voice chat, and real-time alerts, V.Live+ requests access to:",
+    enterPin: "Enter Admin Security PIN",
+    adminSecDesc: "Protected Management Area. Please enter your administrator security PIN code to continue.",
+    changePassword: "Change Password",
+    activeDevices: "Active Devices",
+    privacyPolicy: "Privacy Policy",
+    termsService: "Terms of Service",
+    logout: "Log Out",
+    editProfile: "Edit Profile",
+    myBadges: "My Badges",
+    buyCoins: "Buy Coins",
+    dailyRewards: "Daily Rewards"
+  },
+  fa: {
+    appName: "وی.لایو پلاس",
+    explore: "کشف و جستجو",
+    lives: "پخش زنده",
+    home: "خانه",
+    discover: "کشف",
+    goLive: "لایو شو",
+    messages: "پیام‌ها",
+    wallet: "کیف پول تتر",
+    vip: "کلوپ VIP",
+    profile: "پروفایل من",
+    settings: "تنظیمات",
+    adminPanel: "پنل مدیریت",
+    aiSecurity: "مرکز امنیت AI",
+    searchPlaceholder: "جستجوی استریمر، آیدی یا نام...",
+    activeStreams: "استریم‌های فعال",
+    viewAll: "مشاهده همه",
+    online: "آنلاین",
+    coins: "سکه",
+    send: "ارسال",
+    translate: "ترجمه پیام",
+    autoTranslate: "ترجمه خودکار",
+    appLanguage: "زبان برنامه",
+    selectLanguage: "انتخاب زبان برنامه",
+    translating: "در حال ترجمه...",
+    translated: "ترجمه‌شده",
+    changeLangSuccess: "زبان برنامه تغییر یافت به",
+    giftShop: "فروشگاه هدیه",
+    dailySpin: "گردونه شانس",
+    verifiedBadge: "تایید شده",
+    notifications: "اعلان‌ها",
+    security: "امنیتی",
+    permissions: "مجوز‌های دسترسی برنامه",
+    allowAll: "تایید و قبول همه مجوزها",
+    deny: "رد / عدم تایید",
+    permsTitle: "درخواست دسترسی‌های سیستم V.Live+",
+    permsDesc: "برای برگزاری استریم‌های باکیفیت 4K، چت صوتی شفاف و ارسال به موقع اعلان‌ها، برنامه نیاز به دسترسی‌های زیر دارد:",
+    enterPin: "ورود پین امنیتی مدیریت",
+    adminSecDesc: "بخش مدیریت محرمانه. لطفاً جهت ادامه پین امنیتی مدیر ارشد را وارد کنید.",
+    changePassword: "تغییر رمز عبور",
+    activeDevices: "دستگاه‌های فعال",
+    privacyPolicy: "حریم خصوصی",
+    termsService: "قوانین و مقررات",
+    logout: "خروج از حساب",
+    editProfile: "ویرایش پروفایل",
+    myBadges: "نشان‌های من",
+    buyCoins: "خرید سکه",
+    dailyRewards: "پاداش‌های روزانه"
   },
   ar: {
     appName: "V.Live+",
@@ -164,7 +196,23 @@ const I18N_DICTIONARY = {
     dailySpin: "عجلة الحظ",
     verifiedBadge: "موثق",
     notifications: "الإشعارات",
-    security: "الأمان"
+    security: "الأمان",
+    permissions: "أذونات التطبيق",
+    allowAll: "السماح والقبول للكل",
+    deny: "رفض",
+    permsTitle: "طلب أذونات النظام V.Live+",
+    permsDesc: "لتمكين البث المباشر بدقة 4K والمحادثات الصوتية وإشعارات البث، يطلب التطبيق الأذونات التالية:",
+    enterPin: "أدخل رمز PIN للمسؤول",
+    adminSecDesc: "منطقة إدارة محمية. يرجى إدخال رمز PIN الأمني للمسؤول للمتابعة.",
+    changePassword: "تغيير كلمة المرور",
+    activeDevices: "الأجهزة النشطة",
+    privacyPolicy: "سياسة الخصوصية",
+    termsService: "شروط الخدمة",
+    logout: "تسجيل الخروج",
+    editProfile: "تعديل الملف الشخصي",
+    myBadges: "شاراتي",
+    buyCoins: "شراء عملات",
+    dailyRewards: "المكافآت اليومية"
   },
   tr: {
     appName: "V.Live+",
@@ -197,7 +245,23 @@ const I18N_DICTIONARY = {
     dailySpin: "Şans Çarkı",
     verifiedBadge: "Onaylı",
     notifications: "Bildirimler",
-    security: "Güvenlik"
+    security: "Güvenlik",
+    permissions: "Uygulama İzinleri",
+    allowAll: "Tümüne İzin Ver",
+    deny: "Reddet",
+    permsTitle: "V.Live+ Sistem İzin İsteği",
+    permsDesc: "4K canlı yayınlar ve sesli sohbet için uygulamanın aşağıdaki izinlere ihtiyacı vardır:",
+    enterPin: "Yönetici PIN Kodunu Girin",
+    adminSecDesc: "Korumalı Yönetim Alanı. Devam etmek için lütfen yönetici güvenlik PIN kodunuzu girin.",
+    changePassword: "Şifreyi Değiştir",
+    activeDevices: "Aktif Cihazlar",
+    privacyPolicy: "Gizlilik Politikası",
+    termsService: "Kullanım Şartları",
+    logout: "Çıkış Yap",
+    editProfile: "Profili Düzenle",
+    myBadges: "Rozetlerim",
+    buyCoins: "Jeton Satın Al",
+    dailyRewards: "Günlük Ödüller"
   },
   ru: {
     appName: "V.Live+",
@@ -213,7 +277,7 @@ const I18N_DICTIONARY = {
     settings: "Настройки",
     adminPanel: "Админ Панель",
     aiSecurity: "Центр ИИ Безопасности",
-    searchPlaceholder: "Поиск стримера, ID یا имени...",
+    searchPlaceholder: "Поиск стримера, ID или имени...",
     activeStreams: "Активные стримы",
     viewAll: "Все",
     online: "Онлайн",
@@ -230,7 +294,23 @@ const I18N_DICTIONARY = {
     dailySpin: "Колесо удачи",
     verifiedBadge: "Проверено",
     notifications: "Уведомления",
-    security: "Безопасность"
+    security: "Безопасность",
+    permissions: "Разрешения приложения",
+    allowAll: "Разрешить все",
+    deny: "Отклонить",
+    permsTitle: "Запрос системных разрешений V.Live+",
+    permsDesc: "Для 4K трансляций и голосового чата приложению требуются следующие разрешения:",
+    enterPin: "Введите PIN-код админа",
+    adminSecDesc: "Защищенная область управления. Пожалуйста, введите PIN-код администратора для продолжения.",
+    changePassword: "Изменить пароль",
+    activeDevices: "Активные устройства",
+    privacyPolicy: "Политика конфиденциальности",
+    termsService: "Условия использования",
+    logout: "Выйти",
+    editProfile: "Редактировать профиль",
+    myBadges: "Мои значки",
+    buyCoins: "Купить монеты",
+    dailyRewards: "Ежедневные награды"
   }
 };
 
@@ -1829,17 +1909,17 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // 6. Language & Real-time Translation System
   const [currentAppLang, setCurrentAppLang] = useState(() => {
-    return safeStorage.getItem('vlive_app_lang') || 'فارسی';
+    return safeStorage.getItem('vlive_app_lang') || 'English';
   });
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
 
   const getLangCode = (langName) => {
-    if (langName === 'فارسی' || langName === 'fa' || langName === 'Farsi' || langName === 'Persian') return 'fa';
     if (langName === 'English' || langName === 'en') return 'en';
+    if (langName === 'فارسی' || langName === 'fa' || langName === 'Farsi' || langName === 'Persian') return 'fa';
     if (langName === 'العربية' || langName === 'ar' || langName === 'Arabic') return 'ar';
     if (langName === 'Türkçe' || langName === 'tr' || langName === 'Turkish') return 'tr';
     if (langName === 'Русский' || langName === 'ru' || langName === 'Russian') return 'ru';
-    return 'fa';
+    return 'en';
   };
 
   const currentLangObj = APP_LANGUAGES.find(l => l.name === currentAppLang || l.code === currentAppLang) || APP_LANGUAGES[0];
@@ -1865,7 +1945,27 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       document.documentElement.dir = lang.dir === 'rtl' ? 'rtl' : 'ltr';
       document.documentElement.lang = lang.code;
     }
-    showToast(`${t('changeLangSuccess', 'زبان برنامه تغییر یافت به')} ${lang.flag} ${lang.name}`);
+    showToast(`${t('changeLangSuccess', 'App language changed to')} ${lang.flag} ${lang.name}`);
+  };
+
+  // 13. System Permissions Prompt State & Persistence
+  const [isPermissionsPromptOpen, setIsPermissionsPromptOpen] = useState(() => {
+    return safeStorage.getItem('vlive_permissions_prompted') !== 'true';
+  });
+
+  const handleSavePermissionsPrompt = (acceptedAll = true) => {
+    const updated = {
+      camera: acceptedAll,
+      microphone: acceptedAll,
+      notifications: acceptedAll,
+      gallery: acceptedAll,
+      location: acceptedAll
+    };
+    setSystemPerms(updated);
+    safeStorage.setItem('vlive_system_perms', JSON.stringify(updated));
+    safeStorage.setItem('vlive_permissions_prompted', 'true');
+    setIsPermissionsPromptOpen(false);
+    showToast(acceptedAll ? t('permsAccepted', 'Permissions access granted') : t('permsDenied', 'Permissions settings saved'));
   };
 
   // 7. Live Settings
@@ -4801,15 +4901,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             {notificationsList.some(n => n.unread) && (
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
             )}
-          </button>
-
-          {/* 👑 Admin Panel Button */}
-          <button 
-            onClick={() => setIsAdminPinModalOpen(true)}
-            className="p-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:text-amber-200 hover:bg-amber-500/30 transition flex items-center gap-1 font-bold text-xs shadow-md"
-            title={t('adminPanel', 'پنل مدیریت (Admin)')}
-          >
-            <ShieldCheck className="w-4 h-4 text-amber-400 animate-pulse" />
           </button>
 
           {/* ⚙️ Settings Button */}
@@ -10870,13 +10961,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
                 <button 
                   onClick={() => setIsAdminPinModalOpen(true)}
-                  className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/40 text-left flex items-center justify-between transition col-span-1 sm:col-span-2 shadow-md"
+                  className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-900 border border-slate-800 text-left flex items-center justify-between transition col-span-1 sm:col-span-2 shadow-sm"
                 >
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-amber-400 animate-pulse" />
-                    <span className="text-amber-300 font-bold">👑 ورود به پنل مدیریت ارشد (Admin Panel)</span>
+                    <ShieldCheck className="w-4 h-4 text-slate-400" />
+                    <span className="text-slate-200 font-medium">{t('adminPanel', 'Admin Security Access')}</span>
                   </div>
-                  <span className="text-[10px] font-mono bg-amber-950 text-amber-400 px-2 py-0.5 rounded-lg border border-amber-500/40">PIN: 7777</span>
+                  <Lock className="w-3.5 h-3.5 text-slate-400" />
                 </button>
               </div>
             </div>
@@ -14395,15 +14486,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       {/* EXCLUSIVE ADMIN SECURITY AUTHENTICATION MODAL */}
       {isAdminPinModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md card-3d p-6 border border-amber-500/50 bg-slate-900 rounded-3xl space-y-4 text-center text-right shadow-[0_0_50px_rgba(245,158,11,0.3)]" dir="rtl">
+          <div className="w-full max-w-md card-3d p-6 border border-amber-500/50 bg-slate-900 rounded-3xl space-y-4 text-center shadow-[0_0_50px_rgba(245,158,11,0.3)]">
             <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center mx-auto shadow-inner">
               <ShieldCheck className="w-8 h-8 animate-pulse" />
             </div>
             
             <div>
-              <h3 className="text-base sm:text-lg font-black text-amber-300">👑 ورود به پنل اختصاصی مدیریت ارشد (رایان)</h3>
+              <h3 className="text-base sm:text-lg font-black text-amber-300">{t('enterPin', 'Enter Admin Security PIN')}</h3>
               <p className="text-xs text-slate-400 mt-1">
-                این بخش کاملاً شخصی است. لطفا پین امنیتی مدیر را وارد کنید (کد پیش‌فرض: <span className="font-mono text-amber-400 font-bold">7777</span>)
+                {t('adminSecDesc', 'Protected Management Area. Please enter your administrator security PIN code to continue.')}
               </p>
             </div>
 
@@ -14412,7 +14503,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 type="password"
                 value={enteredAdminPin}
                 onChange={e => setEnteredAdminPin(e.target.value)}
-                placeholder="رمز عبور امنیتی (PIN)..."
+                placeholder="••••••"
                 className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-center font-mono text-lg text-amber-300 outline-none focus:border-amber-500"
               />
 
@@ -14423,14 +14514,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       setIsAdminPinModalOpen(false);
                       setIsAdminPanelOpen(true);
                       setEnteredAdminPin('');
-                      showToast('🔑 با موفقیت به عنوان مدیر ارشد پلتفرم وارد شدید');
+                      showToast(t('adminLoginSuccess', '🔑 Administrator Panel Unlocked'));
                     } else {
-                      showToast('❌ رمز عبور امنیتی اشتباه است!');
+                      showToast(t('invalidPin', '❌ Invalid Security PIN'));
                     }
                   }}
-                  className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black text-xs shadow-lg"
+                  className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition"
                 >
-                  ورود به پنل مدیریت
+                  {t('adminPanel', 'Admin Panel')}
                 </button>
                 <button
                   onClick={() => {
@@ -14439,7 +14530,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   }}
                   className="px-4 py-3 rounded-2xl bg-slate-800 text-slate-400 font-bold text-xs hover:text-white"
                 >
-                  انصراف
+                  {t('cancel', 'Cancel')}
                 </button>
               </div>
             </div>
@@ -16052,7 +16143,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
                 <Globe className="w-5 h-5 text-cyan-400" />
-                <span>{t('selectLanguage', 'انتخاب زبان برنامه')}</span>
+                <span>{t('selectLanguage', 'Select App Language')}</span>
               </h2>
               <button onClick={() => setIsLanguageModalOpen(false)} className="text-slate-400 hover:text-white p-1 rounded-full bg-slate-800">
                 <X className="w-4 h-4" />
@@ -16060,7 +16151,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed">
-              زبان مورد نظر خود را برای تمام بخش‌های برنامه انتخاب کنید:
+              Select your preferred language for all interface components:
             </p>
 
             <div className="grid grid-cols-1 gap-2.5 pt-1">
@@ -16083,6 +16174,57 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   </button>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ONCE-ONLY PERMISSIONS REQUEST MODAL */}
+      {isPermissionsPromptOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="w-full max-w-md card-3d p-6 border border-purple-500/40 bg-slate-900 rounded-3xl space-y-5 shadow-[0_0_50px_rgba(168,85,247,0.3)]">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-purple-600/20 border border-purple-500/40 text-purple-400 flex items-center justify-center shrink-0">
+                <Shield className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">{t('permsTitle', 'V.Live+ System Permissions Request')}</h3>
+                <p className="text-[11px] text-slate-400">{t('permsDesc', 'To enable high-quality 4K live streams, clear voice chat, and real-time alerts, V.Live+ requests access to:')}</p>
+              </div>
+            </div>
+
+            <div className="space-y-2 bg-slate-950/70 p-3 rounded-2xl border border-slate-800 text-xs text-slate-300">
+              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900">
+                <span className="flex items-center gap-2">📷 Camera Access (HD Stream & Call)</span>
+                <span className="text-emerald-400 font-bold">Recommended</span>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900">
+                <span className="flex items-center gap-2">🎙 Microphone Access (Voice Chat)</span>
+                <span className="text-emerald-400 font-bold">Recommended</span>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900">
+                <span className="flex items-center gap-2">🔔 Push Notifications (Live Alerts)</span>
+                <span className="text-cyan-400 font-bold">Optional</span>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900">
+                <span className="flex items-center gap-2">📍 Location (Nearby Streamers)</span>
+                <span className="text-slate-400">Optional</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <button
+                onClick={() => handleSavePermissionsPrompt(true)}
+                className="py-3 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-xs shadow-lg hover:brightness-110 active:scale-95 transition"
+              >
+                {t('allowAll', 'Allow & Accept All')}
+              </button>
+              <button
+                onClick={() => handleSavePermissionsPrompt(false)}
+                className="py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs active:scale-95 transition"
+              >
+                {t('deny', 'Deny / Decline')}
+              </button>
             </div>
           </div>
         </div>
