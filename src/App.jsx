@@ -1789,11 +1789,33 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   ]);
 
   // Admin Roles & Permissions State
-  const [adminRolesList, setAdminRolesList] = useState([
-    { name: 'Rayan Admin', handle: '@tattoo_rayan', role: 'Super Admin', access: 'All Modules' },
-    { name: 'Mod Sarah', handle: '@sarah_mod', role: 'Moderator', access: 'Live & Reports Only' },
-    { name: 'Finance Agent', handle: '@finance_vlive', role: 'Finance Manager', access: 'Wallet & Payouts Only' }
-  ]);
+  const [adminRolesList, setAdminRolesList] = useState(() => {
+    const saved = safeStorage.getItem('vlive_admin_roles_list');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [
+      { id: 'adm_1', name: 'Rayan (Owner)', telegramId: '689123456', role: 'Super Admin', permissions: { users: true, live: true, reports: true, wallet: true, security: true, ads: true, support: true, logs: true }, addedAt: '2026-01-10' },
+      { id: 'adm_2', name: 'Sarah Mod', telegramId: '987654321', role: 'Live Moderator', permissions: { users: false, live: true, reports: true, wallet: false, security: false, ads: false, support: true, logs: false }, addedAt: '2026-03-22' },
+      { id: 'adm_3', name: 'Finance Agent Ali', telegramId: '543216789', role: 'Financial Inspector', permissions: { users: false, live: false, reports: false, wallet: true, security: false, ads: false, support: false, logs: true }, addedAt: '2026-05-18' }
+    ];
+  });
+
+  const [isAddAdminModalOpen, setIsAddAdminModalOpen] = useState(false);
+  const [editingAdminObj, setEditingAdminObj] = useState(null);
+  const [newAdminTelegramId, setNewAdminTelegramId] = useState('');
+  const [newAdminName, setNewAdminName] = useState('');
+  const [newAdminRole, setNewAdminRole] = useState('Live Moderator');
+  const [newAdminPermissions, setNewAdminPermissions] = useState({
+    users: false,
+    live: true,
+    reports: true,
+    wallet: false,
+    security: false,
+    ads: false,
+    support: true,
+    logs: false
+  });
 
   // System Settings State
   const [adminMaintenanceMode, setAdminMaintenanceMode] = useState(false);
@@ -15399,80 +15421,448 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 </div>
               )}
 
-              {/* 15. ROLES & ACCESS WHITELIST */}
+              {/* 15. ROLES & ACCESS WHITELIST BY TELEGRAM NUMERIC ID */}
               {adminActiveTab === 'roles' && (
-                <div className="space-y-3 text-xs">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-white text-sm">۱۵. سطوح دسترسی و مدیریت لیست مجاز (Roles & Access Whitelist)</h3>
-                    <span className="text-[10px] text-amber-400 font-mono">اختصاصی مالک (رایان)</span>
+                <div className="space-y-4 text-xs">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                    <div>
+                      <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-amber-400" />
+                        <span>۱۵. سطوح دسترسی و اضافه کردن ادمین با ای‌دی عددی تلگرام</span>
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        افزودن دستی ادمین جدید با ای‌دی عددی تلگرام، تعیین وظیفه و مشخص کردن محدودیت دسترسی به بخش‌های برنامه
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEditingAdminObj(null);
+                        setNewAdminTelegramId('');
+                        setNewAdminName('');
+                        setNewAdminRole('Live Moderator');
+                        setNewAdminPermissions({
+                          users: false,
+                          live: true,
+                          reports: true,
+                          wallet: false,
+                          security: false,
+                          ads: false,
+                          support: true,
+                          logs: false
+                        });
+                        setIsAddAdminModalOpen(true);
+                      }}
+                      className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md hover:brightness-110 active:scale-95 transition shrink-0"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      <span>+ افزودن ادمین جدید (ای‌دی تلگرام)</span>
+                    </button>
                   </div>
 
-                  {/* WHITELIST MANAGER */}
-                  <div className="p-4 rounded-3xl bg-slate-950 border border-amber-500/40 space-y-3">
-                    <p className="font-bold text-amber-300">🔒 افزودن کاربر مجاز به لیست دسترسی پنل مدیریت</p>
-                    <span className="text-[10px] text-slate-400 block">فقط کاربرانی که نام کاربری تلگرام یا نام آن‌ها در لیست زیر باشد می‌توانند پنل مدیریت را باز کنند.</span>
-                    
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <input
-                        type="text"
-                        value={newWhitelistedUsername}
-                        onChange={e => setNewWhitelistedUsername(e.target.value)}
-                        placeholder="آیدی یا آیدی تلگرام کاربر (مثلاً: @sara_admin)..."
-                        className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
-                      />
-                      <button
-                        onClick={() => {
-                          if (!newWhitelistedUsername) return;
-                          const clean = newWhitelistedUsername.replace('@', '').trim();
-                          if (clean && !adminWhitelist.includes(clean)) {
-                            setAdminWhitelist(prev => [...prev, clean]);
-                            addAdminAuditLog(`کاربر @${clean} به لیست مجاز مدیران اضافه گردید`);
-                            showToast(`کاربر @${clean} به لیست مجاز مدیریت اضافه شد`);
-                            setNewWhitelistedUsername('');
-                          }
-                        }}
-                        className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold whitespace-nowrap"
-                      >
-                        + افزودن به لیست مجاز
-                      </button>
+                  {/* QUICK STATS */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold shrink-0">
+                        <ShieldCheck className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">تعداد ادمین‌های ثبت‌شده</span>
+                        <span className="text-base font-bold text-white">{adminRolesList.length} نفر</span>
+                      </div>
                     </div>
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold shrink-0">
+                        <Lock className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">ماژول‌های قابل تخصیص</span>
+                        <span className="text-base font-bold text-white">۸ بخش اصلی</span>
+                      </div>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold shrink-0">
+                        <Globe className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">احراز هویت تلگرامی</span>
+                        <span className="text-xs font-bold text-cyan-400">Telegram Numeric ID Verification</span>
+                      </div>
+                    </div>
+                  </div>
 
-                    <div className="space-y-1.5 pt-2">
-                      <p className="text-[10px] font-bold text-slate-400">کاربران دارای دسترسی مجاز فعلی:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {adminWhitelist.map((handle, i) => (
-                          <div key={i} className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-amber-300 font-mono text-[11px] flex items-center gap-2">
-                            <span>@{handle}</span>
-                            {handle !== 'rayan' && (
+                  {/* ADD / EDIT ADMIN MODAL */}
+                  {isAddAdminModalOpen && (
+                    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn overflow-y-auto">
+                      <div className="w-full max-w-xl card-3d p-6 border border-amber-500/50 bg-slate-900 rounded-3xl space-y-4 my-auto shadow-[0_0_50px_rgba(245,158,11,0.25)]">
+                        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
+                              <ShieldCheck className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-white text-sm">
+                                {editingAdminObj ? 'ویرایش ادمین و سطح دسترسی‌ها' : 'افزودن ادمین جدید با ای‌دی عددی تلگرام'}
+                              </h3>
+                              <p className="text-[11px] text-slate-400">
+                                مشخص کردن وظیفه، ای‌دی عددی تلگرام و محدودیت دسترسی به ماژول‌های برنامه
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setIsAddAdminModalOpen(false);
+                              setEditingAdminObj(null);
+                            }}
+                            className="p-1 rounded-full text-slate-400 hover:text-white bg-slate-800"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div className="space-y-3.5 text-xs">
+                          {/* TELEGRAM NUMERIC ID */}
+                          <div>
+                            <label className="block text-slate-300 font-bold mb-1 flex items-center justify-between">
+                              <span>🆔 ای‌دی عددی تلگرام (Telegram Numeric ID):</span>
+                              <span className="text-[10px] text-cyan-400 font-mono">الزامی جهت احراز سیستم</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={newAdminTelegramId}
+                              onChange={e => setNewAdminTelegramId(e.target.value)}
+                              placeholder="مثال: 689123456 یا @user_handle..."
+                              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-cyan-300 font-mono text-xs outline-none focus:border-cyan-500"
+                            />
+                            <p className="text-[10px] text-slate-500 mt-1">
+                              ای‌دی عددی تلگرام کاربری که می‌خواهید دسترسی ادمین به او بدهید را وارد کنید (قابل دریافت از کاربری تلگرام یا ربات userinfobot).
+                            </p>
+                          </div>
+
+                          {/* ADMIN NAME / TITLE */}
+                          <div>
+                            <label className="block text-slate-300 font-bold mb-1">
+                              👤 نام ادمین یا عنوان مسئولیت:
+                            </label>
+                            <input
+                              type="text"
+                              value={newAdminName}
+                              onChange={e => setNewAdminName(e.target.value)}
+                              placeholder="مثال: سارا - ناظر ارشد لایو و گزارشات"
+                              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-amber-500"
+                            />
+                          </div>
+
+                          {/* ASSIGNED ROLE / DUTY */}
+                          <div>
+                            <label className="block text-slate-300 font-bold mb-1">
+                              🎯 وظیفه و عنوان نقش ادمین:
+                            </label>
+                            <select
+                              value={newAdminRole}
+                              onChange={e => {
+                                const role = e.target.value;
+                                setNewAdminRole(role);
+                                // Preset default permissions based on role
+                                if (role === 'Super Admin') {
+                                  setNewAdminPermissions({ users: true, live: true, reports: true, wallet: true, security: true, ads: true, support: true, logs: true });
+                                } else if (role === 'Live Moderator') {
+                                  setNewAdminPermissions({ users: false, live: true, reports: true, wallet: false, security: false, ads: false, support: true, logs: false });
+                                } else if (role === 'Financial Inspector') {
+                                  setNewAdminPermissions({ users: false, live: false, reports: false, wallet: true, security: false, ads: false, support: false, logs: true });
+                                } else if (role === 'Support Specialist') {
+                                  setNewAdminPermissions({ users: false, live: false, reports: true, wallet: false, security: false, ads: false, support: true, logs: false });
+                                } else if (role === 'AI Security Inspector') {
+                                  setNewAdminPermissions({ users: false, live: true, reports: true, wallet: false, security: true, ads: false, support: false, logs: true });
+                                }
+                              }}
+                              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-bold text-xs outline-none focus:border-amber-500"
+                            >
+                              <option value="Live Moderator">🎥 ناظر لایو و چت (Live Moderator)</option>
+                              <option value="Financial Inspector">💰 بازرس امور مالی و تسویه (Financial Inspector)</option>
+                              <option value="Support Specialist">🎧 کارشناس پشتیبانی (Support Specialist)</option>
+                              <option value="AI Security Inspector">🛡️ بازرس امنیت و هوش مصنوعی (AI & Security Inspector)</option>
+                              <option value="Super Admin">⭐ مدیر ارشد کل (Super Admin - Full Access)</option>
+                              <option value="Custom Admin">⚙️ ادمین با دسترسی سفارشی (Custom Restrictions)</option>
+                            </select>
+                          </div>
+
+                          {/* PERMISSIONS & RESTRICTIONS CHECKLIST */}
+                          <div className="pt-2">
+                            <label className="block text-slate-200 font-bold mb-2">
+                              🔒 تعیین دقیق محدودیت‌ها و دسترسی به بخش‌های برنامه:
+                            </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.users || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, users: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">👥 مدیریت کاربران</span>
+                                  <span className="text-[9px] text-slate-400">مشاهده، ویرایش و بن کردن کاربران</span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.live || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, live: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">🎥 مدیریت لایو‌ها</span>
+                                  <span className="text-[9px] text-slate-400">قطع استریم‌ها و نظارت زنده</span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.reports || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, reports: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">🚨 رسیدگی به گزارشات</span>
+                                  <span className="text-[9px] text-slate-400">بررسی تخلفات و ریپورت‌ها</span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.wallet || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, wallet: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">💰 امور مالی و تسویه</span>
+                                  <span className="text-[9px] text-slate-400">تایید برداشت USDT و سکه</span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.security || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, security: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">🛡️ امنیت و هوش مصنوعی</span>
+                                  <span className="text-[9px] text-slate-400">تنظیمات الگوریتم فیلتر AI</span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.ads || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, ads: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">📢 تبلیغات و رویدادها</span>
+                                  <span className="text-[9px] text-slate-400">ایجاد بنر و چالش‌های جایزه‌دار</span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.support || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, support: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">🎧 پشتیبانی و تیکت‌ها</span>
+                                  <span className="text-[9px] text-slate-400">پاسخگویی به پیام‌های پشتیبانی</span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.logs || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, logs: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">📜 مشاهده لاگ‌های سیستم</span>
+                                  <span className="text-[9px] text-slate-400">بررسی تاریخچه اقدامات مدیریتی</span>
+                                </div>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* SAVE / CANCEL BUTTONS */}
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                          <button
+                            onClick={() => {
+                              setIsAddAdminModalOpen(false);
+                              setEditingAdminObj(null);
+                            }}
+                            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+                          >
+                            انصراف
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (!newAdminTelegramId || !newAdminName) {
+                                showToast('❌ لطفاً ای‌دی عددی تلگرام و نام ادمین را وارد کنید');
+                                return;
+                              }
+
+                              const cleanTelegramId = newAdminTelegramId.trim();
+
+                              if (editingAdminObj) {
+                                // Update existing admin
+                                const updated = adminRolesList.map(item => {
+                                  if (item.id === editingAdminObj.id || item.telegramId === editingAdminObj.telegramId) {
+                                    return {
+                                      ...item,
+                                      telegramId: cleanTelegramId,
+                                      name: newAdminName.trim(),
+                                      role: newAdminRole,
+                                      permissions: newAdminPermissions
+                                    };
+                                  }
+                                  return item;
+                                });
+                                setAdminRolesList(updated);
+                                safeStorage.setItem('vlive_admin_roles_list', JSON.stringify(updated));
+                                addAdminAuditLog(`اطلاعات و دسترسی‌های ادمین ${newAdminName} (Telegram ID: ${cleanTelegramId}) بروزرسانی شد`);
+                                showToast(`✅ دسترسی ادمین ${newAdminName} با موفقیت ویرایش شد`);
+                              } else {
+                                // Add new admin
+                                const newAdminEntry = {
+                                  id: 'adm_' + Date.now(),
+                                  name: newAdminName.trim(),
+                                  telegramId: cleanTelegramId,
+                                  role: newAdminRole,
+                                  permissions: newAdminPermissions,
+                                  addedAt: new Date().toLocaleDateString('fa-IR')
+                                };
+                                const updated = [newAdminEntry, ...adminRolesList];
+                                setAdminRolesList(updated);
+                                safeStorage.setItem('vlive_admin_roles_list', JSON.stringify(updated));
+
+                                // Also ensure clean handle is in adminWhitelist
+                                const cleanHandle = cleanTelegramId.replace('@', '');
+                                if (!adminWhitelist.includes(cleanHandle)) {
+                                  setAdminWhitelist(prev => [...prev, cleanHandle]);
+                                }
+
+                                addAdminAuditLog(`ادمین جدید ${newAdminName} با ای‌دی تلگرام ${cleanTelegramId} و نقش ${newAdminRole} اضافه گردید`);
+                                showToast(`✅ ادمین جدید با موفقیت اضافه شد`);
+                              }
+
+                              setIsAddAdminModalOpen(false);
+                              setEditingAdminObj(null);
+                              setNewAdminTelegramId('');
+                              setNewAdminName('');
+                            }}
+                            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-bold text-xs shadow-md hover:brightness-110 active:scale-95 transition"
+                          >
+                            {editingAdminObj ? 'ذخیره تغییرات دسترسی' : 'تأیید و افزودن ادمین جدید'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ADMIN DIRECTORY LIST */}
+                  <div className="space-y-3 pt-1">
+                    <h4 className="font-bold text-slate-300 text-xs">فهرست مدیران و بازرسین ثبت‌شده:</h4>
+                    <div className="grid grid-cols-1 gap-3">
+                      {adminRolesList.map((admin) => {
+                        const perms = admin.permissions || {};
+                        const isFull = perms.users && perms.live && perms.reports && perms.wallet && perms.security && perms.ads && perms.support && perms.logs;
+
+                        return (
+                          <div key={admin.id || admin.telegramId} className="p-4 rounded-3xl bg-slate-950 border border-slate-800 hover:border-amber-500/40 transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md">
+                            <div className="flex items-center gap-3.5">
+                              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-purple-500/20 border border-amber-500/30 flex items-center justify-center text-amber-300 font-black text-sm shrink-0">
+                                {admin.name ? admin.name.substring(0, 2).toUpperCase() : 'AD'}
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-white text-sm">{admin.name}</span>
+                                  <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">
+                                    {admin.role || 'Admin'}
+                                  </span>
+                                </div>
+                                
+                                <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                                  <span className="text-cyan-400 font-mono flex items-center gap-1 bg-cyan-950/60 px-2.5 py-0.5 rounded-lg border border-cyan-800/60">
+                                    🆔 Telegram ID: <strong className="text-white font-bold">{admin.telegramId}</strong>
+                                  </span>
+                                  {admin.addedAt && (
+                                    <span className="text-slate-500 text-[10px]">تاریخ ثبت: {admin.addedAt}</span>
+                                  )}
+                                </div>
+
+                                {/* PERMISSIONS BADGES */}
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                  {isFull ? (
+                                    <span className="px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-400 text-[10px] font-bold border border-emerald-800/80">
+                                      ⭐ دسترسی کامل بدون محدودیت (Full Access)
+                                    </span>
+                                  ) : (
+                                    <>
+                                      {perms.users ? <span className="px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300 text-[10px] border border-purple-800/60">👥 کاربران</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">👥 کاربران</span>}
+                                      {perms.live ? <span className="px-2 py-0.5 rounded-md bg-pink-950/80 text-pink-300 text-[10px] border border-pink-800/60">🎥 لایو</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">🎥 لایو</span>}
+                                      {perms.reports ? <span className="px-2 py-0.5 rounded-md bg-rose-950/80 text-rose-300 text-[10px] border border-rose-800/60">🚨 گزارشات</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">🚨 گزارشات</span>}
+                                      {perms.wallet ? <span className="px-2 py-0.5 rounded-md bg-emerald-950/80 text-emerald-300 text-[10px] border border-emerald-800/60">💰 کیف پول</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">💰 کیف پول</span>}
+                                      {perms.security ? <span className="px-2 py-0.5 rounded-md bg-amber-950/80 text-amber-300 text-[10px] border border-amber-800/60">🛡️ امنیت AI</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">🛡️ امنیت AI</span>}
+                                      {perms.ads ? <span className="px-2 py-0.5 rounded-md bg-cyan-950/80 text-cyan-300 text-[10px] border border-cyan-800/60">📢 تبلیغات</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">📢 تبلیغات</span>}
+                                      {perms.support ? <span className="px-2 py-0.5 rounded-md bg-blue-950/80 text-blue-300 text-[10px] border border-blue-800/60">🎧 پشتیبانی</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">🎧 پشتیبانی</span>}
+                                      {perms.logs ? <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-300 text-[10px] border border-slate-700">📜 لاگ‌ها</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">📜 لاگ‌ها</span>}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 self-end sm:self-center">
                               <button
                                 onClick={() => {
-                                  setAdminWhitelist(prev => prev.filter(h => h !== handle));
-                                  addAdminAuditLog(`دسترسی مدیریت @${handle} لغو شد`);
-                                  showToast(`دسترسی مدیریت @${handle} لغو گردید`);
+                                  setEditingAdminObj(admin);
+                                  setNewAdminTelegramId(admin.telegramId || '');
+                                  setNewAdminName(admin.name || '');
+                                  setNewAdminRole(admin.role || 'Live Moderator');
+                                  setNewAdminPermissions(admin.permissions || {
+                                    users: false, live: true, reports: true, wallet: false, security: false, ads: false, support: true, logs: false
+                                  });
+                                  setIsAddAdminModalOpen(true);
                                 }}
-                                className="text-slate-500 hover:text-rose-400 font-bold"
+                                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition"
                               >
-                                ×
+                                ✏️ ویرایش دسترسی
                               </button>
-                            )}
+                              {admin.role !== 'Super Admin' && admin.telegramId !== '689123456' && (
+                                <button
+                                  onClick={() => {
+                                    const updated = adminRolesList.filter(a => a.id !== admin.id && a.telegramId !== admin.telegramId);
+                                    setAdminRolesList(updated);
+                                    safeStorage.setItem('vlive_admin_roles_list', JSON.stringify(updated));
+                                    addAdminAuditLog(`دسترسی ادمین ${admin.name} (Telegram ID: ${admin.telegramId}) لغو گردید`);
+                                    showToast(`دسترسی ادمین ${admin.name} لغو شد.`);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800/60 font-bold text-xs transition"
+                                >
+                                  🗑️ لغو دسترسی
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    {adminRolesList.map((r, idx) => (
-                      <div key={idx} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                        <div>
-                          <p className="font-bold text-white">{r.name} ({r.handle})</p>
-                          <span className="text-[10px] text-amber-300 block font-mono">نقش: {r.role} • دسترسی: {r.access}</span>
-                        </div>
-                        <button onClick={() => addAdminAuditLog(`دسترسی‌های مدیر ${r.name} ویرایش گردید`)} className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-300 font-bold text-[10px]">
-                          ویرایش دسترسی
-                        </button>
-                      </div>
-                    ))}
                   </div>
                 </div>
               )}
