@@ -403,6 +403,13 @@ const safeStorage = {
       console.warn('Storage write warning:', e);
     }
   },
+  removeItem: (key) => {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn('Storage remove warning:', e);
+    }
+  },
   getParsed: (key, defaultValue) => {
     try {
       const saved = safeStorage.getItem(key);
@@ -1972,11 +1979,63 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     system: true
   });
 
-  // 5. Appearance
-  const [appThemeMode, setAppThemeMode] = useState('dark');
-  const [appAccentColor, setAppAccentColor] = useState('pink');
-  const [appFontSize, setAppFontSize] = useState('Medium');
-  const [appAnimations, setAppAnimations] = useState(true);
+  // 5. Appearance & Preferences Persistence
+  const [appThemeMode, setAppThemeMode] = useState(() => {
+    return safeStorage.getItem('vlive_app_theme') || 'dark';
+  });
+  const [appAccentColor, setAppAccentColor] = useState(() => {
+    return safeStorage.getItem('vlive_app_accent_color') || 'pink';
+  });
+  const [appFontSize, setAppFontSize] = useState(() => {
+    return safeStorage.getItem('vlive_app_font_size') || 'Medium';
+  });
+  const [appAnimations, setAppAnimations] = useState(() => {
+    return safeStorage.getItem('vlive_app_animations') !== 'false';
+  });
+
+  // Sync Theme Mode to LocalStorage and Document
+  useEffect(() => {
+    safeStorage.setItem('vlive_app_theme', appThemeMode);
+    if (typeof document !== 'undefined') {
+      if (appThemeMode === 'light') {
+        document.documentElement.classList.add('light-theme');
+        document.documentElement.classList.remove('dark');
+      } else {
+        document.documentElement.classList.remove('light-theme');
+        document.documentElement.classList.add('dark');
+      }
+    }
+  }, [appThemeMode]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_app_accent_color', appAccentColor);
+  }, [appAccentColor]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_app_font_size', appFontSize);
+  }, [appFontSize]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_app_animations', String(appAnimations));
+  }, [appAnimations]);
+
+  // Sync Session Data to LocalStorage
+  useEffect(() => {
+    safeStorage.setItem('vlive_user_logged_in', String(isLoggedIn));
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      safeStorage.setItem('vlive_user_name', userName);
+      safeStorage.setItem('vlive_current_username', currentUsername);
+      safeStorage.setItem('vlive_user_coins', String(userCoins));
+      safeStorage.setItem('vlive_user_avatar', userAvatar);
+      safeStorage.setItem('vlive_user_bio', userBio);
+      safeStorage.setItem('vlive_user_gender', userGender);
+      safeStorage.setItem('vlive_vip_plan', vipPlan);
+      safeStorage.setItem('vlive_vip_expire_days', String(vipExpireDays));
+    }
+  }, [isLoggedIn, userName, currentUsername, userCoins, userAvatar, userBio, userGender, vipPlan, vipExpireDays]);
 
   // 6. Language & Real-time Translation System
   const [currentAppLang, setCurrentAppLang] = useState(() => {
