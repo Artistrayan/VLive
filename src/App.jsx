@@ -3702,6 +3702,120 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const recordedChunksRef = useRef([]);
   const [isRecordingLive, setIsRecordingLive] = useState(false);
 
+  // REAL-TIME LIVE STREAM POLL SYSTEM STATE
+  const [activeLivePoll, setActiveLivePoll] = useState(() => {
+    return safeStorage.getParsed('vlive_active_live_poll_v1', {
+      id: 'poll_demo_1',
+      streamId: 'default',
+      hostUsername: 'Sahar_Miller',
+      question: 'برای لایو فردا شب چه سبکی اجرا بشه؟ 🎵',
+      options: [
+        { id: 1, text: '🎵 DJ & Electronic Remix', votes: 142 },
+        { id: 2, text: '🎸 Acoustic Guitar Solo', votes: 89 },
+        { id: 3, text: '🎹 Piano Chill Vibes', votes: 64 },
+        { id: 4, text: '🎤 Singer Request Live Q&A', votes: 210 }
+      ],
+      totalVotes: 505,
+      userVotedOptionId: null,
+      isActive: true,
+      createdAt: Date.now()
+    });
+  });
+
+  const [isCreatePollModalOpen, setIsCreatePollModalOpen] = useState(false);
+  const [pollQuestionInput, setPollQuestionInput] = useState('');
+  const [pollOptionInputs, setPollOptionInputs] = useState(['', '', '', '']); // up to 4 options
+
+  // REAL-TIME LIVE POLL PERIODIC SIMULATION FOR OTHER VIEWERS
+  useEffect(() => {
+    if (!activeLivePoll || !activeLivePoll.isActive) return;
+    const interval = setInterval(() => {
+      setActiveLivePoll(prev => {
+        if (!prev || !prev.isActive) return prev;
+        const randomOptIndex = Math.floor(Math.random() * prev.options.length);
+        const updatedOptions = prev.options.map((opt, i) => i === randomOptIndex ? { ...opt, votes: opt.votes + 1 } : opt);
+        const nextPoll = {
+          ...prev,
+          options: updatedOptions,
+          totalVotes: prev.totalVotes + 1
+        };
+        safeStorage.setItem('vlive_active_live_poll_v1', JSON.stringify(nextPoll));
+        return nextPoll;
+      });
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [activeLivePoll?.isActive, activeLivePoll?.id]);
+
+  const handleCreateAndBroadcastPoll = () => {
+    if (!pollQuestionInput.trim()) {
+      showToast(loc('لطفاً سوال نظرسنجی را وارد کنید', 'Please enter a poll question'));
+      return;
+    }
+
+    const filledOptions = pollOptionInputs.map(o => o.trim()).filter(Boolean);
+    if (filledOptions.length < 2) {
+      showToast(loc('حداقل ۲ گزینه برای نظرسنجی لازم است', 'At least 2 options are required for a poll'));
+      return;
+    }
+
+    const newPoll = {
+      id: 'poll_' + Date.now(),
+      streamId: viewingStream ? viewingStream.id : 'default',
+      hostUsername: currentUsername || userName,
+      question: pollQuestionInput.trim(),
+      options: filledOptions.map((text, idx) => ({
+        id: idx + 1,
+        text: text,
+        votes: 0
+      })),
+      totalVotes: 0,
+      userVotedOptionId: null,
+      isActive: true,
+      createdAt: Date.now()
+    };
+
+    setActiveLivePoll(newPoll);
+    safeStorage.setItem('vlive_active_live_poll_v1', JSON.stringify(newPoll));
+    setIsCreatePollModalOpen(false);
+    setPollQuestionInput('');
+    setPollOptionInputs(['', '', '', '']);
+    showToast(loc('نظرسنجی زنده با موفقیت ایجاد و به تمام بینندگان پخش شد 📊🚀', 'Live poll created and broadcasted to all viewers! 📊🚀'));
+  };
+
+  const handleCastPollVote = (optionId) => {
+    if (!activeLivePoll || !activeLivePoll.isActive) return;
+    if (activeLivePoll.userVotedOptionId) {
+      showToast(loc('شما قبلاً در این نظرسنجی رای داده‌اید ✅', 'You have already voted in this poll ✅'));
+      return;
+    }
+
+    const updatedOptions = activeLivePoll.options.map(opt => {
+      if (opt.id === optionId) {
+        return { ...opt, votes: opt.votes + 1 };
+      }
+      return opt;
+    });
+
+    const updatedPoll = {
+      ...activeLivePoll,
+      options: updatedOptions,
+      totalVotes: activeLivePoll.totalVotes + 1,
+      userVotedOptionId: optionId
+    };
+
+    setActiveLivePoll(updatedPoll);
+    safeStorage.setItem('vlive_active_live_poll_v1', JSON.stringify(updatedPoll));
+    showToast(loc('رای شما ثبت شد 🗳️✨', 'Your vote has been cast! 🗳️✨'));
+  };
+
+  const handleEndActivePoll = () => {
+    if (!activeLivePoll) return;
+    const closedPoll = { ...activeLivePoll, isActive: false };
+    setActiveLivePoll(closedPoll);
+    safeStorage.setItem('vlive_active_live_poll_v1', JSON.stringify(closedPoll));
+    showToast(loc('نظرسنجی زنده توسط میزبان پایان یافت ⏹️', 'Live poll ended by host ⏹️'));
+  };
+
   useEffect(() => {
     if (videoRef.current && mediaStream) {
       videoRef.current.srcObject = mediaStream;
@@ -9294,7 +9408,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
                       {/* Live Poll Creation */}
                       <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
-                        <span className="text-xs font-bold text-white block">📊 ایجاد نظرسنجی فعال:</span>
+                        <span className="text-xs font-bold text-white block">📊 ایجاد نظرسنجی فعال استودیو:</span>
                         <input
                           type="text"
                           value={creatorPollQuestion}
@@ -9308,8 +9422,16 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                             </div>
                           ))}
                         </div>
-                        <button onClick={() => showToast('نظرسنجی در لایو انتشار یافت ✅')} className="w-full py-2 rounded-xl bg-purple-600 text-white text-xs font-black">
-                          انتشار نظرسنجی در لایو 🗳️
+                        <button 
+                          onClick={() => {
+                            setPollQuestionInput(creatorPollQuestion);
+                            setPollOptionInputs(creatorPollOptions.concat(['', '', '', '']).slice(0, 4));
+                            setIsCreatePollModalOpen(true);
+                          }} 
+                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white text-xs font-black shadow hover:brightness-110 transition active:scale-95 flex items-center justify-center gap-2"
+                        >
+                          <BarChart2 className="w-4 h-4" />
+                          <span>تنظیم و انتشار نظرسنجی در استودیو میزبان 🗳️</span>
                         </button>
                       </div>
                     </div>
@@ -15014,6 +15136,84 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </div>
             )}
 
+            {/* REAL-TIME LIVE BROADCAST POLL OVERLAY CARD */}
+            {activeLivePoll && activeLivePoll.isActive && (
+              <div className="absolute top-16 left-4 z-30 max-w-xs w-full bg-slate-950/90 border-2 border-purple-500/80 rounded-3xl p-3.5 shadow-[0_0_30px_rgba(168,85,247,0.4)] backdrop-blur-xl animate-fadeIn space-y-2.5">
+                <div className="flex items-center justify-between pb-1.5 border-b border-purple-500/30">
+                  <div className="flex items-center gap-1.5">
+                    <span className="p-1 rounded-lg bg-purple-600/30 text-purple-300">
+                      <BarChart2 className="w-4 h-4 text-purple-400" />
+                    </span>
+                    <span className="text-[11px] font-black text-purple-200 uppercase tracking-wider">
+                      {loc('نظرسنجی زنده لایو', 'Live Stream Poll')}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-400 bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
+                    👥 {activeLivePoll.totalVotes.toLocaleString()} {loc('رای', 'votes')}
+                  </span>
+                </div>
+
+                <p className="text-xs font-black text-white leading-snug">
+                  {activeLivePoll.question}
+                </p>
+
+                <div className="space-y-1.5">
+                  {activeLivePoll.options.map(opt => {
+                    const percentage = activeLivePoll.totalVotes > 0 
+                      ? Math.round((opt.votes / activeLivePoll.totalVotes) * 100) 
+                      : 0;
+                    const isVotedThis = activeLivePoll.userVotedOptionId === opt.id;
+
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => handleCastPollVote(opt.id)}
+                        disabled={Boolean(activeLivePoll.userVotedOptionId)}
+                        className={`w-full relative overflow-hidden p-2 rounded-2xl text-left border transition text-xs font-bold ${
+                          isVotedThis 
+                            ? 'border-pink-500 bg-pink-950/60 text-white shadow-[0_0_15px_rgba(236,72,153,0.4)]' 
+                            : activeLivePoll.userVotedOptionId
+                            ? 'border-slate-800 bg-slate-900/80 text-slate-300 cursor-default'
+                            : 'border-slate-800 bg-slate-900/90 text-white hover:border-purple-400 hover:bg-slate-850 active:scale-98'
+                        }`}
+                      >
+                        {/* Animated Percentage Background Progress Bar */}
+                        <div 
+                          className={`absolute top-0 bottom-0 left-0 transition-all duration-700 opacity-30 ${
+                            isVotedThis ? 'bg-gradient-to-r from-pink-500 to-purple-600' : 'bg-gradient-to-r from-purple-600 to-cyan-500'
+                          }`}
+                          style={{ width: `${percentage}%` }}
+                        />
+
+                        <div className="relative z-10 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            {isVotedThis && <CheckCircle2 className="w-3.5 h-3.5 text-pink-400 shrink-0" />}
+                            <span className="truncate">{opt.text}</span>
+                          </div>
+                          <span className="text-[10px] font-mono font-bold text-purple-300 bg-slate-950/80 px-1.5 py-0.5 rounded-lg border border-purple-500/30 shrink-0">
+                            {percentage}% ({opt.votes})
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Host control inline button if viewer is the host */}
+                {(viewingStream?.isSelfStream || viewingStream?.host === userName || currentUsername === activeLivePoll?.hostUsername) && (
+                  <div className="pt-1.5 border-t border-slate-800 flex justify-between items-center text-[10px]">
+                    <span className="text-amber-400 font-bold">👑 {loc('مدیریت استودیو میزبان', 'Host Studio Control')}</span>
+                    <button 
+                      onClick={handleEndActivePoll}
+                      className="text-red-400 hover:text-red-300 font-black underline"
+                    >
+                      {loc('پایان نظرسنجی ⏹️', 'End Poll ⏹️')}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Side Floating Stream Switcher Arrows */}
             <div className="absolute top-1/2 left-3 -translate-y-1/2 z-30">
               <button 
@@ -15059,6 +15259,25 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     {loc('بعدی', 'Next')} <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                 </div>
+
+                {/* Host Poll Creation Button */}
+                <button 
+                  onClick={() => {
+                    setIsCreatePollModalOpen(true);
+                    if (activeLivePoll?.question) {
+                      setPollQuestionInput(activeLivePoll.question);
+                      setPollOptionInputs(activeLivePoll.options.map(o => o.text).concat(['', '', '', '']).slice(0, 4));
+                    }
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-black border border-purple-500/50 bg-purple-950/80 text-purple-200 hover:bg-purple-900 shadow-md backdrop-blur-md flex items-center gap-1.5 transition active:scale-95"
+                  title={loc('نظرسنجی لایو', 'Live Poll')}
+                >
+                  <BarChart2 className="w-3.5 h-3.5 text-purple-400" />
+                  <span>{loc('نظرسنجی', 'Poll')}</span>
+                  {activeLivePoll?.isActive && (
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  )}
+                </button>
 
                 {/* PK Toggle Button */}
                 <button 
@@ -18363,6 +18582,142 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <button
                 onClick={() => setIsAddStoryModalOpen(false)}
                 className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+              >
+                {loc('انصراف', 'Cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      {/* MODAL: HOST STUDIO - CREATE POLL MODAL */}
+      {isCreatePollModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+          <div className="w-full max-w-lg card-3d p-6 border-2 border-purple-500/50 bg-slate-900 rounded-3xl space-y-5 shadow-[0_0_50px_rgba(168,85,247,0.3)] max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-2xl bg-purple-600/20 text-purple-400 border border-purple-500/40">
+                  <BarChart2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">
+                    {loc('ایجاد نظرسنجی زنده - استودیو میزبان', 'Create Live Stream Poll - Host Studio')}
+                  </h3>
+                  <p className="text-xs text-purple-300 font-medium">
+                    {loc('سوال و گزینه‌ها را تعریف کنید تا همزمان برای همه بینندگان لایو پخش شود', 'Define question and options to broadcast in real-time to all live viewers')}
+                  </p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setIsCreatePollModalOpen(false)}
+                className="p-2 rounded-2xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Active Poll Live Summary if one exists */}
+            {activeLivePoll && activeLivePoll.isActive && (
+              <div className="p-4 rounded-2xl bg-purple-950/40 border border-purple-500/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    {loc('نظرسنجی فعال در حال پخش است:', 'Active Poll Currently Live:')}
+                  </span>
+                  <button 
+                    onClick={handleEndActivePoll}
+                    className="px-2.5 py-1 rounded-xl bg-red-600/80 hover:bg-red-600 text-white text-[10px] font-black shadow transition"
+                  >
+                    {loc('پایان نظرسنجی ⏹️', 'End Poll ⏹️')}
+                  </button>
+                </div>
+                <p className="text-xs font-bold text-white">{activeLivePoll.question}</p>
+                <div className="grid grid-cols-2 gap-2 text-[11px] font-bold text-purple-200">
+                  {activeLivePoll.options.map(opt => (
+                    <div key={opt.id} className="p-2 rounded-xl bg-slate-900 border border-purple-500/30 flex justify-between items-center">
+                      <span className="truncate">{opt.text}</span>
+                      <span className="text-pink-400 font-mono">
+                        {activeLivePoll.totalVotes > 0 ? Math.round((opt.votes / activeLivePoll.totalVotes) * 100) : 0}% ({opt.votes})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Poll Creation Form */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  {loc('سوال نظرسنجی (Question):', 'Poll Question:')}
+                </label>
+                <input 
+                  type="text"
+                  value={pollQuestionInput}
+                  onChange={e => setPollQuestionInput(e.target.value)}
+                  placeholder={loc('مثلاً: چه آدرسی یا چه سبکی در لایو بعدی اجرا بشه؟', 'e.g. Which track or game should we play next?')}
+                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-purple-500 shadow-inner"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-slate-300">
+                    {loc('گزینه‌های پاسخ (حداکثر ۴ گزینه):', 'Response Options (Up to 4 options):')}
+                  </label>
+                  <span className="text-[10px] text-purple-300 font-mono">
+                    {pollOptionInputs.filter(o => o.trim()).length} / 4 {loc('پر شده', 'filled')}
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {pollOptionInputs.map((optVal, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-xl bg-purple-950 text-purple-300 border border-purple-500/40 text-[11px] font-black flex items-center justify-center shrink-0">
+                        {index + 1}
+                      </span>
+                      <input 
+                        type="text"
+                        value={optVal}
+                        onChange={e => {
+                          const newOpts = [...pollOptionInputs];
+                          newOpts[index] = e.target.value;
+                          setPollOptionInputs(newOpts);
+                        }}
+                        placeholder={loc(`گزینه ${index + 1}${index < 2 ? ' (اجباری)' : ' (اختیاری)'}`, `Option ${index + 1}${index < 2 ? ' (Required)' : ' (Optional)'}`)}
+                        className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-purple-500"
+                      />
+                      {index >= 2 && (
+                        <button 
+                          onClick={() => {
+                            const newOpts = [...pollOptionInputs];
+                            newOpts[index] = '';
+                            setPollOptionInputs(newOpts);
+                          }}
+                          className="p-2 rounded-xl bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-400"
+                          title={loc('پاک کردن', 'Clear')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Action Buttons */}
+            <div className="pt-3 border-t border-slate-800 flex items-center gap-3">
+              <button 
+                onClick={handleCreateAndBroadcastPoll}
+                className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white font-black text-xs shadow-lg hover:scale-102 active:scale-98 transition flex items-center justify-center gap-2"
+              >
+                <Send className="w-4 h-4" />
+                {loc('انتشار نظرسنجی زنده در لایو 📊🚀', 'Broadcast Poll to Live Stream 📊🚀')}
+              </button>
+              <button 
+                onClick={() => setIsCreatePollModalOpen(false)}
+                className="px-5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
               >
                 {loc('انصراف', 'Cancel')}
               </button>
