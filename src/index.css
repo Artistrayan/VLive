@@ -162,3 +162,34 @@ body, html {
 .toast-animate {
   animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Gift Float Animation Overlay */
+@keyframes giftFloatAnim {
+  0% {
+    transform: scale(0.3) translateY(30px) rotate(-10deg);
+    opacity: 0;
+    filter: drop-shadow(0 0 0px rgba(245, 158, 11, 0));
+  }
+  20% {
+    transform: scale(1.3) translateY(0px) rotate(5deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 30px rgba(245, 158, 11, 1));
+  }
+  50% {
+    transform: scale(1.15) translateY(-25px) rotate(-5deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 40px rgba(236, 72, 153, 1));
+  }
+  80% {
+    transform: scale(1.0) translateY(-65px) rotate(3deg);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(0.6) translateY(-100px) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+.animate-gift-float {
+  animation: giftFloatAnim 2.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
