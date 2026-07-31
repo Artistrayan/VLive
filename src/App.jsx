@@ -476,6 +476,22 @@ function VerifiedBadge({ className = "w-4 h-4", showLabel = false }) {
   );
 }
 
+// REUSABLE VIP STATUS BADGE COMPONENT WITH GOLD NEON GRADIENT EFFECT
+function VipStatusBadge({ size = "normal", showText = true, className = "" }) {
+  const isSmall = size === "small";
+  return (
+    <span 
+      className={`inline-flex items-center gap-1 font-black rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-950 border border-yellow-200/90 shadow-[0_0_12px_rgba(245,158,11,0.8)] shrink-0 transition-transform hover:scale-105 ${
+        isSmall ? "px-2 py-0.5 text-[9px]" : "px-2.5 py-0.5 text-[10px]"
+      } ${className}`}
+      title="VIP Status Member"
+    >
+      <Crown className={`${isSmall ? "w-2.5 h-2.5" : "w-3.5 h-3.5"} fill-slate-950 text-slate-950 shrink-0`} />
+      {showText && <span>VIP Status</span>}
+    </span>
+  );
+}
+
 // SAFE LOCAL STORAGE HELPER TO PREVENT TELEGRAM/RENDER WEBVIEW CRASHES
 const safeStorage = {
   getItem: (key) => {
@@ -2090,11 +2106,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   }, [langCode, isRtl]);
 
   const t = (key, fallback = '') => {
-    return I18N_DICTIONARY[langCode]?.[key] || I18N_DICTIONARY['fa']?.[key] || fallback || key;
+    return I18N_DICTIONARY[langCode]?.[key] || I18N_DICTIONARY['en']?.[key] || I18N_DICTIONARY['fa']?.[key] || fallback || key;
   };
 
   const loc = (faStr, enStr) => {
-    return (langCode === 'fa' || langCode === 'ar') ? faStr : enStr;
+    if (langCode === 'fa' || langCode === 'ar') {
+      return faStr || enStr || '';
+    }
+    return enStr || faStr || '';
   };
 
   const handleSelectLanguage = (lang) => {
@@ -3704,6 +3723,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       title: 'Live Chat & Q&A with VIP Members', 
       thumbnail: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80',
       isVip18: true,
+      is_vip: true,
+      isVip: true,
       entryFee: 100,
       rating: 4.9
     },
@@ -3714,6 +3735,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       title: 'Live Music Performance & Chat', 
       thumbnail: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80',
       isVip18: false,
+      is_vip: true,
+      isVip: true,
       entryFee: 0,
       rating: 4.8
     },
@@ -3724,6 +3747,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       title: 'Exclusive Host Live +18 VIP Stream', 
       thumbnail: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=600&q=80',
       isVip18: true,
+      is_vip: true,
+      isVip: true,
       entryFee: 200,
       rating: 4.6
     }
@@ -4790,7 +4815,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   type="text"
                   value={authUsername}
                   onChange={e => setAuthUsername(e.target.value)}
-                  placeholder="e.g. Sara_Maleki"
+                  placeholder={loc('نام کاربری یا ایمیل را وارد کنید', 'Enter username or email')}
                   className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
                 />
               </div>
@@ -4834,12 +4859,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             <button
               onClick={() => {
                 const cleanUser = authUsername.trim() || 'Rayan_VIP';
-                setUserName(cleanUser.includes('Sara') ? 'Sara Maleki' : cleanUser);
+                setUserName(cleanUser);
                 setCurrentUsername(cleanUser);
                 setIsLoggedIn(true);
                 safeStorage.setItem('vlive_user_logged_in', 'true');
                 safeStorage.setItem('vlive_current_username', cleanUser);
-                safeStorage.setItem('vlive_user_name', cleanUser.includes('Sara') ? 'Sara Maleki' : cleanUser);
+                safeStorage.setItem('vlive_user_name', cleanUser);
                 showToast(`Welcome back to V.Live, @${cleanUser}!`);
               }}
               className="w-full py-3.5 rounded-2xl btn-neon-pink font-bold text-xs shadow-xl flex items-center justify-center gap-2"
@@ -4986,7 +5011,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   type="text"
                   value={authUsername}
                   onChange={e => setAuthUsername(e.target.value)}
-                  placeholder="e.g. Sara_Maleki"
+                  placeholder={loc('نام کاربری یا ایمیل را وارد کنید', 'Enter username or email')}
                   className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
                 />
               </div>
@@ -5020,7 +5045,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             <button
               onClick={() => {
                 const cleanUser = authUsername.trim() || 'Rayan_VIP';
-                setUserName(cleanUser.includes('Sara') ? 'Sara Maleki' : cleanUser);
+                setUserName(cleanUser);
                 setCurrentUsername(cleanUser);
                 setIsLoggedIn(true);
                 safeStorage.setItem('vlive_user_logged_in', 'true');
@@ -5370,29 +5395,36 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         </div>
       )}
 
-      {/* HEADER NAVBAR */}
-      <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-2.5 flex items-center justify-between">
+      {/* HEADER NAVBAR - CLEAN & DECLUTTERED */}
+      <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/60 px-4 py-3 flex items-center justify-between shadow-sm">
         {/* Logo & Brand */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 p-0.5 shadow-[0_0_15px_rgba(255,0,127,0.5)] flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-pink-600 to-purple-600 p-0.5 shadow-md flex items-center justify-center shrink-0">
             <Video className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h1 className="font-black text-base tracking-wider text-white">V.LIVE</h1>
-              <span className="bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow">
-                PRO 4K
-              </span>
-            </div>
+          <div className="flex items-center gap-2">
+            <h1 className="font-black text-base tracking-wider text-white">V.LIVE</h1>
+            <span className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-pink-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-pink-500/30">
+              4K
+            </span>
           </div>
         </div>
 
         {/* Header Actions */}
         <div className="flex items-center gap-2">
+          {/* 👛 Quick Coins Badge */}
+          <button 
+            onClick={() => setActiveTab('wallet')}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition active:scale-95 text-xs font-bold"
+          >
+            <CoinsIcon className="w-3.5 h-3.5 text-amber-400" />
+            <span>{userCoins.toLocaleString()}</span>
+          </button>
+
           {/* 🔍 Search Toggle */}
           <button 
             onClick={() => setIsChatSearchOpen(!isChatSearchOpen)}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-pink-500/50 transition"
+            className="p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
             title="Search"
           >
             <Search className="w-4 h-4" />
@@ -5401,38 +5433,38 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           {/* 🔔 Notification Bell */}
           <button 
             onClick={() => setIsNotificationsOpen(true)}
-            className="relative p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-pink-500/50 transition"
+            className="relative p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
             title="Notifications"
           >
             <Bell className="w-4 h-4" />
             {notificationsList.some(n => n.unread) && (
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-pink-500" />
             )}
           </button>
 
-          {/* ⚙️ Settings Button */}
+          {/* ⚙️ Settings */}
           <button 
             onClick={() => setIsSettingsModalOpen(true)}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-pink-500/50 transition"
+            className="p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
             title={t('settings', 'Settings')}
           >
-            <Settings className="w-4 h-4 text-amber-400" />
+            <Settings className="w-4 h-4 text-slate-300" />
           </button>
 
-          {/* 🌐 Quick Language Switcher Button */}
+          {/* 🌐 Language Switcher */}
           <button 
             onClick={() => setIsLanguageModalOpen(true)}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 hover:text-white hover:border-cyan-500/50 transition flex items-center gap-1 font-bold text-xs"
+            className="px-2.5 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-200 hover:border-cyan-500/50 transition flex items-center gap-1 font-bold text-xs"
             title={t('appLanguage', 'App Language')}
           >
-            <Globe className="w-4 h-4 text-cyan-400" />
-            <span className="text-xs">{currentLangObj.flag}</span>
+            <Globe className="w-3.5 h-3.5 text-cyan-400" />
+            <span>{currentLangObj.flag}</span>
           </button>
 
-          {/* 👤 User Avatar / Profile */}
+          {/* 👤 User Avatar */}
           <button 
             onClick={() => setActiveTab('profile')}
-            className="relative w-8 h-8 rounded-full overflow-hidden border border-pink-500/60 p-0.5 hover:scale-105 transition"
+            className="relative w-8 h-8 rounded-full overflow-hidden border border-pink-500/60 p-0.5 hover:scale-105 transition shrink-0"
             title="Profile"
           >
             <img src={userAvatar} alt={userName} className="w-full h-full object-cover rounded-full" />
@@ -5638,16 +5670,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
 
-                          {/* Top Left: LIVE Badge */}
-                          <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                          {/* Top Left: LIVE Badge & VIP Status */}
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5 flex-wrap">
                             <span className="bg-red-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg border border-red-400/50">
                               <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                               LIVE
                             </span>
-                            {stream.isVip18 && (
-                              <span className="bg-purple-900/90 text-purple-200 text-[10px] font-black px-2 py-0.5 rounded-full border border-purple-500/50">
-                                VIP 18+
-                              </span>
+                            {(stream.is_vip || stream.isVip || stream.isVip18) && (
+                              <VipStatusBadge size="small" showText={true} />
                             )}
                           </div>
 
@@ -5660,9 +5690,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                           {/* Bottom Left / Details Overlay */}
                           <div className="absolute bottom-3 left-3 right-3 space-y-1">
                             <div className="flex items-center justify-between text-xs font-bold text-white">
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1.5">
                                 <span>👤 {stream.host}</span>
                                 <VerifiedBadge className="w-3.5 h-3.5" />
+                                {(stream.is_vip || stream.isVip || stream.isVip18) && (
+                                  <VipStatusBadge size="small" showText={false} />
+                                )}
                               </div>
                               <span className="text-[10px] text-pink-300 font-mono flex items-center gap-0.5 bg-slate-950/80 px-2 py-0.5 rounded-full border border-slate-800">
                                 <Clock className="w-2.5 h-2.5 text-pink-400" />
@@ -5818,7 +5851,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
             {/* REDESIGNED ADVANCED DAILY MISSIONS & REWARDS CENTER */}
             {streamSubTab === 'quests' && (
-              <div className="space-y-5 animate-fadeIn" dir="rtl">
+              <div className="space-y-5 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
                 
                 {/* 1. TOP HEADER & PROGRESS METER */}
                 <div className="card-3d p-5 rounded-3xl bg-gradient-to-br from-cyan-950/60 via-slate-900 to-purple-950/60 border border-cyan-500/40 space-y-4 shadow-2xl relative overflow-hidden">
@@ -6155,7 +6188,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             )}
 {/* LEADERBOARD RANKING SUBTAB */}
             {streamSubTab === 'leaderboard' && (
-              <div className="space-y-4 animate-fadeIn" dir="rtl">
+              <div className="space-y-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
                 {/* Header & Season Info */}
                 <div className="p-5 rounded-3xl bg-gradient-to-br from-amber-500/20 via-slate-900 to-yellow-900/20 border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
@@ -6327,7 +6360,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </div>
             )}
             {/* STORIES REEL CAROUSEL BAR */}
-            <div className="bg-slate-900/80 p-3.5 rounded-3xl border border-slate-800/90 shadow-lg space-y-2" dir="rtl">
+            <div className="bg-slate-900/80 p-3.5 rounded-3xl border border-slate-800/90 shadow-lg space-y-2" dir={isRtl ? "rtl" : "ltr"}>
               <div className="flex items-center justify-between px-1">
                 <span className="text-xs font-black text-white flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
@@ -6737,7 +6770,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             )}
             {/* SUBTAB 6: INTERACTIVE DIALPAD */}
             {callMainSubTab === 'dialpad' && (
-              <div className="max-w-md mx-auto space-y-5 animate-fadeIn" dir="rtl">
+              <div className="max-w-md mx-auto space-y-5 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
                 {/* Input Display Screen */}
                 <div className="card-3d p-4 rounded-3xl bg-slate-900 border border-purple-500/40 flex flex-col items-center justify-center space-y-2 relative overflow-hidden shadow-2xl">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">شماره‌گیر مستقیم P2P</span>
@@ -7812,7 +7845,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
 {/* TAB 3: COMPLETE REDESIGNED MULTI-CURRENCY WALLET & CREATOR EARNINGS */}
         {(activeTab === 'earnings' || activeTab === 'wallet') && (
-          <div className="space-y-5 text-right" dir="rtl">
+          <div className="space-y-5 text-right" dir={isRtl ? "rtl" : "ltr"}>
 
             {/* 1. TOP HEADER: TOTAL BALANCE DISPLAY */}
             <div className="card-3d p-5 sm:p-6 rounded-3xl border border-amber-500/40 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/40 relative overflow-hidden space-y-4 shadow-[0_0_50px_rgba(245,158,11,0.15)]">
@@ -8413,7 +8446,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
             {/* SUB-TAB 6: REDESIGNED ULTIMATE CREATOR STUDIO (20 FEATURES) */}
             {walletSubTab === 'creator' && (
-              <div className="space-y-6 animate-fadeIn text-xs" dir="rtl">
+              <div className="space-y-6 animate-fadeIn text-xs" dir={isRtl ? "rtl" : "ltr"}>
                 
                 {/* 1. TOP HEADER & VERIFICATION BADGE BANNER */}
                 <div className="card-3d p-5 rounded-3xl bg-gradient-to-br from-purple-950/80 via-slate-900 to-cyan-950/80 border border-purple-500/40 relative overflow-hidden shadow-2xl">
@@ -9386,7 +9419,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             )}
 {/* SUB-TAB 7: REDESIGNED ULTIMATE REFERRAL SYSTEM (18 FEATURES) */}
             {walletSubTab === 'referral' && (
-              <div className="space-y-6 animate-fadeIn text-xs" dir="rtl">
+              <div className="space-y-6 animate-fadeIn text-xs" dir={isRtl ? "rtl" : "ltr"}>
                 
                 {/* 1. TOP HEADER BANNER & STATS */}
                 <div className="card-3d p-6 rounded-3xl bg-gradient-to-br from-cyan-950/80 via-slate-900 to-purple-950/80 border border-cyan-500/40 relative overflow-hidden shadow-2xl">
@@ -9839,7 +9872,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             )}
 {/* SUB-TAB 8: SECURITY & VIP */}
             {walletSubTab === 'vip' && (
-              <div className="space-y-6" dir="rtl">
+              <div className="space-y-6" dir={isRtl ? "rtl" : "ltr"}>
                 
                 {/* 1. VIP HEADER BANNER (👑 V.Live Premium - Neon Gold) */}
                 <div className="relative p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-950 via-yellow-950/90 to-amber-900 border-2 border-amber-400/60 shadow-[0_0_40px_rgba(245,158,11,0.25)] overflow-hidden">
@@ -10611,10 +10644,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-lg font-black text-white">{userName}</h2>
                   {isVerified && <VerifiedBadge className="w-4 h-4" showLabel={true} />}
-                  <span className="bg-purple-900/80 text-purple-300 border border-purple-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Crown className="w-3 h-3 text-amber-400" />
-                    VIP Member
-                  </span>
+                  <VipStatusBadge size="normal" showText={true} />
                   
                   {/* TELEGRAM NUMERIC ID BADGE */}
                   <span className="bg-cyan-950/80 text-cyan-300 border border-cyan-800/80 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
@@ -10778,6 +10808,140 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </form>
             )}
 
+            {/* 3. MEDIA GALLERY & STORIES MANAGEMENT (PHOTOS, VIDEOS & 24H STORIES) - PROMINENT TOP POSITION */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Image className="w-4 h-4 text-purple-400" />
+                  <h3 className="text-xs font-bold text-white">
+                    {loc('گالری رسانه و استوری‌ها (Posts & Stories)', 'Media Gallery & Stories')}
+                  </h3>
+                </div>
+
+                {profilePreviewMode === 'self' && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsAddPostModalOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold shadow flex items-center gap-1 active:scale-95 transition"
+                    >
+                      <span>➕</span>
+                      <span>{loc('افزودن پست', 'Add Post')}</span>
+                    </button>
+                    <button
+                      onClick={() => setIsAddStoryModalOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow flex items-center gap-1 active:scale-95 transition"
+                    >
+                      <span>📸</span>
+                      <span>{loc('انتشار استوری', 'Publish Story')}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* ACTIVE USER STORIES SECTION */}
+              {profilePreviewMode === 'self' && (
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                  <span className="text-[11px] font-bold text-purple-300 flex items-center gap-1">
+                    <span>⚡</span> {loc('استوری‌های فعال ۲۴ ساعته شما:', 'Your Active 24h Stories:')}
+                  </span>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {advancedStories.find(s => s.isMe)?.items?.length > 0 ? (
+                      advancedStories.find(s => s.isMe).items.map(stItem => (
+                        <div key={stItem.id} className="relative w-16 h-20 rounded-xl overflow-hidden border border-purple-500/40 shrink-0 group">
+                          <img src={stItem.url} alt="Story" className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => handleDeleteUserStoryItem(stItem.id)}
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-[10px] font-black transition shadow z-10"
+                            title={loc('حذف استوری', 'Delete Story')}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[10px] text-slate-400">{loc('استوری فعالی ندارید. روی دکمه انتشار استوری کلیک کنید.', 'No active stories. Click publish story.')}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[10px] font-bold">
+                  <button 
+                    onClick={() => setProfileGalleryTab('photos')}
+                    className={`px-3 py-1 rounded-lg transition ${profileGalleryTab === 'photos' ? 'bg-pink-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    Photos ({userPhotosList.length})
+                  </button>
+                  <button 
+                    onClick={() => setProfileGalleryTab('videos')}
+                    className={`px-3 py-1 rounded-lg transition ${profileGalleryTab === 'videos' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    Videos ({userVideosList.length})
+                  </button>
+                </div>
+              </div>
+
+              {profileGalleryTab === 'photos' ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {userPhotosList.length > 0 ? (
+                    userPhotosList.map((item) => (
+                      <div key={item.id} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-800 group hover:border-pink-500/50 transition">
+                        <img src={item.url} alt={item.caption || 'Photo'} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-end p-2">
+                          <p className="text-[10px] font-bold text-white truncate">{item.caption}</p>
+                        </div>
+                        {profilePreviewMode === 'self' && (
+                          <button
+                            onClick={() => handleDeletePhotoPost(item.id)}
+                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-xs font-black transition shadow z-10"
+                            title={loc('حذف عکس', 'Delete Photo')}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full py-8 text-center text-xs text-slate-400 border border-dashed border-slate-800 rounded-2xl p-4">
+                      {loc('هیچ عکسی در گالری ثبت نشده است. برای افزودن عکس روی «افزودن پست» کلیک کنید.', 'No photos in gallery. Click "Add Post" to upload.')}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {userVideosList.length > 0 ? (
+                    userVideosList.map((item) => (
+                      <div key={item.id} className="relative aspect-video rounded-2xl overflow-hidden border border-slate-800 group hover:border-purple-500/50 transition">
+                        <img src={item.thumb} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+                        <div className="absolute top-2 right-2 bg-slate-950/80 px-2 py-0.5 rounded-full text-[9px] text-cyan-400 font-bold flex items-center gap-1">
+                          <Eye className="w-2.5 h-2.5" />
+                          {item.views}
+                        </div>
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <p className="text-[10px] font-bold text-white truncate">{item.title}</p>
+                        </div>
+                        {profilePreviewMode === 'self' && (
+                          <button
+                            onClick={() => handleDeleteVideoPost(item.id)}
+                            className="absolute top-2 left-2 w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-xs font-black transition shadow z-10"
+                            title={loc('حذف ویدیو', 'Delete Video')}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full py-8 text-center text-xs text-slate-400 border border-dashed border-slate-800 rounded-2xl p-4">
+                      {loc('هیچ ویدیویی ثبت نشده است. برای افزودن ویدیو روی «افزودن پست» کلیک کنید.', 'No videos in gallery. Click "Add Post" to upload.')}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* 3. FOUR STATISTICS CARDS */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
@@ -10805,7 +10969,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </div>
 
             {/* REDESIGNED ULTIMATE LEVEL & BADGES SYSTEM (18 FEATURES) */}
-            <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-purple-500/40 space-y-5 animate-fadeIn" dir="rtl">
+            <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-purple-500/40 space-y-5 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
               
               {/* 1 & 11. MAIN LEVEL HEADER & CREATOR LEVEL */}
               <div className="p-5 rounded-3xl bg-gradient-to-br from-purple-950/90 via-slate-950 to-pink-950/90 border border-purple-500/50 relative overflow-hidden space-y-4 shadow-2xl">
@@ -11211,140 +11375,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* 5. MEDIA GALLERY & STORIES MANAGEMENT (PHOTOS, VIDEOS & 24H STORIES) */}
-            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <Image className="w-4 h-4 text-purple-400" />
-                  <h3 className="text-xs font-bold text-white">
-                    {loc('گالری رسانه و استوری‌ها (Posts & Stories)', 'Media Gallery & Stories')}
-                  </h3>
-                </div>
-
-                {profilePreviewMode === 'self' && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setIsAddPostModalOpen(true)}
-                      className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold shadow flex items-center gap-1 active:scale-95 transition"
-                    >
-                      <span>➕</span>
-                      <span>{loc('افزودن پست', 'Add Post')}</span>
-                    </button>
-                    <button
-                      onClick={() => setIsAddStoryModalOpen(true)}
-                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow flex items-center gap-1 active:scale-95 transition"
-                    >
-                      <span>📸</span>
-                      <span>{loc('انتشار استوری', 'Publish Story')}</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* ACTIVE USER STORIES SECTION */}
-              {profilePreviewMode === 'self' && (
-                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <span className="text-[11px] font-bold text-purple-300 flex items-center gap-1">
-                    <span>⚡</span> {loc('استوری‌های فعال ۲۴ ساعته شما:', 'Your Active 24h Stories:')}
-                  </span>
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                    {advancedStories.find(s => s.isMe)?.items?.length > 0 ? (
-                      advancedStories.find(s => s.isMe).items.map(stItem => (
-                        <div key={stItem.id} className="relative w-16 h-20 rounded-xl overflow-hidden border border-purple-500/40 shrink-0 group">
-                          <img src={stItem.url} alt="Story" className="w-full h-full object-cover" />
-                          <button
-                            onClick={() => handleDeleteUserStoryItem(stItem.id)}
-                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-[10px] font-black transition shadow z-10"
-                            title={loc('حذف استوری', 'Delete Story')}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-[10px] text-slate-400">{loc('استوری فعالی ندارید. روی دکمه انتشار استوری کلیک کنید.', 'No active stories. Click publish story.')}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between pt-1">
-                <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[10px] font-bold">
-                  <button 
-                    onClick={() => setProfileGalleryTab('photos')}
-                    className={`px-3 py-1 rounded-lg transition ${profileGalleryTab === 'photos' ? 'bg-pink-600 text-white' : 'text-slate-400 hover:text-white'}`}
-                  >
-                    Photos ({userPhotosList.length})
-                  </button>
-                  <button 
-                    onClick={() => setProfileGalleryTab('videos')}
-                    className={`px-3 py-1 rounded-lg transition ${profileGalleryTab === 'videos' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'}`}
-                  >
-                    Videos ({userVideosList.length})
-                  </button>
-                </div>
-              </div>
-
-              {profileGalleryTab === 'photos' ? (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {userPhotosList.length > 0 ? (
-                    userPhotosList.map((item) => (
-                      <div key={item.id} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-800 group hover:border-pink-500/50 transition">
-                        <img src={item.url} alt={item.caption || 'Photo'} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-end p-2">
-                          <p className="text-[10px] font-bold text-white truncate">{item.caption}</p>
-                        </div>
-                        {profilePreviewMode === 'self' && (
-                          <button
-                            onClick={() => handleDeletePhotoPost(item.id)}
-                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-xs font-black transition shadow z-10"
-                            title={loc('حذف عکس', 'Delete Photo')}
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="col-span-full py-8 text-center text-xs text-slate-400 border border-dashed border-slate-800 rounded-2xl p-4">
-                      {loc('هیچ عکسی در گالری ثبت نشده است. برای افزودن عکس روی «افزودن پست» کلیک کنید.', 'No photos in gallery. Click "Add Post" to upload.')}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {userVideosList.length > 0 ? (
-                    userVideosList.map((item) => (
-                      <div key={item.id} className="relative aspect-video rounded-2xl overflow-hidden border border-slate-800 group hover:border-purple-500/50 transition">
-                        <img src={item.thumb} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
-                        <div className="absolute top-2 right-2 bg-slate-950/80 px-2 py-0.5 rounded-full text-[9px] text-cyan-400 font-bold flex items-center gap-1">
-                          <Eye className="w-2.5 h-2.5" />
-                          {item.views}
-                        </div>
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <p className="text-[10px] font-bold text-white truncate">{item.title}</p>
-                        </div>
-                        {profilePreviewMode === 'self' && (
-                          <button
-                            onClick={() => handleDeleteVideoPost(item.id)}
-                            className="absolute top-2 left-2 w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-xs font-black transition shadow z-10"
-                            title={loc('حذف ویدیو', 'Delete Video')}
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="col-span-full py-8 text-center text-xs text-slate-400 border border-dashed border-slate-800 rounded-2xl p-4">
-                      {loc('هیچ ویدیویی ثبت نشده است. برای افزودن ویدیو روی «افزودن پست» کلیک کنید.', 'No videos in gallery. Click "Add Post" to upload.')}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* 6. STREAMER EARNINGS OVERVIEW */}
@@ -11787,7 +11817,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* MODAL: REDESIGNED NOTIFICATIONS SYSTEM */}
       {isNotificationsOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="w-full max-w-xl card-3d p-4 sm:p-6 border border-pink-500/40 bg-slate-900/98 rounded-3xl space-y-4 max-h-[90vh] flex flex-col shadow-[0_0_50px_rgba(236,72,153,0.25)]">
             
             {/* 1. HEADER (عنوان + دکمه‌ها) */}
@@ -12092,7 +12122,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* MODAL: 20. NOTIFICATION SETTINGS (تنظیمات اعلان‌ها) */}
       {isNotifSettingsOpen && (
-        <div className="fixed inset-0 z-[70] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-[70] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="w-full max-w-md card-3d p-6 border border-purple-500/40 bg-slate-900 rounded-3xl space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
@@ -13436,7 +13466,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       {/* MODAL: HIGH-Z-INDEX VIP SYSTEM MODAL */}
       {/* 16. LEVEL UP CELEBRATION ANIMATION MODAL */}
       {isLevelUpModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-amber-500/50 max-w-sm w-full text-center space-y-4 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/20 blur-3xl rounded-full pointer-events-none" />
 
@@ -13466,7 +13496,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* 17. REFERRAL TERMS & ANTI-FRAUD RULES MODAL */}
       {isReferralRulesModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-cyan-500/50 max-w-md w-full space-y-4 shadow-2xl relative">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-xs font-black text-white flex items-center gap-2">
@@ -13496,7 +13526,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       )}
 
 {isVipModalOpen && (
-        <div className="fixed inset-0 z-[80] bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-5 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-[80] bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-5 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="w-full max-w-4xl card-3d p-4 sm:p-6 border-2 border-amber-500/50 bg-slate-900/98 rounded-3xl space-y-4 max-h-[90vh] overflow-y-auto shadow-[0_0_50px_rgba(245,158,11,0.3)]">
             
             {/* Modal Header */}
@@ -13800,7 +13830,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* MODAL: VIP CELEBRATION CONGRATULATIONS MODAL */}
       {isVipCelebrationOpen && (
-        <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="w-full max-w-md card-3d p-6 sm:p-8 border-2 border-amber-400 bg-slate-900 rounded-3xl text-center space-y-5 shadow-[0_0_60px_rgba(245,158,11,0.5)] relative overflow-hidden">
             <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-500 p-0.5 shadow-xl animate-bounce">
               <div className="w-full h-full bg-slate-950 rounded-[22px] flex items-center justify-center">
@@ -14195,7 +14225,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* ==================== PRE-CALL PAID TARIFF CONFIRMATION MODAL ==================== */}
       {preCallConfirmHost && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-amber-500/50 max-w-sm w-full space-y-4 shadow-[0_0_50px_rgba(245,158,11,0.25)] text-center">
             <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-500 to-yellow-400 p-0.5 mx-auto shadow-lg">
               <img src={preCallConfirmHost.user.avatar} alt={preCallConfirmHost.user.name} className="w-full h-full object-cover rounded-[22px]" />
@@ -14239,7 +14269,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* ==================== POST-CALL RATING & FEEDBACK MODAL ==================== */}
       {postCallRatingData && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-pink-500/50 max-w-sm w-full space-y-4 shadow-[0_0_50px_rgba(236,72,153,0.3)] text-center">
             <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-pink-500 to-purple-600 p-0.5 mx-auto shadow-lg">
               <img src={postCallRatingData.user.avatar} alt={postCallRatingData.user.name} className="w-full h-full object-cover rounded-[22px]" />
@@ -14300,7 +14330,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       
       {/* ==================== STORY FULLSCREEN VIEWER MODAL ==================== */}
       {activeStoryView && (
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-between p-3 sm:p-5 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-between p-3 sm:p-5 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           {/* Top Progress & User Info Header */}
           <div className="w-full max-w-md space-y-3 relative z-20">
             {/* Story Progress Bars */}
@@ -14436,7 +14466,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* ==================== CREATE STORY MODAL ==================== */}
       {isCreateStoryOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-pink-500/40 max-w-md w-full space-y-4 shadow-2xl">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h3 className="text-sm font-black text-white flex items-center gap-2">
@@ -14504,7 +14534,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* ==================== STORY VIEWERS MODAL ==================== */}
       {isStoryViewersOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-cyan-500/40 max-w-sm w-full space-y-4 shadow-2xl">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h3 className="text-sm font-black text-white flex items-center gap-2">
@@ -14540,7 +14570,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* ==================== STORY ARCHIVE MODAL ==================== */}
       {isStoryArchiveOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-purple-500/40 max-w-md w-full space-y-4 shadow-2xl">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h3 className="text-sm font-black text-white flex items-center gap-2">
@@ -14570,7 +14600,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       )}
 {/* ==================== SCHEDULE CALL MODAL ==================== */}
       {isScheduleCallModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-purple-500/40 max-w-sm w-full space-y-4 shadow-2xl">
             <div className="flex justify-between items-center border-b border-slate-800 pb-2">
               <h3 className="text-sm font-black text-white flex items-center gap-2">
@@ -14633,7 +14663,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* ==================== RECORD CONSENT MODAL ==================== */}
       {isRecordConsentModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-rose-500/50 max-w-sm w-full space-y-4 text-center">
             <div className="w-12 h-12 rounded-2xl bg-rose-600/20 text-rose-400 border border-rose-500/40 flex items-center justify-center mx-auto">
               <Disc className="w-6 h-6 animate-spin" />
@@ -14658,7 +14688,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* ==================== SECURITY ENCRYPTED CERTIFICATE MODAL ==================== */}
       {isEncryptedCertModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-emerald-500/50 max-w-sm w-full space-y-4 text-center">
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto">
               <Lock className="w-6 h-6 text-emerald-400" />
@@ -15224,7 +15254,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   type="text"
                   value={enteredAdminUsername}
                   onChange={e => setEnteredAdminUsername(e.target.value)}
-                  placeholder="مثال: Rayan_Super_Admin"
+                  placeholder={loc('نام کاربری ادمین', 'Admin Username')}
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-semibold text-xs outline-none focus:border-amber-500"
                 />
               </div>
@@ -15309,7 +15339,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       {/* MODAL 8: 100% REAL & FULLY EXECUTABLE 20-SECTION ADMIN DASHBOARD */}
       {isAdminPanelOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
-          <div className="w-full max-w-6xl card-3d p-4 sm:p-6 border border-amber-500/50 bg-slate-900/95 rounded-3xl space-y-4 max-h-[94vh] flex flex-col shadow-[0_0_80px_rgba(245,158,11,0.25)] text-right" dir="rtl">
+          <div className="w-full max-w-6xl card-3d p-4 sm:p-6 border border-amber-500/50 bg-slate-900/95 rounded-3xl space-y-4 max-h-[94vh] flex flex-col shadow-[0_0_80px_rgba(245,158,11,0.25)] text-right" dir={isRtl ? "rtl" : "ltr"}>
             
             {/* TOP HEADER */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3" dir="ltr">
@@ -17955,7 +17985,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* MODAL: ADD NEW POST TO PROFILE GALLERY */}
       {isAddPostModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="w-full max-w-md card-3d p-6 border border-pink-500/50 bg-slate-900 rounded-3xl space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -18061,7 +18091,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* MODAL: PUBLISH NEW 24H STORY */}
       {isAddStoryModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="w-full max-w-md card-3d p-6 border border-purple-500/50 bg-slate-900 rounded-3xl space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
