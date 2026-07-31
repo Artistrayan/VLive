@@ -507,18 +507,18 @@ const safeStorage = {
 export default function App() {
   // Current User State
   const [userName, setUserName] = useState(() => {
-    return safeStorage.getItem('vlive_user_name') || 'Sara Maleki';
+    return safeStorage.getItem('vlive_user_name') || 'کاربر VIP';
   });
   const [currentUsername, setCurrentUsername] = useState(() => {
-    return safeStorage.getItem('vlive_current_username') || 'Sara_Maleki';
+    return safeStorage.getItem('vlive_current_username') || 'User_VIP';
   });
   const [userCoins, setUserCoins] = useState(() => {
     try {
       const saved = safeStorage.getItem('vlive_user_coins');
-      const val = saved ? parseInt(saved, 10) : 45000;
-      return isNaN(val) ? 45000 : val;
+      const val = saved ? parseInt(saved, 10) : 5000;
+      return isNaN(val) ? 5000 : val;
     } catch (e) {
-      return 45000;
+      return 5000;
     }
   });
   const [userGender, setUserGender] = useState(() => {
@@ -526,10 +526,10 @@ export default function App() {
   });
   const [userRank, setUserRank] = useState('VIP Streamer');
   const [userAvatar, setUserAvatar] = useState(() => {
-    return safeStorage.getItem('vlive_user_avatar') || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80';
+    return safeStorage.getItem('vlive_user_avatar') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
   });
   const [userBio, setUserBio] = useState(() => {
-    return safeStorage.getItem('vlive_user_bio') || 'Official Live Streamer | Private video calls & interactive 4K streams';
+    return safeStorage.getItem('vlive_user_bio') || 'استریمر رسمی V.Live+ | پخش زنده باکیفیت و چت تعاملی';
   });
   const [isVerified, setIsVerified] = useState(true);
 
@@ -768,23 +768,16 @@ export default function App() {
   const [editGender, setEditGender] = useState(userGender);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const galleryFileInputRef = useRef(null);
+  const postFileInputRef = useRef(null);
+  const storyFileInputRef = useRef(null);
 
   // User Profile Posts & Stories Management State
   const [userPhotosList, setUserPhotosList] = useState(() => {
-    return safeStorage.getParsed('vlive_user_photos_v1', [
-      { id: 'p1', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', caption: 'Live Stream Setup 🌟' },
-      { id: 'p2', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80', caption: 'Studio Session 🎙️' },
-      { id: 'p3', url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80', caption: 'VIP Party Night ✨' },
-      { id: 'p4', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80', caption: 'V.Live+ Community Meetup 🚀' }
-    ]);
+    return safeStorage.getParsed('vlive_user_photos_v1', []);
   });
 
   const [userVideosList, setUserVideosList] = useState(() => {
-    return safeStorage.getParsed('vlive_user_videos_v1', [
-      { id: 'v1', title: 'Tehran Live Highlights', views: '12.4K', thumb: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=400&q=80' },
-      { id: 'v2', title: 'VIP Party Stage Moments', views: '8.9K', thumb: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=400&q=80' },
-      { id: 'v3', title: 'Singer Performance Live', views: '24.1K', thumb: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80' }
-    ]);
+    return safeStorage.getParsed('vlive_user_videos_v1', []);
   });
 
   const [isAddPostModalOpen, setIsAddPostModalOpen] = useState(false);
@@ -795,6 +788,38 @@ export default function App() {
   const [isAddStoryModalOpen, setIsAddStoryModalOpen] = useState(false);
   const [newStoryUrl, setNewStoryUrl] = useState('');
   const [newStoryCaption, setNewStoryCaption] = useState('');
+
+  const handlePostFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      if (file.size > 25 * 1024 * 1024) {
+        showToast(loc('حجم فایل نباید بیشتر از ۲۵ مگابایت باشد', 'File size must be under 25MB'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setNewPostUrl(event.target.result);
+        showToast(loc('فایل انتخابی با موفقیت بارگذاری شد', 'File loaded successfully'));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleStoryFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      if (file.size > 25 * 1024 * 1024) {
+        showToast(loc('حجم فایل نباید بیشتر از ۲۵ مگابایت باشد', 'File size must be under 25MB'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setNewStoryUrl(event.target.result);
+        showToast(loc('تصویر استوری با موفقیت بارگذاری شد', 'Story image loaded successfully'));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleAddNewPost = () => {
     if (!newPostUrl.trim() || !newPostTitle.trim()) {
@@ -11231,8 +11256,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                           <img src={stItem.url} alt="Story" className="w-full h-full object-cover" />
                           <button
                             onClick={() => handleDeleteUserStoryItem(stItem.id)}
-                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-slate-950/80 text-red-400 flex items-center justify-center text-[10px] font-black opacity-0 group-hover:opacity-100 transition shadow"
-                            title="Delete Story"
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-[10px] font-black transition shadow z-10"
+                            title={loc('حذف استوری', 'Delete Story')}
                           >
                             ✕
                           </button>
@@ -11268,14 +11293,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     userPhotosList.map((item) => (
                       <div key={item.id} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-800 group hover:border-pink-500/50 transition">
                         <img src={item.url} alt={item.caption || 'Photo'} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-2">
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-end p-2">
                           <p className="text-[10px] font-bold text-white truncate">{item.caption}</p>
                         </div>
                         {profilePreviewMode === 'self' && (
                           <button
                             onClick={() => handleDeletePhotoPost(item.id)}
-                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-slate-950/80 text-red-400 flex items-center justify-center text-xs font-black opacity-0 group-hover:opacity-100 transition shadow"
-                            title="Delete Photo"
+                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-xs font-black transition shadow z-10"
+                            title={loc('حذف عکس', 'Delete Photo')}
                           >
                             ✕
                           </button>
@@ -11283,8 +11308,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       </div>
                     ))
                   ) : (
-                    <div className="col-span-full py-8 text-center text-xs text-slate-400">
-                      {loc('هیچ عکسی در گالری ثبت نشده است', 'No photos in gallery')}
+                    <div className="col-span-full py-8 text-center text-xs text-slate-400 border border-dashed border-slate-800 rounded-2xl p-4">
+                      {loc('هیچ عکسی در گالری ثبت نشده است. برای افزودن عکس روی «افزودن پست» کلیک کنید.', 'No photos in gallery. Click "Add Post" to upload.')}
                     </div>
                   )}
                 </div>
@@ -11305,8 +11330,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         {profilePreviewMode === 'self' && (
                           <button
                             onClick={() => handleDeleteVideoPost(item.id)}
-                            className="absolute top-2 left-2 w-6 h-6 rounded-full bg-slate-950/80 text-red-400 flex items-center justify-center text-xs font-black opacity-0 group-hover:opacity-100 transition shadow"
-                            title="Delete Video"
+                            className="absolute top-2 left-2 w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-xs font-black transition shadow z-10"
+                            title={loc('حذف ویدیو', 'Delete Video')}
                           >
                             ✕
                           </button>
@@ -11314,8 +11339,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       </div>
                     ))
                   ) : (
-                    <div className="col-span-full py-8 text-center text-xs text-slate-400">
-                      {loc('هیچ ویدیویی ثبت نشده است', 'No videos in gallery')}
+                    <div className="col-span-full py-8 text-center text-xs text-slate-400 border border-dashed border-slate-800 rounded-2xl p-4">
+                      {loc('هیچ ویدیویی ثبت نشده است. برای افزودن ویدیو روی «افزودن پست» کلیک کنید.', 'No videos in gallery. Click "Add Post" to upload.')}
                     </div>
                   )}
                 </div>
@@ -17964,14 +17989,44 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </div>
 
               <div>
-                <label className="text-slate-300 font-bold mb-1 block">{loc('لینک تصویر یا ویدیو (URL):', 'Media URL:')}</label>
+                <label className="text-slate-300 font-bold mb-1 block">{loc('انتخاب یا لینک رسانه:', 'Select or Enter Media:')}</label>
+                
+                <input 
+                  type="file" 
+                  ref={postFileInputRef} 
+                  onChange={handlePostFileChange} 
+                  accept={newPostType === 'photo' ? "image/*" : "video/*"} 
+                  className="hidden" 
+                />
+                
+                <div className="flex items-center gap-2 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => postFileInputRef.current && postFileInputRef.current.click()}
+                    className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-xs flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition shadow"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>{loc('انتخاب عکس/ویدیو از گالری دستگاه 📂', 'Choose File from Device 📂')}</span>
+                  </button>
+                </div>
+
                 <input
                   type="text"
                   value={newPostUrl}
                   onChange={e => setNewPostUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
+                  placeholder={loc('یا آدرس لینک مستقیم تصویر/ویدیو...', 'Or paste direct URL...')}
                   className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500 text-xs font-mono"
                 />
+
+                {newPostUrl && (
+                  <div className="mt-2 relative rounded-xl overflow-hidden border border-pink-500/40 max-h-36 bg-slate-950 flex items-center justify-center">
+                    {newPostType === 'photo' ? (
+                      <img src={newPostUrl} alt="Preview" className="max-h-36 object-contain" />
+                    ) : (
+                      <video src={newPostUrl} controls className="max-h-36" />
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -17980,7 +18035,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   type="text"
                   value={newPostTitle}
                   onChange={e => setNewPostTitle(e.target.value)}
-                  placeholder={loc('مثال: لایو جذاب امشب با دوستان...', 'e.g. Awesome live stream...')}
+                  placeholder={loc('مثال: لحظات جذاب استریم امشب...', 'e.g. Highlights from tonight...')}
                   className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500 text-xs"
                 />
               </div>
@@ -18020,14 +18075,38 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="text-slate-300 font-bold mb-1 block">{loc('لینک تصویر استوری (URL):', 'Story Image URL:')}</label>
+                <label className="text-slate-300 font-bold mb-1 block">{loc('انتخاب تصویر استوری:', 'Select Story Image:')}</label>
+                
+                <input 
+                  type="file" 
+                  ref={storyFileInputRef} 
+                  onChange={handleStoryFileChange} 
+                  accept="image/*" 
+                  className="hidden" 
+                />
+
+                <button
+                  type="button"
+                  onClick={() => storyFileInputRef.current && storyFileInputRef.current.click()}
+                  className="w-full py-2.5 px-3 mb-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition shadow"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>{loc('انتخاب عکس استوری از گالری دستگاه 📂', 'Choose Story Photo from Device 📂')}</span>
+                </button>
+
                 <input
                   type="text"
                   value={newStoryUrl}
                   onChange={e => setNewStoryUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
+                  placeholder={loc('یا آدرس لینک مستقیم تصویر استوری...', 'Or paste image URL...')}
                   className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-purple-500 text-xs font-mono"
                 />
+
+                {newStoryUrl && (
+                  <div className="mt-2 relative rounded-xl overflow-hidden border border-purple-500/40 max-h-40 bg-slate-950 flex items-center justify-center">
+                    <img src={newStoryUrl} alt="Story Preview" className="max-h-40 object-contain" />
+                  </div>
+                )}
               </div>
 
               <div>
@@ -18036,7 +18115,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   type="text"
                   value={newStoryCaption}
                   onChange={e => setNewStoryCaption(e.target.value)}
-                  placeholder={loc('مثال: پشت صحنه لایو امروز...', 'e.g. Behind the scenes...')}
+                  placeholder={loc('مثال: پشت صحنه استریم امشب...', 'e.g. Behind the scenes...')}
                   className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-purple-500 text-xs"
                 />
               </div>
