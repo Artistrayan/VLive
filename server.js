@@ -85,6 +85,139 @@ async function callGeminiBackend(prompt) {
   return null;
 }
 
+// REAL BACKEND DATABASE FOR USER PROFILES
+const DB_FILE = path.join(__dirname, 'users_db.json');
+
+const DEFAULT_USERS = [
+  {
+    id: 1,
+    username: 'Sahar_Miller',
+    name: 'Sahar Miller',
+    role: 'VIP Streamer',
+    status: 'approved',
+    isApproved: true,
+    online: true,
+    city: 'Tehran',
+    age: 23,
+    gender: 'female',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+    bio: '☕ Chat & Chill Coffee Time | 4K Live Streamer',
+    coins: 45000,
+    isVerified: true,
+    isVip: true,
+    streamTitle: 'Chat & Chill Coffee Time ☕',
+    viewers: 410,
+    isLive: true,
+    updatedAt: Date.now()
+  },
+  {
+    id: 2,
+    username: 'Sara_Maleki',
+    name: 'Sara Maleki',
+    role: 'VIP Streamer',
+    status: 'approved',
+    isApproved: true,
+    online: true,
+    city: 'Tehran',
+    age: 22,
+    gender: 'female',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
+    bio: 'استودیو چت VIP و اجرای نئونی 4K',
+    coins: 38200,
+    isVerified: true,
+    isVip: true,
+    streamTitle: 'استودیو چت VIP و اجرای نئونی 4K 💖',
+    viewers: 1420,
+    isLive: true,
+    updatedAt: Date.now()
+  },
+  {
+    id: 3,
+    username: 'Elnaz_Karimi',
+    name: 'Elnaz Karimi',
+    role: 'Online Model',
+    status: 'approved',
+    isApproved: true,
+    online: true,
+    city: 'Shiraz',
+    age: 24,
+    gender: 'female',
+    avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
+    bio: 'گفتگوی خصوصی و پاسخ به سوالات حامیان',
+    coins: 29500,
+    isVerified: true,
+    isVip: true,
+    streamTitle: 'گفتگوی خصوصی و پاسخ به سوالات حامیان 🌊',
+    viewers: 980,
+    isLive: true,
+    updatedAt: Date.now()
+  },
+  {
+    id: 4,
+    username: 'Maryam_Hosseini',
+    name: 'Maryam Hosseini',
+    role: 'Official Host',
+    status: 'approved',
+    isApproved: true,
+    online: false,
+    city: 'Isfahan',
+    age: 21,
+    gender: 'female',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
+    bio: 'موزیک زنده و رقص چالش 🎵',
+    coins: 18400,
+    isVerified: true,
+    isVip: false,
+    streamTitle: 'موزیک زنده 🎵',
+    viewers: 320,
+    isLive: false,
+    updatedAt: Date.now()
+  },
+  {
+    id: 5,
+    username: 'Rayan_VIP',
+    name: 'Rayan Maleki',
+    role: 'Super Admin',
+    status: 'approved',
+    isApproved: true,
+    online: true,
+    city: 'Tehran',
+    age: 25,
+    gender: 'male',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80',
+    bio: 'مدیر ارشد پلتفرم V.Live+',
+    coins: 100000,
+    isVerified: true,
+    isVip: true,
+    streamTitle: 'V.Live Official Lounge',
+    viewers: 2500,
+    isLive: false,
+    updatedAt: Date.now()
+  }
+];
+
+function loadUsersDb() {
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const content = fs.readFileSync(DB_FILE, 'utf-8');
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading users_db.json:', e);
+  }
+  saveUsersDb(DEFAULT_USERS);
+  return DEFAULT_USERS;
+}
+
+function saveUsersDb(users) {
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(users, null, 2), 'utf-8');
+  } catch (e) {
+    console.error('Error writing users_db.json:', e);
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   let reqUrl = req.url.split('?')[0];
 
@@ -99,8 +232,8 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Handle Backend AI Security & Translation API Endpoints securely
-  if (reqUrl.startsWith('/api/ai-security/') || reqUrl === '/api/translate') {
+  // Handle Backend API Endpoints (Users, Streams, Security, Translation)
+  if (reqUrl.startsWith('/api/')) {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
@@ -108,6 +241,102 @@ const server = http.createServer(async (req, res) => {
       try { data = JSON.parse(body || '{}'); } catch(e) {}
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
+
+      // GET /api/users or /api/profiles or /api/users/approved - Get all approved user profiles
+      if (reqUrl === '/api/users' || reqUrl === '/api/profiles' || reqUrl === '/api/users/approved') {
+        const users = loadUsersDb();
+        const approvedUsers = users.filter(u => u.status === 'approved' || u.isApproved !== false);
+        return res.end(JSON.stringify(approvedUsers));
+      }
+
+      // POST /api/users/save or POST /api/users/auth/telegram - Register / Login / Update user profile immediately in database
+      if (reqUrl === '/api/users/save' || reqUrl === '/api/users/auth/telegram' || reqUrl === '/api/users/profile') {
+        const users = loadUsersDb();
+        const inputUser = data.user || data;
+        const cleanUsername = inputUser.username || inputUser.currentUsername || 'User_' + Date.now();
+        const cleanName = inputUser.name || inputUser.first_name || cleanUsername;
+
+        let existingIndex = users.findIndex(u => u.username?.toLowerCase() === cleanUsername.toLowerCase());
+        let updatedUserRecord = {
+          id: existingIndex >= 0 ? users[existingIndex].id : Date.now(),
+          username: cleanUsername,
+          name: cleanName,
+          role: inputUser.role || (existingIndex >= 0 ? users[existingIndex].role : 'VIP Streamer'),
+          status: 'approved',
+          isApproved: true,
+          online: true,
+          city: inputUser.city || (existingIndex >= 0 ? users[existingIndex].city : 'Tehran'),
+          age: inputUser.age || (existingIndex >= 0 ? users[existingIndex].age : 22),
+          gender: inputUser.gender || (existingIndex >= 0 ? users[existingIndex].gender : 'female'),
+          avatar: inputUser.avatar || inputUser.avatar_url || (existingIndex >= 0 ? users[existingIndex].avatar : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'),
+          bio: inputUser.bio || (existingIndex >= 0 ? users[existingIndex].bio : 'Official V.Live Streamer'),
+          coins: inputUser.coins || inputUser.wallet_stars || (existingIndex >= 0 ? users[existingIndex].coins : 5000),
+          isVerified: true,
+          isVip: inputUser.isVip !== undefined ? inputUser.isVip : true,
+          streamTitle: inputUser.streamTitle || (existingIndex >= 0 ? users[existingIndex].streamTitle : `${cleanName} 4K Live Stream 💖`),
+          viewers: existingIndex >= 0 ? users[existingIndex].viewers : 150,
+          isLive: inputUser.isLive !== undefined ? inputUser.isLive : (existingIndex >= 0 ? users[existingIndex].isLive : false),
+          updatedAt: Date.now()
+        };
+
+        if (existingIndex >= 0) {
+          users[existingIndex] = updatedUserRecord;
+        } else {
+          users.unshift(updatedUserRecord);
+        }
+
+        saveUsersDb(users);
+        const approvedUsers = users.filter(u => u.status === 'approved' || u.isApproved !== false);
+        return res.end(JSON.stringify({
+          success: true,
+          user: updatedUserRecord,
+          access_token: 'jwt_token_' + Date.now(),
+          users: approvedUsers
+        }));
+      }
+
+      // GET /api/users/search - Search approved users
+      if (reqUrl === '/api/users/search') {
+        const fullUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const query = (fullUrl.searchParams.get('q') || '').toLowerCase();
+        const gender = fullUrl.searchParams.get('gender') || '';
+        const city = fullUrl.searchParams.get('city') || '';
+
+        const users = loadUsersDb();
+        const approvedUsers = users.filter(u => u.status === 'approved' || u.isApproved !== false);
+
+        const filtered = approvedUsers.filter(u => {
+          const matchesQuery = !query || u.username.toLowerCase().includes(query) || u.name.toLowerCase().includes(query) || (u.bio && u.bio.toLowerCase().includes(query));
+          const matchesGender = !gender || gender === 'all' || u.gender === gender;
+          const matchesCity = !city || city === 'all' || u.city === city;
+          return matchesQuery && matchesGender && matchesCity;
+        });
+
+        return res.end(JSON.stringify(filtered));
+      }
+
+      // GET /api/streams/active - Get active live streams from approved users
+      if (reqUrl === '/api/streams/active') {
+        const users = loadUsersDb();
+        const approvedUsers = users.filter(u => u.status === 'approved' || u.isApproved !== false);
+        const streams = approvedUsers.map(u => ({
+          id: u.id,
+          host_username: u.username,
+          host_name: u.name,
+          host_avatar: u.avatar,
+          title: u.streamTitle || `${u.name} Live Broadcast 4K`,
+          stream_key: `live_${u.username.toLowerCase()}`,
+          is_live: u.isLive !== false,
+          viewer_count: u.viewers || 350,
+          active_ar_filter: 'Neon Glow ✨',
+          gender: u.gender,
+          city: u.city,
+          age: u.age,
+          isVip: u.isVip,
+          isVerified: u.isVerified
+        }));
+        return res.end(JSON.stringify(streams));
+      }
 
       // Real-time Translation API Endpoint
       if (reqUrl === '/api/translate') {

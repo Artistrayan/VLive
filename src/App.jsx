@@ -604,6 +604,42 @@ export default function App() {
     safeStorage.setItem('vlive_app_users_v8', JSON.stringify(usersList));
   }, [usersList]);
 
+  // REAL BACKEND DATABASE USER PERSISTENCE & REAL-TIME SYNC
+  const syncUserAndFetchBackendProfiles = async () => {
+    try {
+      if (isLoggedIn && (userName || currentUsername)) {
+        await apiAuth.saveUserToBackend({
+          username: currentUsername || userName,
+          name: userName,
+          avatar: userAvatar,
+          bio: userBio,
+          gender: userGender,
+          coins: userCoins,
+          isVip: vipPlan !== 'none',
+          role: userRank,
+          status: 'approved',
+          isApproved: true,
+          online: true
+        });
+      }
+
+      const approvedUsers = await apiHome.getApprovedUsers();
+      if (Array.isArray(approvedUsers) && approvedUsers.length > 0) {
+        setUsersList(approvedUsers);
+      }
+    } catch (e) {
+      console.warn('Real-time database user sync error:', e);
+    }
+  };
+
+  useEffect(() => {
+    syncUserAndFetchBackendProfiles();
+    const intervalId = setInterval(() => {
+      syncUserAndFetchBackendProfiles();
+    }, 5000); // 5-second real-time polling sync across devices/tabs
+    return () => clearInterval(intervalId);
+  }, [isLoggedIn, userName, currentUsername, userAvatar, userBio, userGender, userCoins, vipPlan, userRank]);
+
   // Server Keep-Alive Ping & Performance Initialization
   useEffect(() => {
     startKeepAlivePing();
@@ -5366,25 +5402,25 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         </div>
       )}
 
-      {/* HEADER NAVBAR - RESTRUCTURED, ELEGANT & BALANCED */}
-      <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/80 px-3 sm:px-5 py-2.5 shadow-md">
-        <div className="flex items-center justify-between gap-2 max-w-7xl mx-auto">
+      {/* HEADER NAVBAR - RESTRUCTURED, COMPACT, ELEGANT & BALANCED FOR ALL SCREENS */}
+      <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/80 px-2.5 sm:px-5 py-2 shadow-md w-full overflow-hidden">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-3 max-w-7xl mx-auto w-full">
           
-          {/* 1. PROFILE SECTION (SIDE A): LARGER AVATAR WITH USERNAME & WALLET BALANCE UNDERNEATH */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          {/* 1. PROFILE SECTION (SIDE A): AVATAR WITH USERNAME & WALLET BALANCE */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 min-w-0">
             <button 
               onClick={() => setActiveTab('profile')}
-              className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-pink-500/80 p-0.5 hover:scale-105 transition shadow-lg shrink-0 group"
+              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-pink-500/80 p-0.5 hover:scale-105 transition shadow-lg shrink-0 group"
               title="View Profile"
             >
               <img src={userAvatar} alt={userName} className="w-full h-full object-cover rounded-full" />
-              <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-950" />
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-950" />
             </button>
 
-            <div className="flex flex-col items-start text-left">
+            <div className="flex flex-col items-start text-left min-w-0">
               <button 
                 onClick={() => setActiveTab('profile')}
-                className="font-black text-xs text-white hover:text-pink-400 transition truncate max-w-[95px] sm:max-w-[130px] leading-tight"
+                className="font-black text-xs text-white hover:text-pink-400 transition truncate max-w-[65px] xs:max-w-[90px] sm:max-w-[130px] leading-tight"
               >
                 @{currentUsername || userName}
               </button>
@@ -5392,49 +5428,49 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               {/* Wallet balance under profile picture */}
               <button 
                 onClick={() => setActiveTab('wallet')}
-                className="flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold text-amber-300 hover:text-amber-200 transition bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full mt-0.5"
+                className="flex items-center gap-1 text-[9px] sm:text-[10px] font-extrabold text-amber-300 hover:text-amber-200 transition bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded-full mt-0.5 shrink-0"
                 title="Wallet Balance"
               >
-                <CoinsIcon className="w-3 h-3 text-amber-400 shrink-0" />
+                <CoinsIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400 shrink-0" />
                 <span>{userCoins.toLocaleString()}</span>
               </button>
             </div>
           </div>
 
-          {/* 2. CENTER SECTION: LOGO + V.LIVE + COMPACT CLEAN ENGLISH WELCOME TEXT */}
-          <div className="flex flex-col items-center justify-center text-center px-1 shrink-0">
+          {/* 2. CENTER SECTION: LOGO + V.LIVE (HIDDEN ON VERY SMALL MOBILE TO PREVENT OVERFLOW) */}
+          <div className="hidden xs:flex flex-col items-center justify-center text-center px-1 shrink-0">
             <div className="flex items-center gap-1.5">
-              <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 p-0.5 shadow-md flex items-center justify-center">
-                <Video className="w-4 h-4 text-white" />
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 p-0.5 shadow-md flex items-center justify-center">
+                <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
               </div>
-              <h1 className="font-black text-sm sm:text-base tracking-wider text-white">V.LIVE</h1>
-              <span className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-pink-300 text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-pink-500/30 hidden xs:inline-block">
+              <h1 className="font-black text-xs sm:text-base tracking-wider text-white">V.LIVE</h1>
+              <span className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-pink-300 text-[8px] sm:text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-pink-500/30 hidden sm:inline-block">
                 4K
               </span>
             </div>
-            <p className="text-[10px] font-medium text-slate-400 tracking-tight mt-0.5 leading-none">
+            <p className="text-[9px] sm:text-[10px] font-medium text-slate-400 tracking-tight mt-0.5 leading-none hidden sm:block">
               Welcome back to V.LIVE
             </p>
           </div>
 
           {/* 3. ICONS SECTION (OPPOSITE SIDE): SETTINGS, NOTIFICATIONS, SEARCH & LANGUAGE */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             {/* 🔍 Search Toggle */}
             <button 
               onClick={() => setIsChatSearchOpen(!isChatSearchOpen)}
-              className="p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
+              className="p-1.5 sm:p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
               title="Search"
             >
-              <Search className="w-4 h-4" />
+              <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             {/* 🔔 Notification Bell */}
             <button 
               onClick={() => setIsNotificationsOpen(true)}
-              className="relative p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
+              className="relative p-1.5 sm:p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
               title="Notifications"
             >
-              <Bell className="w-4 h-4" />
+              <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {notificationsList.some(n => n.unread) && (
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-pink-500" />
               )}
@@ -5443,19 +5479,19 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             {/* ⚙️ Settings */}
             <button 
               onClick={() => setIsSettingsModalOpen(true)}
-              className="p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
+              className="p-1.5 sm:p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
               title={t('settings', 'Settings')}
             >
-              <Settings className="w-4 h-4 text-slate-300" />
+              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-300" />
             </button>
 
             {/* 🌐 Language Switcher */}
             <button 
               onClick={() => setIsLanguageModalOpen(true)}
-              className="px-2.5 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-200 hover:border-cyan-500/50 transition flex items-center gap-1 font-bold text-xs"
+              className="px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-200 hover:border-cyan-500/50 transition flex items-center gap-1 font-bold text-[10px] sm:text-xs"
               title={t('appLanguage', 'App Language')}
             >
-              <Globe className="w-3.5 h-3.5 text-cyan-400" />
+              <Globe className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-cyan-400" />
               <span>{currentLangObj.flag}</span>
             </button>
           </div>
@@ -5464,34 +5500,34 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       </header>
 
       {/* BODY CONTENT AREA */}
-      <main className="flex-1 p-4 max-w-4xl mx-auto w-full space-y-6">
+      <main className="flex-1 p-3 sm:p-4 max-w-4xl mx-auto w-full space-y-5 sm:space-y-6">
 
         {/* TAB 1: HOME & LIVE STREAMS - COMPLETELY REDESIGNED LIVE SECTION */}
         {activeTab === 'streams' && (
           <div className="space-y-6">
 
             {/* 1. SUB-HEADER / QUICK STATS BAR (زیر Header) */}
-            <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-md">
+            <div className="flex items-center justify-between gap-1.5 sm:gap-2 p-2.5 sm:p-3 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-md overflow-x-auto no-scrollbar">
               {/* 👛 Coins Counter */}
               <button 
                 onClick={() => setActiveTab('wallet')}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition active:scale-95"
+                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition active:scale-95 shrink-0"
               >
-                <CoinsIcon className="w-4 h-4 text-amber-400 animate-pulse" />
-                <span className="text-xs font-black">{userCoins.toLocaleString()} {loc('سکه', 'Coins')}</span>
+                <CoinsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-pulse" />
+                <span className="text-[11px] sm:text-xs font-black">{userCoins.toLocaleString()} {loc('سکه', 'Coins')}</span>
               </button>
 
               {/* 👑 VIP Badge */}
               <button 
                 onClick={() => setIsVipModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 text-amber-300 hover:scale-105 transition active:scale-95 shadow-sm"
+                className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 text-amber-300 hover:scale-105 transition active:scale-95 shadow-sm shrink-0"
               >
-                <Crown className="w-4 h-4 text-amber-400 fill-amber-400/30" />
-                <span className="text-xs font-black">👑 {loc('اشتراک VIP', 'VIP Club')}</span>
+                <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 fill-amber-400/30" />
+                <span className="text-[11px] sm:text-xs font-black">👑 {loc('اشتراک VIP', 'VIP Club')}</span>
               </button>
 
               {/* 🔥 Online Counter */}
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] sm:text-xs font-bold shrink-0">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                 <span>🔥 {loc('۱۴,۰۰۰ کاربر آنلاین', '14,000 Online')}</span>
               </div>
@@ -5751,7 +5787,107 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </div>
             )}
 
-            {/* MULTI-GUEST PARTY STAGE SUBTAB */}
+            {/* DISCOVER & SEARCH APPROVED USERS SUBTAB */}
+            {streamSubTab === 'users' && (
+              <div className="space-y-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+                {/* Search Bar & Filter Controls */}
+                <div className="card-3d p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 shadow-xl">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-pink-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+                    <input 
+                      type="text"
+                      value={homeSearchQuery}
+                      onChange={e => setHomeSearchQuery(e.target.value)}
+                      placeholder={loc('جستجوی کاربران تأییدشده دیتابیس (نام، شهر، بیو)...', 'Search approved database users (name, city, bio)...')}
+                      className="w-full pr-10 pl-10 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 shadow-inner"
+                    />
+                    {homeSearchQuery && (
+                      <button onClick={() => setHomeSearchQuery('')} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Filter Pills Bar */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                    {[
+                      { id: 'all', label: loc('🌍 همه کاربران', '🌍 All Users') },
+                      { id: 'online', label: loc('🟢 آنلاین‌ها', '🟢 Online') },
+                      { id: 'top', label: loc('👑 برترین‌ها', '👑 Top Hosts') },
+                      { id: 'verified', label: loc('✅ تأییدشده‌ها', '✅ Verified') }
+                    ].map(f => (
+                      <button
+                        key={f.id}
+                        onClick={() => setUserFilter(f.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 border transition ${userFilter === f.id ? 'bg-pink-600 text-white border-pink-400 shadow' : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'}`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Approved User Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {usersList
+                    .filter(u => u.status === 'approved' || u.isApproved !== false)
+                    .filter(u => {
+                      if (homeSearchQuery) {
+                        const q = homeSearchQuery.toLowerCase();
+                        return (u.name && u.name.toLowerCase().includes(q)) || 
+                               (u.username && u.username.toLowerCase().includes(q)) || 
+                               (u.city && u.city.toLowerCase().includes(q)) || 
+                               (u.bio && u.bio.toLowerCase().includes(q));
+                      }
+                      if (userFilter === 'online') return u.online;
+                      if (userFilter === 'top') return u.isTop || u.isVip;
+                      if (userFilter === 'verified') return u.isVerified;
+                      return true;
+                    })
+                    .map(u => (
+                      <div key={u.id || u.username} className="card-3d p-4 rounded-3xl bg-slate-900 border border-slate-800 hover:border-pink-500/50 transition flex flex-col justify-between space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-pink-500/60 shrink-0">
+                            <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
+                            {u.online && <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full" />}
+                          </div>
+                          <div className="overflow-hidden">
+                            <div className="flex items-center gap-1">
+                              <h4 className="text-xs font-black text-white truncate">{u.name || u.username}</h4>
+                              <VerifiedBadge className="w-3.5 h-3.5" />
+                            </div>
+                            <p className="text-[10px] text-pink-400 font-bold">@{u.username}</p>
+                            <span className="text-[9px] text-slate-400 font-medium">📍 {u.city || 'Tehran'}</span>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-300 line-clamp-2 italic">"{u.bio || 'استریمر تأییدشده V.Live+'}"</p>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+                          <span className="text-[10px] font-mono text-amber-400 font-bold">🪙 {(u.coins || 5000).toLocaleString()}</span>
+                          <button
+                            onClick={() => {
+                              setSelectedHostForCall({
+                                name: u.name,
+                                username: u.username,
+                                avatar: u.avatar,
+                                role: u.role || 'VIP Host',
+                                isVerified: true,
+                                online: u.online !== false,
+                                isVip: u.isVip !== false
+                              });
+                              setIsDirectCallModalOpen(true);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-[11px] shadow hover:scale-105 active:scale-95 transition"
+                          >
+                            {loc('تماس / چت', 'Call / Chat')}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
             {streamSubTab === 'party' && (
               <div className="space-y-4">
                 <div className="p-4 rounded-3xl bg-gradient-to-r from-purple-900/40 via-slate-900 to-pink-900/40 border border-purple-500/40 flex items-center justify-between flex-wrap gap-3">

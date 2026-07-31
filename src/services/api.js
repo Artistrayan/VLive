@@ -134,6 +134,19 @@ export const apiAuth = {
     }
   },
 
+  saveUserToBackend: async (userData) => {
+    try {
+      const res = await apiRequest('/api/users/save', {
+        method: 'POST',
+        body: JSON.stringify(userData)
+      });
+      return res;
+    } catch (err) {
+      console.warn('Failed to save user to backend DB:', err);
+      return null;
+    }
+  },
+
   getCurrentUser: async () => {
     try {
       const user = await apiRequest('/api/users/me');
@@ -201,6 +214,15 @@ export const apiProfile = {
 // STEP 3: HOME API METHODS
 // -------------------------------------------------------------
 export const apiHome = {
+  getApprovedUsers: async () => {
+    try {
+      return await apiRequest('/api/users/approved');
+    } catch (e) {
+      console.warn('Failed to fetch approved users from backend API:', e);
+      return [];
+    }
+  },
+
   getActiveStreams: async () => {
     try {
       return await apiRequest('/api/streams/active');
