@@ -318,143 +318,37 @@ const I18N_DICTIONARY = {
 const DEFAULT_REAL_USERS = [];
 
 // Initial Tether USDT Transactions
-const INITIAL_TRANSACTIONS = [
-  { id: 'TX-901', user: 'Arash Mohammadi', type: 'deposit', amount: '20 USDT', coins: 1000, status: 'pending', date: 'Today 14:20', method: 'Tether TRC20', txHash: '0x8f3a...92b1' },
-  { id: 'TX-902', user: 'Elnaz Karimi', type: 'withdrawal', amount: '100 USDT', coins: 5000, status: 'approved', date: 'Today 11:15', method: 'Tether TRC20', txHash: 'TLp9yW2k4R7xM1vN8L0b3C5a9D' },
-  { id: 'TX-903', user: 'Sara Maleki', type: 'withdrawal', amount: '160 USDT', coins: 8000, status: 'pending', date: 'Yesterday 19:40', method: 'Tether TRC20', txHash: 'TKh8zXpQ7yM3vN1L9R2W4b6K8a0C' },
-  { id: 'TX-904', user: 'New User', type: 'deposit', amount: '10 USDT', coins: 500, status: 'approved', date: 'Yesterday 16:30', method: 'Tether TRC20', txHash: '0x7e2d...10a9' }
-];
+const INITIAL_TRANSACTIONS = [];
 
 // Initial KYC & Gender Verifications
-const INITIAL_VERIFICATIONS = [
-  { id: 1, name: 'Niloofar Amini', username: 'Niloofar_Amini', gender: 'female', nationalCard: 'ID Document Verified', selfiePhoto: 'Video Selfie Approved', date: '2024-04-20', type: 'Female Streamer Verification' },
-  { id: 2, name: 'Mehdi Ahmadi', username: 'Mehdi_99', gender: 'male', nationalCard: 'Under Document Audit', selfiePhoto: 'Selfie Photo Attached', date: '2024-05-01', type: 'Payout Verification' }
-];
+const INITIAL_VERIFICATIONS = [];
 
 // Initial Direct Messages Conversations
 const INITIAL_CONVERSATIONS = [
   {
-    id: 'sara_chat',
-    type: 'private',
-    user: {
-      username: 'Sara_Maleki',
-      name: 'Sara Maleki',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
-      isVerified: true,
-      role: 'VIP Streamer',
-      online: true,
-      city: 'Tehran',
-      phone: '+989123456789'
-    },
-    lastMessage: 'Thanks for your warm support in my stream today! 💖',
-    lastTime: '14:25',
-    unreadCount: 2,
-    pinned: true,
-    muted: false,
-    archived: false,
-    messages: [
-      { id: 1, sender: 'them', text: 'Hello! Thank you for joining my live broadcast today.', translation: 'سلام! ممنون بابت پیوستن به پخش زنده امروز من.', translated: false, time: '14:20', status: 'read', type: 'text' },
-      { id: 2, sender: 'me', text: 'Great stream! Keep up the good work!', translation: 'پخش زنده عالی بود! موفق باشی!', translated: false, time: '14:22', status: 'read', type: 'text' },
-      { id: 3, sender: 'them', text: 'Thanks for your warm support in my stream today! 💖', translation: 'ممنون بابت حمایت گرمت در استریم امروز! 💖', translated: false, time: '14:25', status: 'read', type: 'text', reactions: ['❤️', '🔥'] }
-    ]
-  },
-  {
-    id: 'elnaz_chat',
-    type: 'private',
-    user: {
-      username: 'Elnaz_Karimi',
-      name: 'Elnaz Karimi',
-      avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
-      isVerified: true,
-      role: 'Online Model',
-      online: true,
-      city: 'Shiraz',
-      phone: '+989171112233'
-    },
-    lastMessage: 'My next live stream starts tonight at 10 PM, see you there!',
-    lastTime: '12:10',
-    unreadCount: 0,
-    pinned: false,
-    muted: false,
-    archived: false,
-    messages: [
-      { id: 1, sender: 'them', text: 'Hi! How are you doing today?', translation: 'سلام! امروز چطوری؟', translated: false, time: '12:00', status: 'read', type: 'text' },
-      { id: 2, sender: 'me', text: 'Hi Elnaz! When is your next stream scheduled?', translation: 'سلام الناز! استریم بعدی کی شروع می‌شه؟', translated: false, time: '12:05', status: 'read', type: 'text' },
-      { id: 3, sender: 'them', text: 'My next live stream starts tonight at 10 PM, see you there! 🎥', translation: 'پخش زنده بعدی امشب ساعت ۱۰ شروع می‌شه، می‌بینمت!', translated: false, time: '12:10', status: 'read', type: 'text', reactions: ['👍'] }
-    ]
-  },
-  {
-    id: 'vlive_vip_group',
+    id: 'vlive_official_support',
     type: 'group',
     isGroup: true,
-    groupName: 'V.Live Official VIP Streamers 🌟',
-    groupAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-    membersCount: 148,
+    groupName: 'V.Live Official Support & System 🌟',
+    groupAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80',
+    membersCount: 1,
     user: {
-      username: 'vip_group',
-      name: 'V.Live Official VIP Streamers 🌟',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+      username: 'vlive_support',
+      name: 'V.Live Support 🌟',
+      avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80',
       isVerified: true,
-      role: 'Official Group',
+      role: 'System Support',
       online: true,
       city: 'Global'
     },
-    lastMessage: 'Rayan Admin: Double Coins Event is now active for all hosts!',
-    lastTime: '10:45',
-    unreadCount: 3,
+    lastMessage: 'Welcome to V.Live! Enjoy HD video calls and live streaming.',
+    lastTime: 'Just now',
+    unreadCount: 0,
     pinned: true,
     muted: false,
     archived: false,
     messages: [
-      { id: 1, sender: 'them', senderName: 'Rayan Admin', text: 'Welcome all hosts to V.Live VIP Club! 🚀', translation: 'به کلوپ VIP استریمرهای V.Live خوش آمدید!', translated: false, time: '10:30', status: 'read', type: 'text' },
-      { id: 2, sender: 'them', senderName: 'Sara Maleki', text: 'Happy to be here! 🎉', translation: 'خیلی خوشحالم که اینجام!', translated: false, time: '10:35', status: 'read', type: 'text' },
-      { id: 3, sender: 'them', senderName: 'Rayan Admin', text: 'Double Coins Event is now active for all hosts! 💰🔥', translation: 'رویداد سکه مضاعف اکنون برای همه هاست‌ها فعال گردید!', translated: false, time: '10:45', status: 'read', type: 'text', reactions: ['🔥', '😍'] }
-    ]
-  },
-  {
-    id: 'ali_call_chat',
-    type: 'call',
-    user: {
-      username: 'Ali_Rezaei',
-      name: 'Ali Rezaei',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
-      isVerified: false,
-      role: 'Member',
-      online: false,
-      city: 'Isfahan',
-      phone: '+989139998877'
-    },
-    lastMessage: '📹 Incoming Video Call (Duration 04:12)',
-    lastTime: 'Yesterday',
-    unreadCount: 0,
-    pinned: false,
-    muted: true,
-    archived: false,
-    messages: [
-      { id: 1, sender: 'them', text: 'Hey, how are you doing?', translation: 'سلام، چطوری؟', translated: false, time: 'Yesterday', status: 'read', type: 'text' },
-      { id: 2, sender: 'them', text: '📹 Video Call Ended (Duration 04:12)', time: 'Yesterday', status: 'read', type: 'call_summary' }
-    ]
-  },
-  {
-    id: 'mina_archived',
-    type: 'private',
-    user: {
-      username: 'Mina_Tehrani',
-      name: 'Mina Tehrani',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
-      isVerified: true,
-      role: 'Streamer',
-      online: false,
-      city: 'Tehran'
-    },
-    lastMessage: 'Thanks for the gift! 🌹',
-    lastTime: '3 days ago',
-    unreadCount: 0,
-    pinned: false,
-    muted: true,
-    archived: true,
-    messages: [
-      { id: 1, sender: 'them', text: 'Thanks for the gift! 🌹', translation: 'ممنون بابت هدیه!', translated: false, time: '3 days ago', status: 'read', type: 'text' }
+      { id: 1, sender: 'them', senderName: 'V.Live System', text: 'Welcome to V.Live! Enjoy HD video calls and live streaming.', translation: 'به V.Live خوش آمدید!', translated: false, time: 'Just now', status: 'read', type: 'text' }
     ]
   }
 ];
@@ -559,8 +453,12 @@ export default function App() {
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
   // AUTHENTICATION & ONBOARDING SYSTEM STATES (10-STEP SYSTEM)
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [authStep, setAuthStep] = useState('splash'); // 'splash' | 'welcome' | 'login' | 'register' | 'forgot_password' | 'onboarding' | 'kyc_verification' | 'final_welcome'
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return safeStorage.getItem('vlive_user_logged_in') === 'true';
+  });
+  const [authStep, setAuthStep] = useState(() => {
+    return safeStorage.getItem('vlive_user_logged_in') === 'true' ? 'final_welcome' : 'splash';
+  });
   const [authMethod, setAuthMethod] = useState('telegram'); // 'telegram' | 'google' | 'credentials'
   const [termsAgreed, setTermsAgreed] = useState(true);
   
@@ -629,6 +527,7 @@ export default function App() {
 
   // Main UI State
   const [activeTab, setActiveTab] = useState('streams'); // 'streams', 'messages', 'wallet', 'profile'
+  const [profileMainTab, setProfileMainTab] = useState('gallery'); // 'gallery', 'level', 'wallet', 'settings'
   const [streamSubTab, setStreamSubTab] = useState('lives'); // 'users' or 'lives'
   const [streamModeFilter, setStreamModeFilter] = useState('all');
   
@@ -10719,6 +10618,57 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* PROFILE MAIN SUB-TABS NAVIGATION BAR */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button 
+                onClick={() => setProfileMainTab('gallery')}
+                className={`py-2.5 px-3 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 border ${
+                  profileMainTab === 'gallery'
+                    ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-500/50 shadow-lg'
+                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+              >
+                <Image className="w-4 h-4" />
+                <span>📸 گالری و پست‌ها</span>
+              </button>
+
+              <button 
+                onClick={() => setProfileMainTab('level')}
+                className={`py-2.5 px-3 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 border ${
+                  profileMainTab === 'level'
+                    ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 border-amber-400/50 shadow-lg'
+                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+              >
+                <Trophy className="w-4 h-4" />
+                <span>🏆 سطح و پاداش‌ها</span>
+              </button>
+
+              <button 
+                onClick={() => setProfileMainTab('wallet')}
+                className={`py-2.5 px-3 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 border ${
+                  profileMainTab === 'wallet'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-500 text-white border-emerald-500/50 shadow-lg'
+                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+              >
+                <Wallet className="w-4 h-4" />
+                <span>👛 کیف‌پول و مالی</span>
+              </button>
+
+              <button 
+                onClick={() => setProfileMainTab('settings')}
+                className={`py-2.5 px-3 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 border ${
+                  profileMainTab === 'settings'
+                    ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-cyan-500/50 shadow-lg'
+                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                <span>⚙️ تنظیمات و امنیت</span>
+              </button>
             </div>
 
             {/* EDIT PROFILE FORM */}

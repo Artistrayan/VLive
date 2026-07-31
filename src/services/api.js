@@ -107,16 +107,22 @@ export const apiAuth = {
       return res;
     } catch (err) {
       console.warn('Telegram API auth endpoint failed, operating in frontend session mode:', err);
+      const savedName = localStorage.getItem('vlive_user_name') || 'کاربر VIP';
+      const savedUsername = localStorage.getItem('vlive_current_username') || 'User_VIP';
+      const savedAvatar = localStorage.getItem('vlive_user_avatar') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
+      const savedCoins = parseInt(localStorage.getItem('vlive_user_coins') || '5000', 10);
+      const savedGender = localStorage.getItem('vlive_user_gender') || 'female';
+
       const fallbackUser = {
         id: 108492039,
         telegram_id: 108492039,
-        username: 'rayan_vlive',
-        first_name: 'Rayan',
-        last_name: 'Maleki',
-        avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+        username: savedUsername,
+        first_name: savedName,
+        last_name: '',
+        avatar_url: savedAvatar,
         role: 'VIP Streamer',
-        gender: 'female',
-        wallet_stars: 45000,
+        gender: savedGender,
+        wallet_stars: isNaN(savedCoins) ? 5000 : savedCoins,
         wallet_usdt: 450.0,
         is_vip: true,
         vip_level: 3
