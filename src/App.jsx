@@ -20,7 +20,7 @@ import {
   Home, BarChart2, Tv, Megaphone, Target, Paperclip, Pin, Reply, MoreVertical,
   VolumeX, Trash2, Archive, FileText, CheckCheck, Laugh, Forward, SmilePlus,
   LockKeyhole, SendHorizontal, MessageCircle, Info, PhoneIncoming, PhoneOutgoing,
-  PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert,
+  PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert, Shuffle,
 } from 'lucide-react';
 
 // PRESET HIGH-RES AVATARS FOR PROFILE EDITING
