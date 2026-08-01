@@ -625,9 +625,7 @@ export default function App() {
   const [isVerified, setIsVerified] = useState(true);
 
   // Registered Users Storage
-  const [usersList, setUsersList] = useState(() => {
-    return safeStorage.getParsed('vlive_app_users_v8', safeStorage.getParsed('vlive_app_users_v7', DEFAULT_REAL_USERS));
-  });
+  const [usersList, setUsersList] = useState([]);
 
   // Terms and Conditions Acceptance State
   const [isTermsAccepted, setIsTermsAccepted] = useState(true);
@@ -688,11 +686,9 @@ export default function App() {
     const diffDays = Math.max(0, Math.ceil((vipExpireTimestamp - Date.now()) / (1000 * 60 * 60 * 24)));
     return diffDays || 23;
   });
-  const [vipPurchaseHistory, setVipPurchaseHistory] = useState(() => {
-    return safeStorage.getParsed('vlive_vip_history', [
+  const [vipPurchaseHistory, setVipPurchaseHistory] = useState([
       { id: 'VIP-9001', planId: 'monthly', planName: 'VIP Monthly 🌟', days: 30, priceCoins: 750, priceUsdt: '$14.99', date: '2026-07-15', status: 'Active', txHash: '0x7a9c3b8f' }
     ]);
-  });
   const [isVipMonthlyClaimed, setIsVipMonthlyClaimed] = useState(() => {
     return safeStorage.getItem('vlive_vip_monthly_claimed') === 'true';
   });
@@ -710,12 +706,10 @@ export default function App() {
   const [lastRewardClaimTimestamp, setLastRewardClaimTimestamp] = useState(() => {
     return parseInt(safeStorage.getItem('vlive_last_reward_claim_ts') || '0', 10);
   });
-  const [dailyRewardHistory, setDailyRewardHistory] = useState(() => {
-    return safeStorage.getParsed('vlive_daily_reward_history', [
+  const [dailyRewardHistory, setDailyRewardHistory] = useState([
       { id: 'RWD-101', day: 1, rewardTitle: 'Day 1 Starter Pack', coins: 50, diamonds: 10, bonus: null, date: '2 days ago' },
       { id: 'RWD-102', day: 2, rewardTitle: 'Day 2 Coin Booster', coins: 100, diamonds: 15, bonus: null, date: 'Yesterday' }
     ]);
-  });
   const [isRewardOpeningModalOpen, setIsRewardOpeningModalOpen] = useState(false);
   const [unlockedRewardData, setUnlockedRewardData] = useState(null);
 
@@ -995,15 +989,11 @@ export default function App() {
   const [userRole, setUserRole] = useState(() => {
     return safeStorage.getItem('vlive_user_role') || 'admin';
   });
-  const [posts, setPosts] = useState(() => safeStorage.getParsed('vlive_user_posts', []));
+  const [posts, setPosts] = useState([]);
 
-  const [userPhotosList, setUserPhotosList] = useState(() => {
-    return safeStorage.getParsed('vlive_user_photos_v1', []);
-  });
+  const [userPhotosList, setUserPhotosList] = useState([]);
 
-  const [userVideosList, setUserVideosList] = useState(() => {
-    return safeStorage.getParsed('vlive_user_videos_v1', []);
-  });
+  const [userVideosList, setUserVideosList] = useState([]);
 
   const [freeMatchCallsLeft, setFreeMatchCallsLeft] = useState(3);
   const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
@@ -1243,12 +1233,10 @@ export default function App() {
   };
 
   // App Suggestions & Improvements Box State
-  const [suggestionsList, setSuggestionsList] = useState(() => {
-    return safeStorage.getParsed('vlive_app_suggestions_v1', [
+  const [suggestionsList, setSuggestionsList] = useState([
       { id: 1, user: 'Sara_Maleki', text: 'Add interactive mini-games during live streams for VIP viewers', date: '2024-05-12', status: 'In Review' },
       { id: 2, user: 'Elnaz_Karimi', text: 'Add 3D animated virtual gifts for high-level sponsors', date: '2024-05-14', status: 'Approved' }
     ]);
-  });
   const [newSuggestionInput, setNewSuggestionInput] = useState('');
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
 
@@ -1315,8 +1303,7 @@ export default function App() {
   const [isDndActive, setIsDndActive] = useState(false);
 
   // Call History List
-  const [callHistoryList, setCallHistoryList] = useState(() => {
-    return safeStorage.getParsed('vlive_call_history_v1', [
+  const [callHistoryList, setCallHistoryList] = useState([
       {
         id: 'call_log_1',
         type: 'video',
@@ -1406,15 +1393,13 @@ export default function App() {
         encrypted: true
       }
     ]);
-  });
 
   useEffect(() => {
     safeStorage.setItem('vlive_call_history_v1', JSON.stringify(callHistoryList));
   }, [callHistoryList]);
 
   // Scheduled Calls List
-  const [scheduledCallsList, setScheduledCallsList] = useState(() => {
-    return safeStorage.getParsed('vlive_scheduled_calls_v1', [
+  const [scheduledCallsList, setScheduledCallsList] = useState([
       {
         id: 'sch_1',
         user: {
@@ -1431,25 +1416,20 @@ export default function App() {
         status: 'pending'
       }
     ]);
-  });
 
   useEffect(() => {
     safeStorage.setItem('vlive_scheduled_calls_v1', JSON.stringify(scheduledCallsList));
   }, [scheduledCallsList]);
 
   // Contacts & Favorites
-  const [favoriteContacts, setFavoriteContacts] = useState(() => {
-    return safeStorage.getParsed('vlive_favorite_contacts_v1', ['Sara_Maleki', 'Elnaz_Karimi']);
-  });
+  const [favoriteContacts, setFavoriteContacts] = useState(['Sara_Maleki', 'Elnaz_Karimi']);
 
   useEffect(() => {
     safeStorage.setItem('vlive_favorite_contacts_v1', JSON.stringify(favoriteContacts));
   }, [favoriteContacts]);
 
   // Blocked Call Users
-  const [blockedCallUsers, setBlockedCallUsers] = useState(() => {
-    return safeStorage.getParsed('vlive_blocked_call_users_v1', []);
-  });
+  const [blockedCallUsers, setBlockedCallUsers] = useState([]);
 
   useEffect(() => {
     safeStorage.setItem('vlive_blocked_call_users_v1', JSON.stringify(blockedCallUsers));
@@ -1886,9 +1866,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [isChatSearchOpen, setIsChatSearchOpen] = useState(false);
   const [chatSearchQuery, setChatSearchQuery] = useState('');
 
-  const [conversations, setConversations] = useState(() => {
-    return safeStorage.getParsed('vlive_direct_conversations_v3', INITIAL_CONVERSATIONS);
-  });
+  const [conversations, setConversations] = useState(INITIAL_CONVERSATIONS);
 
   useEffect(() => {
     safeStorage.setItem('vlive_direct_conversations_v3', JSON.stringify(conversations));
@@ -1917,18 +1895,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const isUserSuperAdmin = currentUserRole === 'super_admin' || String(currentTelegramId).trim() === SUPER_ADMIN_TELEGRAM_ID || isUserRayan;
 
   // Transactions State for Admin & Payouts
-  const [transactionsList, setTransactionsList] = useState(() => {
-    return safeStorage.getParsed('vlive_app_transactions_v3', INITIAL_TRANSACTIONS);
-  });
+  const [transactionsList, setTransactionsList] = useState(INITIAL_TRANSACTIONS);
 
   useEffect(() => {
     safeStorage.setItem('vlive_app_transactions_v3', JSON.stringify(transactionsList));
   }, [transactionsList]);
 
   // Verifications State for Admin
-  const [verificationsList, setVerificationsList] = useState(() => {
-    return safeStorage.getParsed('vlive_app_verifications_v3', INITIAL_VERIFICATIONS);
-  });
+  const [verificationsList, setVerificationsList] = useState(INITIAL_VERIFICATIONS);
 
   useEffect(() => {
     safeStorage.setItem('vlive_app_verifications_v3', JSON.stringify(verificationsList));
@@ -3835,8 +3809,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [isRecordingLive, setIsRecordingLive] = useState(false);
 
   // REAL-TIME LIVE STREAM POLL SYSTEM STATE
-  const [activeLivePoll, setActiveLivePoll] = useState(() => {
-    return safeStorage.getParsed('vlive_active_live_poll_v1', {
+  const [activeLivePoll, setActiveLivePoll] = useState({
       id: 'poll_demo_1',
       streamId: 'default',
       hostUsername: 'Sahar_Miller',
@@ -3852,7 +3825,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       isActive: true,
       createdAt: Date.now()
     });
-  });
 
   const [isCreatePollModalOpen, setIsCreatePollModalOpen] = useState(false);
   const [pollQuestionInput, setPollQuestionInput] = useState('');
@@ -4815,7 +4787,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             
           const detectedTgId = tgUser?.id ? String(tgUser.id) : '108492039';
 
-          const handleTelegramOneTapAuth = () => {
+          const handleTelegramOneTapAuth = async () => {
             if (!termsAgreed) {
               showToast(loc('لطفاً ابتدا قوانین و شرایط استفاده را تأیید کنید', 'Please accept Terms of Service & Privacy Policy to continue'));
               return;
@@ -4826,22 +4798,30 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
             }
 
-            // Save user profile state
-            setUserName(detectedTgName);
-            setCurrentUsername(detectedTgUsername);
-            setUserAvatar(detectedTgAvatar);
-            setAuthTelegramId(detectedTgId);
-            setAuthFullName(detectedTgName);
-            setAuthUsername(detectedTgUsername);
+            const initData = typeof window !== 'undefined' ? window.Telegram?.WebApp?.initData || '' : '';
+            const authRes = await apiAuth.loginWithTelegram(initData);
             
-            // Set logged in
-            setIsLoggedIn(true);
-            safeStorage.setItem('vlive_user_logged_in', 'true');
-            safeStorage.setItem('vlive_current_username', detectedTgUsername);
-            safeStorage.setItem('vlive_user_name', detectedTgName);
-            safeStorage.setItem('vlive_user_avatar', detectedTgAvatar);
-
-            showToast(loc(`✨ ورود موفق با تلگرام! خوش آمدید @${detectedTgUsername}`, `✨ Authenticated via Telegram! Welcome @${detectedTgUsername}`));
+            if (authRes && authRes.success && authRes.user) {
+              const u = authRes.user;
+              const finalName = u.first_name || u.name || u.username;
+              const finalUsername = u.username;
+              const finalAvatar = u.avatar_url || u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';
+              
+              setUserName(finalName);
+              setCurrentUsername(finalUsername);
+              setUserAvatar(finalAvatar);
+              setAuthFullName(finalName);
+              setAuthUsername(finalUsername);
+              
+              setIsLoggedIn(true);
+              safeStorage.setItem('vlive_user_logged_in', 'true');
+              safeStorage.setItem('vlive_current_username', finalUsername);
+              safeStorage.setItem('vlive_user_name', finalName);
+              safeStorage.setItem('vlive_user_avatar', finalAvatar);
+              showToast(loc(`✨ ورود موفق با تلگرام! خوش آمدید @${finalUsername}`, `✨ Authenticated via Telegram! Welcome @${finalUsername}`));
+            } else {
+              showToast(loc('❌ خطا در ورود: ' + (authRes?.error || 'Unknown Error'), '❌ Login Failed: ' + (authRes?.error || 'Unknown Error')));
+            }
           };
 
           const handleGuestExplorerAuth = () => {
