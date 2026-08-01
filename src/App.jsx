@@ -5697,73 +5697,25 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </div>
             )}
 
-            {/* 2. STORIES BAR (استوری‌ها) */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-300 px-1">
-                <span className="flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-pink-400" />
-                  {loc('استوری‌های زنده', 'Live Stories')}
-                </span>
-                <span className="text-[10px] text-slate-500">{loc('۲۴ ساعته', '24h Express')}</span>
-              </div>
-
-              <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
-                {/* Add Story Button */}
-                <label className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group">
-                  <div className="w-16 h-16 rounded-full bg-slate-900 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 group-hover:border-pink-400 transition shadow-md">
-                    <Plus className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-bold text-pink-300">{loc('افزودن استوری', 'Add Story')}</span>
-                  <input type="file" accept="image/*" onChange={handleGalleryImageUpload} className="hidden" />
-                </label>
-
-                {/* Story Items */}
-                {[
-                  { name: 'سحر 🌟', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80', isLive: true },
-                  { name: `${userName} 👑`, avatar: userAvatar, isLive: true },
-                  { name: 'مونا 🎵', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80', isLive: true },
-                  { name: 'الکس 🎮', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80', isLive: false },
-                  { name: 'النا 💃', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80', isLive: true },
-                  { name: 'یاسمن 🎨', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80', isLive: false }
-                ].map((s, idx) => (
-                  <button 
-                    key={idx}
-                    onClick={() => showToast(loc(`مشاهده استوری ${s.name}`, `View story of ${s.name}`))}
-                    className="flex flex-col items-center gap-1.5 shrink-0 group active:scale-95 transition"
-                  >
-                    <div className={`relative w-16 h-16 rounded-full p-0.5 ${s.isLive ? 'bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 animate-pulse' : 'bg-slate-800'}`}>
-                      <img src={s.avatar} alt={s.name} className="w-full h-full object-cover rounded-full border-2 border-slate-950" />
-                      {s.isLive && (
-                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-pink-600 text-white font-black text-[8px] px-1.5 py-0.2 rounded-full border border-slate-950 shadow">
-                          LIVE
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-300 truncate max-w-[64px]">{s.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 2. HORIZONTAL CATEGORY SCROLL (دسته‌بندی لایوها) */}
+            {/* 2. HORIZONTAL CATEGORY SCROLL */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 px-1">
-                <span>{loc('دسته‌بندی‌ها و کانال‌ها', 'Categories & Channels')}</span>
-                <span className="text-pink-400 font-mono">{loc('۱۰ کانال فعال', '10 Channels')}</span>
+                <span>Categories & Channels</span>
+                <span className="text-pink-400 font-mono">10 Active Channels</span>
               </div>
 
               <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
                 {[
-                  { id: 'all', label: loc('🌍 همه', '🌍 All'), count: '۲.۸ هزار' },
-                  { id: 'trending', label: loc('🔥 داغ و پرطرفدار', '🔥 Trending'), count: '۹۴۰' },
-                  { id: 'gaming', label: loc('🎮 گیمینگ', '🎮 Gaming'), count: '۴۱۰' },
-                  { id: 'music', label: loc('🎵 موسیقی', '🎵 Music'), count: '۳۲۰' },
-                  { id: 'dance', label: loc('💃 رقص', '💃 Dance'), count: '۲۸۰' },
-                  { id: 'singing', label: loc('🎤 خوانندگی', '🎤 Singing'), count: '۲۱۰' },
-                  { id: 'chat', label: loc('💬 گفتگو و گپ', '💬 Chat'), count: '۵۵۰' },
-                  { id: 'education', label: loc('🎓 آموزشی', '🎓 Education'), count: '۱۳۰' },
-                  { id: 'dating', label: loc('❤️ دوستیابی', '❤️ Dating'), count: '۳۸۰' },
-                  { id: 'vip', label: loc('👑 اختصاصی VIP', '👑 VIP 18+'), count: '۱۸۰' }
+                  { id: 'all', label: '🌍 All', count: '2.8K' },
+                  { id: 'trending', label: '🔥 Trending', count: '940' },
+                  { id: 'gaming', label: '🎮 Gaming', count: '410' },
+                  { id: 'music', label: '🎵 Music', count: '320' },
+                  { id: 'dance', label: '💃 Dance', count: '280' },
+                  { id: 'singing', label: '🎤 Singing', count: '210' },
+                  { id: 'chat', label: '💬 Chat', count: '550' },
+                  { id: 'education', label: '🎓 Education', count: '130' },
+                  { id: 'dating', label: '❤️ Dating', count: '380' },
+                  { id: 'vip', label: '👑 VIP 18+', count: '180' }
                 ].map(cat => (
                   <button 
                     key={cat.id}
@@ -5776,71 +5728,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     </span>
                   </button>
                 ))}
-              </div>
-            </div>
-
-            {/* 4. ACTIVE MATCH & RULES CARD (بخش مسابقه و قوانین PK & Match) */}
-            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-xs font-black text-white flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-amber-400" />
-                  {loc('بخش مسابقه زنده و قوانین PK & Match', 'Live Match & PK Rules Section')}
-                </h3>
-                <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
-                  {loc('رویداد فعال 🔥', 'Active Event 🔥')}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white">🥊 مسابقه PK Battle</span>
-                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full">در جریان</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400">چالش هیجان‌انگیز استریمرها با امتیازدهی آنی و قوانین ضدتقلب.</p>
-                  <button 
-                    onClick={() => {
-                      setIsPkBattleActive(true);
-                      showToast('مسابقه PK Battle با موفقیت روی صفحه فعال شد!');
-                    }}
-                    className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-xs shadow-md hover:scale-[1.02] active:scale-95 transition"
-                  >
-                    {loc('ورود به مسابقه 🏆', 'Enter Match 🏆')}
-                  </button>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white">🎲 مچ رندوم (۳ بار رایگان)</span>
-                    <span className="text-[10px] text-pink-400 font-bold bg-pink-500/10 px-2 py-0.5 rounded-full">{freeMatchCallsLeft}/3 رایگان</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400">تماس تصویری رندوم ۳۰ ثانیه‌ای رایگان با کاربران تاییدشده.</p>
-                  <button 
-                    onClick={() => {
-                      if (freeMatchCallsLeft <= 0) {
-                        showToast('⚠️ سهمیه تماس‌های رندوم رایگان امروز شما به پایان رسیده است.');
-                        return;
-                      }
-                      setIsMatchModalOpen(true);
-                      setMatchState('idle');
-                      setMatchCallSeconds(30);
-                    }}
-                    className="w-full py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-md hover:scale-[1.02] active:scale-95 transition"
-                  >
-                    {loc('شروع مچ ۳۰ ثانیه‌ای 🎲', 'Start 30s Match 🎲')}
-                  </button>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-                    <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
-                    <span>قوانین کلیدی (Match Rules)</span>
-                  </div>
-                  <ul className="text-[10px] text-slate-400 space-y-1 list-disc list-inside">
-                    <li>ممنوعیت ربات و اکانت فیک (Anti-Fraud)</li>
-                    <li>تایید هویت کاربران و امنیت کامل تماس</li>
-                  </ul>
-                </div>
               </div>
             </div>
 
