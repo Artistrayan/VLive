@@ -35,26 +35,26 @@ const PRESET_AVATARS = [
 
 // CATALOG OF 20+ DISTINCT GIFTS WITH SVG ICONS & COIN PRICES
 const GIFTS_CATALOG = [
-  { id: 'rose', name: 'Red Rose', coins: 10, category: 'Basic', icon: Flower, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-  { id: 'heart', name: 'Red Heart', coins: 50, category: 'Basic', icon: Heart, color: 'text-red-500', bg: 'bg-red-500/10' },
-  { id: 'kiss', name: 'Magic Sparkles', coins: 100, category: 'Basic', icon: Sparkles, color: 'text-pink-400', bg: 'bg-pink-500/10' },
-  { id: 'teddy', name: 'Warm Smile', coins: 250, category: 'Popular', icon: Smile, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-  { id: 'diamond', name: 'Shining Gem', coins: 500, category: 'Luxury', icon: Gem, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
-  { id: 'ring', name: 'Gold Ring', coins: 1000, category: 'Luxury', icon: CircleDot, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
-  { id: 'champagne', name: 'Celebration Wine', coins: 1500, category: 'Party', icon: Wine, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-  { id: 'crown', name: 'Royal Crown', coins: 2500, category: 'Royal', icon: Crown, color: 'text-amber-300', bg: 'bg-amber-500/20' },
-  { id: 'sports_car', name: 'Sports Car', coins: 5000, category: 'VIP', icon: Car, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-  { id: 'supercar', name: 'VIP Supercar', coins: 8000, category: 'VIP', icon: Zap, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-  { id: 'gold_bar', name: 'Gold Vault', coins: 10000, category: 'Asset', icon: Box, color: 'text-yellow-300', bg: 'bg-yellow-500/20' },
-  { id: 'jet', name: 'Private Jet', coins: 15000, category: 'VIP', icon: Send, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
-  { id: 'yacht', name: 'Luxury Yacht', coins: 20000, category: 'Super VIP', icon: Anchor, color: 'text-teal-400', bg: 'bg-teal-500/10' },
-  { id: 'castle', name: 'Golden Fortress', coins: 25000, category: 'Super VIP', icon: Shield, color: 'text-yellow-500', bg: 'bg-yellow-600/10' },
-  { id: 'rocket', name: 'Space Rocket', coins: 30000, category: 'Super VIP', icon: Rocket, color: 'text-red-400', bg: 'bg-red-500/10' },
-  { id: 'fireworks', name: 'VIP Fireworks', coins: 35000, category: 'Party', icon: Sparkles, color: 'text-pink-300', bg: 'bg-pink-400/20' },
-  { id: 'phoenix', name: 'Fire Phoenix', coins: 40000, category: 'Mythic', icon: Flame, color: 'text-orange-500', bg: 'bg-orange-500/20' },
-  { id: 'dragon', name: 'Golden Dragon', coins: 50000, category: 'Mythic', icon: Flame, color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
-  { id: 'galaxy', name: 'Cosmic Galaxy', coins: 75000, category: 'Legendary', icon: Globe, color: 'text-cyan-300', bg: 'bg-cyan-400/20' },
-  { id: 'vip_star', name: 'Platinum Star', coins: 100000, category: 'Legendary', icon: Star, color: 'text-amber-200', bg: 'bg-amber-300/20' }
+  { id: 'rose', name: 'Red Rose', coins: 10, category: 'Basic', icon: Flower, emoji: '🌹', color: 'text-rose-500', bg: 'bg-rose-500/10' },
+  { id: 'heart', name: 'Red Heart', coins: 50, category: 'Basic', icon: Heart, emoji: '❤️', color: 'text-red-500', bg: 'bg-red-500/10' },
+  { id: 'kiss', name: 'Magic Sparkles', coins: 100, category: 'Basic', icon: Sparkles, emoji: '✨', color: 'text-pink-400', bg: 'bg-pink-500/10' },
+  { id: 'teddy', name: 'Warm Smile', coins: 250, category: 'Popular', icon: Smile, emoji: '😊', color: 'text-amber-400', bg: 'bg-amber-500/10' },
+  { id: 'diamond', name: 'Shining Gem', coins: 500, category: 'Luxury', icon: Gem, emoji: '💎', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+  { id: 'ring', name: 'Gold Ring', coins: 1000, category: 'Luxury', icon: CircleDot, emoji: '💍', color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+  { id: 'champagne', name: 'Celebration Wine', coins: 1500, category: 'Party', icon: Wine, emoji: '🍷', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+  { id: 'crown', name: 'Royal Crown', coins: 2500, category: 'Royal', icon: Crown, emoji: '👑', color: 'text-amber-300', bg: 'bg-amber-500/20' },
+  { id: 'sports_car', name: 'Sports Car', coins: 5000, category: 'VIP', icon: Car, emoji: '🏎️', color: 'text-blue-400', bg: 'bg-blue-500/10' },
+  { id: 'supercar', name: 'VIP Supercar', coins: 8000, category: 'VIP', icon: Zap, emoji: '⚡', color: 'text-purple-400', bg: 'bg-purple-500/10' },
+  { id: 'gold_bar', name: 'Gold Vault', coins: 10000, category: 'Asset', icon: Box, emoji: '📦', color: 'text-yellow-300', bg: 'bg-yellow-500/20' },
+  { id: 'jet', name: 'Private Jet', coins: 15000, category: 'VIP', icon: Send, emoji: '🚀', color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+  { id: 'yacht', name: 'Luxury Yacht', coins: 20000, category: 'Super VIP', icon: Anchor, emoji: '🛥️', color: 'text-teal-400', bg: 'bg-teal-500/10' },
+  { id: 'castle', name: 'Golden Fortress', coins: 25000, category: 'Super VIP', icon: Shield, emoji: '🏰', color: 'text-yellow-500', bg: 'bg-yellow-600/10' },
+  { id: 'rocket', name: 'Space Rocket', coins: 30000, category: 'Super VIP', icon: Rocket, emoji: '🚀', color: 'text-red-400', bg: 'bg-red-500/10' },
+  { id: 'fireworks', name: 'VIP Fireworks', coins: 35000, category: 'Party', icon: Sparkles, emoji: '🎆', color: 'text-pink-300', bg: 'bg-pink-400/20' },
+  { id: 'phoenix', name: 'Fire Phoenix', coins: 40000, category: 'Mythic', icon: Flame, emoji: '🔥', color: 'text-orange-500', bg: 'bg-orange-500/20' },
+  { id: 'dragon', name: 'Golden Dragon', coins: 50000, category: 'Mythic', icon: Flame, emoji: '🐉', color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
+  { id: 'galaxy', name: 'Cosmic Galaxy', coins: 75000, category: 'Legendary', icon: Globe, emoji: '🌌', color: 'text-cyan-300', bg: 'bg-cyan-400/20' },
+  { id: 'vip_star', name: 'Platinum Star', coins: 100000, category: 'Legendary', icon: Star, emoji: '⭐', color: 'text-amber-200', bg: 'bg-amber-300/20' }
 ];
 
 // APP MULTI-LANGUAGE LIST & INTERNATIONALIZATION DICTIONARY
@@ -838,9 +838,9 @@ export default function App() {
     syncUserAndFetchBackendProfiles();
     const intervalId = setInterval(() => {
       syncUserAndFetchBackendProfiles();
-    }, 5000); // 5-second real-time polling sync across devices/tabs
+    }, 15000); // 15-second gentle polling sync
     return () => clearInterval(intervalId);
-  }, [isLoggedIn, userName, currentUsername, userAvatar, userBio, userGender, userCoins, vipPlan, userRank]);
+  }, [isLoggedIn]);
 
   // Server Keep-Alive Ping & Performance Initialization
   useEffect(() => {
@@ -7576,7 +7576,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             {/* 3. SUB-TAB 1: SWIPE MATCH DECK */}
             {matchSubTab === 'swipe' && (
               <div className="space-y-4">
-                {matchCardIndex < matchDeckProfiles.length ? (
+                {matchCardIndex < matchDeckProfiles.length && matchDeckProfiles[matchCardIndex] ? (
                   <div 
                     onTouchStart={(e) => {
                       const touch = e.touches[0];
@@ -8808,21 +8808,23 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                               const newMsg = {
                                 id: Date.now(),
                                 sender: 'me',
-                                text: "Sent " + g.name + " " + g.icon,
+                                text: "Sent " + g.name + " " + (g.emoji || '🎁'),
                                 type: 'gift',
                                 time: nowTime
                               };
-                              return { ...c, lastMessage: "Sent " + g.name + " " + g.icon, lastTime: nowTime, messages: [...c.messages, newMsg] };
+                              return { ...c, lastMessage: "Sent " + g.name + " " + (g.emoji || '🎁'), lastTime: nowTime, messages: [...c.messages, newMsg] };
                             }
                             return c;
                           }));
 
                           setIsSendGiftInChatOpen(false);
-                          showToast("Sent " + g.name + " " + g.icon + "!");
+                          showToast("Sent " + g.name + " " + (g.emoji || '🎁') + "!");
                         }}
                         className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-amber-400 space-y-1 transition"
                       >
-                        <span className="text-2xl block">{g.icon}</span>
+                        <span className="text-2xl flex items-center justify-center text-amber-300">
+                          {g.emoji ? g.emoji : <g.icon className="w-6 h-6 mx-auto" />}
+                        </span>
                         <p className="font-bold text-white text-[11px]">{g.name}</p>
                         <span className="text-[10px] text-amber-300 font-black">{g.coins} Coins</span>
                       </button>
@@ -16551,8 +16553,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   style={{ top: `${g.y}%`, left: `${g.x}%` }}
                 >
                   <div className="relative p-3 bg-slate-950/90 rounded-2xl border-2 border-amber-400/90 shadow-[0_0_35px_rgba(245,158,11,1)] flex items-center gap-2.5 backdrop-blur-md">
-                    <span className="text-4xl filter drop-shadow-[0_0_20px_rgba(255,215,0,1)] animate-bounce">
-                      {g.gift?.icon || '🎁'}
+                    <span className="text-4xl filter drop-shadow-[0_0_20px_rgba(255,215,0,1)] animate-bounce flex items-center justify-center">
+                      {g.gift?.emoji ? g.gift.emoji : (g.gift?.icon && typeof g.gift.icon !== 'string' ? <g.gift.icon className="w-8 h-8 text-amber-300" /> : '🎁')}
                     </span>
                     <div className="flex flex-col">
                       <span className="text-xs font-black text-amber-300">
@@ -20250,7 +20252,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             {/* TAB 1: SWIPE MATCH DECK */}
             {matchSubTab === 'swipe' && (
               <div className="flex-1 flex flex-col justify-between overflow-y-auto space-y-4 py-1">
-                {matchCardIndex < matchDeckProfiles.length ? (
+                {matchCardIndex < matchDeckProfiles.length && matchDeckProfiles[matchCardIndex] ? (
                   <div className="relative flex-1 min-h-[380px] sm:min-h-[440px] rounded-3xl overflow-hidden bg-slate-950 border border-pink-500/30 shadow-2xl group flex flex-col justify-end">
                     
                     {/* Background Blur & Photo */}
