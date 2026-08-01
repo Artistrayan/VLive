@@ -20,7 +20,7 @@ import {
   Home, BarChart2, Tv, Megaphone, Target, Paperclip, Pin, Reply, MoreVertical,
   VolumeX, Trash2, Archive, FileText, CheckCheck, Laugh, Forward, SmilePlus,
   LockKeyhole, SendHorizontal, MessageCircle, Info, PhoneIncoming, PhoneOutgoing,
-  PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, 
+  PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert,
 } from 'lucide-react';
 
 // PRESET HIGH-RES AVATARS FOR PROFILE EDITING
@@ -5772,6 +5772,50 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <span className="w-6 h-1.5 rounded-full bg-pink-500" />
                 <span className="w-2 h-1.5 rounded-full bg-slate-700" />
                 <span className="w-2 h-1.5 rounded-full bg-slate-700" />
+              </div>
+            </div>
+
+            {/* 4. ACTIVE MATCH & RULES CARD (بخش مسابقه و قوانین PK & Match) */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 className="text-xs font-black text-white flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-amber-400" />
+                  {loc('بخش مسابقه زنده و قوانین PK & Match', 'Live Match & PK Rules Section')}
+                </h3>
+                <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+                  {loc('رویداد فعال 🔥', 'Active Event 🔥')}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white">🥊 مسابقه PK Battle vs @Soren</span>
+                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full">در جریان</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400">چالش هیجان‌انگیز استریمرها با امتیازدهی آنی و قوانین منصفانه ضدتقلب.</p>
+                  <button 
+                    onClick={() => {
+                      setIsPkBattleActive(true);
+                      showToast('مسابقه PK Battle با موفقیت روی صفحه فعال شد!');
+                    }}
+                    className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-xs shadow-md hover:scale-[1.02] active:scale-95 transition"
+                  >
+                    {loc('ورود به مسابقه و قوانین 🏆', 'Enter Match & Rules 🏆')}
+                  </button>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                    <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+                    <span>قوانین کلیدی مسابقه (Match Rules)</span>
+                  </div>
+                  <ul className="text-[10px] text-slate-400 space-y-1 list-disc list-inside">
+                    <li>ممنوعیت استفاده از ربات و اکانت‌های فیک (Anti-Fraud)</li>
+                    <li>ثبت امتیاز بر اساس ارسال هدیه و مشارکت زنده</li>
+                    <li>تایید هویت و عدم تقلب در امتیازدهی نهایی</li>
+                  </ul>
+                </div>
               </div>
             </div>
 
@@ -18588,6 +18632,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </div>
           </div>
         </div>
+      )}
+
       {/* MODAL: HOST STUDIO - CREATE POLL MODAL */}
       {isCreatePollModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
