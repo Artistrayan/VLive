@@ -4649,6 +4649,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     showToast(`🎁 Gift ${gift.name} (${gift.coins} coins) sent successfully!`);
   };
 
+  // Handle User Logout
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setAuthStep('welcome');
+    safeStorage.setItem('vlive_user_logged_in', 'false');
+    showToast(loc('با موفقیت از حساب کاربری خارج شدید', 'Logged out successfully'));
+  };
+
   // Confirm USDT Deposit
   const handleConfirmDeposit = () => {
     if (!depositTxId.trim()) {
@@ -20515,7 +20523,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
             {/* Dual Avatars Merging */}
             <div className="flex items-center justify-center gap-3 relative z-10 py-2">
-              <img src={currentAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80"} alt="Me" className="w-20 h-20 rounded-full object-cover border-4 border-pink-500 shadow-xl" />
+              <img src={userAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80"} alt="Me" className="w-20 h-20 rounded-full object-cover border-4 border-pink-500 shadow-xl" />
               <div className="w-10 h-10 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 flex items-center justify-center shadow-lg text-white text-lg animate-pulse z-20 -mx-4">
                 ❤️
               </div>
