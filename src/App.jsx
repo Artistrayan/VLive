@@ -5,6 +5,7 @@ import {
   apiWallet, apiGiftShop, apiVip, apiCalls, apiNotifications,
   apiCreatorStudio, apiReferral, apiAdmin
 } from './services/api';
+import { supabase } from './supabaseClient';
 import { compressImageFile, cacheManager, startKeepAlivePing, STREAM_QUALITY_PRESETS } from './services/performance';
 import { 
   Video, Shield, ShieldCheck, Star, Wallet, User, Lock, Award, Calendar, 
@@ -524,34 +525,7 @@ const INITIAL_TRANSACTIONS = [];
 const INITIAL_VERIFICATIONS = [];
 
 // Initial Direct Messages Conversations
-const INITIAL_CONVERSATIONS = [
-  {
-    id: 'vlive_official_support',
-    type: 'group',
-    isGroup: true,
-    groupName: 'V.Live Official Support & System 🌟',
-    groupAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80',
-    membersCount: 1,
-    user: {
-      username: 'vlive_support',
-      name: 'V.Live Support 🌟',
-      avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80',
-      isVerified: true,
-      role: 'System Support',
-      online: true,
-      city: 'Global'
-    },
-    lastMessage: 'Welcome to V.Live! Enjoy HD video calls and live streaming.',
-    lastTime: 'Just now',
-    unreadCount: 0,
-    pinned: true,
-    muted: false,
-    archived: false,
-    messages: [
-      { id: 1, sender: 'them', senderName: 'V.Live System', text: 'Welcome to V.Live! Enjoy HD video calls and live streaming.', translation: 'به V.Live خوش آمدید!', translated: false, time: 'Just now', status: 'read', type: 'text' }
-    ]
-  }
-];
+const INITIAL_CONVERSATIONS = [];
 
 // REUSABLE VERIFIED BADGE COMPONENT WITH CYAN NEON GLOW
 function VerifiedBadge({ className = "w-4 h-4", showLabel = false }) {
@@ -939,6 +913,34 @@ export default function App() {
     }).catch(err => console.warn('Wallet balance fetch notice:', err));
 
     // Fetch Active Streams from API
+
+    // SUPABASE PROFILE SYNC
+    apiProfile.getProfile().then(profile => {
+      if (profile) {
+        setUserName(profile.name || profile.username);
+        setCurrentUsername(profile.username);
+        setUserAvatar(profile.avatar || profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
+        setUserBio(profile.bio || '');
+        setUserGender(profile.gender || 'Not Specified');
+        setEditFullName(profile.name || profile.username);
+        setEditUsername(profile.username);
+        setEditAvatarUrl(profile.avatar || profile.avatar_url || '');
+        setEditBio(profile.bio || '');
+        setEditGender(profile.gender || 'Not Specified');
+      }
+    }).catch(err => console.warn('Profile load err:', err));
+
+
+    /* Additional API Loads for Production */
+    if (apiAdmin && typeof apiAdmin.getPosts === 'function') {
+      apiAdmin.getPosts().then(p => { if (p) setPosts(p); });
+    }
+    apiHome.getApprovedUsers().then(users => {
+      if (users) {
+        setUsersList(users);
+        setMatchDeckProfiles(users);
+      }
+    }).catch(err => console.warn('Users load err:', err));
     apiHome.getActiveStreams().then(streams => {
       if (streams && streams.length > 0) {
         console.log('Active API Streams Loaded:', streams.length);
@@ -953,6 +955,30 @@ export default function App() {
     }).catch(err => console.warn('Notifications fetch notice:', err));
   }, [isLoggedIn]);
 
+
+  // SUPABASE REALTIME
+  useEffect(() => {
+    const channel = supabase.channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        (payload) => {
+          console.log('Realtime Profile Change:', payload);
+          if (payload.eventType === 'INSERT') {
+            setUsersList(prev => [payload.new, ...prev]);
+            setMatchDeckProfiles(prev => [payload.new, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setUsersList(prev => prev.map(u => u.id === payload.new.id ? payload.new : u));
+            setMatchDeckProfiles(prev => prev.map(u => u.id === payload.new.id ? payload.new : u));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
   // Edit Profile Settings Form State
   const [editFullName, setEditFullName] = useState(userName);
   const [editUsername, setEditUsername] = useState(currentUsername);
@@ -969,12 +995,7 @@ export default function App() {
   const [userRole, setUserRole] = useState(() => {
     return safeStorage.getItem('vlive_user_role') || 'admin';
   });
-  const [posts, setPosts] = useState(() => {
-    return safeStorage.getParsed('vlive_user_posts', [
-      { id: 'post_1', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80', caption: 'Live Stream Setup 🌟', likes: 128, commentsCount: 14 },
-      { id: 'post_2', image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80', caption: '4K Private Call Studio 🎥', likes: 256, commentsCount: 32 }
-    ]);
-  });
+  const [posts, setPosts] = useState(() => safeStorage.getParsed('vlive_user_posts', []));
 
   const [userPhotosList, setUserPhotosList] = useState(() => {
     return safeStorage.getParsed('vlive_user_photos_v1', []);
@@ -991,12 +1012,7 @@ export default function App() {
   const [matchCallSeconds, setMatchCallSeconds] = useState(30);
 
   // Interactive Dating Match Deck States (REAL PRODUCTION USERS ONLY)
-  const [matchDeckProfiles, setMatchDeckProfiles] = useState([
-    { id: 1, name: 'Sara Maleki', username: 'Sara_Maleki', age: 22, city: 'Tehran', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80', isVerified: true, isVip: true, user_type: 'VERIFIED_USER', distance: '2 km', interests: ['☕ Coffee', '🎥 4K Live', '💖 VIP Studio', '🎵 Music'] },
-    { id: 2, name: 'Elnaz Karimi', username: 'Elnaz_Karimi', age: 24, city: 'Shiraz', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80', isVerified: true, isVip: true, user_type: 'VERIFIED_USER', distance: '5 km', interests: ['🌊 Ocean', '🎨 Art', '🎬 Cinema', '🐱 Pets'] },
-    { id: 3, name: 'Sahar Miller', username: 'Sahar_Miller', age: 23, city: 'Tehran', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80', isVerified: true, isVip: true, user_type: 'VERIFIED_USER', distance: '1 km', interests: ['☕ Chat & Chill', '🎧 Podcast', '🏋️ Fitness', '📸 Photo'] },
-    { id: 4, name: 'Maryam Hosseini', username: 'Maryam_Hosseini', age: 21, city: 'Isfahan', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80', isVerified: true, isVip: false, user_type: 'VERIFIED_USER', distance: '8 km', interests: ['🎵 Live Music', '✈️ Travel', '🧘 Yoga', '📚 Books'] }
-  ]);
+  const [matchDeckProfiles, setMatchDeckProfiles] = useState([]);
 
   // Keep Match Deck synced exclusively with Real Approved Users from Database
   useEffect(() => {
@@ -1933,90 +1949,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     riskThreshold: 'Medium' // 'Low' | 'Medium' | 'High'
   });
 
-  const [aiReportList, setAiReportList] = useState([
-    {
-      id: 'REP-101',
-      reporter: 'Elnaz_Karimi',
-      reportedUser: 'Scammer_Account_99',
-      category: 'Fake / Impersonation',
-      reportText: 'این کاربر با عکس فیک استریمرهای دیگه درخواست سکه و انتقال تتر میکنه!',
-      time: '۱۰ دقیقه قبل',
-      status: 'Pending',
-      aiClassification: null,
-      aiRiskScore: null,
-      aiRiskLevel: null,
-      aiReasoning: null,
-      isAnalyzing: false
-    },
-    {
-      id: 'REP-102',
-      reporter: 'Arash_VIP',
-      reportedUser: 'Toxic_Viewer_12',
-      category: 'Harassment & Foul Language',
-      reportText: 'ارسال پیام‌های توهین‌آمیز و تهدیدآمیز در چت لایو استریم',
-      time: '۲۵ دقیقه قبل',
-      status: 'Pending',
-      aiClassification: null,
-      aiRiskScore: null,
-      aiRiskLevel: null,
-      aiReasoning: null,
-      isAnalyzing: false
-    }
-  ]);
+  const [aiReportList, setAiReportList] = useState([]);
 
-  const [aiReportedChatsList, setAiReportedChatsList] = useState([
-    {
-      id: 'CHAT-REP-201',
-      sender: 'SpamBot_77',
-      recipient: 'Sara_Maleki',
-      messageText: 'ورود به سایت بخت‌آزمایی لینک زیر ۵۰۰۰۰ سکه رایگان t.me/fake_link',
-      reportReason: 'Spam & Scam link',
-      time: '14:20',
-      status: 'Pending',
-      aiAnalysis: null,
-      isAnalyzing: false
-    }
-  ]);
+  const [aiReportedChatsList, setAiReportedChatsList] = useState([]);
 
-  const [aiSupportTicketsList, setAiSupportTicketsList] = useState([
-    {
-      id: 'TICKET-301',
-      user: 'Maryam_Hosseini',
-      subject: 'عدم واریز سکه‌های خریداری‌شده با تتر',
-      messageBody: 'من ۲۰ تتر ترون واریز کردم ولی هنوز سکه‌ها به حسابم اضافه نشده. هش تراکنش: 0x8f3a...',
-      time: 'امروز 11:30',
-      status: 'Open',
-      aiSuggestedReply: null,
-      isGenerating: false
-    }
-  ]);
+  const [aiSupportTicketsList, setAiSupportTicketsList] = useState([]);
 
-  const [aiStreamerVerificationsList, setAiStreamerVerificationsList] = useState([
-    {
-      id: 'KYC-401',
-      username: 'Niloofar_Amini',
-      name: 'نیلوفر امینی',
-      docsSubmitted: ['کارت ملی هوشمند', 'سلفی ویدیویی با کد روز'],
-      photoUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80',
-      status: 'Pending',
-      aiCheck: null,
-      isAnalyzing: false
-    }
-  ]);
+  const [aiStreamerVerificationsList, setAiStreamerVerificationsList] = useState([]);
 
-  const [aiReferralFraudList, setAiReferralFraudList] = useState([
-    {
-      id: 'REF-501',
-      userId: 'Ref_Farmer_01',
-      username: 'User_Multi_Account',
-      referralCount: 42,
-      suspectedDuplicates: true,
-      registeredIps: ['185.220.101.4', '185.220.101.4', '185.220.101.4'],
-      status: 'Pending',
-      aiAnalysis: null,
-      isAnalyzing: false
-    }
-  ]);
+  const [aiReferralFraudList, setAiReferralFraudList] = useState([]);
 
   // AI Security Center Handler Functions
   const handleRunAiReportAnalyzer = async (reportId) => {
@@ -2181,25 +2122,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   });
 
   // Live Streams Management State
-  const [adminLivesList, setAdminLivesList] = useState([
-    { id: 1042, streamer: 'Elena Rostova', title: 'Late Night Acoustic Music Session 🎵', viewers: 1840, category: 'Music', duration: '1h 24m', status: 'Live' },
-    { id: 1043, streamer: 'Ali Reza', title: 'Gaming Championship Finals 🎮', viewers: 920, category: 'Gaming', duration: '45m', status: 'Live' },
-    { id: 1044, streamer: 'Sahar Miller', title: 'Chat & Chill Coffee Time ☕', viewers: 410, category: 'Talk', duration: '12m', status: 'Live' }
-  ]);
+  const [adminLivesList, setAdminLivesList] = useState([]);
 
   // Reports Management State
-  const [adminReportsList, setAdminReportsList] = useState([
-    { id: 801, category: 'Harassment', reason: 'Abusive language in live chat', targetUser: '@spambot99', reportedBy: '@user_102', time: '10 min ago', status: 'Pending' },
-    { id: 802, category: 'Inappropriate Content', reason: 'NSFW image avatar', targetUser: '@unknown_99', reportedBy: '@sahar_m', time: '25 min ago', status: 'Pending' },
-    { id: 803, category: 'Spam', reason: 'Repeated promotional link spamming', targetUser: '@spambot99', reportedBy: '@ali_streamer', time: '1 hr ago', status: 'Approved' }
-  ]);
+  const [adminReportsList, setAdminReportsList] = useState([]);
   const [adminReportCategoryFilter, setAdminReportCategoryFilter] = useState('All');
 
   // Wallet & Withdrawals State
-  const [adminWithdrawalsList, setAdminWithdrawalsList] = useState([
-    { id: 'W-901', user: 'Ali Reza (@ali_streamer)', amount: '$500 USDT', method: 'Tether TRC20', txHash: '0x8f9a...3b21', time: '15 min ago', status: 'Pending' },
-    { id: 'W-902', user: 'Elena Rostova (@elena_r)', amount: '$1,200 USDT', method: 'Tether TRC20', txHash: '0x1c4d...9a04', time: '2 hrs ago', status: 'Approved' }
-  ]);
+  const [adminWithdrawalsList, setAdminWithdrawalsList] = useState([]);
 
   // Gifts Catalog Admin State
   const [newAdminGiftName, setNewAdminGiftName] = useState('');
@@ -2224,16 +2154,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [isAddVipPlanModalOpen, setIsAddVipPlanModalOpen] = useState(false);
 
   // Ads & Banners Admin State
-  const [adminAdsList, setAdminAdsList] = useState([
-    { id: 1, title: 'Summer Coin Discount 30%', type: 'Banner', location: 'Home Hero', clicks: 4820, status: 'Active' },
-    { id: 2, title: 'Watch Video & Get 50 Free Coins', type: 'Rewarded Video', location: 'Wallet Page', clicks: 12900, status: 'Active' }
-  ]);
+  const [adminAdsList, setAdminAdsList] = useState([]);
 
   // Events & Competitions Admin State
-  const [adminEventsList, setAdminEventsList] = useState([
-    { id: 1, title: 'Summer Streamer Cup 2026 🏆', prizePool: '$10,000 USDT', participants: 48, status: 'Ongoing' },
-    { id: 2, title: 'Top Gifter Leaderboard Challenge 🎁', prizePool: '500,000 Coins', participants: 120, status: 'Upcoming' }
-  ]);
+  const [adminEventsList, setAdminEventsList] = useState([]);
 
   // Notification Broadcast State
   const [adminNotifTitle, setAdminNotifTitle] = useState('');
@@ -2310,19 +2234,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [adminReplyingTicket, setAdminReplyingTicket] = useState(null);
   const [adminTicketReplyText, setAdminTicketReplyText] = useState('');
 
-  const [adminModerationQueue, setAdminModerationQueue] = useState([
-    { id: 1, user: '@sahar_m', type: 'Profile Photo', mediaUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', status: 'Pending Review' },
-    { id: 2, user: '@ali_streamer', type: 'Live Thumbnail', mediaUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', status: 'Pending Review' }
-  ]);
+  const [adminModerationQueue, setAdminModerationQueue] = useState([]);
 
   const [adminStatsTimeframe, setAdminStatsTimeframe] = useState('24h');
   const [adminMinWithdrawal, setAdminMinWithdrawal] = useState('$50 USDT');
   const [adminTermsText, setAdminTermsText] = useState('Welcome to V.Live+. Respect community guidelines and terms of service.');
 
-  const [adminBackupsList, setAdminBackupsList] = useState([
-    { id: 'BK-20260728', size: '48.2 MB', date: '2026-07-28 12:00' },
-    { id: 'BK-20260727', size: '46.1 MB', date: '2026-07-27 12:00' }
-  ]);
+  const [adminBackupsList, setAdminBackupsList] = useState([]);
 
   const addAdminAuditLog = (actionText) => {
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -2331,12 +2249,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   };
 
   // System Audit Logs Feed State
-  const [adminLogsList, setAdminLogsList] = useState([
-    { time: '12:15', log: 'Admin deleted Live #1040 for Terms violation' },
-    { time: '12:30', log: 'User @spambot99 banned by Rayan Admin' },
-    { time: '13:05', log: 'Withdrawal #W-902 approved ($1,200 USDT)' },
-    { time: '13:40', log: 'System Backup #BK-20260728 successfully stored' }
-  ]);
+  const [adminLogsList, setAdminLogsList] = useState([]);
 
   // KYC & Gender Verification Modal State
   const [isKycModalOpen, setIsKycModalOpen] = useState(false);
@@ -2568,207 +2481,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [homeGenderFilter, setHomeGenderFilter] = useState('all');
   const [followedUsers, setFollowedUsers] = useState([1, 2]);
 
-  const [notificationsList, setNotificationsList] = useState([
-    // TODAY GROUP
-    { 
-      id: 1, 
-      type: 'messages', 
-      group: 'today', 
-      title: '💬 Ali sent you a message', 
-      body: 'Hey! Are you hosting a live stream tonight? We need to prepare the stage.', 
-      time: '2 min ago', 
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', 
-      unread: true, 
-      actionType: 'chat',
-      sender: 'Ali'
-    },
-    { 
-      id: 2, 
-      type: 'follows', 
-      group: 'today', 
-      title: '❤️ Sara started following you.', 
-      body: 'Sara Maleki is now following your V.LIVE profile.', 
-      time: '15 min ago', 
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', 
-      unread: true, 
-      actionType: 'follow', 
-      isFollowing: false,
-      sender: 'Sara Maleki'
-    },
-    { 
-      id: 3, 
-      type: 'likes', 
-      group: 'today', 
-      title: '👍 12 people liked your photo.', 
-      body: 'Your latest stage photo in VIP gallery is gaining popularity.', 
-      time: '1h ago', 
-      avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', 
-      unread: true 
-    },
-    { 
-      id: 4, 
-      type: 'live', 
-      group: 'today', 
-      title: '🔴 Ali is now LIVE', 
-      body: 'Ali started a 4K PK Battle live broadcast in Tehran stage.', 
-      time: '2h ago', 
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', 
-      unread: true, 
-      actionType: 'join_live',
-      streamHost: 'Ali'
-    },
-    { 
-      id: 5, 
-      type: 'gifts', 
-      group: 'today', 
-      title: '🎁 You received a Diamond Gift', 
-      body: 'From: @Arash_VIP | Gift: Diamond Crown 💎 | Value: 1,000 Coins ($20.00)', 
-      time: '3h ago', 
-      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80', 
-      unread: false,
-      sender: 'Arash_VIP',
-      giftName: 'Diamond Crown 💎',
-      giftValue: '1,000 Coins'
-    },
-    { 
-      id: 6, 
-      type: 'earnings', 
-      group: 'today', 
-      title: '💰 You earned 500 Coins today.', 
-      body: 'Your stream viewers sent 5 gifts during your live session.', 
-      time: '5h ago', 
-      unread: false 
-    },
-    { 
-      id: 7, 
-      type: 'earnings', 
-      group: 'today', 
-      title: '✅ Withdrawal completed.', 
-      body: 'USDT payout of $150.00 has been successfully credited to your TRC20 wallet.', 
-      time: '6h ago', 
-      unread: false 
-    },
-
-    // YESTERDAY GROUP
-    { 
-      id: 8, 
-      type: 'earnings', 
-      group: 'yesterday', 
-      title: '⏳ Withdrawal is under review.', 
-      body: 'Your request for $50.00 USDT cashout is being verified by finance team.', 
-      time: 'Yesterday', 
-      unread: false 
-    },
-    { 
-      id: 9, 
-      type: 'messages', 
-      group: 'yesterday', 
-      title: '📞 Missed Voice Call', 
-      body: 'You missed a 1-on-1 private voice call from @Elnaz', 
-      time: 'Yesterday', 
-      avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', 
-      unread: false, 
-      actionType: 'call_back',
-      sender: 'Elnaz'
-    },
-    { 
-      id: 10, 
-      type: 'messages', 
-      group: 'yesterday', 
-      title: '📹 Missed Video Call', 
-      body: 'You missed a 4K VIP video call from @Sara', 
-      time: 'Yesterday', 
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', 
-      unread: false, 
-      actionType: 'call_back',
-      sender: 'Sara'
-    },
-    { 
-      id: 11, 
-      type: 'system', 
-      group: 'yesterday', 
-      title: '📢 New App Version v4.2.0 Released', 
-      body: 'Includes PK Battles 2.0, 4K camera filters, and faster USDT payouts!', 
-      time: 'Yesterday', 
-      unread: false 
-    },
-    { 
-      id: 12, 
-      type: 'system', 
-      group: 'yesterday', 
-      title: '🛠️ Scheduled System Maintenance', 
-      body: 'Server maintenance completed smoothly. Enjoy ultra-fast zero latency streaming.', 
-      time: 'Yesterday', 
-      unread: false 
-    },
-    { 
-      id: 13, 
-      type: 'system', 
-      group: 'yesterday', 
-      title: '🔒 Security Alert: Login from New Device', 
-      body: 'Device: Samsung Galaxy S24 Ultra (Tehran, Iran) at 14:22 UTC.', 
-      time: 'Yesterday', 
-      unread: false 
-    },
-
-    // OLDER GROUP
-    { 
-      id: 14, 
-      type: 'system', 
-      group: 'older', 
-      title: '👑 Your VIP expires in 3 days.', 
-      body: 'Renew now to maintain your 3D Entrance effects and Gold Crown badge.', 
-      time: '2 days ago', 
-      unread: false, 
-      actionType: 'renew_vip' 
-    },
-    { 
-      id: 15, 
-      type: 'earnings', 
-      group: 'older', 
-      title: '🏆 You reached Rank #5', 
-      body: 'Congratulations! You are in Top 5 Streamers of the Weekly Leaderboard.', 
-      time: '3 days ago', 
-      unread: false 
-    },
-    { 
-      id: 16, 
-      type: 'earnings', 
-      group: 'older', 
-      title: '🎯 Daily Mission Completed', 
-      body: 'Reward: +200 Coins added to your account balance.', 
-      time: '4 days ago', 
-      unread: false,
-      actionType: 'claimed_mission'
-    },
-    { 
-      id: 17, 
-      type: 'earnings', 
-      group: 'older', 
-      title: '🎁 Reward Received', 
-      body: 'Watched sponsored video ad: +20 Coins credited.', 
-      time: '5 days ago', 
-      unread: false 
-    },
-    { 
-      id: 18, 
-      type: 'system', 
-      group: 'older', 
-      title: '✅ Your identity has been verified.', 
-      body: 'Your KYC badge is now active. You can now cash out USDT directly.', 
-      time: '6 days ago', 
-      unread: false 
-    },
-    { 
-      id: 19, 
-      type: 'system', 
-      group: 'older', 
-      title: '⚠️ Your report has been reviewed.', 
-      body: 'Our moderation team reviewed your report and took safety action.', 
-      time: '1 week ago', 
-      unread: false 
-    }
-  ]);
+  const [notificationsList, setNotificationsList] = useState([]);
   
   
   // ==================== ADVANCED STORIES SYSTEM STATE ====================
@@ -2789,54 +2502,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [storyReplyText, setStoryReplyText] = useState('');
   const [isStoryViewersOpen, setIsStoryViewersOpen] = useState(false);
 
-  const [advancedStories, setAdvancedStories] = useState([
-    {
-      id: 'my_story',
-      isMe: true,
-      hasUnseen: false,
-      user: { name: userName, avatar: userAvatar, isVip: true },
-      items: [
-        { id: 's1', type: 'photo', url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=400&q=80', duration: 5, views: 120, likes: 45, time: '2h ago' },
-        { id: 's2', type: 'video', url: 'https://www.w3schools.com/html/mov_bbb.mp4', duration: 15, views: 80, likes: 20, time: '1h ago', hasPoll: true, pollQuestion: 'Next stream game?', pollOptions: ['Valorant', 'CS2'] }
-      ]
-    },
-    {
-      id: 'story_sara',
-      isMe: false,
-      hasUnseen: true,
-      user: { name: 'Sara Maleki', username: 'Sara_Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', isVip: true, role: 'VIP Streamer', user_type: 'VERIFIED_USER' },
-      items: [
-        { id: 's3', type: 'photo', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', duration: 5, time: '5m ago', link: { type: 'live', text: 'Join My Live!' } },
-      ]
-    },
-    {
-      id: 'story_elnaz',
-      isMe: false,
-      hasUnseen: true,
-      user: { name: 'Elnaz Karimi', username: 'Elnaz_Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', isVip: true, role: 'Online Model', user_type: 'VERIFIED_USER' },
-      items: [
-        { id: 's5', type: 'photo', url: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=400&q=80', duration: 5, time: '3h ago' }
-      ]
-    },
-    {
-      id: 'story_sahar',
-      isMe: false,
-      hasUnseen: true,
-      user: { name: 'Sahar Miller', username: 'Sahar_Miller', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', isVip: true, role: 'VIP Streamer', user_type: 'VERIFIED_USER' },
-      items: [
-        { id: 's6', type: 'photo', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80', duration: 5, time: '4h ago' }
-      ]
-    },
-    {
-      id: 'story_promo',
-      isMe: false,
-      hasUnseen: true,
-      user: { name: 'V.Live Official', username: 'VLive_Official', avatar: 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?auto=format&fit=crop&w=300&q=80', isVip: false, isPromo: true, user_type: 'VERIFIED_USER' },
-      items: [
-        { id: 's4', type: 'promo', url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=400&q=80', duration: 8, time: '1h ago', link: { type: 'event', text: 'Summer Event 2026' } }
-      ]
-    }
-  ]);
+  const [advancedStories, setAdvancedStories] = useState([]);
 
   const [storyArchive, setStoryArchive] = useState([
     { id: 'arc1', date: 'Yesterday', url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=200&q=80', views: 350 },
@@ -3826,43 +3492,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [pkWinner, setPkWinner] = useState(null);
 
   // 2. MULTI-GUEST PARTY ROOMS STATE
-  const [partyRoomsList, setPartyRoomsList] = useState([
-    {
-      id: 'party_1',
-      title: 'Royal Persian Lounge & Music',
-      hostName: 'Sara Maleki',
-      hostAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
-      totalSeats: 9,
-      occupiedSeats: 5,
-      seats: [
-        { index: 0, user: 'Sara Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', isHost: true, isMuted: false, user_type: 'VERIFIED_USER' },
-        { index: 1, user: 'Sahar Miller', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', isHost: false, isMuted: false, user_type: 'VERIFIED_USER' },
-        { index: 2, user: 'Maryam Hosseini', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80', isHost: false, isMuted: true, user_type: 'VERIFIED_USER' },
-        { index: 3, user: null, avatar: null, isHost: false, isMuted: false },
-        { index: 4, user: null, avatar: null, isHost: false, isMuted: false },
-        { index: 5, user: null, avatar: null, isHost: false, isMuted: false },
-        { index: 6, user: null, avatar: null, isHost: false, isMuted: false },
-        { index: 7, user: null, avatar: null, isHost: false, isMuted: false },
-        { index: 8, user: null, avatar: null, isHost: false, isMuted: false }
-      ]
-    },
-    {
-      id: 'party_2',
-      title: 'VIP Night Chat & Chill Party',
-      hostName: 'Elnaz Karimi',
-      hostAvatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
-      totalSeats: 6,
-      occupiedSeats: 3,
-      seats: [
-        { index: 0, user: 'Elnaz Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', isHost: true, isMuted: false },
-        { index: 1, user: 'Rayan Admin', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', isHost: false, isMuted: false },
-        { index: 2, user: null, avatar: null, isHost: false, isMuted: false },
-        { index: 3, user: null, avatar: null, isHost: false, isMuted: false },
-        { index: 4, user: null, avatar: null, isHost: false, isMuted: false },
-        { index: 5, user: null, avatar: null, isHost: false, isMuted: false }
-      ]
-    }
-  ]);
+  const [partyRoomsList, setPartyRoomsList] = useState([]);
   const [activePartyRoom, setActivePartyRoom] = useState(null);
   const [mySeatIndex, setMySeatIndex] = useState(null);
   const [isMicMuted, setIsMicMuted] = useState(false);
@@ -4008,30 +3638,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
 
   // 9. MOMENTS & SHORT CLIPS REELS STATE
-  const [momentsFeed, setMomentsFeed] = useState([
-    {
-      id: 'm_1',
-      host: 'Sara_Maleki',
-      hostAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
-      caption: 'Singing live Persian song for my VIP sponsors! Thank you all for the love!',
-      mediaUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
-      likes: 1240,
-      isLiked: false,
-      commentsCount: 88,
-      giftsCount: 45
-    },
-    {
-      id: 'm_2',
-      host: 'Elnaz_Karimi',
-      hostAvatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
-      caption: 'Crazy victory in PK battle tonight! Supercar animation was insane',
-      mediaUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80',
-      likes: 2150,
-      isLiked: true,
-      commentsCount: 142,
-      giftsCount: 89
-    }
-  ]);
+  const [momentsFeed, setMomentsFeed] = useState([]);
 
   // 10. DAILY QUESTS & TASKS REWARD CENTER STATE
   const [dailyQuests, setDailyQuests] = useState([
@@ -4348,44 +3955,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   }, [mediaStream, viewingStream]);
 
   // Streams Data
-  const [streamsList] = useState([
-    { 
-      id: 101, 
-      host: 'Sara Maleki', 
-      viewers: 1420, 
-      title: 'Live Chat & Q&A with VIP Members', 
-      thumbnail: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80',
-      isVip18: true,
-      is_vip: true,
-      isVip: true,
-      entryFee: 100,
-      rating: 4.9
-    },
-    { 
-      id: 102, 
-      host: 'Elnaz Karimi', 
-      viewers: 2890, 
-      title: 'Live Music Performance & Chat', 
-      thumbnail: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80',
-      isVip18: false,
-      is_vip: true,
-      isVip: true,
-      entryFee: 0,
-      rating: 4.8
-    },
-    { 
-      id: 103, 
-      host: 'Niloofar Amini', 
-      viewers: 940, 
-      title: 'Exclusive Host Live +18 VIP Stream', 
-      thumbnail: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=600&q=80',
-      isVip18: true,
-      is_vip: true,
-      isVip: true,
-      entryFee: 200,
-      rating: 4.6
-    }
-  ]);
+  const [streamsList] = useState([]);
 
   // Toast Helper
     // Live Timer for Story Progress
@@ -6633,7 +6203,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     ))}
                 </div>
               </div>
-            )}
 
             {/* DISCOVER & SEARCH APPROVED USERS SUBTAB */}
             {streamSubTab === 'users' && (
