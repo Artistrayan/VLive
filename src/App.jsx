@@ -965,6 +965,17 @@ export default function App() {
   const storyFileInputRef = useRef(null);
 
   // User Profile Posts & Stories Management State
+  const [privacyShowGifts, setPrivacyShowGifts] = useState(true);
+  const [userRole, setUserRole] = useState(() => {
+    return safeStorage.getItem('vlive_user_role') || 'admin';
+  });
+  const [posts, setPosts] = useState(() => {
+    return safeStorage.getParsed('vlive_user_posts', [
+      { id: 'post_1', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80', caption: 'Live Stream Setup 🌟', likes: 128, commentsCount: 14 },
+      { id: 'post_2', image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80', caption: '4K Private Call Studio 🎥', likes: 256, commentsCount: 32 }
+    ]);
+  });
+
   const [userPhotosList, setUserPhotosList] = useState(() => {
     return safeStorage.getParsed('vlive_user_photos_v1', []);
   });
