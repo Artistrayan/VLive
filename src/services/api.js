@@ -85,6 +85,12 @@ async function apiRequest(endpoint, options = {}) {
   }
 }
 
+export const isRealApprovedUser = (u) => {
+  if (!u) return false;
+  if (u.user_type === 'TEST_USER' || u.user_type === 'DEMO_USER' || u.isTest === true || u.isDemo === true || u.isFake === true) return false;
+  return u.status === 'approved' || u.isApproved !== false || u.user_type === 'REAL_USER' || u.user_type === 'VERIFIED_USER' || u.user_type === 'SUPER_ADMIN';
+};
+
 // -------------------------------------------------------------
 // STEP 1: AUTHENTICATION API METHODS
 // -------------------------------------------------------------

@@ -88,12 +88,14 @@ async function callGeminiBackend(prompt) {
 // REAL BACKEND DATABASE FOR USER PROFILES
 const DB_FILE = path.join(__dirname, 'users_db.json');
 
+// USER CLASSIFICATION CONSTANTS: REAL_USER, VERIFIED_USER, TEST_USER, DEMO_USER, ADMIN, SUPER_ADMIN
 const DEFAULT_USERS = [
   {
     id: 1,
     username: 'Sahar_Miller',
     name: 'Sahar Miller',
     role: 'VIP Streamer',
+    user_type: 'VERIFIED_USER',
     status: 'approved',
     isApproved: true,
     online: true,
@@ -115,6 +117,7 @@ const DEFAULT_USERS = [
     username: 'Sara_Maleki',
     name: 'Sara Maleki',
     role: 'VIP Streamer',
+    user_type: 'VERIFIED_USER',
     status: 'approved',
     isApproved: true,
     online: true,
@@ -136,6 +139,7 @@ const DEFAULT_USERS = [
     username: 'Elnaz_Karimi',
     name: 'Elnaz Karimi',
     role: 'Online Model',
+    user_type: 'VERIFIED_USER',
     status: 'approved',
     isApproved: true,
     online: true,
@@ -157,6 +161,7 @@ const DEFAULT_USERS = [
     username: 'Maryam_Hosseini',
     name: 'Maryam Hosseini',
     role: 'Official Host',
+    user_type: 'VERIFIED_USER',
     status: 'approved',
     isApproved: true,
     online: false,
@@ -178,6 +183,7 @@ const DEFAULT_USERS = [
     username: 'Rayan_VIP',
     name: 'Rayan Maleki',
     role: 'Super Admin',
+    user_type: 'SUPER_ADMIN',
     status: 'approved',
     isApproved: true,
     online: true,
@@ -196,12 +202,28 @@ const DEFAULT_USERS = [
   }
 ];
 
+// Permanent Backend Production Filter: Exclude TEST_USER, DEMO_USER, fake or banned accounts
+function getRealApprovedUsers(users) {
+  if (!Array.isArray(users)) return [];
+  return users.filter(u => {
+    if (!u) return false;
+    const isTestOrDemo = u.user_type === 'TEST_USER' || u.user_type === 'DEMO_USER' || u.isTest === true || u.isDemo === true || u.isFake === true;
+    const isBanned = u.status === 'banned' || u.status === 'disabled' || u.isBlocked === true;
+    const isApproved = u.status === 'approved' || u.isApproved !== false;
+    return !isTestOrDemo && !isBanned && isApproved;
+  });
+}
+
 function loadUsersDb() {
   try {
     if (fs.existsSync(DB_FILE)) {
       const content = fs.readFileSync(DB_FILE, 'utf-8');
       const parsed = JSON.parse(content);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Sanitize existing records in DB file
+        const cleaned = getRealApprovedUsers(parsed);
+        if (cleaned.length > 0) return cleaned;
+      }
     }
   } catch (e) {
     console.error('Error reading users_db.json:', e);
@@ -212,7 +234,9 @@ function loadUsersDb() {
 
 function saveUsersDb(users) {
   try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(users, null, 2), 'utf-8');
+    // Save only valid real/verified/admin users to persistence DB
+    const sanitized = getRealApprovedUsers(users);
+    fs.writeFileSync(DB_FILE, JSON.stringify(sanitized.length > 0 ? sanitized : DEFAULT_USERS, null, 2), 'utf-8');
   } catch (e) {
     console.error('Error writing users_db.json:', e);
   }
@@ -242,10 +266,10 @@ const server = http.createServer(async (req, res) => {
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
 
-      // GET /api/users or /api/profiles or /api/users/approved - Get all approved user profiles
+      // GET /api/users or /api/profiles or /api/users/approved - Get all approved real user profiles
       if (reqUrl === '/api/users' || reqUrl === '/api/profiles' || reqUrl === '/api/users/approved') {
         const users = loadUsersDb();
-        const approvedUsers = users.filter(u => u.status === 'approved' || u.isApproved !== false);
+        const approvedUsers = getRealApprovedUsers(users);
         return res.end(JSON.stringify(approvedUsers));
       }
 
@@ -262,6 +286,7 @@ const server = http.createServer(async (req, res) => {
           username: cleanUsername,
           name: cleanName,
           role: inputUser.role || (existingIndex >= 0 ? users[existingIndex].role : 'VIP Streamer'),
+          user_type: inputUser.user_type || (existingIndex >= 0 ? users[existingIndex].user_type : 'REAL_USER'),
           status: 'approved',
           isApproved: true,
           online: true,
@@ -271,7 +296,7 @@ const server = http.createServer(async (req, res) => {
           avatar: inputUser.avatar || inputUser.avatar_url || (existingIndex >= 0 ? users[existingIndex].avatar : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'),
           bio: inputUser.bio || (existingIndex >= 0 ? users[existingIndex].bio : 'Official V.Live Streamer'),
           coins: inputUser.coins || inputUser.wallet_stars || (existingIndex >= 0 ? users[existingIndex].coins : 5000),
-          isVerified: true,
+          isVerified: inputUser.isVerified !== undefined ? inputUser.isVerified : true,
           isVip: inputUser.isVip !== undefined ? inputUser.isVip : true,
           streamTitle: inputUser.streamTitle || (existingIndex >= 0 ? users[existingIndex].streamTitle : `${cleanName} 4K Live Stream 💖`),
           viewers: existingIndex >= 0 ? users[existingIndex].viewers : 150,
@@ -286,7 +311,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         saveUsersDb(users);
-        const approvedUsers = users.filter(u => u.status === 'approved' || u.isApproved !== false);
+        const approvedUsers = getRealApprovedUsers(users);
         return res.end(JSON.stringify({
           success: true,
           user: updatedUserRecord,
@@ -295,7 +320,7 @@ const server = http.createServer(async (req, res) => {
         }));
       }
 
-      // GET /api/users/search - Search approved users
+      // GET /api/users/search - Search approved real users
       if (reqUrl === '/api/users/search') {
         const fullUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
         const query = (fullUrl.searchParams.get('q') || '').toLowerCase();
@@ -303,7 +328,7 @@ const server = http.createServer(async (req, res) => {
         const city = fullUrl.searchParams.get('city') || '';
 
         const users = loadUsersDb();
-        const approvedUsers = users.filter(u => u.status === 'approved' || u.isApproved !== false);
+        const approvedUsers = getRealApprovedUsers(users);
 
         const filtered = approvedUsers.filter(u => {
           const matchesQuery = !query || u.username.toLowerCase().includes(query) || u.name.toLowerCase().includes(query) || (u.bio && u.bio.toLowerCase().includes(query));
@@ -315,10 +340,10 @@ const server = http.createServer(async (req, res) => {
         return res.end(JSON.stringify(filtered));
       }
 
-      // GET /api/streams/active - Get active live streams from approved users
+      // GET /api/streams/active - Get active live streams from approved real users
       if (reqUrl === '/api/streams/active') {
         const users = loadUsersDb();
-        const approvedUsers = users.filter(u => u.status === 'approved' || u.isApproved !== false);
+        const approvedUsers = getRealApprovedUsers(users);
         const streams = approvedUsers.map(u => ({
           id: u.id,
           host_username: u.username,
@@ -333,7 +358,8 @@ const server = http.createServer(async (req, res) => {
           city: u.city,
           age: u.age,
           isVip: u.isVip,
-          isVerified: u.isVerified
+          isVerified: u.isVerified,
+          user_type: u.user_type || 'VERIFIED_USER'
         }));
         return res.end(JSON.stringify(streams));
       }

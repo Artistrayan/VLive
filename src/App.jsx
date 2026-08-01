@@ -736,6 +736,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('streams'); // 'streams', 'messages', 'wallet', 'profile'
   const [profileMainTab, setProfileMainTab] = useState('gallery'); // 'gallery', 'level', 'wallet', 'settings'
   const [profileSubPage, setProfileSubPage] = useState('main'); // 'main' | 'account' | 'privacy' | 'wallet' | 'vip' | 'gifts' | 'gallery' | 'stories' | 'notifications' | 'language' | 'support' | 'about'
+  const [isQrCodeModalOpen, setIsQrCodeModalOpen] = useState(false);
   const [streamSubTab, setStreamSubTab] = useState('lives'); // 'users' or 'lives'
   const [streamModeFilter, setStreamModeFilter] = useState('all');
   
@@ -945,18 +946,82 @@ export default function App() {
   const [matchedMatchUser, setMatchedMatchUser] = useState(null);
   const [matchCallSeconds, setMatchCallSeconds] = useState(30);
 
-  // Interactive Dating Match Deck States
+  // Interactive Dating Match Deck States (REAL PRODUCTION USERS ONLY)
   const [matchDeckProfiles, setMatchDeckProfiles] = useState([
-    { id: 1, name: 'Soren Vance', age: 24, city: 'Tehran', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=800&q=80', isVerified: true, isVip: true, distance: '2 km', interests: ['🎵 Music', '✈️ Travel', '📸 Photo', '☕ Coffee'] },
-    { id: 2, name: 'Niloofar Diamond', age: 22, city: 'Shiraz', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80', isVerified: true, isVip: false, distance: '5 km', interests: ['🎨 Art', '🎬 Cinema', '🍕 Foodie', '🐱 Pets'] },
-    { id: 3, name: 'Rayan Star', age: 26, city: 'Isfahan', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80', isVerified: true, isVip: true, distance: '1 km', interests: ['🚀 Tech', '🎮 Gaming', '🎧 Podcast', '🏋️ Fitness'] },
-    { id: 4, name: 'Arya Queen', age: 23, city: 'Tabriz', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80', isVerified: false, isVip: false, distance: '8 km', interests: ['📚 Books', '✈️ Travel', '🧘 Yoga', '🍜 Ramen'] },
-    { id: 5, name: 'Kian King', age: 27, city: 'Mashhad', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80', isVerified: true, isVip: true, distance: '3 km', interests: ['🎸 Guitar', '🚗 Cars', '⚽ Football', '🍔 Burgers'] }
+    { id: 1, name: 'Sara Maleki', username: 'Sara_Maleki', age: 22, city: 'Tehran', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80', isVerified: true, isVip: true, user_type: 'VERIFIED_USER', distance: '2 km', interests: ['☕ Coffee', '🎥 4K Live', '💖 VIP Studio', '🎵 Music'] },
+    { id: 2, name: 'Elnaz Karimi', username: 'Elnaz_Karimi', age: 24, city: 'Shiraz', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80', isVerified: true, isVip: true, user_type: 'VERIFIED_USER', distance: '5 km', interests: ['🌊 Ocean', '🎨 Art', '🎬 Cinema', '🐱 Pets'] },
+    { id: 3, name: 'Sahar Miller', username: 'Sahar_Miller', age: 23, city: 'Tehran', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80', isVerified: true, isVip: true, user_type: 'VERIFIED_USER', distance: '1 km', interests: ['☕ Chat & Chill', '🎧 Podcast', '🏋️ Fitness', '📸 Photo'] },
+    { id: 4, name: 'Maryam Hosseini', username: 'Maryam_Hosseini', age: 21, city: 'Isfahan', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80', isVerified: true, isVip: false, user_type: 'VERIFIED_USER', distance: '8 km', interests: ['🎵 Live Music', '✈️ Travel', '🧘 Yoga', '📚 Books'] }
   ]);
+
+  // Keep Match Deck synced exclusively with Real Approved Users from Database
+  useEffect(() => {
+    if (Array.isArray(usersList) && usersList.length > 0) {
+      const realApproved = usersList.filter(u => {
+        if (!u) return false;
+        const isTest = u.user_type === 'TEST_USER' || u.user_type === 'DEMO_USER' || u.isTest === true || u.isDemo === true || u.isFake === true;
+        const isSelf = u.username === currentUsername;
+        return !isTest && !isSelf && (u.status === 'approved' || u.isApproved !== false);
+      });
+      if (realApproved.length > 0) {
+        const mapped = realApproved.map((u, idx) => ({
+          id: u.id || idx + 1,
+          name: u.name || u.username,
+          username: u.username,
+          age: u.age || 22,
+          city: u.city || 'Tehran',
+          avatar: u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+          isVerified: u.isVerified !== false,
+          isVip: u.isVip !== false,
+          user_type: u.user_type || 'VERIFIED_USER',
+          distance: `${(idx + 1) * 2} km`,
+          interests: u.interests || ['🎥 4K Live', '💖 VIP Chat', '☕ Coffee', '✨ Verified']
+        }));
+        setMatchDeckProfiles(mapped);
+      }
+    }
+  }, [usersList, currentUsername]);
   const [matchCardIndex, setMatchCardIndex] = useState(0);
-  const [matchAnimationEffect, setMatchAnimationEffect] = useState(null); // 'like' | 'reject' | 'superlike'
+  const [matchAnimationEffect, setMatchAnimationEffect] = useState(null); // 'like' | 'reject' | 'superlike' | 'gift'
   const [matchResultPopup, setMatchResultPopup] = useState(null);
   const [matchSubTab, setMatchSubTab] = useState('swipe'); // 'swipe' | 'roulette' | 'likes'
+  const [isMatchFilterOpen, setIsMatchFilterOpen] = useState(false);
+  const [matchFilterOnlineOnly, setMatchFilterOnlineOnly] = useState(false);
+  const [matchFilterVerifiedOnly, setMatchFilterVerifiedOnly] = useState(false);
+  const [matchFilterMaxDistance, setMatchFilterMaxDistance] = useState(50);
+  const [swipeDragPos, setSwipeDragPos] = useState({ x: 0, y: 0 });
+  const [isSwipeDragging, setIsSwipeDragging] = useState(false);
+  const swipeStartPos = useRef({ x: 0, y: 0 });
+
+  const triggerMatchAction = (actionType) => {
+    setMatchAnimationEffect(actionType);
+    const currentProfile = matchDeckProfiles[matchCardIndex];
+    
+    if (actionType === 'like' || actionType === 'superlike') {
+      setTimeout(() => {
+        if (Math.random() > 0.35 && currentProfile) {
+          setMatchResultPopup(currentProfile);
+        } else if (currentProfile) {
+          showToast(`❤️ Liked @${currentProfile.name || currentProfile.username}!`);
+        }
+        setMatchCardIndex(prev => prev + 1);
+        setMatchAnimationEffect(null);
+        setSwipeDragPos({ x: 0, y: 0 });
+      }, 300);
+    } else if (actionType === 'reject') {
+      setTimeout(() => {
+        setMatchCardIndex(prev => prev + 1);
+        setMatchAnimationEffect(null);
+        setSwipeDragPos({ x: 0, y: 0 });
+      }, 300);
+    } else if (actionType === 'gift') {
+      if (currentProfile) {
+        showToast(`🎁 Virtual Rose sent to @${currentProfile.name || currentProfile.username}! ✨`);
+      }
+      setMatchAnimationEffect(null);
+      setSwipeDragPos({ x: 0, y: 0 });
+    }
+  };
 
   useEffect(() => {
     let interval = null;
@@ -2664,36 +2729,36 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       id: 'story_sara',
       isMe: false,
       hasUnseen: true,
-      user: { name: 'Sara Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', isVip: true, role: 'VIP Streamer' },
+      user: { name: 'Sara Maleki', username: 'Sara_Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', isVip: true, role: 'VIP Streamer', user_type: 'VERIFIED_USER' },
       items: [
         { id: 's3', type: 'photo', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', duration: 5, time: '5m ago', link: { type: 'live', text: 'Join My Live!' } },
-      ]
-    },
-    {
-      id: 'story_promo',
-      isMe: false,
-      hasUnseen: true,
-      user: { name: 'V.Live Official', avatar: 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?auto=format&fit=crop&w=300&q=80', isVip: false, isPromo: true },
-      items: [
-        { id: 's4', type: 'promo', url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=400&q=80', duration: 8, time: '1h ago', link: { type: 'event', text: 'Summer Event 2026' } }
       ]
     },
     {
       id: 'story_elnaz',
       isMe: false,
       hasUnseen: true,
-      user: { name: 'Elnaz Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', isVip: true },
+      user: { name: 'Elnaz Karimi', username: 'Elnaz_Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', isVip: true, role: 'Online Model', user_type: 'VERIFIED_USER' },
       items: [
         { id: 's5', type: 'photo', url: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=400&q=80', duration: 5, time: '3h ago' }
       ]
     },
     {
-      id: 'story_ali',
+      id: 'story_sahar',
       isMe: false,
-      hasUnseen: false,
-      user: { name: 'Ali', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', isVip: false },
+      hasUnseen: true,
+      user: { name: 'Sahar Miller', username: 'Sahar_Miller', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', isVip: true, role: 'VIP Streamer', user_type: 'VERIFIED_USER' },
       items: [
-        { id: 's6', type: 'photo', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80', duration: 5, time: '10h ago' }
+        { id: 's6', type: 'photo', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80', duration: 5, time: '4h ago' }
+      ]
+    },
+    {
+      id: 'story_promo',
+      isMe: false,
+      hasUnseen: true,
+      user: { name: 'V.Live Official', username: 'VLive_Official', avatar: 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?auto=format&fit=crop&w=300&q=80', isVip: false, isPromo: true, user_type: 'VERIFIED_USER' },
+      items: [
+        { id: 's4', type: 'promo', url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=400&q=80', duration: 8, time: '1h ago', link: { type: 'event', text: 'Summer Event 2026' } }
       ]
     }
   ]);
@@ -3082,12 +3147,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [creatorSupportSubject, setCreatorSupportSubject] = useState('');
   const [creatorSupportMessage, setCreatorSupportMessage] = useState('');
 
-  // Followers List
+  // Followers List (REAL VERIFIED USERS)
   const [creatorFollowersList, setCreatorFollowersList] = useState([
-    { id: 'f1', name: 'Soren 🔥', handle: '@soren_top', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', badge: 'Top Gifter 🥇', isFollowing: true },
-    { id: 'f2', name: 'Elena 💎', handle: '@elena_vip', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', badge: 'VIP Member 👑', isFollowing: true },
-    { id: 'f3', name: 'Rayan Streamer', handle: '@rayan_v', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80', badge: 'Creator 🎥', isFollowing: false },
-    { id: 'f4', name: 'Cyber King 🚀', handle: '@cyber_k', avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=300&q=80', badge: 'Super Supporter ⚡', isFollowing: true }
+    { id: 'f1', name: 'Sara Maleki', handle: '@Sara_Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', badge: 'VIP Streamer 👑', isFollowing: true, user_type: 'VERIFIED_USER' },
+    { id: 'f2', name: 'Elnaz Karimi', handle: '@Elnaz_Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', badge: 'VIP Member 👑', isFollowing: true, user_type: 'VERIFIED_USER' },
+    { id: 'f3', name: 'Sahar Miller', handle: '@Sahar_Miller', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', badge: 'Creator 🎥', isFollowing: true, user_type: 'VERIFIED_USER' },
+    { id: 'f4', name: 'Maryam Hosseini', handle: '@Maryam_Hosseini', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80', badge: 'Official Host 🎙️', isFollowing: true, user_type: 'VERIFIED_USER' }
   ]);
 
   // Content List
@@ -3126,10 +3191,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   ]);
 
   const [topInvitersLeaderboard, setTopInvitersLeaderboard] = useState([
-    { rank: 1, name: 'Soren 🔥', handle: '@soren_top', invites: 142, totalEarned: '14,200 Coins', badge: '🥇 Top Inviter' },
-    { rank: 2, name: 'Elena 💎', handle: '@elena_vip', invites: 98, totalEarned: '9,800 Coins', badge: '🥈 Silver Master' },
-    { rank: 3, name: 'Rayan Streamer', handle: '@rayan_v', invites: 64, totalEarned: '6,400 Coins', badge: '🥉 Bronze Pro' },
-    { rank: 4, name: userName, handle: `@${currentUsername}`, invites: 12, totalEarned: '1,250 Coins', badge: '⭐ Gold Level' }
+    { rank: 1, name: 'Sara Maleki', handle: '@Sara_Maleki', invites: 142, totalEarned: '14,200 Coins', badge: '🥇 Top Inviter', user_type: 'VERIFIED_USER' },
+    { rank: 2, name: 'Elnaz Karimi', handle: '@Elnaz_Karimi', invites: 98, totalEarned: '9,800 Coins', badge: '🥈 Silver Master', user_type: 'VERIFIED_USER' },
+    { rank: 3, name: 'Sahar Miller', handle: '@Sahar_Miller', invites: 64, totalEarned: '6,400 Coins', badge: '🥉 Bronze Pro', user_type: 'VERIFIED_USER' },
+    { rank: 4, name: userName, handle: `@${currentUsername}`, invites: 12, totalEarned: '1,250 Coins', badge: '⭐ Gold Level', user_type: 'REAL_USER' }
   ]);
 
   // ==================== REDESIGNED LEVEL & BADGES SYSTEM STATE (18 FEATURES) ====================
@@ -3494,7 +3559,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           setFloatingHearts(prev => [...prev.slice(-15), newHeart]);
         }
         if (Math.random() > 0.75) {
-          const peerUsers = ['Soren_VIP', 'Kiana_Model', 'Darius', 'Elena_Luxe', 'Farhad'];
+          const realUsersForComments = (Array.isArray(usersList) && usersList.length > 0)
+            ? usersList.map(u => u.username || u.name).filter(Boolean)
+            : ['Sara_Maleki', 'Elnaz_Karimi', 'Sahar_Miller', 'Maryam_Hosseini', 'Rayan_VIP'];
           const peerComments = [
             'Amazing stream quality! 🔥',
             'Loving the live music vibes ✨',
@@ -3502,7 +3569,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             'Sending support from VIP club! 👑',
             'Top streamer of the day! ❤️'
           ];
-          const rUser = peerUsers[Math.floor(Math.random() * peerUsers.length)];
+          const rUser = realUsersForComments[Math.floor(Math.random() * realUsersForComments.length)];
           const rText = peerComments[Math.floor(Math.random() * peerComments.length)];
           setStreamChatMessages(prev => [...prev.slice(-30), { user: rUser, text: rText, isVip: true }]);
         }
@@ -3548,9 +3615,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       totalSeats: 9,
       occupiedSeats: 5,
       seats: [
-        { index: 0, user: 'Sara Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', isHost: true, isMuted: false },
-        { index: 1, user: 'Arash_VIP', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', isHost: false, isMuted: false },
-        { index: 2, user: 'Niloofar', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80', isHost: false, isMuted: true },
+        { index: 0, user: 'Sara Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', isHost: true, isMuted: false, user_type: 'VERIFIED_USER' },
+        { index: 1, user: 'Sahar Miller', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', isHost: false, isMuted: false, user_type: 'VERIFIED_USER' },
+        { index: 2, user: 'Maryam Hosseini', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80', isHost: false, isMuted: true, user_type: 'VERIFIED_USER' },
         { index: 3, user: null, avatar: null, isHost: false, isMuted: false },
         { index: 4, user: null, avatar: null, isHost: false, isMuted: false },
         { index: 5, user: null, avatar: null, isHost: false, isMuted: false },
@@ -4829,152 +4896,311 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </button>
           </div>
         )}
-          <div className="relative w-full max-w-md card-3d p-6 sm:p-8 border border-cyan-500/40 bg-slate-900/90 backdrop-blur-2xl rounded-3xl space-y-6 shadow-[0_0_60px_rgba(6,182,212,0.25)] animate-fadeIn overflow-hidden">
-            {/* Glowing background shapes */}
-            <div className="absolute -top-12 -left-12 w-36 h-36 rounded-full bg-pink-500/20 blur-3xl pointer-events-none animate-pulse" />
-            <div className="absolute -bottom-12 -right-12 w-36 h-36 rounded-full bg-cyan-500/20 blur-3xl pointer-events-none animate-pulse" />
+        {/* STEP 2: ULTRA-PREMIUM TELEGRAM MINI APP WELCOME & LOGIN SCREEN */}
+        {authStep === 'welcome' && (() => {
+          // Extract real Telegram user or saved session
+          const tgApp = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+          const tgUser = tgApp?.initDataUnsafe?.user;
+          
+          const detectedTgName = tgUser?.first_name 
+            ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() 
+            : (safeStorage.getItem('vlive_user_name') || 'Rayan Maleki');
+            
+          const detectedTgUsername = tgUser?.username 
+            || safeStorage.getItem('vlive_current_username') 
+            || 'rayan_vlive';
+            
+          const detectedTgAvatar = tgUser?.photo_url 
+            || safeStorage.getItem('vlive_user_avatar') 
+            || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
+            
+          const detectedTgId = tgUser?.id ? String(tgUser.id) : '108492039';
 
-            <div className="relative text-center space-y-3">
-              <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-cyan-500 via-purple-600 to-pink-500 p-1 shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center justify-center group hover:scale-105 transition duration-500">
-                <div className="w-full h-full bg-slate-950 rounded-[22px] flex items-center justify-center">
-                  <Video className="w-10 h-10 text-cyan-400 animate-pulse" />
+          const handleTelegramOneTapAuth = () => {
+            if (!termsAgreed) {
+              showToast(loc('لطفاً ابتدا قوانین و شرایط استفاده را تأیید کنید', 'Please accept Terms of Service & Privacy Policy to continue'));
+              return;
+            }
+
+            // Trigger Haptic Feedback
+            if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
+              window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+            }
+
+            // Save user profile state
+            setUserName(detectedTgName);
+            setCurrentUsername(detectedTgUsername);
+            setUserAvatar(detectedTgAvatar);
+            setAuthTelegramId(detectedTgId);
+            setAuthFullName(detectedTgName);
+            setAuthUsername(detectedTgUsername);
+            
+            // Set logged in
+            setIsLoggedIn(true);
+            safeStorage.setItem('vlive_user_logged_in', 'true');
+            safeStorage.setItem('vlive_current_username', detectedTgUsername);
+            safeStorage.setItem('vlive_user_name', detectedTgName);
+            safeStorage.setItem('vlive_user_avatar', detectedTgAvatar);
+
+            showToast(loc(`✨ ورود موفق با تلگرام! خوش آمدید @${detectedTgUsername}`, `✨ Authenticated via Telegram! Welcome @${detectedTgUsername}`));
+          };
+
+          const handleGuestExplorerAuth = () => {
+            if (!termsAgreed) {
+              showToast(loc('لطفاً ابتدا قوانین و شرایط استفاده را تأیید کنید', 'Please accept Terms of Service & Privacy Policy to continue'));
+              return;
+            }
+
+            if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
+              window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            }
+
+            const guestName = loc('کاربر مهمان', 'Guest Explorer');
+            const guestUser = `guest_${Math.floor(Math.random() * 89999 + 10000)}`;
+
+            setUserName(guestName);
+            setCurrentUsername(guestUser);
+            setIsLoggedIn(true);
+            safeStorage.setItem('vlive_user_logged_in', 'true');
+            safeStorage.setItem('vlive_current_username', guestUser);
+            safeStorage.setItem('vlive_user_name', guestName);
+
+            showToast(loc('⚡ ورود سریع به عنوان مهمان موفقیت‌آمیز بود!', '⚡ Logged in as Guest Explorer!'));
+          };
+
+          return (
+            <div className="relative w-full max-w-md mx-auto space-y-5 my-auto py-4 px-1 animate-fadeIn dir-ltr">
+              
+              {/* Dynamic Animated Background Glows & Particles */}
+              <div className="absolute -top-20 -left-20 w-56 h-56 rounded-full bg-gradient-to-br from-pink-500/30 via-purple-600/30 to-transparent blur-3xl pointer-events-none animate-pulse" />
+              <div className="absolute -bottom-20 -right-20 w-56 h-56 rounded-full bg-gradient-to-tl from-cyan-500/30 via-blue-600/30 to-transparent blur-3xl pointer-events-none animate-pulse" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+
+              {/* 1. TOP UTILITY BAR: LANGUAGE SELECTOR & TELEGRAM MINI APP STATUS */}
+              <div className="flex items-center justify-between px-2">
+                
+                {/* Language Switcher Pill */}
+                <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl shadow-lg">
+                  <button
+                    onClick={() => {
+                      setCurrentAppLang('en');
+                      showToast('Language changed to English 🇺🇸');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${currentAppLang === 'en' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/30' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    <span>🇺🇸</span>
+                    <span>English</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCurrentAppLang('fa');
+                      showToast('زبان به فارسی تغییر یافت 🇮🇷');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${currentAppLang === 'fa' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/30' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    <span>🇮🇷</span>
+                    <span>فارسی</span>
+                  </button>
+                </div>
+
+                {/* Telegram App Badge */}
+                <div className="px-3 py-1.5 rounded-2xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 text-[11px] font-black flex items-center gap-1.5 shadow-md backdrop-blur-xl">
+                  <Send className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Telegram Mini App</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 </div>
               </div>
-              <div className="space-y-1">
-                <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-pink-400 to-purple-400 tracking-tight">
-                  V.Live Mini App
-                </h2>
-                <p className="text-xs text-slate-300 font-medium">Ultra-Premium Telegram Live Streaming & Video Match</p>
+
+              {/* 2. MAIN GLASS CARD */}
+              <div className="relative card-3d p-6 sm:p-7 rounded-3xl bg-slate-900/90 border border-pink-500/30 backdrop-blur-2xl shadow-[0_0_80px_rgba(236,72,153,0.25)] space-y-6 overflow-hidden">
+                
+                {/* Animated Logo & Shimmer Branding */}
+                <div className="relative text-center space-y-3.5">
+                  
+                  {/* Glowing 3D Emblem with Orbiting Rings */}
+                  <div className="relative w-24 h-24 mx-auto group">
+                    <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-pink-500 via-purple-600 via-cyan-400 to-amber-400 blur-xl opacity-80 animate-pulse group-hover:scale-110 transition duration-700" />
+                    <div className="relative w-full h-full rounded-3xl bg-slate-950 border-2 border-pink-500/60 p-1 flex items-center justify-center shadow-2xl overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-tr from-purple-900/40 via-pink-900/20 to-cyan-900/40 animate-spin" style={{ animationDuration: '12s' }} />
+                      <div className="relative z-10 w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center shadow-inner">
+                        <Video className="w-9 h-9 text-pink-400 animate-pulse" />
+                      </div>
+                    </div>
+                    
+                    {/* Live Indicator Dot */}
+                    <div className="absolute -top-1 -right-1 px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-black text-[9px] border-2 border-slate-950 shadow-lg animate-bounce">
+                      LIVE
+                    </div>
+                  </div>
+
+                  {/* Title & Slogan */}
+                  <div className="space-y-1">
+                    <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 via-cyan-300 to-amber-300 tracking-tight flex items-center justify-center gap-2">
+                      <span>V.LIVE Mini App</span>
+                      <Sparkles className="w-5 h-5 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
+                    </h1>
+                    <p className="text-xs text-slate-300 font-bold leading-relaxed max-w-xs mx-auto">
+                      {loc(
+                        'پلتفرم فوق‌پیشرفته پخش زنده 4K، چت ویدئویی و استریم تلگرام',
+                        'Ultra-Premium 4K Live Broadcast & Telegram Video Matching'
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 3. TELEGRAM USER PROFILE CARD */}
+                <div className="relative p-4 rounded-2xl bg-gradient-to-r from-purple-950/90 via-slate-950 to-cyan-950/90 border border-pink-500/40 shadow-xl space-y-3 group hover:border-pink-500/70 transition">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <img 
+                        src={detectedTgAvatar} 
+                        alt={detectedTgName} 
+                        className="w-13 h-13 rounded-2xl object-cover ring-2 ring-pink-500/80 shadow-md group-hover:scale-105 transition" 
+                      />
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-950 shadow animate-pulse" />
+                    </div>
+
+                    <div className="text-left flex-1 min-w-0 space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-black text-white truncate">{detectedTgName}</p>
+                        <BadgeCheck className="w-4 h-4 text-blue-400 shrink-0" title="Telegram Verified Account" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-cyan-300 font-mono font-bold">@{detectedTgUsername}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">#{detectedTgId}</span>
+                      </div>
+                    </div>
+
+                    <div className="px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black flex items-center gap-1 shadow">
+                      <Crown className="w-3 h-3 text-amber-400" />
+                      <span>VIP</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-[11px] font-bold">
+                    <span className="text-slate-400 flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                      {loc('احراز هویت تلگرام آماده است', 'Telegram initData Verified')}
+                    </span>
+                    <span className="text-emerald-400 font-mono">Ready to Launch</span>
+                  </div>
+                </div>
+
+                {/* 4. FEATURE HIGHLIGHT BADGES */}
+                <div className="grid grid-cols-2 gap-2 text-[11px] font-bold">
+                  <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-slate-200 flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>{loc('ورود تک لمسی بدون رمز', '1-Tap Fast Auth')}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-slate-200 flex items-center gap-2">
+                    <Flame className="w-4 h-4 text-pink-400 shrink-0" />
+                    <span>{loc('چت ویدئویی 30 ثانیه‌ای', '30s Video Roulette')}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-slate-200 flex items-center gap-2">
+                    <Star className="w-4 h-4 text-cyan-400 shrink-0" />
+                    <span>{loc('کیف پول و سکه VIP', 'Stars & Coins Wallet')}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-slate-200 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0" />
+                    <span>{loc('امنیت 256 بیت SSL', 'SSL Encrypted')}</span>
+                  </div>
+                </div>
+
+                {/* 5. PRIMARY BUTTONS & ACTION FLOWS */}
+                <div className="space-y-3 pt-1">
+                  
+                  {/* MAIN BUTTON: CONTINUE WITH TELEGRAM */}
+                  <button
+                    onClick={handleTelegramOneTapAuth}
+                    className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-cyan-500 via-purple-600 to-pink-500 hover:from-cyan-400 hover:to-pink-400 text-white font-black text-sm shadow-[0_0_35px_rgba(236,72,153,0.5)] active:scale-95 transition-all duration-300 flex items-center justify-between border border-cyan-300/50 group relative overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition duration-500" />
+                    <div className="flex items-center gap-3 relative z-10">
+                      <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition">
+                        <Send className="w-5 h-5 group-hover:translate-x-1 transition" />
+                      </div>
+                      <div className="text-left">
+                        <span className="block font-black text-sm tracking-wide">
+                          {loc('ورود مستقیم با تلگرام', 'Continue with Telegram')}
+                        </span>
+                        <span className="block text-[10px] text-cyan-100 font-medium opacity-90">
+                          {loc('احراز هویت فوری تلگرام', 'Instant Telegram Mini App Auth')}
+                        </span>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-white group-hover:translate-x-1 transition relative z-10" />
+                  </button>
+
+                  {/* SECONDARY BUTTON: EXPLORE AS GUEST */}
+                  <button
+                    onClick={handleGuestExplorerAuth}
+                    className="w-full py-3.5 px-4 rounded-2xl bg-slate-950/90 hover:bg-slate-900 text-slate-200 font-bold text-xs border border-slate-800 hover:border-pink-500/50 shadow-lg active:scale-95 transition flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-slate-800 text-slate-300 group-hover:text-pink-400 transition">
+                        <Globe className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-slate-200">
+                        {loc('ورود به عنوان مهمان (پیش‌نمایش سریع)', 'Explore as Guest (Instant Preview)')}
+                      </span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
+                  </button>
+
+                  {/* TERTIARY BUTTON: USERNAME / PASSWORD LOGIN */}
+                  <button
+                    onClick={() => {
+                      if (!termsAgreed) {
+                        showToast(loc('لطفاً ابتدا قوانین را بپذیرید', 'Please accept Terms of Service to continue'));
+                        return;
+                      }
+                      setAuthMethod('credentials');
+                      setAuthStep('login');
+                    }}
+                    className="w-full py-2.5 px-4 rounded-xl text-slate-400 hover:text-slate-200 font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-800/50 transition"
+                  >
+                    <Key className="w-3.5 h-3.5 text-purple-400" />
+                    <span>{loc('ورود با نام کاربری و رمز عبور', 'Log in with Username & Password')}</span>
+                  </button>
+
+                </div>
+
+                {/* 6. TERMS & PRIVACY POLICY CHECKBOX */}
+                <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800/90 space-y-2">
+                  <label className="flex items-start gap-2.5 cursor-pointer text-xs">
+                    <input
+                      type="checkbox"
+                      checked={termsAgreed}
+                      onChange={e => setTermsAgreed(e.target.checked)}
+                      className="mt-0.5 w-4.5 h-4.5 accent-pink-500 rounded cursor-pointer"
+                    />
+                    <span className="text-[11px] text-slate-300 leading-relaxed font-medium">
+                      {loc(
+                        'من شرایط استفاده از خدمات و قوانین حریم خصوصی V.Live را می‌پذیرم.',
+                        'I accept V.Live Terms of Service & Privacy Policy.'
+                      )}{' '}
+                      <button 
+                        type="button" 
+                        onClick={() => setIsTermsModalOpen(true)} 
+                        className="text-pink-400 hover:text-pink-300 font-black underline inline-block"
+                      >
+                        {loc('مطالعه قوانین', 'Read Terms')}
+                      </button>
+                    </span>
+                  </label>
+                </div>
+
               </div>
-            </div>
 
-            {/* QUICK AUTO-LOGIN FOR SAVED USERS */}
-            {safeStorage.getItem('vlive_current_username') && (
-              <div className="relative p-4 rounded-2xl bg-gradient-to-r from-purple-950/90 via-cyan-950/90 to-slate-950 border border-cyan-500/50 space-y-3 shadow-xl">
-                <div className="flex items-center gap-3">
-                  <img 
-                    src={safeStorage.getItem('vlive_user_avatar') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'} 
-                    alt="Saved User" 
-                    className="w-12 h-12 rounded-2xl object-cover ring-2 ring-cyan-400 shadow-md" 
-                  />
-                  <div className="text-left flex-1 min-w-0">
-                    <p className="text-xs font-black text-white truncate">{safeStorage.getItem('vlive_user_name') || 'Saved User'}</p>
-                    <span className="text-[10px] text-cyan-300 font-mono block truncate">@{safeStorage.getItem('vlive_current_username')}</span>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[9px] font-bold flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                    Verified Session
-                  </span>
-                </div>
-                <button
-                  onClick={() => {
-                    const savedU = safeStorage.getItem('vlive_current_username');
-                    const savedN = safeStorage.getItem('vlive_user_name') || savedU;
-                    setUserName(savedN);
-                    setCurrentUsername(savedU);
-                    setIsLoggedIn(true);
-                    safeStorage.setItem('vlive_user_logged_in', 'true');
-                    showToast(`⚡ Quick login as @${savedU} successful!`);
-                  }}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 via-purple-600 to-pink-600 text-white font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2"
-                >
-                  <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
-                  <span>⚡ Quick Login (Instant Access)</span>
-                </button>
+              {/* FOOTER DIAGNOSTIC INFO */}
+              <div className="text-center space-y-1 text-[10px] text-slate-500 font-mono">
+                <p>🟢 Telegram Mini App Protocol v4.2 • SSL Secured</p>
+                <p>© 2026 V.Live Platform. All Rights Reserved.</p>
               </div>
-            )}
 
-            {/* Social Authentication Options */}
-            <div className="space-y-3">
-              {/* BUTTON 1: TELEGRAM LOGIN (اصلی) */}
-              <button
-                onClick={() => {
-                  if (!termsAgreed) {
-                    showToast('Please accept Terms of Service & Privacy Policy to continue');
-                    return;
-                  }
-                  setAuthMethod('telegram');
-                  setAuthFullName('Telegram User');
-                  setAuthUsername('telegram_vip');
-                  setAuthTelegramId('108492039');
-                  setAuthStep('register');
-                  showToast('Authenticated via Telegram WebApp ID: 108492039');
-                }}
-                className="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all flex items-center justify-between border border-cyan-400/50 group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-white/20 text-white shadow-inner">
-                    <Send className="w-5 h-5 transform group-hover:translate-x-1 transition" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-black text-sm tracking-wide">Continue with Telegram</p>
-                    <span className="text-[10px] text-cyan-200 block font-medium">Instant Telegram Mini App Auth</span>
-                  </div>
-                </div>
-                <span className="px-2.5 py-1 rounded-full bg-white/20 text-[10px] font-black uppercase tracking-wider">Primary</span>
-              </button>
-
-              {/* BUTTON 2: GOOGLE LOGIN (اختیاری) */}
-              <button
-                onClick={() => {
-                  if (!termsAgreed) {
-                    showToast('Please accept Terms of Service & Privacy Policy to continue');
-                    return;
-                  }
-                  setAuthMethod('google');
-                  setAuthFullName('Google User');
-                  setAuthUsername('google_vip');
-                  setAuthEmail('user@gmail.com');
-                  setAuthStep('register');
-                  showToast('Authenticated via Google Account');
-                }}
-                className="w-full py-3.5 px-4 rounded-2xl bg-slate-950 hover:bg-slate-800 text-slate-100 font-bold text-xs border border-slate-700 shadow-md transition-all flex items-center justify-between group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-slate-800 text-slate-200">
-                    <Globe className="w-4 h-4 text-cyan-400" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-bold">Continue with Google</p>
-                    <span className="text-[10px] text-slate-400 block font-medium">Google OAuth Web Login</span>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
-              </button>
-
-              {/* BUTTON 3: USERNAME + PASSWORD */}
-              <button
-                onClick={() => {
-                  if (!termsAgreed) {
-                    showToast('Please accept Terms of Service & Privacy Policy to continue');
-                    return;
-                  }
-                  setAuthMethod('credentials');
-                  setAuthStep('login');
-                }}
-                className="w-full py-3 px-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 font-bold text-xs border border-slate-800 hover:border-slate-700 transition flex items-center justify-center gap-2"
-              >
-                <Key className="w-4 h-4 text-purple-400" />
-                <span>Log in with Username & Password</span>
-              </button>
             </div>
-
-            {/* TERMS & PRIVACY CHECKBOX (قوانین) */}
-            <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-2">
-              <label className="flex items-start gap-2.5 cursor-pointer text-xs">
-                <input
-                  type="checkbox"
-                  checked={termsAgreed}
-                  onChange={e => setTermsAgreed(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 accent-cyan-500 rounded"
-                />
-                <span className="text-[11px] text-slate-300 leading-snug">
-                  I accept V.Live <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-cyan-400 font-bold underline">Terms of Service</button> & <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-cyan-400 font-bold underline">Privacy Policy</button>.
-                </span>
-              </label>
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* STEP 3: REGISTER / CREATE ACCOUNT (ساخت حساب) */}
         {authStep === 'register' && (() => {
@@ -7289,6 +7515,460 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           </div>
         )}
 
+        {/* TAB: REDESIGNED PREMIUM INTERACTIVE MATCH EXPERIENCE */}
+        {activeTab === 'match' && (
+          <div className="space-y-4 max-w-md mx-auto animate-fadeIn pb-12">
+            
+            {/* 1. Top Header & Smart Filter Bar */}
+            <div className="card-3d p-3.5 rounded-3xl bg-slate-900/90 border border-pink-500/30 flex items-center justify-between gap-3 backdrop-blur-xl shadow-[0_0_40px_rgba(236,72,153,0.2)]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-pink-500/30">
+                  <Flame className="w-5 h-5 text-white animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-1.5">
+                    <span>V.Live Match</span>
+                    <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-pink-500 text-slate-950 text-[10px] font-black uppercase tracking-wider">VIP</span>
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>{matchDeckProfiles.length} Online Matches</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsMatchFilterOpen(true)}
+                  className="p-2.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-pink-400 border border-slate-700 active:scale-95 transition flex items-center gap-1.5 shadow-md"
+                  title="Smart Match Filters"
+                >
+                  <Sliders className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* 2. Sub-Tabs Switcher */}
+            <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800/80 shadow-inner">
+              <button
+                onClick={() => setMatchSubTab('swipe')}
+                className={`py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${matchSubTab === 'swipe' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/25' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                <span>🔥</span>
+                <span>Match Deck</span>
+              </button>
+              <button
+                onClick={() => setMatchSubTab('roulette')}
+                className={`py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${matchSubTab === 'roulette' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-purple-500/25' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                <span>🎲</span>
+                <span>30s Video</span>
+              </button>
+              <button
+                onClick={() => setMatchSubTab('likes')}
+                className={`py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${matchSubTab === 'likes' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-purple-500/25' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                <span>👑</span>
+                <span>Liked You</span>
+              </button>
+            </div>
+
+            {/* 3. SUB-TAB 1: SWIPE MATCH DECK */}
+            {matchSubTab === 'swipe' && (
+              <div className="space-y-4">
+                {matchCardIndex < matchDeckProfiles.length ? (
+                  <div 
+                    onTouchStart={(e) => {
+                      const touch = e.touches[0];
+                      setIsSwipeDragging(true);
+                      swipeStartPos.current = { x: touch.clientX, y: touch.clientY };
+                    }}
+                    onTouchMove={(e) => {
+                      if (!isSwipeDragging) return;
+                      const touch = e.touches[0];
+                      setSwipeDragPos({
+                        x: touch.clientX - swipeStartPos.current.x,
+                        y: touch.clientY - swipeStartPos.current.y
+                      });
+                    }}
+                    onTouchEnd={() => {
+                      if (!isSwipeDragging) return;
+                      setIsSwipeDragging(false);
+                      if (swipeDragPos.x > 80) triggerMatchAction('like');
+                      else if (swipeDragPos.x < -80) triggerMatchAction('reject');
+                      else if (swipeDragPos.y < -80) triggerMatchAction('superlike');
+                      else setSwipeDragPos({ x: 0, y: 0 });
+                    }}
+                    onMouseDown={(e) => {
+                      setIsSwipeDragging(true);
+                      swipeStartPos.current = { x: e.clientX, y: e.clientY };
+                    }}
+                    onMouseMove={(e) => {
+                      if (!isSwipeDragging) return;
+                      setSwipeDragPos({
+                        x: e.clientX - swipeStartPos.current.x,
+                        y: e.clientY - swipeStartPos.current.y
+                      });
+                    }}
+                    onMouseUp={() => {
+                      if (!isSwipeDragging) return;
+                      setIsSwipeDragging(false);
+                      if (swipeDragPos.x > 80) triggerMatchAction('like');
+                      else if (swipeDragPos.x < -80) triggerMatchAction('reject');
+                      else if (swipeDragPos.y < -80) triggerMatchAction('superlike');
+                      else setSwipeDragPos({ x: 0, y: 0 });
+                    }}
+                    onMouseLeave={() => {
+                      if (isSwipeDragging) {
+                        setIsSwipeDragging(false);
+                        setSwipeDragPos({ x: 0, y: 0 });
+                      }
+                    }}
+                    style={{
+                      transform: `translate(${swipeDragPos.x}px, ${swipeDragPos.y}px) rotate(${swipeDragPos.x * 0.05}deg)`,
+                      transition: isSwipeDragging ? 'none' : 'transform 0.3s ease'
+                    }}
+                    className="relative min-h-[480px] sm:min-h-[520px] rounded-3xl overflow-hidden bg-slate-950 border border-pink-500/30 shadow-[0_0_60px_rgba(236,72,153,0.3)] flex flex-col justify-end select-none touch-none cursor-grab active:cursor-grabbing group"
+                  >
+                    {/* Blurred Image Backdrop for Depth */}
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center filter blur-2xl opacity-45 scale-125 pointer-events-none"
+                      style={{ backgroundImage: `url(${matchDeckProfiles[matchCardIndex].avatar})` }}
+                    />
+
+                    {/* Main Profile Photo */}
+                    <img 
+                      src={matchDeckProfiles[matchCardIndex].avatar} 
+                      alt={matchDeckProfiles[matchCardIndex].name} 
+                      className="absolute inset-0 w-full h-full object-cover filter brightness-95 pointer-events-none group-hover:scale-105 transition duration-700" 
+                    />
+
+                    {/* Gradient Vignette Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent pointer-events-none" />
+
+                    {/* Gesture Stamps */}
+                    {isSwipeDragging && swipeDragPos.x > 30 && (
+                      <div className="absolute top-12 left-6 z-30 px-5 py-2 rounded-2xl border-4 border-emerald-400 bg-emerald-500/20 text-emerald-300 font-black text-2xl uppercase tracking-widest rotate-[-12deg] backdrop-blur-md shadow-2xl animate-pulse">
+                        ❤️ LIKE
+                      </div>
+                    )}
+                    {isSwipeDragging && swipeDragPos.x < -30 && (
+                      <div className="absolute top-12 right-6 z-30 px-5 py-2 rounded-2xl border-4 border-rose-500 bg-rose-500/20 text-rose-300 font-black text-2xl uppercase tracking-widest rotate-[12deg] backdrop-blur-md shadow-2xl animate-pulse">
+                        ❌ PASS
+                      </div>
+                    )}
+                    {isSwipeDragging && swipeDragPos.y < -30 && (
+                      <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 px-5 py-2 rounded-2xl border-4 border-amber-400 bg-amber-500/20 text-amber-300 font-black text-2xl uppercase tracking-widest backdrop-blur-md shadow-2xl animate-pulse">
+                        ⭐ SUPER LIKE
+                      </div>
+                    )}
+
+                    {/* Top Badges */}
+                    <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20 pointer-events-none">
+                      <div className="px-3 py-1.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-white/20 text-white text-xs font-black flex items-center gap-1.5 shadow-lg">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>{matchDeckProfiles[matchCardIndex].distance}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-1.5">
+                        {matchDeckProfiles[matchCardIndex].isVerified && (
+                          <div className="px-3 py-1.5 rounded-full bg-blue-500/20 backdrop-blur-md border border-blue-400/40 text-blue-300 text-xs font-black flex items-center gap-1 shadow-lg">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
+                            <span>Verified</span>
+                          </div>
+                        )}
+                        {matchDeckProfiles[matchCardIndex].isVip && (
+                          <div className="px-3 py-1.5 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-400/40 text-amber-300 text-xs font-black flex items-center gap-1 shadow-lg">
+                            <Crown className="w-3.5 h-3.5 text-amber-400" />
+                            <span>VIP</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Card Info Section at Bottom (Minimal Text, Pure Icons & Badges) */}
+                    <div className="relative z-20 p-5 space-y-3.5 pointer-events-auto">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2">
+                            <span>{matchDeckProfiles[matchCardIndex].name}</span>
+                            <span className="px-2.5 py-0.5 rounded-xl bg-white/20 backdrop-blur-md text-white text-sm font-bold">
+                              {matchDeckProfiles[matchCardIndex].age}
+                            </span>
+                          </h2>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-200 font-bold mt-1">
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-pink-400" />
+                            {matchDeckProfiles[matchCardIndex].city}
+                          </span>
+                          <span>•</span>
+                          <span className="text-emerald-400 flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                            Active Now
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Interest Tags */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {matchDeckProfiles[matchCardIndex].interests.map((tag, i) => (
+                          <span key={i} className="px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold shadow-md">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* ACTION BUTTONS BAR (Row of 6 sleek 3D round buttons) */}
+                      <div className="grid grid-cols-6 gap-2 pt-2">
+                        
+                        {/* 1. Pass / Reject */}
+                        <button 
+                          onClick={() => triggerMatchAction('reject')}
+                          className="h-12 rounded-2xl bg-slate-900/90 border border-rose-500/40 text-rose-400 hover:bg-rose-500/20 flex items-center justify-center shadow-lg active:scale-90 transition group"
+                          title="Pass"
+                        >
+                          <X className="w-6 h-6 group-hover:scale-110 transition" />
+                        </button>
+
+                        {/* 2. Instant Gift */}
+                        <button 
+                          onClick={() => triggerMatchAction('gift')}
+                          className="h-12 rounded-2xl bg-slate-900/90 border border-amber-500/40 text-amber-400 hover:bg-amber-500/20 flex items-center justify-center shadow-lg active:scale-90 transition group"
+                          title="Send Virtual Gift"
+                        >
+                          <Gift className="w-6 h-6 group-hover:scale-110 transition animate-bounce" />
+                        </button>
+
+                        {/* 3. Super Like */}
+                        <button 
+                          onClick={() => triggerMatchAction('superlike')}
+                          className="h-12 rounded-2xl bg-slate-900/90 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/20 flex items-center justify-center shadow-lg active:scale-90 transition group"
+                          title="Super Like"
+                        >
+                          <Star className="w-6 h-6 group-hover:scale-110 transition text-amber-400 fill-amber-400" />
+                        </button>
+
+                        {/* 4. Like */}
+                        <button 
+                          onClick={() => triggerMatchAction('like')}
+                          className="h-12 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.6)] active:scale-90 transition group"
+                          title="Like"
+                        >
+                          <Heart className="w-7 h-7 fill-white group-hover:scale-125 transition" />
+                        </button>
+
+                        {/* 5. Direct Message */}
+                        <button 
+                          onClick={() => {
+                            const target = matchDeckProfiles[matchCardIndex];
+                            setIsMatchModalOpen(false);
+                            setActiveTab('messages');
+                            showToast(`💬 Opened chat with @${target.name || target.username}`);
+                          }}
+                          className="h-12 rounded-2xl bg-slate-900/90 border border-purple-500/40 text-purple-300 hover:bg-purple-500/20 flex items-center justify-center shadow-lg active:scale-90 transition group"
+                          title="Chat"
+                        >
+                          <MessageSquare className="w-6 h-6 group-hover:scale-110 transition" />
+                        </button>
+
+                        {/* 6. Video Call */}
+                        <button 
+                          onClick={() => {
+                            const target = matchDeckProfiles[matchCardIndex];
+                            handleInitiateCall(target, 'video', '1on1');
+                            setIsMatchModalOpen(false);
+                            showToast(`📹 Calling ${target.name}...`);
+                          }}
+                          className="h-12 rounded-2xl bg-slate-900/90 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/20 flex items-center justify-center shadow-lg active:scale-90 transition group"
+                          title="1on1 Video Call"
+                        >
+                          <Video className="w-6 h-6 group-hover:scale-110 transition" />
+                        </button>
+
+                      </div>
+
+                    </div>
+                  </div>
+                ) : (
+                  /* Empty State */
+                  <div className="py-16 text-center space-y-4 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-xl">
+                    <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-pink-500/20 to-purple-500/20 border border-pink-500/40 flex items-center justify-center text-4xl animate-bounce shadow-lg">
+                      ✨
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-lg font-black text-white">All Profiles Viewed!</h4>
+                      <p className="text-xs text-slate-400">Refresh the deck or adjust smart filters to discover more matches.</p>
+                    </div>
+                    <div className="flex items-center justify-center gap-3 pt-2">
+                      <button
+                        onClick={() => setMatchCardIndex(0)}
+                        className="px-6 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-105 active:scale-95 transition flex items-center gap-2"
+                      >
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Refresh Deck</span>
+                      </button>
+                      <button
+                        onClick={() => setIsMatchFilterOpen(true)}
+                        className="px-5 py-3 rounded-2xl bg-slate-800 text-slate-200 font-bold text-xs border border-slate-700 hover:bg-slate-700 active:scale-95 transition flex items-center gap-2"
+                      >
+                        <Sliders className="w-4 h-4 text-pink-400" />
+                        <span>Adjust Filters</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* SUB-TAB 2: 30S VIDEO ROULETTE */}
+            {matchSubTab === 'roulette' && (
+              <div className="card-3d p-5 rounded-3xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl shadow-xl space-y-5 text-center">
+                {matchState === 'idle' && (
+                  <div className="space-y-4 py-4">
+                    <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-pink-500/20 to-purple-500/20 border border-pink-500/40 flex items-center justify-center shadow-lg">
+                      <Video className="w-10 h-10 text-pink-400 animate-pulse" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-base font-black text-white">30s Live Video Roulette</h4>
+                      <p className="text-xs text-slate-400">Instant video call pairing with verified online users.</p>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-bold text-amber-400 flex items-center justify-between">
+                      <span>Daily Free Quota:</span>
+                      <span className="text-white bg-amber-500/20 px-2.5 py-1 rounded-xl border border-amber-500/40">{freeMatchCallsLeft} / 3</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (freeMatchCallsLeft <= 0) {
+                          showToast('⚠️ Daily free roulette quota reached.');
+                          return;
+                        }
+                        setMatchState('searching');
+                        setTimeout(() => {
+                          const realPartners = (Array.isArray(usersList) && usersList.length > 0)
+                            ? usersList.filter(u => u && u.username !== currentUsername && u.user_type !== 'TEST_USER' && u.user_type !== 'DEMO_USER' && (u.status === 'approved' || u.isApproved !== false))
+                            : [
+                                { name: 'Sara Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80', city: 'Tehran', isVerified: true },
+                                { name: 'Elnaz Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80', city: 'Shiraz', isVerified: true },
+                                { name: 'Sahar Miller', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', city: 'Tehran', isVerified: true }
+                              ];
+                          const randomPartner = realPartners[Math.floor(Math.random() * realPartners.length)] || realPartners[0];
+                          setMatchedMatchUser(randomPartner);
+                          setMatchState('connected');
+                          setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));
+                          setMatchCallSeconds(30);
+                          showToast(`🎉 Connected with @${randomPartner.name || randomPartner.username}!`);
+                        }, 2200);
+                      }}
+                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white font-black text-xs shadow-lg hover:scale-102 active:scale-95 transition flex items-center justify-center gap-2"
+                    >
+                      <Zap className="w-4 h-4 fill-white" />
+                      <span>Start 30s Video Roulette</span>
+                    </button>
+                  </div>
+                )}
+
+                {matchState === 'searching' && (
+                  <div className="py-12 text-center space-y-4">
+                    <div className="w-16 h-16 mx-auto rounded-full border-4 border-pink-500 border-t-transparent animate-spin shadow-lg" />
+                    <h4 className="text-sm font-black text-white">Matching with Random Partner...</h4>
+                    <p className="text-xs text-slate-400">Connecting video stream in 4K resolution...</p>
+                  </div>
+                )}
+
+                {matchState === 'connected' && matchedMatchUser && (
+                  <div className="space-y-4">
+                    <div className="relative aspect-video rounded-3xl overflow-hidden bg-slate-950 border border-pink-500/40 shadow-2xl flex items-center justify-center">
+                      <img src={matchedMatchUser.avatar} alt={matchedMatchUser.name} className="absolute inset-0 w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-black/30" />
+                      
+                      <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md border border-pink-500/40 text-pink-400 font-black text-xs flex items-center gap-1.5 animate-pulse">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{matchCallSeconds}s</span>
+                      </div>
+
+                      <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between">
+                        <div className="text-left">
+                          <h4 className="text-sm font-black text-white flex items-center gap-1">
+                            {matchedMatchUser.name}
+                            {matchedMatchUser.isVerified && <BadgeCheck className="w-4 h-4 text-blue-400" />}
+                          </h4>
+                          <p className="text-[10px] text-slate-300 font-bold">📍 {matchedMatchUser.city}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setMatchState('idle');
+                            showToast('📞 Call ended.');
+                          }}
+                          className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs shadow-lg active:scale-95 transition"
+                        >
+                          End Call
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* SUB-TAB 3: WHO LIKED YOU (VIP) */}
+            {matchSubTab === 'likes' && (
+              <div className="space-y-3">
+                <div className="card-3d p-4 rounded-3xl bg-slate-900/90 border border-amber-500/30 backdrop-blur-xl shadow-xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 font-black">
+                      👑
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-white">Who Liked Your Profile</h4>
+                      <p className="text-[10px] text-slate-400">See all active members who swiped right on you</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/40">VIP Perk</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {matchDeckProfiles.slice(0, 4).map((p, idx) => (
+                    <div key={idx} className="relative aspect-[3/4] rounded-3xl overflow-hidden bg-slate-950 border border-slate-800 shadow-lg group">
+                      <img src={p.avatar} alt={p.name} className="absolute inset-0 w-full h-full object-cover filter brightness-90 group-hover:scale-105 transition" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                      
+                      <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-pink-500/80 backdrop-blur-md text-white text-[9px] font-black flex items-center gap-1 shadow">
+                        ❤️ Liked You
+                      </div>
+
+                      <div className="absolute bottom-3 left-3 right-3 text-left space-y-1">
+                        <h5 className="text-xs font-black text-white flex items-center gap-1">
+                          {p.name}, {p.age}
+                        </h5>
+                        <div className="grid grid-cols-2 gap-1 pt-1">
+                          <button 
+                            onClick={() => {
+                              setMatchResultPopup(p);
+                            }}
+                            className="py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-[10px] shadow"
+                          >
+                            Match ❤️
+                          </button>
+                          <button 
+                            onClick={() => {
+                              handleInitiateCall(p, 'video', '1on1');
+                              showToast(`📹 Calling ${p.name}...`);
+                            }}
+                            className="py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-cyan-300 font-bold text-[10px]"
+                          >
+                            Video 📹
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
 
         {/* TAB 2: COMPLETE REDESIGNED MESSAGES & DIRECT CHAT SYSTEM */}
         {activeTab === 'messages' && (
@@ -10955,356 +11635,944 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
 {/* TAB 4: REDESIGNED CLEAN PROFILE DASHBOARD */}
         {activeTab === 'profile' && (
-          <div className="space-y-6 pb-20 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+          <div className="space-y-6 pb-24 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
 
             {/* PROFILE PREVIEW MODE SWITCHER */}
-            <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between shadow-md">
+            <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800/80 flex items-center justify-between shadow-lg backdrop-blur-md">
               <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                <Eye className="w-4 h-4 text-pink-400" />
+                <Eye className="w-4 h-4 text-pink-400 animate-pulse" />
                 {loc('حالت پیش‌نمایش پروفایل:', 'Profile Preview Mode:')}
               </span>
               <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
                 <button 
                   onClick={() => setProfilePreviewMode('self')}
-                  className={`px-3 py-1.5 rounded-lg transition ${profilePreviewMode === 'self' ? 'bg-pink-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${profilePreviewMode === 'self' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
                 >
                   {loc('پروفایل من 👤', 'My Profile 👤')}
                 </button>
                 <button 
                   onClick={() => setProfilePreviewMode('other')}
-                  className={`px-3 py-1.5 rounded-lg transition ${profilePreviewMode === 'other' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${profilePreviewMode === 'other' ? 'bg-purple-600 to-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
                 >
                   {loc('نمای کاربر دیگر 👁️', 'Other User 👁️')}
                 </button>
               </div>
             </div>
 
-            {/* 1. COVER PHOTO & PROFILE HEADER */}
-            <div className="relative rounded-3xl overflow-hidden card-3d border border-pink-500/30 bg-slate-900">
-              {/* Cover Photo */}
-              <div className="relative h-44 w-full bg-gradient-to-r from-pink-900 via-purple-900 to-indigo-950 overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80" 
-                  alt="Profile Cover" 
-                  className="w-full h-full object-cover opacity-50"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+            {/* DEDICATED SUB-PAGE HEADER (WHEN NOT ON MAIN DASHBOARD) */}
+            {profileSubPage !== 'main' && (
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl">
+                <button
+                  onClick={() => setProfileSubPage('main')}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center gap-2 transition active:scale-95 border border-slate-700"
+                >
+                  {isRtl ? <ChevronRight className="w-4 h-4 text-pink-400" /> : <ChevronLeft className="w-4 h-4 text-pink-400" />}
+                  <span>{loc('بازگشت به داشبورد', 'Back to Profile Dashboard')}</span>
+                </button>
+                <span className="text-sm font-black text-white capitalize flex items-center gap-2">
+                  {profileSubPage === 'account' && <User className="w-4 h-4 text-pink-400" />}
+                  {profileSubPage === 'privacy' && <Lock className="w-4 h-4 text-emerald-400" />}
+                  {profileSubPage === 'wallet' && <Wallet className="w-4 h-4 text-amber-400" />}
+                  {profileSubPage === 'vip' && <Crown className="w-4 h-4 text-yellow-400" />}
+                  {profileSubPage === 'gifts' && <Gift className="w-4 h-4 text-purple-400" />}
+                  {profileSubPage === 'gallery' && <Image className="w-4 h-4 text-cyan-400" />}
+                  {profileSubPage === 'stories' && <Sparkles className="w-4 h-4 text-pink-400" />}
+                  {profileSubPage === 'notifications' && <Bell className="w-4 h-4 text-blue-400" />}
+                  {profileSubPage === 'language' && <Globe className="w-4 h-4 text-emerald-400" />}
+                  {profileSubPage === 'support' && <Info className="w-4 h-4 text-teal-400" />}
+                  {profileSubPage === 'about' && <Shield className="w-4 h-4 text-indigo-400" />}
+                  {loc(
+                    profileSubPage === 'account' ? 'حساب کاربری' :
+                    profileSubPage === 'privacy' ? 'حریم خصوصی و امنیت' :
+                    profileSubPage === 'wallet' ? 'کیف پول و مالی' :
+                    profileSubPage === 'vip' ? 'عضویت ویژه VIP' :
+                    profileSubPage === 'gifts' ? 'هدایا و پاداش‌ها' :
+                    profileSubPage === 'gallery' ? 'گالری و پست‌ها' :
+                    profileSubPage === 'stories' ? 'استوری‌ها' :
+                    profileSubPage === 'notifications' ? 'اعلان‌ها' :
+                    profileSubPage === 'language' ? 'زبان برنامه' :
+                    profileSubPage === 'support' ? 'پشتیبانی و راهنما' : 'درباره برنامه',
+                    profileSubPage.toUpperCase()
+                  )}
+                </span>
               </div>
+            )}
 
-              {/* Main Profile Info Row */}
-              <div className="px-5 pb-5 pt-0 relative flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 -mt-16">
-                {/* Large Avatar + VIP Frame */}
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-3xl p-1 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 shadow-[0_0_25px_rgba(236,72,153,0.6)]">
-                    <img src={userAvatar} alt={userName} className="w-full h-full object-cover rounded-[22px] border-2 border-slate-950" />
+            {/* MAIN DASHBOARD PAGE */}
+            {profileSubPage === 'main' && (
+              <>
+                {/* 1. PROFILE HEADER */}
+                <div className="relative rounded-3xl overflow-hidden border border-pink-500/30 bg-slate-900 shadow-2xl backdrop-blur-xl">
+                  {/* Animated Cover Background */}
+                  <div className="relative h-48 w-full bg-gradient-to-r from-pink-900 via-purple-900 to-indigo-950 overflow-hidden">
+                    <img 
+                      src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80" 
+                      alt="Profile Cover" 
+                      className="w-full h-full object-cover opacity-40 hover:scale-105 transition duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
                   </div>
-                  {/* VIP / Level Badge */}
-                  <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] shadow-lg border border-yellow-200 flex items-center gap-0.5">
-                    <Crown className="w-3 h-3 fill-slate-950" />
-                    👑 LVL {userLevel}
-                  </span>
-                </div>
 
-                {/* Profile Actions */}
-                <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
-                  {profilePreviewMode === 'self' ? (
-                    <>
-                      <button 
-                        onClick={() => setIsEditingProfile(!isEditingProfile)}
-                        className="btn-neon-pink px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 shadow-md"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                        Edit Profile
-                      </button>
-
-                      <button 
-                        onClick={() => {
-                          navigator.clipboard.writeText(`https://vlive.app/profile/${currentUsername}`);
-                          showToast('Profile link copied to clipboard!');
-                        }}
-                        className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200"
-                        title="Share Profile"
-                      >
-                        <Share2 className="w-4 h-4" />
-                      </button>
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <button 
-                        onClick={() => showToast(`Starting chat with @${currentUsername}`)}
-                        className="px-3 py-2 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1 shadow-md"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        Chat
-                      </button>
-
-                      <button 
-                        onClick={() => showToast(`Initiating voice call with @${currentUsername}`)}
-                        className="px-3 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow-md"
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                        Voice
-                      </button>
-
-                      <button 
-                        onClick={() => handleStartPrivateCall({ name: userName, avatar: userAvatar, pricePerMin: 100 })}
-                        className="px-3 py-2 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1 shadow-md"
-                      >
-                        <Video className="w-3.5 h-3.5" />
-                        Video
-                      </button>
-
-                      <button 
-                        onClick={() => setIsGiftCatalogOpen(true)}
-                        className="p-2.5 rounded-2xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400"
-                        title="Send Gift"
-                      >
-                        <Gift className="w-4 h-4" />
-                      </button>
+                  {/* Avatar & Badges & Header Controls */}
+                  <div className="px-6 pb-6 pt-0 relative flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4 -mt-20">
+                    {/* Avatar with Animated Ring */}
+                    <div className="relative flex flex-col items-center sm:items-start">
+                      <div className="relative group">
+                        <div className="w-28 h-28 rounded-3xl p-1 bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 shadow-[0_0_30px_rgba(236,72,153,0.5)]">
+                          <img src={userAvatar} alt={userName} className="w-full h-full object-cover rounded-[22px] border-2 border-slate-950" />
+                        </div>
+                        {/* Online Status Indicator Dot */}
+                        {privacyShowLastSeen && (
+                          <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-slate-950 rounded-full animate-pulse shadow-md" title="Online Now" />
+                        )}
+                        {/* Level Badge */}
+                        <span className="absolute -bottom-2 right-1/2 translate-x-1/2 sm:translate-x-0 sm:right-0 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-[10px] shadow-lg border border-yellow-200 flex items-center gap-1">
+                          <Crown className="w-3 h-3 fill-slate-950" />
+                          LVL {userLevel}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
 
-              {/* 2. MAIN USER INFORMATION */}
-              <div className="px-5 pb-5 space-y-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-lg font-black text-white">{userName}</h2>
-                  {isVerified && <VerifiedBadge className="w-4 h-4" showLabel={true} />}
-                  <VipStatusBadge size="normal" showText={true} />
-                  
-                  {/* TELEGRAM NUMERIC ID BADGE */}
-                  <span className="bg-cyan-950/80 text-cyan-300 border border-cyan-800/80 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                    🆔 Telegram ID: {currentTelegramId}
-                  </span>
+                    {/* Header Action Buttons (Edit Profile, QR Code, Share Profile) */}
+                    <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
+                      {profilePreviewMode === 'self' ? (
+                        <>
+                          <button 
+                            onClick={() => setProfileSubPage('account')}
+                            className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg active:scale-95 transition"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                            <span>{loc('ویرایش پروفایل', 'Edit Profile')}</span>
+                          </button>
+
+                          <button 
+                            onClick={() => setIsQrCodeModalOpen(true)}
+                            className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 shadow-md active:scale-95 transition"
+                            title={loc('کد QR', 'QR Code')}
+                          >
+                            <QrCode className="w-4 h-4 text-cyan-400" />
+                          </button>
+
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(`https://vlive.app/profile/${currentUsername}`);
+                              showToast(loc('لینک پروفایل کپی شد!', 'Profile link copied to clipboard!'));
+                            }}
+                            className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 shadow-md active:scale-95 transition"
+                            title={loc('اشتراک‌گذاری', 'Share Profile')}
+                          >
+                            <Share2 className="w-4 h-4 text-pink-400" />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button 
+                            onClick={() => showToast(`Starting chat with @${currentUsername}`)}
+                            className="px-4 py-2 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            Chat
+                          </button>
+                          <button 
+                            onClick={() => showToast(`Initiating voice call with @${currentUsername}`)}
+                            className="px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                            Voice
+                          </button>
+                          <button 
+                            onClick={() => handleStartPrivateCall({ name: userName, avatar: userAvatar, pricePerMin: 100 })}
+                            className="px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                          >
+                            <Video className="w-3.5 h-3.5" />
+                            Video
+                          </button>
+                          <button 
+                            onClick={() => setIsGiftCatalogOpen(true)}
+                            className="p-2 rounded-2xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 shadow-md"
+                          >
+                            <Gift className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Profile Details (Name, Badges, Username, Telegram ID) */}
+                  <div className="px-6 pb-6 space-y-2 text-center sm:text-right">
+                    <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                      <h2 className="text-xl font-black text-white tracking-wide">{userName}</h2>
+                      {isVerified && <VerifiedBadge className="w-4 h-4" showLabel={true} />}
+                      <VipStatusBadge size="normal" showText={true} />
+                    </div>
+
+                    <div className="flex items-center justify-center sm:justify-start gap-3 text-xs text-slate-400 flex-wrap">
+                      <span className="text-pink-400 font-bold">@{currentUsername}</span>
+                      <span className="bg-cyan-950/90 text-cyan-300 border border-cyan-800/80 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow">
+                        🆔 ID: {currentTelegramId}
+                      </span>
+                      {privacyShowAge && <span>• 24 Yrs</span>}
+                      {privacyShowCity && (
+                        <span className="flex items-center gap-1 text-slate-300">
+                          <MapPin className="w-3 h-3 text-pink-400" />
+                          Tehran, Iran
+                        </span>
+                      )}
+                      {privacyShowLastSeen && (
+                        <span className="flex items-center gap-1 text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 text-[10px]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          Online Now
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
-                  <span className="text-pink-300 font-semibold">@{currentUsername}</span>
-                  {privacyShowAge && <span>• 24 Yrs</span>}
-                  {privacyShowCity && (
-                    <span className="flex items-center gap-1 text-slate-300">
-                      <MapPin className="w-3 h-3 text-pink-400" />
-                      Tehran, Iran
-                    </span>
-                  )}
-                  {privacyShowLastSeen && (
-                    <span className="flex items-center gap-1 text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 text-[10px]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      Online Now
-                    </span>
-                  )}
+                {/* 2. USER STATISTICS (Icon + Number + Short Title) */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                  <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-pink-500/40 transition shadow-lg text-center space-y-1">
+                    <div className="w-8 h-8 rounded-xl bg-pink-500/15 text-pink-400 flex items-center justify-center mx-auto">
+                      <Heart className="w-4 h-4 fill-pink-400" />
+                    </div>
+                    <p className="text-sm font-black text-white">12.4K</p>
+                    <p className="text-[10px] font-bold text-slate-400">{loc('پسندها', 'Likes')}</p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-purple-500/40 transition shadow-lg text-center space-y-1">
+                    <div className="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center mx-auto">
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <p className="text-sm font-black text-white">8.5K</p>
+                    <p className="text-[10px] font-bold text-slate-400">{loc('دنبال‌کنندگان', 'Followers')}</p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-indigo-500/40 transition shadow-lg text-center space-y-1">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center mx-auto">
+                      <HeartHandshake className="w-4 h-4" />
+                    </div>
+                    <p className="text-sm font-black text-white">340</p>
+                    <p className="text-[10px] font-bold text-slate-400">{loc('دنبال‌شده‌ها', 'Following')}</p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-cyan-500/40 transition shadow-lg text-center space-y-1">
+                    <div className="w-8 h-8 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center mx-auto">
+                      <Image className="w-4 h-4" />
+                    </div>
+                    <p className="text-sm font-black text-white">42</p>
+                    <p className="text-[10px] font-bold text-slate-400">{loc('پست‌ها', 'Posts')}</p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-amber-500/40 transition shadow-lg text-center space-y-1">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center mx-auto">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <p className="text-sm font-black text-white">12</p>
+                    <p className="text-[10px] font-bold text-slate-400">{loc('استوری‌ها', 'Stories')}</p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-orange-500/40 transition shadow-lg text-center space-y-1">
+                    <div className="w-8 h-8 rounded-xl bg-orange-500/15 text-orange-400 flex items-center justify-center mx-auto">
+                      <Flame className="w-4 h-4 fill-orange-400" />
+                    </div>
+                    <p className="text-sm font-black text-white">15.8K</p>
+                    <p className="text-[10px] font-bold text-slate-400">{loc('امتیاز زنده', 'Live Score')}</p>
+                  </div>
                 </div>
 
-                {/* RECOGNIZED ADMIN PROMINENT PROFILE BUTTON */}
-                {String(currentTelegramId).trim() === '8973478139' && (
-                  <div className="pt-2">
+                {/* 3. QUICK ACTIONS (Small Rounded Icon Buttons) */}
+                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 shadow-xl space-y-3">
+                  <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 text-amber-400" />
+                    {loc('دسترسی سریع', 'Quick Actions')}
+                  </h3>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
+                    <button 
+                      onClick={() => setProfileSubPage('account')}
+                      className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-pink-500/50 flex flex-col items-center justify-center gap-1.5 transition active:scale-95 group shadow"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-pink-500/10 group-hover:bg-pink-500 text-pink-400 group-hover:text-white flex items-center justify-center transition">
+                        <Edit3 className="w-4 h-4" />
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-300">{loc('ویرایش', 'Edit')}</span>
+                    </button>
+
+                    <button 
+                      onClick={() => setProfileSubPage('wallet')}
+                      className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/50 flex flex-col items-center justify-center gap-1.5 transition active:scale-95 group shadow"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 group-hover:bg-emerald-500 text-emerald-400 group-hover:text-white flex items-center justify-center transition">
+                        <Wallet className="w-4 h-4" />
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-300">{loc('کیف‌پول', 'Wallet')}</span>
+                    </button>
+
+                    <button 
+                      onClick={() => setProfileSubPage('vip')}
+                      className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-yellow-500/50 flex flex-col items-center justify-center gap-1.5 transition active:scale-95 group shadow"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-yellow-500/10 group-hover:bg-yellow-500 text-yellow-400 group-hover:text-slate-950 flex items-center justify-center transition">
+                        <Crown className="w-4 h-4" />
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-300">{loc('ویژه VIP', 'VIP')}</span>
+                    </button>
+
+                    <button 
+                      onClick={() => setProfileSubPage('gifts')}
+                      className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-purple-500/50 flex flex-col items-center justify-center gap-1.5 transition active:scale-95 group shadow"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-purple-500/10 group-hover:bg-purple-500 text-purple-400 group-hover:text-white flex items-center justify-center transition">
+                        <Gift className="w-4 h-4" />
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-300">{loc('هدایا', 'Gifts')}</span>
+                    </button>
+
+                    <button 
+                      onClick={() => setProfileSubPage('gallery')}
+                      className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 flex flex-col items-center justify-center gap-1.5 transition active:scale-95 group shadow"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-cyan-500/10 group-hover:bg-cyan-500 text-cyan-400 group-hover:text-white flex items-center justify-center transition">
+                        <Image className="w-4 h-4" />
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-300">{loc('گالری', 'Gallery')}</span>
+                    </button>
+
+                    <button 
+                      onClick={() => setProfileSubPage('privacy')}
+                      className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500/50 flex flex-col items-center justify-center gap-1.5 transition active:scale-95 group shadow"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-indigo-500/10 group-hover:bg-indigo-500 text-indigo-400 group-hover:text-white flex items-center justify-center transition">
+                        <Settings className="w-4 h-4" />
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-300">{loc('تنظیمات', 'Settings')}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4. PROFILE MENU (Navigation Cards) */}
+                <div className="space-y-3">
+                  <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider px-1">
+                    {loc('منوی کاربری', 'Profile Menu')}
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Account Navigation Card */}
+                    <button
+                      onClick={() => setProfileSubPage('account')}
+                      className="p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800/80 hover:border-pink-500/40 flex items-center justify-between transition-all duration-300 shadow-xl group text-right"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-2xl bg-pink-500/15 text-pink-400 flex items-center justify-center group-hover:scale-110 transition shrink-0">
+                          <User className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-white group-hover:text-pink-300 transition">{loc('👤 حساب کاربری', '👤 Account')}</h4>
+                          <p className="text-[11px] text-slate-400">{loc('اطلاعات شخصی، نام‌کاربری و ادمین', 'Personal details & admin access')}</p>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-pink-600 transition shrink-0">
+                        {isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </div>
+                    </button>
+
+                    {/* Privacy & Security Navigation Card */}
+                    <button
+                      onClick={() => setProfileSubPage('privacy')}
+                      className="p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800/80 hover:border-emerald-500/40 flex items-center justify-between transition-all duration-300 shadow-xl group text-right"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition shrink-0">
+                          <Lock className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-white group-hover:text-emerald-300 transition">{loc('🔒 حریم خصوصی و امنیت', '🔒 Privacy & Security')}</h4>
+                          <p className="text-[11px] text-slate-400">{loc('تنظیمات نمایش، کاربران مسدود و نشست‌ها', 'Privacy options & blocked users')}</p>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-emerald-600 transition shrink-0">
+                        {isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </div>
+                    </button>
+
+                    {/* Wallet Navigation Card */}
+                    <button
+                      onClick={() => setProfileSubPage('wallet')}
+                      className="p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800/80 hover:border-amber-500/40 flex items-center justify-between transition-all duration-300 shadow-xl group text-right"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center group-hover:scale-110 transition shrink-0">
+                          <Wallet className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-white group-hover:text-amber-300 transition">{loc('💰 کیف پول و مالی', '💰 Wallet & Finances')}</h4>
+                          <p className="text-[11px] text-slate-400">{loc('موجودی سکه، خرید سکه و تاریخچه تراکنش', 'Coins balance & transactions')}</p>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-amber-600 transition shrink-0">
+                        {isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </div>
+                    </button>
+
+                    {/* VIP Navigation Card */}
+                    <button
+                      onClick={() => setProfileSubPage('vip')}
+                      className="p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800/80 hover:border-yellow-500/40 flex items-center justify-between transition-all duration-300 shadow-xl group text-right"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-2xl bg-yellow-500/15 text-yellow-400 flex items-center justify-center group-hover:scale-110 transition shrink-0">
+                          <Crown className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-white group-hover:text-yellow-300 transition">{loc('👑 اشتراک ویژه VIP', '👑 VIP Membership')}</h4>
+                          <p className="text-[11px] text-slate-400">{loc('مزایای ویژه، نشان VIP و ارتقا', 'VIP status & premium benefits')}</p>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-slate-400 group-hover:text-slate-950 group-hover:bg-yellow-400 transition shrink-0">
+                        {isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </div>
+                    </button>
+
+                    {/* Gifts Navigation Card */}
+                    <button
+                      onClick={() => setProfileSubPage('gifts')}
+                      className="p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800/80 hover:border-purple-500/40 flex items-center justify-between transition-all duration-300 shadow-xl group text-right"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-2xl bg-purple-500/15 text-purple-400 flex items-center justify-center group-hover:scale-110 transition shrink-0">
+                          <Gift className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-white group-hover:text-purple-300 transition">{loc('🎁 هدایا و پاداش‌ها', '🎁 Gifts & Rewards')}</h4>
+                          <p className="text-[11px] text-slate-400">{loc('هدایای دریافتی و ارسال‌شده', 'Received gifts & history')}</p>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-purple-600 transition shrink-0">
+                        {isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </div>
+                    </button>
+
+                    {/* Gallery Navigation Card */}
+                    <button
+                      onClick={() => setProfileSubPage('gallery')}
+                      className="p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800/80 hover:border-cyan-500/40 flex items-center justify-between transition-all duration-300 shadow-xl group text-right"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-2xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center group-hover:scale-110 transition shrink-0">
+                          <Image className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-white group-hover:text-cyan-300 transition">{loc('📷 گالری و پست‌ها', '📷 Gallery & Posts')}</h4>
+                          <p className="text-[11px] text-slate-400">{loc('تصاویر، ویدیوها و انتشار پست', 'Photos, videos & posts')}</p>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-cyan-600 transition shrink-0">
+                        {isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </div>
+                    </button>
+
+                    {/* Stories Navigation Card */}
+                    <button
+                      onClick={() => setProfileSubPage('stories')}
+                      className="p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800/80 hover:border-pink-500/40 flex items-center justify-between transition-all duration-300 shadow-xl group text-right"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-2xl bg-pink-500/15 text-pink-400 flex items-center justify-center group-hover:scale-110 transition shrink-0">
+                          <Sparkles className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-white group-hover:text-pink-300 transition">{loc('📖 استوری‌ها', '📖 Stories')}</h4>
+                          <p className="text-[11px] text-slate-400">{loc('استوری‌های ۲۴ ساعته فعال', 'Active 24-hour stories')}</p>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-pink-600 transition shrink-0">
+                        {isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </div>
+                    </button>
+
+                    {/* Notifications Navigation Card */}
+                    <button
+                      onClick={() => setProfileSubPage('notifications')}
+                      className="p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800/80 hover:border-blue-500/40 flex items-center justify-between transition-all duration-300 shadow-xl group text-right"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center group-hover:scale-110 transition shrink-0">
+                          <Bell className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-white group-hover:text-blue-300 transition">{loc('🔔 اعلان‌ها', '🔔 Notifications')}</h4>
+                          <p className="text-[11px] text-slate-400">{loc('تنظیمات پیام‌ها و هشدارهای سیستم', 'Alerts & push notification settings')}</p>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-blue-600 transition shrink-0">
+                        {isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </div>
+                    </button>
+
+                    {/* Language Navigation Card */}
+                    <button
+                      onClick={() => setProfileSubPage('language')}
+                      className="p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800/80 hover:border-emerald-500/40 flex items-center justify-between transition-all duration-300 shadow-xl group text-right"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition shrink-0">
+                          <Globe className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-white group-hover:text-emerald-300 transition">{loc('🌍 زبان برنامه', '🌍 Language')}</h4>
+                          <p className="text-[11px] text-slate-400">{loc('تغییر زبان (فارسی / English)', 'Language preferences')}</p>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-emerald-600 transition shrink-0">
+                        {isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </div>
+                    </button>
+
+                    {/* Support Navigation Card */}
+                    <button
+                      onClick={() => setProfileSubPage('support')}
+                      className="p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800/80 hover:border-teal-500/40 flex items-center justify-between transition-all duration-300 shadow-xl group text-right"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-2xl bg-teal-500/15 text-teal-400 flex items-center justify-center group-hover:scale-110 transition shrink-0">
+                          <Info className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-white group-hover:text-teal-300 transition">{loc('🎧 پشتیبانی و راهنما', '🎧 Support & Help')}</h4>
+                          <p className="text-[11px] text-slate-400">{loc('پاسخ به سوالات و ارتباط با پشتیبانی', 'Help center & customer support')}</p>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-teal-600 transition shrink-0">
+                        {isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </div>
+                    </button>
+
+                    {/* About Navigation Card */}
+                    <button
+                      onClick={() => setProfileSubPage('about')}
+                      className="p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800/80 hover:border-indigo-500/40 flex items-center justify-between transition-all duration-300 shadow-xl group text-right"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-2xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition shrink-0">
+                          <Shield className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-white group-hover:text-indigo-300 transition">{loc('ℹ درباره VLive', 'ℹ About VLive')}</h4>
+                          <p className="text-[11px] text-slate-400">{loc('نسخه برنامه، قوانین و شرایط استفاده', 'App version, terms & policy')}</p>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-indigo-600 transition shrink-0">
+                        {isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </div>
+                    </button>
+
+                    {/* Logout Navigation Card */}
+                    <button
+                      onClick={handleLogout}
+                      className="p-4 rounded-3xl bg-red-950/20 hover:bg-red-900/30 border border-red-800/40 hover:border-red-500/60 flex items-center justify-between transition-all duration-300 shadow-xl group text-right"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-2xl bg-red-500/15 text-red-400 flex items-center justify-center group-hover:scale-110 transition shrink-0">
+                          <LogOut className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-red-400 group-hover:text-red-300 transition">{loc('🚪 خروج از حساب', '🚪 Logout')}</h4>
+                          <p className="text-[11px] text-slate-400">{loc('خروج از حساب کاربری فعلی', 'Sign out of account')}</p>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-red-400 group-hover:text-white group-hover:bg-red-600 transition shrink-0">
+                        {isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* DEDICATED SUB-PAGE 1: ACCOUNT */}
+            {profileSubPage === 'account' && (
+              <div className="space-y-6">
+                {/* ADMIN PANEL ENTRY CARD - ADMIN ONLY */}
+                {(userRole === 'admin' || String(currentTelegramId).trim() === '8973478139') && (
+                  <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-600/20 border border-amber-500/40 shadow-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black">
+                          <ShieldCheck className="w-6 h-6 animate-pulse" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-black text-amber-300">{loc('🛡️ پنل مدیریت ارشد (Admin Panel)', '🛡️ Admin Panel')}</h3>
+                          <p className="text-[11px] text-slate-300">{loc('دسترسی به تنظیمات سیستم و مدیریت کاربران', 'Access system settings & manage users')}</p>
+                        </div>
+                      </div>
+                      <span className="bg-amber-400/20 text-amber-300 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border border-amber-400/30">
+                        ADMIN
+                      </span>
+                    </div>
+
                     <button
                       onClick={() => setIsAdminPinModalOpen(true)}
-                      className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-between border border-amber-300/40"
+                      className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-black text-xs shadow-xl hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2 border border-amber-300/40"
                     >
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 animate-bounce text-slate-950" />
-                        <span>👑 ورود به پنل مدیریت (Admin Panel)</span>
-                      </div>
-                      <span className="bg-slate-950/40 text-amber-200 px-2.5 py-1 rounded-xl text-[10px] font-mono">
-                        ورود با نام‌کاربری و رمز
-                      </span>
+                      <Key className="w-4 h-4 text-slate-950" />
+                      <span>{loc('ورود به پنل مدیریت با رمز عبور', 'Enter Admin Panel with Password')}</span>
                     </button>
                   </div>
                 )}
-              </div>
-            </div>
 
-            {/* PROFILE MAIN SUB-TABS NAVIGATION BAR */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button 
-                onClick={() => setProfileMainTab('gallery')}
-                className={`py-2.5 px-3 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 border ${
-                  profileMainTab === 'gallery'
-                    ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-500/50 shadow-lg'
-                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                }`}
-              >
-                <Image className="w-4 h-4" />
-                <span>📸 گالری و پست‌ها</span>
-              </button>
-
-              <button 
-                onClick={() => setProfileMainTab('level')}
-                className={`py-2.5 px-3 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 border ${
-                  profileMainTab === 'level'
-                    ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 border-amber-400/50 shadow-lg'
-                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                }`}
-              >
-                <Trophy className="w-4 h-4" />
-                <span>🏆 سطح و پاداش‌ها</span>
-              </button>
-
-              <button 
-                onClick={() => setProfileMainTab('wallet')}
-                className={`py-2.5 px-3 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 border ${
-                  profileMainTab === 'wallet'
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-500 text-white border-emerald-500/50 shadow-lg'
-                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                }`}
-              >
-                <Wallet className="w-4 h-4" />
-                <span>👛 کیف‌پول و مالی</span>
-              </button>
-
-              <button 
-                onClick={() => setProfileMainTab('settings')}
-                className={`py-2.5 px-3 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 border ${
-                  profileMainTab === 'settings'
-                    ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-cyan-500/50 shadow-lg'
-                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                }`}
-              >
-                <Settings className="w-4 h-4" />
-                <span>⚙️ تنظیمات و امنیت</span>
-              </button>
-            </div>
-
-            {/* EDIT PROFILE FORM */}
-            {isEditingProfile && (
-              <form onSubmit={handleSaveProfileSettings} className="card-3d p-5 rounded-3xl border border-pink-500/40 bg-slate-900/90 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                {/* EDIT PROFILE FORM */}
+                <form onSubmit={handleSaveProfileSettings} className="p-5 rounded-3xl border border-pink-500/40 bg-slate-900/90 shadow-2xl space-y-4">
+                  <h3 className="text-sm font-black text-white flex items-center gap-2">
                     <Edit3 className="w-4 h-4 text-pink-400" />
-                    Edit Profile Details & Avatar
+                    {loc('ویرایش اطلاعات حساب و آواتار', 'Edit Profile Details & Avatar')}
                   </h3>
-                  <button type="button" onClick={() => setIsEditingProfile(false)} className="text-slate-400 hover:text-white">
-                    <X className="w-4 h-4" />
+
+                  {/* Avatar Upload */}
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-dashed border-pink-500/50 flex flex-col items-center justify-center text-center space-y-2">
+                    <div className="w-12 h-12 rounded-full bg-pink-500/20 text-pink-400 flex items-center justify-center">
+                      <Camera className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white">{loc('بارگذاری عکس آواتار', 'Upload Avatar Image')}</p>
+                      <p className="text-[10px] text-slate-400">{loc('انتخاب عکس از حافظه گوشی', 'Select an image file from storage')}</p>
+                    </div>
+
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      id="profile-avatar-upload"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files && e.target.files[0];
+                        if (file) {
+                          const fileUrl = URL.createObjectURL(file);
+                          setEditAvatarUrl(fileUrl);
+                          showToast(loc('عکس آواتار انتخاب شد!', 'Uploaded photo as avatar!'));
+                        }
+                      }}
+                    />
+
+                    <label 
+                      htmlFor="profile-avatar-upload"
+                      className="cursor-pointer px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition"
+                    >
+                      <Image className="w-3.5 h-3.5" />
+                      {loc('انتخاب تصویر از گوشی', 'Choose Photo')}
+                    </label>
+                  </div>
+
+                  {/* Preset Avatars Selection */}
+                  <div className="space-y-2">
+                    <label className="text-[11px] text-slate-400 font-medium">{loc('یا انتخاب آواتارهای پیش‌فرض:', 'Or select preset avatar:')}</label>
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                      {PRESET_AVATARS.map((avatarUrl, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => setEditAvatarUrl(avatarUrl)}
+                          className={`relative w-12 h-12 rounded-2xl overflow-hidden shrink-0 border-2 transition ${editAvatarUrl === avatarUrl ? 'border-pink-500 scale-105 shadow-[0_0_10px_rgba(236,72,153,0.8)]' : 'border-slate-800 hover:border-slate-600'}`}
+                        >
+                          <img src={avatarUrl} alt={`Avatar ${index + 1}`} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <label className="text-slate-400 mb-1 block">{loc('نام نمایشی', 'Display Name')}</label>
+                      <input 
+                        type="text" 
+                        value={editFullName} 
+                        onChange={e => setEditFullName(e.target.value)}
+                        className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-slate-400 mb-1 block">{loc('نام کاربری', 'Username')}</label>
+                      <input 
+                        type="text" 
+                        value={editUsername} 
+                        onChange={e => setEditUsername(e.target.value)}
+                        className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="text-slate-300 font-bold mb-1 flex items-center justify-between">
+                        <span>🆔 {loc('ای‌دی عددی تلگرام:', 'Telegram Numeric ID:')}</span>
+                        <span className="text-[10px] text-cyan-400 font-mono">{loc('جهت شناسایی ادمین (مثال: 8973478139)', 'e.g. 8973478139')}</span>
+                      </label>
+                      <input 
+                        type="text" 
+                        value={currentTelegramId} 
+                        onChange={e => {
+                          const val = e.target.value.trim();
+                          setCurrentTelegramId(val);
+                          safeStorage.setItem('vlive_user_telegram_id', val);
+                        }}
+                        placeholder="8973478139"
+                        className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-cyan-300 font-mono text-xs outline-none focus:border-cyan-500"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="text-slate-400 mb-1 block">{loc('بیوگرافی', 'Bio Statement')}</label>
+                      <textarea 
+                        value={editBio} 
+                        onChange={e => setEditBio(e.target.value)}
+                        className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500 h-20"
+                      />
+                    </div>
+                  </div>
+
+                  <button type="submit" className="w-full py-3 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-black text-xs shadow-lg active:scale-95 transition">
+                    {loc('ذخیره تغییرات', 'Save Changes')}
+                  </button>
+                </form>
+
+                {/* ACCOUNT ACTIONS & SESSIONS */}
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+                  <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    {loc('نشست‌های فعال و امنیت', 'Active Sessions & Security')}
+                  </h3>
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-slate-200 font-bold block">{loc('تلگرام وب اپ (دستگاه فعلی)', 'Telegram Web App (Current)')}</span>
+                      <span className="text-[10px] text-slate-400">Tehran, Iran • Active Now</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono text-[10px] font-bold border border-emerald-500/30">
+                      THIS DEVICE
+                    </span>
+                  </div>
+
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full py-3 rounded-2xl bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 text-xs font-bold transition flex items-center justify-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>{loc('خروج از حساب کاربری', 'Log Out of Account')}</span>
                   </button>
                 </div>
-
-                {/* 1. UPLOAD FROM PHONE GALLERY */}
-                <div className="p-3.5 rounded-2xl bg-slate-950 border border-dashed border-pink-500/50 flex flex-col items-center justify-center text-center space-y-2">
-                  <div className="w-10 h-10 rounded-full bg-pink-500/20 text-pink-400 flex items-center justify-center">
-                    <Camera className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-white">Upload Avatar Image</p>
-                    <p className="text-[10px] text-slate-400">Select any image file from your phone storage</p>
-                  </div>
-
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    id="profile-avatar-upload"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files && e.target.files[0];
-                      if (file) {
-                        const fileUrl = URL.createObjectURL(file);
-                        setEditAvatarUrl(fileUrl);
-                        showToast(`Uploaded ${file.name} as your avatar!`);
-                      }
-                    }}
-                  />
-
-                  <label 
-                    htmlFor="profile-avatar-upload"
-                    className="cursor-pointer px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition"
-                  >
-                    <Image className="w-3.5 h-3.5" />
-                    Choose Photo from Phone
-                  </label>
-                </div>
-
-                {/* Preset Avatars Selection */}
-                <div className="space-y-2">
-                  <label className="text-[11px] text-slate-400 font-medium">Or Select Preset Avatar</label>
-                  <div className="flex items-center gap-2 overflow-x-auto pb-2">
-                    {PRESET_AVATARS.map((avatarUrl, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => setEditAvatarUrl(avatarUrl)}
-                        className={`relative w-12 h-12 rounded-2xl overflow-hidden shrink-0 border-2 transition ${editAvatarUrl === avatarUrl ? 'border-pink-500 scale-105 shadow-[0_0_10px_rgba(236,72,153,0.8)]' : 'border-slate-800 hover:border-slate-600'}`}
-                      >
-                        <img src={avatarUrl} alt={`Avatar ${index + 1}`} className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <label className="text-slate-400 mb-1 block">Display Name</label>
-                    <input 
-                      type="text" 
-                      value={editFullName} 
-                      onChange={e => setEditFullName(e.target.value)}
-                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-slate-400 mb-1 block">Username</label>
-                    <input 
-                      type="text" 
-                      value={editUsername} 
-                      onChange={e => setEditUsername(e.target.value)}
-                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="text-slate-300 font-bold mb-1 flex items-center justify-between">
-                      <span>🆔 ای‌دی عددی تلگرام (Telegram Numeric ID):</span>
-                      <span className="text-[10px] text-cyan-400 font-mono">جهت شناسایی ادمین (مثال: 8973478139)</span>
-                    </label>
-                    <input 
-                      type="text" 
-                      value={currentTelegramId} 
-                      onChange={e => {
-                        const val = e.target.value.trim();
-                        setCurrentTelegramId(val);
-                        safeStorage.setItem('vlive_user_telegram_id', val);
-                      }}
-                      placeholder="8973478139"
-                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-cyan-300 font-mono text-xs outline-none focus:border-cyan-500"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="text-slate-400 mb-1 block">Bio Statement</label>
-                    <textarea 
-                      value={editBio} 
-                      onChange={e => setEditBio(e.target.value)}
-                      className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500 h-20"
-                    />
-                  </div>
-                </div>
-
-                <button type="submit" className="w-full py-2.5 rounded-xl btn-neon-pink font-bold text-xs">
-                  Save Changes
-                </button>
-              </form>
+              </div>
             )}
 
-            {/* 3. MEDIA GALLERY & STORIES MANAGEMENT (PHOTOS, VIDEOS & 24H STORIES) - PROMINENT TOP POSITION */}
-            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <Image className="w-4 h-4 text-purple-400" />
-                  <h3 className="text-xs font-bold text-white">
-                    {loc('گالری رسانه و استوری‌ها (Posts & Stories)', 'Media Gallery & Stories')}
+            {/* DEDICATED SUB-PAGE 2: PRIVACY & SECURITY */}
+            {profileSubPage === 'privacy' && (
+              <div className="space-y-4">
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+                  <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Lock className="w-4 h-4 text-emerald-400" />
+                    {loc('تنظیمات نمایش حریم خصوصی', 'Privacy Display Settings')}
                   </h3>
+
+                  <div className="space-y-3">
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-200">{loc('نمایش سن در پروفایل', 'Show Age on Profile')}</span>
+                      <button 
+                        type="button"
+                        onClick={() => setPrivacyShowAge(!privacyShowAge)}
+                        className={`w-12 h-6 rounded-full p-1 transition-colors ${privacyShowAge ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                      >
+                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${privacyShowAge ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-200">{loc('نمایش شهر / موقعیت', 'Show Location / City')}</span>
+                      <button 
+                        type="button"
+                        onClick={() => setPrivacyShowCity(!privacyShowCity)}
+                        className={`w-12 h-6 rounded-full p-1 transition-colors ${privacyShowCity ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                      >
+                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${privacyShowCity ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-200">{loc('نمایش وضعیت آنلاین بودن', 'Show Online Status')}</span>
+                      <button 
+                        type="button"
+                        onClick={() => setPrivacyShowLastSeen(!privacyShowLastSeen)}
+                        className={`w-12 h-6 rounded-full p-1 transition-colors ${privacyShowLastSeen ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                      >
+                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${privacyShowLastSeen ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-200">{loc('نمایش هدایا در پروفایل', 'Show Gifts on Profile')}</span>
+                      <button 
+                        type="button"
+                        onClick={() => setPrivacyShowGifts(!privacyShowGifts)}
+                        className={`w-12 h-6 rounded-full p-1 transition-colors ${privacyShowGifts ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                      >
+                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${privacyShowGifts ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                {profilePreviewMode === 'self' && (
-                  <div className="flex items-center gap-2">
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+                  <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Ban className="w-4 h-4 text-red-400" />
+                    {loc('کاربران مسدود شده (Blocked Users)', 'Blocked Users')}
+                  </h3>
+                  <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-400 text-center">
+                    {loc('هیچ کاربری در لیست مسدودشده‌ها قرار ندارد.', 'No users currently blocked.')}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* DEDICATED SUB-PAGE 3: WALLET */}
+            {profileSubPage === 'wallet' && (
+              <div className="space-y-4">
+                <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-slate-900 border border-amber-500/40 shadow-2xl space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-amber-300 uppercase tracking-wider">{loc('موجودی کیف‌پول شما', 'Your Wallet Balance')}</p>
+                      <h2 className="text-3xl font-black text-white flex items-center gap-2 mt-1">
+                        <Coins className="w-8 h-8 text-amber-400" />
+                        <span>{userCoins.toLocaleString()}</span>
+                        <span className="text-xs font-bold text-amber-400">{loc('سکه', 'Coins')}</span>
+                      </h2>
+                    </div>
+                    <button
+                      onClick={() => setActiveTab('wallet')}
+                      className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-black text-xs shadow-lg hover:bg-amber-400 active:scale-95 transition"
+                    >
+                      {loc('خرید سکه', 'Buy Coins')}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+                  <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <History className="w-4 h-4 text-cyan-400" />
+                    {loc('تاریخچه تراکنش‌های اخیر', 'Recent Payment History')}
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-300">{loc('خرید بسته ۵۰۰ سکه', 'Buy 500 Coins')}</span>
+                      <span className="text-emerald-400 font-mono font-bold">+500 Coins</span>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-300">{loc('ارسال هدیه تاج به استریمر', 'Sent Crown Gift')}</span>
+                      <span className="text-red-400 font-mono font-bold">-100 Coins</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* DEDICATED SUB-PAGE 4: VIP */}
+            {profileSubPage === 'vip' && (
+              <div className="space-y-4">
+                <div className="p-6 rounded-3xl bg-gradient-to-r from-yellow-500/20 via-amber-500/20 to-slate-900 border border-yellow-500/40 shadow-2xl space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-yellow-400 text-slate-950 flex items-center justify-center font-black">
+                      <Crown className="w-7 h-7 fill-slate-950" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-yellow-300">{loc('عضویت ویژه VIP', 'VIP Membership')}</h3>
+                      <p className="text-xs text-slate-300">{loc('دسترسی به تمام قابلیت‌های ممتاز و نشان اختصاصی', 'Access all premium features & badge')}</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      onClick={() => setIsVipModalOpen(true)}
+                      className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs shadow-xl hover:brightness-110 active:scale-95 transition"
+                    >
+                      {loc('ارتقا به VIP برنزی / نقره‌ای / طلایی', 'Upgrade VIP Membership')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* DEDICATED SUB-PAGE 5: GIFTS */}
+            {profileSubPage === 'gifts' && (
+              <div className="space-y-4">
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Gift className="w-4 h-4 text-purple-400" />
+                      {loc('هدایای دریافتی شما', 'Your Received Gifts')}
+                    </h3>
+                    <button
+                      onClick={() => setIsGiftCatalogOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-purple-600 text-white font-bold text-xs shadow"
+                    >
+                      {loc('کاتالوگ هدایا', 'Gift Catalog')}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                      <span className="text-2xl">👑</span>
+                      <p className="text-xs font-bold text-white">14</p>
+                      <p className="text-[10px] text-slate-400">Crowns</p>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                      <span className="text-2xl">🚀</span>
+                      <p className="text-xs font-bold text-white">8</p>
+                      <p className="text-[10px] text-slate-400">Rockets</p>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                      <span className="text-2xl">💎</span>
+                      <p className="text-xs font-bold text-white">25</p>
+                      <p className="text-[10px] text-slate-400">Gems</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* DEDICATED SUB-PAGE 6: GALLERY */}
+            {profileSubPage === 'gallery' && (
+              <div className="space-y-4">
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h3 className="text-xs font-black text-white flex items-center gap-2">
+                      <Image className="w-4 h-4 text-cyan-400" />
+                      {loc('گالری رسانه و پست‌ها', 'Media Gallery & Posts')}
+                    </h3>
                     <button
                       onClick={() => setIsAddPostModalOpen(true)}
                       className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold shadow flex items-center gap-1 active:scale-95 transition"
                     >
                       <span>➕</span>
-                      <span>{loc('افزودن پست', 'Add Post')}</span>
+                      <span>{loc('افزودن پست جدید', 'Add Post')}</span>
                     </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {posts.map((p) => (
+                      <div key={p.id} className="relative rounded-2xl overflow-hidden aspect-square border border-slate-800 group">
+                        <img src={p.imageUrl || p.image} alt={p.caption} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition p-2 flex items-end justify-between text-xs text-white">
+                          <span className="flex items-center gap-1 font-bold">❤️ {p.likesCount || p.likes}</span>
+                          <span className="flex items-center gap-1 font-bold">💬 {p.commentsCount || 0}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* DEDICATED SUB-PAGE 7: STORIES */}
+            {profileSubPage === 'stories' && (
+              <div className="space-y-4">
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h3 className="text-xs font-black text-white flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-purple-400" />
+                      {loc('استوری‌های ۲۴ ساعته', '24h Stories')}
+                    </h3>
                     <button
                       onClick={() => setIsAddStoryModalOpen(true)}
                       className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow flex items-center gap-1 active:scale-95 transition"
@@ -11313,23 +12581,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       <span>{loc('انتشار استوری', 'Publish Story')}</span>
                     </button>
                   </div>
-                )}
-              </div>
 
-              {/* ACTIVE USER STORIES SECTION */}
-              {profilePreviewMode === 'self' && (
-                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <span className="text-[11px] font-bold text-purple-300 flex items-center gap-1">
-                    <span>⚡</span> {loc('استوری‌های فعال ۲۴ ساعته شما:', 'Your Active 24h Stories:')}
-                  </span>
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                  <div className="flex items-center gap-3 overflow-x-auto pb-2">
                     {advancedStories.find(s => s.isMe)?.items?.length > 0 ? (
                       advancedStories.find(s => s.isMe).items.map(stItem => (
-                        <div key={stItem.id} className="relative w-16 h-20 rounded-xl overflow-hidden border border-purple-500/40 shrink-0 group">
+                        <div key={stItem.id} className="relative w-24 h-36 rounded-2xl overflow-hidden border-2 border-purple-500/50 shrink-0 group shadow-lg">
                           <img src={stItem.url} alt="Story" className="w-full h-full object-cover" />
                           <button
                             onClick={() => handleDeleteUserStoryItem(stItem.id)}
-                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-[10px] font-black transition shadow z-10"
+                            className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-xs font-black shadow z-10"
                             title={loc('حذف استوری', 'Delete Story')}
                           >
                             ✕
@@ -11337,114 +12597,103 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         </div>
                       ))
                     ) : (
-                      <p className="text-[10px] text-slate-400">{loc('استوری فعالی ندارید. روی دکمه انتشار استوری کلیک کنید.', 'No active stories. Click publish story.')}</p>
+                      <p className="text-xs text-slate-400 p-4 text-center w-full">{loc('استوری فعالی ندارید.', 'No active stories.')}</p>
                     )}
                   </div>
                 </div>
-              )}
-
-              <div className="flex items-center justify-between pt-1">
-                <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[10px] font-bold">
-                  <button 
-                    onClick={() => setProfileGalleryTab('photos')}
-                    className={`px-3 py-1 rounded-lg transition ${profileGalleryTab === 'photos' ? 'bg-pink-600 text-white' : 'text-slate-400 hover:text-white'}`}
-                  >
-                    Photos ({userPhotosList.length})
-                  </button>
-                  <button 
-                    onClick={() => setProfileGalleryTab('videos')}
-                    className={`px-3 py-1 rounded-lg transition ${profileGalleryTab === 'videos' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'}`}
-                  >
-                    Videos ({userVideosList.length})
-                  </button>
-                </div>
               </div>
+            )}
 
-              {profileGalleryTab === 'photos' ? (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {userPhotosList.length > 0 ? (
-                    userPhotosList.map((item) => (
-                      <div key={item.id} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-800 group hover:border-pink-500/50 transition">
-                        <img src={item.url} alt={item.caption || 'Photo'} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-end p-2">
-                          <p className="text-[10px] font-bold text-white truncate">{item.caption}</p>
-                        </div>
-                        {profilePreviewMode === 'self' && (
-                          <button
-                            onClick={() => handleDeletePhotoPost(item.id)}
-                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-xs font-black transition shadow z-10"
-                            title={loc('حذف عکس', 'Delete Photo')}
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="col-span-full py-8 text-center text-xs text-slate-400 border border-dashed border-slate-800 rounded-2xl p-4">
-                      {loc('هیچ عکسی در گالری ثبت نشده است. برای افزودن عکس روی «افزودن پست» کلیک کنید.', 'No photos in gallery. Click "Add Post" to upload.')}
+            {/* DEDICATED SUB-PAGE 8: NOTIFICATIONS */}
+            {profileSubPage === 'notifications' && (
+              <div className="space-y-4">
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+                  <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Bell className="w-4 h-4 text-blue-400" />
+                    {loc('تنظیمات اعلان‌ها', 'Notification Preferences')}
+                  </h3>
+
+                  <div className="space-y-2">
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs font-bold text-slate-200">
+                      <span>{loc('اعلان پیام‌های مستقیم', 'Direct Messages')}</span>
+                      <span className="text-emerald-400">ON</span>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {userVideosList.length > 0 ? (
-                    userVideosList.map((item) => (
-                      <div key={item.id} className="relative aspect-video rounded-2xl overflow-hidden border border-slate-800 group hover:border-purple-500/50 transition">
-                        <img src={item.thumb} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
-                        <div className="absolute top-2 right-2 bg-slate-950/80 px-2 py-0.5 rounded-full text-[9px] text-cyan-400 font-bold flex items-center gap-1">
-                          <Eye className="w-2.5 h-2.5" />
-                          {item.views}
-                        </div>
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <p className="text-[10px] font-bold text-white truncate">{item.title}</p>
-                        </div>
-                        {profilePreviewMode === 'self' && (
-                          <button
-                            onClick={() => handleDeleteVideoPost(item.id)}
-                            className="absolute top-2 left-2 w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-xs font-black transition shadow z-10"
-                            title={loc('حذف ویدیو', 'Delete Video')}
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="col-span-full py-8 text-center text-xs text-slate-400 border border-dashed border-slate-800 rounded-2xl p-4">
-                      {loc('هیچ ویدیویی ثبت نشده است. برای افزودن ویدیو روی «افزودن پست» کلیک کنید.', 'No videos in gallery. Click "Add Post" to upload.')}
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs font-bold text-slate-200">
+                      <span>{loc('اعلان شروع لایو استریمرها', 'Streamer Live Alerts')}</span>
+                      <span className="text-emerald-400">ON</span>
                     </div>
-                  )}
+                  </div>
                 </div>
-              )}
-            </div>
-
-            {/* 3. FOUR STATISTICS CARDS */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
-                <span className="text-[10px] text-slate-400 font-medium">Followers</span>
-                <p className="text-base font-black text-pink-400">14.8K</p>
               </div>
+            )}
 
-              <div className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
-                <span className="text-[10px] text-slate-400 font-medium">Following</span>
-                <p className="text-base font-black text-purple-400">342</p>
-              </div>
+            {/* DEDICATED SUB-PAGE 9: LANGUAGE */}
+            {profileSubPage === 'language' && (
+              <div className="space-y-4">
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+                  <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Globe className="w-4 h-4 text-emerald-400" />
+                    {loc('انتخاب زبان برنامه', 'Select Language')}
+                  </h3>
 
-              <div className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
-                <span className="text-[10px] text-slate-400 font-medium">Total Lives</span>
-                <p className="text-base font-black text-cyan-400">128</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setLanguage('fa')}
+                      className={`p-4 rounded-2xl border flex items-center justify-center gap-2 font-bold text-xs transition ${language === 'fa' ? 'bg-emerald-600 text-white border-emerald-400 shadow-lg' : 'bg-slate-950 text-slate-400 border-slate-800'}`}
+                    >
+                      🇮🇷 فارسی (Persian)
+                    </button>
+                    <button
+                      onClick={() => setLanguage('en')}
+                      className={`p-4 rounded-2xl border flex items-center justify-center gap-2 font-bold text-xs transition ${language === 'en' ? 'bg-emerald-600 text-white border-emerald-400 shadow-lg' : 'bg-slate-950 text-slate-400 border-slate-800'}`}
+                    >
+                      🇺🇸 English
+                    </button>
+                  </div>
+                </div>
               </div>
+            )}
 
-              <div className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
-                <span className="text-[10px] text-slate-400 font-medium">Popularity Score</span>
-                <p className="text-base font-black text-amber-400 flex items-center justify-center gap-0.5">
-                  <Star className="w-4 h-4 fill-amber-400" />
-                  98.4K
-                </p>
+            {/* DEDICATED SUB-PAGE 10: SUPPORT & HELP */}
+            {profileSubPage === 'support' && (
+              <div className="space-y-4">
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+                  <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Info className="w-4 h-4 text-teal-400" />
+                    {loc('مرکز پشتیبانی VLive', 'VLive Support Center')}
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    {loc('برای دریافت پشتیبانی یا گزارش اشکال فنی می‌توانید با پشتیبانی ارتباط برقرار کنید.', 'Contact our support team for help or technical feedback.')}
+                  </p>
+                  <button
+                    onClick={() => showToast(loc('در حال اتصال به پشتیبانی...', 'Connecting to support...'))}
+                    className="w-full py-3 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs shadow-lg transition"
+                  >
+                    {loc('ارتباط با پشتیبانی ۲۴/۷', 'Contact 24/7 Support')}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* DEDICATED SUB-PAGE 11: ABOUT */}
+            {profileSubPage === 'about' && (
+              <div className="space-y-4">
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3 text-center">
+                  <div className="w-16 h-16 rounded-3xl bg-pink-600 text-white flex items-center justify-center font-black text-2xl mx-auto shadow-xl">
+                    V
+                  </div>
+                  <h3 className="text-lg font-black text-white">VLive Telegram Mini App</h3>
+                  <p className="text-xs font-bold text-pink-400">Version 2.4.0 (Production Build)</p>
+                  <p className="text-xs text-slate-400 leading-relaxed pt-2">
+                    {loc('پلتفرم هوشمند پخش زنده، ارتباطات ویدیویی و شبکه اجتماعی تلگرام.', 'Smart live streaming, video call and social platform.')}
+                  </p>
+                </div>
+              </div>
+            )}
+
+
+
+
 
             {/* REDESIGNED ULTIMATE LEVEL & BADGES SYSTEM (18 FEATURES) */}
             <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-purple-500/40 space-y-5 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
@@ -12231,6 +13480,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             setViewingStream(null);
             setIsHostLiveOpen(false);
             setActivePartyRoom(null);
+            setIsMatchModalOpen(false);
             setActiveTab('streams');
             setStreamSubTab('lives');
           }}
@@ -12250,59 +13500,32 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           )}
         </button>
 
-        {/* 2. Discover (🔍) */}
+        {/* 2. Match (🔥) */}
         <button 
           onClick={() => {
             setViewingStream(null);
             setIsHostLiveOpen(false);
             setActivePartyRoom(null);
-            setActiveTab('streams');
-            setStreamSubTab('users');
+            setIsMatchModalOpen(false);
+            setActiveTab('match');
           }}
-          className={activeTab === 'streams' && streamSubTab === 'users'
+          className={activeTab === 'match' || isMatchModalOpen
             ? "relative -top-5 w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition-all duration-300 group"
-            : "flex flex-col items-center gap-1 p-2 rounded-2xl text-slate-400 hover:text-slate-200 transition-all duration-300"
+            : "flex flex-col items-center gap-1 p-2 rounded-2xl text-pink-400 hover:text-pink-300 transition-all duration-300 group"
           }
-          title="Discover"
+          title="Match"
         >
-          {activeTab === 'streams' && streamSubTab === 'users' ? (
-            <Search className="w-6 h-6 font-black group-hover:scale-110 transition duration-300" />
+          {activeTab === 'match' || isMatchModalOpen ? (
+            <Flame className="w-6 h-6 font-black group-hover:scale-110 transition duration-300 text-white animate-pulse" />
           ) : (
             <>
-              <Search className="w-5 h-5" />
-              <span className="text-[9px] tracking-wide">Discover</span>
+              <Flame className="w-5 h-5 text-pink-400 group-hover:scale-110 transition duration-300" />
+              <span className="text-[9px] font-bold tracking-wide text-pink-400">Match</span>
             </>
           )}
         </button>
 
-        {/* 3. Match 30s Random Roulette (🎲) */}
-        <button 
-          onClick={() => {
-            if (freeMatchCallsLeft <= 0) {
-              showToast('⚠️ Daily free random match calls quota reached.');
-              return;
-            }
-            setIsMatchModalOpen(true);
-            setMatchState('idle');
-            setMatchCallSeconds(30);
-          }}
-          className={isMatchModalOpen
-            ? "relative -top-5 w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition-all duration-300 group"
-            : "flex flex-col items-center gap-1 p-2 rounded-2xl text-purple-300 hover:text-purple-200 bg-purple-500/15 border border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.35)] active:scale-95 transition-all duration-300 group"
-          }
-          title="Random 30s Match"
-        >
-          {isMatchModalOpen ? (
-            <Shuffle className="w-6 h-6 font-black group-hover:scale-110 transition duration-300" />
-          ) : (
-            <>
-              <Shuffle className="w-5 h-5 text-purple-400 animate-pulse group-hover:rotate-180 transition duration-500" />
-              <span className="text-[9px] font-bold tracking-wide">Match</span>
-            </>
-          )}
-        </button>
-
-        {/* 4. Live Broadcast Center FAB (🎥) */}
+        {/* 3. Live Broadcast Center (📺) */}
         <button 
           onClick={handleStartLiveStream}
           className="relative -top-5 w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition-all duration-300 group"
@@ -12311,12 +13534,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           <Video className="w-6 h-6 font-black group-hover:scale-110 transition duration-300" />
         </button>
 
-        {/* 5. Messages (💬) */}
+        {/* 4. Messages (💬) */}
         <button 
           onClick={() => {
             setViewingStream(null);
             setIsHostLiveOpen(false);
             setActivePartyRoom(null);
+            setIsMatchModalOpen(false);
             setActiveTab('messages');
           }}
           className={activeTab === 'messages'
@@ -12335,12 +13559,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           )}
         </button>
 
-        {/* 6. Profile (👤) */}
+        {/* 5. Profile (👤) */}
         <button 
           onClick={() => {
             setViewingStream(null);
             setIsHostLiveOpen(false);
             setActivePartyRoom(null);
+            setIsMatchModalOpen(false);
             setActiveTab('profile');
           }}
           className={activeTab === 'profile'
@@ -19198,17 +20423,21 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         }
                         setMatchState('searching');
                         setTimeout(() => {
-                          const samplePartners = [
-                            { name: 'Soren Streamer', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80', city: 'Tehran', isVerified: true },
-                            { name: 'Niloofar Diamond', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', city: 'Shiraz', isVerified: true },
-                            { name: 'Rayan Star', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80', city: 'Isfahan', isVerified: true }
-                          ];
-                          const randomPartner = samplePartners[Math.floor(Math.random() * samplePartners.length)];
+                          const realPartners = (Array.isArray(usersList) && usersList.length > 0)
+                            ? usersList.filter(u => u && u.username !== currentUsername && u.user_type !== 'TEST_USER' && u.user_type !== 'DEMO_USER' && (u.status === 'approved' || u.isApproved !== false))
+                            : [
+                                { name: 'Sara Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80', city: 'Tehran', isVerified: true },
+                                { name: 'Elnaz Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80', city: 'Shiraz', isVerified: true },
+                                { name: 'Sahar Miller', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', city: 'Tehran', isVerified: true }
+                              ];
+                          const randomPartner = realPartners.length > 0
+                            ? realPartners[Math.floor(Math.random() * realPartners.length)]
+                            : { name: 'Sara Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80', city: 'Tehran', isVerified: true };
                           setMatchedMatchUser(randomPartner);
                           setMatchState('connected');
                           setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));
                           setMatchCallSeconds(30);
-                          showToast(`🎉 مچ موفق با ${randomPartner.name}!`);
+                          showToast(`🎉 مچ موفق با ${randomPartner.name || randomPartner.username}!`);
                         }, 2500);
                       }}
                       className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition"
@@ -19314,6 +20543,75 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* SMART MATCH FILTERS MODAL */}
+      {isMatchFilterOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-4 animate-fadeIn">
+          <div className="w-full max-w-sm bg-slate-900/98 border border-pink-500/40 rounded-3xl p-5 shadow-[0_0_60px_rgba(236,72,153,0.3)] space-y-4 relative">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Sliders className="w-5 h-5 text-pink-400" />
+                <span>Smart Match Filters</span>
+              </h3>
+              <button 
+                onClick={() => setIsMatchFilterOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs font-bold text-slate-200">
+              {/* Distance Slider */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between">
+                  <span>Maximum Distance</span>
+                  <span className="text-pink-400">{matchFilterMaxDistance} km</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="1" 
+                  max="100" 
+                  value={matchFilterMaxDistance} 
+                  onChange={(e) => setMatchFilterMaxDistance(Number(e.target.value))}
+                  className="w-full accent-pink-500"
+                />
+              </div>
+
+              {/* Toggles */}
+              <div className="flex items-center justify-between py-2 border-t border-slate-800">
+                <span>Online Users Only</span>
+                <input 
+                  type="checkbox" 
+                  checked={matchFilterOnlineOnly} 
+                  onChange={(e) => setMatchFilterOnlineOnly(e.target.checked)}
+                  className="w-5 h-5 accent-pink-500 rounded cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-between py-2 border-t border-slate-800">
+                <span>Verified Profiles Only</span>
+                <input 
+                  type="checkbox" 
+                  checked={matchFilterVerifiedOnly} 
+                  onChange={(e) => setMatchFilterVerifiedOnly(e.target.checked)}
+                  className="w-5 h-5 accent-pink-500 rounded cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setIsMatchFilterOpen(false);
+                showToast('⚡ Match filters applied!');
+              }}
+              className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-105 active:scale-95 transition"
+            >
+              Apply Filters
+            </button>
           </div>
         </div>
       )}
