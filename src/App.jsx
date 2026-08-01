@@ -63,7 +63,11 @@ const APP_LANGUAGES = [
   { code: 'fa', name: 'فارسی', flag: '🇮🇷', dir: 'rtl' },
   { code: 'ar', name: 'العربية', flag: '🇸🇦', dir: 'rtl' },
   { code: 'tr', name: 'Türkçe', flag: '🇹🇷', dir: 'ltr' },
-  { code: 'ru', name: 'Русский', flag: '🇷🇺', dir: 'ltr' }
+  { code: 'ru', name: 'Русский', flag: '🇷🇺', dir: 'ltr' },
+  { code: 'es', name: 'Español', flag: '🇪🇸', dir: 'ltr' },
+  { code: 'fr', name: 'Français', flag: '🇫🇷', dir: 'ltr' },
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪', dir: 'ltr' },
+  { code: 'zh', name: '中文', flag: '🇨🇳', dir: 'ltr' }
 ];
 
 const I18N_DICTIONARY = {
@@ -311,6 +315,202 @@ const I18N_DICTIONARY = {
     myBadges: "Мои значки",
     buyCoins: "Купить монеты",
     dailyRewards: "Ежедневные награды"
+  },
+  es: {
+    appName: "V.Live+",
+    explore: "Explorar",
+    lives: "Transmitir en vivo",
+    home: "Inicio",
+    discover: "Descubrir",
+    goLive: "Transmitir",
+    messages: "Mensajes",
+    wallet: "Billetera Tether",
+    vip: "Club VIP",
+    profile: "Mi Perfil",
+    settings: "Ajustes",
+    adminPanel: "Panel de Admin",
+    aiSecurity: "Centro de Seguridad IA",
+    searchPlaceholder: "Buscar streamer, ID o nombre...",
+    activeStreams: "Transmisiones Activas",
+    viewAll: "Ver Todo",
+    online: "En Línea",
+    coins: "Monedas",
+    send: "Enviar",
+    translate: "Traducir Mensaje",
+    autoTranslate: "Auto Traducir",
+    appLanguage: "Idioma de la App",
+    selectLanguage: "Seleccionar Idioma",
+    translating: "Traduciendo...",
+    translated: "Traducido",
+    changeLangSuccess: "Idioma cambiado a",
+    giftShop: "Tienda de Regalos",
+    dailySpin: "Ruleta de la Suerte",
+    verifiedBadge: "Verificado",
+    notifications: "Notificaciones",
+    security: "Seguridad",
+    permissions: "Permisos de la App",
+    allowAll: "Permitir y Aceptar Todo",
+    deny: "Rechazar",
+    permsTitle: "Solicitud de Permisos V.Live+",
+    permsDesc: "Para habilitar transmisiones 4K y chat de voz, V.Live+ solicita acceso a:",
+    enterPin: "Ingrese PIN de Admin",
+    adminSecDesc: "Área de gestión protegida. Ingrese el código PIN de seguridad.",
+    changePassword: "Cambiar Contraseña",
+    activeDevices: "Dispositivos Activos",
+    privacyPolicy: "Política de Privacidad",
+    termsService: "Términos de Servicio",
+    logout: "Cerrar Sesión",
+    editProfile: "Editar Perfil",
+    myBadges: "Mis Insignias",
+    buyCoins: "Comprar Monedas",
+    dailyRewards: "Recompensas Diarias"
+  },
+  fr: {
+    appName: "V.Live+",
+    explore: "Explorer",
+    lives: "Flux en Direct",
+    home: "Accueil",
+    discover: "Découvrir",
+    goLive: "Lancer un Direct",
+    messages: "Messages",
+    wallet: "Portefeuille Tether",
+    vip: "Club VIP",
+    profile: "Mon Profil",
+    settings: "Paramètres",
+    adminPanel: "Panneau Admin",
+    aiSecurity: "Centre de Sécurité IA",
+    searchPlaceholder: "Rechercher un streamer, ID ou nom...",
+    activeStreams: "Flux Actifs",
+    viewAll: "Tout Voir",
+    online: "En Ligne",
+    coins: "Pièces",
+    send: "Envoyer",
+    translate: "Traduire le Message",
+    autoTranslate: "Traduction Auto",
+    appLanguage: "Langue de l'App",
+    selectLanguage: "Sélectionner la Langue",
+    translating: "Traduction...",
+    translated: "Traduit",
+    changeLangSuccess: "Langue modifiée en",
+    giftShop: "Boutique de Cadeaux",
+    dailySpin: "Roue de la Fortune",
+    verifiedBadge: "Vérifié",
+    notifications: "Notifications",
+    security: "Sécurité",
+    permissions: "Autorisations",
+    allowAll: "Tout Autoriser",
+    deny: "Refuser",
+    permsTitle: "Demande d'Autorisations V.Live+",
+    permsDesc: "Pour activer les flux 4K et le chat vocal, V.Live+ demande l'accès à:",
+    enterPin: "Entrer le PIN Admin",
+    adminSecDesc: "Zone de gestion protégée. Entrez le code PIN de sécurité.",
+    changePassword: "Changer le Mot de Passe",
+    activeDevices: "Appareils Actifs",
+    privacyPolicy: "Politique de Confidentialité",
+    termsService: "Conditions d'Utilisation",
+    logout: "Se Déconnecter",
+    editProfile: "Modifier le Profil",
+    myBadges: "Mes Badges",
+    buyCoins: "Acheter des Pièces",
+    dailyRewards: "Récompenses Quotidiennes"
+  },
+  de: {
+    appName: "V.Live+",
+    explore: "Entdecken",
+    lives: "Live-Streams",
+    home: "Startseite",
+    discover: "Entdecken",
+    goLive: "Live Gehen",
+    messages: "Nachrichten",
+    wallet: "Tether Wallet",
+    vip: "VIP Club",
+    profile: "Mein Profil",
+    settings: "Einstellungen",
+    adminPanel: "Admin-Panel",
+    aiSecurity: "KI-Sicherheitszentrum",
+    searchPlaceholder: "Streamer, ID oder Name suchen...",
+    activeStreams: "Aktive Streams",
+    viewAll: "Alle Anzeigen",
+    online: "Online",
+    coins: "Münzen",
+    send: "Senden",
+    translate: "Nachricht Übersetzen",
+    autoTranslate: "Automatische Übersetzung",
+    appLanguage: "App-Sprache",
+    selectLanguage: "App-Sprache Auswählen",
+    translating: "Übersetzt...",
+    translated: "Übersetzt",
+    changeLangSuccess: "App-Sprache geändert zu",
+    giftShop: "Geschenkladen",
+    dailySpin: "Glücksrad",
+    verifiedBadge: "Verifiziert",
+    notifications: "Benachrichtigungen",
+    security: "Sicherheit",
+    permissions: "App-Berechtigungen",
+    allowAll: "Alle Zulassen",
+    deny: "Ablehnen",
+    permsTitle: "V.Live+ Berechtigungsanfrage",
+    permsDesc: "Für 4K-Live-Streams und Voice-Chat benötigt V.Live+ Zugriff auf:",
+    enterPin: "Admin-PIN Eingeben",
+    adminSecDesc: "Geschützter Verwaltungsbereich. Bitte Admin-PIN eingeben.",
+    changePassword: "Passwort Ändern",
+    activeDevices: "Aktive Geräte",
+    privacyPolicy: "Datenschutzrichtlinie",
+    termsService: "Nutzungsbedingungen",
+    logout: "Abmelden",
+    editProfile: "Profil Bearbeiten",
+    myBadges: "Meine Abzeichen",
+    buyCoins: "Münzen Kaufen",
+    dailyRewards: "Tägliche Belohnungen"
+  },
+  zh: {
+    appName: "V.Live+",
+    explore: "探索",
+    lives: "直播",
+    home: "首页",
+    discover: "发现",
+    goLive: "开启直播",
+    messages: "消息",
+    wallet: "泰达币钱包",
+    vip: "VIP 俱乐部",
+    profile: "我的资料",
+    settings: "设置",
+    adminPanel: "管理面板",
+    aiSecurity: "AI 安全中心",
+    searchPlaceholder: "搜索主播、ID或名称...",
+    activeStreams: "热门直播",
+    viewAll: "查看全部",
+    online: "在线",
+    coins: "金币",
+    send: "发送",
+    translate: "翻译消息",
+    autoTranslate: "自动翻译",
+    appLanguage: "应用语言",
+    selectLanguage: "选择应用语言",
+    translating: "翻译中...",
+    translated: "已翻译",
+    changeLangSuccess: "应用语言已更改为",
+    giftShop: "礼物商店",
+    dailySpin: "幸运转盘",
+    verifiedBadge: "已认证",
+    notifications: "通知",
+    security: "安全",
+    permissions: "应用权限",
+    allowAll: "允许并接受全部",
+    deny: "拒绝",
+    permsTitle: "V.Live+ 系统权限请求",
+    permsDesc: "为启用高质量 4K 直播和语音聊天，V.Live+ 需要访问以下权限：",
+    enterPin: "输入管理员安全 PIN",
+    adminSecDesc: "受保护的管理区域。请输入管理员 PIN 码以继续。",
+    changePassword: "修改密码",
+    activeDevices: "在线设备",
+    privacyPolicy: "隐私政策",
+    termsService: "服务条款",
+    logout: "退出登录",
+    editProfile: "编辑资料",
+    myBadges: "我的勋章",
+    buyCoins: "购买金币",
+    dailyRewards: "每日奖励"
   }
 };
 
@@ -4615,32 +4815,41 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </button>
           </div>
         )}
-          <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-pink-500/40 bg-slate-900/90 backdrop-blur-xl rounded-3xl space-y-6 shadow-[0_0_50px_rgba(236,72,153,0.2)] animate-fadeIn">
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 p-0.5 shadow-xl flex items-center justify-center">
-                <Video className="w-8 h-8 text-white" />
+          <div className="relative w-full max-w-md card-3d p-6 sm:p-8 border border-cyan-500/40 bg-slate-900/90 backdrop-blur-2xl rounded-3xl space-y-6 shadow-[0_0_60px_rgba(6,182,212,0.25)] animate-fadeIn overflow-hidden">
+            {/* Glowing background shapes */}
+            <div className="absolute -top-12 -left-12 w-36 h-36 rounded-full bg-pink-500/20 blur-3xl pointer-events-none animate-pulse" />
+            <div className="absolute -bottom-12 -right-12 w-36 h-36 rounded-full bg-cyan-500/20 blur-3xl pointer-events-none animate-pulse" />
+
+            <div className="relative text-center space-y-3">
+              <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-cyan-500 via-purple-600 to-pink-500 p-1 shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center justify-center group hover:scale-105 transition duration-500">
+                <div className="w-full h-full bg-slate-950 rounded-[22px] flex items-center justify-center">
+                  <Video className="w-10 h-10 text-cyan-400 animate-pulse" />
+                </div>
               </div>
-              <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300">
-                Welcome to V.Live
-              </h2>
-              <p className="text-xs text-slate-400">Select your preferred authentic entrance mode</p>
+              <div className="space-y-1">
+                <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-pink-400 to-purple-400 tracking-tight">
+                  V.Live Mini App
+                </h2>
+                <p className="text-xs text-slate-300 font-medium">Ultra-Premium Telegram Live Streaming & Video Match</p>
+              </div>
             </div>
 
             {/* QUICK AUTO-LOGIN FOR SAVED USERS */}
             {safeStorage.getItem('vlive_current_username') && (
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/80 via-pink-950/80 to-slate-950 border border-pink-500/50 space-y-3 shadow-xl">
+              <div className="relative p-4 rounded-2xl bg-gradient-to-r from-purple-950/90 via-cyan-950/90 to-slate-950 border border-cyan-500/50 space-y-3 shadow-xl">
                 <div className="flex items-center gap-3">
                   <img 
                     src={safeStorage.getItem('vlive_user_avatar') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'} 
                     alt="Saved User" 
-                    className="w-11 h-11 rounded-2xl object-cover ring-2 ring-pink-500 shadow-md" 
+                    className="w-12 h-12 rounded-2xl object-cover ring-2 ring-cyan-400 shadow-md" 
                   />
                   <div className="text-left flex-1 min-w-0">
                     <p className="text-xs font-black text-white truncate">{safeStorage.getItem('vlive_user_name') || 'Saved User'}</p>
-                    <span className="text-[10px] text-pink-300 font-mono block truncate">@{safeStorage.getItem('vlive_current_username')}</span>
+                    <span className="text-[10px] text-cyan-300 font-mono block truncate">@{safeStorage.getItem('vlive_current_username')}</span>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[9px] font-bold">
-                    {loc('حساب تاییدشده', 'Verified Session')}
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[9px] font-bold flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    Verified Session
                   </span>
                 </div>
                 <button
@@ -4651,12 +4860,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     setCurrentUsername(savedU);
                     setIsLoggedIn(true);
                     safeStorage.setItem('vlive_user_logged_in', 'true');
-                    showToast(loc(`⚡ ورود سریع با حساب @${savedU} انجام شد!`, `⚡ Quick login as @${savedU} successful!`));
+                    showToast(`⚡ Quick login as @${savedU} successful!`);
                   }}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 via-purple-600 to-pink-600 text-white font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2"
                 >
                   <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
-                  <span>{loc('⚡ ورود سریع (بدون نیاز به نام کاربری و رمز عبور)', '⚡ Quick Login (No Password Required)')}</span>
+                  <span>⚡ Quick Login (Instant Access)</span>
                 </button>
               </div>
             )}
@@ -4671,24 +4880,24 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     return;
                   }
                   setAuthMethod('telegram');
-                  setAuthFullName('Rayan (Telegram)');
-                  setAuthUsername('rayan_vlive');
+                  setAuthFullName('Telegram User');
+                  setAuthUsername('telegram_vip');
                   setAuthTelegramId('108492039');
                   setAuthStep('register');
                   showToast('Authenticated via Telegram WebApp ID: 108492039');
                 }}
-                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs shadow-lg transition-all flex items-center justify-between border border-cyan-400/30 group"
+                className="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all flex items-center justify-between border border-cyan-400/50 group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-white/20 text-white">
-                    <Send className="w-4 h-4 transform group-hover:translate-x-1 transition" />
+                  <div className="p-2.5 rounded-xl bg-white/20 text-white shadow-inner">
+                    <Send className="w-5 h-5 transform group-hover:translate-x-1 transition" />
                   </div>
                   <div className="text-left">
-                    <p className="font-black">Continue with Telegram</p>
-                    <span className="text-[9px] text-cyan-200 block">Instant Telegram Mini App Auth</span>
+                    <p className="font-black text-sm tracking-wide">Continue with Telegram</p>
+                    <span className="text-[10px] text-cyan-200 block font-medium">Instant Telegram Mini App Auth</span>
                   </div>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[9px] font-bold">Primary</span>
+                <span className="px-2.5 py-1 rounded-full bg-white/20 text-[10px] font-black uppercase tracking-wider">Primary</span>
               </button>
 
               {/* BUTTON 2: GOOGLE LOGIN (اختیاری) */}
@@ -4699,21 +4908,21 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     return;
                   }
                   setAuthMethod('google');
-                  setAuthFullName('Rayan (Google OAuth)');
-                  setAuthUsername('rayan_google');
-                  setAuthEmail('tattoo.rayan2015@gmail.com');
+                  setAuthFullName('Google User');
+                  setAuthUsername('google_vip');
+                  setAuthEmail('user@gmail.com');
                   setAuthStep('register');
-                  showToast('Authenticated via Google Account: tattoo.rayan2015@gmail.com');
+                  showToast('Authenticated via Google Account');
                 }}
                 className="w-full py-3.5 px-4 rounded-2xl bg-slate-950 hover:bg-slate-800 text-slate-100 font-bold text-xs border border-slate-700 shadow-md transition-all flex items-center justify-between group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-slate-800 text-slate-200">
-                    <Globe className="w-4 h-4 text-rose-400" />
+                  <div className="p-2.5 rounded-xl bg-slate-800 text-slate-200">
+                    <Globe className="w-4 h-4 text-cyan-400" />
                   </div>
                   <div className="text-left">
                     <p className="font-bold">Continue with Google</p>
-                    <span className="text-[9px] text-slate-400 block">Google OAuth Web Login</span>
+                    <span className="text-[10px] text-slate-400 block font-medium">Google OAuth Web Login</span>
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
@@ -4729,7 +4938,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   setAuthMethod('credentials');
                   setAuthStep('login');
                 }}
-                className="w-full py-3 px-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-bold text-xs border border-slate-800 hover:border-slate-700 transition flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 font-bold text-xs border border-slate-800 hover:border-slate-700 transition flex items-center justify-center gap-2"
               >
                 <Key className="w-4 h-4 text-purple-400" />
                 <span>Log in with Username & Password</span>
@@ -4743,10 +4952,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   type="checkbox"
                   checked={termsAgreed}
                   onChange={e => setTermsAgreed(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 accent-pink-500 rounded"
+                  className="mt-0.5 w-4 h-4 accent-cyan-500 rounded"
                 />
                 <span className="text-[11px] text-slate-300 leading-snug">
-                  I accept V.Live <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-pink-400 font-bold underline">Terms of Service</button> & <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-pink-400 font-bold underline">Privacy Policy</button>.
+                  I accept V.Live <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-cyan-400 font-bold underline">Terms of Service</button> & <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-cyan-400 font-bold underline">Privacy Policy</button>.
                 </span>
               </label>
             </div>
@@ -12000,8 +12209,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       </main>
 
-            {/* BOTTOM NAVIGATION BAR (STRICT 5 MAIN TABS) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/80 px-4 py-2 flex items-center justify-around">
+            {/* BOTTOM NAVIGATION BAR WITH MATCH BUTTON & GLOWING EFFECTS */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/80 px-4 py-2.5 flex items-center justify-around">
         {/* 1. Home (🏠) */}
         <button 
           onClick={() => {
@@ -12011,10 +12220,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             setActiveTab('streams');
             setStreamSubTab('lives');
           }}
-          className={`flex flex-col items-center gap-0.5 ${activeTab === 'streams' && streamSubTab === 'lives' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
+          className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all duration-300 ${activeTab === 'streams' && streamSubTab === 'lives' ? 'text-pink-400 font-bold bg-pink-500/15 shadow-[0_0_20px_rgba(236,72,153,0.35)] scale-105' : 'text-slate-400 hover:text-slate-200'}`}
         >
           <Home className="w-5 h-5" />
-          <span className="text-[9px]">{t('home', 'Home')}</span>
+          <span className="text-[9px] tracking-wide">Home</span>
         </button>
 
         {/* 2. Discover (🔍) */}
@@ -12026,22 +12235,40 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             setActiveTab('streams');
             setStreamSubTab('users');
           }}
-          className={`flex flex-col items-center gap-0.5 ${activeTab === 'streams' && streamSubTab === 'users' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
+          className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all duration-300 ${activeTab === 'streams' && streamSubTab === 'users' ? 'text-pink-400 font-bold bg-pink-500/15 shadow-[0_0_20px_rgba(236,72,153,0.35)] scale-105' : 'text-slate-400 hover:text-slate-200'}`}
         >
           <Search className="w-5 h-5" />
-          <span className="text-[9px]">{t('discover', 'Discover')}</span>
+          <span className="text-[9px] tracking-wide">Discover</span>
         </button>
 
-        {/* 3. Live Broadcast Center FAB (🎥) */}
+        {/* 3. Match 30s Random Roulette (🎲) - Next to Camera icon */}
+        <button 
+          onClick={() => {
+            if (freeMatchCallsLeft <= 0) {
+              showToast('⚠️ Daily free random match calls quota reached.');
+              return;
+            }
+            setIsMatchModalOpen(true);
+            setMatchState('idle');
+            setMatchCallSeconds(30);
+          }}
+          className="flex flex-col items-center gap-1 p-2 rounded-2xl text-purple-300 hover:text-purple-200 bg-purple-500/15 border border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.35)] active:scale-95 transition-all duration-300 group"
+          title="Random 30s Match"
+        >
+          <Shuffle className="w-5 h-5 text-purple-400 animate-pulse group-hover:rotate-180 transition duration-500" />
+          <span className="text-[9px] font-bold tracking-wide">Match</span>
+        </button>
+
+        {/* 4. Live Broadcast Center FAB (🎥) */}
         <button 
           onClick={handleStartLiveStream}
-          className="relative -top-5 w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition group"
-          title={t('goLive', 'Go Live')}
+          className="relative -top-5 w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition-all duration-300 group"
+          title="Go Live"
         >
           <Video className="w-6 h-6 font-black group-hover:scale-110 transition duration-300" />
         </button>
 
-        {/* 4. Messages (💬) */}
+        {/* 5. Messages (💬) */}
         <button 
           onClick={() => {
             setViewingStream(null);
@@ -12049,13 +12276,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             setActivePartyRoom(null);
             setActiveTab('messages');
           }}
-          className={`flex flex-col items-center gap-0.5 ${activeTab === 'messages' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
+          className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all duration-300 ${activeTab === 'messages' ? 'text-pink-400 font-bold bg-pink-500/15 shadow-[0_0_20px_rgba(236,72,153,0.35)] scale-105' : 'text-slate-400 hover:text-slate-200'}`}
         >
           <MessageSquare className="w-5 h-5" />
-          <span className="text-[9px]">{t('messages', 'Messages')}</span>
+          <span className="text-[9px] tracking-wide">Messages</span>
         </button>
 
-        {/* 5. Profile (👤) */}
+        {/* 6. Profile (👤) */}
         <button 
           onClick={() => {
             setViewingStream(null);
@@ -12063,10 +12290,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             setActivePartyRoom(null);
             setActiveTab('profile');
           }}
-          className={`flex flex-col items-center gap-0.5 ${activeTab === 'profile' ? 'text-pink-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
+          className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all duration-300 ${activeTab === 'profile' ? 'text-pink-400 font-bold bg-pink-500/15 shadow-[0_0_20px_rgba(236,72,153,0.35)] scale-105' : 'text-slate-400 hover:text-slate-200'}`}
         >
           <User className="w-5 h-5" />
-          <span className="text-[9px]">{t('profile', 'Profile')}</span>
+          <span className="text-[9px] tracking-wide">Profile</span>
         </button>
       </nav>
 
