@@ -5751,30 +5751,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </div>
             </div>
 
-            {/* 3. ROTATING PROMOTIONAL BANNER (بنر گردان) */}
-            <div className="relative rounded-3xl overflow-hidden border border-pink-500/30 bg-gradient-to-r from-purple-900/60 via-slate-900 to-pink-900/60 p-5 shadow-xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="space-y-1.5">
-                  <span className="px-2.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 text-[10px] font-black border border-pink-500/40 uppercase tracking-wider">
-                    🏆 {loc('تورنمنت بزرگ استریمرها', 'VIP Festival Tournament 2026')}
-                  </span>
-                  <h3 className="text-lg font-black text-white">{loc('جشنواره مگا تورنمنت استریمرها', 'Mega Streamer Tournament Festival')}</h3>
-                  <p className="text-xs text-slate-300">{loc('۵۰,۰۰۰ سکه رایگان + تیک آبی اختصاصی برای ۱۰ نفر برتر هفته', '50,000 Free Coins + Special Blue Badge for Top 10 Streamers')}</p>
-                </div>
-                <button 
-                  onClick={() => setIsVipModalOpen(true)}
-                  className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-105 active:scale-95 transition whitespace-nowrap"
-                >
-                  {loc('شرکت در رویداد 👑', 'Join Event 👑')}
-                </button>
-              </div>
-              <div className="flex items-center justify-center gap-1.5 mt-4">
-                <span className="w-6 h-1.5 rounded-full bg-pink-500" />
-                <span className="w-2 h-1.5 rounded-full bg-slate-700" />
-                <span className="w-2 h-1.5 rounded-full bg-slate-700" />
-              </div>
-            </div>
-
             {/* 4. ACTIVE MATCH & RULES CARD (بخش مسابقه و قوانین PK & Match) */}
             <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
