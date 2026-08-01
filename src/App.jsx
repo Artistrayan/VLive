@@ -705,20 +705,53 @@ export default function App() {
 
   // REAL 3-TIER + ELITE VIP SYSTEM STATES
   const [vipPlan, setVipPlan] = useState(() => {
-    return safeStorage.getItem('vlive_vip_plan') || 'gold'; // 'none' | 'silver' | 'gold' | 'diamond' | 'elite'
+    return safeStorage.getItem('vlive_vip_plan') || 'monthly'; // 'none' | 'weekly' | 'monthly' | '3months' | '6months' | 'yearly'
+  });
+  const [vipExpireTimestamp, setVipExpireTimestamp] = useState(() => {
+    return parseInt(safeStorage.getItem('vlive_vip_expire_ts') || String(Date.now() + 23 * 86400 * 1000), 10);
   });
   const [vipExpireDays, setVipExpireDays] = useState(() => {
-    return parseInt(safeStorage.getItem('vlive_vip_expire_days') || '23', 10);
+    const diffDays = Math.max(0, Math.ceil((vipExpireTimestamp - Date.now()) / (1000 * 60 * 60 * 24)));
+    return diffDays || 23;
+  });
+  const [vipPurchaseHistory, setVipPurchaseHistory] = useState(() => {
+    return safeStorage.getParsed('vlive_vip_history', [
+      { id: 'VIP-9001', planId: 'monthly', planName: 'VIP Monthly 🌟', days: 30, priceCoins: 750, priceUsdt: '$14.99', date: '2026-07-15', status: 'Active', txHash: '0x7a9c3b8f' }
+    ]);
   });
   const [isVipMonthlyClaimed, setIsVipMonthlyClaimed] = useState(() => {
     return safeStorage.getItem('vlive_vip_monthly_claimed') === 'true';
   });
   const [isVipModalOpen, setIsVipModalOpen] = useState(false);
-  const [selectedVipPlan, setSelectedVipPlan] = useState('gold'); // 'silver' | 'gold' | 'diamond' | 'elite'
+  const [selectedVipPlan, setSelectedVipPlan] = useState('monthly'); // 'weekly' | 'monthly' | '3months' | '6months' | 'yearly'
   const [selectedVipDuration, setSelectedVipDuration] = useState(1); // 1 | 3 | 6 | 12
-  const [selectedVipPayMethod, setSelectedVipPayMethod] = useState('in_app'); // 'in_app' | 'usdt' | 'coins'
+  const [selectedVipPayMethod, setSelectedVipPayMethod] = useState('coins'); // 'in_app' | 'usdt' | 'coins'
   const [isVipCelebrationOpen, setIsVipCelebrationOpen] = useState(false);
   const [vipEliteRequested, setVipEliteRequested] = useState(false);
+
+  // DAILY REWARDS & STREAK STATE
+  const [dailyStreak, setDailyStreak] = useState(() => {
+    return parseInt(safeStorage.getItem('vlive_daily_streak') || '3', 10);
+  });
+  const [lastRewardClaimTimestamp, setLastRewardClaimTimestamp] = useState(() => {
+    return parseInt(safeStorage.getItem('vlive_last_reward_claim_ts') || '0', 10);
+  });
+  const [dailyRewardHistory, setDailyRewardHistory] = useState(() => {
+    return safeStorage.getParsed('vlive_daily_reward_history', [
+      { id: 'RWD-101', day: 1, rewardTitle: 'Day 1 Starter Pack', coins: 50, diamonds: 10, bonus: null, date: '2 days ago' },
+      { id: 'RWD-102', day: 2, rewardTitle: 'Day 2 Coin Booster', coins: 100, diamonds: 15, bonus: null, date: 'Yesterday' }
+    ]);
+  });
+  const [isRewardOpeningModalOpen, setIsRewardOpeningModalOpen] = useState(false);
+  const [unlockedRewardData, setUnlockedRewardData] = useState(null);
+
+  // CREATOR EARNINGS, WITHDRAWALS & ADMIN FEES STATE
+  const [isPayoutFrozen, setIsPayoutFrozen] = useState(false);
+  const [adminNetworkFee, setAdminNetworkFee] = useState(1.50); // $1.50 USDT TRC20 gas fee
+  const [adminMaxWithdrawal, setAdminMaxWithdrawal] = useState(5000); // $5000 USDT max
+  const [lastWithdrawalTimestamp, setLastWithdrawalTimestamp] = useState(() => {
+    return parseInt(safeStorage.getItem('vlive_last_withdrawal_ts') || '0', 10);
+  });
   const [securityTab, setSecurityTab] = useState('password'); // 'password' | 'accounts' | 'devices'
   const [telegramConnected, setTelegramConnected] = useState(true);
   const [googleConnected, setGoogleConnected] = useState(true);
@@ -1675,8 +1708,39 @@ export default function App() {
       showToast('⚠️ موجودی سکه شما کافی نیست!');
       return;
     }
-    setUserCoins(c => c - gift.coins);
-    setTotalEarnings(e => e + Math.round(gift.coins * 0.8));
+
+    // 29% Platform Commission Calculation
+    const grossCoins = gift.coins;
+    const commissionCoins = Math.round(grossCoins * 0.29);
+    const netCreatorCoins = grossCoins - commissionCoins;
+
+    setUserCoins(c => {
+      const nextCoins = Math.max(0, c - grossCoins);
+      safeStorage.setItem('vlive_user_coins', String(nextCoins));
+      return nextCoins;
+    });
+
+    setTotalEarnings(e => e + netCreatorCoins);
+    setUserDiamonds(d => d + Math.round(netCreatorCoins / 5));
+
+    // Record Transaction Entry with 29% Commission
+    const giftTx = {
+      id: `TX-GFT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type: 'gift_received',
+      description: `In-Call Gift: ${gift.name}`,
+      grossAmountCoins: grossCoins,
+      commissionAmountCoins: commissionCoins,
+      netEarningsCoins: netCreatorCoins,
+      grossUsdt: (grossCoins / 50).toFixed(2),
+      commissionUsdt: (commissionCoins / 50).toFixed(2),
+      netUsdt: (netCreatorCoins / 50).toFixed(2),
+      time: 'Just now',
+      timestamp: new Date().toISOString(),
+      status: 'Completed',
+      icon: gift.emoji || '🎁'
+    };
+
+    setTransactionsList(prev => [giftTx, ...prev]);
 
     const anim = {
       id: Date.now() + Math.random(),
@@ -1690,7 +1754,7 @@ export default function App() {
       setInCallFloatingGifts(prev => prev.filter(g => g.id !== anim.id));
     }, 3500);
 
-    showToast(`🎁 هدیه ${gift.name} ارسال شد!`);
+    showToast(`🎁 Gift ${gift.name} sent! Net earnings credited (+${netCreatorCoins} Coins after 29% commission).`);
   };
 
   const handleAddParticipantToCall = (newUser) => {
@@ -2988,24 +3052,104 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     }));
   };
 
-  // Handler for Claiming Today's Daily Check-In
+  // Handler for Claiming Today's Daily Check-In & Streak Reward
   const handleClaimDailyCheckIn = () => {
-    if (claimedCheckInDays.includes(todayCheckInDay)) {
-      showToast('⚠️ پاداش ورود امروز قبلاً دریافت شده است.');
+    const nowTs = Date.now();
+    const elapsedMs = nowTs - lastRewardClaimTimestamp;
+
+    // 24-Hour Cooldown Validation
+    if (elapsedMs < 24 * 60 * 60 * 1000 && lastRewardClaimTimestamp > 0) {
+      const remainingMs = 24 * 3600 * 1000 - elapsedMs;
+      const hours = Math.floor(remainingMs / (1000 * 60 * 60));
+      const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+      showToast(`⚠️ Daily reward already claimed today! Next reward available in ${hours}h ${mins}m.`);
       return;
     }
-    const coinReward = todayCheckInDay * 10 + 30;
-    const xpReward = 50;
-    setUserCoins(c => c + coinReward);
-    const newXP = userXP + xpReward;
-    if (newXP >= userMaxXP) {
-      setUserLevel(lvl => lvl + 1);
-      setUserXP(newXP - userMaxXP);
-    } else {
-      setUserXP(newXP);
+
+    // Calculate next streak day (1 to 30)
+    let nextStreak = dailyStreak;
+    if (elapsedMs > 48 * 60 * 60 * 1000) {
+      nextStreak = 1; // Reset streak if missed over 48 hours
+    } else if (lastRewardClaimTimestamp > 0) {
+      nextStreak = (dailyStreak % 30) + 1;
     }
-    setClaimedCheckInDays(prev => [...prev, todayCheckInDay]);
-    showToast(`🎉 پاداش ورود روز ${todayCheckInDay} (+${coinReward} سکه و +${xpReward} XP) دریافت شد!`);
+
+    // Determine Rewards based on streak day
+    let coins = 50 + (nextStreak * 20);
+    let diamonds = 10 + Math.floor(nextStreak * 2);
+    let bonusTitle = null;
+    let isChestBonus = false;
+
+    if (nextStreak === 7) {
+      coins = 1000;
+      diamonds = 100;
+      bonusTitle = '3-Day VIP Access Trial 🌟';
+      isChestBonus = true;
+    } else if (nextStreak === 14) {
+      coins = 1500;
+      diamonds = 150;
+      bonusTitle = '5-Day VIP Access 🌟';
+      isChestBonus = true;
+    } else if (nextStreak === 21) {
+      coins = 2000;
+      diamonds = 200;
+      bonusTitle = 'Gold Crown Profile Frame 👑';
+      isChestBonus = true;
+    } else if (nextStreak === 30) {
+      coins = 5000;
+      diamonds = 500;
+      bonusTitle = '30-Day VIP Access 👑';
+      isChestBonus = true;
+    } else if (nextStreak % 3 === 0) {
+      bonusTitle = 'Gift Coupon 🎁';
+    }
+
+    // Apply Rewards
+    setUserCoins(c => c + coins);
+    setUserDiamonds(d => d + diamonds);
+    setDailyStreak(nextStreak);
+    setLastRewardClaimTimestamp(nowTs);
+    setClaimedCheckInDays(prev => [...prev, nextStreak]);
+
+    safeStorage.setItem('vlive_daily_streak', String(nextStreak));
+    safeStorage.setItem('vlive_last_reward_claim_ts', String(nowTs));
+
+    // Prepare unlocked reward display
+    const rewardPayload = {
+      day: nextStreak,
+      title: isChestBonus ? `Day ${nextStreak} Mega Chest 🏆` : `Day ${nextStreak} Reward 🎁`,
+      coins,
+      diamonds,
+      bonusTitle,
+      icon: isChestBonus ? '🏆' : (nextStreak % 2 === 0 ? '💎' : '🪙')
+    };
+
+    setUnlockedRewardData(rewardPayload);
+    setIsRewardOpeningModalOpen(true);
+
+    // Save in history
+    setDailyRewardHistory(prev => [{
+      id: `RWD-${Date.now()}`,
+      day: nextStreak,
+      rewardTitle: rewardPayload.title,
+      coins,
+      diamonds,
+      bonus: bonusTitle,
+      date: 'Just now'
+    }, ...prev]);
+
+    // In-App Notification
+    setNotificationsList(prev => [{
+      id: Date.now(),
+      type: 'system',
+      group: 'today',
+      title: '🎁 Daily Reward Claimed!',
+      body: `You received +${coins} Coins and +${diamonds} Diamonds for Day ${nextStreak} streak!${bonusTitle ? ` Bonus: ${bonusTitle}` : ''}`,
+      time: 'Just now',
+      unread: true
+    }, ...prev]);
+
+    showToast(`🎉 Claimed Day ${nextStreak} Reward (+${coins} Coins & +${diamonds} Diamonds)!`);
   };
 
   // Handler for Claiming Bonus Mission
@@ -3023,6 +3167,71 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     setUserCoins(c => c + 500);
     showToast('🎉 جعبه هفتگی (Mystery Box) باز شد! +500 سکه و قاب سایبر دریافت کردید!');
     setWeeklyChest(w => ({ ...w, claimed: true }));
+  };
+
+  // Handler for Subscribing to VIP Membership Plans
+  const handleSubscribeVipPlan = (planId) => {
+    const planMap = {
+      weekly: { id: 'weekly', name: 'VIP Weekly ⚡', days: 7, priceCoins: 250, priceUsdt: '$4.99' },
+      monthly: { id: 'monthly', name: 'VIP Monthly 🌟', days: 30, priceCoins: 750, priceUsdt: '$14.99' },
+      '3months': { id: '3months', name: 'VIP 3 Months 👑', days: 90, priceCoins: 2000, priceUsdt: '$39.99' },
+      '6months': { id: '6months', name: 'VIP 6 Months 🔥', days: 180, priceCoins: 3500, priceUsdt: '$69.99' },
+      yearly: { id: 'yearly', name: 'VIP Yearly 💎', days: 365, priceCoins: 6000, priceUsdt: '$119.99' }
+    };
+
+    const selectedPlan = planMap[planId] || planMap.monthly;
+
+    if (userCoins < selectedPlan.priceCoins) {
+      showToast(`Insufficient coins! ${selectedPlan.name} requires ${selectedPlan.priceCoins.toLocaleString()} coins.`);
+      return;
+    }
+
+    // Deduct coins
+    setUserCoins(prev => {
+      const nextCoins = Math.max(0, prev - selectedPlan.priceCoins);
+      safeStorage.setItem('vlive_user_coins', String(nextCoins));
+      return nextCoins;
+    });
+
+    // Calculate new expiration
+    const currentExpiry = vipExpireTimestamp > Date.now() ? vipExpireTimestamp : Date.now();
+    const newExpiry = currentExpiry + (selectedPlan.days * 24 * 60 * 60 * 1000);
+    
+    setVipPlan(selectedPlan.id);
+    setVipExpireTimestamp(newExpiry);
+    setVipExpireDays(Math.ceil((newExpiry - Date.now()) / (1000 * 60 * 60 * 24)));
+
+    safeStorage.setItem('vlive_vip_plan', selectedPlan.id);
+    safeStorage.setItem('vlive_vip_expire_ts', String(newExpiry));
+
+    // Add Purchase History
+    const historyItem = {
+      id: `VIP-${Date.now()}`,
+      planId: selectedPlan.id,
+      planName: selectedPlan.name,
+      days: selectedPlan.days,
+      priceCoins: selectedPlan.priceCoins,
+      priceUsdt: selectedPlan.priceUsdt,
+      date: new Date().toLocaleDateString(),
+      status: 'Active',
+      txHash: '0x' + Math.random().toString(16).slice(2, 10)
+    };
+
+    setVipPurchaseHistory(prev => [historyItem, ...prev]);
+
+    // Add Notification
+    setNotificationsList(prev => [{
+      id: Date.now(),
+      type: 'system',
+      group: 'today',
+      title: '👑 VIP Subscription Activated!',
+      body: `Congratulations! ${selectedPlan.name} is now active for ${selectedPlan.days} days. Enjoy all VIP benefits & priority perks!`,
+      time: 'Just now',
+      unread: true
+    }, ...prev]);
+
+    setIsVipCelebrationOpen(true);
+    showToast(`🎉 ${selectedPlan.name} activated successfully for ${selectedPlan.days} days!`);
   };
 
   // Handler for Claiming Monthly Chest
@@ -4607,11 +4816,47 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       return;
     }
 
+    const grossCoins = gift.coins;
+    const commissionCoins = Math.round(grossCoins * 0.29);
+    const netCreatorCoins = grossCoins - commissionCoins;
+
     setUserCoins(prev => {
-      const nextCoins = Math.max(0, prev - gift.coins);
+      const nextCoins = Math.max(0, prev - grossCoins);
       safeStorage.setItem('vlive_user_coins', String(nextCoins));
       return nextCoins;
     });
+
+    setUserDiamonds(d => d + Math.round(netCreatorCoins / 5));
+
+    // Record Transaction Entry with 29% Commission
+    const giftTx = {
+      id: `TX-GFT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type: 'gift_received',
+      description: `Virtual Gift: ${gift.name}`,
+      grossAmountCoins: grossCoins,
+      commissionAmountCoins: commissionCoins,
+      netEarningsCoins: netCreatorCoins,
+      grossUsdt: (grossCoins / 50).toFixed(2),
+      commissionUsdt: (commissionCoins / 50).toFixed(2),
+      netUsdt: (netCreatorCoins / 50).toFixed(2),
+      time: 'Just now',
+      timestamp: new Date().toISOString(),
+      status: 'Completed',
+      icon: gift.emoji || '🎁'
+    };
+
+    setTransactionsList(prev => [giftTx, ...prev]);
+
+    // Add In-App Notification
+    setNotificationsList(prev => [{
+      id: Date.now(),
+      type: 'gifts',
+      group: 'today',
+      title: `Gift Received: ${gift.name} 🎁`,
+      body: `You received ${gift.name} (${grossCoins} Coins). Net earnings (+${netCreatorCoins} Coins / $${(netCreatorCoins/50).toFixed(2)} USDT) added after 29% platform commission.`,
+      time: 'Just now',
+      unread: true
+    }, ...prev]);
     
     // TRIGGER ANIMATED FLOATING GIFT OVERLAY ON VIDEO PREVIEW AREA
     const giftAnimId = Date.now() + Math.random();
@@ -4646,7 +4891,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     }
     
     setIsGiftCatalogOpen(false);
-    showToast(`🎁 Gift ${gift.name} (${gift.coins} coins) sent successfully!`);
+    showToast(`🎁 Gift ${gift.name} (${gift.coins} coins) sent! Net earnings credited after 29% commission.`);
   };
 
   // Handle User Logout
@@ -4687,64 +4932,129 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // SUBMIT FEMALE HOST PAYOUT / WITHDRAWAL REQUEST
   const handleSubmitWithdrawal = () => {
+    const nowTs = Date.now();
     const today = new Date().toISOString().slice(0, 10);
 
-    // Rule 1: Female Streamer or Verified Host check
+    // Security Check 1: Payout Freeze Status
+    if (isPayoutFrozen && !isUserRayan) {
+      showToast('⛔ Creator payouts are currently frozen for system maintenance. Please contact support.');
+      return;
+    }
+
+    // Security Check 2: Creator Gender Check (Female Only)
     if (userGender !== 'female' && !isUserRayan) {
-      showToast('Host payout withdrawals are reserved for registered female hosts');
+      showToast('⛔ Creator earnings withdrawal is strictly reserved for approved female creators.');
+      setIsKycModalOpen(true);
       return;
     }
 
-    // Rule 2: Single withdrawal per day
-    if (lastWithdrawalDate === today && !isUserRayan) {
-      showToast('Limit reached: Only 1 withdrawal per day is allowed.');
+    // Security Check 3: Identity Verification Check (Approved KYC required)
+    const isApprovedKyc = isVerified || verificationsList.some(v => v.user === userName && v.status === 'Approved');
+    if (!isApprovedKyc && !isUserRayan) {
+      showToast('⛔ Identity Verification required! Please complete document & selfie verification first.');
+      setIsKycModalOpen(true);
       return;
     }
 
-    // Rule 3: Valid TRC20 Wallet address
+    // Security Check 4: 24-Hour Cooldown Limit
+    const elapsedMs = nowTs - lastWithdrawalTimestamp;
+    if (elapsedMs < 24 * 60 * 60 * 1000 && !isUserRayan) {
+      const remainingMs = 24 * 3600 * 1000 - elapsedMs;
+      const hours = Math.floor(remainingMs / (1000 * 60 * 60));
+      const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+      showToast(`⚠️ Frequency limit: Only 1 withdrawal per 24 hours allowed. Try again in ${hours}h ${mins}m.`);
+      return;
+    }
+
+    // Security Check 5: Valid TRC20 Wallet address
     const targetWallet = withdrawUsdtAddressInput.trim() || hostUsdtAddress;
     if (!targetWallet || targetWallet.length < 10) {
-      showToast('Please enter a valid Tether USDT TRC20 address');
+      showToast('Please enter a valid Tether USDT (TRC20) wallet address');
       return;
     }
 
-    // Rule 4: Minimum withdrawal $50 USDT (equivalent to 2,500 coins)
+    // Security Check 6: Minimum Withdrawal Check
+    const minUsdtVal = parseFloat(String(adminMinWithdrawal).replace(/[^0-9.]/g, '')) || 50;
+    const minCoinsRequired = minUsdtVal * 50; // 50 coins = $1 USDT
     const coinsToWithdraw = parseInt(withdrawCoinsAmount, 10);
-    if (isNaN(coinsToWithdraw) || coinsToWithdraw < 2500) {
-      showToast('Minimum withdrawal requirement is 2,500 coins ($50 USDT)');
+
+    if (isNaN(coinsToWithdraw) || coinsToWithdraw < minCoinsRequired) {
+      showToast(`Minimum withdrawal requirement is ${minCoinsRequired.toLocaleString()} coins ($${minUsdtVal} USDT)`);
       return;
     }
 
+    // Security Check 7: Maximum Withdrawal Check
+    const maxCoinsAllowed = adminMaxWithdrawal * 50;
+    if (coinsToWithdraw > maxCoinsAllowed) {
+      showToast(`Maximum withdrawal per request is ${maxCoinsAllowed.toLocaleString()} coins ($${adminMaxWithdrawal} USDT)`);
+      return;
+    }
+
+    // Security Check 8: Balance Check
     if (coinsToWithdraw > userCoins) {
-      showToast('Insufficient host coin balance');
+      showToast('Insufficient coin balance for withdrawal!');
       return;
     }
 
-    // Calculate USD value at 50 coins = $1 USDT
+    // Calculate USD values & Deduct Network Gas Fee
     const grossUsdt = coinsToWithdraw / 50;
-    const gasFee = 1.50; // $1.50 TRC20 gas fee
-    const netUsdtPayout = (grossUsdt - gasFee).toFixed(2);
+    const networkGasFeeUsdt = adminNetworkFee || 1.50;
+    const netUsdtPayout = Math.max(0, grossUsdt - networkGasFeeUsdt).toFixed(2);
 
+    // Deduct coins & record timestamp
     setUserCoins(prev => prev - coinsToWithdraw);
+    setLastWithdrawalTimestamp(nowTs);
     setLastWithdrawalDate(today);
+    safeStorage.setItem('vlive_last_withdrawal_ts', String(nowTs));
     safeStorage.setItem('vlive_last_withdrawal_date', today);
 
+    const txId = `W-${Math.floor(1000 + Math.random() * 9000)}`;
+
     const newTx = {
-      id: `TX-${Math.floor(100 + Math.random() * 900)}`,
-      user: userName,
-      type: 'withdrawal',
-      amount: `${netUsdtPayout} USDT (Net)`,
+      id: txId,
+      user: `@${currentUsername}`,
+      userName: userName,
+      type: 'Withdrawal',
+      grossAmountUsdt: `$${grossUsdt.toFixed(2)} USDT`,
+      networkFeeUsdt: `$${networkGasFeeUsdt.toFixed(2)} USDT`,
+      amount: `$${netUsdtPayout} USDT (Net)`,
       coins: coinsToWithdraw,
-      status: 'pending',
+      status: 'Pending Review', // Pending Review | Under Review | Approved | Processing | Completed | Rejected | Cancelled
       date: 'Just now',
+      timestamp: new Date().toISOString(),
       method: 'Tether TRC20',
-      txHash: targetWallet
+      txHash: targetWallet,
+      notice: 'Withdrawal completion time depends on blockchain network conditions.'
     };
 
     setTransactionsList(prev => [newTx, ...prev]);
+
+    // Add to Admin Withdrawals Queue
+    setAdminWithdrawalsList(prev => [{
+      id: txId,
+      user: `${userName} (@${currentUsername})`,
+      amount: `$${grossUsdt.toFixed(2)} USDT (Net: $${netUsdtPayout} USDT)`,
+      networkFee: `$${networkGasFeeUsdt.toFixed(2)} USDT`,
+      method: 'Tether TRC20',
+      txHash: targetWallet,
+      time: 'Just now',
+      status: 'Pending Review'
+    }, ...prev]);
+
+    // Send In-App Notification
+    setNotificationsList(prev => [{
+      id: Date.now(),
+      type: 'earnings',
+      group: 'today',
+      title: '💸 Withdrawal Request Submitted',
+      body: `Your request of $${netUsdtPayout} USDT (Net payout after $${networkGasFeeUsdt} gas fee) is under review. Notice: Completion time depends on blockchain network conditions.`,
+      time: 'Just now',
+      unread: true
+    }, ...prev]);
+
     setIsWithdrawModalOpen(false);
     setWithdrawCoinsAmount('');
-    showToast(`Withdrawal request of ${netUsdtPayout} USDT submitted for admin review`);
+    showToast(`Withdrawal request #${txId} ($${netUsdtPayout} USDT) submitted for admin review`);
   };
 
   // Open Pre-Stream Warning
@@ -15718,57 +16028,192 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         </div>
       )}
 
+      {/* DAILY REWARD MYSTERY CHEST ANIMATED UNLOCK OVERLAY MODAL */}
+      {isRewardOpeningModalOpen && unlockedRewardData && (
+        <div className="fixed inset-0 z-[110] bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+          <div className="w-full max-w-sm card-3d p-6 border-2 border-amber-400/80 bg-gradient-to-b from-slate-900 via-amber-950/40 to-slate-950 rounded-3xl text-center space-y-5 shadow-[0_0_80px_rgba(245,158,11,0.4)] relative overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-400/20 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="relative z-10 space-y-3">
+              <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-amber-500 via-yellow-300 to-amber-600 p-0.5 shadow-xl flex items-center justify-center animate-bounce">
+                <div className="w-full h-full bg-slate-950 rounded-[22px] flex items-center justify-center text-4xl">
+                  {unlockedRewardData.icon}
+                </div>
+              </div>
+
+              <div>
+                <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 text-[10px] font-black uppercase tracking-wider">
+                  Day {unlockedRewardData.day} Reward Unlocked 🎉
+                </span>
+                <h3 className="text-xl font-black text-white mt-1.5 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 bg-clip-text text-transparent">
+                  {unlockedRewardData.title}
+                </h3>
+              </div>
+
+              {/* Reward breakdown */}
+              <div className="p-4 rounded-2xl bg-slate-950/90 border border-amber-500/30 space-y-2 text-xs">
+                <div className="flex items-center justify-between font-mono font-bold text-amber-300">
+                  <span>Coins Received (سکه):</span>
+                  <span className="text-sm text-amber-400">+{unlockedRewardData.coins.toLocaleString()} 🪙</span>
+                </div>
+                <div className="flex items-center justify-between font-mono font-bold text-cyan-300 border-t border-slate-800 pt-1.5">
+                  <span>Diamonds Received (الماس):</span>
+                  <span className="text-sm text-cyan-400">+{unlockedRewardData.diamonds.toLocaleString()} 💎</span>
+                </div>
+                {unlockedRewardData.bonusTitle && (
+                  <div className="flex items-center justify-between font-bold text-purple-300 border-t border-slate-800 pt-1.5">
+                    <span>Bonus Perk (بونوس):</span>
+                    <span className="text-xs text-purple-400">{unlockedRewardData.bonusTitle}</span>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => {
+                  setIsRewardOpeningModalOpen(false);
+                  showToast('🎉 Daily rewards added to your wallet balance!');
+                }}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                Claim & Continue (دریافت و ادامه)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL 3: WITHDRAWAL / PAYOUT MODAL */}
       {isWithdrawModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md card-3d p-6 border border-emerald-500/50 bg-slate-900 rounded-3xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <ArrowUpRight className="w-4 h-4 text-emerald-400" />
-                Request USDT TRC20 Host Payout
-              </h2>
-              <button onClick={() => setIsWithdrawModalOpen(false)} className="text-slate-400 hover:text-white">
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+          <div className="w-full max-w-md card-3d p-6 border-2 border-emerald-500/50 bg-slate-900 rounded-3xl space-y-4 shadow-[0_0_50px_rgba(16,185,129,0.25)]">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <ArrowUpRight className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-white">
+                    Request Creator Earnings Payout
+                  </h2>
+                  <p className="text-[10px] text-slate-400">Tether USDT (TRC20) Network Withdrawal</p>
+                </div>
+              </div>
+              <button onClick={() => setIsWithdrawModalOpen(false)} className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="text-[10px] text-slate-400 block mb-1">Coins to Convert (Min 2,500 coins = $50 USDT)</label>
-                <input 
-                  type="number"
-                  value={withdrawCoinsAmount}
-                  onChange={e => setWithdrawCoinsAmount(e.target.value)}
-                  placeholder="e.g. 5000"
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-white font-mono"
-                />
-              </div>
+            {/* CHECK CREATOR ELIGIBILITY FIRST */}
+            {(userGender !== 'female' || (!isVerified && !verificationsList.some(v => v.user === userName && v.status === 'Approved'))) && !isUserRayan ? (
+              <div className="p-4 rounded-2xl bg-amber-950/60 border border-amber-500/50 space-y-3 text-center">
+                <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-400 border border-amber-400/30">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-black text-amber-300 text-xs">احراز هویت و حساب بانوان استریمر الزامی است</h3>
+                  <p className="text-[11px] text-slate-300 mt-1">
+                    برداشت درآمد اختصاصاً برای حساب‌های بانوان استریمر تأییدشده فعال می‌باشد. برای ارسال درخواست تسویه، ابتدا مدارک هویت خود را ثبت نمایید.
+                  </p>
+                </div>
 
-              <div>
-                <label className="text-[10px] text-slate-400 block mb-1">TRON USDT Address</label>
-                <input 
-                  type="text"
-                  value={withdrawUsdtAddressInput}
-                  onChange={e => setWithdrawUsdtAddressInput(e.target.value)}
-                  placeholder="e.g. TKh8zXpQ7yM3vN1L9R2W4b6K8a0C"
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-white font-mono"
-                />
-              </div>
+                <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-right text-[10px] space-y-1.5 text-slate-300">
+                  <p className="flex items-center gap-1.5 font-bold text-amber-400">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" /> شرایط ثبت درخواست برداشت:
+                  </p>
+                  <p className="pr-4">• حساب بانوان استریمر (Female Creator Account)</p>
+                  <p className="pr-4">• آپلود کارت ملی / پاسپورت و تصویر سلفی</p>
+                  <p className="pr-4">• تأیید حساب توسط تیم مدیریت vLive+</p>
+                </div>
 
-              <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1 text-[10px] text-slate-400">
-                <p>• Minimum: <strong>$50 USDT</strong> (2,500 coins)</p>
-                <p>• Limit: <strong>1 withdrawal request per day</strong></p>
-                <p>• Gas Fee: <strong>$1.50 TRC20 gas fee</strong> deducted from payout</p>
-                <p>• Approval: Reviewed by Admin management</p>
+                <button
+                  onClick={() => {
+                    setIsWithdrawModalOpen(false);
+                    setIsKycModalOpen(true);
+                  }}
+                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-md hover:brightness-110 transition flex items-center justify-center gap-1.5"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  شروع احراز هویت (Start KYC Verification)
+                </button>
               </div>
+            ) : (
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-1 font-bold">
+                    Coins to Withdraw (سکه برای تبدیل به تتر)
+                  </label>
+                  <input 
+                    type="number"
+                    value={withdrawCoinsAmount}
+                    onChange={e => setWithdrawCoinsAmount(e.target.value)}
+                    placeholder="e.g. 2500 coins = $50 USDT"
+                    className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-white font-mono outline-none focus:border-emerald-500"
+                  />
+                  <span className="text-[10px] text-emerald-400 block mt-1 font-mono">
+                    موجودی قابل برداشت شما: {userCoins.toLocaleString()} سکه (≈ ${(userCoins / 50).toFixed(2)} USDT)
+                  </span>
+                </div>
 
-              <button 
-                onClick={handleSubmitWithdrawal}
-                className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold"
-              >
-                Submit Withdrawal Request
-              </button>
-            </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-1 font-bold">
+                    TRON (TRC20) USDT Wallet Address (آدرس کیف پول تتر)
+                  </label>
+                  <input 
+                    type="text"
+                    value={withdrawUsdtAddressInput}
+                    onChange={e => setWithdrawUsdtAddressInput(e.target.value)}
+                    placeholder="TKh8zXpQ7yM3vN1L9R2W4b6K8a0C..."
+                    className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-white font-mono outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                {/* LIVE DYNAMIC FEE BREAKDOWN CARD */}
+                {(() => {
+                  const coinsNum = parseInt(withdrawCoinsAmount, 10) || 0;
+                  const grossUsdtNum = coinsNum / 50;
+                  const netUsdtNum = Math.max(0, grossUsdtNum - adminNetworkFee).toFixed(2);
+                  return (
+                    <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-2 text-[11px]">
+                      <div className="flex justify-between text-slate-300">
+                        <span>مبلغ درخواستی (Gross USDT):</span>
+                        <span className="font-mono font-bold text-white">${grossUsdtNum.toFixed(2)} USDT</span>
+                      </div>
+                      <div className="flex justify-between text-amber-300 border-t border-slate-800/80 pt-1.5">
+                        <span>کارمزد شبکه (TRC20 Gas Fee):</span>
+                        <span className="font-mono font-bold text-amber-400">-${adminNetworkFee.toFixed(2)} USDT</span>
+                      </div>
+                      <div className="flex justify-between text-emerald-300 border-t border-slate-800/80 pt-1.5 font-bold">
+                        <span>صافی واریزی به کیف پول (Net Payout):</span>
+                        <span className="font-mono text-sm text-emerald-400">${netUsdtNum} USDT</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* BLOCKCHAIN NETWORK NOTICE */}
+                <div className="p-3 bg-emerald-950/30 rounded-2xl border border-emerald-500/30 text-[10px] text-emerald-300 space-y-1">
+                  <p className="font-bold flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                    اطلاعیه زمان‌بندی تسویه شبکه:
+                  </p>
+                  <p className="text-slate-300">
+                    * Withdrawal completion time depends on blockchain network conditions.
+                  </p>
+                  <p className="text-slate-400">
+                    (زمان نهایی شدن تسویه حساب بسته به ترافیک شبکه بلاک‌چین ترون متغیر می‌باشد)
+                  </p>
+                </div>
+
+                <button 
+                  onClick={handleSubmitWithdrawal}
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-1.5"
+                >
+                  <ArrowUpRight className="w-4 h-4" />
+                  ارسال درخواست برداشت درآمد
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -17926,47 +18371,144 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               )}
 
               {/* 5. WALLET & FINANCIALS */}
+              {/* 5. WALLET & WITHDRAWALS MANAGEMENT */}
               {adminActiveTab === 'wallet' && (
-                <div className="space-y-3 text-xs">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-white text-sm">۵. مدیریت مالی و درخواست‌های برداشت (Wallet)</h3>
-                    <span className="text-[10px] text-emerald-400 font-mono">حجم مالی کل: $148,200 USDT</span>
+                <div className="space-y-4 text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                    <div>
+                      <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-emerald-400" />
+                        ۵. مدیریت مالی، کمیسیون ۲۹٪ و درخواست‌های تسویه (Financials & Withdrawals)
+                      </h3>
+                      <p className="text-[10px] text-slate-400">بررسی درخواست‌های واریز و برداشت، کمیسیون ۲۹٪ لایو و کارمزد شبکه TRC20</p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setIsPayoutFrozen(!isPayoutFrozen);
+                          addAdminAuditLog(isPayoutFrozen ? 'توقیف واریزها (Payout Freeze) لغو گردید' : 'توقیف کلیه واریزهای مالی فعال گردید');
+                        }}
+                        className={`px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1.5 border transition ${isPayoutFrozen ? 'bg-rose-600 text-white border-rose-400 animate-pulse' : 'bg-slate-800 text-emerald-400 border-emerald-500/30 hover:bg-slate-700'}`}
+                      >
+                        {isPayoutFrozen ? '⛔ Payout Frozen (توقیف فعال)' : '⚡ Freeze Payouts (توقیف واریز)'}
+                      </button>
+                    </div>
                   </div>
 
-                  {/* WITHDRAWALS LIST */}
+                  {/* PLATFORM FINANCIAL SUMMARY CARDS */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-950/80 to-slate-950 border border-emerald-500/40 space-y-1">
+                      <span className="text-[10px] text-emerald-400 font-bold uppercase">تراکنش‌های کل سیستم</span>
+                      <p className="text-xl font-black text-white font-mono">$148,200.00 USDT</p>
+                      <span className="text-[10px] text-slate-400 block">حجم تراکنش خروجی و ورودی</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-950/80 to-slate-950 border border-amber-500/40 space-y-1">
+                      <span className="text-[10px] text-amber-400 font-bold uppercase">درآمد کمیسیون پلتفرم (۲۹٪)</span>
+                      <p className="text-xl font-black text-amber-300 font-mono">$42,978.00 USDT</p>
+                      <span className="text-[10px] text-amber-200 block">کسر ۲۹٪ لحظه‌ای از کلیه هدایای لایو</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-purple-950/80 to-slate-950 border border-purple-500/40 space-y-1">
+                      <span className="text-[10px] text-purple-400 font-bold uppercase">صافی پرداختی استریمرها (۷۱٪)</span>
+                      <p className="text-xl font-black text-purple-300 font-mono">$105,222.00 USDT</p>
+                      <span className="text-[10px] text-slate-400 block">مجموع سود واریز شده به بانوان استریمر</span>
+                    </div>
+                  </div>
+
+                  {/* SYSTEM FEE CONFIGURATION */}
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                    <h4 className="font-bold text-amber-300 text-[11px] flex items-center gap-1.5">
+                      <Sliders className="w-4 h-4 text-amber-400" />
+                      تنظیمات حد نصاب و کارمزد شبکه برداشت TRC20
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-1">حداقل برداشت (USDT)</label>
+                        <input
+                          type="text"
+                          value={adminMinWithdrawal}
+                          onChange={e => setAdminMinWithdrawal(e.target.value)}
+                          placeholder="$50 USDT"
+                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono outline-none focus:border-amber-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-1">کارمزد شبکه ترون (Network Gas Fee)</label>
+                        <input
+                          type="number"
+                          step="0.10"
+                          value={adminNetworkFee}
+                          onChange={e => setAdminNetworkFee(parseFloat(e.target.value) || 0)}
+                          placeholder="1.50"
+                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono outline-none focus:border-amber-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-1">حداکثر سقف برداشت روزانه (USDT)</label>
+                        <input
+                          type="number"
+                          value={adminMaxWithdrawal}
+                          onChange={e => setAdminMaxWithdrawal(parseInt(e.target.value, 10) || 5000)}
+                          placeholder="5000"
+                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono outline-none focus:border-amber-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* WITHDRAWALS QUEUE LIST */}
                   <div className="space-y-2">
-                    <h4 className="font-bold text-slate-300 text-[11px]">درخواست‌های تسویه حساب و برداشت درآمد</h4>
+                    <h4 className="font-bold text-slate-300 text-[11px] flex items-center justify-between">
+                      <span>لیست درخواست‌های تسویه حساب و برداشت درآمد</span>
+                      <span className="text-slate-400 text-[10px]">تعداد درخواست‌ها: {adminWithdrawalsList.length}</span>
+                    </h4>
+
                     {adminWithdrawalsList.map(w => (
-                      <div key={w.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                      <div key={w.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-slate-700 transition">
                         <div>
-                          <p className="font-bold text-white">{w.user} • {w.amount}</p>
-                          <span className="text-[10px] text-slate-400 block font-mono">{w.method} • کد پیگیری: {w.txHash}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-white">{w.user}</span>
+                            <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">{w.amount}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 block font-mono mt-1">
+                            آدرس کیف پول TRC20: {w.txHash} • زمان درخواست: {w.time}
+                          </span>
                         </div>
 
-                        {w.status === 'Pending' ? (
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              onClick={() => {
-                                setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Approved' } : item));
-                                addAdminAuditLog(`درخواست برداشت ${w.id} به مبلغ ${w.amount} تأیید و واریز شد`);
-                              }}
-                              className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]"
-                            >
-                              تأیید برداشت
-                            </button>
-                            <button
-                              onClick={() => {
-                                setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Rejected' } : item));
-                                addAdminAuditLog(`درخواست برداشت ${w.id} رد شد`);
-                              }}
-                              className="px-3 py-1 rounded-xl bg-rose-600 text-white font-bold text-[10px]"
-                            >
-                              رد برداشت
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">{w.status}</span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {w.status === 'Pending' || w.status === 'Pending Review' ? (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Completed' } : item));
+                                  addAdminAuditLog(`درخواست برداشت #${w.id} به مبلغ ${w.amount} تأیید و در شبکه TRON واریز گردید`);
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] shadow"
+                              >
+                                ✓ تأیید و واریز
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Rejected' } : item));
+                                  addAdminAuditLog(`درخواست برداشت #${w.id} رد شد و سکه‌ها به کیف پول استریمر عودت داده شد`);
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] shadow"
+                              >
+                                ✕ رد درخواست
+                              </button>
+                            </div>
+                          ) : (
+                            <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${w.status === 'Completed' || w.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'}`}>
+                              {w.status}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
