@@ -735,6 +735,7 @@ export default function App() {
   // Main UI State
   const [activeTab, setActiveTab] = useState('streams'); // 'streams', 'messages', 'wallet', 'profile'
   const [profileMainTab, setProfileMainTab] = useState('gallery'); // 'gallery', 'level', 'wallet', 'settings'
+  const [profileSubPage, setProfileSubPage] = useState('main'); // 'main' | 'account' | 'privacy' | 'wallet' | 'vip' | 'gifts' | 'gallery' | 'stories' | 'notifications' | 'language' | 'support' | 'about'
   const [streamSubTab, setStreamSubTab] = useState('lives'); // 'users' or 'lives'
   const [streamModeFilter, setStreamModeFilter] = useState('all');
   
@@ -10952,28 +10953,28 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           </div>
         )}
 
-{/* TAB 4: REDESIGNED COMPLETE PROFILE */}
+{/* TAB 4: REDESIGNED CLEAN PROFILE DASHBOARD */}
         {activeTab === 'profile' && (
-          <div className="space-y-6">
+          <div className="space-y-6 pb-20 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
 
-            {/* PROFILE PREVIEW MODE SWITCHER (MY PROFILE VS OTHER STREAMER PROFILE) */}
-            <div className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+            {/* PROFILE PREVIEW MODE SWITCHER */}
+            <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between shadow-md">
               <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                 <Eye className="w-4 h-4 text-pink-400" />
-                Profile Mode Preview:
+                {loc('حالت پیش‌نمایش پروفایل:', 'Profile Preview Mode:')}
               </span>
               <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
                 <button 
                   onClick={() => setProfilePreviewMode('self')}
-                  className={`px-3 py-1 rounded-lg transition ${profilePreviewMode === 'self' ? 'bg-pink-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg transition ${profilePreviewMode === 'self' ? 'bg-pink-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
                 >
-                  My Profile 👤
+                  {loc('پروفایل من 👤', 'My Profile 👤')}
                 </button>
                 <button 
                   onClick={() => setProfilePreviewMode('other')}
-                  className={`px-3 py-1 rounded-lg transition ${profilePreviewMode === 'other' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg transition ${profilePreviewMode === 'other' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
                 >
-                  Other User View 👁️
+                  {loc('نمای کاربر دیگر 👁️', 'Other User 👁️')}
                 </button>
               </div>
             </div>
