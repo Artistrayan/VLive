@@ -738,6 +738,30 @@ export default function App() {
     return safeStorage.getParsed('vlive_user_videos_v1', []);
   });
 
+  const [freeMatchCallsLeft, setFreeMatchCallsLeft] = useState(3);
+  const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
+  const [matchState, setMatchState] = useState('idle'); // 'idle' | 'searching' | 'connected'
+  const [matchedMatchUser, setMatchedMatchUser] = useState(null);
+  const [matchCallSeconds, setMatchCallSeconds] = useState(30);
+
+  useEffect(() => {
+    let interval = null;
+    if (matchState === 'connected' && matchCallSeconds > 0) {
+      interval = setInterval(() => {
+        setMatchCallSeconds(prev => {
+          if (prev <= 1) {
+            setMatchState('idle');
+            setIsMatchModalOpen(false);
+            showToast('⏰ تماس ۳۰ ثانیه‌ای مچ رندوم به پایان رسید.');
+            return 30;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [matchState, matchCallSeconds]);
+
   const [isAddPostModalOpen, setIsAddPostModalOpen] = useState(false);
   const [newPostType, setNewPostType] = useState('photo'); // 'photo' | 'video'
   const [newPostUrl, setNewPostUrl] = useState('');
@@ -4302,7 +4326,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       return;
     }
 
-    setUserCoins(prev => prev - gift.coins);
+    setUserCoins(prev => {
+      const nextCoins = Math.max(0, prev - gift.coins);
+      safeStorage.setItem('vlive_user_coins', String(nextCoins));
+      return nextCoins;
+    });
     
     // TRIGGER ANIMATED FLOATING GIFT OVERLAY ON VIDEO PREVIEW AREA
     const giftAnimId = Date.now() + Math.random();
@@ -5763,13 +5791,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white">🥊 مسابقه PK Battle vs @Soren</span>
+                    <span className="text-xs font-bold text-white">🥊 مسابقه PK Battle</span>
                     <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full">در جریان</span>
                   </div>
-                  <p className="text-[10px] text-slate-400">چالش هیجان‌انگیز استریمرها با امتیازدهی آنی و قوانین منصفانه ضدتقلب.</p>
+                  <p className="text-[10px] text-slate-400">چالش هیجان‌انگیز استریمرها با امتیازدهی آنی و قوانین ضدتقلب.</p>
                   <button 
                     onClick={() => {
                       setIsPkBattleActive(true);
@@ -5777,19 +5805,40 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     }}
                     className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-xs shadow-md hover:scale-[1.02] active:scale-95 transition"
                   >
-                    {loc('ورود به مسابقه و قوانین 🏆', 'Enter Match & Rules 🏆')}
+                    {loc('ورود به مسابقه 🏆', 'Enter Match 🏆')}
+                  </button>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white">🎲 مچ رندوم (۳ بار رایگان)</span>
+                    <span className="text-[10px] text-pink-400 font-bold bg-pink-500/10 px-2 py-0.5 rounded-full">{freeMatchCallsLeft}/3 رایگان</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400">تماس تصویری رندوم ۳۰ ثانیه‌ای رایگان با کاربران تاییدشده.</p>
+                  <button 
+                    onClick={() => {
+                      if (freeMatchCallsLeft <= 0) {
+                        showToast('⚠️ سهمیه تماس‌های رندوم رایگان امروز شما به پایان رسیده است.');
+                        return;
+                      }
+                      setIsMatchModalOpen(true);
+                      setMatchState('idle');
+                      setMatchCallSeconds(30);
+                    }}
+                    className="w-full py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-md hover:scale-[1.02] active:scale-95 transition"
+                  >
+                    {loc('شروع مچ ۳۰ ثانیه‌ای 🎲', 'Start 30s Match 🎲')}
                   </button>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-white">
                     <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
-                    <span>قوانین کلیدی مسابقه (Match Rules)</span>
+                    <span>قوانین کلیدی (Match Rules)</span>
                   </div>
                   <ul className="text-[10px] text-slate-400 space-y-1 list-disc list-inside">
-                    <li>ممنوعیت استفاده از ربات و اکانت‌های فیک (Anti-Fraud)</li>
-                    <li>ثبت امتیاز بر اساس ارسال هدیه و مشارکت زنده</li>
-                    <li>تایید هویت و عدم تقلب در امتیازدهی نهایی</li>
+                    <li>ممنوعیت ربات و اکانت فیک (Anti-Fraud)</li>
+                    <li>تایید هویت کاربران و امنیت کامل تماس</li>
                   </ul>
                 </div>
               </div>
@@ -18744,6 +18793,120 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 {loc('انصراف', 'Cancel')}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: RANDOM VIDEO MATCH (رولت تماس رندوم ۳۰ ثانیه‌ای رایگان) */}
+      {isMatchModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+          <div className="w-full max-w-md bg-slate-900 border border-pink-500/40 rounded-3xl p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h3 className="text-sm font-black text-white flex items-center gap-2">
+                <Video className="w-5 h-5 text-pink-400 animate-pulse" />
+                {loc('رولت مچ رندوم ۳۰ ثانیه‌ای رایگان', 'Free 30s Random Video Match')}
+              </h3>
+              <span className="text-xs font-bold text-pink-400 bg-pink-500/10 px-3 py-1 rounded-full border border-pink-500/20">
+                {freeMatchCallsLeft} / 3 {loc('سهمیه امروز', 'Remaining Today')}
+              </span>
+            </div>
+
+            {matchState === 'idle' && (
+              <div className="space-y-4 text-center">
+                <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-pink-500/20 to-purple-500/20 border border-pink-500/30 flex items-center justify-center">
+                  <Video className="w-10 h-10 text-pink-400" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-black text-white">تماس تصویری تصادفی با کاربران تاییدشده</h4>
+                  <p className="text-xs text-slate-400">
+                    با کلیک روی دکمه زیر، سیستم به صورت هوشمند یک کاربر آنلاین تأییدشده را برای مکالمه ۳۰ ثانیه‌ای رایگان انتخاب می‌کند.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 text-right space-y-1">
+                  <p className="font-bold text-amber-400">📜 قوانین ضدتقلب و امنیت:</p>
+                  <p>• رعایت احترام متقابل و قوانین اخلاقی الزامی است.</p>
+                  <p>• سیستم ضدتقلب هوش مصنوعی فعالیت کاربران را رصد می‌کند.</p>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      setMatchState('searching');
+                      setTimeout(() => {
+                        const samplePartners = [
+                          { name: 'Soren Streamer', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80', city: 'Tehran', isVerified: true },
+                          { name: 'Niloofar Diamond', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', city: 'Shiraz', isVerified: true },
+                          { name: 'Rayan Star', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', city: 'Isfahan', isVerified: true }
+                        ];
+                        const randomPartner = samplePartners[Math.floor(Math.random() * samplePartners.length)];
+                        setMatchedMatchUser(randomPartner);
+                        setMatchState('connected');
+                        setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));
+                        setMatchCallSeconds(30);
+                        showToast(`🎉 مچ موفق با ${randomPartner.name}! تماس ۳۰ ثانیه‌ای آغاز شد.`);
+                      }, 2500);
+                    }}
+                    className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition"
+                  >
+                    {loc('جستجوی مچ رندوم 🚀', 'Find Random Match 🚀')}
+                  </button>
+                  <button
+                    onClick={() => setIsMatchModalOpen(false)}
+                    className="px-5 py-3.5 rounded-2xl bg-slate-800 text-slate-300 font-bold text-xs"
+                  >
+                    {loc('بستن', 'Close')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {matchState === 'searching' && (
+              <div className="py-12 text-center space-y-4">
+                <div className="w-16 h-16 mx-auto rounded-full border-4 border-pink-500 border-t-transparent animate-spin" />
+                <h4 className="text-sm font-black text-white">در حال جستجوی کاربر رندوم آنلاین...</h4>
+                <p className="text-xs text-slate-400">لطفاً چند لحظه صبر کنید تا همتافت متصل شود.</p>
+              </div>
+            )}
+
+            {matchState === 'connected' && matchedMatchUser && (
+              <div className="space-y-4">
+                <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-pink-500/30 flex items-center justify-center">
+                  <img src={matchedMatchUser.avatar} alt={matchedMatchUser.name} className="absolute inset-0 w-full h-full object-cover opacity-85" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-black/40" />
+                  
+                  {/* Timer Badge */}
+                  <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md border border-pink-500/40 text-pink-400 font-black text-xs flex items-center gap-1.5 animate-pulse">
+                    <span>⏱️</span>
+                    <span>{matchCallSeconds} ثانیه باقی‌مانده</span>
+                  </div>
+
+                  <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-black text-white flex items-center gap-1">
+                        {matchedMatchUser.name}
+                        {matchedMatchUser.isVerified && <span className="text-blue-400 text-[10px]">✔</span>}
+                      </h4>
+                      <p className="text-[10px] text-slate-300">📍 {matchedMatchUser.city} • تماس رندوم رایگان</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setMatchState('idle');
+                        setIsMatchModalOpen(false);
+                        showToast('📞 تماس رندوم پایان یافت.');
+                      }}
+                      className="px-4 py-2 rounded-xl bg-red-600 text-white font-bold text-xs shadow-lg hover:bg-red-500"
+                    >
+                      قطع تماس
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-[11px] text-slate-400 text-center">
+                  ⚠️ این تماس به مدت ۳۰ ثانیه رایگان است. پس از اتمام زمان، تماس قطع خواهد شد.
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
