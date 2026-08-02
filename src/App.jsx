@@ -11552,87 +11552,126 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* MAIN DASHBOARD PAGE - REDESIGNED INSTAGRAM/TIKTOK/BUMBLE/TELEGRAM PROFILE */}
       {profileSubPage === 'main' && (
-        <div className="space-y-4 animate-fadeIn">
+        <div className="space-y-5 animate-fadeIn">
 
-          {/* 1. HEADER CARD (INSTAGRAM / TIKTOK / BUMBLE HYBRID) */}
-          <div className="relative rounded-3xl overflow-hidden border border-slate-800 bg-slate-900/90 shadow-2xl backdrop-blur-xl">
-            {/* Sleek Cover Banner */}
-            <div className="relative h-36 w-full bg-gradient-to-r from-pink-900 via-purple-900 to-slate-950 overflow-hidden">
+          {/* PROFILE PREVIEW MODE SWITCHER */}
+          <div className="p-1.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between shadow-lg backdrop-blur-md max-w-sm mx-auto">
+            <span className="text-[10px] font-black text-slate-400 flex items-center gap-1.5 px-2.5 uppercase tracking-wider">
+              <Eye className="w-3.5 h-3.5 text-pink-500 animate-pulse" />
+              {loc('حالت نمایش', 'View Mode')}
+            </span>
+            <div className="flex items-center gap-1 bg-slate-900/60 p-0.5 rounded-xl border border-slate-800/60 text-[10px] font-black">
+              <button 
+                type="button"
+                onClick={() => setProfilePreviewMode('self')}
+                className={`px-3 py-1.5 rounded-lg transition-all duration-300 flex items-center gap-1 ${profilePreviewMode === 'self' ? 'bg-gradient-to-r from-pink-600 via-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/10 font-bold' : 'text-slate-400 hover:text-white'}`}
+              >
+                <User className="w-3 h-3" />
+                <span>{loc('من', 'Self')}</span>
+              </button>
+              <button 
+                type="button"
+                onClick={() => setProfilePreviewMode('other')}
+                className={`px-3 py-1.5 rounded-lg transition-all duration-300 flex items-center gap-1 ${profilePreviewMode === 'other' ? 'bg-gradient-to-r from-purple-600 via-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/10 font-bold' : 'text-slate-400 hover:text-white'}`}
+              >
+                <Eye className="w-3 h-3" />
+                <span>{loc('دیگری', 'Guest')}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 1. PREMIUM HEADER CARD */}
+          <div className="relative rounded-3xl overflow-hidden border border-slate-800/80 bg-slate-900/40 shadow-2xl backdrop-blur-xl">
+            {/* Elegant Streamer Cover Banner */}
+            <div className="relative h-40 w-full overflow-hidden">
               <img 
-                src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80" 
+                src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80" 
                 alt="Profile Cover" 
-                className="w-full h-full object-cover opacity-40 hover:scale-105 transition duration-700"
+                className="w-full h-full object-cover opacity-60 scale-100 hover:scale-105 transition duration-1000"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-500/10 via-transparent to-purple-500/10" />
+              {/* Floating Live Indicator Badge */}
+              {profilePreviewMode === 'other' && (
+                <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-pink-600/95 text-[9px] font-black text-white flex items-center gap-1.5 animate-pulse shadow-lg shadow-pink-600/20 border border-pink-400/30">
+                  <span className="w-1.5 h-1.5 bg-white rounded-full" />
+                  LIVE
+                </span>
+              )}
             </div>
 
-            {/* Main Info Box */}
-            <div className="px-5 pb-5 relative flex flex-col items-center text-center -mt-16 space-y-3">
-              {/* Large Circular Avatar with Ring & Badges */}
-              <div className="relative group">
-                <div className="w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 shadow-[0_0_25px_rgba(236,72,153,0.5)]">
-                  <img 
-                    src={userAvatar} 
-                    alt={userName} 
-                    className="w-full h-full object-cover rounded-full border-4 border-slate-900 shadow-md"
-                  />
+            {/* Main Profile Avatar & Info Area */}
+            <div className="px-6 pb-6 relative flex flex-col items-center text-center -mt-20 space-y-4">
+              {/* Avatar Ring Assembly */}
+              <div className="relative">
+                {/* Outer Breathing Streamer Ring */}
+                <div className="w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 shadow-[0_0_25px_rgba(236,72,153,0.4)]">
+                  <div className="w-full h-full rounded-full bg-slate-950 p-0.5">
+                    <img 
+                      src={userAvatar} 
+                      alt={userName} 
+                      className="w-full h-full object-cover rounded-full border-2 border-slate-900 shadow-inner"
+                    />
+                  </div>
                 </div>
 
-                {/* Online Status Dot */}
+                {/* Modern Active Online Pulse Dot */}
                 {privacyShowLastSeen && (
-                  <span className="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-slate-900 rounded-full animate-pulse shadow-md" title="Online Now" />
+                  <span className="absolute bottom-2 right-2 w-4.5 h-4.5 bg-emerald-500 border-3 border-slate-950 rounded-full animate-pulse shadow-md animate-ping-slow" title="Online Now" />
                 )}
 
-                {/* Level Badge Pill */}
-                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-[10px] shadow-lg border border-yellow-200 flex items-center gap-1 shrink-0 whitespace-nowrap">
+                {/* Gold Crown Level Pill */}
+                <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 text-slate-950 font-black text-[9px] shadow-lg shadow-amber-500/20 border border-yellow-200 flex items-center gap-1 shrink-0 whitespace-nowrap uppercase tracking-wider">
                   <Crown className="w-3 h-3 fill-slate-950" />
                   LVL {userLevel}
                 </span>
               </div>
 
-              {/* User Titles & Identifiers */}
-              <div className="pt-2 space-y-1">
+              {/* Identity Details */}
+              <div className="pt-2 space-y-1.5 w-full">
                 <div className="flex items-center justify-center gap-2 flex-wrap">
-                  <h2 className="text-xl font-black text-white tracking-wide">{userName}</h2>
-                  {isVerified && <VerifiedBadge className="w-4 h-4" showLabel={true} />}
+                  <h2 className="text-2xl font-black text-white tracking-tight drop-shadow-md">{userName}</h2>
+                  {isVerified && <VerifiedBadge className="w-5 h-5 drop-shadow" showLabel={true} />}
                   <VipStatusBadge size="normal" showText={true} />
                 </div>
 
-                <div className="flex items-center justify-center gap-2 text-xs text-slate-400 flex-wrap">
-                  <span className="text-pink-400 font-bold">@{currentUsername}</span>
-                  <span>•</span>
-                  <span className="text-cyan-300 font-mono font-semibold">ID: {currentTelegramId}</span>
+                <div className="flex items-center justify-center gap-2 text-xs text-slate-400 flex-wrap font-semibold">
+                  <span className="text-pink-400">@{currentUsername}</span>
+                  <span className="text-slate-600">•</span>
+                  <span className="text-cyan-400 font-mono">ID: {currentTelegramId}</span>
                   {privacyShowCity && (
                     <>
-                      <span>•</span>
-                      <span className="flex items-center gap-1 text-slate-300">
-                        <MapPin className="w-3 h-3 text-pink-400" />
+                      <span className="text-slate-600">•</span>
+                      <span className="flex items-center gap-1 text-slate-300 bg-slate-950/40 px-2 py-0.5 rounded-full border border-slate-800/40">
+                        <MapPin className="w-3 h-3 text-pink-500" />
                         Tehran, Iran
                       </span>
                     </>
                   )}
                 </div>
 
-                {/* Profile Completion Indicator Ring / Bar */}
-                <div className="max-w-xs mx-auto pt-2">
-                  <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1 font-bold">
-                    <span>{loc('تکمیل پروفایل:', 'Profile Completion:')}</span>
-                    <span className="text-emerald-400 font-mono">85%</span>
+                {/* Sleek Profile Progress Indicator */}
+                {profilePreviewMode === 'self' && (
+                  <div className="max-w-xs mx-auto pt-3 px-4">
+                    <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1.5 font-bold">
+                      <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-amber-400" />{loc('تکمیل پروفایل:', 'Profile Completion:')}</span>
+                      <span className="text-emerald-400 font-mono bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-900/30">85%</span>
+                    </div>
+                    <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800/60 p-0.5">
+                      <div className="bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 h-full rounded-full animate-pulse" style={{ width: '85%' }} />
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
-                    <div className="bg-gradient-to-r from-emerald-500 to-cyan-400 h-full w-[85%]" />
-                  </div>
-                </div>
+                )}
               </div>
 
-              {/* Self Profile vs Other User Header Actions */}
-              <div className="w-full pt-1 flex items-center justify-center gap-2 flex-wrap">
+              {/* Tactile Action Buttons Layout */}
+              <div className="w-full pt-1 flex items-center justify-center gap-2">
                 {profilePreviewMode === 'self' ? (
-                  <>
+                  <div className="w-full flex items-center gap-2">
                     <button 
                       type="button"
                       onClick={() => setProfileSubPage('account')}
-                      className="flex-1 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition"
+                      className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-pink-600 via-pink-500 to-purple-600 hover:brightness-110 active:scale-95 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-pink-600/20 transition-all duration-300"
                     >
                       <Edit3 className="w-4 h-4" />
                       <span>{loc('ویرایش پروفایل', 'Edit Profile')}</span>
@@ -11641,7 +11680,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     <button 
                       type="button"
                       onClick={() => setIsQrCodeModalOpen(true)}
-                      className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-400 shadow-md active:scale-95 transition"
+                      className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 text-cyan-400 shadow-md active:scale-95 transition-all duration-300"
                       title={loc('کد QR', 'QR Code')}
                     >
                       <QrCode className="w-4 h-4" />
@@ -11653,152 +11692,162 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         navigator.clipboard.writeText(`https://vlive.app/profile/${currentUsername}`);
                         showToast(loc('لینک پروفایل کپی شد!', 'Profile link copied to clipboard!'));
                       }}
-                      className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-pink-400 shadow-md active:scale-95 transition"
+                      className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 text-pink-400 shadow-md active:scale-95 transition-all duration-300"
                       title={loc('اشتراک‌گذاری', 'Share Profile')}
                     >
                       <Share2 className="w-4 h-4" />
                     </button>
-                  </>
+                  </div>
                 ) : (
-                  <div className="w-full grid grid-cols-4 sm:grid-cols-7 gap-1.5">
-                    <button 
-                      type="button"
-                      onClick={() => showToast(`Following @${currentUsername}`)}
-                      className="col-span-1 p-2.5 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 shadow-md"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                      <span className="text-[10px]">Follow</span>
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => showToast(`Chat with @${currentUsername}`)}
-                      className="col-span-1 p-2.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 shadow-md"
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      <span className="text-[10px]">Message</span>
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => handleStartPrivateCall({ name: userName, avatar: userAvatar, pricePerMin: 100 })}
-                      className="col-span-1 p-2.5 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 shadow-md"
-                    >
-                      <Video className="w-4 h-4" />
-                      <span className="text-[10px]">Video</span>
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => showToast(`Voice call with @${currentUsername}`)}
-                      className="col-span-1 p-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 shadow-md"
-                    >
-                      <Phone className="w-4 h-4" />
-                      <span className="text-[10px]">Voice</span>
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => setIsGiftCatalogOpen(true)}
-                      className="col-span-1 p-2.5 rounded-2xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 shadow-md flex flex-col items-center justify-center gap-1"
-                    >
-                      <Gift className="w-4 h-4" />
-                      <span className="text-[10px]">Gift</span>
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => showToast(`Blocked @${currentUsername}`)}
-                      className="col-span-1 p-2.5 rounded-2xl bg-slate-800 hover:bg-red-900/60 text-slate-300 hover:text-red-300 border border-slate-700 font-bold text-xs flex flex-col items-center justify-center gap-1"
-                    >
-                      <Ban className="w-4 h-4" />
-                      <span className="text-[10px]">Block</span>
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => showToast(`Reported @${currentUsername}`)}
-                      className="col-span-1 p-2.5 rounded-2xl bg-slate-800 hover:bg-amber-900/60 text-slate-300 hover:text-amber-300 border border-slate-700 font-bold text-xs flex flex-col items-center justify-center gap-1"
-                    >
-                      <AlertTriangle className="w-4 h-4" />
-                      <span className="text-[10px]">Report</span>
-                    </button>
+                  <div className="w-full flex flex-col gap-2.5">
+                    {/* Main Actions Bar */}
+                    <div className="grid grid-cols-3 gap-2 w-full">
+                      <button 
+                        type="button"
+                        onClick={() => showToast(`Following @${currentUsername}`)}
+                        className="py-3 px-4 rounded-2xl bg-gradient-to-r from-pink-600 to-pink-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-pink-600/10 hover:brightness-110 active:scale-95 transition-all duration-300"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        <span>Follow</span>
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => showToast(`Chat with @${currentUsername}`)}
+                        className="py-3 px-4 rounded-2xl bg-gradient-to-r from-purple-600 to-purple-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-purple-600/10 hover:brightness-110 active:scale-95 transition-all duration-300"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        <span>Message</span>
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => setIsGiftCatalogOpen(true)}
+                        className="py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/10 hover:brightness-110 active:scale-95 transition-all duration-300"
+                      >
+                        <Gift className="w-4 h-4" />
+                        <span>Send Gift</span>
+                      </button>
+                    </div>
+
+                    {/* Call & Safety Toolbar */}
+                    <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800/80 w-full overflow-x-auto no-scrollbar">
+                      <button 
+                        type="button"
+                        onClick={() => handleStartPrivateCall({ name: userName, avatar: userAvatar, pricePerMin: 100 })}
+                        className="flex-1 py-2 px-3 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 font-bold text-[10px] flex items-center justify-center gap-1 border border-cyan-500/20 active:scale-95 transition"
+                      >
+                        <Video className="w-3.5 h-3.5" />
+                        <span>Video Call</span>
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => showToast(`Voice call with @${currentUsername}`)}
+                        className="flex-1 py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold text-[10px] flex items-center justify-center gap-1 border border-emerald-500/20 active:scale-95 transition"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>Voice Call</span>
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => showToast(`Blocked @${currentUsername}`)}
+                        className="px-2.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold text-[10px] flex items-center gap-1 border border-red-500/20 active:scale-95 transition"
+                        title="Block User"
+                      >
+                        <Ban className="w-3.5 h-3.5" />
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => showToast(`Reported @${currentUsername}`)}
+                        className="px-2.5 py-2 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 font-bold text-[10px] flex items-center gap-1 border border-orange-500/20 active:scale-95 transition"
+                        title="Report User"
+                      >
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* 2. COMPACT STATISTICS ROW (INSTAGRAM/BUMBLE STYLE) */}
-          <div className="grid grid-cols-5 gap-1.5 p-2 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-lg text-center">
-            <button 
-              type="button"
-              onClick={() => setProfileGalleryTab('posts')}
-              className="p-2 rounded-xl hover:bg-slate-800/60 transition"
-            >
-              <span className="text-sm font-black text-white block">42</span>
-              <span className="text-[10px] font-bold text-slate-400 block">{loc('پست‌ها', 'Posts')}</span>
-            </button>
-            <button 
-              type="button"
-              onClick={() => showToast(loc('لیست دنبال‌کنندگان', 'Followers List'))}
-              className="p-2 rounded-xl hover:bg-slate-800/60 transition"
-            >
-              <span className="text-sm font-black text-white block">8.5K</span>
-              <span className="text-[10px] font-bold text-slate-400 block">{loc('فالوور', 'Followers')}</span>
-            </button>
-            <button 
-              type="button"
-              onClick={() => showToast(loc('لیست دنبال‌شده‌ها', 'Following List'))}
-              className="p-2 rounded-xl hover:bg-slate-800/60 transition"
-            >
-              <span className="text-sm font-black text-white block">340</span>
-              <span className="text-[10px] font-bold text-slate-400 block">{loc('فالووینگ', 'Following')}</span>
-            </button>
-            <button 
-              type="button"
-              onClick={() => showToast(loc('آمار پسندها', 'Likes Breakdown'))}
-              className="p-2 rounded-xl hover:bg-slate-800/60 transition"
-            >
-              <span className="text-sm font-black text-white block">12.4K</span>
-              <span className="text-[10px] font-bold text-pink-400 block">{loc('لایک', 'Likes')}</span>
-            </button>
-            <button 
-              type="button"
-              onClick={() => showToast(loc('بازدیدکنندگان اخیر', 'Recent Visitors'))}
-              className="p-2 rounded-xl hover:bg-slate-800/60 transition"
-            >
-              <span className="text-sm font-black text-white block">1.2K</span>
-              <span className="text-[10px] font-bold text-cyan-400 block">{loc('بازدید', 'Visitors')}</span>
-            </button>
+          {/* 2. STATS CARD GRID */}
+          <div className="grid grid-cols-5 gap-1.5 p-2 rounded-3xl bg-slate-900/40 border border-slate-800/80 shadow-xl backdrop-blur-md">
+            {[
+              { value: '42', label: loc('پست‌ها', 'Posts'), tab: 'posts' },
+              { value: '8.5K', label: loc('فالوور', 'Followers'), action: () => showToast(loc('لیست دنبال‌کنندگان', 'Followers List')) },
+              { value: '340', label: loc('فالووینگ', 'Following'), action: () => showToast(loc('لیست دنبال‌شده‌ها', 'Following List')) },
+              { value: '12.4K', label: loc('لایک', 'Likes'), labelColor: 'text-pink-400', action: () => showToast(loc('آمار پسندها', 'Likes Breakdown')) },
+              { value: '1.2K', label: loc('بازدید', 'Visitors'), labelColor: 'text-cyan-400', action: () => showToast(loc('بازدیدکنندگان اخیر', 'Recent Visitors')) }
+            ].map((stat, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={stat.tab ? () => setProfileGalleryTab(stat.tab) : stat.action}
+                className="p-2.5 rounded-2xl bg-slate-950/30 hover:bg-slate-950/70 border border-transparent hover:border-slate-800/40 transition-all duration-300 flex flex-col items-center justify-center group active:scale-95"
+              >
+                <span className="text-base font-black text-white group-hover:scale-105 transition-transform duration-300">{stat.value}</span>
+                <span className={`text-[9px] font-black tracking-wider uppercase mt-1 ${stat.labelColor || 'text-slate-400'} opacity-85`}>{stat.label}</span>
+              </button>
+            ))}
           </div>
 
-          {/* 3. WALLET SUMMARY CARD (COMPACT HIGH-PRIORITY ROW) */}
+          {/* 3. LUXURY CREDIT CARD - WALLET SUMMARY */}
           <div 
             onClick={() => setProfileSubPage('wallet')}
-            className="p-4 rounded-3xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-amber-600/15 border border-amber-500/30 shadow-xl flex items-center justify-between cursor-pointer hover:border-amber-500/60 transition"
+            className="relative p-5 rounded-3xl bg-gradient-to-br from-amber-500/20 via-slate-950 to-purple-600/10 border border-amber-500/30 shadow-2xl shadow-amber-500/5 overflow-hidden group cursor-pointer hover:border-amber-500/60 transition-all duration-500"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
-                <CoinsIcon className="w-5 h-5 animate-pulse" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="text-xs font-black text-white">{userCoins.toLocaleString()} <span className="text-amber-400 text-[10px] font-bold">{loc('سکه', 'Coins')}</span></h4>
-                  <span className="px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] font-mono font-bold">${(userCoins * 0.005 * 0.71).toFixed(2)} USDT</span>
+            {/* Abstract decorative credit card elements */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/5 rounded-full blur-2xl -ml-10 -mb-10" />
+            
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                {/* Golden Glowing Coin Sphere */}
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-600 text-slate-950 shadow-lg shadow-amber-500/20 flex items-center justify-center border border-yellow-300/40 relative">
+                  <Coins className="w-6 h-6 animate-pulse" />
+                  <span className="absolute top-0 right-0 w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
                 </div>
-                <p className="text-[10px] text-slate-400">{loc('کیف پول، درآمد استریمر و ارتقای VIP', 'Wallet balance, Streamer income & VIP')}</p>
+
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-black text-amber-400 tracking-wider uppercase bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                      {loc('کیف پول من', 'My Balance')}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-[9px] font-mono font-bold border border-emerald-500/20">
+                      $${(userCoins * 0.005 * 0.71).toFixed(2)} USDT
+                    </span>
+                  </div>
+                  <h4 className="text-xl font-black text-white tracking-wide flex items-baseline gap-1.5">
+                    {userCoins.toLocaleString()}
+                    <span className="text-xs font-black text-slate-400">{loc('سکه', 'Coins')}</span>
+                  </h4>
+                  <p className="text-[9px] text-slate-400 font-medium">
+                    {loc('کیف پول، درآمد استریمر و ارتقای VIP', 'Wallet balance, Streamer income & VIP')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Elegant futuristic arrow details */}
+              <div className="flex flex-col items-end gap-1">
+                <div className="w-8 h-8 rounded-full bg-slate-900/80 border border-slate-800 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-slate-950 transition-colors duration-300">
+                  <ChevronRight className="w-4 h-4 text-amber-400 group-hover:text-slate-950 transition-colors" />
+                </div>
+                <span className="text-[8px] font-black text-amber-400/80 tracking-widest uppercase mt-1">WALLET</span>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-amber-400" />
           </div>
 
-          {/* 4. ABOUT CARD (SINGLE CLEAN CONSOLIDATED CARD) */}
-          <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-3">
+          {/* 4. PREMIUM ABOUT & ATTRIBUTES CARD */}
+          <div className="p-5 rounded-3xl bg-slate-900/40 border border-slate-800/80 shadow-xl backdrop-blur-md space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-black text-white flex items-center gap-1.5 uppercase tracking-wider">
-                <User className="w-4 h-4 text-pink-400" />
+              <h3 className="text-[11px] font-black text-white flex items-center gap-2 uppercase tracking-widest">
+                <User className="w-4 h-4 text-pink-500" />
                 {loc('درباره من & ویژگی‌ها', 'About & Attributes')}
               </h3>
               {profilePreviewMode === 'self' && (
                 <button 
                   type="button"
                   onClick={() => setProfileSubPage('account')}
-                  className="text-[11px] text-pink-400 font-bold hover:underline flex items-center gap-1"
+                  className="text-[10px] text-pink-400 font-bold hover:underline flex items-center gap-1 bg-pink-500/10 px-2.5 py-1 rounded-xl border border-pink-500/20"
                 >
                   <Edit3 className="w-3 h-3" />
                   {loc('ویرایش', 'Edit')}
@@ -11806,47 +11855,41 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               )}
             </div>
 
-            <p className="text-xs text-slate-200 leading-relaxed bg-slate-950 p-3 rounded-2xl border border-slate-800/80 italic">
+            <p className="text-xs text-slate-200 leading-relaxed bg-slate-950/60 p-4 rounded-2xl border border-slate-800/60 italic font-medium relative">
+              <span className="absolute -top-2 left-4 text-slate-700 text-3xl font-serif">“</span>
               "{userBio || 'Official V.Live Streamer | Private video calls & interactive 4K streams'}"
+              <span className="absolute -bottom-4 right-4 text-slate-700 text-3xl font-serif">”</span>
             </p>
 
-            {/* Grid Attributes */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-              <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                <span className="text-[10px] text-slate-400 block">{loc('سن / جنسیت', 'Age / Gender')}</span>
-                <span className="text-white font-bold">24 • {authGender === 'female' ? 'Female 🚺' : 'Male 🚹'}</span>
-              </div>
-
-              <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                <span className="text-[10px] text-slate-400 block">{loc('زبان‌ها', 'Languages')}</span>
-                <span className="text-white font-bold">Persian 🇮🇷, English 🇬🇧</span>
-              </div>
-
-              <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                <span className="text-[10px] text-slate-400 block">{loc('شغل', 'Occupation')}</span>
-                <span className="text-white font-bold">Official 4K Host</span>
-              </div>
-
-              <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                <span className="text-[10px] text-slate-400 block">{loc('وضعیت', 'Relationship')}</span>
-                <span className="text-white font-bold">Single 💖</span>
-              </div>
+            {/* Visual Attributes Matrix */}
+            <div className="grid grid-cols-2 gap-2 text-[10px] font-black font-mono">
+              {[
+                { label: loc('سن / جنسیت', 'Age / Gender'), value: `24 • ${authGender === 'female' ? 'Female 🚺' : 'Male 🚹'}`, color: 'border-pink-500/20 bg-pink-500/5 text-pink-300' },
+                { label: loc('زبان‌ها', 'Languages'), value: 'Persian 🇮🇷, English 🇬🇧', color: 'border-cyan-500/20 bg-cyan-500/5 text-cyan-300' },
+                { label: loc('شغل', 'Occupation'), value: 'Official 4K Host', color: 'border-purple-500/20 bg-purple-500/5 text-purple-300' },
+                { label: loc('وضعیت', 'Relationship'), value: 'Single 💖', color: 'border-emerald-500/20 bg-emerald-500/5 text-emerald-300' }
+              ].map((attr, index) => (
+                <div key={index} className={`p-3 rounded-2xl border ${attr.color} flex flex-col justify-between`}>
+                  <span className="text-[8px] uppercase tracking-wider opacity-60 mb-1 font-sans">{attr.label}</span>
+                  <span className="truncate">{attr.value}</span>
+                </div>
+              ))}
             </div>
 
-            {/* Interests Tags */}
+            {/* Modern Badged Interests list */}
             <div className="flex flex-wrap gap-1.5 pt-1">
               {['🎙️ VIP Host', '🎵 Music Lover', '💃 Dancing', '🌍 Traveler', '🎮 Gaming', '💎 Top Streamer'].map((tag, i) => (
-                <span key={i} className="px-2.5 py-1 rounded-full bg-slate-950 border border-slate-800 text-slate-300 text-[10px] font-bold">
+                <span key={i} className="px-3 py-1.5 rounded-full bg-slate-950/50 border border-slate-800/60 text-slate-300 text-[10px] font-bold shadow-sm hover:border-slate-700/80 transition-colors">
                   {tag}
                 </span>
               ))}
             </div>
           </div>
 
-          {/* 5. CONTENT TABS VIEW (POSTS, PHOTOS, VIDEOS, LIVE, SAVED) */}
-          <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
-            {/* Tab Selectors */}
-            <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-950 border border-slate-800 overflow-x-auto no-scrollbar">
+          {/* 5. INTERACTIVE CONTENT TABS */}
+          <div className="p-4 rounded-3xl bg-slate-900/40 border border-slate-800/80 shadow-xl backdrop-blur-md space-y-4">
+            {/* Modern Slide pill selectors */}
+            <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-950/60 border border-slate-800/80 overflow-x-auto no-scrollbar">
               {[
                 { id: 'posts', label: loc('پست‌ها', 'Posts'), icon: Image },
                 { id: 'photos', label: loc('تصاویر', 'Photos'), icon: Sparkles },
@@ -11861,8 +11904,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     key={tItem.id}
                     type="button"
                     onClick={() => setProfileGalleryTab(tItem.id)}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
-                      isActive ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                    className={`flex-1 py-2 px-3 rounded-xl text-[10px] font-black transition-all duration-300 flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap active:scale-95 ${
+                      isActive ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md shadow-pink-500/5' : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     <IconComp className="w-3.5 h-3.5" />
@@ -11872,230 +11915,148 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               })}
             </div>
 
-            {/* Lazy Loaded Tab Content */}
-            {profileGalleryTab === 'posts' && (
-              <div className="grid grid-cols-3 gap-2">
-                {PRESET_AVATARS.map((imgUrl, i) => (
-                  <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-slate-800 relative group cursor-pointer">
-                    <img src={imgUrl} alt={`Post ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition duration-300" />
-                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                      <Heart className="w-5 h-5 text-pink-400 fill-pink-400" />
+            {/* Gallery Display Container */}
+            <div className="min-h-48">
+              {profileGalleryTab === 'posts' && (
+                <div className="grid grid-cols-3 gap-2 animate-fadeIn">
+                  {PRESET_AVATARS.map((imgUrl, i) => (
+                    <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-slate-800/60 relative group cursor-pointer shadow-inner">
+                      <img src={imgUrl} alt={`Post ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
+                      <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
+                        <div className="flex items-center gap-1 bg-slate-950/80 px-2.5 py-1.5 rounded-full border border-slate-800">
+                          <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500" />
+                          <span className="text-[10px] font-black text-white">24</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
 
-            {profileGalleryTab === 'photos' && (
-              <div className="grid grid-cols-3 gap-2">
-                {PRESET_AVATARS.slice(0, 3).map((imgUrl, i) => (
-                  <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-slate-800 relative group cursor-pointer">
-                    <img src={imgUrl} alt={`Photo ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition duration-300" />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {profileGalleryTab === 'videos' && (
-              <div className="grid grid-cols-2 gap-2">
-                {PRESET_AVATARS.slice(0, 2).map((imgUrl, i) => (
-                  <div key={i} className="aspect-[4/5] rounded-2xl overflow-hidden border border-slate-800 relative group cursor-pointer">
-                    <img src={imgUrl} alt={`Video ${i}`} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-slate-950/30 flex items-center justify-center">
-                      <Play className="w-8 h-8 text-white fill-white/80 drop-shadow-lg" />
+              {profileGalleryTab === 'photos' && (
+                <div className="grid grid-cols-3 gap-2 animate-fadeIn">
+                  {PRESET_AVATARS.slice(0, 3).map((imgUrl, i) => (
+                    <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-slate-800/60 relative group cursor-pointer shadow-inner">
+                      <img src={imgUrl} alt={`Photo ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
                     </div>
+                  ))}
+                </div>
+              )}
+
+              {profileGalleryTab === 'videos' && (
+                <div className="grid grid-cols-2 gap-2 animate-fadeIn">
+                  {PRESET_AVATARS.slice(0, 2).map((imgUrl, i) => (
+                    <div key={i} className="aspect-[4/5] rounded-2xl overflow-hidden border border-slate-800/60 relative group cursor-pointer shadow-md">
+                      <img src={imgUrl} alt={`Video ${i}`} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex items-end p-3">
+                        <div className="flex items-center gap-1.5 bg-slate-950/80 px-2.5 py-1 rounded-xl border border-slate-800">
+                          <Play className="w-3.5 h-3.5 text-white fill-white/80" />
+                          <span className="text-[9px] font-black text-slate-300">12.5K</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {profileGalleryTab === 'live' && (
+                <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800/60 space-y-3 animate-fadeIn flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center border border-pink-500/20">
+                    <Radio className="w-6 h-6 text-pink-500 animate-pulse" />
                   </div>
-                ))}
-              </div>
-            )}
+                  <div>
+                    <p className="text-xs font-black text-white">{loc('هیچ لایو ضبط‌شده‌ای پیدا نشد.', 'No archived live streams.')}</p>
+                    <p className="text-[10px] text-slate-500 mt-1">{loc('استریم‌های قبلی ذخیره نشده‌اند', 'Completed broadcasts will appear here')}</p>
+                  </div>
+                </div>
+              )}
 
-            {profileGalleryTab === 'live' && (
-              <div className="p-8 text-center bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
-                <Radio className="w-8 h-8 text-pink-400 mx-auto animate-pulse" />
-                <p className="text-xs font-bold text-white">{loc('هیچ لایو ضبط‌شده‌ای پیدا نشد.', 'No archived live streams.')}</p>
-              </div>
-            )}
-
-            {profileGalleryTab === 'saved' && (
-              <div className="p-8 text-center bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
-                <Pin className="w-8 h-8 text-cyan-400 mx-auto" />
-                <p className="text-xs font-bold text-white">{loc('پست‌های ذخیره‌شده شما اینجا نمایش داده می‌شوند.', 'Your saved posts will appear here.')}</p>
-              </div>
-            )}
+              {profileGalleryTab === 'saved' && (
+                <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800/60 space-y-3 animate-fadeIn flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
+                    <Pin className="w-5 h-5 text-cyan-400 rotate-45" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-white">{loc('پست‌های ذخیره‌شده شما اینجا نمایش داده می‌شوند.', 'Your saved posts will appear here.')}</p>
+                    <p className="text-[10px] text-slate-500 mt-1">{loc('فقط برای خودتان قابل دیدن است', 'Only visible to you')}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* 6. GROUPED SETTINGS MENU CARDS */}
-          <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-3">
-            <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+          {/* 6. GROUPED PREMIUM SETTINGS MENU */}
+          <div className="p-5 rounded-3xl bg-slate-900/40 border border-slate-800/80 shadow-xl backdrop-blur-md space-y-4">
+            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
               <Settings className="w-4 h-4 text-purple-400" />
               {loc('تنظیمات & مدیریت حساب', 'Settings & Management')}
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setProfileSubPage('account')}
-                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-pink-500/15 text-pink-400 flex items-center justify-center">
-                    <User className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">{loc('👤 حساب کاربری', '👤 Account')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('نام، آواتار، بیو، آیدی تلگرام', 'Edit account details')}</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setProfileSubPage('privacy')}
-                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
-                    <Lock className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">{loc('🔒 حریم خصوصی', '🔒 Privacy')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('نمایش سن، شهر، آخرین بازدید', 'Privacy & blocklist')}</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setProfileSubPage('notifications')}
-                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center">
-                    <Bell className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">{loc('🔔 اعلان‌ها', '🔔 Notifications')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('پیام‌ها، لایو، هدیه‌ها', 'Notification preferences')}</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setProfileSubPage('wallet')}
-                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center">
-                    <Wallet className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">{loc('👛 کیف پول & مالی', '👛 Wallet & Finances')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('موجودی، درآمد، تسویه حساب', 'Balance & USDT payouts')}</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setProfileSubPage('vip')}
-                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-yellow-500/15 text-yellow-400 flex items-center justify-center">
-                    <Crown className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">{loc('👑 عضویت VIP', '👑 VIP Membership')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('نشان طلا، مزایای ویژه', 'Upgrade & VIP status')}</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setProfileSubPage('language')}
-                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center">
-                    <Globe className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">{loc('🌍 زبان برنامه', '🌍 Language')}</h4>
-                    <p className="text-[10px] text-slate-400">فارسی / English</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setProfileSubPage('support')}
-                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-teal-500/15 text-teal-400 flex items-center justify-center">
-                    <Info className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">{loc('💬 پشتیبانی & راهنما', '💬 Support & Help')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('ارتباط ۲۴/۷ با پشتیبانی', '24/7 Support desk')}</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setProfileSubPage('about')}
-                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center">
-                    <Shield className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">{loc('ℹ️ درباره VLive', 'ℹ️ About VLive')}</h4>
-                    <p className="text-[10px] text-slate-400">Version 2.4.0 (Build 2026)</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
-              </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {[
+                { subpage: 'account', title: loc('👤 حساب کاربری', 'Account'), desc: loc('ویرایش مشخصات شخصی', 'Personal profile details'), icon: User, tint: 'bg-pink-500/10 text-pink-400 border-pink-500/10' },
+                { subpage: 'privacy', title: loc('🔒 حریم خصوصی', 'Privacy'), desc: loc('وضعیت آنلاین و بلاک‌لیست', 'Online visibility & blocklist'), icon: Lock, tint: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10' },
+                { subpage: 'notifications', title: loc('🔔 اعلان‌ها', 'Notifications'), desc: loc('پیام‌ها، استریم‌ها و هدایا', 'Message & streaming alerts'), icon: Bell, tint: 'bg-blue-500/10 text-blue-400 border-blue-500/10' },
+                { subpage: 'wallet', title: loc('👛 کیف پول & مالی', 'Finances'), desc: loc('مدیریت موجودی و سکه‌ها', 'Coins, top-ups & income'), icon: Wallet, tint: 'bg-amber-500/10 text-amber-400 border-amber-500/10' },
+                { subpage: 'vip', title: loc('👑 عضویت VIP', 'VIP Club'), desc: loc('مزایا و نشان‌های سلطنتی', 'Upgrade status & features'), icon: Crown, tint: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/10' },
+                { subpage: 'language', title: loc('🌍 زبان برنامه', 'Language'), desc: loc('English / فارسی', 'Change application language'), icon: Globe, tint: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/10' },
+                { subpage: 'support', title: loc('💬 پشتیبانی ۲۴/۷', 'Support'), desc: loc('راهنما و چت با کارشناس', 'Get help & raise tickets'), icon: Info, tint: 'bg-teal-500/10 text-teal-400 border-teal-500/10' },
+                { subpage: 'about', title: loc('ℹ️ درباره برنامه', 'About App'), desc: 'Version 2.4.0 (Build 2026)', icon: Shield, tint: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/10' }
+              ].map((item, idx) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setProfileSubPage(item.subpage)}
+                    className="p-3.5 rounded-2xl bg-slate-950/40 hover:bg-slate-950/90 border border-slate-800/60 hover:border-slate-700 transition-all duration-300 flex items-center justify-between group active:scale-95"
+                  >
+                    <div className="flex items-center gap-3.5 text-right">
+                      {/* Styled colored badge backdrop */}
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${item.tint} shadow-inner group-hover:scale-105 transition-transform`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <h4 className="text-xs font-black text-white group-hover:text-pink-400 transition-colors">{item.title}</h4>
+                        <p className="text-[9px] font-medium text-slate-400 tracking-wide line-clamp-1">{item.desc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white transition-all duration-300 transform group-hover:translate-x-0.5" />
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* 7. ADMIN PANEL CARD (STRICTLY HIDDEN UNLESS USER IS ADMIN) */}
+          {/* 7. SECURE ADMIN ACCESS PANEL */}
           {(isUserSuperAdmin || isUserAuthorizedAdmin || userRole === 'admin' || String(currentTelegramId).trim() === '8973478139') && (
-            <div className="p-4 rounded-3xl bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-600/15 border border-amber-500/40 shadow-xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black">
-                  <ShieldCheck className="w-5 h-5 animate-pulse" />
+            <div className="relative p-5 rounded-3xl bg-gradient-to-r from-red-600/10 via-slate-950 to-amber-600/10 border border-red-500/30 shadow-2xl overflow-hidden group">
+              <div className="absolute inset-0 bg-red-600/5 animate-pulse" />
+              <div className="relative flex items-center justify-between">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-red-600 to-amber-500 text-white flex items-center justify-center shadow-lg shadow-red-500/20 relative">
+                    <ShieldAlert className="w-6 h-6 animate-bounce" />
+                    <span className="absolute top-0 right-0 w-2 h-2 bg-yellow-400 rounded-full" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-red-400 tracking-widest uppercase">{loc('🛡️ پنل مدیریت (Admin Panel)', '🛡️ Admin Panel')}</h4>
+                    <p className="text-[10px] font-semibold text-slate-300 mt-0.5">{loc('مدیریت سیستم و کاربران', 'Access System Admin Options')}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-xs font-black text-amber-300">{loc('🛡️ پنل مدیریت (Admin Panel)', '🛡️ Admin Panel')}</h4>
-                  <p className="text-[10px] text-slate-300">{loc('مدیریت سیستم و کاربران', 'Access System Admin')}</p>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAdminPinModalOpen(true)}
+                  className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-amber-500 hover:brightness-110 active:scale-95 text-white font-black text-xs shadow-lg shadow-red-600/10 transition duration-300"
+                >
+                  {loc('ورود ادمین', 'Admin Login')}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsAdminPinModalOpen(true)}
-                className="px-4 py-2 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow-md active:scale-95 transition"
-              >
-                {loc('ورود ادمین', 'Admin Login')}
-              </button>
             </div>
           )}
 
         </div>
       )}
-
-      {/* DEDICATED SUB-PAGE 1: ACCOUNT */}
+{/* DEDICATED SUB-PAGE 1: ACCOUNT */}
       {profileSubPage === 'account' && (
         <div className="space-y-6">
           {/* ADMIN PANEL ENTRY CARD - ADMIN ONLY */}
