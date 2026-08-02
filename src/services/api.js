@@ -93,14 +93,22 @@ export const apiAuth = {
     const userId = authData.user.id;
     console.log("Auth user success, ID:", userId);
     
-    // Manual insert since trigger might not exist or work
-    const { data: manualData, error: manualError } = await supabase.from('profiles').upsert([{
-      id: userId,
-      username,
-      name,
-      avatar,
-      status: 'approved'
-    }], { onConflict: 'id' }).select();
+    // Manual insert but do NOT overwrite existing profile to preserve user edits
+    const { data: existingProfile } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    let manualData = [existingProfile];
+    let manualError = null;
+
+    if (!existingProfile) {
+        const res = await supabase.from('profiles').upsert([{
+            id: userId,
+            username,
+            name,
+            avatar,
+            status: 'approved'
+        }], { onConflict: 'id' }).select();
+        manualData = res.data;
+        manualError = res.error;
+    }
 
     if (manualError) {
       console.error('Profile insertion error:', manualError);

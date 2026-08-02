@@ -1,3 +1,4 @@
+import CoinsIcon from './components/CoinsIcon';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   apiAuth, setStoredToken, setStoredSession, getStoredToken,
@@ -601,7 +602,7 @@ export default function App() {
     return safeStorage.getItem('vlive_user_name') || 'کاربر VIP';
   });
   const [currentUsername, setCurrentUsername] = useState(() => {
-    return safeStorage.getItem('vlive_current_username') || 'User_VIP';
+    return safeStorage.getItem('vlive_current_username') || '';
   });
   const [userCoins, setUserCoins] = useState(() => {
     try {
@@ -686,9 +687,7 @@ export default function App() {
     const diffDays = Math.max(0, Math.ceil((vipExpireTimestamp - Date.now()) / (1000 * 60 * 60 * 24)));
     return diffDays || 23;
   });
-  const [vipPurchaseHistory, setVipPurchaseHistory] = useState([
-      { id: 'VIP-9001', planId: 'monthly', planName: 'VIP Monthly 🌟', days: 30, priceCoins: 750, priceUsdt: '$14.99', date: '2026-07-15', status: 'Active', txHash: '0x7a9c3b8f' }
-    ]);
+  const [vipPurchaseHistory, setVipPurchaseHistory] = useState([]);
   const [isVipMonthlyClaimed, setIsVipMonthlyClaimed] = useState(() => {
     return safeStorage.getItem('vlive_vip_monthly_claimed') === 'true';
   });
@@ -706,10 +705,7 @@ export default function App() {
   const [lastRewardClaimTimestamp, setLastRewardClaimTimestamp] = useState(() => {
     return parseInt(safeStorage.getItem('vlive_last_reward_claim_ts') || '0', 10);
   });
-  const [dailyRewardHistory, setDailyRewardHistory] = useState([
-      { id: 'RWD-101', day: 1, rewardTitle: 'Day 1 Starter Pack', coins: 50, diamonds: 10, bonus: null, date: '2 days ago' },
-      { id: 'RWD-102', day: 2, rewardTitle: 'Day 2 Coin Booster', coins: 100, diamonds: 15, bonus: null, date: 'Yesterday' }
-    ]);
+  const [dailyRewardHistory, setDailyRewardHistory] = useState([]);
   const [isRewardOpeningModalOpen, setIsRewardOpeningModalOpen] = useState(false);
   const [unlockedRewardData, setUnlockedRewardData] = useState(null);
 
@@ -723,15 +719,12 @@ export default function App() {
   const [securityTab, setSecurityTab] = useState('password'); // 'password' | 'accounts' | 'devices'
   const [telegramConnected, setTelegramConnected] = useState(true);
   const [googleConnected, setGoogleConnected] = useState(true);
-  const [connectedTelegramUser, setConnectedTelegramUser] = useState('@rayan_vlive');
+  const [connectedTelegramUser, setConnectedTelegramUser] = useState('');
   const [connectedGoogleUser, setConnectedGoogleUser] = useState('tattoo.rayan2015@gmail.com');
   const [changeOldPassword, setChangeOldPassword] = useState('');
   const [changeNewPassword, setChangeNewPassword] = useState('');
   const [changeUsernameInput, setChangeUsernameInput] = useState('');
-  const [activeDevices, setActiveDevices] = useState([
-    { id: 1, name: 'Samsung Galaxy S24 Ultra', location: 'Tehran, Iran', time: 'Active Now', current: true },
-    { id: 2, name: 'Chrome Browser (macOS)', location: 'London, UK', time: '2 hours ago', current: false }
-  ]);
+  const [activeDevices, setActiveDevices] = useState([]);
 
   // Main UI State
   const [activeTab, setActiveTab] = useState('streams'); // 'streams', 'messages', 'wallet', 'profile'
@@ -1233,10 +1226,7 @@ export default function App() {
   };
 
   // App Suggestions & Improvements Box State
-  const [suggestionsList, setSuggestionsList] = useState([
-      { id: 1, user: 'Sara_Maleki', text: 'Add interactive mini-games during live streams for VIP viewers', date: '2024-05-12', status: 'In Review' },
-      { id: 2, user: 'Elnaz_Karimi', text: 'Add 3D animated virtual gifts for high-level sponsors', date: '2024-05-14', status: 'Approved' }
-    ]);
+  const [suggestionsList, setSuggestionsList] = useState([]);
   const [newSuggestionInput, setNewSuggestionInput] = useState('');
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
 
@@ -1303,126 +1293,21 @@ export default function App() {
   const [isDndActive, setIsDndActive] = useState(false);
 
   // Call History List
-  const [callHistoryList, setCallHistoryList] = useState([
-      {
-        id: 'call_log_1',
-        type: 'video',
-        direction: 'incoming',
-        user: {
-          username: 'Sara_Maleki',
-          name: 'Sara Maleki',
-          avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
-          isVip: true,
-          role: 'VIP Streamer',
-          online: true
-        },
-        time: '10:45 AM',
-        date: 'Today',
-        duration: '08:24',
-        isPaid: true,
-        tariffRate: 20,
-        coinsSpent: 160,
-        quality: '1080p Full HD',
-        rating: 5,
-        encrypted: true
-      },
-      {
-        id: 'call_log_2',
-        type: 'voice',
-        direction: 'missed',
-        user: {
-          username: 'Elnaz_Karimi',
-          name: 'Elnaz Karimi',
-          avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
-          isVip: true,
-          role: 'Online Model',
-          online: true
-        },
-        time: '09:12 AM',
-        date: 'Today',
-        duration: '00:00',
-        isPaid: false,
-        tariffRate: 0,
-        coinsSpent: 0,
-        quality: 'HD Voice',
-        rating: 0,
-        encrypted: true
-      },
-      {
-        id: 'call_log_3',
-        type: 'video',
-        direction: 'outgoing',
-        user: {
-          username: 'Arash_VIP',
-          name: 'Arash VIP Host',
-          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
-          isVip: true,
-          role: 'Top Streamer',
-          online: false
-        },
-        time: 'Yesterday',
-        date: '2026-07-27',
-        duration: '15:10',
-        isPaid: true,
-        tariffRate: 20,
-        coinsSpent: 300,
-        quality: '1080p Full HD',
-        rating: 5,
-        encrypted: true
-      },
-      {
-        id: 'call_log_4',
-        type: 'voice',
-        direction: 'rejected',
-        user: {
-          username: 'Niloofar',
-          name: 'Niloofar S.',
-          avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80',
-          isVip: false,
-          role: 'Community Member',
-          online: false
-        },
-        time: '2 days ago',
-        date: '2026-07-26',
-        duration: '00:00',
-        isPaid: false,
-        tariffRate: 0,
-        coinsSpent: 0,
-        quality: 'Auto',
-        rating: 0,
-        encrypted: true
-      }
-    ]);
+  const [callHistoryList, setCallHistoryList] = useState([]);
 
   useEffect(() => {
     safeStorage.setItem('vlive_call_history_v1', JSON.stringify(callHistoryList));
   }, [callHistoryList]);
 
   // Scheduled Calls List
-  const [scheduledCallsList, setScheduledCallsList] = useState([
-      {
-        id: 'sch_1',
-        user: {
-          username: 'Sara_Maleki',
-          name: 'Sara Maleki',
-          avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
-          role: 'VIP Streamer'
-        },
-        type: 'video',
-        dateTime: '2026-07-29 20:30',
-        note: 'VIP Live Consultation & Q&A',
-        isPaid: true,
-        tariffRate: 20,
-        status: 'pending'
-      }
-    ]);
+  const [scheduledCallsList, setScheduledCallsList] = useState([]);
 
   useEffect(() => {
     safeStorage.setItem('vlive_scheduled_calls_v1', JSON.stringify(scheduledCallsList));
   }, [scheduledCallsList]);
 
   // Contacts & Favorites
-  const [favoriteContacts, setFavoriteContacts] = useState(['Sara_Maleki', 'Elnaz_Karimi']);
+  const [favoriteContacts, setFavoriteContacts] = useState([]);
 
   useEffect(() => {
     safeStorage.setItem('vlive_favorite_contacts_v1', JSON.stringify(favoriteContacts));
@@ -1446,7 +1331,7 @@ export default function App() {
   const [postCallRatingData, setPostCallRatingData] = useState(null);
   const [ratingStarsCall, setRatingStarsCall] = useState(5);
   const [ratingCommentCall, setRatingCommentCall] = useState('');
-  const [selectedCallFeedbackTags, setSelectedCallFeedbackTags] = useState(['کیفیت صدا عالی', 'تصویر کریستالی']);
+  const [selectedCallFeedbackTags, setSelectedCallFeedbackTags] = useState([]);
 
   // Call Modals
   const [isScheduleCallModalOpen, setIsScheduleCallModalOpen] = useState(false);
@@ -4006,9 +3891,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
     // Step 2: Sync Profile updates to Backend API
     apiProfile.updateProfile({
-      first_name: cleanName,
+      name: cleanName,
       username: cleanUsername,
-      avatar_url: cleanAvatar,
+      avatar: cleanAvatar,
       bio: cleanBio,
       gender: editGender
     }).catch(err => console.warn('Profile sync warning:', err));
@@ -4779,7 +4664,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             
           const detectedTgUsername = tgUser?.username 
             || safeStorage.getItem('vlive_current_username') 
-            || 'rayan_vlive';
+            || '';
             
           const detectedTgAvatar = tgUser?.photo_url 
             || safeStorage.getItem('vlive_user_avatar') 
@@ -20732,13 +20617,3 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   );
 }
 
-// COINS SVG ICON COMPONENT
-function CoinsIcon({ className = "w-4 h-4" }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="8" cy="8" r="6" />
-      <path d="M18 8a6 6 0 0 1-6 6" />
-      <path d="M18 16a6 6 0 0 1-6 6" />
-    </svg>
-  );
-}
