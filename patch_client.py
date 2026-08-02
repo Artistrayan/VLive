@@ -1,4 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+with open('src/supabaseClient.js', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+new_content = """import { createClient } from '@supabase/supabase-js';
 
 let supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://oybonjfysshoppnbsutn.supabase.co';
 
@@ -15,3 +18,9 @@ console.log("Supabase Init Proxied:", {
 });
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+"""
+
+with open('src/supabaseClient.js', 'w', encoding='utf-8') as f:
+    f.write(new_content)
+
+print("supabaseClient.js patched")

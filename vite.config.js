@@ -48,6 +48,19 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
   },
+  server: {
+    proxy: {
+      '/supabase': {
+        target: process.env.VITE_SUPABASE_URL || 'https://oybonjfysshoppnbsutn.supabase.co',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/supabase/, '')
+      },
+      '/api': {
+        target: 'http://localhost:10000',
+        changeOrigin: true
+      }
+    }
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
