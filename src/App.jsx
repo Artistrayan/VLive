@@ -11554,30 +11554,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       {profileSubPage === 'main' && (
         <div className="space-y-4 animate-fadeIn">
 
-          {/* PROFILE PREVIEW MODE SWITCHER */}
-          <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800/80 flex items-center justify-between shadow-lg backdrop-blur-md">
-            <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-              <Eye className="w-4 h-4 text-pink-400 animate-pulse" />
-              {loc('حالت پیش‌نمایش پروفایل:', 'Profile Preview Mode:')}
-            </span>
-            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
-              <button 
-                type="button"
-                onClick={() => setProfilePreviewMode('self')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${profilePreviewMode === 'self' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-              >
-                {loc('پروفایل من 👤', 'My Profile 👤')}
-              </button>
-              <button 
-                type="button"
-                onClick={() => setProfilePreviewMode('other')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${profilePreviewMode === 'other' ? 'bg-purple-600 to-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-              >
-                {loc('نمای کاربر دیگر 👁️', 'Other User 👁️')}
-              </button>
-            </div>
-          </div>
-
           {/* 1. HEADER CARD (INSTAGRAM / TIKTOK / BUMBLE HYBRID) */}
           <div className="relative rounded-3xl overflow-hidden border border-slate-800 bg-slate-900/90 shadow-2xl backdrop-blur-xl">
             {/* Sleek Cover Banner */}
