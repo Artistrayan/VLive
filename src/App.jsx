@@ -2492,7 +2492,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // PROFILE REDESIGN STATES
   const [profileGalleryTab, setProfileGalleryTab] = useState('photos'); // 'photos' | 'videos'
-  const [profilePreviewMode, setProfilePreviewMode] = useState('self'); // 'self' | 'other'
+
   const [privacyShowLastSeen, setPrivacyShowLastSeen] = useState(true);
 
   // 20+ GIFTS MODAL STATE
@@ -11489,27 +11489,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         {activeTab === 'profile' && (
           <div className="space-y-6 pb-24 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
 
-      {/* PROFILE PREVIEW MODE SWITCHER */}
-      <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800/80 flex items-center justify-between shadow-lg backdrop-blur-md">
-        <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-          <Eye className="w-4 h-4 text-pink-400 animate-pulse" />
-          {loc('حالت پیش‌نمایش پروفایل:', 'Profile Preview Mode:')}
-        </span>
-        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
-          <button 
-            onClick={() => setProfilePreviewMode('self')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${profilePreviewMode === 'self' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-          >
-            {loc('پروفایل من 👤', 'My Profile 👤')}
-          </button>
-          <button 
-            onClick={() => setProfilePreviewMode('other')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${profilePreviewMode === 'other' ? 'bg-purple-600 to-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-          >
-            {loc('نمای کاربر دیگر 👁️', 'Other User 👁️')}
-          </button>
-        </div>
-      </div>
+
 
       {/* DEDICATED SUB-PAGE HEADER (WHEN NOT ON MAIN DASHBOARD) */}
       {profileSubPage !== 'main' && (
@@ -11554,31 +11534,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       {profileSubPage === 'main' && (
         <div className="space-y-5 animate-fadeIn">
 
-          {/* PROFILE PREVIEW MODE SWITCHER */}
-          <div className="p-1.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between shadow-lg backdrop-blur-md max-w-sm mx-auto">
-            <span className="text-[10px] font-black text-slate-400 flex items-center gap-1.5 px-2.5 uppercase tracking-wider">
-              <Eye className="w-3.5 h-3.5 text-pink-500 animate-pulse" />
-              {loc('حالت نمایش', 'View Mode')}
-            </span>
-            <div className="flex items-center gap-1 bg-slate-900/60 p-0.5 rounded-xl border border-slate-800/60 text-[10px] font-black">
-              <button 
-                type="button"
-                onClick={() => setProfilePreviewMode('self')}
-                className={`px-3 py-1.5 rounded-lg transition-all duration-300 flex items-center gap-1 ${profilePreviewMode === 'self' ? 'bg-gradient-to-r from-pink-600 via-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/10 font-bold' : 'text-slate-400 hover:text-white'}`}
-              >
-                <User className="w-3 h-3" />
-                <span>{loc('من', 'Self')}</span>
-              </button>
-              <button 
-                type="button"
-                onClick={() => setProfilePreviewMode('other')}
-                className={`px-3 py-1.5 rounded-lg transition-all duration-300 flex items-center gap-1 ${profilePreviewMode === 'other' ? 'bg-gradient-to-r from-purple-600 via-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/10 font-bold' : 'text-slate-400 hover:text-white'}`}
-              >
-                <Eye className="w-3 h-3" />
-                <span>{loc('دیگری', 'Guest')}</span>
-              </button>
-            </div>
-          </div>
+
 
           {/* 1. PREMIUM HEADER CARD */}
           <div className="relative rounded-3xl overflow-hidden border border-slate-800/80 bg-slate-900/40 shadow-2xl backdrop-blur-xl">
@@ -11591,13 +11547,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-r from-pink-500/10 via-transparent to-purple-500/10" />
-              {/* Floating Live Indicator Badge */}
-              {profilePreviewMode === 'other' && (
-                <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-pink-600/95 text-[9px] font-black text-white flex items-center gap-1.5 animate-pulse shadow-lg shadow-pink-600/20 border border-pink-400/30">
-                  <span className="w-1.5 h-1.5 bg-white rounded-full" />
-                  LIVE
-                </span>
-              )}
+
             </div>
 
             {/* Main Profile Avatar & Info Area */}
@@ -11651,120 +11601,50 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 </div>
 
                 {/* Sleek Profile Progress Indicator */}
-                {profilePreviewMode === 'self' && (
-                  <div className="max-w-xs mx-auto pt-3 px-4">
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1.5 font-bold">
-                      <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-amber-400" />{loc('تکمیل پروفایل:', 'Profile Completion:')}</span>
-                      <span className="text-emerald-400 font-mono bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-900/30">85%</span>
-                    </div>
-                    <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800/60 p-0.5">
-                      <div className="bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 h-full rounded-full animate-pulse" style={{ width: '85%' }} />
-                    </div>
+                <div className="max-w-xs mx-auto pt-3 px-4">
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1.5 font-bold">
+                    <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-amber-400" />{loc('تکمیل پروفایل:', 'Profile Completion:')}</span>
+                    <span className="text-emerald-400 font-mono bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-900/30">85%</span>
                   </div>
-                )}
+                  <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800/60 p-0.5">
+                    <div className="bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 h-full rounded-full animate-pulse" style={{ width: '85%' }} />
+                  </div>
+                </div>
               </div>
 
               {/* Tactile Action Buttons Layout */}
               <div className="w-full pt-1 flex items-center justify-center gap-2">
-                {profilePreviewMode === 'self' ? (
-                  <div className="w-full flex items-center gap-2">
-                    <button 
-                      type="button"
-                      onClick={() => setProfileSubPage('account')}
-                      className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-pink-600 via-pink-500 to-purple-600 hover:brightness-110 active:scale-95 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-pink-600/20 transition-all duration-300"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                      <span>{loc('ویرایش پروفایل', 'Edit Profile')}</span>
-                    </button>
+                <div className="w-full flex items-center gap-2">
+                  <button 
+                    type="button"
+                    onClick={() => setProfileSubPage('account')}
+                    className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-pink-600 via-pink-500 to-purple-600 hover:brightness-110 active:scale-95 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-pink-600/20 transition-all duration-300"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    <span>{loc('ویرایش پروفایل', 'Edit Profile')}</span>
+                  </button>
 
-                    <button 
-                      type="button"
-                      onClick={() => setIsQrCodeModalOpen(true)}
-                      className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 text-cyan-400 shadow-md active:scale-95 transition-all duration-300"
-                      title={loc('کد QR', 'QR Code')}
-                    >
-                      <QrCode className="w-4 h-4" />
-                    </button>
+                  <button 
+                    type="button"
+                    onClick={() => setIsQrCodeModalOpen(true)}
+                    className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 text-cyan-400 shadow-md active:scale-95 transition-all duration-300"
+                    title={loc('کد QR', 'QR Code')}
+                  >
+                    <QrCode className="w-4 h-4" />
+                  </button>
 
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(`https://vlive.app/profile/${currentUsername}`);
-                        showToast(loc('لینک پروفایل کپی شد!', 'Profile link copied to clipboard!'));
-                      }}
-                      className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 text-pink-400 shadow-md active:scale-95 transition-all duration-300"
-                      title={loc('اشتراک‌گذاری', 'Share Profile')}
-                    >
-                      <Share2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="w-full flex flex-col gap-2.5">
-                    {/* Main Actions Bar */}
-                    <div className="grid grid-cols-3 gap-2 w-full">
-                      <button 
-                        type="button"
-                        onClick={() => showToast(`Following @${currentUsername}`)}
-                        className="py-3 px-4 rounded-2xl bg-gradient-to-r from-pink-600 to-pink-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-pink-600/10 hover:brightness-110 active:scale-95 transition-all duration-300"
-                      >
-                        <UserPlus className="w-4 h-4" />
-                        <span>Follow</span>
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => showToast(`Chat with @${currentUsername}`)}
-                        className="py-3 px-4 rounded-2xl bg-gradient-to-r from-purple-600 to-purple-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-purple-600/10 hover:brightness-110 active:scale-95 transition-all duration-300"
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                        <span>Message</span>
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => setIsGiftCatalogOpen(true)}
-                        className="py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/10 hover:brightness-110 active:scale-95 transition-all duration-300"
-                      >
-                        <Gift className="w-4 h-4" />
-                        <span>Send Gift</span>
-                      </button>
-                    </div>
-
-                    {/* Call & Safety Toolbar */}
-                    <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800/80 w-full overflow-x-auto no-scrollbar">
-                      <button 
-                        type="button"
-                        onClick={() => handleStartPrivateCall({ name: userName, avatar: userAvatar, pricePerMin: 100 })}
-                        className="flex-1 py-2 px-3 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 font-bold text-[10px] flex items-center justify-center gap-1 border border-cyan-500/20 active:scale-95 transition"
-                      >
-                        <Video className="w-3.5 h-3.5" />
-                        <span>Video Call</span>
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => showToast(`Voice call with @${currentUsername}`)}
-                        className="flex-1 py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold text-[10px] flex items-center justify-center gap-1 border border-emerald-500/20 active:scale-95 transition"
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                        <span>Voice Call</span>
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => showToast(`Blocked @${currentUsername}`)}
-                        className="px-2.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold text-[10px] flex items-center gap-1 border border-red-500/20 active:scale-95 transition"
-                        title="Block User"
-                      >
-                        <Ban className="w-3.5 h-3.5" />
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => showToast(`Reported @${currentUsername}`)}
-                        className="px-2.5 py-2 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 font-bold text-[10px] flex items-center gap-1 border border-orange-500/20 active:scale-95 transition"
-                        title="Report User"
-                      >
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                )}
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`https://vlive.app/profile/${currentUsername}`);
+                      showToast(loc('لینک پروفایل کپی شد!', 'Profile link copied to clipboard!'));
+                    }}
+                    className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 text-pink-400 shadow-md active:scale-95 transition-all duration-300"
+                    title={loc('اشتراک‌گذاری', 'Share Profile')}
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -11843,16 +11723,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <User className="w-4 h-4 text-pink-500" />
                 {loc('درباره من & ویژگی‌ها', 'About & Attributes')}
               </h3>
-              {profilePreviewMode === 'self' && (
-                <button 
-                  type="button"
-                  onClick={() => setProfileSubPage('account')}
-                  className="text-[10px] text-pink-400 font-bold hover:underline flex items-center gap-1 bg-pink-500/10 px-2.5 py-1 rounded-xl border border-pink-500/20"
-                >
-                  <Edit3 className="w-3 h-3" />
-                  {loc('ویرایش', 'Edit')}
-                </button>
-              )}
+              <button 
+                type="button"
+                onClick={() => setProfileSubPage('account')}
+                className="text-[10px] text-pink-400 font-bold hover:underline flex items-center gap-1 bg-pink-500/10 px-2.5 py-1 rounded-xl border border-pink-500/20"
+              >
+                <Edit3 className="w-3 h-3" />
+                {loc('ویرایش', 'Edit')}
+              </button>
             </div>
 
             <p className="text-xs text-slate-200 leading-relaxed bg-slate-950/60 p-4 rounded-2xl border border-slate-800/60 italic font-medium relative">
@@ -13263,70 +13141,34 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       <div className="p-4 rounded-3xl bg-gradient-to-r from-pink-950/80 via-purple-950/80 to-slate-950 border border-pink-500/30 space-y-3">
         <h3 className="text-xs font-bold text-white">Quick Actions</h3>
 
-        {profilePreviewMode === 'self' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <button 
-              onClick={handleStartLiveStream}
-              className="btn-neon-pink py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 shadow-lg"
-            >
-              <Camera className="w-4 h-4" />
-              Start Live
-            </button>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <button 
+            onClick={handleStartLiveStream}
+            className="btn-neon-pink py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 shadow-lg"
+          >
+            <Camera className="w-4 h-4" />
+            Start Live
+          </button>
 
-            <button 
-              onClick={() => {
-                navigator.clipboard.writeText(`https://vlive.app/invite?ref=${userName}`);
-                showToast('Invite link copied!');
-              }}
-              className="py-3 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md"
-            >
-              <Share2 className="w-4 h-4" />
-              Invite Friends
-            </button>
+          <button 
+            onClick={() => {
+              navigator.clipboard.writeText(`https://vlive.app/invite?ref=${userName}`);
+              showToast('Invite link copied!');
+            }}
+            className="py-3 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md"
+          >
+            <Share2 className="w-4 h-4" />
+            Invite Friends
+          </button>
 
-            <button 
-              onClick={() => setIsVipModalOpen(true)}
-              className="py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-md"
-            >
-              <Crown className="w-4 h-4 fill-slate-950" />
-              Become VIP
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <button 
-              onClick={() => showToast(`Following @${currentUsername}`)}
-              className="py-2.5 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center justify-center gap-1.5"
-            >
-              <UserPlus className="w-4 h-4" />
-              Follow
-            </button>
-
-            <button 
-              onClick={() => setIsGiftCatalogOpen(true)}
-              className="py-2.5 rounded-2xl bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5"
-            >
-              <Gift className="w-4 h-4" />
-              Send Gift
-            </button>
-
-            <button 
-              onClick={() => showToast(`Blocked @${currentUsername}`)}
-              className="py-2.5 rounded-2xl bg-slate-800 hover:bg-red-900/60 text-slate-300 hover:text-red-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5"
-            >
-              <Ban className="w-4 h-4" />
-              Block
-            </button>
-
-            <button 
-              onClick={() => showToast(`Report submitted for @${currentUsername}`)}
-              className="py-2.5 rounded-2xl bg-slate-800 hover:bg-amber-900/60 text-slate-300 hover:text-amber-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5"
-            >
-              <AlertTriangle className="w-4 h-4" />
-              Report
-            </button>
-          </div>
-        )}
+          <button 
+            onClick={() => setIsVipModalOpen(true)}
+            className="py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-md"
+          >
+            <Crown className="w-4 h-4 fill-slate-950" />
+            Become VIP
+          </button>
+        </div>
       </div>
 
     </div>
