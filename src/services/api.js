@@ -20,7 +20,50 @@ export const apiAuth = {
     if (error) console.error('saveUserToBackend error', error);
     return data;
   },
-    async loginWithTelegram(initData) {
+      async registerWithCredentials(username, name, email, password, gender, avatar) {
+    let { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { username, name, avatar } }
+    });
+
+    if (authError) return { success: false, error: authError.message };
+
+    const userId = authData.user.id;
+    const { data: profileData, error: profileError } = await supabase.from('profiles').upsert([{
+      id: userId,
+      username,
+      name,
+      avatar,
+      gender,
+      status: 'approved'
+    }], { onConflict: 'id' }).select();
+
+    if (profileError) return { success: false, error: profileError.message };
+    
+    await supabase.from('wallets').upsert([{ user_id: userId, coins: 1000, usdt_balance: 0.0 }], { onConflict: 'user_id' });
+
+    localStorage.setItem('vlive_user_id', userId);
+    return { success: true, user: profileData[0] };
+  },
+
+  async loginWithCredentials(email, password) {
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (authError) return { success: false, error: authError.message };
+
+    const userId = authData.user.id;
+    const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('id', userId).single();
+
+    if (profileError) return { success: false, error: profileError.message };
+
+    localStorage.setItem('vlive_user_id', userId);
+    return { success: true, user: profileData };
+  },
+  async loginWithTelegram(initData) {
     let tgUser = null;
     try {
       if (typeof initData === 'string' && initData) {
@@ -196,10 +239,24 @@ export const apiCreatorStudio = {};
 export const apiReferral = {};
 
 export const apiAdmin = {
+  async getAllUsers() {
+    const { data, error } = await supabase.from('profiles').select('*');
+    return error ? [] : data;
+  },
+  async updateUserStatus(userId, status) {
+    const { data, error } = await supabase.from('profiles').update({ status }).eq('id', userId);
+    return { success: !error };
+  },
+  async deleteUser(userId) {
+    const { error } = await supabase.from('profiles').delete().eq('id', userId);
+    return { success: !error };
+  },
+  async getReports() { return []; },
   async analyzeReportAi(params) { return { analysis: 'AI analysis placeholder' }; },
   async moderateChatAi(params) { return { decision: 'Allowed' }; },
   async getSupportAiSuggestion(params) { return { suggestion: 'Support suggestion' }; },
   async verifyStreamerAi(params) { return { verified: true }; },
   async checkReferralFraudAi(params) { return { fraud: false }; },
-  async translateMessage(text, lang) { return { translated: text }; }
+  async translateMessage(text, lang) { return { translated: text }; },
+  async getPosts() { return []; }
 };

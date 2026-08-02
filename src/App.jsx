@@ -830,10 +830,40 @@ export default function App() {
 
   useEffect(() => {
     syncUserAndFetchBackendProfiles();
-    const intervalId = setInterval(() => {
-      syncUserAndFetchBackendProfiles();
-    }, 15000); // 15-second gentle polling sync
-    return () => clearInterval(intervalId);
+    
+    // SUPABASE REALTIME IMPLEMENTATION
+    const channel = supabase.channel('public:profiles')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload) => {
+        console.log('Realtime change received!', payload);
+        
+        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+          setUsersList(prev => {
+            const exists = prev.find(u => u.id === payload.new.id);
+            if (exists) {
+              return prev.map(u => u.id === payload.new.id ? payload.new : u);
+            } else {
+              return [payload.new, ...prev];
+            }
+          });
+          
+          setMatchDeckProfiles(prev => {
+            const exists = prev.find(u => u.id === payload.new.id);
+            if (exists) {
+              return prev.map(u => u.id === payload.new.id ? payload.new : u);
+            } else {
+              return [payload.new, ...prev];
+            }
+          });
+        } else if (payload.eventType === 'DELETE') {
+           setUsersList(prev => prev.filter(u => u.id !== payload.old.id));
+           setMatchDeckProfiles(prev => prev.filter(u => u.id !== payload.old.id));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [isLoggedIn]);
 
   // Server Keep-Alive Ping & Performance Initialization
@@ -921,6 +951,11 @@ export default function App() {
     /* Additional API Loads for Production */
     if (apiAdmin && typeof apiAdmin.getPosts === 'function') {
       apiAdmin.getPosts().then(p => { if (p) setPosts(p); });
+    }
+    if (apiAdmin && typeof apiAdmin.getAllUsers === 'function' && ['rayan', 'rayan_vlive', 'tattoo_rayan'].includes(currentUsername?.toLowerCase())) {
+       apiAdmin.getAllUsers().then(users => {
+         if (users) setAdminUsersList(users);
+       });
     }
     apiHome.getApprovedUsers().then(users => {
       if (users) {
@@ -17557,21 +17592,24 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                             </button>
 
                             <button
-                              onClick={() => {
-                                const newStatus = u.status === 'Banned' ? 'Active' : 'Banned';
+                              onClick={async () => {
+                                const newStatus = (u.status === 'Banned' || u.status === 'banned') ? 'approved' : 'banned';
+                                
+                                if (apiAdmin && typeof apiAdmin.updateUserStatus === 'function') {
+                                    await apiAdmin.updateUserStatus(u.id, newStatus);
+                                }
+                                
                                 setAdminUsersList(prev => {
                                   const updated = prev.map(item => item.id === u.id ? { ...item, status: newStatus } : item);
-                                  safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
                                   return updated;
                                 });
                                 setUsersList(prev => {
-                                  const updated = prev.map(item => item.id === u.id ? { ...item, status: newStatus === 'Banned' ? 'banned' : 'active' } : item);
-                                  safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
+                                  const updated = prev.map(item => item.id === u.id ? { ...item, status: newStatus } : item);
                                   return updated;
                                 });
                                 addAdminAuditLog(`وضعیت کاربر @${u.username} به ${newStatus} تغییر یافت`);
                               }}
-                              className={`px-2 py-1 rounded-xl text-[10px] font-bold ${u.status === 'Banned' ? 'bg-emerald-600 text-white' : 'bg-rose-950 border border-rose-500/40 text-rose-300'}`}
+                              className={`px-2 py-1 rounded-xl text-[10px] font-bold ${(u.status === 'Banned' || u.status === 'banned') ? 'bg-emerald-600 text-white' : 'bg-rose-950 border border-rose-500/40 text-rose-300'}`}
                             >
                               {u.status === 'Banned' ? loc('رفع مسدودیت', 'Unban') : loc('مسدودسازی (Ban)', 'Ban User')}
                             </button>

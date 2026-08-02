@@ -35,3 +35,6 @@ CREATE POLICY "Users can delete own profile."
     FOR DELETE 
     USING ( auth.uid() = id );
 
+
+-- 3. Enable Realtime for profiles table
+alter publication supabase_realtime add table profiles;
