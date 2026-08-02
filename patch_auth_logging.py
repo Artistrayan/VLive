@@ -1,26 +1,9 @@
-import { supabase } from '../supabaseClient';
+import re
 
-export const setStoredToken = (token) => localStorage.setItem('vlive_token', token);
-export const setStoredSession = (session) => localStorage.setItem('vlive_session', JSON.stringify(session));
-export const getStoredToken = () => localStorage.getItem('vlive_token');
-export const getUserId = () => localStorage.getItem('vlive_user_id');
+with open('src/services/api.js', 'r', encoding='utf-8') as f:
+    content = f.read()
 
-export const apiAuth = {
-  async saveUserToBackend(user) {
-    const { data: authData } = await supabase.auth.getUser();
-    if (!authData?.user) return null;
-    
-    const { data, error } = await supabase.from('profiles').upsert([{ 
-      id: authData.user.id,
-      username: user.username || `user_${Date.now()}`, 
-      name: user.name, 
-      avatar: user.avatar 
-    }], { onConflict: 'id' }).select();
-    
-    if (error) console.error('saveUserToBackend error', error);
-    return data;
-  },
-    async loginWithTelegram(initData) {
+new_func = """  async loginWithTelegram(initData) {
     let tgUser = null;
     try {
       if (typeof initData === 'string' && initData) {
@@ -129,69 +112,11 @@ export const apiAuth = {
     }
 
     return { success: false, error: 'Unknown error during profile creation.' };
-  }
-};
+  }"""
 
-export const apiProfile = {
-  async getProfile() {
-    const uid = getUserId();
-    if (!uid) return null;
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
-    return error ? null : data;
-  },
-  async updateProfile(updates) {
-    const uid = getUserId();
-    if (!uid) return { success: false };
-    const { data, error } = await supabase.from('profiles').update(updates).eq('id', uid).select();
-    return { success: !error, data };
-  }
-};
+content = re.sub(r'  async loginWithTelegram\(initData\) \{.*?\n  \}', new_func, content, flags=re.DOTALL)
 
-export const apiHome = {
-  async getApprovedUsers() {
-    const { data, error } = await supabase.from('profiles').select('*').eq('status', 'approved');
-    return error ? [] : data;
-  },
-  async getActiveStreams() {
-    const { data, error } = await supabase.from('streams').select('*').eq('status', 'active');
-    return error ? [] : data;
-  }
-};
+with open('src/services/api.js', 'w', encoding='utf-8') as f:
+    f.write(content)
 
-export const apiDiscover = {};
-export const apiMessages = {};
-export const apiLive = {};
-
-export const apiWallet = {
-  async getBalance() {
-    const uid = getUserId();
-    if (!uid) return { coins: 0 };
-    const { data, error } = await supabase.from('wallets').select('coins').eq('user_id', uid).single();
-    return error ? { coins: 0 } : data;
-  }
-};
-
-export const apiGiftShop = {};
-export const apiVip = {};
-export const apiCalls = {};
-
-export const apiNotifications = {
-  async getNotifications() {
-    const uid = getUserId();
-    if (!uid) return [];
-    const { data, error } = await supabase.from('notifications').select('*').eq('user_id', uid);
-    return error ? [] : data;
-  }
-};
-
-export const apiCreatorStudio = {};
-export const apiReferral = {};
-
-export const apiAdmin = {
-  async analyzeReportAi(params) { return { analysis: 'AI analysis placeholder' }; },
-  async moderateChatAi(params) { return { decision: 'Allowed' }; },
-  async getSupportAiSuggestion(params) { return { suggestion: 'Support suggestion' }; },
-  async verifyStreamerAi(params) { return { verified: true }; },
-  async checkReferralFraudAi(params) { return { fraud: false }; },
-  async translateMessage(text, lang) { return { translated: text }; }
-};
+print("api.js patched with better logging.")
