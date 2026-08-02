@@ -527,6 +527,11 @@ const INITIAL_VERIFICATIONS = [];
 // Initial Direct Messages Conversations
 const INITIAL_CONVERSATIONS = [];
 
+// REUSABLE COINS ICON COMPONENT
+function CoinsIcon({ className = "w-4 h-4 text-amber-400" }) {
+  return <Coins className={className} />;
+}
+
 // REUSABLE VERIFIED BADGE COMPONENT WITH CYAN NEON GLOW
 function VerifiedBadge({ className = "w-4 h-4", showLabel = false }) {
   return (
