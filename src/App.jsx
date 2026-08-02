@@ -1,11 +1,3 @@
-import CoinsIcon from './components/CoinsIcon';
-import HeaderNavigation from './components/HeaderNavigation';
-import BottomNavigation from './components/BottomNavigation';
-import MatchPage from './pages/MatchPage';
-import ProfilePage from './pages/ProfilePage';
-import StreamsPage from './pages/StreamsPage';
-import WalletPage from './pages/WalletPage';
-import AdminPage from './pages/AdminPage';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   apiAuth, setStoredToken, setStoredSession, getStoredToken,
@@ -29,7 +21,7 @@ import {
   Home, BarChart2, Tv, Megaphone, Target, Paperclip, Pin, Reply, MoreVertical,
   VolumeX, Trash2, Archive, FileText, CheckCheck, Laugh, Forward, SmilePlus,
   LockKeyhole, SendHorizontal, MessageCircle, Info, PhoneIncoming, PhoneOutgoing,
-  PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert, Shuffle,
+  PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert, Shuffle, BarChart3, Palette
 } from 'lucide-react';
 
 // PRESET HIGH-RES AVATARS FOR PROFILE EDITING
@@ -603,6 +595,9 @@ const safeStorage = {
   }
 };
 
+
+
+
 export default function App() {
   // Current User State
   const [userName, setUserName] = useState(() => {
@@ -752,7 +747,18 @@ export default function App() {
   const [paidMessageRate, setPaidMessageRate] = useState(3);
 
   // Host Crypto Wallet State for Female Streamers
-  const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
+  
+  const [language, setLanguage] = useState('fa');
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [isGoLiveOpen, setIsGoLiveOpen] = useState(false);
+  const [authTab, setAuthTab] = useState('login');
+  const [selectedStreamerForProfile, setSelectedStreamerForProfile] = useState(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isLiveModalOpen, setIsLiveModalOpen] = useState(false);
+  const [selectedHostForCall, setSelectedHostForCall] = useState(null);
+  const [isDirectCallModalOpen, setIsDirectCallModalOpen] = useState(false);
+  const showTab = (tab) => setActiveTab(tab);
+const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     return safeStorage.getItem('vlive_host_usdt_address') || 'TKh8zXpQ7yM3vN1L9R2W4b6K8a0C';
   });
   const [lastWithdrawalDate, setLastWithdrawalDate] = useState(() => {
@@ -3847,7 +3853,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   }, [mediaStream, viewingStream]);
 
   // Streams Data
-  const [streamsList] = useState([]);
+  const [streamsList, setStreamsList] = useState([]);
 
   // Toast Helper
     // Live Timer for Story Progress
@@ -5842,148 +5848,7394 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
         {/* TAB 1: HOME & LIVE STREAMS */}
         {activeTab === 'streams' && (
-          <StreamsPage
-            isRtl={isRtl}
-            loc={loc}
-            t={t}
-            userCoins={userCoins}
-            setActiveTab={setActiveTab}
-            setIsVipModalOpen={setIsVipModalOpen}
-            setIsLevelUpModalOpen={setIsLevelUpModalOpen}
-            userLevel={userLevel}
-            equippedBadge={equippedBadge}
-            userRole={userRole}
-            streamSubTab={streamSubTab}
-            setStreamSubTab={setStreamSubTab}
-            streamCategoryFilter={streamCategoryFilter}
-            setStreamCategoryFilter={setStreamCategoryFilter}
-            streamSearchQuery={streamSearchQuery}
-            setStreamSearchQuery={setStreamSearchQuery}
-            liveStreamsList={liveStreamsList}
-            setLiveStreamsList={setLiveStreamsList}
-            handleStartLiveStream={handleStartLiveStream}
-            setIsAddStoryModalOpen={setIsAddStoryModalOpen}
-            advancedStories={advancedStories}
-            handleDeleteUserStoryItem={handleDeleteUserStoryItem}
-            handleUserStoryClick={handleUserStoryClick}
-            posts={posts}
-            setIsAddPostModalOpen={setIsAddPostModalOpen}
-            showToast={showToast}
-            handleStartPrivateCall={handleStartPrivateCall}
-            setIsGiftCatalogOpen={setIsGiftCatalogOpen}
-            currentUsername={currentUsername}
-            userAvatar={userAvatar}
-            userName={userName}
-            setIsLanguageModalOpen={setIsLanguageModalOpen}
-            setIsDepositModalOpen={setIsDepositModalOpen}
-            setIsWithdrawModalOpen={setIsWithdrawModalOpen}
-          />
+<div className="space-y-6">
+
+            {/* 1. SUB-HEADER / QUICK STATS BAR (زیر Header) */}
+            <div className="flex items-center justify-between gap-1.5 sm:gap-2 p-2.5 sm:p-3 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-md overflow-x-auto no-scrollbar">
+              {/* 👛 Coins Counter */}
+              <button 
+                onClick={() => setActiveTab('wallet')}
+                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition active:scale-95 shrink-0"
+              >
+                <CoinsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-pulse" />
+                <span className="text-[11px] sm:text-xs font-black">{userCoins.toLocaleString()} {loc('سکه', 'Coins')}</span>
+              </button>
+
+              {/* 👑 VIP Badge */}
+              <button 
+                onClick={() => setIsVipModalOpen(true)}
+                className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 text-amber-300 hover:scale-105 transition active:scale-95 shadow-sm shrink-0"
+              >
+                <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 fill-amber-400/30" />
+                <span className="text-[11px] sm:text-xs font-black">👑 {loc('اشتراک VIP', 'VIP Club')}</span>
+              </button>
+
+              {/* 🔥 Online Counter */}
+              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] sm:text-xs font-bold shrink-0">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>🔥 {loc('۱۴,۰۰۰ کاربر آنلاین', '14,000 Online')}</span>
+              </div>
+            </div>
+
+            {/* Quick Live Search Bar (If Toggled) */}
+            {(isChatSearchOpen || homeSearchQuery) && (
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+                <input 
+                  type="text"
+                  value={homeSearchQuery}
+                  onChange={e => setHomeSearchQuery(e.target.value)}
+                  placeholder={loc('جستجوی نام استریمر، شناسه، شهر یا موضوع لایو...', 'Search live streamer name, ID, city, or topic...')}
+                  className="w-full pr-10 pl-10 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 shadow-inner"
+                />
+                {homeSearchQuery && (
+                  <button 
+                    onClick={() => setHomeSearchQuery('')}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* 1.5 LIVE STORIES HORIZONTAL SLIDER */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-black text-slate-300 px-1">
+                <span className="flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-pink-500 animate-pulse" /> {loc('استوری‌های زنده', 'Live Stories')}</span>
+                <span className="text-[11px] text-pink-400 font-bold cursor-pointer hover:underline" onClick={() => { setProfileSubPage('stories'); setActiveTab('profile'); }}>{loc('مشاهده همه', 'View All')}</span>
+              </div>
+              <div className="flex items-center gap-3 overflow-x-auto pb-1.5 no-scrollbar">
+                {/* Add Story Button */}
+                <button 
+                  onClick={() => setIsCreateStoryOpen(true)}
+                  className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                >
+                  <div className="relative w-14 h-14 rounded-full border-2 border-dashed border-pink-500/60 p-0.5 flex items-center justify-center bg-slate-900 group-hover:scale-105 transition shadow-md">
+                    <img src={userAvatar} alt="My Story" className="w-full h-full object-cover rounded-full opacity-60" />
+                    <div className="absolute inset-0 bg-slate-950/40 rounded-full flex items-center justify-center">
+                      <Plus className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-300 max-w-[60px] truncate">{loc('استوری شما', 'Your Story')}</span>
+                </button>
+
+                {/* Live Streamers Stories */}
+                {usersList.slice(0, 10).map((u, idx) => (
+                  <button 
+                    key={u.id || u.username || idx}
+                    onClick={() => {
+                      setSelectedStreamerForProfile(u);
+                      setIsProfileModalOpen(true);
+                    }}
+                    className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                  >
+                    <div className="relative w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-600 to-amber-400 group-hover:scale-105 transition shadow-lg shadow-pink-500/20">
+                      <img src={u.avatar} alt={u.name} className="w-full h-full object-cover rounded-full border-2 border-slate-950" />
+                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[8px] font-black px-1.5 py-0.2 rounded-full border border-slate-950 uppercase shadow">
+                        LIVE
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-300 max-w-[64px] truncate">{u.name || u.username}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 1.8 QUICK ACTIONS GRID */}
+            <div className="grid grid-cols-4 gap-2.5 p-3 rounded-3xl bg-slate-900/90 border border-slate-800/80 backdrop-blur-md shadow-xl">
+              <button 
+                onClick={() => setIsLiveModalOpen(true)}
+                className="flex flex-col items-center justify-center p-2 rounded-2xl bg-gradient-to-br from-pink-600/20 to-rose-600/20 border border-pink-500/40 text-pink-300 hover:scale-105 active:scale-95 transition group"
+              >
+                <div className="w-8 h-8 rounded-xl bg-pink-600 text-white flex items-center justify-center shadow-md shadow-pink-600/30 group-hover:scale-110 transition">
+                  <Video className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black mt-1 text-white">{loc('شروع لایو', 'Go Live')}</span>
+              </button>
+
+              <button 
+                onClick={() => setActiveTab('match')}
+                className="flex flex-col items-center justify-center p-2 rounded-2xl bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/40 text-purple-300 hover:scale-105 active:scale-95 transition group"
+              >
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500 to-purple-600 text-white flex items-center justify-center shadow-md shadow-purple-600/30 group-hover:scale-110 transition">
+                  <Flame className="w-4 h-4 fill-white" />
+                </div>
+                <span className="text-[10px] font-black mt-1 text-white">{loc('مچ‌یابی', 'Match')}</span>
+              </button>
+
+              <button 
+                onClick={() => setStreamSubTab('party')}
+                className="flex flex-col items-center justify-center p-2 rounded-2xl bg-gradient-to-br from-cyan-600/20 to-blue-600/20 border border-cyan-500/40 text-cyan-300 hover:scale-105 active:scale-95 transition group"
+              >
+                <div className="w-8 h-8 rounded-xl bg-cyan-600 text-white flex items-center justify-center shadow-md shadow-cyan-600/30 group-hover:scale-110 transition">
+                  <Users className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black mt-1 text-white">{loc('اتاق پارتی', 'Party Stage')}</span>
+              </button>
+
+              <button 
+                onClick={() => setIsVipModalOpen(true)}
+                className="flex flex-col items-center justify-center p-2 rounded-2xl bg-gradient-to-br from-amber-600/20 to-yellow-600/20 border border-amber-500/40 text-amber-300 hover:scale-105 active:scale-95 transition group"
+              >
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 flex items-center justify-center shadow-md shadow-amber-500/30 group-hover:scale-110 transition font-black">
+                  <Crown className="w-4 h-4 fill-slate-950" />
+                </div>
+                <span className="text-[10px] font-black mt-1 text-white">{loc('باشگاه VIP', 'VIP Club')}</span>
+              </button>
+            </div>
+
+            {/* 2. HORIZONTAL CATEGORY SCROLL */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 px-1">
+                <span>Categories & Channels</span>
+                <span className="text-pink-400 font-mono">10 Active Channels</span>
+              </div>
+
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                {[
+                  { id: 'all', label: '🌍 All', count: '2.8K' },
+                  { id: 'trending', label: '🔥 Trending', count: '940' },
+                  { id: 'gaming', label: '🎮 Gaming', count: '410' },
+                  { id: 'music', label: '🎵 Music', count: '320' },
+                  { id: 'dance', label: '💃 Dance', count: '280' },
+                  { id: 'singing', label: '🎤 Singing', count: '210' },
+                  { id: 'chat', label: '💬 Chat', count: '550' },
+                  { id: 'education', label: '🎓 Education', count: '130' },
+                  { id: 'dating', label: '❤️ Dating', count: '380' },
+                  { id: 'vip', label: '👑 VIP 18+', count: '180' }
+                ].map(cat => (
+                  <button 
+                    key={cat.id}
+                    onClick={() => setStreamModeFilter(cat.id)}
+                    className={`px-3.5 py-2 rounded-2xl text-xs font-bold shrink-0 border transition-all flex items-center gap-1.5 ${streamModeFilter === cat.id ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.5)] scale-105' : 'bg-slate-900/90 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200'}`}
+                  >
+                    <span>{cat.label}</span>
+                    <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${streamModeFilter === cat.id ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                      {cat.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 5. TRENDING LIVE (کارت‌های بزرگ استریم) */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-black text-white flex items-center gap-2">
+                  <Radio className="w-4 h-4 text-pink-500 animate-pulse" />
+                  {loc('استریم‌های زنده داغ', 'Trending Live Streams')}
+                </h3>
+                <span className="text-xs text-pink-400 font-bold cursor-pointer" onClick={() => setStreamSubTab('lives')}>{loc('مشاهده همه', 'View All')}</span>
+              </div>
+
+                {/* Stream Cards Horizontal Slider */}
+                <div className="flex items-center gap-4 overflow-x-auto pb-2.5 no-scrollbar">
+                  {streamsList
+                    .filter(s => {
+                      if (homeSearchQuery) {
+                        const q = homeSearchQuery.toLowerCase();
+                        return s.title.toLowerCase().includes(q) || s.host.toLowerCase().includes(q);
+                      }
+                      if (streamModeFilter === 'vip') return s.isVip18;
+                      return true;
+                    })
+                    .map(stream => (
+                      <div 
+                        key={stream.id} 
+                        className="w-72 sm:w-80 shrink-0 card-3d rounded-3xl overflow-hidden border border-slate-800 bg-slate-900/90 group hover:border-pink-500/50 transition duration-300 flex flex-col shadow-xl"
+                      >
+                        {/* Thumbnail Container */}
+                        <div className="relative aspect-video overflow-hidden bg-slate-950">
+                          <img 
+                            src={stream.thumbnail} 
+                            alt={stream.title} 
+                            className="w-full h-full object-cover group-hover:scale-110 transition duration-700" 
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+
+                          {/* Top Left: LIVE Badge & VIP Status */}
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5 flex-wrap">
+                            <span className="bg-red-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg border border-red-400/50">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                              LIVE
+                            </span>
+                            {(stream.is_vip || stream.isVip || stream.isVip18) && (
+                              <VipStatusBadge size="small" showText={true} />
+                            )}
+                          </div>
+
+                          {/* Top Right: Viewers Count */}
+                          <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-200 flex items-center gap-1 border border-slate-800 shadow-md">
+                            <Eye className="w-3 h-3 text-cyan-400" />
+                            <span>👁 {(stream.viewers || 2300).toLocaleString()}</span>
+                          </div>
+
+                          {/* Bottom Left / Details Overlay */}
+                          <div className="absolute bottom-3 left-3 right-3 space-y-1">
+                            <div className="flex items-center justify-between text-xs font-bold text-white">
+                              <div className="flex items-center gap-1.5">
+                                <span>👤 {stream.host}</span>
+                                <VerifiedBadge className="w-3.5 h-3.5" />
+                                {(stream.is_vip || stream.isVip || stream.isVip18) && (
+                                  <VipStatusBadge size="small" showText={false} />
+                                )}
+                              </div>
+                              <span className="text-[10px] text-pink-300 font-mono flex items-center gap-0.5 bg-slate-950/80 px-2 py-0.5 rounded-full border border-slate-800">
+                                <Clock className="w-2.5 h-2.5 text-pink-400" />
+                                ⏱ 45m
+                              </span>
+                            </div>
+
+                            <p className="text-[10px] text-slate-300 font-medium line-clamp-1">
+                              {stream.title}
+                            </p>
+
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+                              <span className="flex items-center gap-1 text-pink-400 font-semibold">
+                                <MapPin className="w-3 h-3" />
+                                📍 {loc('تهران', 'Tehran')}
+                              </span>
+                              <span>•</span>
+                              <span className="text-amber-300 flex items-center gap-0.5">
+                                <Gift className="w-3 h-3 text-amber-400" />
+                                {loc('۱.۴ هزار هدیه', '1.4K Gifts')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Card Bottom Actions */}
+                        <div className="p-3 bg-slate-950/90 border-t border-slate-800/80 flex items-center justify-between gap-2 mt-auto">
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {loc('ورودی:', 'Fee:')} {stream.entryFee > 0 ? `${stream.entryFee} ${loc('سکه', 'coins')}` : loc('رایگان', 'FREE')}
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            {/* Boost Stream Button */}
+                            <button 
+                              onClick={() => {
+                                if (userCoins < 100) {
+                                  showToast(loc('برای بوست لایو به ۱۰۰ سکه نیاز دارید', '100 coins required to Boost live stream'));
+                                  return;
+                                }
+                                setUserCoins(prev => prev - 100);
+                                showToast(loc(`لایو ${stream.host} با موفقیت بوست شد!`, `Live stream by ${stream.host} Boosted to top!`));
+                              }}
+                              className="p-1.5 px-2.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-500/40 text-purple-300 text-[10px] font-bold flex items-center gap-1"
+                              title="Boost Live to Top (100 coins)"
+                            >
+                              <Zap className="w-3.5 h-3.5 text-amber-400" />
+                              {loc('بوست ⚡', 'Boost ⚡')}
+                            </button>
+
+                            {/* Watch Live Button */}
+                            <button 
+                              onClick={() => handleTryEnterStream(stream)}
+                              className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-xs shadow-md flex items-center gap-1.5 hover:brightness-110 active:scale-95 transition"
+                            >
+                              <Play className="w-3.5 h-3.5 fill-white" />
+                              {loc('ورود به لایو', 'Enter Live')}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+            {/* DISCOVER & SEARCH APPROVED USERS SUBTAB */}
+            {streamSubTab === 'users' && (
+              <div className="space-y-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+                {/* Search Bar & Filter Controls */}
+                <div className="card-3d p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 shadow-xl">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-pink-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+                    <input 
+                      type="text"
+                      value={homeSearchQuery}
+                      onChange={e => setHomeSearchQuery(e.target.value)}
+                      placeholder={loc('جستجوی کاربران تأییدشده دیتابیس (نام، شهر، بیو)...', 'Search approved database users (name, city, bio)...')}
+                      className="w-full pr-10 pl-10 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 shadow-inner"
+                    />
+                    {homeSearchQuery && (
+                      <button onClick={() => setHomeSearchQuery('')} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Filter Pills Bar */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                    {[
+                      { id: 'all', label: loc('🌍 همه کاربران', '🌍 All Users') },
+                      { id: 'online', label: loc('🟢 آنلاین‌ها', '🟢 Online') },
+                      { id: 'top', label: loc('👑 برترین‌ها', '👑 Top Hosts') },
+                      { id: 'verified', label: loc('✅ تأییدشده‌ها', '✅ Verified') }
+                    ].map(f => (
+                      <button
+                        key={f.id}
+                        onClick={() => setUserFilter(f.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 border transition ${userFilter === f.id ? 'bg-pink-600 text-white border-pink-400 shadow' : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'}`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Approved User Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {usersList
+                    .filter(u => u.status === 'approved' || u.isApproved !== false)
+                    .filter(u => u.username !== currentUsername)
+                    .filter(u => {
+                      if (homeSearchQuery) {
+                        const q = homeSearchQuery.toLowerCase();
+                        return (u.name && u.name.toLowerCase().includes(q)) || 
+                               (u.username && u.username.toLowerCase().includes(q)) || 
+                               (u.city && u.city.toLowerCase().includes(q)) || 
+                               (u.bio && u.bio.toLowerCase().includes(q));
+                      }
+                      if (userFilter === 'online') return true; // Everyone is online for now
+                      if (userFilter === 'top') return u.isTop || u.is_vip || u.isVip;
+                      if (userFilter === 'verified') return u.isVerified || u.is_verified;
+                      return true;
+                    })
+                    .map(u => (
+                      <div key={u.id || u.username} className="card-3d p-4 rounded-3xl bg-slate-900 border border-slate-800 hover:border-pink-500/50 transition flex flex-col justify-between space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-pink-500/60 shrink-0">
+                            <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
+                            {u.online && <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full" />}
+                          </div>
+                          <div className="overflow-hidden">
+                            <div className="flex items-center gap-1">
+                              <h4 className="text-xs font-black text-white truncate">{u.name || u.username}</h4>
+                              <VerifiedBadge className="w-3.5 h-3.5" />
+                            </div>
+                            <p className="text-[10px] text-pink-400 font-bold">@{u.username}</p>
+                            <span className="text-[9px] text-slate-400 font-medium">📍 {u.city || 'Tehran'}</span>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-300 line-clamp-2 italic">"{u.bio || 'استریمر تأییدشده V.Live+'}"</p>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+                          <span className="text-[10px] font-mono text-amber-400 font-bold">🪙 {(u.coins || 5000).toLocaleString()}</span>
+                          <button
+                            onClick={() => {
+                              setSelectedHostForCall({
+                                name: u.name,
+                                username: u.username,
+                                avatar: u.avatar,
+                                role: u.role || 'VIP Host',
+                                isVerified: true,
+                                online: u.online !== false,
+                                isVip: u.isVip !== false
+                              });
+                              setIsDirectCallModalOpen(true);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-[11px] shadow hover:scale-105 active:scale-95 transition"
+                          >
+                            {loc('تماس / چت', 'Call / Chat')}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+            {streamSubTab === 'party' && (
+              <div className="space-y-4">
+                <div className="p-4 rounded-3xl bg-gradient-to-r from-purple-900/40 via-slate-900 to-pink-900/40 border border-purple-500/40 flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                      <Users className="w-4 h-4 text-purple-400" />
+                      {loc('استیج پارتی چندنفره صوتی و تصویری', 'Multi-Guest Voice & Video Party Stage')}
+                    </h3>
+                    <p className="text-[10px] text-purple-300">{loc('روی استیج بنشینید، با میزبان چت کنید و هدیه گروهی بفرستید', 'Take a seat on stage, chat with hosts & send group gifts')}</p>
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      const newRoom = {
+                        id: `party_${Date.now()}`,
+                        title: loc(`اتاق VIP ${userName}`, `${userName}'s VIP Lounge`),
+                        hostName: userName,
+                        hostAvatar: userAvatar,
+                        totalSeats: 9,
+                        occupiedSeats: 1,
+                        seats: Array.from({ length: 9 }).map((_, i) => ({
+                          index: i,
+                          user: i === 0 ? userName : null,
+                          avatar: i === 0 ? userAvatar : null,
+                          isHost: i === 0,
+                          isMuted: false
+                        }))
+                      };
+                      setPartyRoomsList(prev => [newRoom, ...prev]);
+                      setActivePartyRoom(newRoom);
+                      setMySeatIndex(0);
+                      showToast(loc('اتاق پارتی شما با موفقیت ساخته شد!', 'Your Party Lounge has been created!'));
+                    }}
+                    className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white font-bold text-xs shadow-lg flex items-center gap-1.5 shrink-0 hover:brightness-110 active:scale-95 transition"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {loc('ساخت اتاق پارتی', 'Create Party Room')}
+                  </button>
+                </div>
+
+                {/* Party Rooms Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {partyRoomsList.map(room => (
+                    <div key={room.id} className="card-3d p-4 rounded-3xl border border-purple-500/30 bg-slate-900/90 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <img src={room.hostAvatar} alt={room.hostName} className="w-12 h-12 rounded-2xl object-cover border-2 border-purple-500 shadow-md shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-xs font-bold text-white truncate">{room.title}</h4>
+                          <p className="text-[10px] text-purple-300">{loc('میزبان:', 'Host:')} @{room.hostName}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-500/30 text-[9px] font-bold">
+                              {room.occupiedSeats} / {room.totalSeats} {loc('صندلی پر است', 'Seats Occupied')}
+                            </span>
+                            <span className="text-[9px] text-emerald-400 font-bold flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                              {loc('اتاق فعال', 'Active Lounge')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Mini Seats Preview Grid */}
+                      <div className="flex items-center gap-1.5 bg-slate-950 p-2.5 rounded-2xl overflow-x-auto border border-slate-800">
+                        {room.seats.map((seat, idx) => (
+                          <div key={idx} className="w-8 h-8 rounded-full border border-purple-500/40 bg-slate-900 flex items-center justify-center shrink-0 overflow-hidden relative">
+                            {seat.avatar ? (
+                              <img src={seat.avatar} alt="Seat" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[9px] text-slate-500 font-bold">#{idx + 1}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <button 
+                        onClick={() => setActivePartyRoom(room)}
+                        className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white text-xs font-bold shadow-lg flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-white" />
+                        {loc('ورود به استیج و نشستن', 'Enter Stage & Take Seat')}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* REDESIGNED ADVANCED DAILY MISSIONS & REWARDS CENTER */}
+            {streamSubTab === 'quests' && (
+              <div className="space-y-5 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+                
+                {/* 1. TOP HEADER & PROGRESS METER */}
+                <div className="card-3d p-5 rounded-3xl bg-gradient-to-br from-cyan-950/60 via-slate-900 to-purple-950/60 border border-cyan-500/40 space-y-4 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-cyan-500/10 blur-3xl rounded-full pointer-events-none" />
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-400 to-purple-500 p-0.5 shadow-lg shadow-cyan-500/20">
+                        <div className="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center">
+                          <Target className="w-6 h-6 text-cyan-400" />
+                        </div>
+                      </div>
+                      <div>
+                        <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                          🎯 مأموریت‌های روزانه (Daily Missions)
+                          <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-mono border border-cyan-500/30">
+                            Season Pass
+                          </span>
+                        </h2>
+                        <p className="text-xs text-slate-300 mt-0.5">مأموریت‌ها را انجام دهید، سکه، الماس و پاداش‌های VIP آزاد کنید!</p>
+                      </div>
+                    </div>
+
+                    {/* Streak & Level Info Pill */}
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                      <div className="px-3 py-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-1.5 text-amber-300 text-xs font-black shadow-md">
+                        <Flame className="w-4 h-4 text-amber-400 fill-amber-400 animate-bounce" />
+                        <span>{loginStreakDays} روز استریک متوالی</span>
+                      </div>
+                      <div className="px-3 py-1.5 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center gap-1.5 text-purple-300 text-xs font-black shadow-md">
+                        <Award className="w-4 h-4 text-purple-400" />
+                        <span>Level {userLevel}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Daily Completion Progress Bar & XP Level Pass */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 relative z-10">
+                    {/* Missions Completion Rate */}
+                    <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-1.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-slate-300">پیشرفت کل مأموریت‌ها:</span>
+                        <span className="font-black font-mono text-cyan-400">
+                          {allMissions.filter(m => m.completed).length} / {allMissions.length} (
+                          {Math.round((allMissions.filter(m => m.completed).length / allMissions.length) * 100)}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                        <div 
+                          className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]"
+                          style={{ width: `${(allMissions.filter(m => m.completed).length / allMissions.length) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Level XP Meter */}
+                    <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-1.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-slate-300">امتیاز تجربی (Level Pass XP):</span>
+                        <span className="font-black font-mono text-purple-400">{userXP} / {userMaxXP} XP</span>
+                      </div>
+                      <div className="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                        <div 
+                          className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(168,85,247,0.8)]"
+                          style={{ width: `${(userXP / userMaxXP) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. 30-DAY DAILY LOGIN REWARD CALENDAR */}
+                <div className="card-3d p-4 rounded-3xl bg-slate-900 border border-amber-500/30 space-y-3 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-amber-400" />
+                      <h3 className="text-xs font-black text-white">تقویم ۳۰ روزه جایزه ورود روزانه (Daily Login Calendar)</h3>
+                    </div>
+                    <button
+                      onClick={handleClaimDailyCheckIn}
+                      disabled={claimedCheckInDays.includes(todayCheckInDay)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1 shadow-md ${claimedCheckInDays.includes(todayCheckInDay) ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'btn-neon-pink animate-pulse'}`}
+                    >
+                      <Gift className="w-3.5 h-3.5" />
+                      <span>{claimedCheckInDays.includes(todayCheckInDay) ? 'ورود امروز ثبت شد ✅' : 'دریافت جایزه امروز 🎁'}</span>
+                    </button>
+                  </div>
+
+                  {/* Horizontal Scrollable Days */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                    {Array.from({ length: 30 }, (_, i) => i + 1).map(day => {
+                      const isClaimed = claimedCheckInDays.includes(day);
+                      const isToday = day === todayCheckInDay;
+                      const isMilestone = day === 7 || day === 14 || day === 21 || day === 30;
+
+                      return (
+                        <div
+                          key={day}
+                          className={`flex flex-col items-center justify-between p-2 rounded-2xl min-w-[70px] h-24 border transition shrink-0 relative overflow-hidden ${
+                            isToday ? 'bg-gradient-to-b from-amber-500/20 to-slate-900 border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.3)] ring-2 ring-amber-400/50' :
+                            isClaimed ? 'bg-slate-950/80 border-slate-800 opacity-60' :
+                            isMilestone ? 'bg-purple-950/40 border-purple-500/50' : 'bg-slate-950 border-slate-800'
+                          }`}
+                        >
+                          {isMilestone && (
+                            <span className="absolute top-0 right-0 left-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[8px] font-black text-center py-0.5 uppercase">
+                              {day === 7 ? '🎨 Frame' : day === 14 ? '👑 VIP' : day === 21 ? '💎 50' : '🏆 Badge'}
+                            </span>
+                          )}
+
+                          <span className="text-[10px] font-bold text-slate-400 mt-1">روز {day}</span>
+                          
+                          <div className="my-1">
+                            {isClaimed ? (
+                              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                            ) : isMilestone ? (
+                              <Crown className="w-5 h-5 text-amber-300 animate-pulse" />
+                            ) : (
+                              <Coins className="w-5 h-5 text-amber-400" />
+                            )}
+                          </div>
+
+                          <span className="text-[9px] font-black text-white font-mono">
+                            +{day * 10 + 30} 🪙
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 3. BONUS LUCKY MISSION & MYSTERY CHESTS */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Daily Bonus Lucky Mission */}
+                  <div className="card-3d p-3.5 rounded-2xl bg-gradient-to-br from-purple-900/40 to-slate-900 border border-purple-500/40 space-y-2 flex flex-col justify-between shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black text-purple-300 flex items-center gap-1 bg-purple-500/20 px-2 py-0.5 rounded-lg border border-purple-500/30">
+                        🎲 مأموریت شانس روزانه
+                      </span>
+                      <span className="text-[10px] font-mono text-amber-400 font-bold">+{bonusMission.rewardCoins} 🪙</span>
+                    </div>
+                    <h4 className="text-xs font-bold text-white leading-snug">{bonusMission.title}</h4>
+                    <button
+                      onClick={handleClaimBonusMission}
+                      disabled={bonusMission.claimed}
+                      className={`w-full py-1.5 rounded-xl text-xs font-black transition ${bonusMission.claimed ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-md animate-pulse'}`}
+                    >
+                      {bonusMission.claimed ? 'دریافت شده ✅' : 'دریافت جایزه شانس 🎲'}
+                    </button>
+                  </div>
+
+                  {/* Weekly Mystery Box */}
+                  <div className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-cyan-500/40 space-y-2 flex flex-col justify-between shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black text-cyan-300 flex items-center gap-1 bg-cyan-500/20 px-2 py-0.5 rounded-lg border border-cyan-500/30">
+                        🎁 جعبه هفتگی (Weekly Chest)
+                      </span>
+                      <span className="text-[10px] font-mono text-cyan-300 font-bold">{weeklyChest.completed}/{weeklyChest.required}</span>
+                    </div>
+                    <p className="text-[10px] text-slate-300 font-bold">{weeklyChest.reward}</p>
+                    <button
+                      onClick={handleClaimWeeklyChest}
+                      disabled={weeklyChest.claimed || weeklyChest.completed < weeklyChest.required}
+                      className={`w-full py-1.5 rounded-xl text-xs font-black transition ${weeklyChest.claimed ? 'bg-slate-800 text-slate-500' : weeklyChest.completed >= weeklyChest.required ? 'bg-cyan-500 text-slate-950 shadow-md animate-bounce' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+                    >
+                      {weeklyChest.claimed ? 'باز شده ✅' : weeklyChest.completed >= weeklyChest.required ? 'باز کردن جعبه هفتگی 🎁' : 'در حال تکمیل...'}
+                    </button>
+                  </div>
+
+                  {/* Monthly Mega Reward Chest */}
+                  <div className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-amber-500/40 space-y-2 flex flex-col justify-between shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black text-amber-300 flex items-center gap-1 bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                        🎉 ابر جعبه ماهانه (Mega Chest)
+                      </span>
+                      <span className="text-[10px] font-mono text-amber-300 font-bold">{monthlyChest.completed}/{monthlyChest.required}</span>
+                    </div>
+                    <p className="text-[10px] text-slate-300 font-bold">{monthlyChest.reward}</p>
+                    <button
+                      onClick={handleClaimMonthlyChest}
+                      disabled={monthlyChest.claimed || monthlyChest.completed < monthlyChest.required}
+                      className={`w-full py-1.5 rounded-xl text-xs font-black transition ${monthlyChest.claimed ? 'bg-slate-800 text-slate-500' : monthlyChest.completed >= monthlyChest.required ? 'btn-neon-pink shadow-md animate-bounce' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+                    >
+                      {monthlyChest.claimed ? 'باز شده ✅' : monthlyChest.completed >= monthlyChest.required ? 'باز کردن ابر جعبه 🎉' : 'در حال تکمیل...'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4. CATEGORY SUBTABS NAVIGATION BAR */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-slate-800">
+                  {[
+                    { id: 'daily', label: '🎯 روزانه (Daily)', count: allMissions.filter(m => m.category === 'daily').length },
+                    { id: 'weekly', label: '📅 هفتگی (Weekly)', count: allMissions.filter(m => m.category === 'weekly').length },
+                    { id: 'monthly', label: '📆 ماهانه (Monthly)', count: allMissions.filter(m => m.category === 'monthly').length },
+                    { id: 'streamer', label: '🎥 استریمر (Streamer)', count: allMissions.filter(m => m.category === 'streamer').length },
+                    { id: 'vip', label: '👑 ویژه VIP', count: allMissions.filter(m => m.category === 'vip').length },
+                    { id: 'history', label: '📜 تاریخچه جوایز', count: claimedMissionsHistory.length }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setMissionActiveTab(tab.id)}
+                      className={`px-4 py-2 rounded-2xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
+                        missionActiveTab === tab.id ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono">{tab.count}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* 5. MISSIONS CARDS LIST */}
+                {missionActiveTab !== 'history' ? (
+                  <div className="space-y-3">
+                    {allMissions.filter(m => m.category === missionActiveTab).map(m => (
+                      <div 
+                        key={m.id} 
+                        className={`card-3d p-4 rounded-3xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md ${
+                          m.isVipExclusive ? 'bg-gradient-to-r from-amber-950/30 via-slate-900 to-slate-900 border-amber-500/50' :
+                          m.isStreamerExclusive ? 'bg-gradient-to-r from-purple-950/30 via-slate-900 to-slate-900 border-purple-500/40' :
+                          m.completed ? 'bg-slate-900/90 border-slate-800' : 'bg-slate-900/70 border-slate-800/80'
+                        }`}
+                      >
+                        {/* Left Info Column */}
+                        <div className="space-y-1.5 min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {/* Difficulty Tag */}
+                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${
+                              m.difficulty === 'easy' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                              m.difficulty === 'medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                              'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                            }`}>
+                              {m.difficulty === 'easy' ? '🟢 آسان' : m.difficulty === 'medium' ? '🟡 متوسط' : '🔴 سخت'}
+                            </span>
+
+                            {m.isVipExclusive && (
+                              <span className="px-2 py-0.5 rounded-lg bg-amber-500 text-slate-950 text-[9px] font-black flex items-center gap-1">
+                                <Crown className="w-3 h-3 fill-slate-950" /> VIP Exclusive
+                              </span>
+                            )}
+
+                            {m.isStreamerExclusive && (
+                              <span className="px-2 py-0.5 rounded-lg bg-purple-600 text-white text-[9px] font-black flex items-center gap-1">
+                                <Radio className="w-3 h-3" /> Streamer Quest
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 className="text-xs sm:text-sm font-bold text-white leading-snug">{m.title}</h4>
+                          <p className="text-[10px] text-slate-400">{m.desc}</p>
+
+                          {/* Progress Meter Bar */}
+                          <div className="space-y-1 max-w-md pt-1">
+                            <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
+                              <span>میزان پیشرفت:</span>
+                              <span className="font-bold text-cyan-300">{m.progress} / {m.total}</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                              <div 
+                                className="h-full bg-gradient-to-r from-pink-500 to-cyan-400 rounded-full transition-all duration-300"
+                                style={{ width: `${Math.min(100, (m.progress / m.total) * 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right Rewards & Action Column */}
+                        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800">
+                          <div className="flex flex-col items-start sm:items-end">
+                            <div className="flex items-center gap-1 text-xs font-black text-amber-300">
+                              {m.rewardType === 'coins' ? <Coins className="w-3.5 h-3.5 text-amber-400" /> :
+                               m.rewardType === 'diamonds' ? <Gem className="w-3.5 h-3.5 text-cyan-400" /> :
+                               m.rewardType === 'vip_trial' ? <Crown className="w-3.5 h-3.5 text-amber-400" /> :
+                               <Gift className="w-3.5 h-3.5 text-pink-400" />}
+                              <span>{typeof m.rewardVal === 'number' ? `+${m.rewardVal} ${m.rewardType.toUpperCase()}` : m.rewardVal}</span>
+                            </div>
+                            <span className="text-[10px] font-mono text-purple-400 font-bold">+{m.xpVal} XP</span>
+                          </div>
+
+                          <button
+                            onClick={() => handleMissionAction(m)}
+                            className={`px-4 py-2.5 rounded-2xl text-xs font-black shrink-0 transition shadow-lg flex items-center gap-1.5 active:scale-95 ${
+                              m.claimed ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700' :
+                              m.completed ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-black animate-pulse shadow-emerald-500/20' :
+                              'bg-slate-950 text-pink-400 border border-pink-500/40 hover:bg-pink-600 hover:text-white'
+                            }`}
+                          >
+                            {m.claimed ? (
+                              <>
+                                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                <span>دریافت شده</span>
+                              </>
+                            ) : m.completed ? (
+                              <>
+                                <Gift className="w-4 h-4 fill-slate-950" />
+                                <span>دریافت جایزه (Claim)</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>انجام مأموریت</span>
+                                <ChevronRight className="w-4 h-4" />
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  /* HISTORY LOG TAB */
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                      <span className="text-xs font-bold text-white flex items-center gap-2">
+                        <History className="w-4 h-4 text-purple-400" />
+                        سوابق جوایز دریافت شده مأموریت‌ها ({claimedMissionsHistory.length})
+                      </span>
+                    </div>
+
+                    {claimedMissionsHistory.map(h => (
+                      <div key={h.id} className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">{h.icon}</span>
+                          <div>
+                            <h4 className="text-xs font-bold text-white">{h.title}</h4>
+                            <span className="text-[10px] text-slate-400 font-mono">{h.date}</span>
+                          </div>
+                        </div>
+                        <span className="text-xs font-black text-emerald-400 font-mono">{h.reward}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+{/* LEADERBOARD RANKING SUBTAB */}
+            {streamSubTab === 'leaderboard' && (
+              <div className="space-y-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+                {/* Header & Season Info */}
+                <div className="p-5 rounded-3xl bg-gradient-to-br from-amber-500/20 via-slate-900 to-yellow-900/20 border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
+                  
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-600 p-0.5 shadow-lg shadow-amber-500/20">
+                      <div className="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center">
+                        <Trophy className="w-7 h-7 text-amber-400" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-white flex items-center gap-2">
+                        لیدربرد جهانی
+                        <span className="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 text-[10px] border border-pink-500/30">
+                          {lbSeason}
+                        </span>
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">رقابت کنید، مدال بگیرید و جایزه ببرید!</p>
+                    </div>
+                  </div>
+
+                  {/* My Rank Card */}
+                  <div className="bg-slate-950/80 backdrop-blur-md px-5 py-3 rounded-2xl border border-slate-700/50 flex flex-col items-center justify-center relative z-10">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Your Rank</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-amber-400 font-black text-xl">#158</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filters Row */}
+                <div className="flex flex-col md:flex-row gap-3">
+                  {/* Category Tabs */}
+                  <div className="flex-1 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 flex items-center overflow-x-auto no-scrollbar">
+                    {[
+                      { id: 'streamers', icon: Video, label: 'استریمرها' },
+                      { id: 'gifters', icon: Gift, label: 'حمایت‌کنندگان' },
+                      { id: 'earnings', icon: DollarSign, label: 'درآمدها' },
+                      { id: 'popular', icon: Heart, label: 'محبوب‌ترین' },
+                      { id: 'rising', icon: TrendingUp, label: 'در حال رشد' },
+                      { id: 'vip', icon: Crown, label: 'وی‌آی‌پی' }
+                    ].map(tab => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setLbMainTab(tab.id)}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${lbMainTab === tab.id ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                      >
+                        <tab.icon className="w-3.5 h-3.5" />
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Time & Region Filters */}
+                  <div className="flex gap-2">
+                    <select 
+                      value={lbTimeFilter}
+                      onChange={e => setLbTimeFilter(e.target.value)}
+                      className="bg-slate-900 border border-slate-800 text-slate-300 text-xs font-bold rounded-xl px-3 outline-none cursor-pointer"
+                    >
+                      <option value="today">امروز</option>
+                      <option value="week">این هفته</option>
+                      <option value="month">این ماه</option>
+                      <option value="year">امسال</option>
+                      <option value="all">تمام زمان‌ها</option>
+                    </select>
+
+                    <select 
+                      value={lbRegionFilter}
+                      onChange={e => setLbRegionFilter(e.target.value)}
+                      className="bg-slate-900 border border-slate-800 text-slate-300 text-xs font-bold rounded-xl px-3 outline-none cursor-pointer"
+                    >
+                      <option value="global">🌍 جهانی</option>
+                      <option value="country">🌏 کشور</option>
+                      <option value="city">📍 شهر</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Top 3 Podium (Only show for first page of ranking) */}
+                <div className="flex items-end justify-center gap-2 sm:gap-6 mt-12 mb-8 h-48 px-2">
+                  {/* Rank 2 - Silver */}
+                  {leaderboardData[1] && (
+                    <div className="flex flex-col items-center animate-slideUp" style={{ animationDelay: '100ms' }}>
+                      <div className="relative mb-2">
+                        <img src={leaderboardData[1].avatar} className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-slate-300 shadow-[0_0_15px_rgba(203,213,225,0.5)]" />
+                        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-slate-300 border-2 border-slate-900 flex items-center justify-center font-black text-slate-900 text-sm shadow-lg">2</div>
+                      </div>
+                      <span className="text-white font-bold text-xs max-w-[80px] truncate text-center">{leaderboardData[1].user}</span>
+                      <span className="text-slate-400 text-[10px]">{leaderboardData[1].score}</span>
+                      <div className="w-16 sm:w-20 h-24 bg-gradient-to-t from-slate-400/20 to-slate-400/5 mt-2 rounded-t-xl border-t-2 border-slate-400/50" />
+                    </div>
+                  )}
+
+                  {/* Rank 1 - Gold */}
+                  {leaderboardData[0] && (
+                    <div className="flex flex-col items-center animate-slideUp z-10" style={{ animationDelay: '0ms' }}>
+                      <div className="relative mb-2">
+                        <Crown className="w-8 h-8 text-amber-400 absolute -top-8 left-1/2 -translate-x-1/2 drop-shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
+                        <img src={leaderboardData[0].avatar} className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.6)]" />
+                        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-amber-400 border-4 border-slate-900 flex items-center justify-center font-black text-slate-900 text-lg shadow-lg">1</div>
+                      </div>
+                      <span className="text-white font-black text-sm max-w-[100px] truncate text-center">{leaderboardData[0].user}</span>
+                      <span className="text-amber-400 text-xs font-bold">{leaderboardData[0].score}</span>
+                      <div className="w-20 sm:w-24 h-32 bg-gradient-to-t from-amber-400/30 to-amber-400/5 mt-2 rounded-t-xl border-t-2 border-amber-400/50 flex flex-col items-center justify-start pt-4">
+                        <span className="text-amber-300 text-[10px] font-bold">10000 🪙</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rank 3 - Bronze */}
+                  {leaderboardData[2] && (
+                    <div className="flex flex-col items-center animate-slideUp" style={{ animationDelay: '200ms' }}>
+                      <div className="relative mb-2">
+                        <img src={leaderboardData[2].avatar} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-4 border-amber-700 shadow-[0_0_15px_rgba(180,83,9,0.5)]" />
+                        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-amber-700 border-2 border-slate-900 flex items-center justify-center font-black text-amber-100 text-sm shadow-lg">3</div>
+                      </div>
+                      <span className="text-white font-bold text-xs max-w-[70px] truncate text-center">{leaderboardData[2].user}</span>
+                      <span className="text-slate-400 text-[10px]">{leaderboardData[2].score}</span>
+                      <div className="w-14 sm:w-16 h-16 bg-gradient-to-t from-amber-700/20 to-amber-700/5 mt-2 rounded-t-xl border-t-2 border-amber-700/50" />
+                    </div>
+                  )}
+                </div>
+
+                {/* List View */}
+                <div className="space-y-3">
+                  {leaderboardData.slice(3).map((item, idx) => (
+                    <div 
+                      key={item.rank} 
+                      onClick={() => showToast(`مشاهده پروفایل ${item.user}`)}
+                      className={`card-3d p-4 rounded-3xl border flex items-center justify-between gap-3 cursor-pointer transition hover:bg-slate-800 ${item.isMe ? 'bg-amber-950/30 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : 'bg-slate-900 border-slate-800'}`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-8 font-black text-slate-500 text-sm text-center">
+                          {item.rank}
+                        </div>
+                        <img src={item.avatar} alt={item.user} className="w-12 h-12 rounded-2xl object-cover ring-2 ring-slate-700 shrink-0" />
+                        <div>
+                          <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                            {item.user}
+                            {item.isMe && <span className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[9px] font-black uppercase">You</span>}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] text-slate-400 font-medium bg-slate-950 px-2 py-0.5 rounded-lg border border-slate-800">
+                              LVL {item.level}
+                            </span>
+                            <span className="text-[10px] text-amber-400 font-bold">
+                              {item.badge}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-end">
+                        <div className="text-sm font-black text-white flex items-center gap-1">
+                          {item.score}
+                          <span className="text-[10px] text-slate-400 font-normal">{item.label}</span>
+                        </div>
+                        {lbMainTab === 'streamers' && (
+                          <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-1">
+                            <span className="flex items-center gap-0.5"><Eye className="w-3 h-3" /> {item.viewers}</span>
+                            <span className="flex items-center gap-0.5"><Gift className="w-3 h-3 text-pink-500/70" /> {item.gifts}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* STORIES REEL CAROUSEL BAR */}
+            <div className="bg-slate-900/80 p-3.5 rounded-3xl border border-slate-800/90 shadow-lg space-y-2" dir={isRtl ? "rtl" : "ltr"}>
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-black text-white flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
+                  استوری‌های لحظه‌ای (Stories)
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsStoryArchiveOpen(true)}
+                    className="text-[10px] font-bold text-slate-400 hover:text-pink-400 flex items-center gap-1 transition"
+                  >
+                    <History className="w-3 h-3" />
+                    آرشیو استوری‌ها
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar">
+                {/* Create Story Button */}
+                <div className="flex flex-col items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => setIsCreateStoryOpen(true)}
+                    className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-950 p-0.5 border-2 border-dashed border-pink-500/60 hover:border-pink-400 transition flex items-center justify-center group shadow-md"
+                  >
+                    <img src={userAvatar} alt="My Avatar" className="w-full h-full rounded-full object-cover group-hover:scale-105 transition" />
+                    <div className="absolute inset-0 bg-slate-950/40 rounded-full flex items-center justify-center">
+                      <div className="w-6 h-6 rounded-full bg-pink-500 text-slate-950 flex items-center justify-center font-black shadow-lg">
+                        <Plus className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </button>
+                  <span className="text-[10px] font-bold text-slate-300">افزودن استوری</span>
+                </div>
+
+                {/* Story Circles */}
+                {advancedStories.map(story => (
+                  <div 
+                    key={story.id} 
+                    onClick={() => handleOpenStory(story)}
+                    className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                  >
+                    <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 transition group-hover:scale-105 shadow-md ${story.hasUnseen ? 'bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 animate-pulse' : 'bg-slate-700'}`}>
+                      <div className="w-full h-full bg-slate-950 rounded-full p-0.5">
+                        <img src={story.user.avatar} alt={story.user.name} className="w-full h-full rounded-full object-cover" />
+                      </div>
+                      {story.user.isVip && (
+                        <div className="absolute -top-1 -right-1 bg-amber-400 text-slate-950 rounded-full p-0.5 shadow-md">
+                          <Crown className="w-3 h-3 fill-slate-950" />
+                        </div>
+                      )}
+                      {story.user.isPromo && (
+                        <div className="absolute -bottom-1 -left-1 bg-pink-600 text-white text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase border border-slate-900 shadow">
+                          Ad
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-300 max-w-[65px] truncate text-center">
+                      {story.isMe ? 'استوری من' : story.user.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 2. SUBTABS NAVIGATION BAR */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar border-b border-slate-800/80">
+              <button
+                onClick={() => setCallMainSubTab('recent')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'recent' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
+              >
+                <Clock className="w-4 h-4" />
+                <span>تاریخچه اخیر (Recent Calls)</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono">{callHistoryList.length}</span>
+              </button>
+
+              <button
+                onClick={() => setCallMainSubTab('contacts')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'contacts' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
+              >
+                <Users className="w-4 h-4" />
+                <span>مخاطبین (Contacts)</span>
+              </button>
+
+              <button
+                onClick={() => setCallMainSubTab('favorites')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'favorites' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
+              >
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+                <span>علاقه‌مندی‌ها (Favorites)</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono">{favoriteContacts.length}</span>
+              </button>
+
+              <button
+                onClick={() => setCallMainSubTab('scheduled')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'scheduled' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
+              >
+                <Calendar className="w-4 h-4 text-cyan-400" />
+                <span>تماس‌های برنامه‌ریزی‌شده</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono">{scheduledCallsList.length}</span>
+              </button>
+
+              <button
+                onClick={() => setCallMainSubTab('tariffs')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'tariffs' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
+              >
+                <DollarSign className="w-4 h-4 text-amber-400" />
+                <span>تعرفه و تنظیمات پولی</span>
+              </button>
+
+              <button
+                onClick={() => setCallMainSubTab('dialpad')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'dialpad' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
+              >
+                <PhoneCall className="w-4 h-4 text-emerald-400" />
+                <span>شماره‌گیر (Dialpad)</span>
+              </button>
+            </div>
+
+            {/* SUBTAB 1: RECENT CALLS */}
+            {callMainSubTab === 'recent' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                    {['all', 'voice', 'video', 'missed', 'rejected', 'paid'].map(f => (
+                      <button
+                        key={f}
+                        onClick={() => setCallLogFilter(f)}
+                        className={`px-3 py-1 rounded-xl text-xs font-bold capitalize transition ${callLogFilter === f ? 'bg-pink-500 text-white shadow-md' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700'}`}
+                      >
+                        {f === 'all' ? 'همه' : f === 'voice' ? 'صوتی 📞' : f === 'video' ? 'تصویری 📹' : f === 'missed' ? 'از دست رفته 🔴' : f === 'rejected' ? 'رد شده 🚫' : 'پولی 🪙'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 flex-1 max-w-xs">
+                    <Search className="w-3.5 h-3.5 text-slate-500" />
+                    <input
+                      type="text"
+                      value={callSearchQuery}
+                      onChange={e => setCallSearchQuery(e.target.value)}
+                      placeholder="جستجو در تاریخچه تماس..."
+                      className="w-full bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {callHistoryList
+                    .filter(item => {
+                      if (callLogFilter === 'voice' && item.type !== 'voice') return false;
+                      if (callLogFilter === 'video' && item.type !== 'video') return false;
+                      if (callLogFilter === 'missed' && item.direction !== 'missed') return false;
+                      if (callLogFilter === 'rejected' && item.direction !== 'rejected') return false;
+                      if (callLogFilter === 'paid' && !item.isPaid) return false;
+                      if (callSearchQuery && !item.user.name.toLowerCase().includes(callSearchQuery.toLowerCase())) return false;
+                      return true;
+                    })
+                    .map(log => (
+                      <div key={log.id} className="card-3d p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-pink-500/40 flex items-center justify-between gap-3 transition">
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <img src={log.user.avatar} alt={log.user.name} className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-700" />
+                            <span className={`absolute -bottom-1 -left-1 p-1 rounded-full border border-slate-950 text-[10px] ${log.type === 'video' ? 'bg-purple-600 text-white' : 'bg-cyan-600 text-white'}`}>
+                              {log.type === 'video' ? <Video className="w-2.5 h-2.5" /> : <PhoneCall className="w-2.5 h-2.5" />}
+                            </span>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="text-xs font-bold text-white">{log.user.name}</h4>
+                              {log.user.isVip && <Crown className="w-3 h-3 text-amber-400 fill-amber-400/20" />}
+                              {log.isPaid && <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/30">پولی</span>}
+                            </div>
+
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                              <span className="flex items-center gap-1">
+                                {log.direction === 'missed' ? <PhoneMissed className="w-3 h-3 text-rose-500" /> : log.direction === 'incoming' ? <PhoneIncoming className="w-3 h-3 text-emerald-400" /> : <PhoneOutgoing className="w-3 h-3 text-cyan-400" />}
+                                <span className={log.direction === 'missed' ? 'text-rose-400 font-bold' : ''}>
+                                  {log.direction === 'missed' ? 'از دست رفته' : log.direction === 'rejected' ? 'رد شده' : log.direction === 'incoming' ? 'ورودی' : 'خروجی'}
+                                </span>
+                              </span>
+                              <span>•</span>
+                              <span>{log.time} ({log.duration})</span>
+                              {log.coinsSpent > 0 && (
+                                <span className="text-amber-400 font-mono flex items-center gap-0.5">
+                                  <Coins className="w-2.5 h-2.5" /> {log.coinsSpent} سکه
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleInitiateCall(log.user, 'voice', '1on1')}
+                            className="p-2 rounded-xl bg-slate-950 border border-slate-800 text-cyan-400 hover:bg-cyan-600 hover:text-white transition"
+                            title="تماس صوتی"
+                          >
+                            <PhoneCall className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleInitiateCall(log.user, 'video', '1on1')}
+                            className="p-2 rounded-xl bg-pink-500/20 border border-pink-500/40 text-pink-300 hover:bg-pink-500 hover:text-white transition"
+                            title="تماس تصویری"
+                          >
+                            <Video className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* SUBTAB 2: CONTACTS */}
+            {callMainSubTab === 'contacts' && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {conversations.map(conv => (
+                    <div key={conv.id} className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <img src={conv.user.avatar} alt={conv.user.name} className="w-12 h-12 rounded-2xl object-cover ring-2 ring-pink-500/30" />
+                          <span className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full ring-2 ring-slate-950 ${conv.user.online ? 'bg-emerald-500' : 'bg-slate-500'}`} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="text-xs font-bold text-white">{conv.user.name}</h4>
+                            {conv.user.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400 fill-cyan-400/20" />}
+                            {conv.user.isVip && <Crown className="w-3.5 h-3.5 text-amber-400" />}
+                          </div>
+                          <p className="text-[10px] text-slate-400">{conv.user.role || 'کاربر رسمی'} • {conv.user.city || 'ایران'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleToggleFavoriteContact(conv.user.username)}
+                          className={`p-2 rounded-xl border transition ${favoriteContacts.includes(conv.user.username) ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-slate-950 text-slate-500 border-slate-800'}`}
+                        >
+                          <Star className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleInitiateCall(conv.user, 'voice', '1on1')}
+                          className="p-2 rounded-xl bg-slate-950 border border-slate-800 text-cyan-400 hover:bg-cyan-600 hover:text-white transition"
+                          title="Voice Call"
+                        >
+                          <PhoneCall className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleInitiateCall(conv.user, 'video', '1on1')}
+                          className="px-3 py-2 rounded-xl btn-neon-pink text-xs font-bold flex items-center gap-1"
+                        >
+                          <Video className="w-3.5 h-3.5" />
+                          <span>تماس</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SUBTAB 3: FAVORITES */}
+            {callMainSubTab === 'favorites' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {conversations.filter(c => favoriteContacts.includes(c.user.username)).map(c => (
+                  <div key={c.id} className="card-3d p-4 rounded-3xl bg-slate-900 border border-amber-500/30 flex flex-col items-center text-center space-y-3 relative overflow-hidden">
+                    <span className="absolute top-2 right-2 text-amber-400">
+                      <Star className="w-4 h-4 fill-amber-400" />
+                    </span>
+                    <img src={c.user.avatar} alt={c.user.name} className="w-16 h-16 rounded-3xl object-cover ring-2 ring-amber-400/50 shadow-lg" />
+                    <div>
+                      <h4 className="text-sm font-black text-white">{c.user.name}</h4>
+                      <p className="text-[10px] text-amber-300 font-semibold">{c.user.role || 'مخاطب ویژه'}</p>
+                    </div>
+                    <div className="flex items-center gap-2 w-full pt-1">
+                      <button
+                        onClick={() => handleInitiateCall(c.user, 'voice', '1on1')}
+                        className="flex-1 py-2 rounded-2xl bg-slate-950 text-cyan-300 border border-slate-800 text-xs font-bold flex items-center justify-center gap-1"
+                      >
+                        <PhoneCall className="w-3.5 h-3.5" /> صوتی
+                      </button>
+                      <button
+                        onClick={() => handleInitiateCall(c.user, 'video', '1on1')}
+                        className="flex-1 py-2 rounded-2xl btn-neon-pink text-xs font-bold flex items-center justify-center gap-1"
+                      >
+                        <Video className="w-3.5 h-3.5" /> تصویری
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* SUBTAB 4: SCHEDULED CALLS */}
+            {callMainSubTab === 'scheduled' && (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-bold text-white">تماس‌های رزرو شده آینده</h3>
+                  <button
+                    onClick={() => setIsScheduleCallModalOpen(true)}
+                    className="px-3 py-1.5 rounded-xl btn-neon-pink text-xs font-bold flex items-center gap-1"
+                  >
+                    <Plus className="w-4 h-4" /> افزودن رزرو جدید
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {scheduledCallsList.map(sch => (
+                    <div key={sch.id} className="card-3d p-4 rounded-2xl bg-slate-900 border border-purple-500/30 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img src={sch.user.avatar} alt={sch.user.name} className="w-12 h-12 rounded-2xl object-cover ring-2 ring-purple-500/40" />
+                        <div>
+                          <h4 className="text-xs font-bold text-white">{sch.user.name}</h4>
+                          <p className="text-[10px] text-purple-300 font-medium">{sch.note}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-cyan-400" /> {sch.dateTime}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleInitiateCall(sch.user, sch.type, '1on1')}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                      >
+                        <Video className="w-4 h-4" />
+                        <span>ورود به لابی</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SUBTAB 5: TARIFFS & CALL PRIVACY SETTINGS */}
+            {callMainSubTab === 'tariffs' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-amber-500/40 space-y-4">
+                  <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+                    <DollarSign className="w-5 h-5 text-amber-400" />
+                    <div>
+                      <h3 className="text-sm font-black text-white">تعرفه تماس پولی اختصاصی</h3>
+                      <p className="text-[10px] text-slate-400">تنظیم نرخ دریافت سکه از کاربران برای تماس‌های خصوصی 1 در 1</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                    <span className="text-xs font-bold text-white">فعال‌سازی تماس‌های پولی</span>
+                    <input
+                      type="checkbox"
+                      checked={streamerPaidCallEnabled}
+                      onChange={e => setStreamerPaidCallEnabled(e.target.checked)}
+                      className="w-4 h-4 accent-pink-500 cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-300">نرخ تماس (سکه در هر دقیقه):</label>
+                    <div className="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-2xl border border-slate-800">
+                      <Coins className="w-4 h-4 text-amber-400" />
+                      <input
+                        type="number"
+                        value={streamerCallTariffPerMin}
+                        onChange={e => setStreamerCallTariffPerMin(Number(e.target.value))}
+                        className="w-full bg-transparent text-xs font-bold text-amber-300 outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs">
+                    💡 درآمد حاصل از تماس‌های پولی به بخش Earnings و کیف پول شما منتقل می‌شود (سهم ۸۰٪ استریمر).
+                  </div>
+                </div>
+
+                <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-cyan-500/40 space-y-4">
+                  <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+                    <ShieldCheck className="w-5 h-5 text-cyan-400" />
+                    <div>
+                      <h3 className="text-sm font-black text-white">حریم خصوصی و امنیت تماس</h3>
+                      <p className="text-[10px] text-slate-400">مدیریت افراد مجاز برای برقراری تماس و رمزنگاری 256 بیتی</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-300">دریافت تماس فقط از:</label>
+                    <select
+                      value={privacyWhoCall}
+                      onChange={e => setPrivacyWhoCall(e.target.value)}
+                      className="w-full bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs text-white outline-none cursor-pointer"
+                    >
+                      <option value="Everyone">همه کاربران (Everyone)</option>
+                      <option value="Friends">فقط دوستان (Friends Only)</option>
+                      <option value="Followers">فقط دنبال‌کنندگان (Followers Only)</option>
+                      <option value="VIP Only">فقط اعضای VIP 👑</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-cyan-400" />
+                      <span className="text-xs font-bold text-white">رمزنگاری سرتاسری (256-Bit E2E)</span>
+                    </div>
+                    <span className="text-xs font-bold text-emerald-400">فعال 🔒</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* SUBTAB 6: INTERACTIVE DIALPAD */}
+            {callMainSubTab === 'dialpad' && (
+              <div className="max-w-md mx-auto space-y-5 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+                {/* Input Display Screen */}
+                <div className="card-3d p-4 rounded-3xl bg-slate-900 border border-purple-500/40 flex flex-col items-center justify-center space-y-2 relative overflow-hidden shadow-2xl">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">شماره‌گیر مستقیم P2P</span>
+                  <div className="flex items-center justify-between w-full px-4 py-2 bg-slate-950 rounded-2xl border border-slate-800">
+                    <input
+                      type="text"
+                      value={dialpadInput}
+                      onChange={e => setDialpadInput(e.target.value)}
+                      placeholder="شماره یا آیدی کاربر..."
+                      className="bg-transparent text-lg font-black font-mono text-emerald-400 outline-none w-full text-center tracking-widest"
+                    />
+                    {dialpadInput && (
+                      <button 
+                        onClick={() => setDialpadInput(prev => prev.slice(0, -1))}
+                        className="p-1.5 text-slate-400 hover:text-rose-400 transition"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Keypad Grid */}
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { num: '1', sub: '' },
+                    { num: '2', sub: 'ABC' },
+                    { num: '3', sub: 'DEF' },
+                    { num: '4', sub: 'GHI' },
+                    { num: '5', sub: 'JKL' },
+                    { num: '6', sub: 'MNO' },
+                    { num: '7', sub: 'PQRS' },
+                    { num: '8', sub: 'TUV' },
+                    { num: '9', sub: 'WXYZ' },
+                    { num: '*', sub: '' },
+                    { num: '0', sub: '+' },
+                    { num: '#', sub: '' }
+                  ].map(k => (
+                    <button
+                      key={k.num}
+                      onClick={() => setDialpadInput(prev => prev + k.num)}
+                      className="card-3d py-3.5 rounded-2xl bg-slate-900 border border-slate-800/80 hover:border-pink-500/50 hover:bg-slate-800 transition flex flex-col items-center justify-center shadow-md active:scale-95"
+                    >
+                      <span className="text-xl font-black text-white font-mono">{k.num}</span>
+                      {k.sub && <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{k.sub}</span>}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Call Action Buttons */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      if (!dialpadInput) {
+                        showToast("لطفاً شماره یا آیدی کاربر را وارد کنید");
+                        return;
+                      }
+                      const matchedUser = conversations.find(c => c.user.username.toLowerCase().includes(dialpadInput.toLowerCase()) || c.user.name.toLowerCase().includes(dialpadInput.toLowerCase()))?.user || {
+                        username: dialpadInput,
+                        name: `User ${dialpadInput}`,
+                        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+                        isVip: false
+                      };
+                      handleInitiateCall(matchedUser, 'voice', '1on1');
+                      showToast(`برقراری تماس صوتی با ${matchedUser.name}...`);
+                    }}
+                    className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition"
+                  >
+                    <PhoneCall className="w-4 h-4" />
+                    <span>تماس صوتی</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (!dialpadInput) {
+                        showToast("لطفاً شماره یا آیدی کاربر را وارد کنید");
+                        return;
+                      }
+                      const matchedUser = conversations.find(c => c.user.username.toLowerCase().includes(dialpadInput.toLowerCase()) || c.user.name.toLowerCase().includes(dialpadInput.toLowerCase()))?.user || {
+                        username: dialpadInput,
+                        name: `User ${dialpadInput}`,
+                        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+                        isVip: true
+                      };
+                      handleInitiateCall(matchedUser, 'video', '1on1');
+                      showToast(`برقراری تماس تصویری HD با ${matchedUser.name}...`);
+                    }}
+                    className="flex-1 py-3.5 rounded-2xl btn-neon-pink text-xs font-black flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 active:scale-95 transition"
+                  >
+                    <Video className="w-4 h-4" />
+                    <span>تماس تصویری</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
         )}
+
+        {/* TAB: REDESIGNED PREMIUM INTERACTIVE MATCH EXPERIENCE */}
+        {activeTab === 'match' && (
+          <div className="space-y-4 max-w-md mx-auto animate-fadeIn pb-12">
+            
+            {/* 1. Top Header & Smart Filter Bar */}
+            <div className="card-3d p-3.5 rounded-3xl bg-slate-900/90 border border-pink-500/30 flex items-center justify-between gap-3 backdrop-blur-xl shadow-[0_0_40px_rgba(236,72,153,0.2)]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-pink-500/30">
+                  <Flame className="w-5 h-5 text-white animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-1.5">
+                    <span>V.Live Match</span>
+                    <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-pink-500 text-slate-950 text-[10px] font-black uppercase tracking-wider">VIP</span>
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>{matchDeckProfiles.length} Online Matches</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRandomMatch}
+                  className="px-3 py-2 rounded-2xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 active:scale-95 transition flex items-center gap-1.5 text-xs font-bold shadow-md"
+                  title="Random Discovery"
+                >
+                  <Shuffle className="w-4 h-4 text-indigo-400" />
+                  <span className="hidden xs:inline">🎲 Random</span>
+                </button>
+                <button
+                  onClick={() => setIsMatchFilterOpen(true)}
+                  className="p-2.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-pink-400 border border-slate-700 active:scale-95 transition flex items-center gap-1.5 shadow-md"
+                  title="Smart Match Filters"
+                >
+                  <Sliders className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* 2. Sub-Tabs Switcher */}
+            <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800/80 shadow-inner">
+              <button
+                onClick={() => setMatchSubTab('swipe')}
+                className={`py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${matchSubTab === 'swipe' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/25' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                <span>🔥</span>
+                <span>Match Deck</span>
+              </button>
+              <button
+                onClick={() => setMatchSubTab('roulette')}
+                className={`py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${matchSubTab === 'roulette' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-purple-500/25' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                <span>🎲</span>
+                <span>30s Video</span>
+              </button>
+              <button
+                onClick={() => setMatchSubTab('likes')}
+                className={`py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${matchSubTab === 'likes' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-purple-500/25' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                <span>👑</span>
+                <span>Liked You</span>
+              </button>
+            </div>
+
+            {/* 3. SUB-TAB 1: SWIPE MATCH DECK */}
+            {matchSubTab === 'swipe' && (
+              <div className="space-y-4">
+                {matchCardIndex < matchDeckProfiles.length && matchDeckProfiles[matchCardIndex] ? (
+                  <div 
+                    onTouchStart={(e) => {
+                      const touch = e.touches[0];
+                      setIsSwipeDragging(true);
+                      swipeStartPos.current = { x: touch.clientX, y: touch.clientY };
+                    }}
+                    onTouchMove={(e) => {
+                      if (!isSwipeDragging) return;
+                      const touch = e.touches[0];
+                      setSwipeDragPos({
+                        x: touch.clientX - swipeStartPos.current.x,
+                        y: touch.clientY - swipeStartPos.current.y
+                      });
+                    }}
+                    onTouchEnd={() => {
+                      if (!isSwipeDragging) return;
+                      setIsSwipeDragging(false);
+                      if (swipeDragPos.x > 80) triggerMatchAction('like');
+                      else if (swipeDragPos.x < -80) triggerMatchAction('reject');
+                      else if (swipeDragPos.y < -80) triggerMatchAction('superlike');
+                      else setSwipeDragPos({ x: 0, y: 0 });
+                    }}
+                    onMouseDown={(e) => {
+                      setIsSwipeDragging(true);
+                      swipeStartPos.current = { x: e.clientX, y: e.clientY };
+                    }}
+                    onMouseMove={(e) => {
+                      if (!isSwipeDragging) return;
+                      setSwipeDragPos({
+                        x: e.clientX - swipeStartPos.current.x,
+                        y: e.clientY - swipeStartPos.current.y
+                      });
+                    }}
+                    onMouseUp={() => {
+                      if (!isSwipeDragging) return;
+                      setIsSwipeDragging(false);
+                      if (swipeDragPos.x > 80) triggerMatchAction('like');
+                      else if (swipeDragPos.x < -80) triggerMatchAction('reject');
+                      else if (swipeDragPos.y < -80) triggerMatchAction('superlike');
+                      else setSwipeDragPos({ x: 0, y: 0 });
+                    }}
+                    onMouseLeave={() => {
+                      if (isSwipeDragging) {
+                        setIsSwipeDragging(false);
+                        setSwipeDragPos({ x: 0, y: 0 });
+                      }
+                    }}
+                    style={{
+                      transform: `translate(${swipeDragPos.x}px, ${swipeDragPos.y}px) rotate(${swipeDragPos.x * 0.05}deg)`,
+                      transition: isSwipeDragging ? 'none' : 'transform 0.3s ease'
+                    }}
+                    className="relative min-h-[480px] sm:min-h-[520px] rounded-3xl overflow-hidden bg-slate-950 border border-pink-500/30 shadow-[0_0_60px_rgba(236,72,153,0.3)] flex flex-col justify-end select-none touch-none cursor-grab active:cursor-grabbing group"
+                  >
+                    {/* Blurred Image Backdrop for Depth */}
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center filter blur-2xl opacity-45 scale-125 pointer-events-none"
+                      style={{ backgroundImage: `url(${matchDeckProfiles[matchCardIndex].avatar})` }}
+                    />
+
+                    {/* Main Profile Photo */}
+                    <img 
+                      src={matchDeckProfiles[matchCardIndex].avatar} 
+                      alt={matchDeckProfiles[matchCardIndex].name} 
+                      className="absolute inset-0 w-full h-full object-cover filter brightness-95 pointer-events-none group-hover:scale-105 transition duration-700" 
+                    />
+
+                    {/* Gradient Vignette Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent pointer-events-none" />
+
+                    {/* Gesture Stamps */}
+                    {isSwipeDragging && swipeDragPos.x > 30 && (
+                      <div className="absolute top-12 left-6 z-30 px-5 py-2 rounded-2xl border-4 border-emerald-400 bg-emerald-500/20 text-emerald-300 font-black text-2xl uppercase tracking-widest rotate-[-12deg] backdrop-blur-md shadow-2xl animate-pulse">
+                        ❤️ LIKE
+                      </div>
+                    )}
+                    {isSwipeDragging && swipeDragPos.x < -30 && (
+                      <div className="absolute top-12 right-6 z-30 px-5 py-2 rounded-2xl border-4 border-rose-500 bg-rose-500/20 text-rose-300 font-black text-2xl uppercase tracking-widest rotate-[12deg] backdrop-blur-md shadow-2xl animate-pulse">
+                        ❌ PASS
+                      </div>
+                    )}
+                    {isSwipeDragging && swipeDragPos.y < -30 && (
+                      <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 px-5 py-2 rounded-2xl border-4 border-amber-400 bg-amber-500/20 text-amber-300 font-black text-2xl uppercase tracking-widest backdrop-blur-md shadow-2xl animate-pulse">
+                        ⭐ SUPER LIKE
+                      </div>
+                    )}
+
+                    {/* Top Badges */}
+                    <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20 pointer-events-none">
+                      <div className="px-3 py-1.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-white/20 text-white text-xs font-black flex items-center gap-1.5 shadow-lg">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>{matchDeckProfiles[matchCardIndex].distance}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-1.5">
+                        {matchDeckProfiles[matchCardIndex].isVerified && (
+                          <div className="px-3 py-1.5 rounded-full bg-blue-500/20 backdrop-blur-md border border-blue-400/40 text-blue-300 text-xs font-black flex items-center gap-1 shadow-lg">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
+                            <span>Verified</span>
+                          </div>
+                        )}
+                        {matchDeckProfiles[matchCardIndex].isVip && (
+                          <div className="px-3 py-1.5 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-400/40 text-amber-300 text-xs font-black flex items-center gap-1 shadow-lg">
+                            <Crown className="w-3.5 h-3.5 text-amber-400" />
+                            <span>VIP</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Card Info Section at Bottom (Minimal Text, Pure Icons & Badges) */}
+                    <div className="relative z-20 p-5 space-y-3.5 pointer-events-auto">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2">
+                            <span>{matchDeckProfiles[matchCardIndex].name}</span>
+                            <span className="px-2.5 py-0.5 rounded-xl bg-white/20 backdrop-blur-md text-white text-sm font-bold">
+                              {matchDeckProfiles[matchCardIndex].age}
+                            </span>
+                          </h2>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-200 font-bold mt-1">
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-pink-400" />
+                            {matchDeckProfiles[matchCardIndex].city}
+                          </span>
+                          <span>•</span>
+                          <span className="text-emerald-400 flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                            Active Now
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Interest Tags */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {matchDeckProfiles[matchCardIndex].interests.map((tag, i) => (
+                          <span key={i} className="px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold shadow-md">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* ACTION BUTTONS BAR (Row of 6 sleek 3D round buttons) */}
+                      <div className="grid grid-cols-6 gap-2 pt-2">
+                        
+                        {/* 1. Pass / Reject */}
+                        <button 
+                          onClick={() => triggerMatchAction('reject')}
+                          className="h-12 rounded-2xl bg-slate-900/90 border border-rose-500/40 text-rose-400 hover:bg-rose-500/20 flex items-center justify-center shadow-lg active:scale-90 transition group"
+                          title="Pass"
+                        >
+                          <X className="w-6 h-6 group-hover:scale-110 transition" />
+                        </button>
+
+                        {/* 2. Instant Gift */}
+                        <button 
+                          onClick={() => triggerMatchAction('gift')}
+                          className="h-12 rounded-2xl bg-slate-900/90 border border-amber-500/40 text-amber-400 hover:bg-amber-500/20 flex items-center justify-center shadow-lg active:scale-90 transition group"
+                          title="Send Virtual Gift"
+                        >
+                          <Gift className="w-6 h-6 group-hover:scale-110 transition animate-bounce" />
+                        </button>
+
+                        {/* 3. Super Like */}
+                        <button 
+                          onClick={() => triggerMatchAction('superlike')}
+                          className="h-12 rounded-2xl bg-slate-900/90 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/20 flex items-center justify-center shadow-lg active:scale-90 transition group"
+                          title="Super Like"
+                        >
+                          <Star className="w-6 h-6 group-hover:scale-110 transition text-amber-400 fill-amber-400" />
+                        </button>
+
+                        {/* 4. Like */}
+                        <button 
+                          onClick={() => triggerMatchAction('like')}
+                          className="h-12 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.6)] active:scale-90 transition group"
+                          title="Like"
+                        >
+                          <Heart className="w-7 h-7 fill-white group-hover:scale-125 transition" />
+                        </button>
+
+                        {/* 5. Direct Message */}
+                        <button 
+                          onClick={() => {
+                            const target = matchDeckProfiles[matchCardIndex];
+                            setIsMatchModalOpen(false);
+                            setActiveTab('messages');
+                            showToast(`💬 Opened chat with @${target.name || target.username}`);
+                          }}
+                          className="h-12 rounded-2xl bg-slate-900/90 border border-purple-500/40 text-purple-300 hover:bg-purple-500/20 flex items-center justify-center shadow-lg active:scale-90 transition group"
+                          title="Chat"
+                        >
+                          <MessageSquare className="w-6 h-6 group-hover:scale-110 transition" />
+                        </button>
+
+                        {/* 6. Video Call */}
+                        <button 
+                          onClick={() => {
+                            const target = matchDeckProfiles[matchCardIndex];
+                            handleInitiateCall(target, 'video', '1on1');
+                            setIsMatchModalOpen(false);
+                            showToast(`📹 Calling ${target.name}...`);
+                          }}
+                          className="h-12 rounded-2xl bg-slate-900/90 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/20 flex items-center justify-center shadow-lg active:scale-90 transition group"
+                          title="1on1 Video Call"
+                        >
+                          <Video className="w-6 h-6 group-hover:scale-110 transition" />
+                        </button>
+
+                      </div>
+
+                    </div>
+                  </div>
+                ) : (
+                  /* Empty State */
+                  <div className="py-16 text-center space-y-4 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-xl">
+                    <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-pink-500/20 to-purple-500/20 border border-pink-500/40 flex items-center justify-center text-4xl animate-bounce shadow-lg">
+                      ✨
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-lg font-black text-white">All Profiles Viewed!</h4>
+                      <p className="text-xs text-slate-400">Refresh the deck or adjust smart filters to discover more matches.</p>
+                    </div>
+                    <div className="flex items-center justify-center gap-3 pt-2">
+                      <button
+                        onClick={() => setMatchCardIndex(0)}
+                        className="px-6 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-105 active:scale-95 transition flex items-center gap-2"
+                      >
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Refresh Deck</span>
+                      </button>
+                      <button
+                        onClick={() => setIsMatchFilterOpen(true)}
+                        className="px-5 py-3 rounded-2xl bg-slate-800 text-slate-200 font-bold text-xs border border-slate-700 hover:bg-slate-700 active:scale-95 transition flex items-center gap-2"
+                      >
+                        <Sliders className="w-4 h-4 text-pink-400" />
+                        <span>Adjust Filters</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* SUB-TAB 2: 30S VIDEO ROULETTE */}
+            {matchSubTab === 'roulette' && (
+              <div className="card-3d p-5 rounded-3xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl shadow-xl space-y-5 text-center">
+                {matchState === 'idle' && (
+                  <div className="space-y-4 py-4">
+                    <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-pink-500/20 to-purple-500/20 border border-pink-500/40 flex items-center justify-center shadow-lg">
+                      <Video className="w-10 h-10 text-pink-400 animate-pulse" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-base font-black text-white">30s Live Video Roulette</h4>
+                      <p className="text-xs text-slate-400">Instant video call pairing with verified online users.</p>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-bold text-amber-400 flex items-center justify-between">
+                      <span>Daily Free Quota:</span>
+                      <span className="text-white bg-amber-500/20 px-2.5 py-1 rounded-xl border border-amber-500/40">{freeMatchCallsLeft} / 3</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (freeMatchCallsLeft <= 0) {
+                          showToast('⚠️ Daily free roulette quota reached.');
+                          return;
+                        }
+                        setMatchState('searching');
+                        setTimeout(() => {
+                          const realPartners = (Array.isArray(usersList) && usersList.length > 0)
+                            ? usersList.filter(u => u && u.username !== currentUsername && u.user_type !== 'TEST_USER' && u.user_type !== 'DEMO_USER' && (u.status === 'approved' || u.isApproved !== false))
+                            : [
+                                { name: 'Sara Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80', city: 'Tehran', isVerified: true },
+                                { name: 'Elnaz Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80', city: 'Shiraz', isVerified: true },
+                                { name: 'Sahar Miller', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', city: 'Tehran', isVerified: true }
+                              ];
+                          const randomPartner = realPartners[Math.floor(Math.random() * realPartners.length)] || realPartners[0];
+                          setMatchedMatchUser(randomPartner);
+                          setMatchState('connected');
+                          setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));
+                          setMatchCallSeconds(30);
+                          showToast(`🎉 Connected with @${randomPartner.name || randomPartner.username}!`);
+                        }, 2200);
+                      }}
+                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white font-black text-xs shadow-lg hover:scale-102 active:scale-95 transition flex items-center justify-center gap-2"
+                    >
+                      <Zap className="w-4 h-4 fill-white" />
+                      <span>Start 30s Video Roulette</span>
+                    </button>
+                  </div>
+                )}
+
+                {matchState === 'searching' && (
+                  <div className="py-12 text-center space-y-4">
+                    <div className="w-16 h-16 mx-auto rounded-full border-4 border-pink-500 border-t-transparent animate-spin shadow-lg" />
+                    <h4 className="text-sm font-black text-white">Matching with Random Partner...</h4>
+                    <p className="text-xs text-slate-400">Connecting video stream in 4K resolution...</p>
+                  </div>
+                )}
+
+                {matchState === 'connected' && matchedMatchUser && (
+                  <div className="space-y-4">
+                    <div className="relative aspect-video rounded-3xl overflow-hidden bg-slate-950 border border-pink-500/40 shadow-2xl flex items-center justify-center">
+                      <img src={matchedMatchUser.avatar} alt={matchedMatchUser.name} className="absolute inset-0 w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-black/30" />
+                      
+                      <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md border border-pink-500/40 text-pink-400 font-black text-xs flex items-center gap-1.5 animate-pulse">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{matchCallSeconds}s</span>
+                      </div>
+
+                      <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between">
+                        <div className="text-left">
+                          <h4 className="text-sm font-black text-white flex items-center gap-1">
+                            {matchedMatchUser.name}
+                            {matchedMatchUser.isVerified && <BadgeCheck className="w-4 h-4 text-blue-400" />}
+                          </h4>
+                          <p className="text-[10px] text-slate-300 font-bold">📍 {matchedMatchUser.city}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setMatchState('idle');
+                            showToast('📞 Call ended.');
+                          }}
+                          className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs shadow-lg active:scale-95 transition"
+                        >
+                          End Call
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* SUB-TAB 3: WHO LIKED YOU (VIP) */}
+            {matchSubTab === 'likes' && (
+              <div className="space-y-3">
+                <div className="card-3d p-4 rounded-3xl bg-slate-900/90 border border-amber-500/30 backdrop-blur-xl shadow-xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 font-black">
+                      👑
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-white">Who Liked Your Profile</h4>
+                      <p className="text-[10px] text-slate-400">See all active members who swiped right on you</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/40">VIP Perk</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {matchDeckProfiles.slice(0, 4).map((p, idx) => (
+                    <div key={idx} className="relative aspect-[3/4] rounded-3xl overflow-hidden bg-slate-950 border border-slate-800 shadow-lg group">
+                      <img src={p.avatar} alt={p.name} className="absolute inset-0 w-full h-full object-cover filter brightness-90 group-hover:scale-105 transition" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                      
+                      <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-pink-500/80 backdrop-blur-md text-white text-[9px] font-black flex items-center gap-1 shadow">
+                        ❤️ Liked You
+                      </div>
+
+                      <div className="absolute bottom-3 left-3 right-3 text-left space-y-1">
+                        <h5 className="text-xs font-black text-white flex items-center gap-1">
+                          {p.name}, {p.age}
+                        </h5>
+                        <div className="grid grid-cols-2 gap-1 pt-1">
+                          <button 
+                            onClick={() => {
+                              setMatchResultPopup(p);
+                            }}
+                            className="py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-[10px] shadow"
+                          >
+                            Match ❤️
+                          </button>
+                          <button 
+                            onClick={() => {
+                              handleInitiateCall(p, 'video', '1on1');
+                              showToast(`📹 Calling ${p.name}...`);
+                            }}
+                            className="py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-cyan-300 font-bold text-[10px]"
+                          >
+                            Video 📹
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
+
+        {/* TAB 2: COMPLETE REDESIGNED MESSAGES & DIRECT CHAT SYSTEM */}
+        {activeTab === 'messages' && (
+          <div className="space-y-4">
+            {/* 1. HEADER: USER AVATAR, TITLE, SEARCH & CREATION ACTIONS */}
+            <div className="card-3d p-4 rounded-3xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3 flex-wrap backdrop-blur-xl">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <img 
+                    src={userAvatar} 
+                    alt={userName} 
+                    className="w-10 h-10 rounded-2xl object-cover ring-2 ring-pink-500/40 shadow-md" 
+                  />
+                  <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-slate-950 flex items-center justify-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                  </span>
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h2 className="text-base font-black text-white tracking-tight flex items-center gap-1.5">
+                      💬 Messages (پیام‌ها)
+                    </h2>
+                    {totalUnreadMessages > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-pink-500 text-white font-black text-[10px] shadow-lg animate-pulse">
+                        {totalUnreadMessages} New
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-medium">Secure Encrypted Chat & LiveKit Calls</p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsChatSearchOpen(!isChatSearchOpen)}
+                  className={"p-2.5 rounded-2xl border transition " + (isChatSearchOpen ? "bg-pink-500 text-white border-pink-400" : "bg-slate-950 text-slate-300 border-slate-800 hover:border-pink-500/40")}
+                  title="Search Messages"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => setIsCreateGroupModalOpen(true)}
+                  className="px-3 py-2 rounded-2xl bg-purple-600/20 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 hover:bg-purple-600/30 transition shadow-md"
+                >
+                  <Users className="w-4 h-4 text-purple-400" />
+                  <span className="hidden sm:inline">Create Group</span>
+                </button>
+
+                <button
+                  onClick={() => setIsNewChatModalOpen(true)}
+                  className="px-3.5 py-2 rounded-2xl btn-neon-pink text-xs font-bold flex items-center gap-1.5 shadow-lg hover:scale-105 transition"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>New Chat</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 2. ADVANCED SEARCH BAR (NAME, ID, PHONE, CITY) */}
+            {isChatSearchOpen && (
+              <div className="card-3d p-3 rounded-2xl bg-slate-900 border border-pink-500/30 space-y-2 animate-fadeIn">
+                <div className="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800">
+                  <Search className="w-4 h-4 text-pink-400 shrink-0" />
+                  <input 
+                    type="text"
+                    value={msgSearchQuery}
+                    onChange={e => setMsgSearchQuery(e.target.value)}
+                    placeholder="Search by Name, Username ID, City, or Phone..."
+                    className="w-full bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
+                  />
+                  {msgSearchQuery && (
+                    <button onClick={() => setMsgSearchQuery('')} className="text-slate-400 hover:text-white">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px] font-bold text-slate-400">
+                  <span className="text-slate-500 shrink-0">Filter By:</span>
+                  {[
+                    { id: 'all', label: 'All Fields' },
+                    { id: 'name', label: 'Name' },
+                    { id: 'id', label: 'Username ID' },
+                    { id: 'city', label: 'City (شهر)' },
+                    { id: 'phone', label: 'Phone' }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setMsgSearchField(f.id)}
+                      className={"px-2.5 py-1 rounded-lg shrink-0 transition " + (msgSearchField === f.id ? "bg-pink-600 text-white font-black" : "bg-slate-950 border border-slate-800 hover:text-slate-200")}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 3. CATEGORY TABS: ALL, PRIVATE, GROUPS, CALLS, ARCHIVED */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs font-bold">
+              {[
+                { id: 'all', label: 'All', icon: MessageSquare, badge: conversations.length },
+                { id: 'private', label: 'Private (خصوصی)', icon: User, badge: conversations.filter(c => !c.isGroup && !c.archived).length },
+                { id: 'groups', label: 'Groups (گروه‌ها)', icon: Users, badge: conversations.filter(c => c.isGroup).length },
+                { id: 'calls', label: 'Calls (تماس‌ها)', icon: Phone, badge: conversations.filter(c => c.type === 'call').length },
+                { id: 'archived', label: 'Archived (بایگانی)', icon: Archive, badge: conversations.filter(c => c.archived).length }
+              ].map(tab => {
+                const IconComponent = tab.icon;
+                const isActive = msgFilterTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setMsgFilterTab(tab.id)}
+                    className={"px-4 py-2.5 rounded-2xl flex items-center gap-2 shrink-0 transition border " + (isActive ? "bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-400 shadow-lg shadow-pink-500/20" : "bg-slate-900/80 text-slate-400 border-slate-800/80 hover:bg-slate-800 hover:text-slate-200")}
+                  >
+                    <IconComponent className="w-4 h-4" />
+                    <span>{tab.label}</span>
+                    <span className={"px-2 py-0.5 rounded-full text-[9px] " + (isActive ? "bg-white/20 text-white font-black" : "bg-slate-950 text-slate-400")}>
+                      {tab.badge}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* MAIN MESSAGES LAYOUT: SIDEBAR + CHAT THREAD */}
+            <div className="card-3d rounded-3xl border border-slate-800 bg-slate-950/90 overflow-hidden h-[620px] flex flex-col md:flex-row shadow-2xl relative">
+              
+              {/* CONVERSATIONS LIST SIDEBAR */}
+              <div className={"w-full md:w-80 border-r border-slate-800/80 flex flex-col bg-slate-950 " + (activeConversationId ? "hidden md:flex" : "flex")}>
+                <div className="p-3 border-b border-slate-800/80 bg-slate-900/50 flex items-center justify-between text-xs font-bold text-slate-400">
+                  <span>Recent Conversations</span>
+                  <span className="text-[10px] text-pink-400">Live Sync</span>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar">
+                  {conversations
+                    .filter(conv => {
+                      if (msgFilterTab === 'private' && (conv.isGroup || conv.archived)) return false;
+                      if (msgFilterTab === 'groups' && !conv.isGroup) return false;
+                      if (msgFilterTab === 'calls' && conv.type !== 'call') return false;
+                      if (msgFilterTab === 'archived' && !conv.archived) return false;
+                      if (msgFilterTab === 'all' && conv.archived) return false;
+
+                      if (msgSearchQuery.trim()) {
+                        const q = msgSearchQuery.toLowerCase();
+                        const nameMatch = conv.user.name?.toLowerCase().includes(q);
+                        const idMatch = conv.user.username?.toLowerCase().includes(q);
+                        const cityMatch = conv.user.city?.toLowerCase().includes(q);
+                        const phoneMatch = conv.user.phone?.includes(q);
+
+                        if (msgSearchField === 'name') return nameMatch;
+                        if (msgSearchField === 'id') return idMatch;
+                        if (msgSearchField === 'city') return cityMatch;
+                        if (msgSearchField === 'phone') return phoneMatch;
+                        return nameMatch || idMatch || cityMatch || phoneMatch;
+                      }
+
+                      return true;
+                    })
+                    .map(conv => {
+                      const isSelected = activeConversationId === conv.id;
+                      return (
+                        <button
+                          key={conv.id}
+                          onClick={() => {
+                            setActiveConversationId(conv.id);
+                            setConversations(prev => prev.map(c => c.id === conv.id ? { ...c, unreadCount: 0 } : c));
+                          }}
+                          className={"w-full p-3 rounded-2xl flex items-center gap-3 transition text-left border relative group " + (isSelected ? "bg-gradient-to-r from-pink-500/20 via-purple-500/10 to-transparent border-pink-500/50 shadow-md" : "bg-slate-900/40 border-slate-800/60 hover:bg-slate-900 hover:border-slate-700")}
+                        >
+                          <div className="relative shrink-0">
+                            <img src={conv.user.avatar} alt={conv.user.name} className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-700" />
+                            {conv.user.online && !conv.isGroup && (
+                              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
+                            )}
+                            {conv.isGroup && (
+                              <span className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-purple-600 text-white ring-2 ring-slate-950">
+                                <Users className="w-2.5 h-2.5" />
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-bold text-white truncate flex items-center gap-1">
+                                {conv.user.name}
+                                {conv.user.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
+                                {conv.pinned && <Pin className="w-3 h-3 text-amber-400 shrink-0 fill-amber-400" />}
+                              </span>
+                              <span className="text-[9px] text-slate-500 font-mono shrink-0">{conv.lastTime}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between text-[11px]">
+                              <p className="text-slate-400 truncate flex-1 pr-2">
+                                {conv.lastMessage}
+                              </p>
+
+                              {conv.unreadCount > 0 ? (
+                                <span className="px-1.5 py-0.5 rounded-full bg-pink-500 text-slate-950 font-black text-[9px] shrink-0 shadow-sm">
+                                  {conv.unreadCount}
+                                </span>
+                              ) : conv.muted ? (
+                                <VolumeX className="w-3 h-3 text-slate-600 shrink-0" />
+                              ) : null}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* CHAT THREAD VIEW */}
+              <div className={"flex-1 flex flex-col bg-slate-950/60 relative " + (!activeConversationId ? "hidden md:flex" : "flex")}>
+                {activeConversationId ? (
+                  (() => {
+                    const currentConv = conversations.find(c => c.id === activeConversationId);
+                    if (!currentConv) return null;
+
+                    return (
+                      <>
+                        {/* 1. CHAT THREAD TOP HEADER */}
+                        <div className="p-3.5 border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md flex items-center justify-between gap-2 z-10">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <button 
+                              onClick={() => setActiveConversationId(null)}
+                              className="md:hidden p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
+                            >
+                              <ChevronLeft className="w-5 h-5" />
+                            </button>
+
+                            <div className="relative shrink-0">
+                              <img src={currentConv.user.avatar} alt={currentConv.user.name} className="w-10 h-10 rounded-2xl object-cover ring-2 ring-pink-500/30" />
+                              {currentConv.user.online && (
+                                <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
+                              )}
+                            </div>
+
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <h3 className="text-xs font-bold text-white truncate">{currentConv.user.name}</h3>
+                                {currentConv.user.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
+                              </div>
+                              <p className="text-[9px] text-emerald-400 font-bold flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                🟢 Online & Ready
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Direct Action Buttons in Header */}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              onClick={() => {
+                                handleInitiateCall(currentConv.user, 'voice', '1on1');
+                                showToast("Initiating Voice Call with " + currentConv.user.name + "...");
+                              }}
+                              className="p-2 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-slate-950 font-bold transition shadow-md"
+                              title="Voice Call"
+                            >
+                              <Phone className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                handleInitiateCall(currentConv.user, 'video', '1on1');
+                                showToast("Initiating 4K Video Call with " + currentConv.user.name + "...");
+                              }}
+                              className="p-2 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-600 hover:text-white font-bold transition shadow-md"
+                              title="Video Call"
+                            >
+                              <Video className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              onClick={() => setIsSendGiftInChatOpen(true)}
+                              className="p-2 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500 hover:text-slate-950 font-bold transition shadow-md"
+                              title="Send Gift"
+                            >
+                              <Gift className="w-4 h-4" />
+                            </button>
+
+                            <div className="relative">
+                              <button
+                                onClick={() => setShowChatOptionsMenu(!showChatOptionsMenu)}
+                                className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+
+                              {showChatOptionsMenu && (
+                                <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-1.5 z-50 text-xs font-semibold space-y-1 animate-fadeIn">
+                                  <button
+                                    onClick={() => {
+                                      setIsChatLocked(!isChatLocked);
+                                      setShowChatOptionsMenu(false);
+                                      showToast(isChatLocked ? 'Chat unlocked' : '🔒 Chat locked with passcode security');
+                                    }}
+                                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800 text-amber-300 flex items-center gap-2"
+                                  >
+                                    <Lock className="w-3.5 h-3.5" />
+                                    {isChatLocked ? 'Unlock Chat' : '🔒 Lock Chat'}
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      setIsChatGalleryOpen(true);
+                                      setShowChatOptionsMenu(false);
+                                    }}
+                                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800 text-slate-200 flex items-center gap-2"
+                                  >
+                                    <Image className="w-3.5 h-3.5 text-cyan-400" />
+                                    Media Gallery
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      showToast('Chat muted');
+                                      setShowChatOptionsMenu(false);
+                                    }}
+                                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800 text-slate-200 flex items-center gap-2"
+                                  >
+                                    <VolumeX className="w-3.5 h-3.5 text-purple-400" />
+                                    Mute Notifications
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      showToast('User reported to moderation');
+                                      setShowChatOptionsMenu(false);
+                                    }}
+                                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800 text-amber-400 flex items-center gap-2"
+                                  >
+                                    <AlertTriangle className="w-3.5 h-3.5" />
+                                    Report User
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      showToast('User blocked');
+                                      setShowChatOptionsMenu(false);
+                                    }}
+                                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800 text-rose-400 flex items-center gap-2"
+                                  >
+                                    <Ban className="w-3.5 h-3.5" />
+                                    Block User
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* PINNED MESSAGE BANNER */}
+                        {pinnedMessage && (
+                          <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 flex items-center justify-between text-xs text-amber-200">
+                            <div className="flex items-center gap-2 truncate">
+                              <Pin className="w-3.5 h-3.5 text-amber-400 shrink-0 fill-amber-400" />
+                              <span className="font-bold text-[10px] text-amber-400">Pinned:</span>
+                              <span className="truncate text-[11px]">{pinnedMessage.text}</span>
+                            </div>
+                            <button onClick={() => setPinnedMessage(null)} className="p-1 text-slate-400 hover:text-white">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+
+                        {/* MESSAGES SCROLL AREA */}
+                        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-950/80 custom-scrollbar">
+                          {currentConv.messages.map(msg => {
+                            const isMe = msg.sender === 'me';
+                            return (
+                              <div 
+                                key={msg.id} 
+                                className={"flex flex-col " + (isMe ? "items-end" : "items-start") + " group transition"}
+                              >
+                                {msg.senderName && !isMe && (
+                                  <span className="text-[9px] font-bold text-purple-400 mb-0.5 px-1">{msg.senderName}</span>
+                                )}
+
+                                <div className="relative group max-w-[82%]">
+                                  <div 
+                                    className={"p-3.5 rounded-3xl text-xs space-y-1.5 shadow-xl transition-all duration-300 relative border " + (isMe ? "bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 text-white rounded-br-xs border-pink-400/40" : "bg-slate-900/90 text-slate-100 rounded-bl-xs border-slate-800")}
+                                  >
+                                    {msg.type === 'gift' ? (
+                                      <div className="flex items-center gap-2 p-2 rounded-2xl bg-slate-950/60 border border-amber-500/30 text-amber-300 font-bold">
+                                        <span className="text-2xl">👑</span>
+                                        <div>
+                                          <p className="text-xs text-white">{msg.text}</p>
+                                          <span className="text-[10px] text-amber-400 font-black">+500 Coins Value</span>
+                                        </div>
+                                      </div>
+                                    ) : msg.type === 'coins' ? (
+                                      <div className="flex items-center gap-2 p-2 rounded-2xl bg-slate-950/60 border border-emerald-500/30 text-emerald-300 font-bold">
+                                        <span className="text-2xl">💸</span>
+                                        <div>
+                                          <p className="text-xs text-white">{msg.text}</p>
+                                          <span className="text-[10px] text-emerald-400 font-black">Direct Transfer Completed</span>
+                                        </div>
+                                      </div>
+                                    ) : msg.type === 'voice' ? (
+                                      <div className="flex items-center gap-3 p-2 bg-slate-950/60 rounded-2xl border border-slate-800">
+                                        <button className="w-8 h-8 rounded-full bg-pink-500 text-slate-950 flex items-center justify-center font-bold shadow-md">
+                                          ▶
+                                        </button>
+                                        <div className="flex-1 h-3 flex items-center gap-0.5">
+                                          {[40, 70, 30, 90, 100, 60, 80, 50, 90, 40, 70, 100].map((h, i) => (
+                                            <div key={i} className="flex-1 bg-pink-400/60 rounded-full" style={{ height: h + "%" }} />
+                                          ))}
+                                        </div>
+                                        <span className="text-[10px] font-mono text-slate-300">0:12</span>
+                                      </div>
+                                     ) : (
+                                       <>
+                                         <p className="leading-relaxed whitespace-pre-wrap">
+                                           {msg.translated && msg.translation ? (
+                                             <span className="block">{msg.translation}</span>
+                                           ) : (
+                                             msg.text
+                                           )}
+                                         </p>
+                                         {msg.translated && msg.translation && (
+                                           <span className="inline-flex items-center gap-1 text-[9px] text-cyan-300 font-mono bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-500/30 w-fit mt-1">
+                                             <Globe className="w-2.5 h-2.5 text-cyan-400" />
+                                             🌐 {t('translated', 'ترجمه‌شده')} ({msg.translationLang || langCode})
+                                           </span>
+                                         )}
+                                       </>
+                                     )}
+
+                                    {msg.reactions && msg.reactions.length > 0 && (
+                                      <div className="flex items-center gap-1 mt-1 bg-slate-950/80 px-2 py-0.5 rounded-full border border-slate-800 shrink-0 w-fit text-[11px]">
+                                        {msg.reactions.map((r, i) => <span key={i}>{r}</span>)}
+                                      </div>
+                                    )}
+
+                                    <div className="flex items-center justify-end gap-1 text-[8px] text-slate-300 pt-1">
+                                      <span>{msg.time}</span>
+                                      {isMe && (
+                                        <CheckCheck className="w-3 h-3 text-cyan-300" title="Read" />
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="hidden group-hover:flex items-center gap-1 absolute -top-3 right-2 bg-slate-900 border border-slate-700 rounded-full px-2 py-0.5 shadow-xl text-[10px] z-20">
+                                    <button 
+                                      onClick={() => {
+                                        setConversations(prev => prev.map(c => {
+                                          if (c.id === activeConversationId) {
+                                            return {
+                                              ...c,
+                                              messages: c.messages.map(m => m.id === msg.id ? { ...m, reactions: [...(m.reactions || []), '❤️'] } : m)
+                                            };
+                                          }
+                                          return c;
+                                        }));
+                                      }}
+                                      className="hover:scale-125 transition"
+                                      title="React Heart"
+                                    >
+                                      ❤️
+                                    </button>
+                                    <button 
+                                      onClick={() => {
+                                        setConversations(prev => prev.map(c => {
+                                          if (c.id === activeConversationId) {
+                                            return {
+                                              ...c,
+                                              messages: c.messages.map(m => m.id === msg.id ? { ...m, reactions: [...(m.reactions || []), '🔥'] } : m)
+                                            };
+                                          }
+                                          return c;
+                                        }));
+                                      }}
+                                      className="hover:scale-125 transition"
+                                      title="React Fire"
+                                    >
+                                      🔥
+                                    </button>
+                                    <button 
+                                      onClick={() => handleTranslateChatMessage(msg.id, msg.text)}
+                                      className="text-cyan-400 hover:text-white font-bold ml-1 flex items-center gap-0.5"
+                                      title="Translate Message"
+                                    >
+                                      🌍 {msg.translated ? 'Original' : 'Translate'}
+                                    </button>
+                                    <button 
+                                      onClick={() => setPinnedMessage(msg)}
+                                      className="text-amber-400 hover:text-white ml-1"
+                                      title="Pin Message"
+                                    >
+                                      📌
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* POPOVERS: AI ASSISTANT, EMOJIS, ATTACHMENTS */}
+                        {showAiAssistant && (
+                          <div className="p-3 bg-slate-900 border-t border-purple-500/40 space-y-2 animate-fadeIn z-20">
+                            <div className="flex items-center justify-between text-xs font-bold text-purple-300">
+                              <span className="flex items-center gap-1.5">
+                                <Bot className="w-4 h-4 text-purple-400" />
+                                🤖 AI Chat Assistant (هوش مصنوعی)
+                              </span>
+                              <button onClick={() => setShowAiAssistant(false)} className="text-slate-400 hover:text-white">
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px] font-bold">
+                              {[
+                                'Thanks for your live! 💖',
+                                "Let's do a video call 📹",
+                                'How are you doing today? 😊',
+                                'Sent you a gift! 🎁'
+                              ].map((suggestion, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => {
+                                    setDirectInputText(suggestion);
+                                    setShowAiAssistant(false);
+                                  }}
+                                  className="p-2 rounded-xl bg-purple-950/60 border border-purple-500/30 text-purple-200 hover:bg-purple-600 hover:text-white transition text-left truncate"
+                                >
+                                  ✨ {suggestion}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {showEmojiPicker && (
+                          <div className="p-3 bg-slate-900 border-t border-slate-800 animate-fadeIn z-20">
+                            <div className="flex items-center justify-between mb-2 text-xs font-bold text-slate-300">
+                              <span>😀 Emojis & Quick Reaction</span>
+                              <button onClick={() => setShowEmojiPicker(false)} className="text-slate-400 hover:text-white">
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2 text-xl">
+                              {['😀', '😂', '😍', '🔥', '👑', '💖', '👍', '🏎️', '🎉', '🚀', '💎', '🌹', '💯', '✨', '👏'].map((emoji, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => {
+                                    setDirectInputText(prev => prev + emoji);
+                                    setShowEmojiPicker(false);
+                                  }}
+                                  className="hover:scale-125 transition p-1"
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {showAttachmentMenu && (
+                          <div className="p-3 bg-slate-900 border-t border-slate-800 grid grid-cols-4 gap-2 text-center text-xs font-bold animate-fadeIn z-20">
+                            <button onClick={() => { showToast('Attach photo'); setShowAttachmentMenu(false); }} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-pink-400 hover:border-pink-500 flex flex-col items-center gap-1">
+                              <Image className="w-5 h-5" /> Photo
+                            </button>
+                            <button onClick={() => { showToast('Attach video'); setShowAttachmentMenu(false); }} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-purple-400 hover:border-purple-500 flex flex-col items-center gap-1">
+                              <Video className="w-5 h-5" /> Video
+                            </button>
+                            <button onClick={() => { showToast('Attach file'); setShowAttachmentMenu(false); }} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-cyan-400 hover:border-cyan-500 flex flex-col items-center gap-1">
+                              <Paperclip className="w-5 h-5" /> File
+                            </button>
+                            <button onClick={() => { showToast('Share location'); setShowAttachmentMenu(false); }} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-emerald-400 hover:border-emerald-500 flex flex-col items-center gap-1">
+                              <MapPin className="w-5 h-5" /> Location
+                            </button>
+                          </div>
+                        )}
+
+                        {isRecordingAudio ? (
+                          <div className="p-3 bg-pink-950/80 border-t border-pink-500/50 flex items-center justify-between text-xs font-bold animate-pulse z-20">
+                            <div className="flex items-center gap-2 text-pink-300">
+                              <span className="w-3 h-3 rounded-full bg-pink-500 animate-ping" />
+                              <span>Recording Voice Note... ({audioRecordingSeconds}s)</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button 
+                                onClick={() => setIsRecordingAudio(false)} 
+                                className="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 text-[10px] hover:text-white"
+                              >
+                                Cancel
+                              </button>
+
+                              <button 
+                                onClick={() => {
+                                  setIsRecordingAudio(false);
+                                  const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                                  setConversations(prev => prev.map(c => {
+                                    if (c.id === activeConversationId) {
+                                      const newMsg = {
+                                        id: Date.now(),
+                                        sender: 'me',
+                                        text: '🎤 Voice Note (0:12)',
+                                        type: 'voice',
+                                        time: nowTime
+                                      };
+                                      return { ...c, lastMessage: '🎤 Voice Note', lastTime: nowTime, messages: [...c.messages, newMsg] };
+                                    }
+                                    return c;
+                                  }));
+                                  showToast('Voice note sent!');
+                                }}
+                                className="px-4 py-1.5 rounded-xl btn-neon-pink text-[10px] text-white font-black"
+                              >
+                                Send Voice
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-3 border-t border-slate-800/80 bg-slate-900/90 flex items-center gap-2 z-10 flex-wrap sm:flex-nowrap">
+                            <button 
+                              onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowAttachmentMenu(false); setShowAiAssistant(false); }}
+                              className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-pink-400 transition"
+                              title="Emoji"
+                            >
+                              <Smile className="w-4 h-4" />
+                            </button>
+
+                            <button 
+                              onClick={() => { setShowAttachmentMenu(!showAttachmentMenu); setShowEmojiPicker(false); setShowAiAssistant(false); }}
+                              className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-purple-400 transition"
+                              title="Attachment"
+                            >
+                              <Paperclip className="w-4 h-4" />
+                            </button>
+
+                            <button 
+                              onClick={() => { setShowAiAssistant(!showAiAssistant); setShowEmojiPicker(false); setShowAttachmentMenu(false); }}
+                              className="p-2.5 rounded-xl bg-purple-950 border border-purple-500/40 text-purple-300 hover:bg-purple-600 hover:text-white transition shadow-md"
+                              title="AI Assistant"
+                            >
+                              <Bot className="w-4 h-4" />
+                            </button>
+
+                            <button 
+                              onClick={() => setIsSendCoinsInChatOpen(true)}
+                              className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500 hover:text-slate-950 transition font-black text-xs hidden sm:flex items-center gap-1"
+                              title="Send Coins"
+                            >
+                              <DollarSign className="w-4 h-4" />
+                            </button>
+
+                            <input 
+                              type="text"
+                              value={directInputText}
+                              onChange={e => setDirectInputText(e.target.value)}
+                              onKeyDown={e => e.key === 'Enter' && handleSendDirectMessage()}
+                              placeholder="Write a message... (تایپ پیام)"
+                              className="flex-1 min-w-[120px] px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500/80 transition"
+                            />
+
+                            <button 
+                              onClick={() => setIsRecordingAudio(true)}
+                              className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-pink-400 transition"
+                              title="Record Voice"
+                            >
+                              <Mic className="w-4 h-4" />
+                            </button>
+
+                            <button 
+                              onClick={handleSendDirectMessage}
+                              className="p-2.5 rounded-2xl btn-neon-pink shadow-lg hover:scale-105 active:scale-95 transition"
+                            >
+                              <Send className="w-4 h-4 text-white" />
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-slate-500 p-8 space-y-3 text-center">
+                    <div className="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center text-pink-400 shadow-xl animate-bounce">
+                      <MessageSquare className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-sm font-bold text-white">Select a conversation to start messaging</h3>
+                    <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
+                      Send text, voice notes, photos, gifts, or start a 4K LiveKit video call with hosts directly inside V.Live.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* IN-CHAT ACTIVE CALL OVERLAY MODAL */}
+            {activeChatCall && (
+              <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-2xl flex flex-col items-center justify-between p-8 text-white animate-fadeIn">
+                <div className="text-center space-y-2 mt-8">
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-xs border border-emerald-500/30 flex items-center gap-1.5 justify-center mx-auto w-fit">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    Live LiveKit {activeChatCall.type === 'video' ? '4K Video' : 'HD Voice'} Call Active
+                  </span>
+                  <h3 className="text-2xl font-black">{activeChatCall.user.name}</h3>
+                  <p className="text-sm text-slate-400 font-mono">Duration: {Math.floor(chatCallSeconds / 60).toString().padStart(2, '0')}:{(chatCallSeconds % 60).toString().padStart(2, '0')}</p>
+                </div>
+
+                <div className="relative my-auto flex flex-col items-center">
+                  <div className="w-32 h-32 rounded-full ring-4 ring-pink-500/50 shadow-[0_0_50px_rgba(236,72,153,0.5)] overflow-hidden animate-pulse">
+                    <img src={activeChatCall.user.avatar} alt={activeChatCall.user.name} className="w-full h-full object-cover" />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 mb-8">
+                  <button 
+                    onClick={() => setIsChatCallMuted(!isChatCallMuted)}
+                    className={"p-4 rounded-full border transition " + (isChatCallMuted ? "bg-rose-600 text-white border-rose-500" : "bg-slate-900 text-slate-200 border-slate-700")}
+                  >
+                    {isChatCallMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      setActiveChatCall(null);
+                      showToast('Call ended');
+                    }}
+                    className="p-5 rounded-full bg-rose-600 text-white shadow-2xl hover:scale-110 active:scale-95 transition ring-4 ring-rose-500/40"
+                    title="End Call"
+                  >
+                    <Phone className="w-8 h-8 rotate-[135deg]" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* IN-CHAT SEND COINS MODAL */}
+            {isSendCoinsInChatOpen && (
+              <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+                <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-emerald-500/40 max-w-sm w-full space-y-4 animate-scaleUp">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-emerald-400" />
+                      💸 Send Coins Direct Transfer
+                    </h3>
+                    <button onClick={() => setIsSendCoinsInChatOpen(false)} className="text-slate-400 hover:text-white">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-slate-300">
+                    Send coins instantly from your balance ({userCoins.toLocaleString()} Coins) to recipient wallet.
+                  </p>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-slate-400 block font-bold">Coins Amount</label>
+                    <input 
+                      type="number"
+                      value={sendCoinsInChatAmount}
+                      onChange={e => setSendCoinsInChatAmount(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold text-sm outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      if (userCoins < sendCoinsInChatAmount) {
+                        showToast('Insufficient coins balance!');
+                        setIsDepositModalOpen(true);
+                        return;
+                      }
+
+                      setUserCoins(prev => prev - sendCoinsInChatAmount);
+                      const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                      setConversations(prev => prev.map(c => {
+                        if (c.id === activeConversationId) {
+                          const newMsg = {
+                            id: Date.now(),
+                            sender: 'me',
+                            text: "Sent +" + sendCoinsInChatAmount + " Coins 💸",
+                            type: 'coins',
+                            time: nowTime
+                          };
+                          return { ...c, lastMessage: "Sent +" + sendCoinsInChatAmount + " Coins", lastTime: nowTime, messages: [...c.messages, newMsg] };
+                        }
+                        return c;
+                      }));
+
+                      setIsSendCoinsInChatOpen(false);
+                      showToast("Successfully sent " + sendCoinsInChatAmount + " Coins!");
+                    }}
+                    className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-xs shadow-lg hover:scale-105 transition"
+                  >
+                    Confirm & Send Coins
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* IN-CHAT SEND GIFT MODAL */}
+            {isSendGiftInChatOpen && (
+              <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+                <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-amber-500/40 max-w-md w-full space-y-4 animate-scaleUp">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                      <Gift className="w-4 h-4 text-amber-400" />
+                      🎁 Send Gift in Direct Chat
+                    </h3>
+                    <button onClick={() => setIsSendGiftInChatOpen(false)} className="text-slate-400 hover:text-white">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                    {[
+                      { name: 'Rose', icon: '🌹', coins: 10 },
+                      { name: 'Heart', icon: '❤️', coins: 50 },
+                      { name: 'Diamond', icon: '💎', coins: 500 },
+                      { name: 'Crown', icon: '👑', coins: 2500 }
+                    ].map((g, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          if (userCoins < g.coins) {
+                            showToast('Insufficient coin balance!');
+                            setIsDepositModalOpen(true);
+                            return;
+                          }
+
+                          setUserCoins(prev => prev - g.coins);
+                          const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                          setConversations(prev => prev.map(c => {
+                            if (c.id === activeConversationId) {
+                              const newMsg = {
+                                id: Date.now(),
+                                sender: 'me',
+                                text: "Sent " + g.name + " " + (g.emoji || '🎁'),
+                                type: 'gift',
+                                time: nowTime
+                              };
+                              return { ...c, lastMessage: "Sent " + g.name + " " + (g.emoji || '🎁'), lastTime: nowTime, messages: [...c.messages, newMsg] };
+                            }
+                            return c;
+                          }));
+
+                          setIsSendGiftInChatOpen(false);
+                          showToast("Sent " + g.name + " " + (g.emoji || '🎁') + "!");
+                        }}
+                        className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-amber-400 space-y-1 transition"
+                      >
+                        <span className="text-2xl flex items-center justify-center text-amber-300">
+                          {g.emoji ? g.emoji : <g.icon className="w-6 h-6 mx-auto" />}
+                        </span>
+                        <p className="font-bold text-white text-[11px]">{g.name}</p>
+                        <span className="text-[10px] text-amber-300 font-black">{g.coins} Coins</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* CREATE GROUP MODAL */}
+            {isCreateGroupModalOpen && (
+              <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+                <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-purple-500/40 max-w-sm w-full space-y-4 animate-scaleUp">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                      <Users className="w-4 h-4 text-purple-400" />
+                      👥 Create New Group (ساخت گروه جدید)
+                    </h3>
+                    <button onClick={() => setIsCreateGroupModalOpen(false)} className="text-slate-400 hover:text-white">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-3 text-xs">
+                    <div>
+                      <label className="text-slate-400 text-[10px] block font-bold mb-1">Group Name (نام گروه)</label>
+                      <input 
+                        type="text"
+                        value={newGroupName}
+                        onChange={e => setNewGroupName(e.target.value)}
+                        placeholder="e.g. VIP Streamers Club"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-purple-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-slate-400 text-[10px] block font-bold mb-1">Description (توضیحات)</label>
+                      <input 
+                        type="text"
+                        value={newGroupDesc}
+                        onChange={e => setNewGroupDesc(e.target.value)}
+                        placeholder="Group purpose & rules..."
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-purple-500"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      if (!newGroupName.trim()) {
+                        showToast('Please enter a group name');
+                        return;
+                      }
+
+                      const newGroup = {
+                        id: "group_" + Date.now(),
+                        type: 'group',
+                        isGroup: true,
+                        groupName: newGroupName,
+                        user: {
+                          username: "group_" + Date.now(),
+                          name: newGroupName,
+                          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+                          isVerified: true,
+                          role: 'Group Admin',
+                          online: true
+                        },
+                        lastMessage: 'Group created',
+                        lastTime: 'Just now',
+                        unreadCount: 0,
+                        messages: [
+                          { id: 1, sender: 'them', senderName: 'System', text: "Group \"" + newGroupName + "\" created successfully.", time: 'Just now', status: 'read', type: 'text' }
+                        ]
+                      };
+
+                      setConversations(prev => [newGroup, ...prev]);
+                      setIsCreateGroupModalOpen(false);
+                      setNewGroupName('');
+                      setNewGroupDesc('');
+                      showToast("Group \"" + newGroupName + "\" created successfully!");
+                    }}
+                    className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs shadow-lg hover:scale-105 transition"
+                  >
+                    Create Group Now
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* MEDIA GALLERY MODAL */}
+            {isChatGalleryOpen && (
+              <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+                <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-slate-800 max-w-md w-full space-y-4 animate-scaleUp">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                      <Image className="w-4 h-4 text-cyan-400" />
+                      🖼️ Shared Media Gallery
+                    </h3>
+                    <button onClick={() => setIsChatGalleryOpen(false)} className="text-slate-400 hover:text-white">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
+                      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
+                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'
+                    ].map((img, i) => (
+                      <img key={i} src={img} alt="media" className="w-full h-24 rounded-2xl object-cover ring-1 ring-slate-800" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </div>
+        )})}
         {/* TAB 3: COMPLETE REDESIGNED MULTI-CURRENCY WALLET & CREATOR EARNINGS */}
         {(activeTab === 'earnings' || activeTab === 'wallet') && (
-          <WalletPage
-            isRtl={isRtl}
-            loc={loc}
-            t={t}
-            userCoins={userCoins}
-            setUserCoins={setUserCoins}
-            setActiveTab={setActiveTab}
-            setIsDepositModalOpen={setIsDepositModalOpen}
-            setIsWithdrawModalOpen={setIsWithdrawModalOpen}
-            setIsVipModalOpen={setIsVipModalOpen}
-            showToast={showToast}
-            safeStorage={safeStorage}
-          />
+<div className="space-y-5 text-right" dir={isRtl ? "rtl" : "ltr"}>
+
+            {/* 1. TOP HEADER: TOTAL BALANCE DISPLAY */}
+            <div className="card-3d p-5 sm:p-6 rounded-3xl border border-amber-500/40 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/40 relative overflow-hidden space-y-4 shadow-[0_0_50px_rgba(245,158,11,0.15)]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <span className="text-[11px] text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <DollarSign className="w-4 h-4 text-amber-400" />
+                    💰 Total Balance (موجودی کل حساب کاربری)
+                  </span>
+                  <div className="flex items-baseline gap-3 mt-1.5 flex-wrap">
+                    <h2 className="text-3xl sm:text-4xl font-black text-white font-mono tracking-tight">
+                      {userCoins.toLocaleString()} <span className="text-amber-400 text-lg sm:text-xl font-bold">Coins</span>
+                    </h2>
+                    <span className="text-xs text-amber-300 font-bold bg-amber-500/20 px-2.5 py-1 rounded-full border border-amber-500/30">
+                      ≈ ${((userCoins / 500) + (userDiamonds / 100) + userCashBalance).toFixed(2)} USDT
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button 
+                    onClick={() => setWalletSubTab('buy')}
+                    className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 active:scale-95 transition"
+                  >
+                    <Plus className="w-4 h-4" />
+                    ➕ خرید سکه
+                  </button>
+
+                  <button 
+                    onClick={() => setWalletSubTab('withdraw')}
+                    className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 active:scale-95 transition"
+                  >
+                    <ArrowUpRight className="w-4 h-4" />
+                    💸 برداشت درآمد
+                  </button>
+
+                  <button 
+                    onClick={() => setWalletSubTab('history')}
+                    className="p-2.5 rounded-2xl bg-slate-900 border border-slate-700 text-amber-300 text-xs font-bold hover:bg-slate-800 flex items-center gap-1"
+                    title="تاریخچه تراکنش‌ها"
+                  >
+                    <Clock className="w-4 h-4" />
+                    <span>تراکنش‌ها</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 3 GLASSMORPHISM NEON BALANCE CARDS */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                
+                {/* 🪙 COINS CARD (GOLD THEME) */}
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-950/80 via-amber-900/40 to-slate-950 border border-amber-500/50 shadow-[0_0_25px_rgba(245,158,11,0.2)] flex flex-col justify-between space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                      <Coins className="w-4 h-4 text-amber-400" /> 🪙 Coins (سکه)
+                    </span>
+                    <span className="text-xs bg-amber-500/25 text-amber-200 border border-amber-400/40 font-bold px-2 py-0.5 rounded-full border border-amber-500/30">ارز مصرفی</span>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-black text-white font-mono">{userCoins.toLocaleString()}</p>
+                    <span className="text-xs text-slate-200 block mt-0.5">معادل تقریبی: ≈ ${(userCoins / 500).toFixed(2)} USDT</span>
+                  </div>
+                  <button 
+                    onClick={() => setWalletSubTab('buy')}
+                    className="w-full py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md"
+                  >
+                    ➕ Buy Coins (خرید سکه)
+                  </button>
+                </div>
+
+                {/* 💎 DIAMONDS CARD (BLUE THEME) */}
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-950/80 via-blue-900/40 to-slate-950 border border-cyan-500/50 shadow-[0_0_25px_rgba(6,182,212,0.2)] flex flex-col justify-between space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-cyan-400" /> 💎 Diamonds (الماس)
+                    </span>
+                    <span className="text-xs bg-cyan-500/25 text-cyan-200 border border-cyan-400/40 font-bold px-2 py-0.5 rounded-full border border-cyan-500/30">درآمد استریمر</span>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-black text-white font-mono">{userDiamonds.toLocaleString()}</p>
+                    <span className="text-xs text-slate-200 block mt-0.5">ارزش تبدیل نقد: ≈ ${(userDiamonds / 100).toFixed(2)} USDT</span>
+                  </div>
+                  <button 
+                    onClick={() => setWalletSubTab('convert')}
+                    className="w-full py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs transition shadow-md"
+                  >
+                    🔄 Convert (تبدیل درآمد)
+                  </button>
+                </div>
+
+                {/* 💵 CASH BALANCE CARD (GREEN THEME) */}
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-950/80 via-teal-900/40 to-slate-950 border border-emerald-500/50 shadow-[0_0_25px_rgba(16,185,129,0.2)] flex flex-col justify-between space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                      <DollarSign className="w-4 h-4 text-emerald-400" /> 💵 Cash Balance (موجودی نقد)
+                    </span>
+                    <span className="text-xs bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">قابل برداشت</span>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-black text-emerald-400 font-mono">${userCashBalance.toFixed(2)} <span className="text-xs font-bold text-slate-300">USDT</span></p>
+                    <span className="text-xs text-slate-200 block mt-0.5">آماده واریز مستقیم به TRC20</span>
+                  </div>
+                  <button 
+                    onClick={() => setWalletSubTab('withdraw')}
+                    className="w-full py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-md"
+                  >
+                    💸 Withdraw (برداشت وجه)
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+            {/* 2. FOUR MAIN BIG ACTION BUTTONS */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <button
+                onClick={() => setWalletSubTab('buy')}
+                className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'buy' ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-amber-500/50'}`}
+              >
+                <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-400 group-hover:scale-110 transition">
+                  <Plus className="w-6 h-6" />
+                </div>
+                <span className="font-black text-sm">➕ Buy Coins</span>
+                <span className="text-xs text-slate-200">خرید سکه برای هدیه و خدمات</span>
+              </button>
+
+              <button
+                onClick={() => setWalletSubTab('giftshop')}
+                className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'giftshop' ? 'bg-pink-500/20 border-pink-400 text-pink-300 shadow-[0_0_20px_rgba(236,72,153,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-pink-500/50'}`}
+              >
+                <div className="p-3 rounded-2xl bg-pink-500/20 text-pink-400 group-hover:scale-110 transition">
+                  <Gift className="w-6 h-6" />
+                </div>
+                <span className="font-black text-sm">🎁 Send Gift</span>
+                <span className="text-xs text-slate-200">ارسال هدیه به استریمرها</span>
+              </button>
+
+              <button
+                onClick={() => setWalletSubTab('withdraw')}
+                className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'withdraw' ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-emerald-500/50'}`}
+              >
+                <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition">
+                  <ArrowUpRight className="w-6 h-6" />
+                </div>
+                <span className="font-black text-sm">💸 Withdraw</span>
+                <span className="text-xs text-slate-200">تسویه و برداشت درآمد به TRC20</span>
+              </button>
+
+              <button
+                onClick={() => setWalletSubTab('history')}
+                className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'history' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-cyan-500/50'}`}
+              >
+                <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-400 group-hover:scale-110 transition">
+                  <Clock className="w-6 h-6" />
+                </div>
+                <span className="font-black text-sm">📜 History</span>
+                <span className="text-xs text-slate-200">تاریخچه کامل تراکنش‌ها</span>
+              </button>
+            </div>
+
+            {/* WALLET SUB-NAVIGATION CHIPS BAR */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs border-b border-slate-800">
+              {[
+                { id: 'overview', label: '💰 Balance (نمای کلی)' },
+                { id: 'buy', label: '🪙 Buy Coins (خرید سکه)' },
+                { id: 'convert', label: '💎 Convert (تبدیل درآمد)' },
+                { id: 'withdraw', label: '💸 Withdraw (برداشت)' },
+                { id: 'history', label: '📜 Transactions (تاریخچه)' },
+                { id: 'creator', label: '🏆 Creator Earnings (درآمد)' },
+                { id: 'referral', label: '👥 Referral (دعوت دوستان)' },
+                { id: 'vip', label: '👑 VIP Premium (اشتراک VIP)' },
+                { id: 'security', label: '🔒 Security (امنیت و برداشت)' },
+                { id: 'giftshop', label: '🎁 Gift Shop (فروشگاه)' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setWalletSubTab(tab.id)}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition border ${walletSubTab === tab.id ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 border-amber-300 font-black shadow-md scale-105' : 'bg-slate-900 border-slate-700 text-slate-200 hover:text-white font-bold text-xs shadow-sm'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* SUB-TAB 1: BALANCE OVERVIEW */}
+            {walletSubTab === 'overview' && (
+              <div className="space-y-4">
+                
+                {/* LIVE EARNINGS TREND & ANALYTICS CHART */}
+                <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-emerald-400" />
+                      📈 نمودار روند درآمدزایی هفتگی (Weekly Earnings Trend)
+                    </h3>
+                    <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      +۲۴٪ رشد نسبت به هفته قبل
+                    </span>
+                  </div>
+
+                  {/* VISUAL REVENUE BARS */}
+                  <div className="grid grid-cols-7 gap-2 pt-4 pb-1 text-center items-end h-32">
+                    {[
+                      { day: 'شنبه', coins: 1200, height: 'h-16', color: 'bg-amber-500/40' },
+                      { day: '۱شنبه', coins: 1800, height: 'h-20', color: 'bg-amber-500/50' },
+                      { day: '۲شنبه', coins: 2400, height: 'h-24', color: 'bg-amber-500/60' },
+                      { day: '۳شنبه', coins: 1500, height: 'h-18', color: 'bg-amber-500/50' },
+                      { day: '۴شنبه', coins: 3100, height: 'h-28', color: 'bg-amber-500/80' },
+                      { day: '۵شنبه', coins: 4200, height: 'h-32', color: 'bg-gradient-to-t from-amber-500 to-orange-400 shadow-[0_0_15px_rgba(245,158,11,0.5)]' },
+                      { day: 'جمعه', coins: 2900, height: 'h-26', color: 'bg-amber-500/70' }
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex flex-col items-center justify-end h-full gap-1">
+                        <span className="text-[11px] font-mono text-amber-300 font-bold">{item.coins}</span>
+                        <div className={`w-full rounded-t-xl transition-all duration-500 ${item.height} ${item.color}`} />
+                        <span className="text-xs text-slate-200 block mt-1">{item.day}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* PLATFORM FEE TRANSPARENCY BOX */}
+                <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-amber-300 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-amber-400" />
+                      ۹. کمیسیون و سهم درآمد برنامه (Platform Fee Transparency)
+                    </h3>
+                    <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      سهم استریمر: ۸۰٪ خالص
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] pt-1">
+                    <div className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-center">
+                      <span className="text-xs text-slate-200">ارزش هدیه دریافتی</span>
+                      <p className="font-bold text-white mt-0.5">1,000 Coins</p>
+                    </div>
+                    <div className="p-2.5 rounded-2xl bg-slate-900 border border-rose-500/30 text-center">
+                      <span className="text-xs text-rose-300">کمیسیون پلتفرم (20%)</span>
+                      <p className="font-bold text-rose-400 mt-0.5">-200 Coins</p>
+                    </div>
+                    <div className="p-2.5 rounded-2xl bg-slate-900 border border-emerald-500/30 text-center">
+                      <span className="text-xs text-emerald-300">درآمد خالص استریمر (80%)</span>
+                      <p className="font-bold text-emerald-400 mt-0.5">+800 Diamonds</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* WATCH ADS REWARD WIDGET */}
+                <div className="p-4 rounded-3xl bg-gradient-to-r from-purple-950/80 via-slate-900 to-slate-950 border border-purple-500/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-2xl bg-purple-600/20 text-purple-300 border border-purple-500/30">
+                      <Play className="w-6 h-6 fill-purple-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-sm flex items-center gap-1.5">
+                        ۱۱. تبلیغات و پاداش (Watch Video Ads)
+                      </h4>
+                      <p className="text-[11px] text-slate-300">با تماشای یک ویدئوی ۱۵ ثانیه‌ای اسپانسر، <strong>+۲۰ سکه رایگان</strong> دریافت کنید!</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setUserCoins(prev => prev + 20);
+                      const newTx = {
+                        id: `TX-${Date.now().toString().slice(-4)}`,
+                        type: 'Ad Reward',
+                        description: 'پاداش تماشای ویدئوی تبلیغاتی اسپانسر',
+                        amount: '+20 Coins',
+                        category: 'Coins',
+                        time: 'هم‌اکنون',
+                        status: 'Completed',
+                        icon: '🎬',
+                        color: 'text-purple-400'
+                      };
+                      setTxHistoryList(prev => [newTx, ...prev]);
+                      showToast('🎉 پاداش تماشای ویدیو: +۲۰ سکه به کیف پول شما اضافه شد!');
+                    }}
+                    className="px-5 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs whitespace-nowrap shadow-lg hover:scale-105 transition"
+                  >
+                    🎬 تماشای ویدیو (+20 Coins)
+                  </button>
+                </div>
+
+                {/* RECENT TRANSACTIONS PREVIEW */}
+                <div className="card-3d p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-cyan-400" />
+                      ۷. آخرین تراکنش‌های کیف پول
+                    </h3>
+                    <button 
+                      onClick={() => setWalletSubTab('history')}
+                      className="text-amber-300 font-bold hover:underline text-[11px]"
+                    >
+                      مشاهده تمام تراکنش‌ها ➔
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {txHistoryList.slice(0, 3).map(tx => (
+                      <div key={tx.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xl">{tx.icon}</span>
+                          <div>
+                            <p className="font-bold text-white text-[11px]">{tx.description}</p>
+                            <span className="text-xs text-slate-200">{tx.time} • کد: {tx.id}</span>
+                          </div>
+                        </div>
+                        <div className="text-left">
+                          <p className={`font-black font-mono text-xs ${tx.color}`}>{tx.amount}</p>
+                          <span className={`text-[11px] px-1.5 py-0.2 rounded font-bold ${tx.status === 'Completed' ? 'bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 font-bold' : 'bg-amber-500/25 text-amber-200 border border-amber-400/40 font-bold'}`}>{tx.status}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* SUB-TAB 2: BUY COIN STORE */}
+            {walletSubTab === 'buy' && (
+              <div className="space-y-4 text-xs">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-white text-sm">۳. فروشگاه خرید سکه (Coin Store)</h3>
+                  <span className="text-xs text-amber-300 font-bold bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+                    موجودی فعلی: {userCoins.toLocaleString()} سکه
+                  </span>
+                </div>
+
+                {/* PAYMENT METHOD SELECTOR */}
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                  <label className="text-xs text-slate-200 font-bold block">انتخاب روش پرداخت:</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button
+                      onClick={() => setSelectedCoinPackPayment('In-App')}
+                      className={`p-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 transition ${selectedCoinPackPayment === 'In-App' ? 'bg-amber-500 text-slate-950 border-amber-300 font-black' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                    >
+                      📱 پرداخت درون‌برنامه‌ای (Google/Apple)
+                    </button>
+                    <button
+                      onClick={() => setSelectedCoinPackPayment('USDT TRC20')}
+                      className={`p-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 transition ${selectedCoinPackPayment === 'USDT TRC20' ? 'bg-amber-500 text-slate-950 border-amber-300 font-black' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                    >
+                      🪙 USDT TRC20 (۵٪ سکه بونوس)
+                    </button>
+                    <button
+                      onClick={() => setSelectedCoinPackPayment('Card')}
+                      className={`p-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 transition ${selectedCoinPackPayment === 'Card' ? 'bg-amber-500 text-slate-950 border-amber-300 font-black' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                    >
+                      💳 کارت به کارت / درگاه مستقیم
+                    </button>
+                  </div>
+                </div>
+
+                {/* COIN PACKAGES GRID */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { coins: 100, price: '1.99', badge: 'پک برنز', bonus: '' },
+                    { coins: 500, price: '8.99', badge: 'محبوب‌ترین 🔥', bonus: '+25 سکه هدیه' },
+                    { coins: 1000, price: '16.99', badge: 'پک طلایی 🌟', bonus: '+100 سکه هدیه' },
+                    { coins: 5000, price: '79.99', badge: 'پک الماس 💎', bonus: '+750 سکه هدیه' },
+                    { coins: 10000, price: '149.99', badge: 'پک وی‌آی‌پی 👑', bonus: '+2,000 سکه بونوس' }
+                  ].map((pack, i) => (
+                    <div key={i} className="p-4 rounded-3xl bg-slate-950 border border-amber-500/30 hover:border-amber-400 transition space-y-3 flex flex-col justify-between text-center relative overflow-hidden group">
+                      {pack.badge && (
+                        <span className="absolute top-2 left-2 text-[11px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full shadow">
+                          {pack.badge}
+                        </span>
+                      )}
+                      <div className="pt-3">
+                        <span className="text-3xl block">🪙</span>
+                        <h4 className="text-xl font-black text-white mt-1 font-mono">{pack.coins.toLocaleString()} <span className="text-xs text-amber-300">Coins</span></h4>
+                        {pack.bonus && <span className="text-xs text-emerald-400 font-bold block mt-0.5">{pack.bonus}</span>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-base font-black text-amber-400 font-mono">${pack.price} USD</p>
+                        <button
+                          onClick={() => handleBuyCoinsPack(pack.coins, pack.price)}
+                          className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow-md transition transform group-hover:scale-105"
+                        >
+                          خرید آنلاین سکه
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SUB-TAB 3: CONVERT DIAMONDS */}
+            {walletSubTab === 'convert' && (
+              <div className="space-y-4 text-xs">
+                <div className="p-5 rounded-3xl bg-slate-950 border border-cyan-500/40 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 className="font-bold text-cyan-300 text-sm flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-cyan-400" />
+                      ۴. تبدیل درآمد استریمر (Convert Diamonds to Cash)
+                    </h3>
+                    <span className="text-xs text-slate-200">نرخ تبدیل: ۱۰۰ الماس = $۱.۰۰ USDT</span>
+                  </div>
+
+                  <p className="text-slate-300 text-[11px] leading-relaxed">
+                    هدایای دریافتی در لایو به صورت <strong>الماس (Diamonds)</strong> در کیف پول شما ذخیره می‌شوند. شما می‌توانید الماس‌های خود را بدون کارمزد اضافی به موجودی نقد USDT تبدیل کرده و مستقیم برداشت کنید.
+                  </p>
+
+                  <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-200">موجودی فعلی الماس:</span>
+                      <span className="font-black text-cyan-300 text-sm font-mono">{userDiamonds.toLocaleString()} 💎</span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs text-slate-200 block font-bold">مقدار الماس جهت تبدیل:</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={convertDiamondsInput}
+                          onChange={e => setConvertDiamondsInput(e.target.value)}
+                          placeholder="مثلاً: 5000"
+                          className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono font-bold outline-none focus:border-cyan-400"
+                        />
+                        <button
+                          onClick={() => setConvertDiamondsInput(userDiamonds.toString())}
+                          className="px-3 py-2 rounded-xl bg-slate-800 text-cyan-300 font-bold text-xs"
+                        >
+                          حداکثر (All)
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* CONVERSION PREVIEW RESULT */}
+                    <div className="p-3 rounded-xl bg-cyan-950/50 border border-cyan-500/30 flex items-center justify-between">
+                      <span className="text-cyan-200 font-bold text-xs">دریافت نقد نهایی:</span>
+                      <span className="text-lg font-black text-emerald-400 font-mono">
+                        +${((parseInt(convertDiamondsInput) || 0) / 100).toFixed(2)} USDT
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={handleConvertDiamondsAction}
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs shadow-lg transition"
+                    >
+                      💎 تبدیل فوری به ارز نقد USDT
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SUB-TAB 4: WITHDRAW */}
+            {walletSubTab === 'withdraw' && (
+              <div className="space-y-5 text-xs">
+                
+                {/* WITHDRAWAL FORM */}
+                <div className="p-5 rounded-3xl bg-slate-950 border border-emerald-500/40 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h3 className="font-bold text-emerald-300 text-sm flex items-center gap-1.5">
+                      <ArrowUpRight className="w-4 h-4 text-emerald-400" />
+                      ۵. تسویه حساب و برداشت درآمد (Withdraw Earnings)
+                    </h3>
+                    <span className="text-[11px] text-emerald-400 font-black bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/30 font-mono">
+                      موجودی قابل برداشت: ${userCashBalance.toFixed(2)} USDT
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs text-slate-200 block font-bold">مبلغ برداشت (USD):</label>
+                      <input
+                        type="number"
+                        value={withdrawAmountInput}
+                        onChange={e => setWithdrawAmountInput(e.target.value)}
+                        placeholder="مثلاً: 50"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono font-bold outline-none focus:border-emerald-400"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs text-slate-200 block font-bold">روش برداشت:</label>
+                      <select
+                        value={withdrawMethodInput}
+                        onChange={e => setWithdrawMethodInput(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-emerald-400"
+                      >
+                        <option value="USDT TRC20">USDT TRC20 (تتر شبکه‌ ترون)</option>
+                        <option value="Wise / Wire">Bank Transfer / Wise</option>
+                        <option value="Crypto Wallet">Crypto Web3 Wallet</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-200 block font-bold">آدرس کیف پول مقصد (Wallet Address):</label>
+                    <input
+                      type="text"
+                      value={withdrawAddressInput}
+                      onChange={e => setWithdrawAddressInput(e.target.value)}
+                      placeholder="آدرس کیف پول تتر TRC20..."
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-amber-300 font-mono text-xs outline-none focus:border-emerald-400"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-200 block font-bold">رمز برداشت امنیتی (Security PIN):</label>
+                    <input
+                      type="password"
+                      maxLength={4}
+                      value={withdrawPinInput}
+                      onChange={e => setWithdrawPinInput(e.target.value)}
+                      placeholder="رمز ۴ رقمی برداشت (پیش‌فرض: 1234)..."
+                      className="w-full sm:w-48 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono outline-none focus:border-emerald-400 text-center tracking-widest"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleRequestWithdrawalAction}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs shadow-lg transition"
+                  >
+                    💸 ثبت درخواست برداشت فوری
+                  </button>
+                </div>
+
+                {/* 6. WITHDRAWAL STATUSES TABLE */}
+                <div className="card-3d p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+                  <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-emerald-400" />
+                    ۶. وضعیت درخواست‌های برداشت وجه (Withdrawal Requests Log)
+                  </h4>
+
+                  <div className="space-y-2">
+                    {withdrawalsHistoryList.map(item => (
+                      <div key={item.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-white text-xs">{item.amount}</span>
+                            <span className="text-xs text-slate-200">({item.method})</span>
+                          </div>
+                          <span className="text-xs text-slate-200 block font-mono">آدرس: {item.address} • تاریخ: {item.date}</span>
+                          {item.reason && <p className="text-xs text-rose-300 mt-0.5">دلیل رد: {item.reason}</p>}
+                        </div>
+
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold self-start sm:self-auto ${item.status === 'Completed' ? 'bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 font-bold border border-emerald-500/30' : item.status === 'Pending' ? 'bg-amber-500/25 text-amber-200 border border-amber-400/40 font-bold border border-amber-500/30' : 'bg-rose-500/25 text-rose-200 border border-rose-400/40 font-bold border border-rose-500/30'}`}>
+                          {item.status === 'Completed' ? '🟢 Completed (تکمیل شده)' : item.status === 'Pending' ? '🟡 Pending (در حال بررسی)' : '🔴 Rejected (رد شده)'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* SUB-TAB 5: TRANSACTIONS HISTORY */}
+            {walletSubTab === 'history' && (
+              <div className="space-y-4 text-xs">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-white text-sm">۷. تاریخچه جامع تراکنش‌ها (Transactions Ledger)</h3>
+                  <span className="text-xs text-slate-200">{txHistoryList.length} تراکنش ثبت شده</span>
+                </div>
+
+                {/* CATEGORY FILTER CHIPS */}
+                <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
+                  {['All', 'Coins', 'Gifts', 'Convert', 'Withdrawals', 'VIP', 'Referral'].map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setTxCategoryFilter(cat)}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold transition ${txCategoryFilter === cat ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-950 border border-slate-800 text-slate-200'}`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  {txHistoryList
+                    .filter(t => txCategoryFilter === 'All' || t.category === txCategoryFilter)
+                    .map(tx => (
+                      <div key={tx.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{tx.icon}</span>
+                          <div>
+                            <p className="font-bold text-white text-xs">{tx.description}</p>
+                            <span className="text-xs text-slate-200 block font-mono">{tx.time} • کد تراکنش: {tx.id}</span>
+                          </div>
+                        </div>
+                        <div className="text-left">
+                          <p className={`font-black font-mono text-xs ${tx.color}`}>{tx.amount}</p>
+                          <span className="text-[11px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded font-bold">{tx.status}</span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* SUB-TAB 6: REDESIGNED ULTIMATE CREATOR STUDIO (20 FEATURES) */}
+            {walletSubTab === 'creator' && (
+              <div className="space-y-6 animate-fadeIn text-xs" dir={isRtl ? "rtl" : "ltr"}>
+                
+                {/* 1. TOP HEADER & VERIFICATION BADGE BANNER */}
+                <div className="card-3d p-5 rounded-3xl bg-gradient-to-br from-purple-950/80 via-slate-900 to-cyan-950/80 border border-purple-500/40 relative overflow-hidden shadow-2xl">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 blur-3xl rounded-full pointer-events-none" />
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 p-0.5 shadow-xl shadow-purple-500/20">
+                        <img src={userAvatar} alt="creator avatar" className="w-full h-full object-cover rounded-2xl" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-base sm:text-lg font-black text-white">{userName}</h2>
+                          <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold border border-cyan-500/40 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-cyan-400" />
+                            Verified Official Partner ✅
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 text-slate-300 text-xs">
+                          <span className="flex items-center gap-1 text-amber-300 font-bold">
+                            <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> Host Level 18 💎
+                          </span>
+                          <span className="text-slate-500">•</span>
+                          <span className="text-purple-300 font-bold">VIP Gold Partner 🥇</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Action Top Launcher */}
+                    <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+                      <button
+                        onClick={() => setIsGoLiveOpen(true)}
+                        className="btn-neon-pink px-4 py-2 rounded-2xl text-xs font-black shadow-lg flex items-center gap-1.5 animate-pulse"
+                      >
+                        <Radio className="w-4 h-4" />
+                        <span>🎥 شروع لایو استریم</span>
+                      </button>
+                      <button
+                        onClick={() => setCreatorActiveTab('schedule')}
+                        className="px-3.5 py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold border border-slate-700 transition flex items-center gap-1.5"
+                      >
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>📅 زمان‌بندی</span>
+                      </button>
+                      <button
+                        onClick={() => setCreatorActiveTab('withdrawal')}
+                        className="px-3.5 py-2 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold border border-emerald-500/40 transition flex items-center gap-1.5"
+                      >
+                        <DollarSign className="w-3.5 h-3.5" />
+                        <span>💸 برداشت</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 20. QUICK ACTIONS BAR */}
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-4 pt-4 border-t border-slate-800/80 relative z-10">
+                    {[
+                      { id: 'dashboard', label: '📊 داشبورد اصلی', icon: BarChart3, color: 'text-cyan-400' },
+                      { id: 'live_center', label: '🎥 مرکز لایو', icon: Radio, color: 'text-rose-400' },
+                      { id: 'analytics', label: '📈 آنالیز بینندگان', icon: TrendingUp, color: 'text-emerald-400' },
+                      { id: 'earnings', label: '💰 درآمدها', icon: Coins, color: 'text-amber-400' },
+                      { id: 'gifts', label: '🎁 هدایای دریافتی', icon: Gift, color: 'text-pink-400' },
+                      { id: 'followers', label: '👥 فالوورها', icon: Users, color: 'text-purple-400' },
+                      { id: 'content', label: '📁 مدیریت محتوا', icon: Video, color: 'text-blue-400' },
+                      { id: 'schedule', label: '📅 تقویم لایو', icon: Calendar, color: 'text-indigo-400' },
+                      { id: 'vip', label: '👑 مزایای VIP', icon: Crown, color: 'text-amber-300' },
+                      { id: 'promotions', label: '📢 پروموشن لایو', icon: Zap, color: 'text-yellow-400' },
+                      { id: 'community', label: '💬 جامعه مخاطبان', icon: MessageSquare, color: 'text-teal-400' },
+                      { id: 'goals', label: '🎯 اهداف درآمدی', icon: Target, color: 'text-orange-400' }
+                    ].map(act => (
+                      <button
+                        key={act.id}
+                        onClick={() => setCreatorActiveTab(act.id)}
+                        className={`p-2.5 rounded-2xl border transition flex flex-col items-center justify-center gap-1 text-center ${
+                          creatorActiveTab === act.id ? 'bg-slate-800 border-cyan-400 shadow-md ring-1 ring-cyan-400/50' : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
+                        }`}
+                      >
+                        <act.icon className={`w-4 h-4 ${act.color}`} />
+                        <span className="text-[10px] font-bold text-white truncate w-full">{act.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CREATOR STUDIO MAIN TAB NAVIGATION BAR */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-slate-800">
+                  {[
+                    { id: 'dashboard', label: '📊 1. Dashboard (داشبورد)' },
+                    { id: 'live_center', label: '🎥 2. Live Center' },
+                    { id: 'analytics', label: '📈 3. Analytics' },
+                    { id: 'earnings', label: '💰 4. Earnings' },
+                    { id: 'gifts', label: '🎁 5. Gifts & Gifters' },
+                    { id: 'followers', label: '👥 6. Followers' },
+                    { id: 'content', label: '📁 7. Content' },
+                    { id: 'schedule', label: '📅 8. Schedule' },
+                    { id: 'vip', label: '👑 9. VIP Creator' },
+                    { id: 'promotions', label: '📢 10. Promotions' },
+                    { id: 'community', label: '💬 11. Community & Polls' },
+                    { id: 'goals', label: '🎯 12. Goals' },
+                    { id: 'withdrawal', label: '💸 13. Withdrawal' },
+                    { id: 'level_achievements', label: '🏆 14-15. Level & Achievements' },
+                    { id: 'reports_settings', label: '⚙️ 16-17. Settings & Health' },
+                    { id: 'verification_support', label: '🎧 18-19. Support & Verification' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setCreatorActiveTab(tab.id)}
+                      className={`px-4 py-2 rounded-2xl text-xs font-bold transition whitespace-nowrap ${
+                        creatorActiveTab === tab.id ? 'bg-gradient-to-r from-purple-600 to-cyan-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* TAB 1: DASHBOARD OVERVIEW */}
+                {creatorActiveTab === 'dashboard' && (
+                  <div className="space-y-4 animate-fadeIn">
+                    {/* 8 OVERVIEW METRICS GRID */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1 font-bold">
+                          <Users className="w-3.5 h-3.5 text-purple-400" /> 👥 Followers
+                        </span>
+                        <p className="text-lg font-black text-white font-mono">10,450</p>
+                        <span className="text-[10px] text-emerald-400 font-bold">+48 امروز</span>
+                      </div>
+
+                      <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1 font-bold">
+                          <Heart className="w-3.5 h-3.5 text-rose-400" /> ❤️ Likes
+                        </span>
+                        <p className="text-lg font-black text-rose-400 font-mono">45,200</p>
+                        <span className="text-[10px] text-rose-300 font-bold">+1.2k این هفته</span>
+                      </div>
+
+                      <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1 font-bold">
+                          <Radio className="w-3.5 h-3.5 text-cyan-400" /> 🎥 Live برگزار شده
+                        </span>
+                        <p className="text-lg font-black text-cyan-300 font-mono">128 لایو</p>
+                        <span className="text-[10px] text-cyan-400 font-bold">مجموع ۱80 ساعت</span>
+                      </div>
+
+                      <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1 font-bold">
+                          <Eye className="w-3.5 h-3.5 text-blue-400" /> 👀 مجموع بازدید
+                        </span>
+                        <p className="text-lg font-black text-white font-mono">154,000</p>
+                        <span className="text-[10px] text-emerald-400 font-bold">رشد عالی 🚀</span>
+                      </div>
+
+                      <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-amber-500/30 space-y-1">
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1 font-bold">
+                          <Coins className="w-3.5 h-3.5 text-amber-400" /> 💰 درآمد امروز
+                        </span>
+                        <p className="text-lg font-black text-amber-400 font-mono">$48.20 USD</p>
+                        <span className="text-[10px] text-amber-300 font-bold">4,820 Diamonds</span>
+                      </div>
+
+                      <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-amber-500/30 space-y-1">
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1 font-bold">
+                          <Coins className="w-3.5 h-3.5 text-amber-400" /> 💰 درآمد ماه
+                        </span>
+                        <p className="text-lg font-black text-emerald-400 font-mono">$1,420.00 USD</p>
+                        <span className="text-[10px] text-emerald-300 font-bold">142,000 Diamonds</span>
+                      </div>
+
+                      <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1 font-bold">
+                          <Gift className="w-3.5 h-3.5 text-pink-400" /> 🎁 هدایای دریافتی
+                        </span>
+                        <p className="text-lg font-black text-pink-300 font-mono">1,840 عدد</p>
+                        <span className="text-[10px] text-pink-400 font-bold">Top: 👑 Crown</span>
+                      </div>
+
+                      <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1 font-bold">
+                          <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> 📈 رشد صفحه
+                        </span>
+                        <p className="text-lg font-black text-emerald-400 font-mono">+12.5%</p>
+                        <span className="text-[10px] text-emerald-300 font-bold">رشد ماهانه کانال</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: LIVE CENTER */}
+                {creatorActiveTab === 'live_center' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <h3 className="text-sm font-black text-white flex items-center gap-2">
+                        <Radio className="w-4 h-4 text-rose-500" />
+                        ۲. مدیریت و استودیوی لایو (Live Center)
+                      </h3>
+                      <button
+                        onClick={() => setIsGoLiveOpen(true)}
+                        className="btn-neon-pink px-4 py-2 rounded-2xl text-xs font-black shadow-lg flex items-center gap-1.5"
+                      >
+                        <Play className="w-4 h-4 fill-white" />
+                        <span>شروع آنی لایو استریم</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Left: Stream Metadata Form */}
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs text-slate-300 font-bold block mb-1">عنوان لایو (Live Title):</label>
+                          <input
+                            type="text"
+                            value={creatorLiveTitle}
+                            onChange={(e) => setCreatorLiveTitle(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-xs text-slate-300 font-bold block mb-1">دسته‌بندی (Category):</label>
+                            <select
+                              value={creatorLiveCategory}
+                              onChange={(e) => setCreatorLiveCategory(e.target.value)}
+                              className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-3 py-2.5 text-xs text-white focus:outline-none"
+                            >
+                              <option value="Music">🎵 Music & Concert</option>
+                              <option value="Gaming">🎮 Gaming & Esports</option>
+                              <option value="Talk">💬 Talk Show & Chat</option>
+                              <option value="Dance">💃 Dance & Party</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="text-xs text-slate-300 font-bold block mb-1">تگ‌ها (Hashtags):</label>
+                            <input
+                              type="text"
+                              value={creatorLiveTags}
+                              onChange={(e) => setCreatorLiveTags(e.target.value)}
+                              className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-3 py-2.5 text-xs text-white focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Recording Toggle */}
+                        <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                          <div>
+                            <span className="text-xs font-bold text-white block">ضبط خودکار لایو (Auto Record VOD):</span>
+                            <span className="text-[10px] text-slate-400">ذخیره نسخه باکیفیت لایو پس از پایان استریم</span>
+                          </div>
+                          <button
+                            onClick={() => setCreatorRecordStream(!creatorRecordStream)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${creatorRecordStream ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}
+                          >
+                            {creatorRecordStream ? 'فعال ✅' : 'غیرفعال ❌'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Right: Hardware & Filters */}
+                      <div className="space-y-3">
+                        <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
+                          <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                            <Settings className="w-3.5 h-3.5 text-cyan-400" /> تجهیزات و سخت‌افزار لایو
+                          </span>
+                          <div className="space-y-2 pt-1">
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="text-slate-400">میکروفون:</span>
+                              <span className="font-bold text-white">{creatorMicrophone}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="text-slate-400">دوربین اصلی:</span>
+                              <span className="font-bold text-white">{creatorCamera}</span>
+                            </div>
+                            <div className="space-y-1 pt-1">
+                              <div className="flex justify-between text-xs">
+                                <span className="text-slate-400">فیلتر زیبایی (Beauty Filter):</span>
+                                <span className="font-bold text-pink-400">{creatorBeautyFilter}%</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={creatorBeautyFilter}
+                                onChange={(e) => setCreatorBeautyFilter(Number(e.target.value))}
+                                className="w-full accent-pink-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 3: ANALYTICS */}
+                {creatorActiveTab === 'analytics' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <h3 className="text-sm font-black text-white flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-emerald-400" />
+                        ۳. آمار و تحلیل کامل بینندگان (Analytics)
+                      </h3>
+                      <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                        <button className="px-3 py-1 rounded-lg text-xs font-bold bg-cyan-500 text-slate-950">روزانه</button>
+                        <button className="px-3 py-1 rounded-lg text-xs font-bold text-slate-400 hover:text-white">هفتگی</button>
+                        <button className="px-3 py-1 rounded-lg text-xs font-bold text-slate-400 hover:text-white">ماهانه</button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+                      <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                        <span className="text-[10px] text-slate-400">حداکثر بیننده (Peak)</span>
+                        <p className="text-sm font-black text-cyan-300 font-mono">1,250 نفر</p>
+                      </div>
+                      <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                        <span className="text-[10px] text-slate-400">میانگین زمان تماشا</span>
+                        <p className="text-sm font-black text-purple-300 font-mono">18.5 دقیقه</p>
+                      </div>
+                      <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                        <span className="text-[10px] text-slate-400">کاربران جدید</span>
+                        <p className="text-sm font-black text-emerald-400 font-mono">+450 نفر</p>
+                      </div>
+                      <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                        <span className="text-[10px] text-slate-400">نرخ فالو (Follow Rate)</span>
+                        <p className="text-sm font-black text-rose-300 font-mono">8.4%</p>
+                      </div>
+                      <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                        <span className="text-[10px] text-slate-400">ساعت اوج بازدید</span>
+                        <p className="text-sm font-black text-amber-300 font-mono">21:00 - 23:30</p>
+                      </div>
+                      <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                        <span className="text-[10px] text-slate-400">محبوب‌ترین لایو</span>
+                        <p className="text-xs font-black text-white truncate">DJ Night 🎵</p>
+                      </div>
+                    </div>
+
+                    {/* Chart Mock Visualizer */}
+                    <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
+                      <span className="text-xs font-bold text-slate-300">نمودار روند بینندگان همزمان (Concurrent Viewers Graph):</span>
+                      <div className="h-28 flex items-end justify-between gap-2 pt-4 border-b border-slate-800 px-2">
+                        {[35, 55, 40, 75, 90, 60, 85, 100, 95, 110, 80, 120].map((h, i) => (
+                          <div key={i} className="flex-1 bg-gradient-to-t from-cyan-600 to-purple-500 rounded-t-lg transition-all hover:brightness-125" style={{ height: `${h}%` }} />
+                        ))}
+                      </div>
+                      <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                        <span>18:00</span>
+                        <span>19:00</span>
+                        <span>20:00</span>
+                        <span>21:00</span>
+                        <span>22:00</span>
+                        <span>23:00</span>
+                        <span>00:00</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 4: EARNINGS */}
+                {creatorActiveTab === 'earnings' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-amber-500/30 space-y-4 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <h3 className="text-sm font-black text-white flex items-center gap-2">
+                        <Coins className="w-4 h-4 text-amber-400" />
+                        ۴. جزئیات کامل درآمدها (Creator Earnings)
+                      </h3>
+                      <button
+                        onClick={() => setCreatorActiveTab('withdrawal')}
+                        className="btn-neon-pink px-4 py-2 rounded-2xl text-xs font-black shadow-lg"
+                      >
+                        درخواست برداشت درآمد 💸
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                        <span className="text-xs text-slate-400 block">درآمد امروز</span>
+                        <p className="text-lg font-black text-amber-400 font-mono">$48.20 USD</p>
+                        <span className="text-[10px] text-emerald-400 font-bold">4,820 Diamonds</span>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                        <span className="text-xs text-slate-400 block">این هفته</span>
+                        <p className="text-lg font-black text-white font-mono">$340.00 USD</p>
+                        <span className="text-[10px] text-emerald-400 font-bold">34,000 Diamonds</span>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                        <span className="text-xs text-slate-400 block">این ماه</span>
+                        <p className="text-lg font-black text-cyan-300 font-mono">$1,420.00 USD</p>
+                        <span className="text-[10px] text-cyan-400 font-bold">142,000 Diamonds</span>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                        <span className="text-xs text-slate-400 block">کل درآمد کل دوره</span>
+                        <p className="text-lg font-black text-emerald-400 font-mono">$5,890.00 USD</p>
+                        <span className="text-[10px] text-slate-400 font-bold">۵۸۹,۰۰۰ Diamonds</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 5: GIFTS & TOP GIFTERS */}
+                {creatorActiveTab === 'gifts' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <h3 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                      <Gift className="w-4 h-4 text-pink-400" />
+                      ۵. هدایای دریافتی و برترین حامیان (Gifts & Top Gifters)
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Top Gifters */}
+                      <div className="space-y-2">
+                        <span className="text-xs font-bold text-amber-300 block">👑 ۳ حامی برترین این ماه (Top Supporters):</span>
+                        {[
+                          { name: 'Soren 🔥', handle: '@soren_top', amount: '10,000 Coins ($50.00)', rank: '🥇' },
+                          { name: 'Rayan Streamer', handle: '@rayan_v', amount: '7,500 Coins ($37.50)', rank: '🥈' },
+                          { name: 'Elena 💎', handle: '@elena_vip', amount: '5,200 Coins ($26.00)', rank: '🥉' }
+                        ].map((g, idx) => (
+                          <div key={idx} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-base">{g.rank}</span>
+                              <div>
+                                <h4 className="text-xs font-bold text-white">{g.name}</h4>
+                                <span className="text-[10px] text-slate-400">{g.handle}</span>
+                              </div>
+                            </div>
+                            <span className="text-xs font-black text-amber-400 font-mono">{g.amount}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Popular Gifts */}
+                      <div className="space-y-2">
+                        <span className="text-xs font-bold text-pink-300 block">🎁 محبوب‌ترین هدایای دریافتی:</span>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                            <span className="text-2xl">👑</span>
+                            <span className="text-[10px] text-white font-bold block">Crown of Honor</span>
+                            <span className="text-[10px] text-amber-400 font-mono font-bold">450 عدد</span>
+                          </div>
+                          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                            <span className="text-2xl">🏎️</span>
+                            <span className="text-[10px] text-white font-bold block">Supercar</span>
+                            <span className="text-[10px] text-cyan-300 font-mono font-bold">120 عدد</span>
+                          </div>
+                          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                            <span className="text-2xl">🚀</span>
+                            <span className="text-[10px] text-white font-bold block">Rocket</span>
+                            <span className="text-[10px] text-pink-300 font-mono font-bold">85 عدد</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 6: FOLLOWERS */}
+                {creatorActiveTab === 'followers' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <h3 className="text-sm font-black text-white flex items-center gap-2">
+                        <Users className="w-4 h-4 text-purple-400" />
+                        ۶. مدیریت دنبال‌کنندگان (Followers Management)
+                      </h3>
+                      <span className="text-xs text-purple-300 font-bold bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/30">
+                        مجموع: ۱۰,۴۵۰ فالوور
+                      </span>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {creatorFollowersList.map(f => (
+                        <div key={f.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <img src={f.avatar} alt="follower" className="w-10 h-10 rounded-full object-cover border border-purple-500/30" />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-xs font-bold text-white">{f.name}</h4>
+                                <span className="text-[9px] px-2 py-0.2 rounded-full bg-slate-800 text-amber-300 font-bold">{f.badge}</span>
+                              </div>
+                              <span className="text-[10px] text-slate-400">{f.handle}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                setCreatorFollowersList(prev => prev.map(x => x.id === f.id ? { ...x, isFollowing: !x.isFollowing } : x));
+                                showToast(f.isFollowing ? 'انجام شد' : 'دنبال کردن متقابل فعال گردید');
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${f.isFollowing ? 'bg-slate-800 text-slate-400' : 'bg-purple-600 text-white'}`}
+                            >
+                              {f.isFollowing ? 'دنبال شده' : 'دنبال کردن متقابل 👥'}
+                            </button>
+                            <button
+                              onClick={() => showToast('کاربر بلاک گردید')}
+                              className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-rose-950 text-rose-400 text-xs font-bold border border-slate-800"
+                            >
+                              بلاک
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 7: CONTENT MANAGEMENT */}
+                {creatorActiveTab === 'content' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <h3 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                      <Video className="w-4 h-4 text-blue-400" />
+                      ۷. مدیریت محتوا (VODs & Stories)
+                    </h3>
+
+                    <div className="space-y-2.5">
+                      {creatorContentList.map(c => (
+                        <div key={c.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-blue-400">
+                              <Play className="w-5 h-5 fill-current" />
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-bold text-white">{c.title}</h4>
+                              <div className="flex items-center gap-3 text-[10px] text-slate-400 mt-0.5 font-mono">
+                                <span>مدت: {c.duration}</span>
+                                <span>•</span>
+                                <span>{c.views} بازدید</span>
+                                <span>•</span>
+                                <span className="text-rose-400">❤️ {c.likes}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => showToast('در حال پخش محتوا...')} className="px-3 py-1.5 rounded-xl bg-blue-600/20 text-blue-300 text-xs font-bold border border-blue-500/30">
+                              پخش 🎥
+                            </button>
+                            <button onClick={() => {
+                              setCreatorContentList(prev => prev.filter(x => x.id !== c.id));
+                              showToast('محتوا حذف گردید');
+                            }} className="px-3 py-1.5 rounded-xl bg-rose-600/20 text-rose-300 text-xs font-bold border border-rose-500/30">
+                              حذف 🗑️
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 8: SCHEDULE */}
+                {creatorActiveTab === 'schedule' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <h3 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                      <Calendar className="w-4 h-4 text-indigo-400" />
+                      ۸. تقویم لایوهای برنامه‌ریزی شده (Stream Schedule)
+                    </h3>
+
+                    {/* Add Schedule Input */}
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                      <span className="text-xs font-bold text-cyan-300">افزودن برنامه لایو جدید:</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input
+                          type="text"
+                          placeholder="عنوان لایو..."
+                          value={creatorNewScheduleTitle}
+                          onChange={(e) => setCreatorNewScheduleTitle(e.target.value)}
+                          className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                        />
+                        <input
+                          type="text"
+                          placeholder="ساعت (مثلاً ۲۱:۰۰)"
+                          value={creatorNewScheduleTime}
+                          onChange={(e) => setCreatorNewScheduleTime(e.target.value)}
+                          className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                        />
+                        <button
+                          onClick={() => {
+                            if (!creatorNewScheduleTitle.trim()) {
+                              showToast('لطفاً عنوان لایو را وارد کنید');
+                              return;
+                            }
+                            setCreatorScheduleList(prev => [
+                              ...prev,
+                              { id: Date.now(), day: creatorNewScheduleDay, time: creatorNewScheduleTime, title: creatorNewScheduleTitle, category: 'Music', description: 'لایو برنامه‌ریزی شده جدید' }
+                            ]);
+                            setCreatorNewScheduleTitle('');
+                            showToast('برنامه لایو جدید در تقویم ثبت شد ✅');
+                          }}
+                          className="btn-neon-pink rounded-xl text-xs font-black py-2"
+                        >
+                          ثبت در تقویم 📅
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {creatorScheduleList.map(s => (
+                        <div key={s.id} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2.5 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 text-[10px] font-black font-mono">
+                                {s.day} - {s.time}
+                              </span>
+                              <span className="text-xs font-bold text-white">{s.title}</span>
+                            </div>
+                            <p className="text-[10px] text-slate-400">{s.description}</p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setCreatorScheduleList(prev => prev.filter(x => x.id !== s.id));
+                              showToast('رویداد حذف شد');
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-slate-900 text-rose-400 text-xs font-bold border border-slate-800 hover:bg-rose-950"
+                          >
+                            لغو برنامه
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 9: VIP CREATOR */}
+                {creatorActiveTab === 'vip' && (
+                  <div className="card-3d p-5 rounded-3xl bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-900 border border-amber-500/40 space-y-4 animate-fadeIn">
+                    <h3 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                      <Crown className="w-4 h-4 text-amber-400 fill-amber-400" />
+                      ۹. مزایای اختصاصی استریمر VIP (VIP Creator Perks)
+                    </h3>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[
+                        { title: '🎥 کیفیت استریم 4K Ultra HD', desc: 'نرخ بیت‌ریت تا ۱۵ مگابیت بر ثانیه با وضوح فوق‌العاده', status: 'فعال ✅' },
+                        { title: '⏱️ زمان لایو نامحدود', desc: 'بدون هیچ‌گونه محدودیت زمانی در برگزاری استریم', status: 'فعال ✅' },
+                        { title: '⭐ اولویت نمایش در اکسپلور', desc: 'قرارگیری در صدر لیست لایوهای پیشنهادی به بینندگان', status: 'فعال ✅' },
+                        { title: '🎨 ابزارها و افکت‌های واقعیت افزوده', desc: 'دسترسی به تمام افکت‌ها و فیلترهای سه‌بعدی VIP', status: 'فعال ✅' }
+                      ].map((p, idx) => (
+                        <div key={idx} className="p-4 rounded-2xl bg-slate-950 border border-amber-500/30 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-white">{p.title}</h4>
+                            <span className="text-[10px] font-black text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-500/30">{p.status}</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400">{p.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 10: PROMOTIONS */}
+                {creatorActiveTab === 'promotions' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <h3 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                      <Zap className="w-4 h-4 text-yellow-400" />
+                      ۱۰. تبلیغ و افزایش بازدید لایو (Promotions & Boost)
+                    </h3>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 flex flex-col justify-between">
+                        <div>
+                          <span className="text-xs font-black text-amber-400 block">📌 Banner Boost</span>
+                          <p className="text-[10px] text-slate-300 mt-1">نمایش بنر ویژه لایو در بالای صفحه اصلی اپلیکیشن</p>
+                        </div>
+                        <button onClick={() => showToast('ارتقای بنر لایو فعال گردید ($10)')} className="w-full py-2 rounded-xl bg-amber-500 text-slate-950 text-xs font-black">
+                          خرید بوست بنر ($10)
+                        </button>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 flex flex-col justify-between">
+                        <div>
+                          <span className="text-xs font-black text-cyan-400 block">🔔 Push Broadcast</span>
+                          <p className="text-[10px] text-slate-300 mt-1">ارسال نوتیفیکیشن فوری شروع لایو به تمام ۱۰,۴۵۰ فالوور</p>
+                        </div>
+                        <button onClick={() => showToast('نوتیفیکیشن همگانی ارسال گردید ($15)')} className="w-full py-2 rounded-xl bg-cyan-500 text-slate-950 text-xs font-black">
+                          ارسال نوتیفیکیشن همگانی ($15)
+                        </button>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 flex flex-col justify-between">
+                        <div>
+                          <span className="text-xs font-black text-purple-400 block">🚀 Explorer Highlight</span>
+                          <p className="text-[10px] text-slate-300 mt-1">قرارگیری در رده ۱ تا ۳ اکسپلور به مدت ۲ ساعت</p>
+                        </div>
+                        <button onClick={() => showToast('هایلایت اکسپلور فعال گردید ($20)')} className="w-full py-2 rounded-xl bg-purple-600 text-white text-xs font-black">
+                          خرید جایگاه اکسپلور ($20)
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 11: COMMUNITY & POLLS */}
+                {creatorActiveTab === 'community' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <h3 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                      <MessageSquare className="w-4 h-4 text-teal-400" />
+                      ۱۱. مدیریت جامعه مخاطبان و نظرسنجی (Community & Polls)
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Broadcast Announcement */}
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
+                        <span className="text-xs font-bold text-white block">📢 ارسال اطلاعیه عمومی به مخاطبان:</span>
+                        <textarea
+                          rows={3}
+                          placeholder="متن اطلاعیه خود را بنویسید..."
+                          value={creatorBroadcastMsg}
+                          onChange={(e) => setCreatorBroadcastMsg(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none"
+                        />
+                        <button
+                          onClick={() => {
+                            if (!creatorBroadcastMsg.trim()) { showToast('متن اطلاعیه را وارد کنید'); return; }
+                            setCreatorBroadcastMsg('');
+                            showToast('اطلاعیه عمومی برای تمام فالوورها ارسال شد ✅');
+                          }}
+                          className="w-full py-2 rounded-xl bg-teal-500 text-slate-950 text-xs font-black"
+                        >
+                          ارسال اطلاعیه 📢
+                        </button>
+                      </div>
+
+                      {/* Live Poll Creation */}
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
+                        <span className="text-xs font-bold text-white block">📊 ایجاد نظرسنجی فعال استودیو:</span>
+                        <input
+                          type="text"
+                          value={creatorPollQuestion}
+                          onChange={(e) => setCreatorPollQuestion(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                        />
+                        <div className="space-y-1">
+                          {creatorPollOptions.map((opt, i) => (
+                            <div key={i} className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-300 font-bold">
+                              گزینه {i + 1}: {opt}
+                            </div>
+                          ))}
+                        </div>
+                        <button 
+                          onClick={() => {
+                            setPollQuestionInput(creatorPollQuestion);
+                            setPollOptionInputs(creatorPollOptions.concat(['', '', '', '']).slice(0, 4));
+                            setIsCreatePollModalOpen(true);
+                          }} 
+                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white text-xs font-black shadow hover:brightness-110 transition active:scale-95 flex items-center justify-center gap-2"
+                        >
+                          <BarChart2 className="w-4 h-4" />
+                          <span>تنظیم و انتشار نظرسنجی در استودیو میزبان 🗳️</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 12: GOALS */}
+                {creatorActiveTab === 'goals' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <h3 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                      <Target className="w-4 h-4 text-orange-400" />
+                      ۱۲. اهداف استریمر (Monthly Goals)
+                    </h3>
+
+                    <div className="space-y-3">
+                      {/* Income Goal */}
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                        <div className="flex justify-between text-xs font-bold">
+                          <span className="text-white">هدف درآمد ماهانه (Monthly Income Goal):</span>
+                          <span className="text-emerald-400 font-mono">$1,420 / $1,000 (142% تکمیل شد 🎉)</span>
+                        </div>
+                        <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                          <div className="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 rounded-full w-full" />
+                        </div>
+                      </div>
+
+                      {/* Followers Goal */}
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                        <div className="flex justify-between text-xs font-bold">
+                          <span className="text-white">هدف جذب فالوور (Follower Goal):</span>
+                          <span className="text-purple-300 font-mono">10,450 / 15,000 (70%)</span>
+                        </div>
+                        <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                          <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full w-[70%]" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 13: WITHDRAWAL */}
+                {creatorActiveTab === 'withdrawal' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-emerald-500/30 space-y-4 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <h3 className="text-sm font-black text-white flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-emerald-400" />
+                        ۱۳. درخواست برداشت درآمد (Withdrawal Request)
+                      </h3>
+                      <span className="text-xs font-mono font-black text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30">
+                        موجود در ولت: $1,250.00 USD
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs text-slate-300 font-bold block mb-1">مبلغ برداشت (USD):</label>
+                          <input
+                            type="number"
+                            value={withdrawAmountInput}
+                            onChange={(e) => setWithdrawAmountInput(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs text-slate-300 font-bold block mb-1">روش تسویه حساب:</label>
+                          <select
+                            value={withdrawMethodInput}
+                            onChange={(e) => setWithdrawMethodInput(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none"
+                          >
+                            <option value="USDT TRC20">USDT TRC20 Crypto Wallet</option>
+                            <option value="Bank Transfer">کارت بانکی شتاب IRAN</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-xs text-slate-300 font-bold block mb-1">آدرس ولت یا شماره شبای مقصد:</label>
+                          <input
+                            type="text"
+                            value={withdrawAddressInput}
+                            onChange={(e) => setWithdrawAddressInput(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none"
+                          />
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            showToast(`درخواست برداشت $${withdrawAmountInput} ثبت گردید و تا ۲۴ ساعت آینده تسویه می‌شود ✅`);
+                          }}
+                          className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-black text-xs shadow-lg"
+                        >
+                          تأیید و ثبت درخواست برداشت 💸
+                        </button>
+                      </div>
+
+                      {/* Withdrawal History */}
+                      <div className="space-y-2">
+                        <span className="text-xs font-bold text-white block">سوابق درخواست‌های برداشت:</span>
+                        {withdrawalsHistoryList.map(w => (
+                          <div key={w.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                            <div>
+                              <span className="font-bold text-white block">{w.amount}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">{w.date} • {w.method}</span>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${
+                              w.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' :
+                              w.status === 'Pending' ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
+                            }`}>{w.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 14-15: CREATOR LEVEL & ACHIEVEMENTS */}
+                {creatorActiveTab === 'level_achievements' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <h3 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                      <Award className="w-4 h-4 text-purple-400" />
+                      ۱۴-۱۵. رتبه استریمر و مدال‌های افتخار (Level & Achievements)
+                    </h3>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Level */}
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                        <span className="text-xs font-bold text-amber-300">💎 Creator Level: 18</span>
+                        <p className="text-[10px] text-slate-300">ارتقا به سطح ۱۹ نیاز به ۲,۵۰۰ سکه هدیه بیشتر دارد.</p>
+                      </div>
+
+                      {/* Achievements */}
+                      <div className="space-y-2">
+                        <span className="text-xs font-bold text-white block">🏆 مدال‌ها و افتخارات کسب شده:</span>
+                        {[
+                          { title: '🥇 اولین استریم موفق', desc: 'اولین لایو استریم 4K' },
+                          { title: '🏆 ۱۰,۰۰۰ فالوور', desc: 'عضویت در باشگاه ۱۰K' },
+                          { title: '⏱️ ۱۰۰ ساعت لایو', desc: 'استریمر اسطوره ۱۰۰ ساعته' }
+                        ].map((ach, i) => (
+                          <div key={i} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-2.5">
+                            <span className="text-lg">{ach.title.split(' ')[0]}</span>
+                            <div>
+                              <h4 className="text-xs font-bold text-white">{ach.title}</h4>
+                              <span className="text-[10px] text-slate-400">{ach.desc}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 16-17: REPORTS & SETTINGS */}
+                {creatorActiveTab === 'reports_settings' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <h3 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                      <Shield className="w-4 h-4 text-emerald-400" />
+                      ۱۶-۱۷. سلامت حساب و تنظیمات استریم (Account Health & Settings)
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Health */}
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                        <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="w-4 h-4" /> وضعیت سلامت حساب: عالی (100% Clean)
+                        </span>
+                        <p className="text-[10px] text-slate-400">هیچ‌گونه تخلف، اخطار یا ریپورت کپی‌رایتی روی حساب شما ثبت نشده است.</p>
+                      </div>
+
+                      {/* Settings */}
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                        <span className="text-xs font-bold text-white block">⚙️ کیفیت و نرخ بیت‌ریت:</span>
+                        <div className="flex justify-between text-xs text-slate-300">
+                          <span>کیفیت پخش: 4K Ultra (2160p 60fps)</span>
+                          <span className="text-emerald-400 font-bold">عالی</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 18-19: SUPPORT & VERIFICATION */}
+                {creatorActiveTab === 'verification_support' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <h3 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                      <LifeBuoy className="w-4 h-4 text-cyan-400" />
+                      ۱۸-۱۹. پشتیبانی اختصاصی و نشان تأیید (Support & Verification)
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Verification Status */}
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                        <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-cyan-400" /> احراز هویت استریمر: Verified ✅
+                        </span>
+                        <p className="text-[10px] text-slate-400">نشان آبی رسمی VIP روی پروفایل شما فعال است.</p>
+                      </div>
+
+                      {/* Creator Support Ticket */}
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
+                        <span className="text-xs font-bold text-white block">🎧 ارسال تیکت اولویت‌دار پشتیبانی:</span>
+                        <input
+                          type="text"
+                          placeholder="موضوع تیکت..."
+                          value={creatorSupportSubject}
+                          onChange={(e) => setCreatorSupportSubject(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                        />
+                        <textarea
+                          rows={2}
+                          placeholder="متن پیام شما..."
+                          value={creatorSupportMessage}
+                          onChange={(e) => setCreatorSupportMessage(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none"
+                        />
+                        <button
+                          onClick={() => {
+                            if (!creatorSupportSubject.trim()) { showToast('موضوع تیکت را وارد کنید'); return; }
+                            setCreatorSupportSubject('');
+                            setCreatorSupportMessage('');
+                            showToast('تیکت شما ثبت شد و کارشناسان V.Live به زودی پاسخ خواهند داد 🎧');
+                          }}
+                          className="w-full py-2 rounded-xl bg-cyan-500 text-slate-950 text-xs font-black"
+                        >
+                          ارسال تیکت اولویت‌دار 📩
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+{/* SUB-TAB 7: REDESIGNED ULTIMATE REFERRAL SYSTEM (18 FEATURES) */}
+            {walletSubTab === 'referral' && (
+              <div className="space-y-6 animate-fadeIn text-xs" dir={isRtl ? "rtl" : "ltr"}>
+                
+                {/* 1. TOP HEADER BANNER & STATS */}
+                <div className="card-3d p-6 rounded-3xl bg-gradient-to-br from-cyan-950/80 via-slate-900 to-purple-950/80 border border-cyan-500/40 relative overflow-hidden shadow-2xl">
+                  <div className="absolute top-0 right-0 w-72 h-72 bg-cyan-500/10 blur-3xl rounded-full pointer-events-none" />
+                  
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Users className="w-6 h-6 text-cyan-400" />
+                        <h2 className="text-base sm:text-xl font-black text-white">Invite Friends, Earn Rewards Together 👥</h2>
+                      </div>
+                      <p className="text-slate-300 text-xs mt-1 leading-relaxed">
+                        با دعوت از دوستان خود به V.Live، برای شما و دوستتان پاداش‌های ارزشمند سکه، الماس و اشتراک VIP آزاد می‌شود!
+                      </p>
+                    </div>
+
+                    {/* Telegram Mini App Fast Invite Launcher */}
+                    <button
+                      onClick={handleShareTelegramReferral}
+                      className="btn-neon-cyan px-5 py-3 rounded-2xl text-xs font-black shadow-xl flex items-center gap-2 animate-bounce"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      <span>✈️ دعوت مستقیم از داخل تلگرام</span>
+                    </button>
+                  </div>
+
+                  {/* 12. BONUS EVENT BANNER */}
+                  {isBonusEventActive && (
+                    <div className="mt-4 p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 via-pink-500/20 to-purple-500/20 border border-amber-400/40 flex items-center justify-between text-xs relative z-10">
+                      <div className="flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-amber-400 fill-amber-400 animate-pulse" />
+                        <span className="font-bold text-amber-300">🔥 رویداد طلایی ۲ برابر (Double Bonus Event):</span>
+                        <span className="text-white hidden sm:inline">فقط امروز: دعوت هر دوست ⚡ ۲ برابر جایزه (200 Coins)</span>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-amber-400 text-slate-950 font-black text-[10px]">فعال ⚡</span>
+                    </div>
+                  )}
+
+                  {/* 1. TOP 4 STATS CARDS */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 relative z-10">
+                    <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-center space-y-1">
+                      <span className="text-[10px] text-slate-400 block font-bold">تعداد دعوت‌ها</span>
+                      <p className="text-base font-black text-cyan-300 font-mono">{totalInvitesCount} نفر</p>
+                      <span className="text-[10px] text-emerald-400 font-bold">+۲ نفر امروز</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-center space-y-1">
+                      <span className="text-[10px] text-slate-400 block font-bold">درآمد از دعوت</span>
+                      <p className="text-base font-black text-amber-400 font-mono">{totalReferralEarnings.toLocaleString()} Coins</p>
+                      <span className="text-[10px] text-amber-300 font-bold">~ ${(totalReferralEarnings / 200).toFixed(2)} USDT</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-center space-y-1">
+                      <span className="text-[10px] text-slate-400 block font-bold">کاربران فعال دعوت‌شده</span>
+                      <p className="text-base font-black text-emerald-400 font-mono">{activeInvitesCount} کاربر</p>
+                      <span className="text-[10px] text-slate-400">۷۵٪ نرخ فعال‌سازی</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-amber-500/30 text-center space-y-1">
+                      <span className="text-[10px] text-slate-400 block font-bold">سطح دعوت (Referral Tier)</span>
+                      <p className="text-base font-black text-amber-300 flex items-center justify-center gap-1">
+                        <Crown className="w-4 h-4 text-amber-400 fill-amber-400" /> {referralTier} Tier
+                      </p>
+                      <span className="text-[10px] text-cyan-300 font-bold">+۱۵٪ کمیسیون ویژه</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. DOUBLE REWARD RULES BANNER */}
+                <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-emerald-500/30 flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl shrink-0">
+                      🎁
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-bold">پاداش شما (دعوت‌کننده):</span>
+                      <h4 className="text-sm font-black text-emerald-400">🎁 100 Coins (یا 200 Coins در رویداد)</h4>
+                      <p className="text-[10px] text-slate-400">به محض فعال‌سازی حساب دوست جدید</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-purple-500/30 flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-xl shrink-0">
+                      🎉
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-bold">پاداش دوست جدید شما:</span>
+                      <h4 className="text-sm font-black text-purple-300">🎁 100 Coins هدیه خوش‌آمدگویی</h4>
+                      <p className="text-[10px] text-slate-400">واریز فوری به کیف پول پس از ثبت‌نام</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2 & 3. UNIQUE REFERRAL LINK & QUICK SHARE BUTTONS */}
+                <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h3 className="text-xs font-black text-white flex items-center gap-2">
+                      <Link className="w-4 h-4 text-cyan-400" />
+                      ۲. لینک و کد دعوت اختصاصی شما (Referral Link & Code)
+                    </h3>
+                    <span className="text-[10px] text-slate-400 font-mono">ID: {referralCode}</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Referral Link Input */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] text-slate-300 font-bold block">لینک دعوت اختصاصی شما:</label>
+                      <div className="flex items-center gap-2 bg-slate-950 p-2 rounded-2xl border border-slate-800">
+                        <span className="text-xs text-cyan-300 font-mono dir-ltr truncate flex-1 px-2">{referralLink}</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(referralLink);
+                            showToast('لینک دعوت اختصاصی با موفقیت کپی شد! 📋');
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1 shrink-0"
+                        >
+                          <Copy className="w-3.5 h-3.5" /> کپی لینک
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Referral Code Box */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] text-slate-300 font-bold block">کد معرف (Referral Code):</label>
+                      <div className="flex items-center justify-between bg-slate-950 p-2 rounded-2xl border border-slate-800">
+                        <span className="text-sm font-black text-amber-400 font-mono px-3">{referralCode}</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(referralCode);
+                            showToast(`کد معرف ${referralCode} کپی شد!`);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1"
+                        >
+                          <Copy className="w-3.5 h-3.5" /> کپی کد
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. QUICK SHARE BUTTONS */}
+                  <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                    <span className="text-[11px] text-slate-400 font-bold block">۳. اشتراک‌گذاری سریع در شبکه‌های اجتماعی:</span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <button
+                        onClick={handleShareTelegramReferral}
+                        className="p-2.5 rounded-2xl bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 font-bold border border-sky-500/40 flex items-center justify-center gap-2 transition"
+                      >
+                        <Send className="w-4 h-4 text-sky-400" />
+                        <span>Telegram ✈️</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`عضو شبکه V.Live شو و ۱۰۰ سکه رایگان بگیر! 🎁 ${referralLink}`)}`;
+                          window.open(waUrl, '_blank');
+                        }}
+                        className="p-2.5 rounded-2xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 font-bold border border-emerald-500/40 flex items-center justify-center gap-2 transition"
+                      >
+                        <MessageSquare className="w-4 h-4 text-emerald-400" />
+                        <span>WhatsApp 🟢</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(`سلام! تو اپلیکیشن V.Live ثبت‌نام کن با کد دعوت من: ${referralCode} و ۱۰۰ سکه هدیه بگیر! ${referralLink}`);
+                          showToast('متن استوری اینستاگرام کپی شد! 📸');
+                        }}
+                        className="p-2.5 rounded-2xl bg-pink-600/20 hover:bg-pink-600/30 text-pink-300 font-bold border border-pink-500/40 flex items-center justify-center gap-2 transition"
+                      >
+                        <Camera className="w-4 h-4 text-pink-400" />
+                        <span>Instagram 📸</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(referralLink);
+                          showToast('لینک دعوت کپی شد!');
+                        }}
+                        className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 flex items-center justify-center gap-2 transition"
+                      >
+                        <Copy className="w-4 h-4 text-slate-300" />
+                        <span>Copy Link 📋</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. REWARD CONDITIONS & NOTIFICATION SIMULATOR */}
+                <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      ۵. شرایط دریافت کامل جایزه دعوت
+                    </h3>
+                    <button
+                      onClick={() => showToast('🎉 دوست شما @ali_reza84 ثبت‌نام کرد! ۱۰۰ سکه پاداش آزاد شد.')}
+                      className="px-3 py-1 rounded-xl bg-purple-500/20 text-purple-300 text-[10px] font-bold border border-purple-500/30 hover:bg-purple-500/30"
+                    >
+                      🔔 تست اعلان ثبت‌نام دوست
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-2.5">
+                      <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">۱</span>
+                      <div>
+                        <h4 className="font-bold text-white">ثبت‌نام کاربر</h4>
+                        <p className="text-[10px] text-slate-400">ورود با لینک یا کد اختصاصی شما</p>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-2.5">
+                      <span className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs">۲</span>
+                      <div>
+                        <h4 className="font-bold text-white">۱۰ دقیقه حضور فعال</h4>
+                        <p className="text-[10px] text-slate-400">تماشا یا استفاده از امکانات برنامه</p>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-2.5">
+                      <span className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs">۳</span>
+                      <div>
+                        <h4 className="font-bold text-white">تکمیل پروفایل</h4>
+                        <p className="text-[10px] text-slate-400">تنظیم آواتار و نام کاربری</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* REFERRAL SYSTEM SUB-TABS */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-slate-800">
+                  {[
+                    { id: 'overview', label: '👥 ۶. لیست دعوت‌ها (Invites List)' },
+                    { id: 'milestones', label: '🎯 ۱۰. پاداش مرحله‌ای (Milestones)' },
+                    { id: 'leaderboard', label: '🏆 ۹. رتبه دعوت (Top Inviters)' },
+                    { id: 'analytics', label: '📊 ۱۴. نمودار درآمد و رشد' },
+                    { id: 'rules', label: '📜 ۱۳&۱۷. قوانین و ضدتقلب' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setReferralActiveTab(tab.id)}
+                      className={`px-4 py-2 rounded-2xl text-xs font-bold transition whitespace-nowrap ${
+                        referralActiveTab === tab.id ? 'bg-gradient-to-r from-cyan-600 to-purple-600 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* SUB-TAB 1: INVITES LIST */}
+                {referralActiveTab === 'overview' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <h3 className="text-xs font-black text-white flex items-center gap-2">
+                        <Users className="w-4 h-4 text-cyan-400" />
+                        ۶. لیست کاربران دعوت‌شده توسط شما (Invites List)
+                      </h3>
+                      <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                        مجموع: {totalInvitesCount} کاربر
+                      </span>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {invitesList.map(inv => (
+                        <div key={inv.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <img src={inv.avatar} alt="invite user" className="w-10 h-10 rounded-full object-cover border border-cyan-500/30" />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-xs font-bold text-white">{inv.name}</h4>
+                                <span className="text-[10px] text-slate-400">{inv.handle}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                                <span>عضویت: {inv.date}</span>
+                                <span>•</span>
+                                <span className="text-cyan-300">استفاده: {inv.minutesUsed} دقیقه</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            {inv.status === 'Active' ? (
+                              <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30 flex items-center gap-1">
+                                🟢 Active (پاداش آزاد شد)
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30 flex items-center gap-1">
+                                🟡 Pending ({inv.minutesUsed}/10 min)
+                              </span>
+                            )}
+                            <span className="text-xs font-black text-amber-400 font-mono">+{inv.rewardAmount} Coins</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* SUB-TAB 2: MILESTONES */}
+                {referralActiveTab === 'milestones' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <h3 className="text-xs font-black text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                      <Target className="w-4 h-4 text-amber-400" />
+                      ۱۰. جایزه مرحله‌ای (Tiered Milestone Rewards)
+                    </h3>
+
+                    <div className="space-y-3">
+                      {referralMilestones.map(m => (
+                        <div key={m.id} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 text-xs font-black">
+                                {m.count} دعوت
+                              </span>
+                              <h4 className="text-xs font-bold text-white">{m.rewardTitle}</h4>
+                            </div>
+                            <p className="text-[10px] text-slate-400">رسیدن به {m.count} دعوت فعال برای دریافت این پاداش ویژه</p>
+                          </div>
+
+                          <div>
+                            {m.status === 'Claimed' && (
+                              <span className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-400 text-xs font-bold">دریافت شده ✅</span>
+                            )}
+                            {m.status === 'Claimable' && (
+                              <button
+                                onClick={() => {
+                                  setReferralMilestones(prev => prev.map(x => x.id === m.id ? { ...x, status: 'Claimed' } : x));
+                                  setUserCoins(prev => prev + (m.amount || 200));
+                                  showToast(`🎉 پاداش ${m.rewardTitle} با موفقیت دریافت گردید!`);
+                                }}
+                                className="btn-neon-pink px-4 py-1.5 rounded-xl text-xs font-black shadow-md"
+                              >
+                                دریافت پاداش 🎁
+                              </button>
+                            )}
+                            {m.status === 'Locked' && (
+                              <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-500 text-xs font-bold">
+                                🔒 قفل ({totalInvitesCount}/{m.count})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* SUB-TAB 3: LEADERBOARD */}
+                {referralActiveTab === 'leaderboard' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <h3 className="text-xs font-black text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                      <Trophy className="w-4 h-4 text-amber-400" />
+                      ۹. جدول رتبه‌بندی برترین معرف‌ها (Top Inviters Leaderboard)
+                    </h3>
+
+                    <div className="space-y-2.5">
+                      {topInvitersLeaderboard.map(inviter => (
+                        <div key={inviter.rank} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="w-7 h-7 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center font-black text-xs text-amber-400 font-mono">
+                              #{inviter.rank}
+                            </span>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-xs font-bold text-white">{inviter.name}</h4>
+                                <span className="text-[9px] px-2 py-0.2 rounded-full bg-amber-500/10 text-amber-300 font-bold">{inviter.badge}</span>
+                              </div>
+                              <span className="text-[10px] text-slate-400">{inviter.handle}</span>
+                            </div>
+                          </div>
+
+                          <div className="text-left space-y-0.5">
+                            <span className="text-xs font-black text-cyan-300 block">{inviter.invites} دعوت</span>
+                            <span className="text-[10px] text-amber-400 font-mono">{inviter.totalEarned}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* SUB-TAB 4: ANALYTICS */}
+                {referralActiveTab === 'analytics' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <h3 className="text-xs font-black text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                      <TrendingUp className="w-4 h-4 text-emerald-400" />
+                      ۱۴. نمودار رشد دعوت و درآمد ماهانه (Analytics)
+                    </h3>
+
+                    <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
+                      <span className="text-xs font-bold text-slate-300">روند دعوت‌های ثبت‌شده در هفته‌های اخیر:</span>
+                      <div className="h-28 flex items-end justify-between gap-2 pt-4 border-b border-slate-800 px-2">
+                        {[20, 35, 50, 65, 80, 45, 90, 100].map((h, i) => (
+                          <div key={i} className="flex-1 bg-gradient-to-t from-emerald-600 to-cyan-400 rounded-t-lg" style={{ height: `${h}%` }} />
+                        ))}
+                      </div>
+                      <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                        <span>هفته ۱</span>
+                        <span>هفته ۲</span>
+                        <span>هفته ۳</span>
+                        <span>هفته ۴</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* SUB-TAB 5: ANTI-FRAUD & RULES */}
+                {referralActiveTab === 'rules' && (
+                  <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <h3 className="text-xs font-black text-white flex items-center gap-2">
+                        <ShieldAlert className="w-4 h-4 text-rose-400" />
+                        ۱۳ & ۱۷. شرایط دریافت جایزه و قوانین ضدتقلب
+                      </h3>
+                      <button
+                        onClick={() => setIsReferralRulesModalOpen(true)}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 text-cyan-300 font-bold text-xs border border-slate-700 hover:bg-slate-700"
+                      >
+                        نمایش کامل سند قوانین 📜
+                      </button>
+                    </div>
+
+                    <div className="space-y-3 text-slate-300 text-xs leading-relaxed">
+                      <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                        <h4 className="font-bold text-white flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> قانون تک‌معرفی (Single Inviter)
+                        </h4>
+                        <p className="text-[11px] text-slate-400">هر حساب کاربری جدید تنها مجاز به داشتن یک معرف رسمی می‌باشد.</p>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                        <h4 className="font-bold text-white flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> شرط فعال‌سازی حساب (Min Usage)
+                        </h4>
+                        <p className="text-[11px] text-slate-400">پاداش سکه پس از انجام حداقل ۱۰ دقیقه فعالیت کاربر جدید آزاد خواهد شد.</p>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-slate-950 border border-rose-500/30 space-y-1">
+                        <h4 className="font-bold text-rose-400 flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5 text-rose-400" /> سیستم هوشمند ساخت حساب‌های تکراری (Anti-Duplicate)
+                        </h4>
+                        <p className="text-[11px] text-slate-400">ساخت چندین حساب با یک دستگاه یا IP مساوی، موجب مسدودی دائم پاداش‌ها می‌گردد.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            )}
+{/* SUB-TAB 8: SECURITY & VIP */}
+            {walletSubTab === 'vip' && (
+              <div className="space-y-6" dir={isRtl ? "rtl" : "ltr"}>
+                
+                {/* 1. VIP HEADER BANNER (👑 V.Live Premium - Neon Gold) */}
+                <div className="relative p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-950 via-yellow-950/90 to-amber-900 border-2 border-amber-400/60 shadow-[0_0_40px_rgba(245,158,11,0.25)] overflow-hidden">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+                  
+                  <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-4 text-right">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 via-yellow-300 to-amber-600 p-0.5 flex items-center justify-center shadow-lg shrink-0 animate-pulse">
+                        <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                          <Crown className="w-8 h-8 text-amber-400 fill-amber-400/20" />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h2 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 bg-clip-text text-transparent">
+                            V.Live Premium
+                          </h2>
+                          <span className="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 font-mono text-xs font-black">
+                            VIP Club 👑
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-slate-200 font-bold mt-1">
+                          Unlock Exclusive Features • تجربه شاهانه و ارتقای کامل امکانات
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* VIP Status Card */}
+                    <div className="w-full md:w-auto p-4 rounded-2xl bg-slate-950/90 border border-amber-500/40 flex items-center justify-between gap-4 shadow-inner">
+                      <div className="space-y-1">
+                        <p className="text-[11px] text-slate-400 font-bold">وضعیت اشتراک (VIP Status)</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-black text-amber-300 capitalize flex items-center gap-1">
+                            {vipPlan === 'silver' && '🥉 Silver VIP'}
+                            {vipPlan === 'gold' && '🥈 Gold VIP'}
+                            {vipPlan === 'diamond' && '🥇 Diamond VIP'}
+                            {vipPlan === 'elite' && '💠 Elite VIP'}
+                            {vipPlan === 'none' && 'غیرفعال (Free Member)'}
+                          </span>
+                          {vipPlan !== 'none' && (
+                            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 font-bold">
+                              {vipExpireDays} روز باقی‌مانده
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setIsVipModalOpen(true);
+                          showToast('صفحه تمدید و ارتقای اشتراک VIP باز شد');
+                        }}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs shadow-md transition transform active:scale-95 shrink-0 flex items-center gap-1.5"
+                      >
+                        <Crown className="w-3.5 h-3.5 fill-slate-950" />
+                        <span>{vipPlan === 'none' ? 'خرید VIP' : 'Renew VIP (تمدید)'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* MONTHLY REWARD CLAIM BOX FOR ACTIVE VIPS */}
+                  {vipPlan !== 'none' && (
+                    <div className="mt-5 pt-4 border-t border-amber-500/30 flex items-center justify-between flex-wrap gap-3 bg-slate-950/60 p-3.5 rounded-2xl border border-amber-500/20">
+                      <div className="flex items-center gap-2 text-xs">
+                        <Gift className="w-5 h-5 text-amber-400 animate-bounce" />
+                        <div>
+                          <span className="font-black text-amber-300">هدایای ماهانه VIP (Monthly Gift): </span>
+                          <span className="text-slate-200">۵۰۰ سکه رایگان + ۵۰ الماس + قاب طلایی اختصاصی</span>
+                        </div>
+                      </div>
+
+                      {isVipMonthlyClaimed ? (
+                        <span className="px-3 py-1 rounded-xl bg-emerald-950 text-emerald-300 text-xs font-bold border border-emerald-500/30 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          هدیه این ماه دریافت شد
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setUserCoins(prev => prev + 500);
+                            setIsVipMonthlyClaimed(true);
+                            safeStorage.setItem('vlive_vip_monthly_claimed', 'true');
+                            showToast('🎁 ۵۰۰ سکه + ۵۰ الماس + قاب طلایی ماهانه به شما اهدا شد!');
+                          }}
+                          className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition flex items-center gap-1.5"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          دریافت هدیه ماهانه
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. VIP PLANS SELECTOR (پلن‌ها) */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-black text-amber-300 flex items-center gap-2">
+                      <Crown className="w-4 h-4 text-amber-400" />
+                      ۲. انتخاب سطح اشتراک VIP (Subscription Tiers)
+                    </h3>
+                    <span className="text-xs text-slate-300 font-medium">سطح دلخواه خود را انتخاب کنید</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    
+                    {/* SILVER PLAN */}
+                    <div 
+                      onClick={() => setSelectedVipPlan('silver')}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'silver' ? 'bg-slate-900 border-slate-300 shadow-[0_0_20px_rgba(203,213,225,0.25)]' : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'}`}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-lg">🥉</span>
+                          <span className="text-xs font-mono font-black text-slate-300 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700">
+                            300 Coins / mo
+                          </span>
+                        </div>
+                        <h4 className="text-base font-black text-slate-200">Silver VIP</h4>
+                        <p className="text-[11px] text-slate-300 font-medium">مناسب برای شروع و مرور بدون تبلیغات</p>
+                        <ul className="text-xs text-slate-200 space-y-1.5 pt-1 border-t border-slate-800">
+                          <li className="flex items-center gap-1.5">🚫 بدون تبلیغات (No Ads)</li>
+                          <li className="flex items-center gap-1.5">👑 نشان VIP نقره‌ای</li>
+                          <li className="flex items-center gap-1.5">📞 تماس تصویری HD</li>
+                          <li className="flex items-center gap-1.5">🎧 اولویت در پشتیبانی</li>
+                        </ul>
+                      </div>
+
+                      <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'silver' ? 'bg-slate-200 text-slate-950 font-black' : 'bg-slate-900 text-slate-400'}`}>
+                        {selectedVipPlan === 'silver' ? 'انتخاب شده ✓' : 'انتخاب Silver'}
+                      </div>
+                    </div>
+
+                    {/* GOLD PLAN (POPULAR) */}
+                    <div 
+                      onClick={() => setSelectedVipPlan('gold')}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'gold' ? 'bg-slate-900 border-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.3)]' : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'}`}
+                    >
+                      <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-[10px] shadow-md">
+                        محبوب‌ترین ⭐
+                      </span>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-lg">🥈</span>
+                          <span className="text-xs font-mono font-black text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-400/40">
+                            500 Coins / mo
+                          </span>
+                        </div>
+                        <h4 className="text-base font-black text-amber-300">Gold VIP</h4>
+                        <p className="text-[11px] text-slate-300 font-medium">بهترین گزینه برای کاربران فعال و استریمرها</p>
+                        <ul className="text-xs text-slate-200 space-y-1.5 pt-1 border-t border-slate-800">
+                          <li className="flex items-center gap-1.5 text-amber-200 font-bold">✅ همه امکانات Silver +</li>
+                          <li className="flex items-center gap-1.5">🎁 ارسال هدایای ویژه VIP</li>
+                          <li className="flex items-center gap-1.5">🚪 ورود به اتاق‌های VIP</li>
+                          <li className="flex items-center gap-1.5">🎥 افزایش کیفیت لایو (1080p)</li>
+                          <li className="flex items-center gap-1.5">🖼️ فریم اختصاصی طلایی</li>
+                        </ul>
+                      </div>
+
+                      <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'gold' ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black shadow-md' : 'bg-slate-900 text-slate-400'}`}>
+                        {selectedVipPlan === 'gold' ? 'انتخاب شده ✓' : 'انتخاب Gold'}
+                      </div>
+                    </div>
+
+                    {/* DIAMOND PLAN */}
+                    <div 
+                      onClick={() => setSelectedVipPlan('diamond')}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'diamond' ? 'bg-slate-900 border-cyan-400 shadow-[0_0_25px_rgba(6,182,212,0.3)]' : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'}`}
+                    >
+                      <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-cyan-500 text-slate-950 font-black text-[10px] shadow-md">
+                        ارزش فوق‌العاده 💎
+                      </span>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-lg">🥇</span>
+                          <span className="text-xs font-mono font-black text-cyan-300 bg-cyan-500/20 px-2.5 py-0.5 rounded-full border border-cyan-400/40">
+                            1,000 Coins / mo
+                          </span>
+                        </div>
+                        <h4 className="text-base font-black text-cyan-300">Diamond VIP</h4>
+                        <p className="text-[11px] text-slate-300 font-medium">تجربه شاهانه با بیشترین پروموت و بوست</p>
+                        <ul className="text-xs text-slate-200 space-y-1.5 pt-1 border-t border-slate-800">
+                          <li className="flex items-center gap-1.5 text-cyan-200 font-bold">✅ همه امکانات Gold +</li>
+                          <li className="flex items-center gap-1.5">📞 تماس خصوصی اختصاصی</li>
+                          <li className="flex items-center gap-1.5">🔥 ۵X دیده شدن در Discover</li>
+                          <li className="flex items-center gap-1.5">🚀 Boost لایو در بالای لیست</li>
+                          <li className="flex items-center gap-1.5">💎 نشان و Badge Diamond</li>
+                        </ul>
+                      </div>
+
+                      <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'diamond' ? 'bg-gradient-to-r from-cyan-500 to-blue-400 text-slate-950 font-black shadow-md' : 'bg-slate-900 text-slate-400'}`}>
+                        {selectedVipPlan === 'diamond' ? 'انتخاب شده ✓' : 'انتخاب Diamond'}
+                      </div>
+                    </div>
+
+                    {/* ELITE VIP (EXCLUSIVE BY INVITATION) */}
+                    <div 
+                      onClick={() => setSelectedVipPlan('elite')}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'elite' ? 'bg-gradient-to-br from-purple-950/80 via-slate-900 to-indigo-950/80 border-purple-400 shadow-[0_0_25px_rgba(168,85,247,0.3)]' : 'bg-slate-950/80 border-purple-900/60 hover:border-purple-600'}`}
+                    >
+                      <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 text-white font-black text-[10px] shadow-md">
+                        خاص با دعوت 💠
+                      </span>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-lg">💠</span>
+                          <span className="text-xs font-mono font-black text-purple-300 bg-purple-500/20 px-2.5 py-0.5 rounded-full border border-purple-400/40">
+                            ادمین / دعوت
+                          </span>
+                        </div>
+                        <h4 className="text-base font-black text-purple-300">Elite VIP</h4>
+                        <p className="text-[11px] text-slate-300 font-medium">سطح فوق‌العاده اختصاصی مدیران و سفیران</p>
+                        <ul className="text-xs text-slate-200 space-y-1.5 pt-1 border-t border-purple-900/60">
+                          <li className="flex items-center gap-1.5 text-purple-200 font-bold">💠 نشان و تگ اختصاصی Elite</li>
+                          <li className="flex items-center gap-1.5">☎️ پشتیبانی اختصاصی ۲۴/۷</li>
+                          <li className="flex items-center gap-1.5">🚀 دسترسی زودتر به قابلیت‌ها</li>
+                          <li className="flex items-center gap-1.5">🖼️ قاب‌های نایاب پروفایل</li>
+                        </ul>
+                      </div>
+
+                      <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'elite' ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white font-black shadow-md' : 'bg-slate-900 text-slate-400'}`}>
+                        {selectedVipPlan === 'elite' ? 'انتخاب شده ✓' : 'درخواست Elite'}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* 3. DURATION & PAYMENT OPTIONS */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  {/* DURATION SELECTOR */}
+                  <div className="p-5 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                    <h4 className="text-xs font-black text-amber-300 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-400" />
+                      ۳. مدت زمان اشتراک (Subscription Duration)
+                    </h4>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {[
+                        { duration: 1, label: '۱ ماهه', discount: '0%', badge: 'عادی' },
+                        { duration: 3, label: '۳ ماهه', discount: '15%', badge: '۱۵٪ تخفیف' },
+                        { duration: 6, label: '۶ ماهه', discount: '25%', badge: '۲۵٪ تخفیف' },
+                        { duration: 12, label: '۱۲ ماهه (سالانه)', discount: '40%', badge: '۴۰٪ تخفیف ویژه 🔥' }
+                      ].map(item => (
+                        <button
+                          key={item.duration}
+                          onClick={() => setSelectedVipDuration(item.duration)}
+                          className={`p-3 rounded-2xl border text-right transition flex flex-col justify-between space-y-1 ${selectedVipDuration === item.duration ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold shadow-md' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'}`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-black text-white">{item.label}</span>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              {item.badge}
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-slate-400 font-mono">
+                            {item.duration * 30} روز اعتبار
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* PAYMENT METHOD SELECTOR */}
+                  <div className="p-5 rounded-3xl bg-slate-950 border border-slate-800 space-y-3 flex flex-col justify-between">
+                    <div>
+                      <h4 className="text-xs font-black text-amber-300 flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-amber-400" />
+                        ۴. روش پرداخت (Payment Method)
+                      </h4>
+
+                      <div className="grid grid-cols-3 gap-2 text-xs mt-3">
+                        <button
+                          onClick={() => setSelectedVipPayMethod('in_app')}
+                          className={`p-3 rounded-2xl border text-center transition space-y-1 ${selectedVipPayMethod === 'in_app' ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold shadow-md' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                        >
+                          <CreditCard className="w-5 h-5 mx-auto text-amber-400" />
+                          <span className="block text-[11px] font-bold">پرداخت در برنامه‌ای</span>
+                        </button>
+
+                        <button
+                          onClick={() => setSelectedVipPayMethod('usdt')}
+                          className={`p-3 rounded-2xl border text-center transition space-y-1 ${selectedVipPayMethod === 'usdt' ? 'bg-emerald-500/10 border-emerald-400 text-emerald-300 font-bold shadow-md' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                        >
+                          <DollarSign className="w-5 h-5 mx-auto text-emerald-400" />
+                          <span className="block text-[11px] font-bold">USDT (TRC20)</span>
+                        </button>
+
+                        <button
+                          onClick={() => setSelectedVipPayMethod('coins')}
+                          className={`p-3 rounded-2xl border text-center transition space-y-1 ${selectedVipPayMethod === 'coins' ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold shadow-md' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                        >
+                          <CoinsIcon className="w-5 h-5 mx-auto text-amber-400" />
+                          <span className="block text-[11px] font-bold">سکه‌های من</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* FINAL PAYMENT CTA BUTTON */}
+                    <div className="pt-3 border-t border-slate-800 space-y-2">
+                      {selectedVipPlan === 'elite' ? (
+                        <button
+                          onClick={() => {
+                            setVipEliteRequested(true);
+                            showToast('درخواست فعال‌سازی Elite VIP برای مدیریت ارسال شد');
+                          }}
+                          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white font-black text-xs shadow-lg hover:brightness-110 transition active:scale-95 flex items-center justify-center gap-2"
+                        >
+                          <Shield className="w-4 h-4" />
+                          <span>{vipEliteRequested ? 'درخواست در حال بررسی مدیران...' : 'ارسال درخواست فعال‌سازی Elite VIP'}</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            const basePrices = { silver: 300, gold: 500, diamond: 1000 };
+                            const discountMultipliers = { 1: 1.0, 3: 0.85, 6: 0.75, 12: 0.60 };
+                            const monthlyCost = basePrices[selectedVipPlan] || 500;
+                            const totalBaseCoins = monthlyCost * selectedVipDuration;
+                            const finalCoinsCost = Math.round(totalBaseCoins * (discountMultipliers[selectedVipDuration] || 1.0));
+
+                            if (selectedVipPayMethod === 'coins') {
+                              if (userCoins < finalCoinsCost) {
+                                showToast(`موجودی سکه کافی نیست! هزینه: ${finalCoinsCost} سکه`);
+                                return;
+                              }
+                              setUserCoins(prev => prev - finalCoinsCost);
+                            }
+
+                            setVipPlan(selectedVipPlan);
+                            setVipExpireDays(selectedVipDuration * 30);
+                            setIsVipMonthlyClaimed(false);
+                            safeStorage.setItem('vlive_vip_plan', selectedVipPlan);
+                            safeStorage.setItem('vlive_vip_expire_days', (selectedVipDuration * 30).toString());
+                            safeStorage.setItem('vlive_vip_monthly_claimed', 'false');
+
+                            setIsVipCelebrationOpen(true);
+                            showToast(`👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت فعال شد!`);
+                          }}
+                          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-[0_0_25px_rgba(245,158,11,0.4)] hover:brightness-110 transition active:scale-95 flex items-center justify-center gap-2 animate-pulse"
+                        >
+                          <Crown className="w-4 h-4 fill-slate-950" />
+                          <span>تایید و فعال‌سازی اشتراک {selectedVipPlan.toUpperCase()} ({selectedVipDuration} ماهه)</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* 4. 10 VIP BENEFITS GRID (مزایای ۱۰ گانه) */}
+                <div className="p-5 rounded-3xl bg-slate-950 border border-slate-800 space-y-4">
+                  <div className="border-b border-slate-800 pb-2.5">
+                    <h3 className="text-sm font-black text-amber-300 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      ۴. لیست کامل مزایا و امکانات VIP (10 Privileges)
+                    </h3>
+                    <p className="text-xs text-slate-300 font-medium">تمامی قابلیت‌هایی که بلافاصله بعد از خرید در کل برنامه فعال می‌شوند</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
+                    {[
+                      { icon: Crown, title: 'Badge اختصاصی', desc: 'نشان طلایی کنار نام در تمام چت‌ها و لایوها' },
+                      { icon: Sparkles, title: 'افکت ویژه پروفایل', desc: 'فریم‌های متحرک نئونی و طلایی' },
+                      { icon: Radio, title: 'کیفیت بالاتر لایو', desc: 'پخش استریم با وضوح 1080p / 4K' },
+                      { icon: PhoneCall, title: 'تماس تصویری HD', desc: 'مکالمات تصویری بدون تاخیر با بالاترین کیفیت' },
+                      { icon: ShieldCheck, title: 'حذف کامل تبلیغات', desc: 'تجربه کاملا روان بدون اسپم و تبلیغ' },
+                      { icon: Flame, title: 'نمایش بیشتر در Discover', desc: '۲X تا ۵X دیده شدن بیشتر در تب کشف' },
+                      { icon: Star, title: 'اولویت در نتایج', desc: 'بالانشینی در نتایج جستجو و لیست اعضا' },
+                      { icon: Gift, title: 'هدایای انحصاری', desc: 'دسترسی به ۵+ هدیه اختصاصی VIP' },
+                      { icon: Palette, title: 'تم‌های اختصاصی', desc: 'پوسته‌ها و تم‌های طلایی و نئونی' },
+                      { icon: Gift, title: 'هدیه ماهانه', desc: '۵۰۰ سکه + ۵۰ الماس + قاب رایگان هر ماه' }
+                    ].map((item, idx) => (
+                      <div key={idx} className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1.5 hover:border-amber-500/40 transition">
+                        <item.icon className="w-5 h-5 text-amber-400" />
+                        <h5 className="font-black text-white text-xs">{item.title}</h5>
+                        <p className="text-[10px] text-slate-300 leading-relaxed">{item.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 5. STREAMERS VS VIEWERS BENEFITS CARDS */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  {/* STREAMERS BENEFITS */}
+                  <div className="p-5 rounded-3xl bg-gradient-to-br from-amber-950/40 via-slate-950 to-slate-900 border border-amber-500/30 space-y-3">
+                    <div className="flex items-center gap-2 border-b border-amber-500/20 pb-2">
+                      <Radio className="w-5 h-5 text-amber-400" />
+                      <h4 className="text-xs font-black text-amber-300">مزایای اختصاصی استریمرهای VIP</h4>
+                    </div>
+                    <ul className="text-xs text-slate-200 space-y-2">
+                      <li className="flex items-center gap-2">⭐ <strong>لایو در اولویت نمایش:</strong> سنجاق شدن استریم در بالای صفحه اول</li>
+                      <li className="flex items-center gap-2">💰 <strong>کارمزد کمتر روی هدایا:</strong> فقط ۱۰٪ کارمزد پلتفرم به جای ۲۰٪</li>
+                      <li className="flex items-center gap-2">🔒 <strong>امکان ایجاد لایو خصوصی:</strong> اتاق‌های اختصاصی فقط برای VIPها</li>
+                      <li className="flex items-center gap-2">📊 <strong>ابزارهای حرفه‌ای‌تر:</strong> آنالیتیکس پیشرفته و ابزار مدیریت چت</li>
+                    </ul>
+                  </div>
+
+                  {/* VIEWERS BENEFITS */}
+                  <div className="p-5 rounded-3xl bg-gradient-to-br from-purple-950/40 via-slate-950 to-slate-900 border border-purple-500/30 space-y-3">
+                    <div className="flex items-center gap-2 border-b border-purple-500/20 pb-2">
+                      <UserCheck className="w-5 h-5 text-purple-400" />
+                      <h4 className="text-xs font-black text-purple-300">مزایای اختصاصی کاربران VIP</h4>
+                    </div>
+                    <ul className="text-xs text-slate-200 space-y-2">
+                      <li className="flex items-center gap-2">💬 <strong>پیام بدون محدودیت:</strong> گفتگو با استریمرها بدون فیلتر اسپم</li>
+                      <li className="flex items-center gap-2">📞 <strong>تماس تصویری با کیفیت بالاتر:</strong> تماس 4K با شفافیت کریستالی</li>
+                      <li className="flex items-center gap-2">✨ <strong>استیکرها و ایموجی‌های اختصاصی:</strong> پکیج ایموجی‌های نایاب VIP</li>
+                      <li className="flex items-center gap-2">🖼️ <strong>قاب و پس‌زمینه اختصاصی:</strong> تزیینات نئونی پروفایل و چت</li>
+                    </ul>
+                  </div>
+
+                </div>
+
+                {/* 6. PLAN COMPARISON MATRIX TABLE (جدول مقایسه) */}
+                <div className="p-5 rounded-3xl bg-slate-950 border border-slate-800 space-y-3 overflow-x-auto">
+                  <h3 className="text-xs font-black text-amber-300 flex items-center gap-2">
+                    <BarChart2 className="w-4 h-4 text-amber-400" />
+                    ۶. جدول مقایسه کامل قابلیت‌های پلن‌های VIP
+                  </h3>
+
+                  <table className="w-full text-right text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-300 font-black">
+                        <th className="p-2.5">قابلیت</th>
+                        <th className="p-2.5 text-center text-slate-300">Silver 🥉</th>
+                        <th className="p-2.5 text-center text-amber-300">Gold 🥈</th>
+                        <th className="p-2.5 text-center text-cyan-300">Diamond 🥇</th>
+                        <th className="p-2.5 text-center text-purple-300">Elite 💠</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 text-slate-200">
+                      <tr>
+                        <td className="p-2.5 font-bold">حذف تبلیغات</td>
+                        <td className="p-2.5 text-center text-emerald-400">✅</td>
+                        <td className="p-2.5 text-center text-emerald-400">✅</td>
+                        <td className="p-2.5 text-center text-emerald-400">✅</td>
+                        <td className="p-2.5 text-center text-emerald-400">✅</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold">Badge VIP</td>
+                        <td className="p-2.5 text-center text-slate-300">✅ Silver</td>
+                        <td className="p-2.5 text-center text-amber-300 font-bold">✅ Gold</td>
+                        <td className="p-2.5 text-center text-cyan-300 font-bold">✅ Diamond</td>
+                        <td className="p-2.5 text-center text-purple-300 font-bold">✅ Elite 💠</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold">Boost Profile</td>
+                        <td className="p-2.5 text-center text-rose-400">❌</td>
+                        <td className="p-2.5 text-center text-amber-300 font-bold">✅ 2X</td>
+                        <td className="p-2.5 text-center text-cyan-300 font-bold">✅ 5X</td>
+                        <td className="p-2.5 text-center text-purple-300 font-bold">✅ 10X Top</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold">Boost Live Stream</td>
+                        <td className="p-2.5 text-center text-rose-400">❌</td>
+                        <td className="p-2.5 text-center text-amber-300">✅</td>
+                        <td className="p-2.5 text-center text-cyan-300 font-bold">✅ Pinned Top</td>
+                        <td className="p-2.5 text-center text-purple-300 font-bold">✅ Always #1</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold">هدیه ماهانه (Coins)</td>
+                        <td className="p-2.5 text-center text-rose-400">❌</td>
+                        <td className="p-2.5 text-center text-amber-300 font-mono">500 Coins</td>
+                        <td className="p-2.5 text-center text-cyan-300 font-mono font-bold">1,000 Coins</td>
+                        <td className="p-2.5 text-center text-purple-300 font-mono font-bold">2,500 Coins</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold">پشتیبانی ویژه</td>
+                        <td className="p-2.5 text-center text-slate-300">اولویت عادی</td>
+                        <td className="p-2.5 text-center text-amber-300">✅ سریع</td>
+                        <td className="p-2.5 text-center text-cyan-300 font-bold">✅ آنی VIP</td>
+                        <td className="p-2.5 text-center text-purple-300 font-bold">✅ ۲۴/۷ Concierge</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold">تم و قاب اختصاصی</td>
+                        <td className="p-2.5 text-center text-rose-400">❌</td>
+                        <td className="p-2.5 text-center text-slate-300">قاب طلایی</td>
+                        <td className="p-2.5 text-center text-cyan-300 font-bold">✅ قاب و تم اختصاصی</td>
+                        <td className="p-2.5 text-center text-purple-300 font-bold">✅ نایاب نئونی</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 7. FULL APP INTEGRATION CALLOUT BANNER */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-950/40 via-purple-950/40 to-slate-900 border border-pink-500/30 text-xs space-y-2">
+                  <p className="font-black text-pink-300 flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 text-pink-400" />
+                    اتصال فعال VIP در تمام بخش‌های V.Live:
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-[11px] text-slate-300 pt-1">
+                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">🏠 Home: نمایش بیشتر</div>
+                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">🔍 Discover: اولویت جستجو</div>
+                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">🎥 Live: اولویت استریم</div>
+                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">💬 Messages: پیام نامحدود</div>
+                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">👤 Profile: قاب نئونی 👑</div>
+                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">👛 Wallet: هدیه ماهانه</div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {walletSubTab === 'security' && (
+              <div className="space-y-4 text-xs">
+                
+                {/* 12. FINANCIAL SECURITY */}
+                <div className="p-5 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                  <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    ۱۲. امنیت مالی و حساب کاربری (Financial Security)
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+                    <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <h4 className="font-bold text-white">تأیید هویت KYC</h4>
+                        <span className="text-xs text-slate-200">الزامی جهت برداشت درآمد</span>
+                      </div>
+                      <span className="text-xs font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full">تأیید شده 🟢</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <h4 className="font-bold text-white">رمز برداشت ۴ رقمی</h4>
+                        <span className="text-xs text-slate-200">تأیید برداشت‌های مالی</span>
+                      </div>
+                      <span className="text-xs font-bold text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded-full">فعال 🔒</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between sm:col-span-2">
+                      <div>
+                        <h4 className="font-bold text-white">محدودیت برداشت روزانه (Daily Limit)</h4>
+                        <span className="text-xs text-slate-200">حداکثر سقف برداشت روزانه</span>
+                      </div>
+                      <span className="font-bold text-amber-400 font-mono text-xs">$5,000 USDT / روزانه</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 13. VIP PAYMENTS & PROFILE BOOSTS */}
+                <div className="p-5 rounded-3xl bg-slate-950 border border-amber-500/30 space-y-3">
+                  <h3 className="font-bold text-amber-300 text-sm flex items-center gap-2">
+                    <Crown className="w-4 h-4 text-amber-400" />
+                    ۱۳. خرید اشتراک VIP و پروموت (VIP Payment & Boosts)
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-2">
+                      <h4 className="font-bold text-white">اشتراک VIP ماهیانه</h4>
+                      <p className="text-amber-400 font-black font-mono">500 Coins</p>
+                      <button 
+                        onClick={() => {
+                          if (userCoins < 500) { showToast('موجودی سکه کافی نیست!'); return; }
+                          setUserCoins(p => p - 500);
+                          showToast('👑 اشتراک VIP برای شما فعال شد!');
+                        }}
+                        className="w-full py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold"
+                      >
+                        خرید VIP
+                      </button>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-2">
+                      <h4 className="font-bold text-white">بوست پروفایل (Profile Boost)</h4>
+                      <p className="text-amber-400 font-black font-mono">200 Coins</p>
+                      <button 
+                        onClick={() => {
+                          if (userCoins < 200) { showToast('موجودی سکه کافی نیست!'); return; }
+                          setUserCoins(p => p - 200);
+                          showToast('🚀 پروفایل شما به صورت ویژه نمایش داده شد!');
+                        }}
+                        className="w-full py-1.5 rounded-xl bg-purple-600 text-white font-bold"
+                      >
+                        بوست ۲۴ ساعته
+                      </button>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-2">
+                      <h4 className="font-bold text-white">پروموت لایو استریم</h4>
+                      <p className="text-amber-400 font-black font-mono">1,000 Coins</p>
+                      <button 
+                        onClick={() => {
+                          if (userCoins < 1000) { showToast('موجودی سکه کافی نیست!'); return; }
+                          setUserCoins(p => p - 1000);
+                          showToast('🎥 لایو شما در بالای صفحه اول سنجاق شد!');
+                        }}
+                        className="w-full py-1.5 rounded-xl bg-pink-600 text-white font-bold"
+                      >
+                        سنجاق لایو
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* SUB-TAB 9: GIFT SHOP DIRECT FLOW */}
+            {walletSubTab === 'giftshop' && (
+              <div className="space-y-4 text-xs">
+                <div className="p-5 rounded-3xl bg-slate-950 border border-pink-500/40 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                      <Gift className="w-4 h-4 text-pink-400" />
+                      ۱۴. فروشگاه مستقیم هدایا (Gift Shop)
+                    </h3>
+                    <span className="text-xs text-pink-300 font-bold bg-pink-500/10 px-2.5 py-1 rounded-full border border-pink-500/20">
+                      مسیر مستقیم: خرید سکه ➔ انتخاب هدیه ➔ ارسال
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
+                    {[
+                      { name: 'Red Rose', icon: '🌹', coins: 10 },
+                      { name: 'Red Heart', icon: '❤️', coins: 50 },
+                      { name: 'Shining Diamond', icon: '💎', coins: 500 },
+                      { name: 'Royal Crown', icon: '👑', coins: 2500 },
+                      { name: 'Sports Car', icon: '🏎️', coins: 5000 },
+                      { name: 'Gold Vault', icon: '📦', coins: 10000 },
+                      { name: 'Private Jet', icon: '🚀', coins: 25000 },
+                      { name: 'Island Resort', icon: '🏝️', coins: 50000 }
+                    ].map((g, i) => (
+                      <div key={i} className="p-3.5 bg-slate-900 rounded-2xl border border-slate-800 text-center space-y-2 hover:border-pink-500/50 transition">
+                        <span className="text-3xl block">{g.icon}</span>
+                        <p className="font-bold text-white text-xs">{g.name}</p>
+                        <span className="text-amber-300 font-black font-mono block text-xs">{g.coins.toLocaleString()} Coins</span>
+                        <button
+                          onClick={() => {
+                            if (userCoins < g.coins) {
+                              showToast('موجودی سکه کافی نیست! ابتدا سکه خریداری کنید.');
+                              setWalletSubTab('buy');
+                              return;
+                            }
+                            setUserCoins(p => p - g.coins);
+                            showToast(`🎁 هدیه ${g.name} با موفقیت ارسال شد!`);
+                          }}
+                          className="w-full py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs shadow"
+                        >
+                          ارسال هدیه
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </div>
         )}
         {/* TAB 4: REDESIGNED CLEAN PROFILE DASHBOARD */}
         {activeTab === 'profile' && (
-          <ProfilePage
-            isRtl={isRtl}
-            loc={loc}
-            t={t}
-            profilePreviewMode={profilePreviewMode}
-            setProfilePreviewMode={setProfilePreviewMode}
-            profileSubPage={profileSubPage}
-            setProfileSubPage={setProfileSubPage}
-            profileMainTab={profileMainTab}
-            setProfileMainTab={setProfileMainTab}
-            userAvatar={userAvatar}
-            userName={userName}
-            userLevel={userLevel}
-            userCoins={userCoins}
-            setUserCoins={setUserCoins}
-            currentUsername={currentUsername}
-            currentTelegramId={currentTelegramId}
-            setCurrentTelegramId={setCurrentTelegramId}
-            isVerified={isVerified}
-            setIsVerified={setIsVerified}
-            privacyShowLastSeen={privacyShowLastSeen}
-            privacyShowAge={privacyShowAge}
-            privacyShowCity={privacyShowCity}
-            privacyShowGifts={privacyShowGifts}
-            setPrivacyShowAge={setPrivacyShowAge}
-            setPrivacyShowCity={setPrivacyShowCity}
-            setPrivacyShowLastSeen={setPrivacyShowLastSeen}
-            setPrivacyShowGifts={setPrivacyShowGifts}
-            privacyWhoMessage={privacyWhoMessage}
-            setPrivacyWhoMessage={setPrivacyWhoMessage}
-            privacyWhoCall={privacyWhoCall}
-            setPrivacyWhoCall={setPrivacyWhoCall}
-            setIsQrCodeModalOpen={setIsQrCodeModalOpen}
-            showToast={showToast}
-            handleStartPrivateCall={handleStartPrivateCall}
-            setIsGiftCatalogOpen={setIsGiftCatalogOpen}
-            userRole={userRole}
-            isUserSuperAdmin={isUserSuperAdmin}
-            isUserAuthorizedAdmin={isUserAuthorizedAdmin}
-            setActiveTab={setActiveTab}
-            setIsAdminPinModalOpen={setIsAdminPinModalOpen}
-            userBio={userBio}
-            editAvatarUrl={editAvatarUrl}
-            setEditAvatarUrl={setEditAvatarUrl}
-            editFullName={editFullName}
-            setEditFullName={setEditFullName}
-            editUsername={editUsername}
-            setEditUsername={setEditUsername}
-            editBio={editBio}
-            setEditBio={setEditBio}
-            handleSaveProfileSettings={handleSaveProfileSettings}
-            PRESET_AVATARS={PRESET_AVATARS}
-            handleLogout={handleLogout}
-            setIsEditingProfile={setIsEditingProfile}
-            setIsSettingsModalOpen={setIsSettingsModalOpen}
-            setSettingsCategoryFilter={setSettingsCategoryFilter}
-            setIsLanguageModalOpen={setIsLanguageModalOpen}
-            language={language}
-            setLanguage={setLanguage}
-            setIsDepositModalOpen={setIsDepositModalOpen}
-            setIsWithdrawModalOpen={setIsWithdrawModalOpen}
-            setIsAddPostModalOpen={setIsAddPostModalOpen}
-            posts={posts}
-            setIsAddStoryModalOpen={setIsAddStoryModalOpen}
-            advancedStories={advancedStories}
-            handleDeleteUserStoryItem={handleDeleteUserStoryItem}
-            equippedBadge={equippedBadge}
-            setEquippedBadge={setEquippedBadge}
-            handleGainXP={handleGainXP}
-            setIsLevelUpModalOpen={setIsLevelUpModalOpen}
-            userXP={userXP}
-            maxXP={maxXP}
-            creatorLevel={creatorLevel}
-            creatorXP={creatorXP}
-            maxCreatorXP={maxCreatorXP}
-            levelActiveTab={levelActiveTab}
-            setLevelActiveTab={setLevelActiveTab}
-            xpActivitiesList={xpActivitiesList}
-            setXpActivitiesList={setXpActivitiesList}
-            userBadgesList={userBadgesList}
-            setUserBadgesList={setUserBadgesList}
-            userAchievementsList={userAchievementsList}
-            levelRoadmapList={levelRoadmapList}
-            handleStartLiveStream={handleStartLiveStream}
-            setIsVipModalOpen={setIsVipModalOpen}
-            safeStorage={safeStorage}
-          />
+          <div className="space-y-6 pb-24 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+
+      {/* PROFILE PREVIEW MODE SWITCHER */}
+      <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800/80 flex items-center justify-between shadow-lg backdrop-blur-md">
+        <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+          <Eye className="w-4 h-4 text-pink-400 animate-pulse" />
+          {loc('حالت پیش‌نمایش پروفایل:', 'Profile Preview Mode:')}
+        </span>
+        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+          <button 
+            onClick={() => setProfilePreviewMode('self')}
+            className={`px-3 py-1.5 rounded-lg transition-all ${profilePreviewMode === 'self' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+          >
+            {loc('پروفایل من 👤', 'My Profile 👤')}
+          </button>
+          <button 
+            onClick={() => setProfilePreviewMode('other')}
+            className={`px-3 py-1.5 rounded-lg transition-all ${profilePreviewMode === 'other' ? 'bg-purple-600 to-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+          >
+            {loc('نمای کاربر دیگر 👁️', 'Other User 👁️')}
+          </button>
+        </div>
+      </div>
+
+      {/* DEDICATED SUB-PAGE HEADER (WHEN NOT ON MAIN DASHBOARD) */}
+      {profileSubPage !== 'main' && (
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl">
+          <button
+            onClick={() => setProfileSubPage('main')}
+            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center gap-2 transition active:scale-95 border border-slate-700"
+          >
+            {isRtl ? <ChevronRight className="w-4 h-4 text-pink-400" /> : <ChevronLeft className="w-4 h-4 text-pink-400" />}
+            <span>{loc('بازگشت به داشبورد', 'Back to Profile Dashboard')}</span>
+          </button>
+          <span className="text-sm font-black text-white capitalize flex items-center gap-2">
+            {profileSubPage === 'account' && <User className="w-4 h-4 text-pink-400" />}
+            {profileSubPage === 'privacy' && <Lock className="w-4 h-4 text-emerald-400" />}
+            {profileSubPage === 'wallet' && <Wallet className="w-4 h-4 text-amber-400" />}
+            {profileSubPage === 'vip' && <Crown className="w-4 h-4 text-yellow-400" />}
+            {profileSubPage === 'gifts' && <Gift className="w-4 h-4 text-purple-400" />}
+            {profileSubPage === 'gallery' && <Image className="w-4 h-4 text-cyan-400" />}
+            {profileSubPage === 'stories' && <Sparkles className="w-4 h-4 text-pink-400" />}
+            {profileSubPage === 'notifications' && <Bell className="w-4 h-4 text-blue-400" />}
+            {profileSubPage === 'language' && <Globe className="w-4 h-4 text-emerald-400" />}
+            {profileSubPage === 'support' && <Info className="w-4 h-4 text-teal-400" />}
+            {profileSubPage === 'about' && <Shield className="w-4 h-4 text-indigo-400" />}
+            {loc(
+              profileSubPage === 'account' ? 'حساب کاربری' :
+              profileSubPage === 'privacy' ? 'حریم خصوصی و امنیت' :
+              profileSubPage === 'wallet' ? 'کیف پول و مالی' :
+              profileSubPage === 'vip' ? 'عضویت ویژه VIP' :
+              profileSubPage === 'gifts' ? 'هدایا و پاداش‌ها' :
+              profileSubPage === 'gallery' ? 'گالری و پست‌ها' :
+              profileSubPage === 'stories' ? 'استوری‌ها' :
+              profileSubPage === 'notifications' ? 'اعلان‌ها' :
+              profileSubPage === 'language' ? 'زبان برنامه' :
+              profileSubPage === 'support' ? 'پشتیبانی و راهنما' : 'درباره برنامه',
+              profileSubPage.toUpperCase()
+            )}
+          </span>
+        </div>
+      )}
+
+      {/* MAIN DASHBOARD PAGE */}
+      {profileSubPage === 'main' && (
+        <>
+          {/* 1. PROFILE HEADER */}
+          <div className="relative rounded-3xl overflow-hidden border border-pink-500/30 bg-slate-900 shadow-2xl backdrop-blur-xl">
+            {/* Animated Cover Background */}
+            <div className="relative h-48 w-full bg-gradient-to-r from-pink-900 via-purple-900 to-indigo-950 overflow-hidden">
+              <img 
+                src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80" 
+                alt="Profile Cover" 
+                className="w-full h-full object-cover opacity-40 hover:scale-105 transition duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+            </div>
+
+            {/* Avatar & Badges & Header Controls */}
+            <div className="px-6 pb-6 pt-0 relative flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4 -mt-20">
+              {/* Avatar with Animated Ring */}
+              <div className="relative flex flex-col items-center sm:items-start">
+                <div className="relative group">
+                  <div className="w-28 h-28 rounded-3xl p-1 bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 shadow-[0_0_30px_rgba(236,72,153,0.5)]">
+                    <img src={userAvatar} alt={userName} className="w-full h-full object-cover rounded-[22px] border-2 border-slate-950" />
+                  </div>
+                  {/* Online Status Indicator Dot */}
+                  {privacyShowLastSeen && (
+                    <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-slate-950 rounded-full animate-pulse shadow-md" title="Online Now" />
+                  )}
+                  {/* Level Badge */}
+                  <span className="absolute -bottom-2 right-1/2 translate-x-1/2 sm:translate-x-0 sm:right-0 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-[10px] shadow-lg border border-yellow-200 flex items-center gap-1">
+                    <Crown className="w-3 h-3 fill-slate-950" />
+                    LVL {userLevel}
+                  </span>
+                </div>
+              </div>
+
+              {/* Header Action Buttons */}
+              <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
+                {profilePreviewMode === 'self' ? (
+                  <>
+                    <button 
+                      onClick={() => setProfileSubPage('account')}
+                      className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg active:scale-95 transition"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                      <span>{loc('ویرایش پروفایل', 'Edit Profile')}</span>
+                    </button>
+
+                    <button 
+                      onClick={() => setIsQrCodeModalOpen(true)}
+                      className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 shadow-md active:scale-95 transition"
+                      title={loc('کد QR', 'QR Code')}
+                    >
+                      <QrCode className="w-4 h-4 text-cyan-400" />
+                    </button>
+
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://vlive.app/profile/${currentUsername}`);
+                        showToast(loc('لینک پروفایل کپی شد!', 'Profile link copied to clipboard!'));
+                      }}
+                      className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 shadow-md active:scale-95 transition"
+                      title={loc('اشتراک‌گذاری', 'Share Profile')}
+                    >
+                      <Share2 className="w-4 h-4 text-pink-400" />
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button 
+                      onClick={() => showToast(`Starting chat with @${currentUsername}`)}
+                      className="px-4 py-2 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      Chat
+                    </button>
+                    <button 
+                      onClick={() => showToast(`Initiating voice call with @${currentUsername}`)}
+                      className="px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      Voice
+                    </button>
+                    <button 
+                      onClick={() => handleStartPrivateCall({ name: userName, avatar: userAvatar, pricePerMin: 100 })}
+                      className="px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                    >
+                      <Video className="w-3.5 h-3.5" />
+                      Video
+                    </button>
+                    <button 
+                      onClick={() => setIsGiftCatalogOpen(true)}
+                      className="p-2 rounded-2xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 shadow-md"
+                    >
+                      <Gift className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Profile Details */}
+            <div className="px-6 pb-6 space-y-2 text-center sm:text-right">
+              <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                <h2 className="text-xl font-black text-white tracking-wide">{userName}</h2>
+                {isVerified && <VerifiedBadge className="w-4 h-4" showLabel={true} />}
+                <VipStatusBadge size="normal" showText={true} />
+              </div>
+
+              <div className="flex items-center justify-center sm:justify-start gap-3 text-xs text-slate-400 flex-wrap">
+                <span className="text-pink-400 font-bold">@{currentUsername}</span>
+                <span className="bg-cyan-950/90 text-cyan-300 border border-cyan-800/80 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow">
+                  🆔 ID: {currentTelegramId}
+                </span>
+                {privacyShowAge && <span>• 24 Yrs</span>}
+                {privacyShowCity && (
+                  <span className="flex items-center gap-1 text-slate-300">
+                    <MapPin className="w-3 h-3 text-pink-400" />
+                    Tehran, Iran
+                  </span>
+                )}
+                {privacyShowLastSeen && (
+                  <span className="flex items-center gap-1 text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 text-[10px]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Online Now
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 2. TAB NAVIGATION FOR PROFILE DASHBOARD */}
+          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-950 border border-slate-800 shadow-inner overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => setProfileMainTab('overview')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 ${profileMainTab === 'overview' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>{loc('اطلاعات & گالری', 'Overview')}</span>
+            </button>
+            <button
+              onClick={() => setProfileMainTab('wallet')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 ${profileMainTab === 'wallet' ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              <Wallet className="w-3.5 h-3.5" />
+              <span>{loc('کیف‌پول & VIP', 'Wallet & VIP')}</span>
+            </button>
+            <button
+              onClick={() => setProfileMainTab('stats')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 ${profileMainTab === 'stats' ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              <BarChart2 className="w-3.5 h-3.5" />
+              <span>{loc('آمار & رتبه', 'Statistics')}</span>
+            </button>
+            <button
+              onClick={() => setProfileMainTab('settings')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 ${profileMainTab === 'settings' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>{loc('تنظیمات & امنیت', 'Settings')}</span>
+            </button>
+            {(isUserSuperAdmin || isUserAuthorizedAdmin) && (
+              <button
+                onClick={() => setActiveTab('admin')}
+                className="px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/40 hover:scale-105 shadow-md"
+              >
+                <Shield className="w-3.5 h-3.5 text-amber-400" />
+                <span>{loc('پنل ادمین 🛡️', 'Admin Panel')}</span>
+              </button>
+            )}
+          </div>
+
+          {/* TAB 1: OVERVIEW & GALLERY */}
+          {profileMainTab === 'overview' && (
+            <div className="space-y-4 animate-fadeIn">
+              {/* Bio & Interests Card */}
+              <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 shadow-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <User className="w-4 h-4 text-pink-400" />
+                    {loc('درباره من', 'About Me')}
+                  </h3>
+                  <button 
+                    onClick={() => setProfileSubPage('account')}
+                    className="text-[11px] text-pink-400 font-bold hover:underline flex items-center gap-1"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    {loc('ویرایش', 'Edit')}
+                  </button>
+                </div>
+                <p className="text-xs text-slate-200 leading-relaxed italic bg-slate-950 p-3 rounded-2xl border border-slate-800/60">
+                  "{userBio || 'عاشق استریم زنده، چت تصویری و آشنایی با دوستان جدید در V.Live'}"
+                </p>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {['🎙️ Host VIP', '🎵 Music Lover', '💃 Dancing', '🌍 Traveler', '🎮 Gaming', '💎 Top Streamer'].map((tag, i) => (
+                    <span key={i} className="px-3 py-1 rounded-full bg-slate-950 border border-slate-800 text-slate-300 text-[10px] font-bold">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Photo & Video Posts Grid */}
+              <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 shadow-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Image className="w-4 h-4 text-cyan-400" />
+                    {loc('گالری پست‌ها و تصاویر', 'Photo & Video Gallery')}
+                  </h3>
+                  <button 
+                    onClick={() => setProfileSubPage('gallery')}
+                    className="text-[11px] text-cyan-400 font-bold hover:underline"
+                  >
+                    {loc('مدیریت گالری', 'Manage Gallery')}
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+                    'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
+                    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
+                    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+                    'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80'
+                  ].map((imgUrl, i) => (
+                    <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-slate-800 relative group cursor-pointer">
+                      <img src={imgUrl} alt={`Gallery item ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition duration-300" />
+                      <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                        <Heart className="w-5 h-5 text-pink-400 fill-pink-400" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: WALLET & VIP */}
+          {profileMainTab === 'wallet' && (
+            <div className="space-y-4 animate-fadeIn">
+              {/* Wallet Overview Card */}
+              <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-500/20 via-slate-900 to-amber-600/20 border border-amber-500/40 shadow-2xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-md">
+                      <CoinsIcon className="w-6 h-6 animate-pulse" />
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider">{loc('موجودی کیف پول', 'Wallet Coins')}</span>
+                      <h2 className="text-2xl font-black text-white">{userCoins.toLocaleString()} <span className="text-sm font-bold text-amber-400">{loc('سکه', 'Coins')}</span></h2>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setProfileSubPage('wallet')}
+                    className="px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs shadow-lg hover:scale-105 active:scale-95 transition"
+                  >
+                    {loc('خرید سکه 🪙', 'Recharge 🪙')}
+                  </button>
+                </div>
+
+                {/* Earnings & Payout Breakdown */}
+                <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-slate-300 flex items-center gap-1.5"><DollarSign className="w-4 h-4 text-emerald-400" /> {loc('سهم درآمد استریمر (۷۱٪)', 'Streamer Earnings Share (71%)')}</span>
+                    <span className="text-emerald-400 font-mono">${(userCoins * 0.005 * 0.71).toFixed(2)} USDT</span>
+                  </div>
+                  <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full w-[71%]" />
+                  </div>
+                  <p className="text-[10px] text-slate-400">{loc('تسویه حساب فوری به کیف پول USDT یا کارت بانکی', 'Instant payout to your USDT address or bank card')}</p>
+                </div>
+              </div>
+
+              {/* VIP Club Membership Status */}
+              <div className="p-5 rounded-3xl bg-gradient-to-r from-purple-900/40 via-slate-900 to-pink-900/40 border border-purple-500/40 shadow-xl flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-md">
+                    <Crown className="w-6 h-6 text-yellow-400 fill-yellow-400/30" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-white flex items-center gap-1.5">
+                      <span>{loc('اشتراک طلایی VIP', 'VIP Gold Club')}</span>
+                      <span className="px-2 py-0.2 rounded-full bg-yellow-400/20 text-yellow-300 text-[9px] font-bold border border-yellow-400/30">ACTIVE</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-400">{loc('تخفیف استریم، نشان طلا، تماس نامحدود', 'Stream discounts, Gold Badge, Priority calls')}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsVipModalOpen(true)}
+                  className="px-4 py-2 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-md hover:scale-105 active:scale-95 transition"
+                >
+                  {loc('ارتقای VIP 👑', 'Upgrade VIP 👑')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: STATISTICS & RANK */}
+          {profileMainTab === 'stats' && (
+            <div className="space-y-4 animate-fadeIn">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 hover:border-pink-500/40 transition shadow-lg text-center space-y-1">
+                  <div className="w-9 h-9 rounded-2xl bg-pink-500/15 text-pink-400 flex items-center justify-center mx-auto">
+                    <Heart className="w-4 h-4 fill-pink-400" />
+                  </div>
+                  <p className="text-base font-black text-white">12.4K</p>
+                  <p className="text-[11px] font-bold text-slate-400">{loc('پسندها', 'Likes')}</p>
+                </div>
+                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 hover:border-purple-500/40 transition shadow-lg text-center space-y-1">
+                  <div className="w-9 h-9 rounded-2xl bg-purple-500/15 text-purple-400 flex items-center justify-center mx-auto">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <p className="text-base font-black text-white">8.5K</p>
+                  <p className="text-[11px] font-bold text-slate-400">{loc('دنبال‌کنندگان', 'Followers')}</p>
+                </div>
+                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 hover:border-indigo-500/40 transition shadow-lg text-center space-y-1">
+                  <div className="w-9 h-9 rounded-2xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center mx-auto">
+                    <HeartHandshake className="w-4 h-4" />
+                  </div>
+                  <p className="text-base font-black text-white">340</p>
+                  <p className="text-[11px] font-bold text-slate-400">{loc('دنبال‌شده‌ها', 'Following')}</p>
+                </div>
+                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 hover:border-cyan-500/40 transition shadow-lg text-center space-y-1">
+                  <div className="w-9 h-9 rounded-2xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center mx-auto">
+                    <Image className="w-4 h-4" />
+                  </div>
+                  <p className="text-base font-black text-white">42</p>
+                  <p className="text-[11px] font-bold text-slate-400">{loc('پست‌ها', 'Posts')}</p>
+                </div>
+                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 hover:border-amber-500/40 transition shadow-lg text-center space-y-1">
+                  <div className="w-9 h-9 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center mx-auto">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <p className="text-base font-black text-white">12</p>
+                  <p className="text-[11px] font-bold text-slate-400">{loc('استوری‌ها', 'Stories')}</p>
+                </div>
+                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 hover:border-orange-500/40 transition shadow-lg text-center space-y-1">
+                  <div className="w-9 h-9 rounded-2xl bg-orange-500/15 text-orange-400 flex items-center justify-center mx-auto">
+                    <Flame className="w-4 h-4 fill-orange-400" />
+                  </div>
+                  <p className="text-base font-black text-white">15.8K</p>
+                  <p className="text-[11px] font-bold text-slate-400">{loc('امتیاز زنده', 'Live Score')}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: SETTINGS & SECURITY */}
+          {profileMainTab === 'settings' && (
+            <div className="space-y-3 animate-fadeIn">
+              <button
+                onClick={() => setProfileSubPage('account')}
+                className="w-full p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 flex items-center justify-between transition shadow-md group text-right"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-pink-500/15 text-pink-400 flex items-center justify-center">
+                    <User className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-white">{loc('👤 حساب کاربری', '👤 Account Details')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('ویرایش نام، تصویر، جنسیت و بیوگرافی', 'Edit name, photo, gender & bio')}</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
+              </button>
+
+              <button
+                onClick={() => setProfileSubPage('privacy')}
+                className="w-full p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 flex items-center justify-between transition shadow-md group text-right"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-white">{loc('🔒 حریم خصوصی و امنیت', '🔒 Privacy & Security')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('کنترل کلمه عبور، نمایش آنلاین و بلاک‌شده‌ها', 'Password, online visibility & blocked users')}</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
+              </button>
+
+              <button
+                onClick={() => setIsLanguageModalOpen(true)}
+                className="w-full p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 flex items-center justify-between transition shadow-md group text-right"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center">
+                    <Globe className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-white">{loc('🌍 زبان برنامه', '🌍 App Language')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('فارسی / English', 'Language settings')}</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="w-full p-4 rounded-3xl bg-red-950/20 hover:bg-red-900/30 border border-red-800/40 flex items-center justify-between transition shadow-md group text-right"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-red-500/15 text-red-400 flex items-center justify-center">
+                    <LogOut className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-red-400">{loc('🚪 خروج از حساب', '🚪 Logout')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('خروج از حساب کاربری فعلی', 'Sign out of your account')}</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-red-400 group-hover:text-white transition" />
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* DEDICATED SUB-PAGE 1: ACCOUNT */}
+      {profileSubPage === 'account' && (
+        <div className="space-y-6">
+          {/* ADMIN PANEL ENTRY CARD - ADMIN ONLY */}
+          {(userRole === 'admin' || String(currentTelegramId).trim() === '8973478139') && (
+            <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-600/20 border border-amber-500/40 shadow-2xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black">
+                    <ShieldCheck className="w-6 h-6 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-amber-300">{loc('🛡️ پنل مدیریت ارشد (Admin Panel)', '🛡️ Admin Panel')}</h3>
+                    <p className="text-[11px] text-slate-300">{loc('دسترسی به تنظیمات سیستم و مدیریت کاربران', 'Access system settings & manage users')}</p>
+                  </div>
+                </div>
+                <span className="bg-amber-400/20 text-amber-300 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border border-amber-400/30">
+                  ADMIN
+                </span>
+              </div>
+
+              <button
+                onClick={() => setIsAdminPinModalOpen(true)}
+                className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-black text-xs shadow-xl hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2 border border-amber-300/40"
+              >
+                <Key className="w-4 h-4 text-slate-950" />
+                <span>{loc('ورود به پنل مدیریت با رمز عبور', 'Enter Admin Panel with Password')}</span>
+              </button>
+            </div>
+          )}
+
+          {/* EDIT PROFILE FORM */}
+          <form onSubmit={handleSaveProfileSettings} className="p-5 rounded-3xl border border-pink-500/40 bg-slate-900/90 shadow-2xl space-y-4">
+            <h3 className="text-sm font-black text-white flex items-center gap-2">
+              <Edit3 className="w-4 h-4 text-pink-400" />
+              {loc('ویرایش اطلاعات حساب و آواتار', 'Edit Profile Details & Avatar')}
+            </h3>
+
+            {/* Avatar Upload */}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-dashed border-pink-500/50 flex flex-col items-center justify-center text-center space-y-2">
+              <div className="w-12 h-12 rounded-full bg-pink-500/20 text-pink-400 flex items-center justify-center">
+                <Camera className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white">{loc('بارگذاری عکس آواتار', 'Upload Avatar Image')}</p>
+                <p className="text-[10px] text-slate-400">{loc('انتخاب عکس از حافظه گوشی', 'Select an image file from storage')}</p>
+              </div>
+
+              <input 
+                type="file" 
+                accept="image/*"
+                id="profile-avatar-upload"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files && e.target.files[0];
+                  if (file) {
+                    const fileUrl = URL.createObjectURL(file);
+                    setEditAvatarUrl(fileUrl);
+                    showToast(loc('عکس آواتار انتخاب شد!', 'Uploaded photo as avatar!'));
+                  }
+                }}
+              />
+
+              <label 
+                htmlFor="profile-avatar-upload"
+                className="cursor-pointer px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition"
+              >
+                <Image className="w-3.5 h-3.5" />
+                {loc('انتخاب تصویر از گوشی', 'Choose Photo')}
+              </label>
+            </div>
+
+            {/* Preset Avatars Selection */}
+            <div className="space-y-2">
+              <label className="text-[11px] text-slate-400 font-medium">{loc('یا انتخاب آواتارهای پیش‌فرض:', 'Or select preset avatar:')}</label>
+              <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                {PRESET_AVATARS && PRESET_AVATARS.map((avatarUrl, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => setEditAvatarUrl(avatarUrl)}
+                    className={`relative w-12 h-12 rounded-2xl overflow-hidden shrink-0 border-2 transition ${editAvatarUrl === avatarUrl ? 'border-pink-500 scale-105 shadow-[0_0_10px_rgba(236,72,153,0.8)]' : 'border-slate-800 hover:border-slate-600'}`}
+                  >
+                    <img src={avatarUrl} alt={`Avatar ${index + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <label className="text-slate-400 mb-1 block">{loc('نام نمایشی', 'Display Name')}</label>
+                <input 
+                  type="text" 
+                  value={editFullName} 
+                  onChange={e => setEditFullName(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-400 mb-1 block">{loc('نام کاربری', 'Username')}</label>
+                <input 
+                  type="text" 
+                  value={editUsername} 
+                  onChange={e => setEditUsername(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="text-slate-300 font-bold mb-1 flex items-center justify-between">
+                  <span>🆔 {loc('ای‌دی عددی تلگرام:', 'Telegram Numeric ID:')}</span>
+                  <span className="text-[10px] text-cyan-400 font-mono">{loc('جهت شناسایی ادمین (مثال: 8973478139)', 'e.g. 8973478139')}</span>
+                </label>
+                <input 
+                  type="text" 
+                  value={currentTelegramId} 
+                  onChange={e => {
+                    const val = e.target.value.trim();
+                    setCurrentTelegramId(val);
+                    safeStorage && safeStorage.setItem('vlive_user_telegram_id', val);
+                  }}
+                  placeholder="8973478139"
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-cyan-300 font-mono text-xs outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="text-slate-400 mb-1 block">{loc('بیوگرافی', 'Bio Statement')}</label>
+                <textarea 
+                  value={editBio} 
+                  onChange={e => setEditBio(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500 h-20"
+                />
+              </div>
+            </div>
+
+            <button type="submit" className="w-full py-3 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-black text-xs shadow-lg active:scale-95 transition">
+              {loc('ذخیره تغییرات', 'Save Changes')}
+            </button>
+          </form>
+
+          {/* ACCOUNT ACTIONS & SESSIONS */}
+          <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+            <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              {loc('نشست‌های فعال و امنیت', 'Active Sessions & Security')}
+            </h3>
+            <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+              <div>
+                <span className="text-slate-200 font-bold block">{loc('تلگرام وب اپ (دستگاه فعلی)', 'Telegram Web App (Current)')}</span>
+                <span className="text-[10px] text-slate-400">Tehran, Iran • Active Now</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono text-[10px] font-bold border border-emerald-500/30">
+                THIS DEVICE
+              </span>
+            </div>
+
+            <button 
+              onClick={handleLogout}
+              className="w-full py-3 rounded-2xl bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 text-xs font-bold transition flex items-center justify-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>{loc('خروج از حساب کاربری', 'Log Out of Account')}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED SUB-PAGE 2: PRIVACY & SECURITY */}
+      {profileSubPage === 'privacy' && (
+        <div className="space-y-4">
+          <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+            <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Lock className="w-4 h-4 text-emerald-400" />
+              {loc('تنظیمات نمایش حریم خصوصی', 'Privacy Display Settings')}
+            </h3>
+
+            <div className="space-y-3">
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-200">{loc('نمایش سن در پروفایل', 'Show Age on Profile')}</span>
+                <button 
+                  type="button"
+                  onClick={() => setPrivacyShowAge(!privacyShowAge)}
+                  className={`w-12 h-6 rounded-full p-1 transition-colors ${privacyShowAge ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                >
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${privacyShowAge ? 'translate-x-6' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-200">{loc('نمایش شهر / موقعیت', 'Show Location / City')}</span>
+                <button 
+                  type="button"
+                  onClick={() => setPrivacyShowCity(!privacyShowCity)}
+                  className={`w-12 h-6 rounded-full p-1 transition-colors ${privacyShowCity ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                >
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${privacyShowCity ? 'translate-x-6' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-200">{loc('نمایش وضعیت آنلاین بودن', 'Show Online Status')}</span>
+                <button 
+                  type="button"
+                  onClick={() => setPrivacyShowLastSeen(!privacyShowLastSeen)}
+                  className={`w-12 h-6 rounded-full p-1 transition-colors ${privacyShowLastSeen ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                >
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${privacyShowLastSeen ? 'translate-x-6' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-200">{loc('نمایش هدایا در پروفایل', 'Show Gifts on Profile')}</span>
+                <button 
+                  type="button"
+                  onClick={() => setPrivacyShowGifts(!privacyShowGifts)}
+                  className={`w-12 h-6 rounded-full p-1 transition-colors ${privacyShowGifts ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                >
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${privacyShowGifts ? 'translate-x-6' : 'translate-x-0'}`} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+            <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Ban className="w-4 h-4 text-red-400" />
+              {loc('کاربران مسدود شده (Blocked Users)', 'Blocked Users')}
+            </h3>
+            <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-400 text-center">
+              {loc('هیچ کاربری در لیست مسدودشده‌ها قرار ندارد.', 'No users currently blocked.')}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED SUB-PAGE 3: WALLET */}
+      {profileSubPage === 'wallet' && (
+        <div className="space-y-4">
+          <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-slate-900 border border-amber-500/40 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-amber-300 uppercase tracking-wider">{loc('موجودی کیف‌پول شما', 'Your Wallet Balance')}</p>
+                <h2 className="text-3xl font-black text-white flex items-center gap-2 mt-1">
+                  <Coins className="w-8 h-8 text-amber-400" />
+                  <span>{userCoins.toLocaleString()}</span>
+                  <span className="text-xs font-bold text-amber-400">{loc('سکه', 'Coins')}</span>
+                </h2>
+              </div>
+              <button
+                onClick={() => setActiveTab('wallet')}
+                className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-black text-xs shadow-lg hover:bg-amber-400 active:scale-95 transition"
+              >
+                {loc('خرید سکه', 'Buy Coins')}
+              </button>
+            </div>
+          </div>
+
+          <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+            <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <History className="w-4 h-4 text-cyan-400" />
+              {loc('تاریخچه تراکنش‌های اخیر', 'Recent Payment History')}
+            </h3>
+            <div className="space-y-2">
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-300">{loc('خرید بسته ۵۰۰ سکه', 'Buy 500 Coins')}</span>
+                <span className="text-emerald-400 font-mono font-bold">+500 Coins</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-300">{loc('ارسال هدیه تاج به استریمر', 'Sent Crown Gift')}</span>
+                <span className="text-red-400 font-mono font-bold">-100 Coins</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED SUB-PAGE 4: VIP */}
+      {profileSubPage === 'vip' && (
+        <div className="space-y-4">
+          <div className="p-6 rounded-3xl bg-gradient-to-r from-yellow-500/20 via-amber-500/20 to-slate-900 border border-yellow-500/40 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-yellow-400 text-slate-950 flex items-center justify-center font-black">
+                <Crown className="w-7 h-7 fill-slate-950" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-yellow-300">{loc('عضویت ویژه VIP', 'VIP Membership')}</h3>
+                <p className="text-xs text-slate-300">{loc('دسترسی به تمام قابلیت‌های ممتاز و نشان اختصاصی', 'Access all premium features & badge')}</p>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => setIsVipModalOpen(true)}
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs shadow-xl hover:brightness-110 active:scale-95 transition"
+              >
+                {loc('ارتقا به VIP برنزی / نقره‌ای / طلایی', 'Upgrade VIP Membership')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED SUB-PAGE 5: GIFTS */}
+      {profileSubPage === 'gifts' && (
+        <div className="space-y-4">
+          <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Gift className="w-4 h-4 text-purple-400" />
+                {loc('هدایای دریافتی شما', 'Your Received Gifts')}
+              </h3>
+              <button
+                onClick={() => setIsGiftCatalogOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-purple-600 text-white font-bold text-xs shadow"
+              >
+                {loc('کاتالوگ هدایا', 'Gift Catalog')}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                <span className="text-2xl">👑</span>
+                <p className="text-xs font-bold text-white">14</p>
+                <p className="text-[10px] text-slate-400">Crowns</p>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                <span className="text-2xl">🚀</span>
+                <p className="text-xs font-bold text-white">8</p>
+                <p className="text-[10px] text-slate-400">Rockets</p>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                <span className="text-2xl">💎</span>
+                <p className="text-xs font-bold text-white">25</p>
+                <p className="text-[10px] text-slate-400">Gems</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED SUB-PAGE 6: GALLERY */}
+      {profileSubPage === 'gallery' && (
+        <div className="space-y-4">
+          <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-xs font-black text-white flex items-center gap-2">
+                <Image className="w-4 h-4 text-cyan-400" />
+                {loc('گالری رسانه و پست‌ها', 'Media Gallery & Posts')}
+              </h3>
+              <button
+                onClick={() => setIsAddPostModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold shadow flex items-center gap-1 active:scale-95 transition"
+              >
+                <span>➕</span>
+                <span>{loc('افزودن پست جدید', 'Add Post')}</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {posts && posts.map((p) => (
+                <div key={p.id} className="relative rounded-2xl overflow-hidden aspect-square border border-slate-800 group">
+                  <img src={p.imageUrl || p.image} alt={p.caption} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition p-2 flex items-end justify-between text-xs text-white">
+                    <span className="flex items-center gap-1 font-bold">❤️ {p.likesCount || p.likes}</span>
+                    <span className="flex items-center gap-1 font-bold">💬 {p.commentsCount || 0}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED SUB-PAGE 7: STORIES */}
+      {profileSubPage === 'stories' && (
+        <div className="space-y-4">
+          <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-xs font-black text-white flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-purple-400" />
+                {loc('استوری‌های ۲۴ ساعته', '24h Stories')}
+              </h3>
+              <button
+                onClick={() => setIsAddStoryModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow flex items-center gap-1 active:scale-95 transition"
+              >
+                <span>📸</span>
+                <span>{loc('انتشار استوری', 'Publish Story')}</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 overflow-x-auto pb-2">
+              {advancedStories && advancedStories.find(s => s.isMe)?.items?.length > 0 ? (
+                advancedStories.find(s => s.isMe).items.map(stItem => (
+                  <div key={stItem.id} className="relative w-24 h-36 rounded-2xl overflow-hidden border-2 border-purple-500/50 shrink-0 group shadow-lg">
+                    <img src={stItem.url} alt="Story" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => handleDeleteUserStoryItem(stItem.id)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center text-xs font-black shadow z-10"
+                      title={loc('حذف استوری', 'Delete Story')}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-slate-400 p-4 text-center w-full">{loc('استوری فعالی ندارید.', 'No active stories.')}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED SUB-PAGE 8: NOTIFICATIONS */}
+      {profileSubPage === 'notifications' && (
+        <div className="space-y-4">
+          <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+            <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Bell className="w-4 h-4 text-blue-400" />
+              {loc('تنظیمات اعلان‌ها', 'Notification Preferences')}
+            </h3>
+
+            <div className="space-y-2">
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs font-bold text-slate-200">
+                <span>{loc('اعلان پیام‌های مستقیم', 'Direct Messages')}</span>
+                <span className="text-emerald-400">ON</span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs font-bold text-slate-200">
+                <span>{loc('اعلان شروع لایو استریمرها', 'Streamer Live Alerts')}</span>
+                <span className="text-emerald-400">ON</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED SUB-PAGE 9: LANGUAGE */}
+      {profileSubPage === 'language' && (
+        <div className="space-y-4">
+          <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+            <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Globe className="w-4 h-4 text-emerald-400" />
+              {loc('انتخاب زبان برنامه', 'Select Language')}
+            </h3>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setLanguage('fa')}
+                className={`p-4 rounded-2xl border flex items-center justify-center gap-2 font-bold text-xs transition ${language === 'fa' ? 'bg-emerald-600 text-white border-emerald-400 shadow-lg' : 'bg-slate-950 text-slate-400 border-slate-800'}`}
+              >
+                🇮🇷 فارسی (Persian)
+              </button>
+              <button
+                onClick={() => setLanguage('en')}
+                className={`p-4 rounded-2xl border flex items-center justify-center gap-2 font-bold text-xs transition ${language === 'en' ? 'bg-emerald-600 text-white border-emerald-400 shadow-lg' : 'bg-slate-950 text-slate-400 border-slate-800'}`}
+              >
+                🇺🇸 English
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED SUB-PAGE 10: SUPPORT & HELP */}
+      {profileSubPage === 'support' && (
+        <div className="space-y-4">
+          <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+            <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Info className="w-4 h-4 text-teal-400" />
+              {loc('مرکز پشتیبانی VLive', 'VLive Support Center')}
+            </h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              {loc('برای دریافت پشتیبانی یا گزارش اشکال فنی می‌توانید با پشتیبانی ارتباط برقرار کنید.', 'Contact our support team for help or technical feedback.')}
+            </p>
+            <button
+              onClick={() => showToast(loc('در حال اتصال به پشتیبانی...', 'Connecting to support...'))}
+              className="w-full py-3 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs shadow-lg transition"
+            >
+              {loc('ارتباط با پشتیبانی ۲۴/۷', 'Contact 24/7 Support')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED SUB-PAGE 11: ABOUT */}
+      {profileSubPage === 'about' && (
+        <div className="space-y-4">
+          <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3 text-center">
+            <div className="w-16 h-16 rounded-3xl bg-pink-600 text-white flex items-center justify-center font-black text-2xl mx-auto shadow-xl">
+              V
+            </div>
+            <h3 className="text-lg font-black text-white">VLive Telegram Mini App</h3>
+            <p className="text-xs font-bold text-pink-400">Version 2.4.0 (Production Build)</p>
+            <p className="text-xs text-slate-400 leading-relaxed pt-2">
+              {loc('پلتفرم هوشمند پخش زنده، ارتباطات ویدیویی و شبکه اجتماعی تلگرام.', 'Smart live streaming, video call and social platform.')}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* LEVEL & BADGES SYSTEM */}
+      <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-purple-500/40 space-y-5 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+        
+        {/* MAIN LEVEL HEADER */}
+        <div className="p-5 rounded-3xl bg-gradient-to-br from-purple-950/90 via-slate-950 to-pink-950/90 border border-purple-500/50 relative overflow-hidden space-y-4 shadow-2xl">
+          <div className="absolute top-0 left-0 w-64 h-64 bg-purple-500/10 blur-3xl rounded-full pointer-events-none" />
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 p-0.5 shadow-[0_0_20px_rgba(236,72,153,0.6)] flex items-center justify-center text-2xl font-black">
+                  👑
+                </div>
+                <span className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] shadow-md">
+                  Lv.{userLevel}
+                </span>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-black text-white">سطح کاربری (Level {userLevel})</h3>
+                  <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30 text-[10px]">
+                    نشان فعال: {equippedBadge}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  کسب XP بیشتر از فعالیت‌های روزانه، تماشای لایو، ارسال هدیه و دعوت از دوستان
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleGainXP(500, 'تست ارتقا XP')}
+                className="btn-neon-pink px-4 py-2.5 rounded-2xl text-xs font-black shadow-lg flex items-center gap-1.5 animate-pulse"
+              >
+                <Zap className="w-4 h-4 fill-white" />
+                <span>⚡ دریافت +500 XP (تست)</span>
+              </button>
+              <button
+                onClick={() => setIsLevelUpModalOpen(true)}
+                className="px-3 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow-md"
+              >
+                🎆 جشن لول آپ
+              </button>
+            </div>
+          </div>
+
+          {/* USER XP PROGRESS BAR */}
+          <div className="space-y-1.5 relative z-10">
+            <div className="flex items-center justify-between text-xs font-bold">
+              <span className="text-slate-300 flex items-center gap-1">
+                <Award className="w-4 h-4 text-amber-400" /> پیشرفت سطح اصلی (User Level Progress):
+              </span>
+              <span className="text-amber-400 font-mono">{userXP.toLocaleString()} / {maxXP.toLocaleString()} XP ({((userXP / maxXP) * 100).toFixed(1)}%)</span>
+            </div>
+            <div className="w-full h-3 rounded-full bg-slate-900 border border-slate-800 overflow-hidden p-0.5">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-amber-400 transition-all duration-500 shadow-[0_0_12px_rgba(236,72,153,0.8)]"
+                style={{ width: `${Math.min(100, (userXP / maxXP) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          {/* CREATOR LEVEL */}
+          <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1.5 relative z-10">
+            <div className="flex items-center justify-between text-[11px] font-bold">
+              <span className="text-pink-300 flex items-center gap-1">
+                <Video className="w-3.5 h-3.5 text-pink-400" /> سطح اختصاصی استریمر (Creator Level {creatorLevel}):
+              </span>
+              <span className="text-purple-300 font-mono">{creatorXP.toLocaleString()} / {maxCreatorXP.toLocaleString()} XP</span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-pink-500"
+                style={{ width: `${(creatorXP / maxCreatorXP) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* LEVEL & BADGES SYSTEM SUB-TABS */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-slate-800">
+          {[
+            { id: 'overview', label: '📊 ۳. دریافت XP و فعالیت‌ها' },
+            { id: 'badges', label: '🏅 ۵&۷. گالری مدال‌ها (Badges)' },
+            { id: 'achievements', label: '🎯 ۶&۸. دستاوردها (Achievements)' },
+            { id: 'roadmap', label: '🗺️ ۴. نقشه راه سطوح (Roadmap)' },
+            { id: 'leaderboard', label: '🏆 ۹. رتبه‌بندی برترین سطوح' },
+            { id: 'store', label: '🏪 ۱۵. فروشگاه مدال (Badge Store)' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setLevelActiveTab(tab.id)}
+              className={`px-4 py-2 rounded-2xl text-xs font-bold transition whitespace-nowrap ${
+                levelActiveTab === tab.id ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* SUB-TAB 1: XP GAINS ACTIVITIES */}
+        {levelActiveTab === 'overview' && (
+          <div className="space-y-4 animate-fadeIn">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-black text-white flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                ۳. روش‌های دریافت امتیاز تجربه (XP Gains List)
+              </h4>
+              <span className="text-[10px] text-slate-400">بروزرسانی روزانه</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {xpActivitiesList && xpActivitiesList.map(act => (
+                <div key={act.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
+                  <div>
+                    <h5 className="text-xs font-bold text-white">{act.title}</h5>
+                    <span className="text-[10px] text-amber-400 font-mono font-bold">{act.xp}</span>
+                  </div>
+
+                  <div>
+                    {act.isClaimed ? (
+                      <span className="px-3 py-1 rounded-xl bg-slate-900 text-slate-400 text-[10px] font-bold">دریافت شد ✅</span>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setXpActivitiesList(prev => prev.map(x => x.id === act.id ? { ...x, isClaimed: true } : x));
+                          const xpVal = parseInt(act.xp.replace('+','').replace(' XP','')) || 100;
+                          handleGainXP(xpVal, act.title);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs shadow-md"
+                      >
+                        دریافت XP ⚡
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* SUB-TAB 2: BADGES GALLERY */}
+        {levelActiveTab === 'badges' && (
+          <div className="space-y-4 animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h4 className="text-xs font-black text-white flex items-center gap-1.5">
+                <Award className="w-4 h-4 text-purple-400" />
+                ۵ & ۷. گالری مدال‌های کاربر (Collection & Badges)
+              </h4>
+              <span className="text-[10px] text-purple-300 font-bold bg-purple-500/10 px-2.5 py-1 rounded-full border border-purple-500/20">
+                بازشده: {userBadgesList ? userBadgesList.filter(b => b.isUnlocked).length : 0} از {userBadgesList ? userBadgesList.length : 0}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {userBadgesList && userBadgesList.map(badge => (
+                <div
+                  key={badge.id}
+                  className={`p-4 rounded-2xl border transition-all space-y-2 relative ${
+                    badge.isEquipped ? 'bg-slate-950 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]' :
+                    badge.isUnlocked ? 'bg-slate-950 border-slate-800 hover:border-slate-700' : 'bg-slate-950/40 border-slate-900 opacity-60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl">{badge.icon}</span>
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                      badge.rarity === 'Legendary' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
+                      badge.rarity === 'Mythic' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
+                      badge.rarity === 'Epic' ? 'bg-pink-500/20 text-pink-300 border-pink-500/30' :
+                      'bg-slate-800 text-slate-300 border-slate-700'
+                    }`}>
+                      {badge.rarity}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h5 className="text-xs font-bold text-white">{badge.name}</h5>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{badge.desc}</p>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800/80">
+                    {badge.isEquipped ? (
+                      <span className="text-[10px] text-amber-400 font-bold block text-center">نشان فعال پروفایل ✓</span>
+                    ) : badge.isUnlocked ? (
+                      <button
+                        onClick={() => {
+                          setEquippedBadge(badge.name);
+                          setUserBadgesList(prev => prev.map(b => ({ ...b, isEquipped: b.id === badge.id })));
+                          showToast(`نشان ${badge.name} روی پروفایل شما فعال شد! 🏅`);
+                        }}
+                        className="w-full py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold border border-slate-700"
+                      >
+                        فعال‌سازی روی پروفایل 👑
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-slate-500 font-bold block text-center">🔒 قفل‌شده</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* SUB-TAB 3: ACHIEVEMENTS */}
+        {levelActiveTab === 'achievements' && (
+          <div className="space-y-4 animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h4 className="text-xs font-black text-white flex items-center gap-1.5">
+                <Target className="w-4 h-4 text-cyan-400" />
+                ۶ & ۸. لیست دستاوردها و نوار پیشرفت (Achievements Progress)
+              </h4>
+              <span className="text-[10px] text-cyan-300 font-bold bg-cyan-500/10 px-2.5 py-1 rounded-full border border-cyan-500/20">
+                تکمیل‌شده: {userAchievementsList ? userAchievementsList.filter(a => a.isCompleted).length : 0} از {userAchievementsList ? userAchievementsList.length : 0}
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {userAchievementsList && userAchievementsList.map(ach => (
+                <div key={ach.id} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-xs font-bold text-white">{ach.title}</h5>
+                    <span className="text-xs font-black text-amber-400 font-mono">{ach.progress}%</span>
+                  </div>
+
+                  <div className="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all duration-300"
+                      style={{ width: `${ach.progress}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
+                    <span>پیشرفت: {ach.current} / {ach.target}</span>
+                    <span className="text-purple-300 font-bold">پاداش: {ach.reward}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* SUB-TAB 4: LEVEL ROADMAP */}
+        {levelActiveTab === 'roadmap' && (
+          <div className="space-y-4 animate-fadeIn">
+            <h4 className="text-xs font-black text-white flex items-center gap-1.5 border-b border-slate-800 pb-3">
+              <MapPin className="w-4 h-4 text-amber-400" />
+              ۴ & ۱۲. نقشه راه سطوح و جوایز ارتقا (Level Roadmap & Rewards)
+            </h4>
+
+            <div className="space-y-3">
+              {levelRoadmapList && levelRoadmapList.map(rm => (
+                <div key={rm.level} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center font-black text-xs font-mono">
+                      Lv.{rm.level}
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-white">{rm.rewardTitle}</h5>
+                      <p className="text-[10px] text-slate-400">پاداش اختصاصی رسیدن به سطح {rm.level}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    {userLevel >= rm.level ? (
+                      <span className="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30">
+                        دریافت شد ✅
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-500 text-xs font-bold border border-slate-800">
+                        🔒 قفل (نیازمند Level {rm.level})
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* SUB-TAB 5: LEADERBOARD */}
+        {levelActiveTab === 'leaderboard' && (
+          <div className="space-y-4 animate-fadeIn">
+            <h4 className="text-xs font-black text-white flex items-center gap-1.5 border-b border-slate-800 pb-3">
+              <Trophy className="w-4 h-4 text-amber-400" />
+              ۹. جدول رتبه‌بندی کاربران بر اساس Level و XP
+            </h4>
+
+            <div className="space-y-2.5">
+              {[
+                { rank: 1, name: 'Soren 🔥', level: 45, xp: '445,000 XP', badge: '🥇 Top Player' },
+                { rank: 2, name: 'Elena 💎', level: 38, xp: '382,000 XP', badge: '🥈 Master Streamer' },
+                { rank: 3, name: 'Rayan Streamer', level: 29, xp: '290,000 XP', badge: '🥉 Pro Creator' },
+                { rank: 4, name: userName, level: userLevel, xp: `${userXP.toLocaleString()} XP`, badge: `👑 ${equippedBadge}` }
+              ].map(player => (
+                <div key={player.rank} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center font-black text-xs text-amber-400 font-mono">
+                      #{player.rank}
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h5 className="text-xs font-bold text-white">{player.name}</h5>
+                        <span className="text-[9px] px-2 py-0.2 rounded-full bg-purple-500/20 text-purple-300 font-bold">{player.badge}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400">{player.xp}</span>
+                    </div>
+                  </div>
+
+                  <span className="text-xs font-black text-amber-400 font-mono">Level {player.level}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* SUB-TAB 6: BADGE STORE */}
+        {levelActiveTab === 'store' && (
+          <div className="space-y-4 animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h4 className="text-xs font-black text-white flex items-center gap-1.5">
+                <ShoppingBag className="w-4 h-4 text-pink-400" />
+                ۱۵. فروشگاه اختصاصی مدال‌ها و فریم‌های متحرک (Badge Store)
+              </h4>
+              <span className="text-[10px] text-pink-300 font-bold bg-pink-500/10 px-2.5 py-1 rounded-full border border-pink-500/20">
+                نسخه ویژه ۲۰۲۶ 🛍️
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { title: '🌟 Star Host Badge', price: '300 Coins', desc: 'مدال درخشان ستاره‌ای برای اتاق لایو' },
+                { title: '⚡ Lightning King', price: '500 Coins', desc: 'نشان متحرک صاعقه‌ای کنار آواتار' },
+                { title: '🎨 Neon Legend Frame', price: '1,000 Coins', desc: 'قاب نئونی متحول‌کننده عکس پروفایل' }
+              ].map((item, idx) => (
+                <div key={idx} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
+                  <div>
+                    <h5 className="text-xs font-bold text-white">{item.title}</h5>
+                    <p className="text-[10px] text-slate-400">{item.desc}</p>
+                    <span className="text-xs font-black text-amber-400 font-mono mt-1 block">{item.price}</span>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const cost = parseInt(item.price) || 300;
+                      if (userCoins < cost) {
+                        showToast(`موجودی سکه کافی نیست! نیاز به ${cost} سکه دارید.`);
+                        setIsDepositModalOpen(true);
+                        return;
+                      }
+                      setUserCoins(prev => prev - cost);
+                      setUserBadgesList(prev => [...prev, {
+                        id: `badge_${Date.now()}_${idx}`,
+                        name: item.title,
+                        icon: item.title.split(' ')[0],
+                        desc: item.desc,
+                        rarity: 'Legendary',
+                        isUnlocked: true,
+                        isEquipped: false
+                      }]);
+                      showToast(`با موفقیت ${item.title} خریداری شد! 🛍️`);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-xs shadow-md active:scale-95 transition"
+                  >
+                    خرید 🛍️
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* BIOGRAPHY & ATTRIBUTES */}
+      <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 text-xs">
+        <h3 className="font-bold text-white flex items-center gap-1.5 text-xs">
+          <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+          About & Bio
+        </h3>
+
+        <p className="text-slate-300 leading-relaxed text-[11px]">{userBio}</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800/80 text-[11px]">
+          <div>
+            <span className="text-slate-400 block text-[10px] mb-1">Occupation</span>
+            <span className="text-white font-medium">Official V.Live 4K Host</span>
+          </div>
+
+          <div>
+            <span className="text-slate-400 block text-[10px] mb-1">Languages</span>
+            <span className="text-white font-medium">Persian 🇮🇷, English 🇬🇧</span>
+          </div>
+
+          <div>
+            <span className="text-slate-400 block text-[10px] mb-1">Interests</span>
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30 text-[9px] font-bold">Music 🎵</span>
+              <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[9px] font-bold">Live Host 🎥</span>
+              <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[9px] font-bold">Gaming 🎮</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* STREAMER EARNINGS OVERVIEW */}
+      <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+            <DollarSign className="w-4 h-4 text-emerald-400" />
+            Streamer Earnings & Payout (71% Rate)
+          </h3>
+          <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+            USDT Cashout Available
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+            <span className="text-[9px] text-slate-400">Today</span>
+            <p className="text-sm font-black text-emerald-400 mt-0.5">$45.00</p>
+            <span className="text-[8px] text-amber-300">2,250 Coins</span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+            <span className="text-[9px] text-slate-400">This Month</span>
+            <p className="text-sm font-black text-cyan-400 mt-0.5">$1,280.00</p>
+            <span className="text-[8px] text-amber-300">64,000 Coins</span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+            <span className="text-[9px] text-slate-400">Total All-Time</span>
+            <p className="text-sm font-black text-purple-400 mt-0.5">$8,450.00</p>
+            <span className="text-[8px] text-amber-300">422,500 Coins</span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+            <span className="text-[9px] text-slate-400">Gifts Received</span>
+            <p className="text-sm font-black text-pink-400 mt-0.5">1,840</p>
+            <span className="text-[8px] text-pink-300">Gifts Total</span>
+          </div>
+        </div>
+      </div>
+
+      {/* GIFT SHOWCASE */}
+      <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+            <Gift className="w-4 h-4 text-amber-400" />
+            Gift Showcase Window
+          </h3>
+          <span className="text-[10px] text-slate-400">Collected from live fans</span>
+        </div>
+
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
+          {[
+            { name: 'Supercar', icon: '🏎️', count: 12, coins: '5,000' },
+            { name: 'Royal Crown', icon: '👑', count: 45, coins: '2,500' },
+            { name: 'Gold Vault', icon: '📦', count: 8, coins: '10,000' },
+            { name: 'Diamond Ring', icon: '💎', count: 120, coins: '1,000' },
+            { name: 'Rose Bouquet', icon: '🌹', count: 950, coins: '10' }
+          ].map((gift, i) => (
+            <div key={i} className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1 hover:border-amber-500/50 transition">
+              <span className="text-2xl block">{gift.icon}</span>
+              <p className="text-[10px] font-bold text-white truncate">{gift.name}</p>
+              <span className="inline-block px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-black border border-amber-500/30">
+                x{gift.count}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* BADGES & MEDALS */}
+      <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+        <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+          <Crown className="w-4 h-4 text-amber-400" />
+          Badges & Achievements
+        </h3>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div className="p-2.5 rounded-2xl bg-slate-950 border border-amber-500/30 flex items-center gap-2">
+            <span className="text-xl">👑</span>
+            <div>
+              <h4 className="text-[10px] font-bold text-amber-300">VIP Member</h4>
+              <p className="text-[8px] text-slate-400">Unlimited access</p>
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-2xl bg-slate-950 border border-cyan-500/30 flex items-center gap-2">
+            <span className="text-xl">✅</span>
+            <div>
+              <h4 className="text-[10px] font-bold text-cyan-300">Verified Host</h4>
+              <p className="text-[8px] text-slate-400">Official Blue Tick</p>
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-2xl bg-slate-950 border border-pink-500/30 flex items-center gap-2">
+            <span className="text-xl">🔥</span>
+            <div>
+              <h4 className="text-[10px] font-bold text-pink-300">Top Streamer</h4>
+              <p className="text-[8px] text-slate-400">Weekly #1 Host</p>
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-2xl bg-slate-950 border border-purple-500/30 flex items-center gap-2">
+            <span className="text-xl">💎</span>
+            <div>
+              <h4 className="text-[10px] font-bold text-purple-300">Premium Creator</h4>
+              <p className="text-[8px] text-slate-400">4K Live Enabled</p>
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-2xl bg-slate-950 border border-yellow-500/30 flex items-center gap-2 sm:col-span-2">
+            <span className="text-xl">🏆</span>
+            <div>
+              <h4 className="text-[10px] font-bold text-yellow-300">Top Gift Receiver</h4>
+              <p className="text-[8px] text-slate-400">Over 1,000+ gifts collected</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* PRIVACY SETTINGS */}
+      <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 text-xs">
+        <h3 className="font-bold text-white flex items-center gap-1.5">
+          <Lock className="w-4 h-4 text-pink-400" />
+          Privacy Controls
+        </h3>
+
+        <div className="space-y-2">
+          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <span>Show City on Profile</span>
+            <button 
+              onClick={() => setPrivacyShowCity(!privacyShowCity)}
+              className={`px-3 py-1 rounded-xl text-[10px] font-bold transition ${privacyShowCity ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+            >
+              {privacyShowCity ? 'Visible' : 'Hidden'}
+            </button>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <span>Show Age on Profile</span>
+            <button 
+              onClick={() => setPrivacyShowAge(!privacyShowAge)}
+              className={`px-3 py-1 rounded-xl text-[10px] font-bold transition ${privacyShowAge ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+            >
+              {privacyShowAge ? 'Visible' : 'Hidden'}
+            </button>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <span>Show Online Status / Last Seen</span>
+            <button 
+              onClick={() => setPrivacyShowLastSeen(!privacyShowLastSeen)}
+              className={`px-3 py-1 rounded-xl text-[10px] font-bold transition ${privacyShowLastSeen ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+            >
+              {privacyShowLastSeen ? 'Visible' : 'Hidden'}
+            </button>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <span>Who Can Send Direct Messages</span>
+            <button 
+              onClick={() => setPrivacyWhoMessage(privacyWhoMessage === 'Everyone' ? 'Followers Only' : 'Everyone')}
+              className="px-3 py-1 rounded-xl text-[10px] font-bold bg-purple-900 text-purple-200 border border-purple-500/30"
+            >
+              {privacyWhoMessage}
+            </button>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <span>Who Can Video/Voice Call Me</span>
+            <button 
+              onClick={() => setPrivacyWhoCall(privacyWhoCall === 'VIP Only' ? 'Everyone' : 'VIP Only')}
+              className="px-3 py-1 rounded-xl text-[10px] font-bold bg-amber-900 text-amber-200 border border-amber-500/30"
+            >
+              {privacyWhoCall}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ACCOUNT SETTINGS */}
+      <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 text-xs">
+        <h3 className="font-bold text-white flex items-center gap-1.5">
+          <Settings className="w-4 h-4 text-cyan-400" />
+          Account Settings
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button 
+            onClick={() => setIsEditingProfile(true)}
+            className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition"
+          >
+            <span className="text-slate-200 font-medium">Edit Info & Avatar</span>
+            <Edit3 className="w-3.5 h-3.5 text-pink-400" />
+          </button>
+
+          <button 
+            onClick={() => {
+              setIsSettingsModalOpen(true);
+              setSettingsCategoryFilter('account');
+            }}
+            className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition"
+          >
+            <span className="text-slate-200 font-medium">{t('changePassword', 'تغییر رمز عبور (Change Password)')}</span>
+            <Key className="w-3.5 h-3.5 text-purple-400" />
+          </button>
+
+          <button 
+            onClick={() => {
+              setIsSettingsModalOpen(true);
+              setSettingsCategoryFilter('security');
+            }}
+            className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition"
+          >
+            <span className="text-slate-200 font-medium">{t('activeDevices', 'مدیریت دستگاه‌های فعال (Active Devices)')}</span>
+            <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
+          </button>
+
+          <button 
+            onClick={() => setIsLanguageModalOpen(true)}
+            className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition"
+          >
+            <span className="text-slate-200 font-medium">{t('selectLanguage', 'انتخاب زبان برنامه (Language)')}</span>
+            <Languages className="w-3.5 h-3.5 text-amber-400" />
+          </button>
+
+          <button 
+            onClick={() => setIsAdminPinModalOpen(true)}
+            className="p-3 rounded-2xl bg-slate-950 hover:bg-slate-900 border border-slate-800 text-left flex items-center justify-between transition col-span-1 sm:col-span-2 shadow-sm"
+          >
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-slate-400" />
+              <span className="text-slate-200 font-medium">{t('adminPanel', 'Admin Security Access')}</span>
+            </div>
+            <Lock className="w-3.5 h-3.5 text-slate-400" />
+          </button>
+        </div>
+      </div>
+
+      {/* WALLET SUMMARY & USDT TRANSACTIONS */}
+      <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 text-xs">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-white flex items-center gap-1.5">
+            <Wallet className="w-4 h-4 text-amber-400" />
+            Wallet Balance & TRC20 History
+          </h3>
+          <span className="text-amber-300 font-black">{userCoins.toLocaleString()} Coins</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setIsDepositModalOpen(true)}
+            className="flex-1 py-2 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md"
+          >
+            Deposit / Charge
+          </button>
+          <button 
+            onClick={() => setIsWithdrawModalOpen(true)}
+            className="flex-1 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md"
+          >
+            Withdraw USDT
+          </button>
+        </div>
+      </div>
+
+      {/* SECURITY & IDENTITY (KYC) */}
+      <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 text-xs">
+        <h3 className="font-bold text-white flex items-center gap-1.5">
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          Security & KYC Status
+        </h3>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 text-center">
+            <span className="text-[9px] text-slate-400 block">Identity KYC</span>
+            <span className="text-[10px] font-bold text-emerald-400">Verified ✅</span>
+          </div>
+
+          <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 text-center">
+            <span className="text-[9px] text-slate-400 block">Phone Number</span>
+            <span className="text-[10px] font-bold text-emerald-400">Verified ✅</span>
+          </div>
+
+          <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 text-center">
+            <span className="text-[9px] text-slate-400 block">Email Address</span>
+            <span className="text-[10px] font-bold text-emerald-400">Verified ✅</span>
+          </div>
+
+          <div className="p-2.5 rounded-2xl bg-slate-950 border border-purple-500/30 text-center">
+            <span className="text-[9px] text-slate-400 block">2FA Auth</span>
+            <span className="text-[10px] font-bold text-purple-300">Active 🔒</span>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTTOM PROFILE QUICK ACTIONS */}
+      <div className="p-4 rounded-3xl bg-gradient-to-r from-pink-950/80 via-purple-950/80 to-slate-950 border border-pink-500/30 space-y-3">
+        <h3 className="text-xs font-bold text-white">Quick Actions</h3>
+
+        {profilePreviewMode === 'self' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button 
+              onClick={handleStartLiveStream}
+              className="btn-neon-pink py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 shadow-lg"
+            >
+              <Camera className="w-4 h-4" />
+              Start Live
+            </button>
+
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(`https://vlive.app/invite?ref=${userName}`);
+                showToast('Invite link copied!');
+              }}
+              className="py-3 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md"
+            >
+              <Share2 className="w-4 h-4" />
+              Invite Friends
+            </button>
+
+            <button 
+              onClick={() => setIsVipModalOpen(true)}
+              className="py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-md"
+            >
+              <Crown className="w-4 h-4 fill-slate-950" />
+              Become VIP
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button 
+              onClick={() => showToast(`Following @${currentUsername}`)}
+              className="py-2.5 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center justify-center gap-1.5"
+            >
+              <UserPlus className="w-4 h-4" />
+              Follow
+            </button>
+
+            <button 
+              onClick={() => setIsGiftCatalogOpen(true)}
+              className="py-2.5 rounded-2xl bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5"
+            >
+              <Gift className="w-4 h-4" />
+              Send Gift
+            </button>
+
+            <button 
+              onClick={() => showToast(`Blocked @${currentUsername}`)}
+              className="py-2.5 rounded-2xl bg-slate-800 hover:bg-red-900/60 text-slate-300 hover:text-red-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5"
+            >
+              <Ban className="w-4 h-4" />
+              Block
+            </button>
+
+            <button 
+              onClick={() => showToast(`Report submitted for @${currentUsername}`)}
+              className="py-2.5 rounded-2xl bg-slate-800 hover:bg-amber-900/60 text-slate-300 hover:text-amber-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5"
+            >
+              <AlertTriangle className="w-4 h-4" />
+              Report
+            </button>
+          </div>
+        )}
+      </div>
+
+    </div>
         )}
       </main>
 
@@ -9879,66 +17131,2601 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       )}
 
       {/* MODAL 8: 100% REAL & FULLY EXECUTABLE 20-SECTION ADMIN DASHBOARD */}
-      <AdminPage
-        isRtl={isRtl}
-        loc={loc}
-        t={t}
-        isAdminPanelOpen={isAdminPanelOpen}
-        setIsAdminPanelOpen={setIsAdminPanelOpen}
-        adminTab={adminTab}
-        setAdminTab={setAdminTab}
-        adminSearchQuery={adminSearchQuery}
-        setAdminSearchQuery={setAdminSearchQuery}
-        showToast={showToast}
-        adminUsersList={adminUsersList}
-        setAdminUsersList={setAdminUsersList}
-        adminReportsList={adminReportsList}
-        setAdminReportsList={setAdminReportsList}
-        adminWithdrawalsList={adminWithdrawalsList}
-        setAdminWithdrawalsList={setAdminWithdrawalsList}
-        adminGiftsList={adminGiftsList}
-        setAdminGiftsList={setAdminGiftsList}
-        adminVipPlansList={adminVipPlansList}
-        setAdminVipPlansList={setAdminVipPlansList}
-        adminAdsList={adminAdsList}
-        setAdminAdsList={setAdminAdsList}
-        adminEventsList={adminEventsList}
-        setAdminEventsList={setAdminEventsList}
-        adminBroadcastMessage={adminBroadcastMessage}
-        setAdminBroadcastMessage={setAdminBroadcastMessage}
-        adminBroadcastTarget={adminBroadcastTarget}
-        setAdminBroadcastTarget={setAdminBroadcastTarget}
-        adminSystemFeePercent={adminSystemFeePercent}
-        setAdminSystemFeePercent={setAdminSystemFeePercent}
-        adminAiModerationEnabled={adminAiModerationEnabled}
-        setAdminAiModerationEnabled={setAdminAiModerationEnabled}
-        adminRiskThreshold={adminRiskThreshold}
-        setAdminRiskThreshold={setAdminRiskThreshold}
-        adminSelectedReportForAi={adminSelectedReportForAi}
-        setAdminSelectedReportForAi={setAdminSelectedReportForAi}
-        adminAiAnalysisResult={adminAiAnalysisResult}
-        setAdminAiAnalysisResult={setAdminAiAnalysisResult}
-        adminIsAnalyzingReport={adminIsAnalyzingReport}
-        setAdminIsAnalyzingReport={setAdminIsAnalyzingReport}
-        adminWhitelistUsers={adminWhitelistUsers}
-        setAdminWhitelistUsers={setAdminWhitelistUsers}
-        adminNewWhitelistId={adminNewWhitelistId}
-        setAdminNewWhitelistId={setAdminNewWhitelistId}
-        adminNewWhitelistName={adminNewWhitelistName}
-        setAdminNewWhitelistName={setAdminNewWhitelistName}
-        adminNewWhitelistRole={adminNewWhitelistRole}
-        setAdminNewWhitelistRole={setAdminNewWhitelistRole}
-        adminIsAddWhitelistModalOpen={adminIsAddWhitelistModalOpen}
-        setAdminIsAddWhitelistModalOpen={setAdminIsAddWhitelistModalOpen}
-        isUserSuperAdmin={isUserSuperAdmin}
-        isUserAuthorizedAdmin={isUserAuthorizedAdmin}
-        currentTelegramId={currentTelegramId}
-        handleRunAiReportAnalysis={handleRunAiReportAnalysis}
-        handleRunAiChatModeration={handleRunAiChatModeration}
-        handleRunAiSupportAssistant={handleRunAiSupportAssistant}
-        handleRunAiStreamerVerification={handleRunAiStreamerVerification}
-        handleRunAiReferralAudit={handleRunAiReferralAudit}
-      />
+      {isAdminPanelOpen && (
+<div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
+          <div className="w-full max-w-6xl card-3d p-4 sm:p-6 border border-amber-500/50 bg-slate-900/95 rounded-3xl space-y-4 max-h-[94vh] flex flex-col shadow-[0_0_80px_rgba(245,158,11,0.25)] text-right" dir={isRtl ? "rtl" : "ltr"}>
+            
+            {/* TOP HEADER */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3" dir="ltr">
+              <div className="flex items-center gap-2.5 dir-rtl">
+                <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-slate-950 font-black shadow-lg">
+                  <ShieldCheck className="w-6 h-6 animate-pulse" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-amber-300 tracking-wide flex items-center gap-2">
+                    <span>👑 {loc('پنل مدیریت ارشد vLive+', 'vLive+ Super Admin Dashboard')}</span>
+                  </h2>
+                  <p className="text-[11px] text-slate-400">{loc('پنل کنترل مدیریت کامل کاربران، لایوها، مالی، امنیت و هوش مصنوعی', 'Full admin control panel for users, streams, finances, security, and AI')}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Global Search Bar */}
+                <div className="relative flex-1 sm:w-60">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={adminGlobalSearch}
+                    onChange={e => setAdminGlobalSearch(e.target.value)}
+                    placeholder="جستجوی سراسری (کاربر، لایو، تراکنش)..."
+                    className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {/* Export Buttons */}
+                <button
+                  onClick={() => addAdminAuditLog('گزارش خروجی اکسل (Excel) دانلود شد')}
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold border border-amber-500/30 flex items-center gap-1"
+                >
+                  <Download className="w-3 h-3" />
+                  Excel
+                </button>
+                
+                <button
+                  onClick={() => addAdminAuditLog('گزارش خروجی پی‌دی‌اف (PDF) تولید شد')}
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 text-[10px] font-bold border border-rose-500/30 flex items-center gap-1"
+                >
+                  <FileText className="w-3 h-3" />
+                  PDF
+                </button>
+
+                <button 
+                  onClick={() => setIsAdminPanelOpen(false)} 
+                  className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* 20 SIDEBAR / CHIPS NAV TABS */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar text-xs border-b border-slate-800/80">
+              {[
+                { id: 'dashboard', label: loc('📊 داشبورد', '📊 Dashboard') },
+                { id: 'users', label: loc('👥 کاربران', '👥 Users') },
+                { id: 'live', label: loc('🎥 لایوها', '🎥 Live Streams') },
+                { id: 'reports', label: loc('💬 گزارش‌ها', '💬 Reports') },
+                { id: 'wallet', label: loc('💰 کیف پول', '💰 Wallet') },
+                { id: 'gifts', label: loc('🎁 هدایا', '🎁 Gifts') },
+                { id: 'vip', label: loc('👑 VIP اشتراک', '👑 VIP Club') },
+                { id: 'ads', label: loc('📢 تبلیغات', '📢 Ads & Banners') },
+                { id: 'events', label: loc('🏆 مسابقات', '🏆 Events') },
+                { id: 'notifications', label: loc('🔔 اعلان‌ها', '🔔 Notifications') },
+                { id: 'moderation', label: loc('🛡 محتوا', '🛡 Moderation') },
+                { id: 'statistics', label: loc('📈 آمار', '📈 Statistics') },
+                { id: 'support', label: loc('🎫 تیکت‌ها', '🎫 Support') },
+                { id: 'verification', label: loc('🔑 تأیید هویت', '🔑 Verification') },
+                { id: 'roles', label: loc('👥 ادمین‌ها', '👥 Admin Roles') },
+                { id: 'security', label: loc('🔒 امنیت', '🔒 Security') },
+                { id: 'settings', label: loc('⚙️ تنظیمات', '⚙️ Settings') },
+                { id: 'aimod', label: loc('🤖 هوش مصنوعی', '🤖 AI Mod') },
+                { id: 'aisecurity', label: loc('🛡 مرکز امنیت AI', '🛡 AI Security') },
+                { id: 'backup', label: loc('💾 بکاپ', '💾 Backups') },
+                { id: 'logs', label: loc('📜 لاگ‌ها', '📜 System Logs') }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setAdminActiveTab(tab.id)}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap border transition ${adminActiveTab === tab.id ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 border-amber-300 shadow-md font-black scale-105' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* PANEL BODY CONTENT AREA */}
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 pl-1">
+
+              {/* 1. DASHBOARD OVERVIEW */}
+              {adminActiveTab === 'dashboard' && (
+                <div className="space-y-4">
+                  {/* URGENT ALERT BANNER */}
+                  <div className="p-3.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 text-rose-200">
+                      <AlertTriangle className="w-5 h-5 text-rose-400 animate-bounce" />
+                      <div>
+                        <p className="font-bold">🚨 هشدار فوریت: افزایش غیرعادی گزارش‌های تخلف!</p>
+                        <span className="text-[10px] text-slate-300">لایو استریم شماره ۱۰۴۲ در ۵ دقیقه گذشته ۱۴ گزارش دریافت کرده است. بررسی فوری لازم است.</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setAdminActiveTab('live')}
+                      className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] whitespace-nowrap"
+                    >
+                      بررسی لایو استریم
+                    </button>
+                  </div>
+
+                  {/* 7 REAL-TIME STAT CARDS */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5 text-cyan-400" /> کل کاربران
+                      </span>
+                      <p className="text-base font-black text-white">{adminUsersList.length + 12836}</p>
+                      <span className="text-[9px] text-emerald-400">+۱۴٪ این هفته</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <Activity className="w-3.5 h-3.5 text-emerald-400" /> کاربران آنلاین
+                      </span>
+                      <p className="text-base font-black text-emerald-400">۱,۴۹۲ نفر</p>
+                      <span className="text-[9px] text-slate-400">هم‌اکنون فعال</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <Video className="w-3.5 h-3.5 text-pink-400" /> لایوهای فعال
+                      </span>
+                      <p className="text-base font-black text-pink-400">{adminLivesList.length} لایو</p>
+                      <span className="text-[9px] text-slate-400">در حال پخش زنده</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <DollarSign className="w-3.5 h-3.5 text-amber-400" /> درآمد امروز
+                      </span>
+                      <p className="text-base font-black text-amber-400">$4,820 USDT</p>
+                      <span className="text-[9px] text-emerald-400">۹۶۴,۰۰۰ سکه فروخته شد</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <MessageSquare className="w-3.5 h-3.5 text-purple-400" /> کل پیام‌ها
+                      </span>
+                      <p className="text-base font-black text-white">۸۴,۲۰۰</p>
+                      <span className="text-[9px] text-slate-400">پیام‌های امروز</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <PhoneCall className="w-3.5 h-3.5 text-cyan-400" /> کل تماس‌ها
+                      </span>
+                      <p className="text-base font-black text-cyan-300">۱,۲۳۰ تماس</p>
+                      <span className="text-[9px] text-slate-400">صوتی و تصویری</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1 sm:col-span-2">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-400" /> گزارش‌های جدید
+                      </span>
+                      <p className="text-base font-black text-rose-400">{adminReportsList.filter(r => r.status === 'Pending').length} گزارش بررسی‌نشده</p>
+                      <span className="text-[9px] text-rose-300">اقدام سریع لازم است</span>
+                    </div>
+                  </div>
+
+                  {/* QUICK ACTIONS */}
+                  <div className="p-4 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-2">
+                    <h3 className="text-xs font-bold text-white">اقدامات سریع سیستم</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      <button onClick={() => setAdminActiveTab('notifications')} className="p-2.5 rounded-xl bg-purple-950/60 border border-purple-500/30 text-purple-300 font-bold hover:bg-purple-900 text-center">
+                        📢 ارسال اعلان عمومی
+                      </button>
+                      <button onClick={() => {
+                        addAdminAuditLog('بکاپ اضطراری از دیتابیس ساخته شد');
+                        setAdminBackupsList(prev => [{ id: `BK-${Date.now()}`, size: '49.5 MB', date: new Date().toLocaleString() }, ...prev]);
+                      }} className="p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 font-bold hover:bg-cyan-900 text-center">
+                        💾 پشتیبان‌گیری دیتابیس
+                      </button>
+                      <button onClick={() => setAdminActiveTab('aimod')} className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 font-bold hover:bg-emerald-900 text-center">
+                        🤖 قوانین هوش مصنوعی
+                      </button>
+                      <button onClick={() => {
+                        setAdminMaintenanceMode(prev => !prev);
+                        addAdminAuditLog(!adminMaintenanceMode ? 'حالت تعمیرات فعال شد 🚨' : 'حالت تعمیرات غیرفعال شد');
+                      }} className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/30 text-amber-300 font-bold hover:bg-amber-900 text-center">
+                        {adminMaintenanceMode ? '🟢 غیرفعال‌سازی تعمیرات' : '🛠 فعال‌سازی تعمیرات'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. USER MANAGEMENT */}
+              {adminActiveTab === 'users' && (
+                <div className="space-y-3 text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <h3 className="font-bold text-white text-sm">{loc('۲. مدیریت کامل کاربران', '2. User Management')}</h3>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          const mockUsernames = ['sahar_m', 'ali_streamer', 'spambot99', 'elena_r', 'unknown_99'];
+                          setAdminUsersList(prev => {
+                            const cleaned = prev.filter(u => !mockUsernames.includes(u.username.toLowerCase()));
+                            safeStorage.setItem('vlive_admin_users_list', JSON.stringify(cleaned));
+                            return cleaned;
+                          });
+                          setUsersList(prev => {
+                            const cleaned = prev.filter(u => !mockUsernames.includes(u.username.toLowerCase()));
+                            safeStorage.setItem('vlive_app_users_v8', JSON.stringify(cleaned));
+                            return cleaned;
+                          });
+                          addAdminAuditLog('کاربران فیک و دمو با موفقیت پاکسازی شدند');
+                          showToast(loc('✅ کاربران فیک با موفقیت پاکسازی شدند! فقط کاربران واقعی باقی ماندند.', '✅ Fake users cleared! Only real users remain.'));
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-rose-950 hover:bg-rose-900 border border-rose-500/50 text-rose-300 font-bold text-[11px] flex items-center gap-1 shadow-sm"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> {loc('حذف کاربرهای فیک (دمو)', 'Clear Demo Users')}
+                      </button>
+
+                      <button
+                        onClick={() => setIsAddUserModalOpen(true)}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 shadow-sm"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> {loc('کاربر جدید', 'New User')}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* USER FILTER STATUS BUTTONS */}
+                  <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
+                    {['All', 'Active', 'Banned', 'Suspended', 'Verified', 'VIP User', 'Streamer'].map(st => (
+                      <button
+                        key={st}
+                        onClick={() => setAdminUserFilterStatus(st)}
+                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition ${adminUserFilterStatus === st ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-950 border border-slate-800 text-slate-400'}`}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* ADD USER INLINE MODAL */}
+                  {isAddUserModalOpen && (
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-emerald-500/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-emerald-300">ساخت کاربر جدید توسط ادمین</h4>
+                        <button onClick={() => setIsAddUserModalOpen(false)} className="text-slate-400"><X className="w-4 h-4" /></button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input
+                          type="text"
+                          value={adminNewUser.name}
+                          onChange={e => setAdminNewUser({ ...adminNewUser, name: e.target.value })}
+                          placeholder="نام کامل..."
+                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                        />
+                        <input
+                          type="text"
+                          value={adminNewUser.username}
+                          onChange={e => setAdminNewUser({ ...adminNewUser, username: e.target.value })}
+                          placeholder="نام کاربری (username)..."
+                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                        />
+                        <input
+                          type="email"
+                          value={adminNewUser.email}
+                          onChange={e => setAdminNewUser({ ...adminNewUser, email: e.target.value })}
+                          placeholder="ایمیل..."
+                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                        />
+                      </div>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            const cleanName = adminNewUser.name.trim();
+                            const cleanUsername = adminNewUser.username.trim();
+                            if (!cleanName || !cleanUsername) {
+                              showToast(loc('لطفاً نام و نام کاربری را وارد کنید', 'Please enter name and username'));
+                              return;
+                            }
+                            const isDup = usersList.some(u => u.username?.toLowerCase() === cleanUsername.toLowerCase()) ||
+                                          adminUsersList.some(u => u.username?.toLowerCase() === cleanUsername.toLowerCase());
+                            if (isDup) {
+                              showToast(loc('❌ این نام کاربری قبلاً ثبت شده است! هر نام کاربری فقط یکبار امکان ثبت دارد.', '❌ Username already exists! Every username must be unique.'));
+                              return;
+                            }
+                            const createdUser = {
+                              id: Date.now(),
+                              name: adminNewUser.name,
+                              username: adminNewUser.username,
+                              email: adminNewUser.email || `${adminNewUser.username}@vlive.com`,
+                              coins: 10000,
+                              status: 'Active',
+                              isVerified: true,
+                              role: adminNewUser.role,
+                              reportsCount: 0,
+                              avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+                              registeredAt: new Date().toISOString().slice(0, 10)
+                            };
+
+                            setAdminUsersList(prev => {
+                              const updated = [createdUser, ...prev];
+                              safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
+                              return updated;
+                            });
+
+                            setUsersList(prev => {
+                              const updated = [createdUser, ...prev];
+                              safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
+                              return updated;
+                            });
+
+                            addAdminAuditLog(`کاربر جدید @${adminNewUser.username} توسط ادمین ساخته شد`);
+                            showToast(loc(`کاربر جدید @${adminNewUser.username} اضافه شد`, `New user @${adminNewUser.username} created`));
+                            setAdminNewUser({ name: '', username: '', email: '', coins: 10000, role: 'User' });
+                            setIsAddUserModalOpen(false);
+                          }}
+                          className="px-4 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs"
+                        >
+                          {loc('تأیید و ساخت کاربر', 'Confirm & Create User')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* EDIT USER INLINE FORM */}
+                  {adminEditingUser && (
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-amber-500/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-amber-300">{loc(`ویرایش اطلاعات کاربر @${adminEditingUser.username}`, `Edit User @${adminEditingUser.username}`)}</h4>
+                        <button onClick={() => setAdminEditingUser(null)} className="text-slate-400"><X className="w-4 h-4" /></button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[10px] text-slate-400 block">{loc('نام کامل:', 'Full Name:')}</label>
+                          <input
+                            type="text"
+                            value={adminEditingUser.name}
+                            onChange={e => setAdminEditingUser({ ...adminEditingUser, name: e.target.value })}
+                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-400 block">{loc('موجودی سکه:', 'Coin Balance:')}</label>
+                          <input
+                            type="number"
+                            value={adminEditingUser.coins}
+                            onChange={e => setAdminEditingUser({ ...adminEditingUser, coins: parseInt(e.target.value) || 0 })}
+                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-400 block">{loc('نقش:', 'Role:')}</label>
+                          <select
+                            value={adminEditingUser.role}
+                            onChange={e => setAdminEditingUser({ ...adminEditingUser, role: e.target.value })}
+                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                          >
+                            <option value="User">{loc('کاربر عادی', 'Regular User')}</option>
+                            <option value="Streamer">{loc('استریمر', 'Streamer')}</option>
+                            <option value="VIP User">{loc('کاربر VIP', 'VIP User')}</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setAdminUsersList(prev => {
+                              const updated = prev.map(u => u.id === adminEditingUser.id ? adminEditingUser : u);
+                              safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
+                              return updated;
+                            });
+                            setUsersList(prev => {
+                              const updated = prev.map(u => u.id === adminEditingUser.id ? { ...u, ...adminEditingUser } : u);
+                              safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
+                              return updated;
+                            });
+                            addAdminAuditLog(`اطلاعات کاربر @${adminEditingUser.username} بروزرسانی شد`);
+                            setAdminEditingUser(null);
+                          }}
+                          className="px-4 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
+                        >
+                          {loc('ذخیره تغییرات کاربر', 'Save User Changes')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* USERS LIST */}
+                  <div className="space-y-2">
+                    {adminUsersList
+                      .filter(u => {
+                        const matchSearch = adminGlobalSearch === '' || (u.name || '').toLowerCase().includes(adminGlobalSearch.toLowerCase()) || (u.username || '').toLowerCase().includes(adminGlobalSearch.toLowerCase());
+                        const matchStatus = adminUserFilterStatus === 'All' || u.status === adminUserFilterStatus || u.role === adminUserFilterStatus || (adminUserFilterStatus === 'Verified' && u.isVerified);
+                        return matchSearch && matchStatus;
+                      })
+                      .map(u => (
+                        <div key={u.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <img src={u.avatar} alt={u.name} className="w-10 h-10 rounded-full object-cover border border-pink-500/40" />
+                            <div>
+                              <p className="font-bold text-white flex items-center gap-1.5">
+                                {u.name}
+                                {u.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400" />}
+                                <span className={`text-[9px] px-1.5 py-0.2 rounded font-normal ${u.status === 'Banned' ? 'bg-rose-950 text-rose-300' : 'bg-slate-800 text-slate-300'}`}>{u.status} • {u.role}</span>
+                              </p>
+                              <span className="text-[10px] text-slate-400 block font-mono">@{u.username} • {u.email} • {u.coins.toLocaleString()} {loc('سکه', 'coins')}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <button
+                              onClick={() => setAdminEditingUser(u)}
+                              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold"
+                            >
+                              {loc('ویرایش', 'Edit')}
+                            </button>
+
+                            <button
+                              onClick={async () => {
+                                const newStatus = (u.status === 'Banned' || u.status === 'banned') ? 'approved' : 'banned';
+                                
+                                if (apiAdmin && typeof apiAdmin.updateUserStatus === 'function') {
+                                    await apiAdmin.updateUserStatus(u.id, newStatus);
+                                }
+                                
+                                setAdminUsersList(prev => {
+                                  const updated = prev.map(item => item.id === u.id ? { ...item, status: newStatus } : item);
+                                  return updated;
+                                });
+                                setUsersList(prev => {
+                                  const updated = prev.map(item => item.id === u.id ? { ...item, status: newStatus } : item);
+                                  return updated;
+                                });
+                                addAdminAuditLog(`وضعیت کاربر @${u.username} به ${newStatus} تغییر یافت`);
+                              }}
+                              className={`px-2 py-1 rounded-xl text-[10px] font-bold ${(u.status === 'Banned' || u.status === 'banned') ? 'bg-emerald-600 text-white' : 'bg-rose-950 border border-rose-500/40 text-rose-300'}`}
+                            >
+                              {u.status === 'Banned' ? loc('رفع مسدودیت', 'Unban') : loc('مسدودسازی (Ban)', 'Ban User')}
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                const newStatus = u.status === 'Suspended' ? 'Active' : 'Suspended';
+                                setAdminUsersList(prev => {
+                                  const updated = prev.map(item => item.id === u.id ? { ...item, status: newStatus } : item);
+                                  safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
+                                  return updated;
+                                });
+                                addAdminAuditLog(`وضعیت تعلیق کاربر @${u.username} تغییر کرد`);
+                              }}
+                              className="px-2 py-1 rounded-xl bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px] font-bold"
+                            >
+                              {u.status === 'Suspended' ? loc('لغو تعلیق', 'Unsuspend') : loc('تعلیق (Suspend)', 'Suspend')}
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                const newVerified = !u.isVerified;
+                                setAdminUsersList(prev => {
+                                  const updated = prev.map(item => item.id === u.id ? { ...item, isVerified: newVerified } : item);
+                                  safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
+                                  return updated;
+                                });
+                                setUsersList(prev => {
+                                  const updated = prev.map(item => item.id === u.id ? { ...item, isVerified: newVerified } : item);
+                                  safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
+                                  return updated;
+                                });
+                                addAdminAuditLog(`نشان تأیید هویت برای @${u.username} ${newVerified ? 'اعطا شد' : 'لغو شد'}`);
+                              }}
+                              className="px-2 py-1 rounded-xl bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10px] font-bold"
+                            >
+                              {u.isVerified ? loc('حذف نشان Cyan', 'Remove Badge') : loc('اعطای نشان Cyan', 'Give Badge')}
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setAdminUsersList(prev => {
+                                  const updated = prev.filter(item => item.id !== u.id);
+                                  safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
+                                  return updated;
+                                });
+                                setUsersList(prev => {
+                                  const updated = prev.filter(item => item.id !== u.id);
+                                  safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
+                                  return updated;
+                                });
+                                addAdminAuditLog(`حساب کاربر @${u.username} برای همیشه حذف شد`);
+                                showToast(loc(`کاربر @${u.username} حذف شد`, `User @${u.username} deleted`));
+                              }}
+                              className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 3. LIVE MANAGEMENT */}
+              {adminActiveTab === 'live' && (
+                <div className="space-y-3 text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="font-bold text-white text-sm">۳. مدیریت مستقیم لایواستریم‌ها (Live Management)</h3>
+                      <p className="text-[10px] text-slate-400">نظارت بر لایوهای فعال، قطع استریم، بستن چت و برخورد با متخلفین</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-pink-400 font-mono font-bold">{adminLivesList.length} لایو در حال پخش</span>
+                      <button
+                        onClick={() => {
+                          const demoLive = {
+                            id: Date.now(),
+                            title: 'لایو تست ادمین 🎵 (اجرای موسیقی زنده)',
+                            streamer: 'Rayan Streamer',
+                            viewers: 1450,
+                            category: 'Music',
+                            duration: '12m'
+                          };
+                          setAdminLivesList(prev => [demoLive, ...prev]);
+                          setStreamsList(prev => [{
+                            id: `live_${demoLive.id}`,
+                            title: demoLive.title,
+                            host: demoLive.streamer,
+                            thumbnail: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
+                            viewers: demoLive.viewers,
+                            category: demoLive.category,
+                            isVip18: false,
+                            entryFee: 0
+                          }, ...prev]);
+                          addAdminAuditLog('لایو جدید آزمایشی برای بررسی ساخته شد');
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-[10px] flex items-center gap-1 shadow"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> ساخت لایو آزمایشی
+                      </button>
+                    </div>
+                  </div>
+
+                  {adminLivesList.length === 0 ? (
+                    <div className="p-8 text-center rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                      <Video className="w-8 h-8 text-slate-600 mx-auto" />
+                      <p className="font-bold text-slate-400">هیچ لایو در حال پخشی وجود ندارد</p>
+                      <button
+                        onClick={() => {
+                          setAdminLivesList([
+                            { id: 1042, title: 'لایو موسیقی شبانه 🎸', streamer: 'Sara Miller', viewers: 3420, category: 'Music', duration: '45m' },
+                            { id: 1043, title: 'چت زنده و گپ شبانه 💬', streamer: 'Ali Streamer', viewers: 890, category: 'Chat', duration: '18m' }
+                          ]);
+                          showToast('لیست لایوهای نمونه بازنشانی شد');
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 text-pink-300 font-bold text-[10px]"
+                      >
+                        بازنشانی لایوهای نمونه
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {adminLivesList.map(l => (
+                        <div key={l.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-white">{l.title}</span>
+                              <span className="bg-pink-500/20 text-pink-300 text-[9px] px-2 py-0.2 rounded-full border border-pink-500/30">Live #{l.id}</span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 block font-mono mt-0.5">استریمر: {l.streamer} • {l.viewers} بیننده زنده • دسته‌بندی: {l.category} • مدت: {l.duration}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <button
+                              onClick={() => {
+                                setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
+                                setStreamsList(prev => prev.filter(item => item.host !== l.streamer && item.id !== `live_${l.id}`));
+                                addAdminAuditLog(`لایو استریم شماره #${l.id} (${l.title}) متوقف و از سیستم حذف شد`);
+                              }}
+                              className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold"
+                            >
+                              پایان دادن به لایو
+                            </button>
+
+                            <button
+                              onClick={() => addAdminAuditLog(`چت عمومی لایو #${l.id} قفل گردید`)}
+                              className="px-2.5 py-1 rounded-xl bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px] font-bold"
+                            >
+                              بستن چت
+                            </button>
+
+                            <button
+                              onClick={() => addAdminAuditLog(`اخطار انضباطی به استریمر ${l.streamer} ارسال شد`)}
+                              className="px-2.5 py-1 rounded-xl bg-purple-950 border border-purple-500/40 text-purple-300 text-[10px] font-bold"
+                            >
+                              اخطار به استریمر
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
+                                setStreamsList(prev => prev.filter(item => item.host !== l.streamer));
+                                setAdminUsersList(prev => prev.map(u => (u.name === l.streamer || u.username === l.streamer) ? { ...u, status: 'Banned' } : u));
+                                setUsersList(prev => prev.map(u => (u.name === l.streamer || u.username === l.streamer) ? { ...u, status: 'banned' } : u));
+                                addAdminAuditLog(`استریمر ${l.streamer} مسدود شد و لایو قطع گردید`);
+                              }}
+                              className="px-2.5 py-1 rounded-xl bg-red-950 border border-red-500/50 text-red-300 text-[10px] font-bold"
+                            >
+                              مسدودسازی استریمر
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 4. REPORTS */}
+              {adminActiveTab === 'reports' && (
+                <div className="space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm">۴. بررسی گزارش تخلفات کاربران (Reports)</h3>
+                    <span className="text-[10px] text-amber-400">{adminReportsList.length} گزارش ثبتی</span>
+                  </div>
+
+                  {/* Filter tabs */}
+                  <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
+                    {['All', 'Harassment', 'Inappropriate Content', 'Spam', 'Fraud', 'Impersonation'].map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => setAdminReportCategoryFilter(cat)}
+                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition ${adminReportCategoryFilter === cat ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-950 text-slate-400 border border-slate-800'}`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="space-y-2">
+                    {adminReportsList.filter(r => adminReportCategoryFilter === 'All' || r.category === adminReportCategoryFilter).map(r => (
+                      <div key={r.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-rose-300 flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                            [{r.category}] کاربر متخلف: {r.targetUser}
+                          </span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${r.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>{r.status}</span>
+                        </div>
+                        <p className="text-slate-300 text-[11px] bg-slate-900 p-2 rounded-xl">دلیل گزارش: "{r.reason}"</p>
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[10px] text-slate-400">گزارش‌شده توسط: {r.reportedBy} • {r.time}</span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setAdminReportsList(prev => prev.map(item => item.id === r.id ? { ...item, status: 'Approved' } : item));
+                                setAdminUsersList(prev => prev.map(u => u.username === r.targetUser ? { ...u, reportsCount: (u.reportsCount || 0) + 1 } : u));
+                                addAdminAuditLog(`گزارش #${r.id} تأیید شد و با کاربر متخلف برخورد گردید`);
+                              }}
+                              className="px-2.5 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]"
+                            >
+                              تأیید و برخورد با کاربر
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setAdminReportsList(prev => prev.map(item => item.id === r.id ? { ...item, status: 'Rejected' } : item));
+                                addAdminAuditLog(`گزارش #${r.id} رد شد (فاقد مصداق تخلف)`);
+                              }}
+                              className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-300 font-bold text-[10px]"
+                            >
+                              رد گزارش
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 5. WALLET & FINANCIALS */}
+              {/* 5. WALLET & WITHDRAWALS MANAGEMENT */}
+              {adminActiveTab === 'wallet' && (
+                <div className="space-y-4 text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                    <div>
+                      <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-emerald-400" />
+                        ۵. مدیریت مالی، کمیسیون ۲۹٪ و درخواست‌های تسویه (Financials & Withdrawals)
+                      </h3>
+                      <p className="text-[10px] text-slate-400">بررسی درخواست‌های واریز و برداشت، کمیسیون ۲۹٪ لایو و کارمزد شبکه TRC20</p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setIsPayoutFrozen(!isPayoutFrozen);
+                          addAdminAuditLog(isPayoutFrozen ? 'توقیف واریزها (Payout Freeze) لغو گردید' : 'توقیف کلیه واریزهای مالی فعال گردید');
+                        }}
+                        className={`px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1.5 border transition ${isPayoutFrozen ? 'bg-rose-600 text-white border-rose-400 animate-pulse' : 'bg-slate-800 text-emerald-400 border-emerald-500/30 hover:bg-slate-700'}`}
+                      >
+                        {isPayoutFrozen ? '⛔ Payout Frozen (توقیف فعال)' : '⚡ Freeze Payouts (توقیف واریز)'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* PLATFORM FINANCIAL SUMMARY CARDS */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-950/80 to-slate-950 border border-emerald-500/40 space-y-1">
+                      <span className="text-[10px] text-emerald-400 font-bold uppercase">تراکنش‌های کل سیستم</span>
+                      <p className="text-xl font-black text-white font-mono">$148,200.00 USDT</p>
+                      <span className="text-[10px] text-slate-400 block">حجم تراکنش خروجی و ورودی</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-950/80 to-slate-950 border border-amber-500/40 space-y-1">
+                      <span className="text-[10px] text-amber-400 font-bold uppercase">درآمد کمیسیون پلتفرم (۲۹٪)</span>
+                      <p className="text-xl font-black text-amber-300 font-mono">$42,978.00 USDT</p>
+                      <span className="text-[10px] text-amber-200 block">کسر ۲۹٪ لحظه‌ای از کلیه هدایای لایو</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-purple-950/80 to-slate-950 border border-purple-500/40 space-y-1">
+                      <span className="text-[10px] text-purple-400 font-bold uppercase">صافی پرداختی استریمرها (۷۱٪)</span>
+                      <p className="text-xl font-black text-purple-300 font-mono">$105,222.00 USDT</p>
+                      <span className="text-[10px] text-slate-400 block">مجموع سود واریز شده به بانوان استریمر</span>
+                    </div>
+                  </div>
+
+                  {/* SYSTEM FEE CONFIGURATION */}
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                    <h4 className="font-bold text-amber-300 text-[11px] flex items-center gap-1.5">
+                      <Sliders className="w-4 h-4 text-amber-400" />
+                      تنظیمات حد نصاب و کارمزد شبکه برداشت TRC20
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-1">حداقل برداشت (USDT)</label>
+                        <input
+                          type="text"
+                          value={adminMinWithdrawal}
+                          onChange={e => setAdminMinWithdrawal(e.target.value)}
+                          placeholder="$50 USDT"
+                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono outline-none focus:border-amber-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-1">کارمزد شبکه ترون (Network Gas Fee)</label>
+                        <input
+                          type="number"
+                          step="0.10"
+                          value={adminNetworkFee}
+                          onChange={e => setAdminNetworkFee(parseFloat(e.target.value) || 0)}
+                          placeholder="1.50"
+                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono outline-none focus:border-amber-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-1">حداکثر سقف برداشت روزانه (USDT)</label>
+                        <input
+                          type="number"
+                          value={adminMaxWithdrawal}
+                          onChange={e => setAdminMaxWithdrawal(parseInt(e.target.value, 10) || 5000)}
+                          placeholder="5000"
+                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono outline-none focus:border-amber-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* WITHDRAWALS QUEUE LIST */}
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-slate-300 text-[11px] flex items-center justify-between">
+                      <span>لیست درخواست‌های تسویه حساب و برداشت درآمد</span>
+                      <span className="text-slate-400 text-[10px]">تعداد درخواست‌ها: {adminWithdrawalsList.length}</span>
+                    </h4>
+
+                    {adminWithdrawalsList.map(w => (
+                      <div key={w.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-slate-700 transition">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-white">{w.user}</span>
+                            <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">{w.amount}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 block font-mono mt-1">
+                            آدرس کیف پول TRC20: {w.txHash} • زمان درخواست: {w.time}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {w.status === 'Pending' || w.status === 'Pending Review' ? (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Completed' } : item));
+                                  addAdminAuditLog(`درخواست برداشت #${w.id} به مبلغ ${w.amount} تأیید و در شبکه TRON واریز گردید`);
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] shadow"
+                              >
+                                ✓ تأیید و واریز
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Rejected' } : item));
+                                  addAdminAuditLog(`درخواست برداشت #${w.id} رد شد و سکه‌ها به کیف پول استریمر عودت داده شد`);
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] shadow"
+                              >
+                                ✕ رد درخواست
+                              </button>
+                            </div>
+                          ) : (
+                            <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${w.status === 'Completed' || w.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'}`}>
+                              {w.status}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 6. GIFTS */}
+              {adminActiveTab === 'gifts' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۶. مدیریت هدایای مجازی لایو (Gifts)</h3>
+                  
+                  {/* Add gift form */}
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-pink-500/30 space-y-2">
+                    <p className="font-bold text-pink-300">افزودن هدیه جدید به فروشگاه</p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={newAdminGiftName}
+                        onChange={e => setNewAdminGiftName(e.target.value)}
+                        placeholder="نام هدیه (مثلاً: اژدهای پرنده 🐲)..."
+                        className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                      />
+                      <input
+                        type="number"
+                        value={newAdminGiftCoins}
+                        onChange={e => setNewAdminGiftCoins(e.target.value)}
+                        placeholder="قیمت به سکه (مثلاً: ۵۰۰۰)..."
+                        className="w-full sm:w-36 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                      />
+                      <button
+                        onClick={() => {
+                          if (!newAdminGiftName || !newAdminGiftCoins) return;
+                          addAdminAuditLog(`هدیه جدید "${newAdminGiftName}" با قیمت ${newAdminGiftCoins} سکه به فروشگاه اضافه شد`);
+                          setNewAdminGiftName('');
+                          setNewAdminGiftCoins('');
+                        }}
+                        className="px-4 py-2 rounded-xl bg-pink-600 text-white font-bold whitespace-nowrap"
+                      >
+                        + افزودن هدیه
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 7. VIP SUBSCRIPTIONS */}
+              {adminActiveTab === 'vip' && (
+                <div className="space-y-3 text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="font-bold text-white text-sm">۷. مدیریت پلن‌های اشتراک VIP (VIP Subscriptions)</h3>
+                      <p className="text-[10px] text-slate-400">تنظیم قیمت پلن‌ها، فعال/غیرفعال‌سازی و ایجاد پلن جدید</p>
+                    </div>
+                    <button
+                      onClick={() => setIsAddVipPlanModalOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-[11px] flex items-center gap-1 shrink-0 shadow"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> + پلن جدید VIP
+                    </button>
+                  </div>
+
+                  {/* Add VIP Plan Inline Modal */}
+                  {isAddVipPlanModalOpen && (
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-amber-500/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-amber-300">افزودن پلن VIP جدید</h4>
+                        <button onClick={() => setIsAddVipPlanModalOpen(false)} className="text-slate-400"><X className="w-4 h-4" /></button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input
+                          type="text"
+                          value={newVipPlanTitle}
+                          onChange={e => setNewVipPlanTitle(e.target.value)}
+                          placeholder="عنوان پلن (مثلاً VIP 6 Months)..."
+                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                        />
+                        <input
+                          type="number"
+                          value={newVipPlanCoins}
+                          onChange={e => setNewVipPlanCoins(e.target.value)}
+                          placeholder="قیمت سکه (مثلاً 2500)..."
+                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                        />
+                        <input
+                          type="text"
+                          value={newVipPlanUsdt}
+                          onChange={e => setNewVipPlanUsdt(e.target.value)}
+                          placeholder="قیمت تتر (مثلاً $12.00)..."
+                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                        />
+                      </div>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            if (!newVipPlanTitle || !newVipPlanCoins) {
+                              showToast(loc('لطفاً عنوان و قیمت سکه را وارد کنید', 'Please fill title and coins'));
+                              return;
+                            }
+                            const newPlan = {
+                              id: `plan_${Date.now()}`,
+                              title: newVipPlanTitle,
+                              priceCoins: parseInt(newVipPlanCoins) || 1000,
+                              priceUsdt: newVipPlanUsdt || `$${((parseInt(newVipPlanCoins) || 1000) / 200).toFixed(2)}`,
+                              status: 'Active'
+                            };
+                            setAdminVipPlans(prev => {
+                              const updated = [...prev, newPlan];
+                              safeStorage.setItem('vlive_admin_vip_plans', JSON.stringify(updated));
+                              return updated;
+                            });
+                            addAdminAuditLog(`پلن VIP جدید "${newVipPlanTitle}" ایجاد گردید`);
+                            setNewVipPlanTitle('');
+                            setNewVipPlanCoins('');
+                            setNewVipPlanUsdt('');
+                            setIsAddVipPlanModalOpen(false);
+                          }}
+                          className="px-4 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
+                        >
+                          تأیید و ساخت پلن
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Edit VIP Plan Form */}
+                  {editingVipPlan && (
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-cyan-500/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-cyan-300">ویرایش پلن VIP ({editingVipPlan.title})</h4>
+                        <button onClick={() => setEditingVipPlan(null)} className="text-slate-400"><X className="w-4 h-4" /></button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[10px] text-slate-400 block">عنوان پلن:</label>
+                          <input
+                            type="text"
+                            value={editingVipPlan.title}
+                            onChange={e => setEditingVipPlan({ ...editingVipPlan, title: e.target.value })}
+                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-400 block">قیمت سکه:</label>
+                          <input
+                            type="number"
+                            value={editingVipPlan.priceCoins}
+                            onChange={e => setEditingVipPlan({ ...editingVipPlan, priceCoins: parseInt(e.target.value) || 0 })}
+                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-400 block">قیمت به USDT:</label>
+                          <input
+                            type="text"
+                            value={editingVipPlan.priceUsdt}
+                            onChange={e => setEditingVipPlan({ ...editingVipPlan, priceUsdt: e.target.value })}
+                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setAdminVipPlans(prev => {
+                              const updated = prev.map(p => p.id === editingVipPlan.id ? editingVipPlan : p);
+                              safeStorage.setItem('vlive_admin_vip_plans', JSON.stringify(updated));
+                              return updated;
+                            });
+                            addAdminAuditLog(`قیمت و اطلاعات پلن ${editingVipPlan.title} بروزرسانی گردید`);
+                            setEditingVipPlan(null);
+                          }}
+                          className="px-4 py-1.5 rounded-xl bg-cyan-600 text-white font-bold text-xs"
+                        >
+                          ذخیره تغییرات پلن
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {adminVipPlans.map(plan => (
+                      <div key={plan.id} className="p-3.5 rounded-2xl bg-slate-950 border border-amber-500/30 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="font-bold text-amber-300">{plan.title}</p>
+                          <span className={`text-[9px] px-2 py-0.2 rounded-full ${plan.status === 'Active' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
+                            {plan.status === 'Active' ? 'فعال' : 'متوقف'}
+                          </span>
+                        </div>
+                        <p className="text-base font-black text-white">{plan.priceCoins} سکه <span className="text-[10px] text-slate-400">({plan.priceUsdt})</span></p>
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <button
+                            onClick={() => setEditingVipPlan(plan)}
+                            className="flex-1 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold hover:brightness-110 transition"
+                          >
+                            تغییر قیمت / ویرایش
+                          </button>
+                          <button
+                            onClick={() => {
+                              const newStatus = plan.status === 'Active' ? 'Paused' : 'Active';
+                              setAdminVipPlans(prev => {
+                                const updated = prev.map(p => p.id === plan.id ? { ...p, status: newStatus } : p);
+                                safeStorage.setItem('vlive_admin_vip_plans', JSON.stringify(updated));
+                                return updated;
+                              });
+                              addAdminAuditLog(`وضعیت پلن ${plan.title} به ${newStatus} تغییر یافت`);
+                            }}
+                            className={`px-2 py-1.5 rounded-xl font-bold ${plan.status === 'Active' ? 'bg-slate-800 text-slate-300' : 'bg-emerald-700 text-white'}`}
+                          >
+                            {plan.status === 'Active' ? 'غیرفعال' : 'فعال‌سازی'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 8. ADVERTISEMENTS */}
+              {adminActiveTab === 'ads' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۸. مدیریت تبلیغات و بنرها (Advertisements)</h3>
+                  <div className="space-y-2">
+                    {adminAdsList.map(ad => (
+                      <div key={ad.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-white">{ad.title}</p>
+                          <span className="text-[10px] text-slate-400 block">{ad.type} • مکان: {ad.location} • {ad.clicks.toLocaleString()} کلیک</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setAdminAdsList(prev => prev.map(a => a.id === ad.id ? { ...a, status: a.status === 'Active' ? 'Paused' : 'Active' } : a));
+                            addAdminAuditLog(`وضعیت کمپین تبلیغاتی "${ad.title}" تغییر کرد`);
+                          }}
+                          className={`px-3 py-1 rounded-xl text-white font-bold text-[10px] ${ad.status === 'Active' ? 'bg-emerald-600' : 'bg-slate-700'}`}
+                        >
+                          {ad.status === 'Active' ? 'فعال (Active)' : 'متوقف شده'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 9. EVENTS */}
+              {adminActiveTab === 'events' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۹. مدیریت مسابقات و رویدادها (Events)</h3>
+                  <div className="space-y-2">
+                    {adminEventsList.map(ev => (
+                      <div key={ev.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-white">{ev.title}</p>
+                          <span className="text-[10px] text-amber-400 block font-mono">مجموع جوایز: {ev.prizePool} • {ev.participants} شرکت‌کننده</span>
+                        </div>
+                        <button
+                          onClick={() => addAdminAuditLog(`جدول رتبه‌بندی رویداد ${ev.title} مشاهده شد`)}
+                          className="px-3 py-1 rounded-xl bg-amber-500 text-slate-950 font-bold text-[10px]"
+                        >
+                          رتبه‌بندی و جوایز
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 10. NOTIFICATIONS BROADCAST */}
+              {adminActiveTab === 'notifications' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۰. ارسال اعلان عمومی و پیام نوتیفیکیشن (Notifications)</h3>
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-purple-500/30 space-y-3">
+                    <input
+                      type="text"
+                      value={adminNotifTitle}
+                      onChange={e => setAdminNotifTitle(e.target.value)}
+                      placeholder="عنوان اعلان همگانی..."
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
+                    />
+                    <textarea
+                      value={adminNotifBody}
+                      onChange={e => setAdminNotifBody(e.target.value)}
+                      placeholder="متن کامل پیام اعلان (تخفیف، بروزرسانی، رویداد)..."
+                      className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none h-24"
+                    />
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <select
+                        value={adminNotifCategory}
+                        onChange={e => setAdminNotifCategory(e.target.value)}
+                        className="bg-slate-900 border border-slate-800 text-white text-xs rounded-xl px-3 py-2 outline-none"
+                      >
+                        <option value="Update">🚀 اعلان بروزرسانی سیستم</option>
+                        <option value="Discount">💰 تخفیف ویژه خرید سکه</option>
+                        <option value="Event">🏆 شروع مسابقه جدید</option>
+                        <option value="Maintenance">🛠 اطلاعیه تعمیرات سیستم</option>
+                      </select>
+                      <button
+                        onClick={() => {
+                          if (!adminNotifTitle || !adminNotifBody) return;
+                          addAdminAuditLog(`اعلان همگانی "${adminNotifTitle}" به تمامی کاربران ارسال شد`);
+                          setAdminNotifTitle('');
+                          setAdminNotifBody('');
+                        }}
+                        className="flex-1 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black"
+                      >
+                        ارسال فوری اعلان به تمام کاربران
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 11. CONTENT MODERATION */}
+              {adminActiveTab === 'moderation' && (
+                <div className="space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-white text-sm">۱۱. نظارت و مدیریت محتوا (Content Moderation)</h3>
+                      <p className="text-[10px] text-slate-400">بررسی تصاویر پروفایل، لایو و محتوای ارسال شده توسط کاربران</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const newModItem = {
+                          id: Date.now(),
+                          user: '@new_streamer',
+                          type: 'Banner Photo',
+                          mediaUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
+                          status: 'Pending Review'
+                        };
+                        setAdminModerationQueue(prev => [newModItem, ...prev]);
+                        showToast(loc('نمونه محتوای جدید برای بررسی اضافه شد', 'Sample media added for moderation'));
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> افزودن نمونه محتوا
+                    </button>
+                  </div>
+
+                  {adminModerationQueue.length === 0 ? (
+                    <div className="p-8 text-center rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                      <ShieldCheck className="w-8 h-8 text-emerald-400 mx-auto" />
+                      <p className="font-bold text-slate-300">تمام محتواها بررسی شدند! هیچ محتوای معلقی وجود ندارد.</p>
+                      <button
+                        onClick={() => {
+                          setAdminModerationQueue([
+                            { id: 1, user: '@sahar_m', type: 'Profile Photo', mediaUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', status: 'Pending Review' },
+                            { id: 2, user: '@ali_streamer', type: 'Live Thumbnail', mediaUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', status: 'Pending Review' }
+                          ]);
+                          showToast('صف نظارت بر محتوا بازنشانی گردید');
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 text-pink-300 font-bold text-[10px]"
+                      >
+                        بازنشانی صف محتوا
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {adminModerationQueue.map(item => (
+                        <div key={item.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <img src={item.mediaUrl} alt="media" className="w-12 h-12 rounded-xl object-cover border border-slate-800" />
+                            <div>
+                              <p className="font-bold text-white">{item.type} • {item.user}</p>
+                              <span className="text-[10px] text-amber-400">{item.status}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setAdminModerationQueue(prev => prev.filter(i => i.id !== item.id));
+                                addAdminAuditLog(`تصویر/محتوای ${item.user} با موفقیت تأیید شد`);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px]"
+                            >
+                              تأیید محتوا
+                            </button>
+                            <button
+                              onClick={() => {
+                                setAdminModerationQueue(prev => prev.filter(i => i.id !== item.id));
+                                addAdminAuditLog(`تصویر/محتوای نامناسب ${item.user} با موفقیت حذف گردید`);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px]"
+                            >
+                              حذف تصویر
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 12. STATISTICS */}
+              {adminActiveTab === 'statistics' && (
+                <div className="space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm">۱۲. آمار پیشرفته و نمودار رشد برنامه (Statistics)</h3>
+                    <div className="flex gap-1">
+                      {['24h', '7d', '30d', '1y'].map(tf => (
+                        <button
+                          key={tf}
+                          onClick={() => setAdminStatsTimeframe(tf)}
+                          className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${adminStatsTimeframe === tf ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-400'}`}
+                        >
+                          {tf}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
+                      <span className="text-slate-400">نرخ رشد کاربران روزانه</span>
+                      <p className="text-lg font-black text-emerald-400">+۲۸.۴٪ رشد</p>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
+                      <span className="text-slate-400">میانگین مدت لایوها</span>
+                      <p className="text-lg font-black text-cyan-400">۴۲ دقیقه</p>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
+                      <span className="text-slate-400">نرخ تبدیل خرید سکه</span>
+                      <p className="text-lg font-black text-amber-400">۸۴.۲٪</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 13. SUPPORT TICKETS */}
+              {adminActiveTab === 'support' && (
+                <div className="space-y-3 text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="font-bold text-white text-sm">۱۳. مدیریت تیکت‌های پشتیبانی کاربران (Support)</h3>
+                      <p className="text-[10px] text-slate-400">پاسخ به سوالات، پیگیری مشکلات پرداخت و لایو استریم</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const newT = {
+                          id: `T-${Date.now().toString().slice(-3)}`,
+                          user: 'کاربر تست',
+                          subject: 'سوال درباره نحوه نقد کردن درآمد سکه‌ها',
+                          category: 'Financial',
+                          status: 'Open',
+                          message: 'سلام، پس از رسیدن به 50,000 سکه چگونه درخواست تسویه بدهم؟'
+                        };
+                        setAdminTicketsList(prev => {
+                          const updated = [newT, ...prev];
+                          safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
+                          return updated;
+                        });
+                        showToast(loc('تیکت جدید نمونه اضافه شد', 'New support ticket created'));
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center gap-1 shadow"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> تیکت جدید (تست)
+                    </button>
+                  </div>
+
+                  {/* Filter chips */}
+                  <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
+                    {['All', 'Open', 'Answered', 'Closed'].map(st => (
+                      <button
+                        key={st}
+                        onClick={() => setAdminTicketFilter(st)}
+                        className={`px-3 py-1 rounded-xl text-[10px] font-bold transition ${adminTicketFilter === st ? 'bg-purple-600 text-white font-black' : 'bg-slate-950 border border-slate-800 text-slate-400'}`}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="space-y-2">
+                    {adminTicketsList
+                      .filter(t => adminTicketFilter === 'All' || t.status === adminTicketFilter)
+                      .map(t => (
+                        <div key={t.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <p className="font-bold text-white flex items-center gap-1.5">
+                              <span className="text-purple-400 font-mono">[{t.id}]</span>
+                              <span>{t.subject}</span>
+                              <span className="text-[10px] text-slate-400 font-normal">• {t.user}</span>
+                            </p>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${t.status === 'Open' ? 'bg-amber-500/20 text-amber-300' : t.status === 'Answered' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-800 text-slate-400'}`}>
+                              {t.status}
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-slate-300 bg-slate-900 p-2.5 rounded-xl border border-slate-800/80">
+                            💬 "{t.message}"
+                          </p>
+
+                          {t.reply && (
+                            <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 text-purple-200 text-[11px]">
+                              <p className="font-bold text-purple-300 text-[10px]">پاسخ ادمین:</p>
+                              <p>{t.reply}</p>
+                            </div>
+                          )}
+
+                          {adminReplyingTicket?.id === t.id && (
+                            <div className="space-y-2 pt-1">
+                              <textarea
+                                value={adminTicketReplyText}
+                                onChange={e => setAdminTicketReplyText(e.target.value)}
+                                placeholder="متن پاسخ ادمین به تیکت کاربر..."
+                                className="w-full p-2.5 rounded-xl bg-slate-900 border border-purple-500/50 text-white text-xs outline-none h-20"
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => setAdminReplyingTicket(null)}
+                                  className="px-3 py-1 rounded-xl bg-slate-800 text-slate-400 font-bold text-[10px]"
+                                >
+                                  انصراف
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (!adminTicketReplyText.trim()) return;
+                                    setAdminTicketsList(prev => {
+                                      const updated = prev.map(item => item.id === t.id ? { ...item, status: 'Answered', reply: adminTicketReplyText.trim() } : item);
+                                      safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
+                                      return updated;
+                                    });
+                                    addAdminAuditLog(`پاسخ ادمین به تیکت #${t.id} ثبت گردید`);
+                                    setAdminReplyingTicket(null);
+                                    setAdminTicketReplyText('');
+                                  }}
+                                  className="px-3.5 py-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px]"
+                                >
+                                  ارسال پاسخ
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[9px] text-slate-500 font-mono">دسته‌بندی: {t.category}</span>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setAdminReplyingTicket(t);
+                                  setAdminTicketReplyText(t.reply || '');
+                                }}
+                                className="px-3 py-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px]"
+                              >
+                                {t.reply ? 'ویرایش پاسخ' : 'پاسخ به تیکت'}
+                              </button>
+
+                              {t.status !== 'Closed' && (
+                                <button
+                                  onClick={() => {
+                                    setAdminTicketsList(prev => {
+                                      const updated = prev.map(item => item.id === t.id ? { ...item, status: 'Closed' } : item);
+                                      safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
+                                      return updated;
+                                    });
+                                    addAdminAuditLog(`تیکت #${t.id} بسته شد`);
+                                  }}
+                                  className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-300 font-bold text-[10px]"
+                                >
+                                  بستن تیکت
+                                </button>
+                              )}
+
+                              <button
+                                onClick={() => {
+                                  setAdminTicketsList(prev => {
+                                    const updated = prev.filter(item => item.id !== t.id);
+                                    safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
+                                    return updated;
+                                  });
+                                  addAdminAuditLog(`تیکت #${t.id} حذف شد`);
+                                }}
+                                className="p-1 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 14. VERIFICATION KYC */}
+              {adminActiveTab === 'verification' && (
+                <div className="space-y-3 text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="font-bold text-white text-sm">۱۴. تأیید هویت و مدارک شناسایی (Verification)</h3>
+                      <p className="text-[10px] text-slate-400">بررسی درخواست‌های تیک آبی (Cyan Badge) و احراز هویت کاربران</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const newReq = {
+                          id: Date.now(),
+                          username: 'elena_r',
+                          name: 'النا راد',
+                          nationalId: '0082394812',
+                          photo: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
+                          status: 'pending',
+                          date: new Date().toLocaleDateString('fa-IR')
+                        };
+                        setVerificationsList(prev => [newReq, ...prev]);
+                        showToast(loc('درخواست نمونه احراز هویت اضافه شد', 'Sample verification request added'));
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[10px] flex items-center gap-1 shadow shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> + درخواست نمونه (تست)
+                    </button>
+                  </div>
+
+                  {verificationsList.length === 0 ? (
+                    <div className="p-8 text-center rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                      <BadgeCheck className="w-8 h-8 text-cyan-400 mx-auto" />
+                      <p className="font-bold text-slate-300">هیچ درخواست تأیید هویتی در صف انتظار نیست.</p>
+                      <button
+                        onClick={() => {
+                          setVerificationsList([
+                            { id: 1, username: 'sahar_m', name: 'سحر میلر', nationalId: '۴۸۲۰۹۳۲۰۱', photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', status: 'pending', date: '۱۴۰۴/۰۵/۱۰' },
+                            { id: 2, username: 'ali_streamer', name: 'علی رضایی', nationalId: '۰۰۷۹۱۲۳۴۵۶', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', status: 'pending', date: '۱۴۰۴/۰۵/۱۱' }
+                          ]);
+                          showToast('درخواست‌های احراز هویت بازنشانی شدند');
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 text-cyan-300 font-bold text-[10px]"
+                      >
+                        بازنشانی لیست احراز هویت
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {verificationsList.map(item => (
+                        <div key={item.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            {item.photo && (
+                              <img src={item.photo} alt={item.name} className="w-12 h-12 rounded-xl object-cover border border-cyan-500/40" />
+                            )}
+                            <div>
+                              <p className="font-bold text-white flex items-center gap-1.5">
+                                <span>{item.name || item.username}</span>
+                                <span className="text-[10px] text-cyan-400 font-mono">@{item.username}</span>
+                              </p>
+                              <span className="text-[10px] text-slate-400 block font-mono">کد ملی / مدارک: {item.nationalId || 'ثبت شده'} • تاریخ: {item.date || 'امروز'}</span>
+                              <span className={`text-[9px] px-2 py-0.2 rounded-full inline-block mt-1 ${item.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300' : item.status === 'rejected' ? 'bg-rose-500/20 text-rose-300' : 'bg-amber-500/20 text-amber-300'}`}>
+                                وضعیت: {item.status === 'approved' ? 'تأیید شده ✅' : item.status === 'rejected' ? 'رد شده ❌' : 'در انتظار بررسی ⏳'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <button
+                              onClick={() => {
+                                setVerificationsList(prev => prev.map(v => v.id === item.id ? { ...v, status: 'approved' } : v));
+                                setAdminUsersList(prev => prev.map(u => u.username === item.username ? { ...u, isVerified: true } : u));
+                                setUsersList(prev => prev.map(u => u.username === item.username ? { ...u, isVerified: true } : u));
+                                if (item.username === currentUsername) setIsVerified(true);
+                                addAdminAuditLog(`مدارک هویت ${item.username} تأیید شد و نشان تیک آبی اعطا گردید`);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[10px] flex items-center gap-1 shadow"
+                            >
+                              <BadgeCheck className="w-3.5 h-3.5" /> تأیید مدارک (Cyan Badge)
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setVerificationsList(prev => prev.map(v => v.id === item.id ? { ...v, status: 'rejected' } : v));
+                                setAdminUsersList(prev => prev.map(u => u.username === item.username ? { ...u, isVerified: false } : u));
+                                setUsersList(prev => prev.map(u => u.username === item.username ? { ...u, isVerified: false } : u));
+                                addAdminAuditLog(`مدارک هویت ${item.username} رد شد`);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px]"
+                            >
+                              رد مدارک
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 15. ROLES & ACCESS WHITELIST BY TELEGRAM NUMERIC ID */}
+              {adminActiveTab === 'roles' && (
+                <div className="space-y-4 text-xs">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                    <div>
+                      <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-amber-400" />
+                        <span>۱۵. سطوح دسترسی و اضافه کردن ادمین با ای‌دی عددی تلگرام</span>
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        افزودن دستی ادمین جدید با ای‌دی عددی تلگرام، تعیین وظیفه و مشخص کردن محدودیت دسترسی به بخش‌های برنامه
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEditingAdminObj(null);
+                        setNewAdminTelegramId('');
+                        setNewAdminName('');
+                        setNewAdminRole('Live Moderator');
+                        setNewAdminPermissions({
+                          users: false,
+                          live: true,
+                          reports: true,
+                          wallet: false,
+                          security: false,
+                          ads: false,
+                          support: true,
+                          logs: false
+                        });
+                        setIsAddAdminModalOpen(true);
+                      }}
+                      className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md hover:brightness-110 active:scale-95 transition shrink-0"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      <span>+ افزودن ادمین جدید (ای‌دی تلگرام)</span>
+                    </button>
+                  </div>
+
+                  {/* QUICK STATS */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold shrink-0">
+                        <ShieldCheck className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">تعداد ادمین‌های ثبت‌شده</span>
+                        <span className="text-base font-bold text-white">{adminRolesList.length} نفر</span>
+                      </div>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold shrink-0">
+                        <Lock className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">ماژول‌های قابل تخصیص</span>
+                        <span className="text-base font-bold text-white">۸ بخش اصلی</span>
+                      </div>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold shrink-0">
+                        <Globe className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">احراز هویت تلگرامی</span>
+                        <span className="text-xs font-bold text-cyan-400">Telegram Numeric ID Verification</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ADD / EDIT ADMIN MODAL */}
+                  {isAddAdminModalOpen && (
+                    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn overflow-y-auto">
+                      <div className="w-full max-w-xl card-3d p-6 border border-amber-500/50 bg-slate-900 rounded-3xl space-y-4 my-auto shadow-[0_0_50px_rgba(245,158,11,0.25)]">
+                        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
+                              <ShieldCheck className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-white text-sm">
+                                {editingAdminObj ? 'ویرایش ادمین و سطح دسترسی‌ها' : 'افزودن ادمین جدید با ای‌دی عددی تلگرام'}
+                              </h3>
+                              <p className="text-[11px] text-slate-400">
+                                مشخص کردن وظیفه، ای‌دی عددی تلگرام و محدودیت دسترسی به ماژول‌های برنامه
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setIsAddAdminModalOpen(false);
+                              setEditingAdminObj(null);
+                            }}
+                            className="p-1 rounded-full text-slate-400 hover:text-white bg-slate-800"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div className="space-y-3.5 text-xs">
+                          {/* TELEGRAM NUMERIC ID */}
+                          <div>
+                            <label className="block text-slate-300 font-bold mb-1 flex items-center justify-between">
+                              <span>🆔 ای‌دی عددی تلگرام (Telegram Numeric ID):</span>
+                              <span className="text-[10px] text-cyan-400 font-mono">الزامی جهت احراز سیستم</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={newAdminTelegramId}
+                              onChange={e => setNewAdminTelegramId(e.target.value)}
+                              placeholder="مثال: 8973478139"
+                              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-cyan-300 font-mono text-xs outline-none focus:border-cyan-500"
+                            />
+                            <p className="text-[10px] text-slate-500 mt-1">
+                              ای‌دی عددی تلگرام کاربری که می‌خواهید دسترسی ادمین به او بدهید را وارد کنید (با ثبت ای‌دی، منوی ادمین در پروفایل او فعال می‌شود).
+                            </p>
+                          </div>
+
+                          {/* ADMIN NAME / TITLE */}
+                          <div>
+                            <label className="block text-slate-300 font-bold mb-1">
+                              👤 نام ادمین یا عنوان مسئولیت:
+                            </label>
+                            <input
+                              type="text"
+                              value={newAdminName}
+                              onChange={e => setNewAdminName(e.target.value)}
+                              placeholder="مثال: رایان - مدیر ارشد کل"
+                              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-amber-500"
+                            />
+                          </div>
+
+                          {/* ADMIN USERNAME & PASSWORD FOR LOGIN */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-slate-300 font-bold mb-1">
+                                🔑 نام کاربری ورود (Admin Username):
+                              </label>
+                              <input
+                                type="text"
+                                value={newAdminUsername}
+                                onChange={e => setNewAdminUsername(e.target.value)}
+                                placeholder="مثال: Rayan_Super_Admin"
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-mono text-xs outline-none focus:border-amber-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-300 font-bold mb-1">
+                                🔒 رمز عبور ورود (Admin Password):
+                              </label>
+                              <input
+                                type="text"
+                                value={newAdminPassword}
+                                onChange={e => setNewAdminPassword(e.target.value)}
+                                placeholder="مثال: Rayan_0935"
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-mono text-xs outline-none focus:border-amber-500"
+                              />
+                            </div>
+                          </div>
+
+                          {/* ASSIGNED ROLE / DUTY */}
+                          <div>
+                            <label className="block text-slate-300 font-bold mb-1">
+                              🎯 وظیفه و عنوان نقش ادمین:
+                            </label>
+                            <select
+                              value={newAdminRole}
+                              onChange={e => {
+                                const role = e.target.value;
+                                setNewAdminRole(role);
+                                // Preset default permissions based on role
+                                if (role === 'Super Admin') {
+                                  setNewAdminPermissions({ users: true, live: true, reports: true, wallet: true, security: true, ads: true, support: true, logs: true });
+                                } else if (role === 'Live Moderator') {
+                                  setNewAdminPermissions({ users: false, live: true, reports: true, wallet: false, security: false, ads: false, support: true, logs: false });
+                                } else if (role === 'Financial Inspector') {
+                                  setNewAdminPermissions({ users: false, live: false, reports: false, wallet: true, security: false, ads: false, support: false, logs: true });
+                                } else if (role === 'Support Specialist') {
+                                  setNewAdminPermissions({ users: false, live: false, reports: true, wallet: false, security: false, ads: false, support: true, logs: false });
+                                } else if (role === 'AI Security Inspector') {
+                                  setNewAdminPermissions({ users: false, live: true, reports: true, wallet: false, security: true, ads: false, support: false, logs: true });
+                                }
+                              }}
+                              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-bold text-xs outline-none focus:border-amber-500"
+                            >
+                              <option value="Live Moderator">🎥 ناظر لایو و چت (Live Moderator)</option>
+                              <option value="Financial Inspector">💰 بازرس امور مالی و تسویه (Financial Inspector)</option>
+                              <option value="Support Specialist">🎧 کارشناس پشتیبانی (Support Specialist)</option>
+                              <option value="AI Security Inspector">🛡️ بازرس امنیت و هوش مصنوعی (AI & Security Inspector)</option>
+                              <option value="Super Admin">⭐ مدیر ارشد کل (Super Admin - Full Access)</option>
+                              <option value="Custom Admin">⚙️ ادمین با دسترسی سفارشی (Custom Restrictions)</option>
+                            </select>
+                          </div>
+
+                          {/* PERMISSIONS & RESTRICTIONS CHECKLIST */}
+                          <div className="pt-2">
+                            <label className="block text-slate-200 font-bold mb-2">
+                              🔒 تعیین دقیق محدودیت‌ها و دسترسی به بخش‌های برنامه:
+                            </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.users || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, users: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">👥 مدیریت کاربران</span>
+                                  <span className="text-[9px] text-slate-400">مشاهده، ویرایش و بن کردن کاربران</span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.live || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, live: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">🎥 مدیریت لایو‌ها</span>
+                                  <span className="text-[9px] text-slate-400">قطع استریم‌ها و نظارت زنده</span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.reports || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, reports: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">🚨 رسیدگی به گزارشات</span>
+                                  <span className="text-[9px] text-slate-400">بررسی تخلفات و ریپورت‌ها</span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.wallet || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, wallet: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">💰 امور مالی و تسویه</span>
+                                  <span className="text-[9px] text-slate-400">تایید برداشت USDT و سکه</span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.security || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, security: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">🛡️ امنیت و هوش مصنوعی</span>
+                                  <span className="text-[9px] text-slate-400">تنظیمات الگوریتم فیلتر AI</span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.ads || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, ads: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">📢 تبلیغات و رویدادها</span>
+                                  <span className="text-[9px] text-slate-400">ایجاد بنر و چالش‌های جایزه‌دار</span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.support || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, support: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">🎧 پشتیبانی و تیکت‌ها</span>
+                                  <span className="text-[9px] text-slate-400">پاسخگویی به پیام‌های پشتیبانی</span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={newAdminPermissions.logs || false}
+                                  onChange={e => setNewAdminPermissions(prev => ({ ...prev, logs: e.target.checked }))}
+                                  className="w-4 h-4 accent-amber-500 rounded"
+                                />
+                                <div>
+                                  <span className="font-bold text-white text-[11px] block">📜 مشاهده لاگ‌های سیستم</span>
+                                  <span className="text-[9px] text-slate-400">بررسی تاریخچه اقدامات مدیریتی</span>
+                                </div>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* SAVE / CANCEL BUTTONS */}
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                          <button
+                            onClick={() => {
+                              setIsAddAdminModalOpen(false);
+                              setEditingAdminObj(null);
+                            }}
+                            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+                          >
+                            انصراف
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (!newAdminTelegramId || !newAdminName) {
+                                showToast('❌ لطفاً ای‌دی عددی تلگرام و نام ادمین را وارد کنید');
+                                return;
+                              }
+
+                              const cleanTelegramId = newAdminTelegramId.trim();
+                              const adminUserVal = newAdminUsername.trim() || 'Admin_' + cleanTelegramId;
+                              const adminPassVal = newAdminPassword.trim() || 'Pass_' + Math.floor(1000 + Math.random() * 9000);
+
+                              if (editingAdminObj) {
+                                // Update existing admin
+                                const updated = adminRolesList.map(item => {
+                                  if (item.id === editingAdminObj.id || item.telegramId === editingAdminObj.telegramId) {
+                                    return {
+                                      ...item,
+                                      telegramId: cleanTelegramId,
+                                      name: newAdminName.trim(),
+                                      username: adminUserVal,
+                                      password: adminPassVal,
+                                      role: newAdminRole,
+                                      permissions: newAdminPermissions
+                                    };
+                                  }
+                                  return item;
+                                });
+                                setAdminRolesList(updated);
+                                safeStorage.setItem('vlive_admin_roles_list', JSON.stringify(updated));
+                                addAdminAuditLog(`اطلاعات و دسترسی‌های ادمین ${newAdminName} (Telegram ID: ${cleanTelegramId}) بروزرسانی شد`);
+                                showToast(`✅ دسترسی ادمین ${newAdminName} با موفقیت ویرایش شد`);
+                              } else {
+                                // Add new admin
+                                const newAdminEntry = {
+                                  id: 'adm_' + Date.now(),
+                                  name: newAdminName.trim(),
+                                  telegramId: cleanTelegramId,
+                                  username: adminUserVal,
+                                  password: adminPassVal,
+                                  role: newAdminRole,
+                                  permissions: newAdminPermissions,
+                                  addedAt: new Date().toLocaleDateString('fa-IR')
+                                };
+                                const updated = [newAdminEntry, ...adminRolesList];
+                                setAdminRolesList(updated);
+                                safeStorage.setItem('vlive_admin_roles_list', JSON.stringify(updated));
+
+                                // Also ensure clean handle is in adminWhitelist
+                                const cleanHandle = cleanTelegramId.replace('@', '');
+                                if (!adminWhitelist.includes(cleanHandle)) {
+                                  setAdminWhitelist(prev => [...prev, cleanHandle]);
+                                }
+
+                                addAdminAuditLog(`ادمین جدید ${newAdminName} با ای‌دی تلگرام ${cleanTelegramId} و نقش ${newAdminRole} اضافه گردید`);
+                                showToast(`✅ ادمین جدید اضافه شد! منوی ادمین برای ای‌دی تلگرام ${cleanTelegramId} فعال گردید.`);
+                              }
+
+                              setIsAddAdminModalOpen(false);
+                              setEditingAdminObj(null);
+                              setNewAdminTelegramId('');
+                              setNewAdminName('');
+                              setNewAdminUsername('');
+                              setNewAdminPassword('');
+                            }}
+                            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-bold text-xs shadow-md hover:brightness-110 active:scale-95 transition"
+                          >
+                            {editingAdminObj ? 'ذخیره تغییرات دسترسی' : 'تأیید و افزودن ادمین جدید'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ADMIN DIRECTORY LIST */}
+                  <div className="space-y-3 pt-1">
+                    <h4 className="font-bold text-slate-300 text-xs">فهرست مدیران و بازرسین ثبت‌شده:</h4>
+                    <div className="grid grid-cols-1 gap-3">
+                      {adminRolesList.map((admin) => {
+                        const perms = admin.permissions || {};
+                        const isFull = perms.users && perms.live && perms.reports && perms.wallet && perms.security && perms.ads && perms.support && perms.logs;
+
+                        return (
+                          <div key={admin.id || admin.telegramId} className="p-4 rounded-3xl bg-slate-950 border border-slate-800 hover:border-amber-500/40 transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md">
+                            <div className="flex items-center gap-3.5">
+                              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-purple-500/20 border border-amber-500/30 flex items-center justify-center text-amber-300 font-black text-sm shrink-0">
+                                {admin.name ? admin.name.substring(0, 2).toUpperCase() : 'AD'}
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-white text-sm">{admin.name}</span>
+                                  <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">
+                                    {admin.role || 'Admin'}
+                                  </span>
+                                </div>
+                                
+                                <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                                  <span className="text-cyan-400 font-mono flex items-center gap-1 bg-cyan-950/60 px-2.5 py-0.5 rounded-lg border border-cyan-800/60">
+                                    🆔 Telegram ID: <strong className="text-white font-bold">{admin.telegramId}</strong>
+                                  </span>
+                                  <span className="text-amber-300 font-mono flex items-center gap-1 bg-amber-950/60 px-2.5 py-0.5 rounded-lg border border-amber-800/60">
+                                    🔑 {admin.username || 'Rayan_Super_Admin'} : <strong className="text-amber-200 font-bold">{admin.password || 'Rayan_0935'}</strong>
+                                  </span>
+                                  {admin.addedAt && (
+                                    <span className="text-slate-500 text-[10px]">تاریخ ثبت: {admin.addedAt}</span>
+                                  )}
+                                </div>
+
+                                {/* PERMISSIONS BADGES */}
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                  {isFull ? (
+                                    <span className="px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-400 text-[10px] font-bold border border-emerald-800/80">
+                                      ⭐ دسترسی کامل بدون محدودیت (Full Access)
+                                    </span>
+                                  ) : (
+                                    <>
+                                      {perms.users ? <span className="px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300 text-[10px] border border-purple-800/60">👥 کاربران</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">👥 کاربران</span>}
+                                      {perms.live ? <span className="px-2 py-0.5 rounded-md bg-pink-950/80 text-pink-300 text-[10px] border border-pink-800/60">🎥 لایو</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">🎥 لایو</span>}
+                                      {perms.reports ? <span className="px-2 py-0.5 rounded-md bg-rose-950/80 text-rose-300 text-[10px] border border-rose-800/60">🚨 گزارشات</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">🚨 گزارشات</span>}
+                                      {perms.wallet ? <span className="px-2 py-0.5 rounded-md bg-emerald-950/80 text-emerald-300 text-[10px] border border-emerald-800/60">💰 کیف پول</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">💰 کیف پول</span>}
+                                      {perms.security ? <span className="px-2 py-0.5 rounded-md bg-amber-950/80 text-amber-300 text-[10px] border border-amber-800/60">🛡️ امنیت AI</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">🛡️ امنیت AI</span>}
+                                      {perms.ads ? <span className="px-2 py-0.5 rounded-md bg-cyan-950/80 text-cyan-300 text-[10px] border border-cyan-800/60">📢 تبلیغات</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">📢 تبلیغات</span>}
+                                      {perms.support ? <span className="px-2 py-0.5 rounded-md bg-blue-950/80 text-blue-300 text-[10px] border border-blue-800/60">🎧 پشتیبانی</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">🎧 پشتیبانی</span>}
+                                      {perms.logs ? <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-300 text-[10px] border border-slate-700">📜 لاگ‌ها</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">📜 لاگ‌ها</span>}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 self-end sm:self-center">
+                              <button
+                                onClick={() => {
+                                  setEditingAdminObj(admin);
+                                  setNewAdminTelegramId(admin.telegramId || '');
+                                  setNewAdminName(admin.name || '');
+                                  setNewAdminRole(admin.role || 'Live Moderator');
+                                  setNewAdminPermissions(admin.permissions || {
+                                    users: false, live: true, reports: true, wallet: false, security: false, ads: false, support: true, logs: false
+                                  });
+                                  setIsAddAdminModalOpen(true);
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition"
+                              >
+                                ✏️ ویرایش دسترسی
+                              </button>
+                              {admin.role !== 'Super Admin' && admin.telegramId !== '689123456' && (
+                                <button
+                                  onClick={() => {
+                                    const updated = adminRolesList.filter(a => a.id !== admin.id && a.telegramId !== admin.telegramId);
+                                    setAdminRolesList(updated);
+                                    safeStorage.setItem('vlive_admin_roles_list', JSON.stringify(updated));
+                                    addAdminAuditLog(`دسترسی ادمین ${admin.name} (Telegram ID: ${admin.telegramId}) لغو گردید`);
+                                    showToast(`دسترسی ادمین ${admin.name} لغو شد.`);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800/60 font-bold text-xs transition"
+                                >
+                                  🗑️ لغو دسترسی
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 16. SECURITY */}
+              {adminActiveTab === 'security' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۶. امنیت سیستم و لاگ ورود مدیران (Security)</h3>
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 font-mono text-[10px]">
+                    <p className="text-slate-300">• 12:15 - ورود مدیر ارشد رایان از IP: 185.220.101.4 (تهران)</p>
+                    <p className="text-slate-300">• 10:40 - ورود مدیر سارا از IP: 91.108.4.12 (لندن)</p>
+                  </div>
+                </div>
+              )}
+
+              {/* 17. SYSTEM SETTINGS */}
+              {adminActiveTab === 'settings' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۷. تنظیمات عمومی سیستم (System Settings)</h3>
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-white">حالت تعمیرات (Maintenance Mode)</p>
+                        <span className="text-[10px] text-slate-400">قفل دسترسی کاربران غیرادمین</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={adminMaintenanceMode}
+                        onChange={e => {
+                          setAdminMaintenanceMode(e.target.checked);
+                          addAdminAuditLog(e.target.checked ? 'حالت تعمیرات فعال شد 🚨' : 'حالت تعمیرات غیرفعال شد');
+                        }}
+                        className="accent-amber-500 w-4 h-4 rounded cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-white">کارمزد پلتفرم از سکه‌ها</p>
+                        <span className="text-[10px] text-amber-300">{adminPlatformFee}</span>
+                      </div>
+                      <input
+                        type="text"
+                        value={adminPlatformFee}
+                        onChange={e => setAdminPlatformFee(e.target.value)}
+                        className="w-20 px-2 py-1 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 18. AI MODERATION */}
+              {adminActiveTab === 'aimod' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۸. سیستم نظارت خودکار هوش مصنوعی (AI Moderation)</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-white">تشخیص خودکار تصاویر نامناسب</p>
+                        <span className="text-[10px] text-slate-400">شناسایی هوشمند عکس‌های متخلف</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={adminAiBadImages}
+                        onChange={e => {
+                          setAdminAiBadImages(e.target.checked);
+                          addAdminAuditLog(`تشخیص تصاویر نامناسب هوش مصنوعی ${!adminAiBadImages ? 'فعال' : 'غیرفعال'} شد`);
+                        }}
+                        className="accent-emerald-500 w-4 h-4 rounded cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-white">فیلتر هوشمند کلمات توهین‌آمیز</p>
+                        <span className="text-[10px] text-slate-400">مسدودسازی خودکار چت نامناسب</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={adminAiOffensiveText}
+                        onChange={e => {
+                          setAdminAiOffensiveText(e.target.checked);
+                          addAdminAuditLog(`فیلتر کلمات توهین‌آمیز هوش مصنوعی ${!adminAiOffensiveText ? 'فعال' : 'غیرفعال'} شد`);
+                        }}
+                        className="accent-emerald-500 w-4 h-4 rounded cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 18.5 AI SECURITY CENTER (CONNECTS TO BACKEND GEMINI PROXY) */}
+              {adminActiveTab === 'aisecurity' && (
+                <div className="space-y-4 text-xs dir-rtl text-right">
+                  {/* TOP BANNER */}
+                  <div className="p-4 rounded-3xl bg-gradient-to-r from-purple-950/90 via-slate-900 to-indigo-950/90 border border-purple-500/40 space-y-3 shadow-xl">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-purple-600/30 border border-purple-500/50 text-purple-300">
+                          <ShieldCheck className="w-7 h-7 animate-pulse" />
+                        </div>
+                        <div>
+                          <h3 className="font-black text-white text-base flex items-center gap-2">
+                            <span>🛡 مرکز امنیت هوش مصنوعی (AI Security Center)</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40">
+                              Gemini 1.5 Powered
+                            </span>
+                          </h3>
+                          <p className="text-[11px] text-purple-200/90 mt-0.5">
+                            اتصال امن پروکسی بک‌اند (بررسی هوشمند گزارش‌ها، چت‌ها، تیکت‌ها، مدارک استریمر و تقلب دعوت)
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* AI SECURITY STATUS & MASTER TOGGLE */}
+                      <div className="flex items-center gap-3 bg-slate-950/80 p-2.5 rounded-2xl border border-purple-500/30">
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-400 block font-bold">وضعیت هوش مصنوعی:</span>
+                          <span className={`text-[10px] font-black ${aiSecuritySettings.enabled ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {aiSecuritySettings.enabled ? '🟢 فعال و آماده‌به‌کار' : '🔴 غیرفعال'}
+                          </span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={aiSecuritySettings.enabled}
+                          onChange={e => {
+                            setAiSecuritySettings({ ...aiSecuritySettings, enabled: e.target.checked });
+                            addAdminAuditLog(`سیستم AI Security Center ${e.target.checked ? 'فعال' : 'غیرفعال'} گردید`);
+                          }}
+                          className="w-5 h-5 accent-purple-500 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+
+                    {/* RISK THRESHOLD SELECTOR */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-purple-500/20 text-[11px]">
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-300 font-bold">آستانه حساسیت ریسک:</span>
+                        {['Low', 'Medium', 'High'].map(lvl => (
+                          <button
+                            key={lvl}
+                            onClick={() => setAiSecuritySettings({ ...aiSecuritySettings, riskThreshold: lvl })}
+                            className={`px-3 py-1 rounded-xl text-[10px] font-bold border transition ${
+                              aiSecuritySettings.riskThreshold === lvl
+                                ? 'bg-purple-600 text-white border-purple-300 shadow-md font-black'
+                                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            {lvl === 'Low' ? 'کم (۴۰+)' : lvl === 'Medium' ? 'متوسط (۶۰+)' : 'بالا (۸۰+)'}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="text-[10px] text-amber-300 font-mono bg-amber-950/40 px-2.5 py-1 rounded-xl border border-amber-500/30">
+                        🔒 GEMINI_API_KEY کاملاً محرمانه در بک‌اند (Render) محافظت می‌شود
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 1. REPORT ANALYZER */}
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-400" />
+                        ۱. تحلیل‌گر گزارشات کاربران (Report Analyzer)
+                      </h4>
+                      <span className="text-[10px] text-amber-300 font-bold">{aiReportList.length} گزارش فعال</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {aiReportList.map(rep => (
+                        <div key={rep.id} className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                            <div>
+                              <p className="font-bold text-white flex items-center gap-2">
+                                <span>گزارش {rep.id}</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/30">
+                                  دسته‌بندی: {rep.category}
+                                </span>
+                              </p>
+                              <span className="text-[10px] text-slate-400 block font-mono">
+                                گزارش‌دهنده: @{rep.reporter} • متخلف: @{rep.reportedUser} • زمان: {rep.time}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => handleRunAiReportAnalyzer(rep.id)}
+                              disabled={rep.isAnalyzing || !aiSecuritySettings.enabled}
+                              className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 shadow-md transition"
+                            >
+                              <Sparkles className={`w-3.5 h-3.5 ${rep.isAnalyzing ? 'animate-spin' : ''}`} />
+                              {rep.isAnalyzing ? 'در حال تحلیل با Gemini...' : '🤖 تحلیل هوشمند گزارش با Gemini'}
+                            </button>
+                          </div>
+
+                          <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200">
+                            <span className="text-[10px] text-slate-400 font-bold block mb-0.5">متن گزارش کاربر:</span>
+                            "{rep.reportText}"
+                          </div>
+
+                          {/* AI ANALYSIS RESULTS DISPLAY */}
+                          {rep.aiRiskScore !== null && (
+                            <div className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/40 space-y-2 text-[11px] animate-fadeIn">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-purple-300 flex items-center gap-1.5">
+                                  <Sparkles className="w-3.5 h-3.5 text-purple-400" /> نتیجه تحلیل Gemini:
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-white">امتیاز ریسک: {rep.aiRiskScore}/100</span>
+                                  <span className={`px-2 py-0.5 rounded-full font-black text-[10px] ${
+                                    rep.aiRiskLevel === 'High' ? 'bg-rose-600 text-white animate-pulse' :
+                                    rep.aiRiskLevel === 'Medium' ? 'bg-amber-500 text-slate-950' :
+                                    'bg-emerald-600 text-white'
+                                  }`}>
+                                    {rep.aiRiskLevel === 'High' ? '🔴 ریسک بالا (High Risk)' :
+                                     rep.aiRiskLevel === 'Medium' ? '🟡 ریسک متوسط' : '🟢 ریسک پایین'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <p className="text-slate-300">
+                                <span className="font-bold text-purple-200">دسته‌بندی هوشمند: </span>
+                                <span className="text-amber-300 font-bold">{rep.aiClassification}</span> — {rep.aiReasoning}
+                              </p>
+
+                              {/* ADMIN DECISION CONTROLS */}
+                              <div className="flex items-center gap-2 pt-2 border-t border-purple-500/30">
+                                <span className="text-[10px] font-bold text-slate-300">تصمیم نهایی مدیر:</span>
+                                <button
+                                  onClick={() => {
+                                    setAiReportList(prev => prev.map(r => r.id === rep.id ? { ...r, status: 'Banned' } : r));
+                                    addAdminAuditLog(`کاربر @${rep.reportedUser} بر اساس گزارش ${rep.id} و تحلیل AI مسدود شد`);
+                                    showToast(`⛔ کاربر @${rep.reportedUser} مسدود گردید`);
+                                  }}
+                                  className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px]"
+                                >
+                                  ⛔ مسدودسازی کاربر (Ban)
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setAiReportList(prev => prev.map(r => r.id === rep.id ? { ...r, status: 'Rejected' } : r));
+                                    addAdminAuditLog(`گزارش ${rep.id} توسط مدیر رد گردید`);
+                                    showToast('❌ گزارش رد شد');
+                                  }}
+                                  className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[10px]"
+                                >
+                                  ❌ رد گزارش
+                                </button>
+                                <span className="text-[10px] text-slate-400 mr-auto font-mono">وضعیت: {rep.status}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 2. CHAT MODERATION */}
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <div>
+                        <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4 text-cyan-400" />
+                          ۲. نظارت هوشمند چت‌های گزارش‌شده (Reported Chat Moderation)
+                        </h4>
+                        <p className="text-[10px] text-emerald-400 font-bold mt-0.5">
+                          📌 قانون حریم خصوصی: تنها پیام‌هایی که گزارش شده‌اند برای تحلیل Gemini ارسال می‌شوند (نه تمام پیام‌ها).
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {aiReportedChatsList.map(chat => (
+                        <div key={chat.id} className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                            <div>
+                              <p className="font-bold text-white">
+                                چت گزارش‌شده {chat.id} — <span className="text-cyan-300">علت: {chat.reportReason}</span>
+                              </p>
+                              <span className="text-[10px] text-slate-400 block font-mono">
+                                فرستنده: @{chat.sender} • گیرنده: @{chat.recipient} • زمان: {chat.time}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => handleRunAiChatModerator(chat.id)}
+                              disabled={chat.isAnalyzing || !aiSecuritySettings.enabled}
+                              className="px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition"
+                            >
+                              <Sparkles className={`w-3.5 h-3.5 ${chat.isAnalyzing ? 'animate-spin' : ''}`} />
+                              {chat.isAnalyzing ? 'در حال تحلیل چت...' : '🔍 تحلیل پیام با Gemini'}
+                            </button>
+                          </div>
+
+                          <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 font-mono text-xs">
+                            "{chat.messageText}"
+                          </div>
+
+                          {chat.aiAnalysis && (
+                            <div className="p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/40 space-y-2 text-[11px]">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-cyan-300">تحلیل Gemini: {chat.aiAnalysis.summary || 'بررسی انجام شد'}</span>
+                                <span className="font-black text-amber-300">ریسک: {chat.aiAnalysis.riskScore || 80}/100</span>
+                              </div>
+                              <div className="flex items-center gap-2 pt-1 border-t border-cyan-500/20">
+                                <button
+                                  onClick={() => {
+                                    addAdminAuditLog(`فرستنده پیام اسپم @${chat.sender} مسدود گردید`);
+                                    showToast(`⛔ کاربر @${chat.sender} مسدود شد`);
+                                  }}
+                                  className="px-2.5 py-1 rounded-xl bg-rose-600 text-white font-bold text-[10px]"
+                                >
+                                  ⛔ مسدودسازی فرستنده
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setAiReportedChatsList(prev => prev.filter(c => c.id !== chat.id));
+                                    showToast('🗑 پیام از دیتابیس پاک گردید');
+                                  }}
+                                  className="px-2.5 py-1 rounded-xl bg-slate-800 text-rose-300 font-bold text-[10px]"
+                                >
+                                  🗑 حذف پیام
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 3. SUPPORT ASSISTANT */}
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                        <LifeBuoy className="w-4 h-4 text-emerald-400" />
+                        ۳. دستیار هوشمند پشتیبانی و تیکت‌ها (Support Assistant)
+                      </h4>
+                      <span className="text-[10px] text-emerald-300 font-bold">پیشنهاد اولیه با AI • تایید نهایی با ادمین</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {aiSupportTicketsList.map(ticket => (
+                        <div key={ticket.id} className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                            <div>
+                              <p className="font-bold text-white flex items-center gap-2">
+                                <span>تیکت {ticket.id}: {ticket.subject}</span>
+                              </p>
+                              <span className="text-[10px] text-slate-400 block font-mono">کاربر: @{ticket.user} • زمان: {ticket.time}</span>
+                            </div>
+
+                            <button
+                              onClick={() => handleGenerateAiSupportReply(ticket.id)}
+                              disabled={ticket.isGenerating || !aiSecuritySettings.enabled}
+                              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition"
+                            >
+                              <Sparkles className={`w-3.5 h-3.5 ${ticket.isGenerating ? 'animate-spin' : ''}`} />
+                              {ticket.isGenerating ? 'تولید پاسخ با Gemini...' : '✨ پاسخ پیشنهادی Gemini'}
+                            </button>
+                          </div>
+
+                          <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200">
+                            "{ticket.messageBody}"
+                          </div>
+
+                          {ticket.aiSuggestedReply && (
+                            <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2">
+                              <span className="font-bold text-emerald-300 text-[11px] block">پاسخ پیشنهادی Gemini (پیش‌نویس):</span>
+                              <textarea
+                                value={ticket.aiSuggestedReply}
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  setAiSupportTicketsList(prev => prev.map(t => t.id === ticket.id ? { ...t, aiSuggestedReply: val } : t));
+                                }}
+                                className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-emerald-200 outline-none focus:border-emerald-500 h-24"
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => {
+                                    setAiSupportTicketsList(prev => prev.map(t => t.id === ticket.id ? { ...t, status: 'Closed' } : t));
+                                    addAdminAuditLog(`پاسخ تیکت ${ticket.id} توسط مدیر تایید و ارسال شد`);
+                                    showToast('📤 پاسخ تیکت با موفقیت برای کاربر ارسال شد');
+                                  }}
+                                  className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md"
+                                >
+                                  📤 تایید و ارسال پاسخ برای کاربر
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 4. STREAMER VERIFICATION */}
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                        <BadgeCheck className="w-4 h-4 text-pink-400" />
+                        ۴. بررسی هوشمند مدارک استریمرها (Streamer Verification)
+                      </h4>
+                      <span className="text-[10px] text-pink-300 font-bold">بررسی کامل بودن مدارک با AI • تصمیم با ادمین</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {aiStreamerVerificationsList.map(kyc => (
+                        <div key={kyc.id} className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                            <div className="flex items-center gap-3">
+                              <img src={kyc.photoUrl} alt={kyc.name} className="w-10 h-10 rounded-full object-cover border border-pink-500/40" />
+                              <div>
+                                <p className="font-bold text-white">{kyc.name} (@{kyc.username})</p>
+                                <span className="text-[10px] text-slate-400 block">مدارک ارسالی: {kyc.docsSubmitted.join(' ، ')}</span>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => handleRunAiStreamerVerification(kyc.id)}
+                              disabled={kyc.isAnalyzing || !aiSecuritySettings.enabled}
+                              className="px-3.5 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition"
+                            >
+                              <Sparkles className={`w-3.5 h-3.5 ${kyc.isAnalyzing ? 'animate-spin' : ''}`} />
+                              {kyc.isAnalyzing ? 'در حال بررسی وضوح تصویر...' : '🔎 بررسی وضوح مدارک با Gemini'}
+                            </button>
+                          </div>
+
+                          {kyc.aiCheck && (
+                            <div className="p-3 rounded-xl bg-pink-950/40 border border-pink-500/40 space-y-2 text-[11px]">
+                              <p className="text-slate-200">
+                                <span className="font-bold text-pink-300">ارزیابی کیفیت Gemini: </span>
+                                {kyc.aiCheck.isClear ? '✅ مدارک کامل و تصویر واضح است.' : '⚠️ وضوح مدارک نیاز به بررسی دقیق‌تر دارد.'}
+                              </p>
+                              <div className="flex items-center gap-2 pt-1 border-t border-pink-500/20">
+                                <button
+                                  onClick={() => {
+                                    setAiStreamerVerificationsList(prev => prev.map(k => k.id === kyc.id ? { ...k, status: 'Approved' } : k));
+                                    addAdminAuditLog(`درخواست استریمر @${kyc.username} تایید گردید`);
+                                    showToast(`👑 استریمر @${kyc.username} تایید شد`);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs"
+                                >
+                                  ✅ تایید نهایی استریمر
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setAiStreamerVerificationsList(prev => prev.map(k => k.id === kyc.id ? { ...k, status: 'Rejected' } : k));
+                                    addAdminAuditLog(`درخواست استریمر @${kyc.username} رد شد`);
+                                    showToast('❌ درخواست رد شد');
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-slate-800 text-rose-300 font-bold text-xs"
+                                >
+                                  ❌ رد درخواست
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 5. REFERRAL FRAUD */}
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                        <UserCheck className="w-4 h-4 text-indigo-400" />
+                        ۵. شناسایی تقلب سیستم دعوت (Referral Fraud Detection)
+                      </h4>
+                      <span className="text-[10px] text-indigo-300 font-bold">شناسایی آی‌پی‌های تکراری و الگوی مشکوک</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {aiReferralFraudList.map(ref => (
+                        <div key={ref.id} className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                            <div>
+                              <p className="font-bold text-white">کاربر: @{ref.username} ({ref.userId})</p>
+                              <span className="text-[10px] text-slate-400 block font-mono">
+                                تعداد دعوت: {ref.referralCount} کاربر • آی‌پی‌های ثبت‌شده: {ref.registeredIps.join(', ')}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => handleRunAiReferralFraudCheck(ref.id)}
+                              disabled={ref.isAnalyzing || !aiSecuritySettings.enabled}
+                              className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition"
+                            >
+                              <Sparkles className={`w-3.5 h-3.5 ${ref.isAnalyzing ? 'animate-spin' : ''}`} />
+                              {ref.isAnalyzing ? 'تحلیل الگوی دعوت...' : '🔍 تحلیل تقلب با Gemini'}
+                            </button>
+                          </div>
+
+                          {ref.aiAnalysis && (
+                            <div className="p-3 rounded-xl bg-indigo-950/40 border border-indigo-500/40 space-y-2 text-[11px]">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-indigo-300">تحلیل Gemini: {ref.aiAnalysis.recommendation || 'الگوی مشکوک مشاهده شد'}</span>
+                                <span className="font-black text-rose-400">احتمال تقلب: {ref.aiAnalysis.fraudScore || 85}%</span>
+                              </div>
+                              <div className="flex items-center gap-2 pt-1 border-t border-indigo-500/20">
+                                <button
+                                  onClick={() => {
+                                    addAdminAuditLog(`پاداش دعوت کاربر @${ref.username} مسدود شد`);
+                                    showToast(`🚨 پاداش دعوت @${ref.username} مسدود گردید`);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-xs"
+                                >
+                                  🚨 مسدودسازی پاداش دعوت
+                                </button>
+                                <button
+                                  onClick={() => showToast('✅ حساب کاربر تایید شد')}
+                                  className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+                                >
+                                  ✅ تایید حساب
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* SCOPE EXCLUSIONS ROADMAP BANNER */}
+                  <div className="p-4 rounded-3xl bg-slate-950/80 border border-slate-800/80 space-y-2 text-slate-400 text-[11px]">
+                    <h5 className="font-bold text-slate-300 flex items-center gap-2">
+                      <span>🛑 قابلیت‌های غیرفعال طبق دستور مدیریت (ویژه نسخه بعدی V2)</span>
+                    </h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
+                      <p className="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                        • بررسی زنده تمام لایو استریم‌ها: <span className="text-rose-400 font-bold">غیرفعال</span>
+                      </p>
+                      <p className="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                        • بررسی زنده تمام تماس‌های صوتی و تصویری: <span className="text-rose-400 font-bold">غیرفعال</span>
+                      </p>
+                      <p className="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                        • بررسی زنده تمام پیام‌های عمومی چت: <span className="text-rose-400 font-bold">غیرفعال (فقط پیام‌های گزارش‌شده)</span>
+                      </p>
+                      <p className="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                        • سیستم Ban و مسدودسازی اتوماتیک: <span className="text-rose-400 font-bold">غیرفعال (تصمیم نهایی با ادمین)</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 19. BACKUP & RESTORE */}
+              {adminActiveTab === 'backup' && (
+                <div className="space-y-3 text-xs">
+                  <h3 className="font-bold text-white text-sm">۱۹. تهیه نسخه پشتیبان و بازیابی (Backup & Restore)</h3>
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <p className="font-bold text-cyan-300">لیست نسخه‌های پشتیبان ثبت‌شده</p>
+                      <button
+                        onClick={() => {
+                          const newB = { id: `BK-${Date.now()}`, size: '49.8 MB', date: new Date().toLocaleString() };
+                          setAdminBackupsList(prev => [newB, ...prev]);
+                          addAdminAuditLog(`نسخه پشتیبان جدید ${newB.id} با موفقیت ایجاد گردید`);
+                        }}
+                        className="px-4 py-2 rounded-xl bg-cyan-600 text-white font-bold"
+                      >
+                        + بکاپ‌گیری فوری
+                      </button>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      {adminBackupsList.map(b => (
+                        <div key={b.id} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center text-[11px]">
+                          <span>{b.id} • حجم: {b.size} • تاریخ: {b.date}</span>
+                          <button
+                            onClick={() => addAdminAuditLog(`دیتابیس از روی فایل ${b.id} بازیابی گردید`)}
+                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold"
+                          >
+                            بازیابی اطلاعات
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 20. LOGS & AUDIT TRAIL */}
+              {adminActiveTab === 'logs' && (
+                <div className="space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm">۲۰. لاگ لحظه‌ای فعالیت‌های مدیران (Audit Logs)</h3>
+                    <span className="text-[10px] text-slate-400">{adminLogsList.length} فعالیت ثبت شده</span>
+                  </div>
+                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-2 font-mono text-[11px] max-h-80 overflow-y-auto">
+                    {adminLogsList.map((log, i) => (
+                      <div key={i} className="flex items-center gap-2 border-b border-slate-900 pb-1.5 text-slate-300 dir-rtl">
+                        <span className="text-amber-400 font-bold">[{log.time}]</span>
+                        <span>{log.log}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
       {/* MODAL 9: KYC VERIFICATION REQUEST */}
       {isKycModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
