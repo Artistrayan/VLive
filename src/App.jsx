@@ -11550,421 +11550,573 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         </div>
       )}
 
-      {/* MAIN DASHBOARD PAGE */}
+      {/* MAIN DASHBOARD PAGE - REDESIGNED INSTAGRAM/TIKTOK/BUMBLE/TELEGRAM PROFILE */}
       {profileSubPage === 'main' && (
-        <>
-          {/* 1. PROFILE HEADER */}
-          <div className="relative rounded-3xl overflow-hidden border border-pink-500/30 bg-slate-900 shadow-2xl backdrop-blur-xl">
-            {/* Animated Cover Background */}
-            <div className="relative h-48 w-full bg-gradient-to-r from-pink-900 via-purple-900 to-indigo-950 overflow-hidden">
+        <div className="space-y-4 animate-fadeIn">
+
+          {/* PROFILE PREVIEW MODE SWITCHER */}
+          <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800/80 flex items-center justify-between shadow-lg backdrop-blur-md">
+            <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <Eye className="w-4 h-4 text-pink-400 animate-pulse" />
+              {loc('حالت پیش‌نمایش پروفایل:', 'Profile Preview Mode:')}
+            </span>
+            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+              <button 
+                type="button"
+                onClick={() => setProfilePreviewMode('self')}
+                className={`px-3 py-1.5 rounded-lg transition-all ${profilePreviewMode === 'self' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+              >
+                {loc('پروفایل من 👤', 'My Profile 👤')}
+              </button>
+              <button 
+                type="button"
+                onClick={() => setProfilePreviewMode('other')}
+                className={`px-3 py-1.5 rounded-lg transition-all ${profilePreviewMode === 'other' ? 'bg-purple-600 to-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+              >
+                {loc('نمای کاربر دیگر 👁️', 'Other User 👁️')}
+              </button>
+            </div>
+          </div>
+
+          {/* 1. HEADER CARD (INSTAGRAM / TIKTOK / BUMBLE HYBRID) */}
+          <div className="relative rounded-3xl overflow-hidden border border-slate-800 bg-slate-900/90 shadow-2xl backdrop-blur-xl">
+            {/* Sleek Cover Banner */}
+            <div className="relative h-36 w-full bg-gradient-to-r from-pink-900 via-purple-900 to-slate-950 overflow-hidden">
               <img 
                 src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80" 
                 alt="Profile Cover" 
                 className="w-full h-full object-cover opacity-40 hover:scale-105 transition duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent" />
             </div>
 
-            {/* Avatar & Badges & Header Controls */}
-            <div className="px-6 pb-6 pt-0 relative flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4 -mt-20">
-              {/* Avatar with Animated Ring */}
-              <div className="relative flex flex-col items-center sm:items-start">
-                <div className="relative group">
-                  <div className="w-28 h-28 rounded-3xl p-1 bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 shadow-[0_0_30px_rgba(236,72,153,0.5)]">
-                    <img src={userAvatar} alt={userName} className="w-full h-full object-cover rounded-[22px] border-2 border-slate-950" />
-                  </div>
-                  {/* Online Status Indicator Dot */}
-                  {privacyShowLastSeen && (
-                    <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-slate-950 rounded-full animate-pulse shadow-md" title="Online Now" />
+            {/* Main Info Box */}
+            <div className="px-5 pb-5 relative flex flex-col items-center text-center -mt-16 space-y-3">
+              {/* Large Circular Avatar with Ring & Badges */}
+              <div className="relative group">
+                <div className="w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 shadow-[0_0_25px_rgba(236,72,153,0.5)]">
+                  <img 
+                    src={userAvatar} 
+                    alt={userName} 
+                    className="w-full h-full object-cover rounded-full border-4 border-slate-900 shadow-md"
+                  />
+                </div>
+
+                {/* Online Status Dot */}
+                {privacyShowLastSeen && (
+                  <span className="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-slate-900 rounded-full animate-pulse shadow-md" title="Online Now" />
+                )}
+
+                {/* Level Badge Pill */}
+                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-[10px] shadow-lg border border-yellow-200 flex items-center gap-1 shrink-0 whitespace-nowrap">
+                  <Crown className="w-3 h-3 fill-slate-950" />
+                  LVL {userLevel}
+                </span>
+              </div>
+
+              {/* User Titles & Identifiers */}
+              <div className="pt-2 space-y-1">
+                <div className="flex items-center justify-center gap-2 flex-wrap">
+                  <h2 className="text-xl font-black text-white tracking-wide">{userName}</h2>
+                  {isVerified && <VerifiedBadge className="w-4 h-4" showLabel={true} />}
+                  <VipStatusBadge size="normal" showText={true} />
+                </div>
+
+                <div className="flex items-center justify-center gap-2 text-xs text-slate-400 flex-wrap">
+                  <span className="text-pink-400 font-bold">@{currentUsername}</span>
+                  <span>•</span>
+                  <span className="text-cyan-300 font-mono font-semibold">ID: {currentTelegramId}</span>
+                  {privacyShowCity && (
+                    <>
+                      <span>•</span>
+                      <span className="flex items-center gap-1 text-slate-300">
+                        <MapPin className="w-3 h-3 text-pink-400" />
+                        Tehran, Iran
+                      </span>
+                    </>
                   )}
-                  {/* Level Badge */}
-                  <span className="absolute -bottom-2 right-1/2 translate-x-1/2 sm:translate-x-0 sm:right-0 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-[10px] shadow-lg border border-yellow-200 flex items-center gap-1">
-                    <Crown className="w-3 h-3 fill-slate-950" />
-                    LVL {userLevel}
-                  </span>
+                </div>
+
+                {/* Profile Completion Indicator Ring / Bar */}
+                <div className="max-w-xs mx-auto pt-2">
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1 font-bold">
+                    <span>{loc('تکمیل پروفایل:', 'Profile Completion:')}</span>
+                    <span className="text-emerald-400 font-mono">85%</span>
+                  </div>
+                  <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                    <div className="bg-gradient-to-r from-emerald-500 to-cyan-400 h-full w-[85%]" />
+                  </div>
                 </div>
               </div>
 
-              {/* Header Action Buttons */}
-              <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
+              {/* Self Profile vs Other User Header Actions */}
+              <div className="w-full pt-1 flex items-center justify-center gap-2 flex-wrap">
                 {profilePreviewMode === 'self' ? (
                   <>
                     <button 
+                      type="button"
                       onClick={() => setProfileSubPage('account')}
-                      className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg active:scale-95 transition"
+                      className="flex-1 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition"
                     >
                       <Edit3 className="w-4 h-4" />
                       <span>{loc('ویرایش پروفایل', 'Edit Profile')}</span>
                     </button>
 
                     <button 
+                      type="button"
                       onClick={() => setIsQrCodeModalOpen(true)}
-                      className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 shadow-md active:scale-95 transition"
+                      className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-400 shadow-md active:scale-95 transition"
                       title={loc('کد QR', 'QR Code')}
                     >
-                      <QrCode className="w-4 h-4 text-cyan-400" />
+                      <QrCode className="w-4 h-4" />
                     </button>
 
                     <button 
+                      type="button"
                       onClick={() => {
                         navigator.clipboard.writeText(`https://vlive.app/profile/${currentUsername}`);
                         showToast(loc('لینک پروفایل کپی شد!', 'Profile link copied to clipboard!'));
                       }}
-                      className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 shadow-md active:scale-95 transition"
+                      className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-pink-400 shadow-md active:scale-95 transition"
                       title={loc('اشتراک‌گذاری', 'Share Profile')}
                     >
-                      <Share2 className="w-4 h-4 text-pink-400" />
+                      <Share2 className="w-4 h-4" />
                     </button>
                   </>
                 ) : (
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="w-full grid grid-cols-4 sm:grid-cols-7 gap-1.5">
                     <button 
-                      onClick={() => showToast(`Starting chat with @${currentUsername}`)}
-                      className="px-4 py-2 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                      type="button"
+                      onClick={() => showToast(`Following @${currentUsername}`)}
+                      className="col-span-1 p-2.5 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 shadow-md"
                     >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      Chat
+                      <UserPlus className="w-4 h-4" />
+                      <span className="text-[10px]">Follow</span>
                     </button>
                     <button 
-                      onClick={() => showToast(`Initiating voice call with @${currentUsername}`)}
-                      className="px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                      type="button"
+                      onClick={() => showToast(`Chat with @${currentUsername}`)}
+                      className="col-span-1 p-2.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 shadow-md"
                     >
-                      <Phone className="w-3.5 h-3.5" />
-                      Voice
+                      <MessageSquare className="w-4 h-4" />
+                      <span className="text-[10px]">Message</span>
                     </button>
                     <button 
+                      type="button"
                       onClick={() => handleStartPrivateCall({ name: userName, avatar: userAvatar, pricePerMin: 100 })}
-                      className="px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                      className="col-span-1 p-2.5 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 shadow-md"
                     >
-                      <Video className="w-3.5 h-3.5" />
-                      Video
+                      <Video className="w-4 h-4" />
+                      <span className="text-[10px]">Video</span>
                     </button>
                     <button 
+                      type="button"
+                      onClick={() => showToast(`Voice call with @${currentUsername}`)}
+                      className="col-span-1 p-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 shadow-md"
+                    >
+                      <Phone className="w-4 h-4" />
+                      <span className="text-[10px]">Voice</span>
+                    </button>
+                    <button 
+                      type="button"
                       onClick={() => setIsGiftCatalogOpen(true)}
-                      className="p-2 rounded-2xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 shadow-md"
+                      className="col-span-1 p-2.5 rounded-2xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 shadow-md flex flex-col items-center justify-center gap-1"
                     >
                       <Gift className="w-4 h-4" />
+                      <span className="text-[10px]">Gift</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => showToast(`Blocked @${currentUsername}`)}
+                      className="col-span-1 p-2.5 rounded-2xl bg-slate-800 hover:bg-red-900/60 text-slate-300 hover:text-red-300 border border-slate-700 font-bold text-xs flex flex-col items-center justify-center gap-1"
+                    >
+                      <Ban className="w-4 h-4" />
+                      <span className="text-[10px]">Block</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => showToast(`Reported @${currentUsername}`)}
+                      className="col-span-1 p-2.5 rounded-2xl bg-slate-800 hover:bg-amber-900/60 text-slate-300 hover:text-amber-300 border border-slate-700 font-bold text-xs flex flex-col items-center justify-center gap-1"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      <span className="text-[10px]">Report</span>
                     </button>
                   </div>
                 )}
               </div>
             </div>
+          </div>
 
-            {/* Profile Details */}
-            <div className="px-6 pb-6 space-y-2 text-center sm:text-right">
-              <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
-                <h2 className="text-xl font-black text-white tracking-wide">{userName}</h2>
-                {isVerified && <VerifiedBadge className="w-4 h-4" showLabel={true} />}
-                <VipStatusBadge size="normal" showText={true} />
+          {/* 2. COMPACT STATISTICS ROW (INSTAGRAM/BUMBLE STYLE) */}
+          <div className="grid grid-cols-5 gap-1.5 p-2 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-lg text-center">
+            <button 
+              type="button"
+              onClick={() => setProfileGalleryTab('posts')}
+              className="p-2 rounded-xl hover:bg-slate-800/60 transition"
+            >
+              <span className="text-sm font-black text-white block">42</span>
+              <span className="text-[10px] font-bold text-slate-400 block">{loc('پست‌ها', 'Posts')}</span>
+            </button>
+            <button 
+              type="button"
+              onClick={() => showToast(loc('لیست دنبال‌کنندگان', 'Followers List'))}
+              className="p-2 rounded-xl hover:bg-slate-800/60 transition"
+            >
+              <span className="text-sm font-black text-white block">8.5K</span>
+              <span className="text-[10px] font-bold text-slate-400 block">{loc('فالوور', 'Followers')}</span>
+            </button>
+            <button 
+              type="button"
+              onClick={() => showToast(loc('لیست دنبال‌شده‌ها', 'Following List'))}
+              className="p-2 rounded-xl hover:bg-slate-800/60 transition"
+            >
+              <span className="text-sm font-black text-white block">340</span>
+              <span className="text-[10px] font-bold text-slate-400 block">{loc('فالووینگ', 'Following')}</span>
+            </button>
+            <button 
+              type="button"
+              onClick={() => showToast(loc('آمار پسندها', 'Likes Breakdown'))}
+              className="p-2 rounded-xl hover:bg-slate-800/60 transition"
+            >
+              <span className="text-sm font-black text-white block">12.4K</span>
+              <span className="text-[10px] font-bold text-pink-400 block">{loc('لایک', 'Likes')}</span>
+            </button>
+            <button 
+              type="button"
+              onClick={() => showToast(loc('بازدیدکنندگان اخیر', 'Recent Visitors'))}
+              className="p-2 rounded-xl hover:bg-slate-800/60 transition"
+            >
+              <span className="text-sm font-black text-white block">1.2K</span>
+              <span className="text-[10px] font-bold text-cyan-400 block">{loc('بازدید', 'Visitors')}</span>
+            </button>
+          </div>
+
+          {/* 3. WALLET SUMMARY CARD (COMPACT HIGH-PRIORITY ROW) */}
+          <div 
+            onClick={() => setProfileSubPage('wallet')}
+            className="p-4 rounded-3xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-amber-600/15 border border-amber-500/30 shadow-xl flex items-center justify-between cursor-pointer hover:border-amber-500/60 transition"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+                <CoinsIcon className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-black text-white">{userCoins.toLocaleString()} <span className="text-amber-400 text-[10px] font-bold">{loc('سکه', 'Coins')}</span></h4>
+                  <span className="px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] font-mono font-bold">${(userCoins * 0.005 * 0.71).toFixed(2)} USDT</span>
+                </div>
+                <p className="text-[10px] text-slate-400">{loc('کیف پول، درآمد استریمر و ارتقای VIP', 'Wallet balance, Streamer income & VIP')}</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-amber-400" />
+          </div>
+
+          {/* 4. ABOUT CARD (SINGLE CLEAN CONSOLIDATED CARD) */}
+          <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black text-white flex items-center gap-1.5 uppercase tracking-wider">
+                <User className="w-4 h-4 text-pink-400" />
+                {loc('درباره من & ویژگی‌ها', 'About & Attributes')}
+              </h3>
+              {profilePreviewMode === 'self' && (
+                <button 
+                  type="button"
+                  onClick={() => setProfileSubPage('account')}
+                  className="text-[11px] text-pink-400 font-bold hover:underline flex items-center gap-1"
+                >
+                  <Edit3 className="w-3 h-3" />
+                  {loc('ویرایش', 'Edit')}
+                </button>
+              )}
+            </div>
+
+            <p className="text-xs text-slate-200 leading-relaxed bg-slate-950 p-3 rounded-2xl border border-slate-800/80 italic">
+              "{userBio || 'Official V.Live Streamer | Private video calls & interactive 4K streams'}"
+            </p>
+
+            {/* Grid Attributes */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+              <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                <span className="text-[10px] text-slate-400 block">{loc('سن / جنسیت', 'Age / Gender')}</span>
+                <span className="text-white font-bold">24 • {authGender === 'female' ? 'Female 🚺' : 'Male 🚹'}</span>
               </div>
 
-              <div className="flex items-center justify-center sm:justify-start gap-3 text-xs text-slate-400 flex-wrap">
-                <span className="text-pink-400 font-bold">@{currentUsername}</span>
-                <span className="bg-cyan-950/90 text-cyan-300 border border-cyan-800/80 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow">
-                  🆔 ID: {currentTelegramId}
+              <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                <span className="text-[10px] text-slate-400 block">{loc('زبان‌ها', 'Languages')}</span>
+                <span className="text-white font-bold">Persian 🇮🇷, English 🇬🇧</span>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                <span className="text-[10px] text-slate-400 block">{loc('شغل', 'Occupation')}</span>
+                <span className="text-white font-bold">Official 4K Host</span>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                <span className="text-[10px] text-slate-400 block">{loc('وضعیت', 'Relationship')}</span>
+                <span className="text-white font-bold">Single 💖</span>
+              </div>
+            </div>
+
+            {/* Interests Tags */}
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {['🎙️ VIP Host', '🎵 Music Lover', '💃 Dancing', '🌍 Traveler', '🎮 Gaming', '💎 Top Streamer'].map((tag, i) => (
+                <span key={i} className="px-2.5 py-1 rounded-full bg-slate-950 border border-slate-800 text-slate-300 text-[10px] font-bold">
+                  {tag}
                 </span>
-                {privacyShowAge && <span>• 24 Yrs</span>}
-                {privacyShowCity && (
-                  <span className="flex items-center gap-1 text-slate-300">
-                    <MapPin className="w-3 h-3 text-pink-400" />
-                    Tehran, Iran
-                  </span>
-                )}
-                {privacyShowLastSeen && (
-                  <span className="flex items-center gap-1 text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 text-[10px]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Online Now
-                  </span>
-                )}
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* 2. TAB NAVIGATION FOR PROFILE DASHBOARD */}
-          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-950 border border-slate-800 shadow-inner overflow-x-auto no-scrollbar">
-            <button
-              onClick={() => setProfileMainTab('overview')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 ${profileMainTab === 'overview' ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
-            >
-              <User className="w-3.5 h-3.5" />
-              <span>{loc('اطلاعات & گالری', 'Overview')}</span>
-            </button>
-            <button
-              onClick={() => setProfileMainTab('wallet')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 ${profileMainTab === 'wallet' ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
-            >
-              <Wallet className="w-3.5 h-3.5" />
-              <span>{loc('کیف‌پول & VIP', 'Wallet & VIP')}</span>
-            </button>
-            <button
-              onClick={() => setProfileMainTab('stats')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 ${profileMainTab === 'stats' ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
-            >
-              <BarChart2 className="w-3.5 h-3.5" />
-              <span>{loc('آمار & رتبه', 'Statistics')}</span>
-            </button>
-            <button
-              onClick={() => setProfileMainTab('settings')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 ${profileMainTab === 'settings' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
-            >
-              <Settings className="w-3.5 h-3.5" />
-              <span>{loc('تنظیمات & امنیت', 'Settings')}</span>
-            </button>
-            {(isUserSuperAdmin || isUserAuthorizedAdmin) && (
-              <button
-                onClick={() => setActiveTab('admin')}
-                className="px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shrink-0 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/40 hover:scale-105 shadow-md"
-              >
-                <Shield className="w-3.5 h-3.5 text-amber-400" />
-                <span>{loc('پنل ادمین 🛡️', 'Admin Panel')}</span>
-              </button>
+          {/* 5. CONTENT TABS VIEW (POSTS, PHOTOS, VIDEOS, LIVE, SAVED) */}
+          <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
+            {/* Tab Selectors */}
+            <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-950 border border-slate-800 overflow-x-auto no-scrollbar">
+              {[
+                { id: 'posts', label: loc('پست‌ها', 'Posts'), icon: Image },
+                { id: 'photos', label: loc('تصاویر', 'Photos'), icon: Sparkles },
+                { id: 'videos', label: loc('ویدیوها', 'Videos'), icon: Video },
+                { id: 'live', label: loc('لایوها', 'Live'), icon: Radio },
+                { id: 'saved', label: loc('ذخیره‌شده', 'Saved'), icon: Pin },
+              ].map(tItem => {
+                const IconComp = tItem.icon;
+                const isActive = profileGalleryTab === tItem.id;
+                return (
+                  <button
+                    key={tItem.id}
+                    type="button"
+                    onClick={() => setProfileGalleryTab(tItem.id)}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
+                      isActive ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <IconComp className="w-3.5 h-3.5" />
+                    <span>{tItem.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Lazy Loaded Tab Content */}
+            {profileGalleryTab === 'posts' && (
+              <div className="grid grid-cols-3 gap-2">
+                {PRESET_AVATARS.map((imgUrl, i) => (
+                  <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-slate-800 relative group cursor-pointer">
+                    <img src={imgUrl} alt={`Post ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition duration-300" />
+                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                      <Heart className="w-5 h-5 text-pink-400 fill-pink-400" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {profileGalleryTab === 'photos' && (
+              <div className="grid grid-cols-3 gap-2">
+                {PRESET_AVATARS.slice(0, 3).map((imgUrl, i) => (
+                  <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-slate-800 relative group cursor-pointer">
+                    <img src={imgUrl} alt={`Photo ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition duration-300" />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {profileGalleryTab === 'videos' && (
+              <div className="grid grid-cols-2 gap-2">
+                {PRESET_AVATARS.slice(0, 2).map((imgUrl, i) => (
+                  <div key={i} className="aspect-[4/5] rounded-2xl overflow-hidden border border-slate-800 relative group cursor-pointer">
+                    <img src={imgUrl} alt={`Video ${i}`} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-slate-950/30 flex items-center justify-center">
+                      <Play className="w-8 h-8 text-white fill-white/80 drop-shadow-lg" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {profileGalleryTab === 'live' && (
+              <div className="p-8 text-center bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
+                <Radio className="w-8 h-8 text-pink-400 mx-auto animate-pulse" />
+                <p className="text-xs font-bold text-white">{loc('هیچ لایو ضبط‌شده‌ای پیدا نشد.', 'No archived live streams.')}</p>
+              </div>
+            )}
+
+            {profileGalleryTab === 'saved' && (
+              <div className="p-8 text-center bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
+                <Pin className="w-8 h-8 text-cyan-400 mx-auto" />
+                <p className="text-xs font-bold text-white">{loc('پست‌های ذخیره‌شده شما اینجا نمایش داده می‌شوند.', 'Your saved posts will appear here.')}</p>
+              </div>
             )}
           </div>
 
-          {/* TAB 1: OVERVIEW & GALLERY */}
-          {profileMainTab === 'overview' && (
-            <div className="space-y-4 animate-fadeIn">
-              {/* Bio & Interests Card */}
-              <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 shadow-xl space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <User className="w-4 h-4 text-pink-400" />
-                    {loc('درباره من', 'About Me')}
-                  </h3>
-                  <button 
-                    onClick={() => setProfileSubPage('account')}
-                    className="text-[11px] text-pink-400 font-bold hover:underline flex items-center gap-1"
-                  >
-                    <Edit3 className="w-3 h-3" />
-                    {loc('ویرایش', 'Edit')}
-                  </button>
-                </div>
-                <p className="text-xs text-slate-200 leading-relaxed italic bg-slate-950 p-3 rounded-2xl border border-slate-800/60">
-                  "{userBio || 'عاشق استریم زنده، چت تصویری و آشنایی با دوستان جدید در V.Live'}"
-                </p>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {['🎙️ Host VIP', '🎵 Music Lover', '💃 Dancing', '🌍 Traveler', '🎮 Gaming', '💎 Top Streamer'].map((tag, i) => (
-                    <span key={i} className="px-3 py-1 rounded-full bg-slate-950 border border-slate-800 text-slate-300 text-[10px] font-bold">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
+          {/* 6. GROUPED SETTINGS MENU CARDS */}
+          <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-3">
+            <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Settings className="w-4 h-4 text-purple-400" />
+              {loc('تنظیمات & مدیریت حساب', 'Settings & Management')}
+            </h3>
 
-              {/* Photo & Video Posts Grid */}
-              <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 shadow-xl space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Image className="w-4 h-4 text-cyan-400" />
-                    {loc('گالری پست‌ها و تصاویر', 'Photo & Video Gallery')}
-                  </h3>
-                  <button 
-                    onClick={() => setProfileSubPage('gallery')}
-                    className="text-[11px] text-cyan-400 font-bold hover:underline"
-                  >
-                    {loc('مدیریت گالری', 'Manage Gallery')}
-                  </button>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-                    'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
-                    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
-                    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-                    'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80'
-                  ].map((imgUrl, i) => (
-                    <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-slate-800 relative group cursor-pointer">
-                      <img src={imgUrl} alt={`Gallery item ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition duration-300" />
-                      <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                        <Heart className="w-5 h-5 text-pink-400 fill-pink-400" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: WALLET & VIP */}
-          {profileMainTab === 'wallet' && (
-            <div className="space-y-4 animate-fadeIn">
-              {/* Wallet Overview Card */}
-              <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-500/20 via-slate-900 to-amber-600/20 border border-amber-500/40 shadow-2xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-md">
-                      <CoinsIcon className="w-6 h-6 animate-pulse" />
-                    </div>
-                    <div>
-                      <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider">{loc('موجودی کیف پول', 'Wallet Coins')}</span>
-                      <h2 className="text-2xl font-black text-white">{userCoins.toLocaleString()} <span className="text-sm font-bold text-amber-400">{loc('سکه', 'Coins')}</span></h2>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setProfileSubPage('wallet')}
-                    className="px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs shadow-lg hover:scale-105 active:scale-95 transition"
-                  >
-                    {loc('خرید سکه 🪙', 'Recharge 🪙')}
-                  </button>
-                </div>
-
-                {/* Earnings & Payout Breakdown */}
-                <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold">
-                    <span className="text-slate-300 flex items-center gap-1.5"><DollarSign className="w-4 h-4 text-emerald-400" /> {loc('سهم درآمد استریمر (۷۱٪)', 'Streamer Earnings Share (71%)')}</span>
-                    <span className="text-emerald-400 font-mono">${(userCoins * 0.005 * 0.71).toFixed(2)} USDT</span>
-                  </div>
-                  <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                    <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full w-[71%]" />
-                  </div>
-                  <p className="text-[10px] text-slate-400">{loc('تسویه حساب فوری به کیف پول USDT یا کارت بانکی', 'Instant payout to your USDT address or bank card')}</p>
-                </div>
-              </div>
-
-              {/* VIP Club Membership Status */}
-              <div className="p-5 rounded-3xl bg-gradient-to-r from-purple-900/40 via-slate-900 to-pink-900/40 border border-purple-500/40 shadow-xl flex items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-md">
-                    <Crown className="w-6 h-6 text-yellow-400 fill-yellow-400/30" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-black text-white flex items-center gap-1.5">
-                      <span>{loc('اشتراک طلایی VIP', 'VIP Gold Club')}</span>
-                      <span className="px-2 py-0.2 rounded-full bg-yellow-400/20 text-yellow-300 text-[9px] font-bold border border-yellow-400/30">ACTIVE</span>
-                    </h4>
-                    <p className="text-[11px] text-slate-400">{loc('تخفیف استریم، نشان طلا، تماس نامحدود', 'Stream discounts, Gold Badge, Priority calls')}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsVipModalOpen(true)}
-                  className="px-4 py-2 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-md hover:scale-105 active:scale-95 transition"
-                >
-                  {loc('ارتقای VIP 👑', 'Upgrade VIP 👑')}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: STATISTICS & RANK */}
-          {profileMainTab === 'stats' && (
-            <div className="space-y-4 animate-fadeIn">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 hover:border-pink-500/40 transition shadow-lg text-center space-y-1">
-                  <div className="w-9 h-9 rounded-2xl bg-pink-500/15 text-pink-400 flex items-center justify-center mx-auto">
-                    <Heart className="w-4 h-4 fill-pink-400" />
-                  </div>
-                  <p className="text-base font-black text-white">12.4K</p>
-                  <p className="text-[11px] font-bold text-slate-400">{loc('پسندها', 'Likes')}</p>
-                </div>
-                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 hover:border-purple-500/40 transition shadow-lg text-center space-y-1">
-                  <div className="w-9 h-9 rounded-2xl bg-purple-500/15 text-purple-400 flex items-center justify-center mx-auto">
-                    <Users className="w-4 h-4" />
-                  </div>
-                  <p className="text-base font-black text-white">8.5K</p>
-                  <p className="text-[11px] font-bold text-slate-400">{loc('دنبال‌کنندگان', 'Followers')}</p>
-                </div>
-                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 hover:border-indigo-500/40 transition shadow-lg text-center space-y-1">
-                  <div className="w-9 h-9 rounded-2xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center mx-auto">
-                    <HeartHandshake className="w-4 h-4" />
-                  </div>
-                  <p className="text-base font-black text-white">340</p>
-                  <p className="text-[11px] font-bold text-slate-400">{loc('دنبال‌شده‌ها', 'Following')}</p>
-                </div>
-                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 hover:border-cyan-500/40 transition shadow-lg text-center space-y-1">
-                  <div className="w-9 h-9 rounded-2xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center mx-auto">
-                    <Image className="w-4 h-4" />
-                  </div>
-                  <p className="text-base font-black text-white">42</p>
-                  <p className="text-[11px] font-bold text-slate-400">{loc('پست‌ها', 'Posts')}</p>
-                </div>
-                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 hover:border-amber-500/40 transition shadow-lg text-center space-y-1">
-                  <div className="w-9 h-9 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center mx-auto">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <p className="text-base font-black text-white">12</p>
-                  <p className="text-[11px] font-bold text-slate-400">{loc('استوری‌ها', 'Stories')}</p>
-                </div>
-                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800/80 hover:border-orange-500/40 transition shadow-lg text-center space-y-1">
-                  <div className="w-9 h-9 rounded-2xl bg-orange-500/15 text-orange-400 flex items-center justify-center mx-auto">
-                    <Flame className="w-4 h-4 fill-orange-400" />
-                  </div>
-                  <p className="text-base font-black text-white">15.8K</p>
-                  <p className="text-[11px] font-bold text-slate-400">{loc('امتیاز زنده', 'Live Score')}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: SETTINGS & SECURITY */}
-          {profileMainTab === 'settings' && (
-            <div className="space-y-3 animate-fadeIn">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
+                type="button"
                 onClick={() => setProfileSubPage('account')}
-                className="w-full p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 flex items-center justify-between transition shadow-md group text-right"
+                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-pink-500/15 text-pink-400 flex items-center justify-center">
-                    <User className="w-5 h-5" />
+                  <div className="w-9 h-9 rounded-xl bg-pink-500/15 text-pink-400 flex items-center justify-center">
+                    <User className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-black text-white">{loc('👤 حساب کاربری', '👤 Account Details')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('ویرایش نام، تصویر، جنسیت و بیوگرافی', 'Edit name, photo, gender & bio')}</p>
+                    <h4 className="text-xs font-bold text-white">{loc('👤 حساب کاربری', '👤 Account')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('نام، آواتار، بیو، آیدی تلگرام', 'Edit account details')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
               </button>
 
               <button
+                type="button"
                 onClick={() => setProfileSubPage('privacy')}
-                className="w-full p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 flex items-center justify-between transition shadow-md group text-right"
+                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
-                    <Lock className="w-5 h-5" />
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                    <Lock className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-black text-white">{loc('🔒 حریم خصوصی و امنیت', '🔒 Privacy & Security')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('کنترل کلمه عبور، نمایش آنلاین و بلاک‌شده‌ها', 'Password, online visibility & blocked users')}</p>
+                    <h4 className="text-xs font-bold text-white">{loc('🔒 حریم خصوصی', '🔒 Privacy')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('نمایش سن، شهر، آخرین بازدید', 'Privacy & blocklist')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
               </button>
 
               <button
-                onClick={() => setIsLanguageModalOpen(true)}
-                className="w-full p-4 rounded-3xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 flex items-center justify-between transition shadow-md group text-right"
+                type="button"
+                onClick={() => setProfileSubPage('notifications')}
+                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center">
-                    <Globe className="w-5 h-5" />
+                  <div className="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center">
+                    <Bell className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-black text-white">{loc('🌍 زبان برنامه', '🌍 App Language')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('فارسی / English', 'Language settings')}</p>
+                    <h4 className="text-xs font-bold text-white">{loc('🔔 اعلان‌ها', '🔔 Notifications')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('پیام‌ها، لایو، هدیه‌ها', 'Notification preferences')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
               </button>
 
               <button
-                onClick={handleLogout}
-                className="w-full p-4 rounded-3xl bg-red-950/20 hover:bg-red-900/30 border border-red-800/40 flex items-center justify-between transition shadow-md group text-right"
+                type="button"
+                onClick={() => setProfileSubPage('wallet')}
+                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-red-500/15 text-red-400 flex items-center justify-center">
-                    <LogOut className="w-5 h-5" />
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center">
+                    <Wallet className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-black text-red-400">{loc('🚪 خروج از حساب', '🚪 Logout')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('خروج از حساب کاربری فعلی', 'Sign out of your account')}</p>
+                    <h4 className="text-xs font-bold text-white">{loc('👛 کیف پول & مالی', '👛 Wallet & Finances')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('موجودی، درآمد، تسویه حساب', 'Balance & USDT payouts')}</p>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-red-400 group-hover:text-white transition" />
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setProfileSubPage('vip')}
+                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-yellow-500/15 text-yellow-400 flex items-center justify-center">
+                    <Crown className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">{loc('👑 عضویت VIP', '👑 VIP Membership')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('نشان طلا، مزایای ویژه', 'Upgrade & VIP status')}</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setProfileSubPage('language')}
+                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center">
+                    <Globe className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">{loc('🌍 زبان برنامه', '🌍 Language')}</h4>
+                    <p className="text-[10px] text-slate-400">فارسی / English</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setProfileSubPage('support')}
+                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-teal-500/15 text-teal-400 flex items-center justify-center">
+                    <Info className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">{loc('💬 پشتیبانی & راهنما', '💬 Support & Help')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('ارتباط ۲۴/۷ با پشتیبانی', '24/7 Support desk')}</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setProfileSubPage('about')}
+                className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-between transition shadow-sm text-right group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center">
+                    <Shield className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">{loc('ℹ️ درباره VLive', 'ℹ️ About VLive')}</h4>
+                    <p className="text-[10px] text-slate-400">Version 2.4.0 (Build 2026)</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
+              </button>
+            </div>
+          </div>
+
+          {/* 7. ADMIN PANEL CARD (STRICTLY HIDDEN UNLESS USER IS ADMIN) */}
+          {(isUserSuperAdmin || isUserAuthorizedAdmin || userRole === 'admin' || String(currentTelegramId).trim() === '8973478139') && (
+            <div className="p-4 rounded-3xl bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-600/15 border border-amber-500/40 shadow-xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black">
+                  <ShieldCheck className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-amber-300">{loc('🛡️ پنل مدیریت (Admin Panel)', '🛡️ Admin Panel')}</h4>
+                  <p className="text-[10px] text-slate-300">{loc('مدیریت سیستم و کاربران', 'Access System Admin')}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAdminPinModalOpen(true)}
+                className="px-4 py-2 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow-md active:scale-95 transition"
+              >
+                {loc('ورود ادمین', 'Admin Login')}
               </button>
             </div>
           )}
-        </>
+
+        </div>
       )}
 
       {/* DEDICATED SUB-PAGE 1: ACCOUNT */}
