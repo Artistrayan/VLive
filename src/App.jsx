@@ -8794,7 +8794,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             )}
 
           </div>
-        )})}
+        )}
         {/* TAB 3: COMPLETE REDESIGNED MULTI-CURRENCY WALLET & CREATOR EARNINGS */}
         {(activeTab === 'earnings' || activeTab === 'wallet') && (
 <div className="space-y-5 text-right" dir={isRtl ? "rtl" : "ltr"}>
