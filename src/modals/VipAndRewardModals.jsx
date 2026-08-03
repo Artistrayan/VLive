@@ -1,33 +1,40 @@
 import React from 'react';
 import { Crown, ShieldAlert, X, Clock, CreditCard } from 'lucide-react';
 
-export default function VipAndRewardModals({
-  isLevelUpModalOpen,
-  setIsLevelUpModalOpen,
-  isRtl,
-  userLevel,
-  levelUpModalData,
-  isReferralRulesModalOpen,
-  setIsReferralRulesModalOpen,
-  isVipModalOpen,
-  setIsVipModalOpen,
-  selectedVipPlan,
-  setSelectedVipPlan,
-  selectedVipDuration,
-  setSelectedVipDuration,
-  selectedVipPayMethod,
-  setSelectedVipPayMethod,
-  userCoins,
-  setUserCoins,
-  setVipPlan,
-  setVipExpireDays,
-  setIsVipMonthlyClaimed,
-  isVipCelebrationOpen,
-  setIsVipCelebrationOpen,
-  vipPlan,
-  vipExpireDays,
-  showToast
-}) {
+export default function VipAndRewardModals(props) {
+  const {
+    isLevelUpModalOpen,
+    setIsLevelUpModalOpen = (() => {}),
+    isRtl,
+    userLevel = 12,
+    levelUpModalData = { newLevel: 12, title: 'VIP Star', rewards: '5,000 Coins + VIP Badge' },
+    isReferralRulesModalOpen,
+    setIsReferralRulesModalOpen = (() => {}),
+    isVipModalOpen,
+    setIsVipModalOpen = (() => {}),
+    userCoins = 10000,
+    setUserCoins = (() => {}),
+    setVipPlan = (() => {}),
+    setVipExpireDays = (() => {}),
+    setIsVipMonthlyClaimed = (() => {}),
+    isVipCelebrationOpen,
+    setIsVipCelebrationOpen = (() => {}),
+    vipPlan = 'FREE',
+    vipExpireDays = 30,
+    showToast = (() => {})
+  } = props;
+
+  const [localSelectedVipPlan, setLocalSelectedVipPlan] = React.useState('GOLD');
+  const selectedVipPlan = props.selectedVipPlan !== undefined ? props.selectedVipPlan : localSelectedVipPlan;
+  const setSelectedVipPlan = props.setSelectedVipPlan || setLocalSelectedVipPlan;
+
+  const [localSelectedVipDuration, setLocalSelectedVipDuration] = React.useState('1m');
+  const selectedVipDuration = props.selectedVipDuration !== undefined ? props.selectedVipDuration : localSelectedVipDuration;
+  const setSelectedVipDuration = props.setSelectedVipDuration || setLocalSelectedVipDuration;
+
+  const [localSelectedVipPayMethod, setLocalSelectedVipPayMethod] = React.useState('coins');
+  const selectedVipPayMethod = props.selectedVipPayMethod !== undefined ? props.selectedVipPayMethod : localSelectedVipPayMethod;
+  const setSelectedVipPayMethod = props.setSelectedVipPayMethod || setLocalSelectedVipPayMethod;
   return (
     <>
       {/* 16. LEVEL UP CELEBRATION ANIMATION MODAL */}

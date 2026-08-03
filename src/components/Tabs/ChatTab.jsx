@@ -25,8 +25,26 @@ export default function ChatTab(props) {
     activeConversationId, setActiveConversationId,
     isChatSearchOpen, setIsChatSearchOpen,
     activeChatCall, setActiveChatCall,
-    showToast, loc, isRtl
+    userCoins: propUserCoins, setUserCoins: propSetUserCoins,
+    showToast = (() => {}), loc = ((a, b) => b || a), isRtl
   } = props;
+
+  const [localIsSendCoinsInChatOpen, setLocalIsSendCoinsInChatOpen] = React.useState(false);
+  const isSendCoinsInChatOpen = props.isSendCoinsInChatOpen !== undefined ? props.isSendCoinsInChatOpen : localIsSendCoinsInChatOpen;
+  const setIsSendCoinsInChatOpen = props.setIsSendCoinsInChatOpen || setLocalIsSendCoinsInChatOpen;
+
+  const [sendCoinsInChatAmount, setSendCoinsInChatAmount] = React.useState(100);
+  const [localUserCoins, setLocalUserCoins] = React.useState(5000);
+  const userCoins = propUserCoins !== undefined ? propUserCoins : localUserCoins;
+  const setUserCoins = propSetUserCoins || setLocalUserCoins;
+
+  const setIsDepositModalOpen = props.setIsDepositModalOpen || (() => showToast('Deposit modal opened'));
+  
+  const [showChatOptionsMenu, setShowChatOptionsMenu] = React.useState(false);
+  const [isChatLocked, setIsChatLocked] = React.useState(false);
+  const [isRecordingAudio, setIsRecordingAudio] = React.useState(false);
+  const [chatCallSeconds, setChatCallSeconds] = React.useState(45);
+  const [isChatCallMuted, setIsChatCallMuted] = React.useState(false);
 
   if (activeTab !== 'messages') return null;
 

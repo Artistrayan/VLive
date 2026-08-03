@@ -4,22 +4,25 @@ import {
   Gift, Heart, UserPlus, Video, DollarSign, MessageSquare, AlertCircle, Shield
 } from 'lucide-react';
 
-export default function NotificationsModal({
-  isNotificationsOpen,
-  setIsNotificationsOpen,
-  isNotifSettingsOpen,
-  setIsNotifSettingsOpen,
-  isRtl,
-  notificationsList,
-  setNotificationsList,
-  notificationFilterTab,
-  setNotificationFilterTab,
-  notifSettings,
-  setNotifSettings,
-  setActiveChatCall,
-  setIsSettingsModalOpen,
-  showToast
-}) {
+export default function NotificationsModal(props) {
+  const {
+    isNotificationsOpen,
+    setIsNotificationsOpen = (() => {}),
+    isNotifSettingsOpen,
+    setIsNotifSettingsOpen = (() => {}),
+    isRtl,
+    notificationsList = [],
+    setNotificationsList = (() => {}),
+    notifSettings = {},
+    setNotifSettings = (() => {}),
+    setActiveChatCall = (() => {}),
+    setIsSettingsModalOpen = (() => {}),
+    showToast = (() => {})
+  } = props;
+
+  const [localNotificationFilterTab, setLocalNotificationFilterTab] = React.useState('all');
+  const notificationFilterTab = props.notificationFilterTab !== undefined ? props.notificationFilterTab : localNotificationFilterTab;
+  const setNotificationFilterTab = props.setNotificationFilterTab || setLocalNotificationFilterTab;
   if (!isNotificationsOpen && !isNotifSettingsOpen) return null;
 
   const filterOptions = [

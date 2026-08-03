@@ -3,37 +3,50 @@ import {
   ShieldCheck, X, Eye, EyeOff, Send, Globe, Smartphone, LogOut
 } from 'lucide-react';
 
-export default function SecurityModal({
-  isSecurityModalOpen,
-  setIsSecurityModalOpen,
-  securityTab,
-  setSecurityTab,
-  currentUsername,
-  authUsername,
-  changeUsernameInput,
-  setChangeUsernameInput,
-  setCurrentUsername,
-  changeOldPassword,
-  setChangeOldPassword,
-  changeNewPassword,
-  setChangeNewPassword,
-  showChangeOldPassword,
-  setShowChangeOldPassword,
-  showChangeNewPassword,
-  setShowChangeNewPassword,
-  telegramConnected,
-  setTelegramConnected,
-  connectedTelegramUser,
-  googleConnected,
-  setGoogleConnected,
-  connectedGoogleUser,
-  activeDevices,
-  setActiveDevices,
-  setIsLoggedIn,
-  setAuthStep,
-  safeStorage,
-  showToast
-}) {
+export default function SecurityModal(props) {
+  const {
+    isSecurityModalOpen,
+    setIsSecurityModalOpen = (() => {}),
+    currentUsername = 'Rayan',
+    authUsername = 'Rayan',
+    setCurrentUsername = (() => {}),
+    telegramConnected = false,
+    setTelegramConnected = (() => {}),
+    connectedTelegramUser = '@rayan',
+    googleConnected = true,
+    setGoogleConnected = (() => {}),
+    connectedGoogleUser = 'rayan@vlive.com',
+    activeDevices = [],
+    setActiveDevices = (() => {}),
+    setIsLoggedIn = (() => {}),
+    setAuthStep = (() => {}),
+    safeStorage = { setItem: () => {} },
+    showToast = (() => {})
+  } = props;
+
+  const [localSecurityTab, setLocalSecurityTab] = React.useState('account');
+  const securityTab = props.securityTab !== undefined ? props.securityTab : localSecurityTab;
+  const setSecurityTab = props.setSecurityTab || setLocalSecurityTab;
+
+  const [localChangeUsernameInput, setLocalChangeUsernameInput] = React.useState('');
+  const changeUsernameInput = props.changeUsernameInput !== undefined ? props.changeUsernameInput : localChangeUsernameInput;
+  const setChangeUsernameInput = props.setChangeUsernameInput || setLocalChangeUsernameInput;
+
+  const [localChangeOldPassword, setLocalChangeOldPassword] = React.useState('');
+  const changeOldPassword = props.changeOldPassword !== undefined ? props.changeOldPassword : localChangeOldPassword;
+  const setChangeOldPassword = props.setChangeOldPassword || setLocalChangeOldPassword;
+
+  const [localChangeNewPassword, setLocalChangeNewPassword] = React.useState('');
+  const changeNewPassword = props.changeNewPassword !== undefined ? props.changeNewPassword : localChangeNewPassword;
+  const setChangeNewPassword = props.setChangeNewPassword || setLocalChangeNewPassword;
+
+  const [localShowChangeOldPassword, setLocalShowChangeOldPassword] = React.useState(false);
+  const showChangeOldPassword = props.showChangeOldPassword !== undefined ? props.showChangeOldPassword : localShowChangeOldPassword;
+  const setShowChangeOldPassword = props.setShowChangeOldPassword || setLocalShowChangeOldPassword;
+
+  const [localShowChangeNewPassword, setLocalShowChangeNewPassword] = React.useState(false);
+  const showChangeNewPassword = props.showChangeNewPassword !== undefined ? props.showChangeNewPassword : localShowChangeNewPassword;
+  const setShowChangeNewPassword = props.setShowChangeNewPassword || setLocalShowChangeNewPassword;
   if (!isSecurityModalOpen) return null;
 
   return (
