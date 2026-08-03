@@ -2,9 +2,9 @@ import React from 'react';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { 
   Camera, Edit3, Settings, ShieldAlert, Sparkles, QrCode, Lock, Crown,
-  CheckCircle, Plus, DollarSign, LogOut, ChevronRight
+  CheckCircle, Plus, DollarSign, LogOut, ChevronRight, MapPin, Wallet, Flame, Video, Gift, PhoneCall
 } from 'lucide-react';
-import { CoinsIcon } from '../CommonBadges';
+import { CoinsIcon, VerifiedBadge, VipStatusBadge } from '../CommonBadges';
 
 export default function ProfileTab(props) {
   const {
@@ -12,15 +12,18 @@ export default function ProfileTab(props) {
     userAvatar, setUserAvatar,
     userName, setUserName,
     userBio, setUserBio,
-    userCoins, userDiamonds, userCashBalance,
-    activeProfileTab, setActiveProfileTab,
+    userCoins = 0, userDiamonds = 0, userCashBalance = 0,
+    activeProfileTab = 'overview', setActiveProfileTab = (() => {}),
     currentUsername, authUsername,
     isUserRayan, userLevel, vipPlan,
-    PRESET_AVATARS, compressImageFile,
-    setIsEditProfileModalOpen, setIsVipModalOpen,
-    setIsSecurityModalOpen, setIsQrCodeModalOpen,
-    setWalletSubTab, setIsLoggedIn, setAuthStep,
-    showToast, loc
+    PRESET_AVATARS = [], compressImageFile,
+    setIsEditProfileModalOpen = (() => {}), setIsVipModalOpen = (() => {}),
+    setIsSecurityModalOpen = (() => {}), setIsQrCodeModalOpen = (() => {}),
+    setWalletSubTab = (() => {}), setIsLoggedIn = (() => {}), setAuthStep = (() => {}),
+    showToast = (() => {}), loc = ((a, b) => b || a),
+    isVerified = true,
+    authAvatar = '', authFullName = '', authCity = 'Tehran', userRank = 'VIP Streamer',
+    authBio = '', dailyStreak = 5
   } = props;
 
   if (activeTab !== 'profile') return null;
