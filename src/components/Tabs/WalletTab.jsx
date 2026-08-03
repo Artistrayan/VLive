@@ -14,24 +14,18 @@ export default function WalletTab(props) {
     userDiamonds, setUserDiamonds,
     userCashBalance, setUserCashBalance,
     walletSubTab, setWalletSubTab,
-    buyCoinsAmountInput, setBuyCoinsAmountInput,
-    convertDiamondsInput, setConvertDiamondsInput,
-    withdrawAmountInput, setWithdrawAmountInput,
-    withdrawUsdtAddress, setWithdrawUsdtAddress,
-    financialTransactionsList, setFinancialTransactionsList,
-    withdrawalRequestsList, setWithdrawalRequestsList,
-    creatorStudioSubTab, setCreatorStudioSubTab,
-    referralSubTab, setReferralSubTab,
-    giftShopSearchQuery, setGiftShopSearchQuery,
-    giftShopCategoryFilter, setGiftShopCategoryFilter,
-    referralCode, setReferralCode,
-    invitedUsersList, setInvitedUsersList,
-    referralRewardsClaimed, setReferralRewardsClaimed,
-    referralMilestonesList, setReferralMilestonesList,
-    chatGiftsList,
+    referralCode,
     setIsVipModalOpen, setIsReferralRulesModalOpen,
     showToast, loc, isRtl
   } = props;
+
+  const [localConvertDiamondsInput, setLocalConvertDiamondsInput] = React.useState('');
+  const convertDiamondsInput = props.convertDiamondsInput !== undefined ? props.convertDiamondsInput : localConvertDiamondsInput;
+  const setConvertDiamondsInput = props.setConvertDiamondsInput || setLocalConvertDiamondsInput;
+
+  const [localWithdrawAmountInput, setLocalWithdrawAmountInput] = React.useState('');
+  const withdrawAmountInput = props.withdrawAmountInput !== undefined ? props.withdrawAmountInput : localWithdrawAmountInput;
+  const setWithdrawAmountInput = props.setWithdrawAmountInput || setLocalWithdrawAmountInput;
 
   if (activeTab !== 'earnings' && activeTab !== 'wallet') return null;
 
