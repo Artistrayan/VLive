@@ -8,29 +8,59 @@ import {
 export default function SettingsModal(props) {
   const {
     isSettingsModalOpen, setIsSettingsModalOpen,
-    settingsActiveTab, setSettingsActiveTab,
-    settingsSearchQuery, setSettingsSearchQuery,
     userAvatar, setUserAvatar,
     userName, setUserName,
     userBio, setUserBio,
     currentUsername, authUsername,
     isUserRayan, userLevel, vipPlan,
     userCoins, userDiamonds, userCashBalance,
-    currentLang, setCurrentLang,
     isRtl,
     notifSettings, setNotifSettings,
-    privacyGhostMode, setPrivacyGhostMode,
-    privacyHideOnlineStatus, setPrivacyHideOnlineStatus,
-    privacyBlockCallsFromNonContacts, setPrivacyBlockCallsFromNonContacts,
     appThemeMode, setAppThemeMode,
-    appAudioQuality, setAppAudioQuality,
-    appVideoQuality, setAppVideoQuality,
-    appAutoPlayGifts, setAppAutoPlayGifts,
-    appDataSaverMode, setDataSaverMode,
     setIsSecurityModalOpen, setIsKycModalOpen, setIsSuggestionModalOpen, setIsTermsModalOpen, setIsVipModalOpen,
     PRESET_AVATARS, compressImageFile,
     showToast, loc
   } = props;
+
+  const [localSettingsActiveTab, setLocalSettingsActiveTab] = React.useState('account');
+  const settingsActiveTab = props.settingsActiveTab !== undefined ? props.settingsActiveTab : localSettingsActiveTab;
+  const setSettingsActiveTab = props.setSettingsActiveTab || setLocalSettingsActiveTab;
+
+  const [localSettingsSearchQuery, setLocalSettingsSearchQuery] = React.useState('');
+  const settingsSearchQuery = props.settingsSearchQuery !== undefined ? props.settingsSearchQuery : localSettingsSearchQuery;
+  const setSettingsSearchQuery = props.setSettingsSearchQuery || setLocalSettingsSearchQuery;
+
+  const [localCurrentLang, setLocalCurrentLang] = React.useState('fa');
+  const currentLang = props.currentLang !== undefined ? props.currentLang : localCurrentLang;
+  const setCurrentLang = props.setCurrentLang || setLocalCurrentLang;
+
+  const [localPrivacyGhostMode, setLocalPrivacyGhostMode] = React.useState(false);
+  const privacyGhostMode = props.privacyGhostMode !== undefined ? props.privacyGhostMode : localPrivacyGhostMode;
+  const setPrivacyGhostMode = props.setPrivacyGhostMode || setLocalPrivacyGhostMode;
+
+  const [localPrivacyHideOnlineStatus, setLocalPrivacyHideOnlineStatus] = React.useState(false);
+  const privacyHideOnlineStatus = props.privacyHideOnlineStatus !== undefined ? props.privacyHideOnlineStatus : localPrivacyHideOnlineStatus;
+  const setPrivacyHideOnlineStatus = props.setPrivacyHideOnlineStatus || setLocalPrivacyHideOnlineStatus;
+
+  const [localPrivacyBlockCallsFromNonContacts, setLocalPrivacyBlockCallsFromNonContacts] = React.useState(false);
+  const privacyBlockCallsFromNonContacts = props.privacyBlockCallsFromNonContacts !== undefined ? props.privacyBlockCallsFromNonContacts : localPrivacyBlockCallsFromNonContacts;
+  const setPrivacyBlockCallsFromNonContacts = props.setPrivacyBlockCallsFromNonContacts || setLocalPrivacyBlockCallsFromNonContacts;
+
+  const [localAppAudioQuality, setLocalAppAudioQuality] = React.useState('high');
+  const appAudioQuality = props.appAudioQuality !== undefined ? props.appAudioQuality : localAppAudioQuality;
+  const setAppAudioQuality = props.setAppAudioQuality || setLocalAppAudioQuality;
+
+  const [localAppVideoQuality, setLocalAppVideoQuality] = React.useState('1080p');
+  const appVideoQuality = props.appVideoQuality !== undefined ? props.appVideoQuality : localAppVideoQuality;
+  const setAppVideoQuality = props.setAppVideoQuality || setLocalAppVideoQuality;
+
+  const [localAppAutoPlayGifts, setLocalAppAutoPlayGifts] = React.useState(true);
+  const appAutoPlayGifts = props.appAutoPlayGifts !== undefined ? props.appAutoPlayGifts : localAppAutoPlayGifts;
+  const setAppAutoPlayGifts = props.setAppAutoPlayGifts || setLocalAppAutoPlayGifts;
+
+  const [localAppDataSaverMode, setLocalAppDataSaverMode] = React.useState(false);
+  const appDataSaverMode = props.appDataSaverMode !== undefined ? props.appDataSaverMode : localAppDataSaverMode;
+  const setDataSaverMode = props.setDataSaverMode || setLocalAppDataSaverMode;
 
   if (!isSettingsModalOpen) return null;
 

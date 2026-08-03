@@ -1,51 +1,66 @@
 import React from 'react';
 import { X, Check, Globe, Image, Camera, Plus, BarChart2, Send, Trash2 } from 'lucide-react';
 
-export default function ContentAndEngagementModals({
-  isKycModalOpen,
-  setIsKycModalOpen,
-  kycNationalId,
-  setKycNationalId,
-  handleSubmitKyc,
-  isSuggestionModalOpen,
-  setIsSuggestionModalOpen,
-  suggestionInput,
-  setSuggestionInput,
-  handleSendSuggestion,
-  isLanguageModalOpen,
-  setIsLanguageModalOpen,
-  currentLang,
-  setCurrentLang,
-  APP_LANGUAGES,
-  showToast,
-  loc,
-  isRtl,
-  isAddPostModalOpen,
-  setIsAddPostModalOpen,
-  newPostCaption,
-  setNewPostCaption,
-  newPostImage,
-  setNewPostImage,
-  handlePublishPost,
-  PRESET_AVATARS,
-  compressImageFile,
-  isAddStoryModalOpen,
-  setIsAddStoryModalOpen,
-  newStoryCaption,
-  setNewStoryCaption,
-  newStoryImage,
-  setNewStoryImage,
-  handlePublishStory,
-  isCreatePollModalOpen,
-  setIsCreatePollModalOpen,
-  activeLivePoll,
-  handleEndActivePoll,
-  pollQuestionInput,
-  setPollQuestionInput,
-  pollOptionInputs,
-  setPollOptionInputs,
-  handleCreateAndBroadcastPoll
-}) {
+export default function ContentAndEngagementModals(props) {
+  const {
+    isKycModalOpen,
+    setIsKycModalOpen,
+    kycNationalId,
+    setKycNationalId,
+    handleSubmitKyc,
+    isSuggestionModalOpen,
+    setIsSuggestionModalOpen,
+    handleSendSuggestion,
+    isLanguageModalOpen,
+    setIsLanguageModalOpen,
+    APP_LANGUAGES,
+    showToast,
+    loc,
+    isRtl,
+    isAddPostModalOpen,
+    setIsAddPostModalOpen,
+    PRESET_AVATARS,
+    compressImageFile,
+    isAddStoryModalOpen,
+    setIsAddStoryModalOpen,
+    newStoryCaption,
+    setNewStoryCaption,
+    handlePublishStory,
+    isCreatePollModalOpen,
+    setIsCreatePollModalOpen,
+    activeLivePoll,
+    handleEndActivePoll,
+    pollQuestionInput,
+    setPollQuestionInput,
+    pollOptionInputs,
+    setPollOptionInputs,
+    handleCreateAndBroadcastPoll
+  } = props;
+
+  const [localSuggestionInput, setLocalSuggestionInput] = React.useState('');
+  const suggestionInput = props.suggestionInput !== undefined ? props.suggestionInput : localSuggestionInput;
+  const setSuggestionInput = props.setSuggestionInput || setLocalSuggestionInput;
+
+  const [localCurrentLang, setLocalCurrentLang] = React.useState('fa');
+  const currentLang = props.currentLang !== undefined ? props.currentLang : localCurrentLang;
+  const setCurrentLang = props.setCurrentLang || setLocalCurrentLang;
+
+  const [localNewPostCaption, setLocalNewPostCaption] = React.useState('');
+  const newPostCaption = props.newPostCaption !== undefined ? props.newPostCaption : localNewPostCaption;
+  const setNewPostCaption = props.setNewPostCaption || setLocalNewPostCaption;
+
+  const [localNewPostImage, setLocalNewPostImage] = React.useState('');
+  const newPostImage = props.newPostImage !== undefined ? props.newPostImage : localNewPostImage;
+  const setNewPostImage = props.setNewPostImage || setLocalNewPostImage;
+
+  const [localNewStoryImage, setLocalNewStoryImage] = React.useState('');
+  const newStoryImage = props.newStoryImage !== undefined ? props.newStoryImage : localNewStoryImage;
+  const setNewStoryImage = props.setNewStoryImage || setLocalNewStoryImage;
+
+  const handlePublishPost = props.handlePublishPost || (() => {
+    showToast && showToast('پست با موفقیت منتشر شد ✅');
+    setIsAddPostModalOpen && setIsAddPostModalOpen(false);
+  });
   return (
     <>
       {/* MODAL 9: KYC VERIFICATION REQUEST */}

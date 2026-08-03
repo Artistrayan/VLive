@@ -18,25 +18,58 @@ export default function AdminDashboardModal(props) {
     currentTelegramId, isUserRayan,
     adminRolesList, setAdminRolesList,
     activeAdminSession, setActiveAdminSession,
-    adminTab, setAdminTab,
-    adminSearchQuery, setAdminSearchQuery,
-    adminFilterRole, setAdminFilterRole,
     usersList, setUsersList,
-    liveStreamsList, setLiveStreamsList,
-    postsList, setPostsList,
-    storiesList, setStoriesList,
-    financialTransactionsList, setFinancialTransactionsList,
-    withdrawalRequestsList, setWithdrawalRequestsList,
-    reportsList, setReportsList,
-    systemLogsList, setSystemLogsList,
     isAddAdminModalOpen, setIsAddAdminModalOpen,
-    editingAdminItem, setEditingAdminItem,
     newAdminUsername, setNewAdminUsername,
     newAdminPassword, setNewAdminPassword,
     newAdminTelegramId, setNewAdminTelegramId,
     newAdminRole, setNewAdminRole,
     showToast, loc, isRtl
   } = props;
+
+  const [localAdminTab, setLocalAdminTab] = React.useState('overview');
+  const adminTab = props.adminTab !== undefined ? props.adminTab : localAdminTab;
+  const setAdminTab = props.setAdminTab || setLocalAdminTab;
+
+  const [localAdminSearchQuery, setLocalAdminSearchQuery] = React.useState('');
+  const adminSearchQuery = props.adminSearchQuery !== undefined ? props.adminSearchQuery : localAdminSearchQuery;
+  const setAdminSearchQuery = props.setAdminSearchQuery || setLocalAdminSearchQuery;
+
+  const [localAdminFilterRole, setLocalAdminFilterRole] = React.useState('ALL');
+  const adminFilterRole = props.adminFilterRole !== undefined ? props.adminFilterRole : localAdminFilterRole;
+  const setAdminFilterRole = props.setAdminFilterRole || setLocalAdminFilterRole;
+
+  const [localLiveStreamsList, setLocalLiveStreamsList] = React.useState([]);
+  const liveStreamsList = props.liveStreamsList !== undefined ? props.liveStreamsList : localLiveStreamsList;
+  const setLiveStreamsList = props.setLiveStreamsList || setLocalLiveStreamsList;
+
+  const [localPostsList, setLocalPostsList] = React.useState([]);
+  const postsList = props.postsList !== undefined ? props.postsList : localPostsList;
+  const setPostsList = props.setPostsList || setLocalPostsList;
+
+  const [localStoriesList, setLocalStoriesList] = React.useState([]);
+  const storiesList = props.storiesList !== undefined ? props.storiesList : localStoriesList;
+  const setStoriesList = props.setStoriesList || setLocalStoriesList;
+
+  const [localFinancialTransactionsList, setLocalFinancialTransactionsList] = React.useState([]);
+  const financialTransactionsList = props.financialTransactionsList !== undefined ? props.financialTransactionsList : localFinancialTransactionsList;
+  const setFinancialTransactionsList = props.setFinancialTransactionsList || setLocalFinancialTransactionsList;
+
+  const [localWithdrawalRequestsList, setLocalWithdrawalRequestsList] = React.useState([]);
+  const withdrawalRequestsList = props.withdrawalRequestsList !== undefined ? props.withdrawalRequestsList : localWithdrawalRequestsList;
+  const setWithdrawalRequestsList = props.setWithdrawalRequestsList || setLocalWithdrawalRequestsList;
+
+  const [localReportsList, setLocalReportsList] = React.useState([]);
+  const reportsList = props.reportsList !== undefined ? props.reportsList : localReportsList;
+  const setReportsList = props.setReportsList || setLocalReportsList;
+
+  const [localSystemLogsList, setLocalSystemLogsList] = React.useState([]);
+  const systemLogsList = props.systemLogsList !== undefined ? props.systemLogsList : localSystemLogsList;
+  const setSystemLogsList = props.setSystemLogsList || setLocalSystemLogsList;
+
+  const [localEditingAdminItem, setLocalEditingAdminItem] = React.useState(null);
+  const editingAdminItem = props.editingAdminItem !== undefined ? props.editingAdminItem : localEditingAdminItem;
+  const setEditingAdminItem = props.setEditingAdminItem || setLocalEditingAdminItem;
 
   const { setIsEditMode, setIsInspectorOpen } = useVisualUiEditor();
 
