@@ -1,17 +1,30 @@
 import React from 'react';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
+import { VerifiedBadge } from '../CommonBadges';
 import { 
   Search, Plus, Filter, MessageSquare, PhoneCall, Video, Pin, BellOff, Trash2, 
   CheckCheck, Send, Mic, Image, Paperclip, Smile, Gift, Sparkles, X, ChevronRight,
-  Shield, Check, UserPlus, Phone, Camera
+  Shield, Check, UserPlus, Phone, Camera, User, Users, Archive, VolumeX, ChevronLeft,
+  MoreVertical, Lock, AlertTriangle, Ban, Globe, Bot, MapPin, DollarSign, MicOff
 } from 'lucide-react';
 
 export default function ChatTab(props) {
   const {
     activeTab,
     userAvatar, userName, totalUnreadMessages,
+    msgSearchQuery, setMsgSearchQuery,
+    msgSearchField, setMsgSearchField,
+    msgFilterTab, setMsgFilterTab,
+    isCreateGroupModalOpen, setIsCreateGroupModalOpen,
+    newGroupName, setNewGroupName,
+    newGroupDesc, setNewGroupDesc,
+    isNewChatModalOpen, setIsNewChatModalOpen,
+    isChatGalleryOpen, setIsChatGalleryOpen,
+    isSendGiftInChatOpen, setIsSendGiftInChatOpen,
+    conversations, setConversations,
+    activeConversationId, setActiveConversationId,
+    isChatSearchOpen, setIsChatSearchOpen,
     chatSearchQuery, setChatSearchQuery,
-    setIsNewGroupModalOpen, setIsChatSearchOpen, isChatSearchOpen,
     chatCategoryFilter, setChatCategoryFilter,
     activeDirectChat, setActiveDirectChat,
     activeChatCall, setActiveChatCall,
