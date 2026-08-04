@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Crown, BadgeCheck, Video, DollarSign, TrendingUp, Users, Calendar, 
-  Settings, ShieldAlert, Award, ArrowUpRight, Plus, Eye, Clock, Gift, 
+  Settings, ShieldAlert, ShieldCheck, Award, ArrowUpRight, Plus, Eye, Clock, Gift, 
   CreditCard, Bell, Sparkles, CheckCircle2, ChevronLeft, ChevronRight, 
   BarChart3, RefreshCw, AlertCircle, FileText, HelpCircle, Lock
 } from 'lucide-react';
@@ -321,6 +321,57 @@ export default function StreamerDashboardModal({
                     </div>
                   </div>
 
+                  {/* STREAMER LEVEL, XP & RISK SCORE MODULE */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    
+                    {/* STREAMER LEVEL & XP */}
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Crown className="w-4 h-4 text-amber-400" />
+                          <span className="text-xs font-black text-white">سطح استریمر: Professional Streamer (سطح ۳)</span>
+                        </div>
+                        <span className="text-[10px] text-amber-300 font-mono font-bold">4,250 / 5,000 XP</span>
+                      </div>
+                      
+                      {/* XP Progress Bar */}
+                      <div className="w-full h-2 rounded-full bg-slate-900 overflow-hidden border border-slate-800">
+                        <div className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-amber-400 rounded-full w-[85%]" />
+                      </div>
+
+                      <div className="flex items-center justify-between text-[10px] text-slate-400">
+                        <span>۷۵۰ XP تا سطح Elite Streamer</span>
+                        <div className="flex items-center gap-1">
+                          <span className="px-1.5 py-0.2 rounded bg-pink-500/20 text-pink-300 font-bold border border-pink-500/30">Verified 🛡️</span>
+                          <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">Top Creator 👑</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* RISK SCORE & AI ANTI-FRAUD STATUS */}
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                          <span className="text-xs font-black text-white">شاخص ریسک و امنیت (Risk Score)</span>
+                        </div>
+                        <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-black px-2 py-0.5 rounded-full border border-emerald-500/30">
+                          Low (5/100) 🟢
+                        </span>
+                      </div>
+
+                      <p className="text-[10px] text-slate-400">
+                        سیستم هوش مصنوعی اکانت شما را پاک، بدون تخلف و کاملاً امن ارزیابی کرده است.
+                      </p>
+
+                      <div className="flex items-center gap-2 text-[9px] text-slate-300 font-mono">
+                        <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">AI Monitor: Active 🤖</span>
+                        <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">Fraud Protection: Passed 🔒</span>
+                      </div>
+                    </div>
+
+                  </div>
+
                   {/* SCHEDULED STREAMS PREVIEW */}
                   <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
                     <div className="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -508,7 +559,8 @@ export default function StreamerDashboardModal({
                       </div>
 
                       <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400 space-y-1">
-                        <p>• کارمزد پلتفرم برای تسویه حساب: ۱۵٪</p>
+                        <p className="text-pink-400 font-bold">• سهم استریمر: ۷۱٪ • سهم کارمزد پلتفرم: ۲۹٪ (محاسبه و کسر خودکار)</p>
+                        <p>• حداقل مبلغ برداشت: ۵۰ تتر (50 USDT TRC-20)</p>
                         <p>• زمان واریز تتر پس از تایید ادمین: بین ۲ الی ۱۲ ساعت کاری</p>
                       </div>
                     </div>
@@ -532,10 +584,18 @@ export default function StreamerDashboardModal({
                   
                   {/* TOP SUPPORTERS LEADERBOARD */}
                   <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-                    <h4 className="font-bold text-white text-xs flex items-center gap-1.5 border-b border-slate-800 pb-2">
-                      <Crown className="w-4 h-4 text-amber-400" />
-                      <span>حامیان برتر استریم (Top Supporters)</span>
-                    </h4>
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                        <Crown className="w-4 h-4 text-amber-400" />
+                        <span>رتبه‌بندی و حامیان برتر استریم (Ranking & Supporters)</span>
+                      </h4>
+                      <div className="flex items-center gap-1 text-[10px]">
+                        <button className="px-2 py-0.5 rounded-lg bg-pink-500 text-white font-bold">روزانه</button>
+                        <button className="px-2 py-0.5 rounded-lg bg-slate-900 text-slate-400 font-bold hover:text-white">هفتگی</button>
+                        <button className="px-2 py-0.5 rounded-lg bg-slate-900 text-slate-400 font-bold hover:text-white">ماهانه</button>
+                        <button className="px-2 py-0.5 rounded-lg bg-slate-900 text-slate-400 font-bold hover:text-white">کل زمان‌ها</button>
+                      </div>
+                    </div>
 
                     <div className="space-y-2">
                       {topSupporters.map(sup => (
