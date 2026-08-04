@@ -2571,9 +2571,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [withdrawPinInput, setWithdrawPinInput] = useState('');
 
   const [withdrawalsHistoryList, setWithdrawalsHistoryList] = useState([
-    { id: 'W-801', amount: '$100.00 USDT', method: 'USDT TRC20', address: 'TBMvBi...1NSnB', date: '2026-07-26 18:20', status: 'Pending', reason: '' },
-    { id: 'W-800', amount: '$250.00 USDT', method: 'USDT TRC20', address: 'TBMvBi...1NSnB', date: '2026-07-20 14:10', status: 'Completed', reason: '' },
-    { id: 'W-799', amount: '$50.00 USDT', method: 'Bank Transfer', address: 'IR4829...901', date: '2026-07-15 10:00', status: 'Rejected', reason: 'عدم تطابق نام حساب با کارت ملی' }
+    { id: 'W-801', amount: '$100.00 USDT', method: 'USDT TRC20', address: 'TBMvBi...1NSnB', date: '2026-07-26 18:20', status: 'Pending', reason: '', txHash: '' },
+    { id: 'W-800', amount: '$250.00 USDT', method: 'USDT TRC20', address: 'TBMvBi...1NSnB', date: '2026-07-20 14:10', status: 'Completed', reason: '', txHash: 'f4b23c9...a1b2' },
+    { id: 'W-799', amount: '$50.00 USDT', method: 'Bank Transfer', address: 'IR4829...901', date: '2026-07-15 10:00', status: 'Rejected', reason: 'عدم تطابق نام حساب با کارت ملی', txHash: '' }
   ]);
 
   const [convertDiamondsInput, setConvertDiamondsInput] = useState('5000');
@@ -5318,7 +5318,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       <main className="flex-1 p-3 sm:p-4 max-w-4xl mx-auto w-full space-y-5 sm:space-y-6">
 
         {/* TAB 1: HOME & LIVE STREAMS */}
-        {activeTab === 'streams' && (
+        {activeTab === 'home' && (
 <div className="space-y-6">
 
             {/* 1. SUB-HEADER / QUICK STATS BAR (زیر Header) */}
@@ -7348,6 +7348,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         />
         {/* TAB 4: PROFILE TAB */}
         <ProfileTab
+          setIsAdminPanelOpen={setIsAdminPanelOpen}
           activeTab={activeTab}
           userAvatar={userAvatar}
           setUserAvatar={setUserAvatar}
@@ -8974,7 +8975,76 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         </div>
       )}
 
-      {/* MODAL FOR PARTY ROOM STAGE */}
+      
+      {/* MODAL: LIVE HOST SETUP & BROADCAST */}
+      {(isHostLiveOpen || isLiveModalOpen) && (
+        <div className="fixed inset-0 z-[60] bg-slate-950 flex flex-col p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+          <div className="flex-1 w-full max-w-md mx-auto space-y-6 flex flex-col justify-center">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-black text-white flex items-center gap-2">
+                <Video className="w-6 h-6 text-pink-500" />
+                Go Live
+              </h2>
+              <button 
+                onClick={() => {
+                  setIsHostLiveOpen(false);
+                  setIsLiveModalOpen(false);
+                }}
+                className="w-10 h-10 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold"
+              >✕</button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-300">Broadcast Title</label>
+                <input 
+                  type="text"
+                  placeholder="Enter a catchy title..."
+                  className="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-pink-500"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-300">Category / Tags</label>
+                <div className="flex gap-2">
+                  <span className="px-3 py-1.5 rounded-xl bg-pink-500/20 text-pink-300 border border-pink-500/40 text-xs font-bold cursor-pointer">Chatting</span>
+                  <span className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-400 border border-slate-700 text-xs font-bold cursor-pointer">Music</span>
+                  <span className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-400 border border-slate-700 text-xs font-bold cursor-pointer">Gaming</span>
+                </div>
+              </div>
+              
+              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-700 text-xs text-slate-300">
+                <p className="font-bold mb-2">Camera Preview (Simulated)</p>
+                <div className="w-full h-48 bg-slate-950 rounded-xl flex items-center justify-center border-2 border-dashed border-slate-800 text-slate-500">
+                  <Camera className="w-8 h-8 opacity-50" />
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => {
+                showToast('Starting Broadcast...');
+                setTimeout(() => {
+                  setIsHostLiveOpen(false);
+                  setIsLiveModalOpen(false);
+                  setIsStreaming(true);
+                  setViewingStream({
+                    id: 'self',
+                    host: currentUsername || userName,
+                    title: 'My Live Stream',
+                    isSelfStream: true,
+                    thumbnail: userAvatar
+                  });
+                }, 1500);
+              }}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-lg shadow-[0_0_30px_rgba(236,72,153,0.5)] hover:scale-105 active:scale-95 transition"
+            >
+              Start Streaming
+            </button>
+          </div>
+        </div>
+      )}
+{/* MODAL FOR PARTY ROOM STAGE */}
       {activePartyRoom && (
         <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col p-4 dir-ltr overflow-y-auto">
           <div className="w-full max-w-2xl mx-auto space-y-4 my-auto">

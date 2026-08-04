@@ -565,7 +565,7 @@ export default function WalletTab(props) {
                 <div className="card-3d p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
                   <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
                     <Clock className="w-4 h-4 text-emerald-400" />
-                    ۶. وضعیت درخواست‌های برداشت وجه (Withdrawal Requests Log)
+                    ۶. تاریخچه پرداخت‌ها (Payout History)
                   </h4>
 
                   <div className="space-y-2">
@@ -577,9 +577,9 @@ export default function WalletTab(props) {
                             <span className="text-xs text-slate-200">({item.method})</span>
                           </div>
                           <span className="text-xs text-slate-200 block font-mono">آدرس: {item.address} • تاریخ: {item.date}</span>
+                          {item.txHash && <span className="text-[10px] text-slate-400 block font-mono mt-0.5">تراکنش (TxHash): {item.txHash}</span>}
                           {item.reason && <p className="text-xs text-rose-300 mt-0.5">دلیل رد: {item.reason}</p>}
                         </div>
-
                         <span className={`px-3 py-1 rounded-full text-xs font-bold self-start sm:self-auto ${item.status === 'Completed' ? 'bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 font-bold border border-emerald-500/30' : item.status === 'Pending' ? 'bg-amber-500/25 text-amber-200 border border-amber-400/40 font-bold border border-amber-500/30' : 'bg-rose-500/25 text-rose-200 border border-rose-400/40 font-bold border border-rose-500/30'}`}>
                           {item.status === 'Completed' ? '🟢 Completed (تکمیل شده)' : item.status === 'Pending' ? '🟡 Pending (در حال بررسی)' : '🔴 Rejected (رد شده)'}
                         </span>
@@ -587,10 +587,9 @@ export default function WalletTab(props) {
                     ))}
                   </div>
                 </div>
-
               </div>
             )}
-
+            
             {/* SUB-TAB 5: TRANSACTIONS HISTORY */}
             {walletSubTab === 'history' && (
               <div className="space-y-4 text-xs">

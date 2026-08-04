@@ -47,7 +47,7 @@ export default function VisualUiEditorToolbar({ activeTab, setActiveTab, setIsAd
     publishChanges
   } = useVisualUiEditor();
 
-  if (!isSuperAdmin) return null;
+  if (!isSuperAdmin || !isEditMode) return null;
 
   const handlePageSelect = (pageId) => {
     setSelectedPage(pageId);

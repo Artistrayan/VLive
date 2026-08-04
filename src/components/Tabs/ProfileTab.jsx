@@ -1,8 +1,9 @@
+import { useVisualUiEditor } from '../../context/VisualUiEditorContext';
 import React from 'react';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { 
   Camera, Edit3, Settings, ShieldAlert, Sparkles, QrCode, Lock, Crown,
-  CheckCircle, Plus, DollarSign, LogOut, ChevronRight, MapPin, Wallet, Flame, Video, Gift, PhoneCall
+  CheckCircle, Plus, DollarSign, LogOut, ChevronRight, MapPin, Wallet, Flame, Video, Gift, PhoneCall, Image
 } from 'lucide-react';
 import { CoinsIcon, VerifiedBadge, VipStatusBadge } from '../CommonBadges';
 
@@ -22,12 +23,15 @@ export default function ProfileTab(props) {
     setWalletSubTab = (() => {}), setIsLoggedIn = (() => {}), setAuthStep = (() => {}),
     showToast = (() => {}), loc = ((a, b) => b || a),
     isVerified = true,
+    setIsAdminPanelOpen,
     authAvatar = '', authFullName = '', authCity = 'Tehran', userRank = 'VIP Streamer',
     authBio = '', dailyStreak = 5
   } = props;
 
   if (activeTab !== 'profile') return null;
 
+  
+  const { isSuperAdmin, isEditMode, setIsEditMode } = useVisualUiEditor();
   return (
     <>
         {/* TAB 4: REDESIGNED CLEAN PROFILE DASHBOARD */}
@@ -319,6 +323,32 @@ export default function ProfileTab(props) {
           {activeProfileTab === 'settings' && (
             <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
               <h3 className="font-bold text-white text-sm pb-2 border-b border-slate-800">Account Preferences</h3>
+              {isSuperAdmin && (
+                <div className="space-y-3 mt-6">
+                  <h3 className="font-bold text-rose-400 text-sm pb-2 border-b border-rose-500/30">Super Admin Zone (Rayan Only)</h3>
+                  <button
+                    onClick={() => setIsAdminPanelOpen && setIsAdminPanelOpen(true)}
+                    className="w-full p-4 rounded-2xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/50 flex items-center justify-between text-xs text-rose-300 transition shadow-[0_0_15px_rgba(244,63,94,0.2)]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <ShieldAlert className="w-4 h-4 text-rose-400" />
+                      <span className="font-black">Open Super Admin Dashboard</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-rose-500" />
+                  </button>
+                  <button
+                    onClick={() => setIsEditMode && setIsEditMode(!isEditMode)}
+                    className="w-full p-4 rounded-2xl bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/50 flex items-center justify-between text-xs text-amber-300 transition shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Edit3 className="w-4 h-4 text-amber-400" />
+                      <span className="font-black">{isEditMode ? 'Disable Visual Edit Mode' : 'Enable Visual Edit Mode'}</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-amber-500" />
+                  </button>
+                </div>
+              )}
+
 
               <div className="space-y-3">
                 <button
