@@ -235,6 +235,7 @@ export default function App() {
   
   // USER FILTER BAR STATE ('all', 'online', 'top', 'verified')
   const [userFilter, setUserFilter] = useState('all');
+  const [homeSubTab, setHomeSubTab] = useState('explore'); // 'explore' or 'live'
   
   const [toastMessage, setToastMessage] = useState(null);
   const [earningsTimeframe, setEarningsTimeframe] = useState('daily');
@@ -5276,574 +5277,463 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         </div>
       )}
 
-                  {/* HEADER NAVBAR - NEW REDESIGN */}
-      <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/80 px-3 sm:px-5 py-3 shadow-md w-full overflow-hidden">
-        <div className="flex flex-col gap-4 max-w-7xl mx-auto w-full">
+      {/* HEADER NAVBAR - COMPACT SLEEK REDESIGN */}
+      <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/80 px-3 sm:px-4 py-2 shadow-md w-full overflow-hidden">
+        <div className="flex items-center justify-between max-w-7xl mx-auto w-full gap-2">
           
-          {/* Top Row: Small Icons */}
-          <div className="flex items-center justify-between w-full">
-            {/* Top-Left: Camera + (Streamer), Free Gift */}
-            <div className="flex items-center gap-2">
-              {(isUserRayan || userRank === 'VIP Streamer' || isVerified) && (
-                <button 
-                  onClick={() => setIsHostLiveOpen(true)} 
-                  className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-pink-400 hover:text-pink-300 hover:border-pink-500/50 transition relative"
-                  title="Go Live / Streamer Mode"
-                >
-                  <Video className="w-4 h-4" />
-                  <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[8px] font-black w-3.5 h-3.5 flex items-center justify-center rounded-full">+</span>
-                </button>
-              )}
-              <button 
-                onClick={() => setIsRewardOpeningModalOpen(true)}
-                className="px-2.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center gap-1.5 text-amber-400 hover:scale-105 transition"
-                title="Free Daily Gifts"
-              >
-                <Gift className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-black uppercase tracking-wider">Free</span>
+          {/* Left: User Profile & Coins + Streamer Camera Button */}
+          <div className="flex items-center gap-2">
+            <button onClick={() => setActiveTab('profile')} className="relative group shrink-0">
+              <div className="w-9 h-9 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-cyan-500 shadow-md">
+                <img src={userAvatar} alt="Profile" className="w-full h-full object-cover rounded-full border border-slate-950" />
+              </div>
+            </button>
+            <div className="flex flex-col items-start">
+              <button onClick={() => setActiveTab('profile')} className="font-bold text-xs text-white hover:text-pink-400 transition truncate max-w-[100px]">
+                @{currentUsername || userName}
+              </button>
+              <button onClick={() => setActiveTab('wallet')} className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full mt-0.5">
+                <CoinsIcon className="w-2.5 h-2.5 text-amber-400" />
+                <span className="text-[10px] font-black text-amber-300">{userCoins.toLocaleString()}</span>
               </button>
             </div>
 
-            {/* Top-Right: Notifications, Settings, Language, Messages */}
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Approved Streamer Go-Live Button (Camera with +) */}
+            {(isUserRayan || userRank === 'VIP Streamer' || isVerified) && (
               <button 
-                onClick={() => setActiveTab('messages')}
-                className="relative p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-cyan-500/50 transition"
+                onClick={() => setIsHostLiveOpen(true)} 
+                className="ml-1 w-7 h-7 rounded-full bg-slate-900 border border-pink-500/40 flex items-center justify-center text-pink-400 hover:text-pink-300 hover:border-pink-500 transition relative shrink-0 shadow-sm"
+                title="Start Live Broadcast"
               >
-                <MessageSquare className="w-4 h-4" />
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-pink-500" />
+                <Video className="w-3.5 h-3.5" />
+                <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[7px] font-black w-3 h-3 flex items-center justify-center rounded-full">+</span>
               </button>
-              <button 
-                onClick={() => setIsNotificationsOpen(true)}
-                className="relative p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-cyan-500/50 transition"
-              >
-                <Bell className="w-4 h-4" />
-                {notificationsList.some(n => n.unread) && (
-                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-pink-500" />
-                )}
-              </button>
-              <button 
-                onClick={() => setIsSettingsModalOpen(true)}
-                className="p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-cyan-500/50 transition"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={() => setIsLanguageModalOpen(true)}
-                className="px-2 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-200 hover:border-cyan-500/50 transition flex items-center gap-1 font-bold text-[10px]"
-              >
-                <Globe className="w-3 h-3 text-cyan-400" />
-                <span>{currentLangObj.flag}</span>
-              </button>
-            </div>
+            )}
           </div>
 
-          {/* Bottom Row: Profile & App Logo */}
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setActiveTab('profile')} className="relative group shrink-0">
-                <div className="w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-cyan-500 shadow-lg">
-                  <img src={userAvatar} alt="Profile" className="w-full h-full object-cover rounded-full border-2 border-slate-950" />
-                </div>
-              </button>
-              <div className="flex flex-col items-start">
-                <button onClick={() => setActiveTab('profile')} className="font-black text-sm text-white hover:text-pink-400 transition tracking-tight">
-                  @{currentUsername || userName}
-                </button>
-                <button onClick={() => setActiveTab('wallet')} className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full mt-0.5 shadow-sm">
-                  <CoinsIcon className="w-3 h-3 text-amber-400" />
-                  <span className="text-[11px] font-black text-amber-300">{userCoins.toLocaleString()}</span>
-                </button>
-              </div>
+          {/* Center App Title */}
+          <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => setActiveTab('home')}>
+            <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-pink-600 via-purple-600 to-cyan-500 flex items-center justify-center shadow-md">
+              <Video className="w-3.5 h-3.5 text-white" />
             </div>
+            <h1 className="font-black text-base tracking-wider text-white">V.LIVE</h1>
+          </div>
 
-            <div className="flex items-center gap-2 pr-1">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-600 via-purple-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-pink-500/20">
-                <Video className="w-4 h-4 text-white" />
-              </div>
-              <h1 className="font-black text-xl tracking-wider text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">V.LIVE</h1>
-            </div>
+          {/* Right Controls: Gifts, Notifications, Messages */}
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => setIsRewardOpeningModalOpen(true)}
+              className="p-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 transition"
+              title="Daily Rewards"
+            >
+              <Gift className="w-3.5 h-3.5" />
+            </button>
+
+            <button 
+              onClick={() => setActiveTab('messages')}
+              className="relative p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-pink-500" />
+            </button>
+
+            <button 
+              onClick={() => setIsNotificationsOpen(true)}
+              className="relative p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              {notificationsList.some(n => n.unread) && (
+                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-pink-500" />
+              )}
+            </button>
+
+            <button 
+              onClick={() => setIsSettingsModalOpen(true)}
+              className="p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
           </div>
 
         </div>
       </header>
+
       {/* BODY CONTENT AREA */}
-      <main className="flex-1 p-3 sm:p-4 max-w-4xl mx-auto w-full space-y-5 sm:space-y-6">
+      <main className="flex-1 p-2 sm:p-4 max-w-4xl mx-auto w-full space-y-4">
 
-        {/* TAB 1: HOME & LIVE STREAMS */}
+        {/* TAB 1: HOME (EXPLORE & LIVE SUB-TABS) */}
         {activeTab === 'home' && (
-          <div className="space-y-6 animate-fadeIn pb-12">
+          <div className="space-y-3 animate-fadeIn pb-12">
             
-            {/* V.LIVE STREAMING SYSTEM (STANDARD & ADULT 18+) */}
-            <LiveStreamSystem
-              currentUser={{
-                name: userName,
-                avatar: userAvatar,
-                isStreamer: isVerified || currentUsername === 'Rayan',
-                isVerifiedStreamer: isVerified,
-                user_type: isVerified ? 'STREAMER' : 'REAL_USER',
-                username: currentUsername
-              }}
-              currentUsername={currentUsername}
-              userCoins={userCoins}
-              setUserCoins={setUserCoins}
-              vipPlan={vipPlan}
-              setVipPlan={setVipPlan}
-              streamsList={streamsList}
-              setStreamsList={setStreamsList}
-              viewingStream={viewingStream}
-              setViewingStream={setViewingStream}
-              showToast={showToast}
-              setActiveTab={setActiveTab}
-              handleInitiateCall={handleInitiateCall}
-              addAdminAuditLog={addAdminAuditLog}
-              setAdminReportsList={setAdminReportsList}
-            />
-
-            {/* VIP Users (Stories Style) */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between px-1">
-                <h3 className="text-sm font-black text-white flex items-center gap-1.5">
-                  <Crown className="w-4 h-4 text-amber-400" />
-                  کاربران ویژه (VIP)
-                </h3>
-              </div>
-              <div className="flex items-center gap-4 overflow-x-auto pb-2 no-scrollbar px-1">
-                {usersList.filter(u => u.isVip || u.is_vip || u.isTop).map(user => (
-                  <div key={user.id} className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group" onClick={() => { setSelectedUser(user); setIsUserProfileModalOpen(true); }}>
-                    <div className="relative w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-orange-500 shadow-lg shadow-amber-500/20 group-hover:scale-105 transition">
-                      <img src={user.avatar || 'https://via.placeholder.com/150'} alt={user.name} className="w-full h-full object-cover rounded-full border-2 border-slate-950" />
-                      {user.online && (
-                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-950 shadow-sm" />
-                      )}
-                    </div>
-                    <span className="text-[10px] font-bold text-white max-w-[60px] truncate">{user.name}</span>
-                    <span className="text-[9px] text-amber-400 bg-amber-500/10 px-1.5 rounded-full">Level {user.level || 5}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Filter Header */}
-            <div className="flex items-center justify-between gap-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800">
-              <div className="flex items-center gap-1">
-                {['all', 'online', 'followers'].map(f => (
-                  <button 
-                    key={f}
-                    onClick={() => setUserFilter(f)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${userFilter === f ? 'bg-pink-500 text-white shadow-md shadow-pink-500/30' : 'text-slate-400 hover:text-white'}`}
-                  >
-                    {f === 'all' ? 'همه کاربران' : f === 'online' ? 'آنلاین' : 'دنبال کننده ها'}
-                  </button>
-                ))}
-              </div>
-              <button onClick={() => setIsSmartMatchModalOpen(true)} className="p-2 rounded-xl bg-slate-800 text-cyan-400 hover:bg-slate-700 transition">
-                <Filter className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* User Grid */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              {filteredUsersList.map(user => (
-                <div key={user.id} className="card-3d bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 group relative">
-                  
-                  {/* Image & Click to View */}
-                  <div 
-                    className="aspect-[3/4] relative cursor-pointer"
-                    onClick={() => {
-                      if (user.isStreaming || streamsList.some(s => s.host === user.name)) {
-                        const stream = streamsList.find(s => s.host === user.name) || { host: user.name, avatar: user.avatar, id: 'stream_'+user.id };
-                        setViewingStream(stream);
-                      } else {
-                        setSelectedUser(user);
-                        setIsUserProfileModalOpen(true);
-                      }
-                    }}
-                  >
-                    <img src={user.avatar || 'https://via.placeholder.com/150'} alt={user.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
-                    
-                    {/* Top Left: Online Dot */}
-                    {user.online && (
-                      <div className="absolute top-2 left-2 flex items-center gap-1 bg-slate-950/60 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-slate-800/50">
-                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                         <span className="text-[9px] font-bold text-emerald-400">Online</span>
-                      </div>
-                    )}
-
-                    {/* Top Right: Live Badge */}
-                    {(user.isStreaming || streamsList.some(s => s.host === user.name)) && (
-                      <div className="absolute top-2 right-2 flex items-center gap-1 bg-red-600/90 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-red-400/50">
-                         <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                         <span className="text-[9px] font-black text-white">LIVE</span>
-                      </div>
-                    )}
-                    
-                    {/* Bottom Info inside image */}
-                    <div className="absolute bottom-2 left-2 right-2 pointer-events-none">
-                      <h4 className="text-sm font-black text-white drop-shadow-md truncate">{user.name}, {user.age || 22}</h4>
-                      <p className="text-[10px] text-pink-300 font-bold drop-shadow-md truncate">Level {user.level || 5} • {user.city || 'Tehran'}</p>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="p-2.5 flex items-center gap-2 bg-slate-950">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setActiveCall({ user, isVideo: true, isIncoming: false }); }}
-                      className="flex-1 py-1.5 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400 flex items-center justify-center hover:bg-pink-500 hover:text-white transition group/btn"
-                    >
-                      <Video className="w-4 h-4 group-hover/btn:scale-110 transition" />
-                    </button>
-                    <button 
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        setActiveConversationId(user.id);
-                        setActiveTab('messages');
-                      }}
-                      className="flex-1 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center hover:bg-cyan-500 hover:text-white transition group/btn"
-                    >
-                      <MessageSquare className="w-4 h-4 group-hover/btn:scale-110 transition" />
-                    </button>
-                  </div>
-
-                </div>
-              ))}
-            </div>
-
-          </div>
-        )}
-        {/* TAB: REDESIGNED PREMIUM INTERACTIVE MATCH EXPERIENCE */}
-        {activeTab === 'match' && (
-          <div className="space-y-4 max-w-md mx-auto animate-fadeIn pb-16 px-1">
-            
-            {/* 1. TOP HEADER (موجودی کیف پول بالا راست + لوگو وسط بالا + قوانین بالا چپ) */}
-            <div className="card-3d p-3 rounded-3xl bg-slate-900/95 border border-pink-500/30 flex items-center justify-between gap-2 backdrop-blur-xl shadow-[0_0_35px_rgba(236,72,153,0.25)]">
-              
-              {/* Top Left: Rules Modal Button */}
+            {/* TOP COMPACT SUB-TAB SWITCHER (EXPLORE / LIVE) */}
+            <div className="grid grid-cols-2 gap-1 bg-slate-950/90 p-1 rounded-2xl border border-slate-800 shadow-sm max-w-xs mx-auto">
               <button
-                onClick={() => setIsMatchRulesModalOpen(true)}
-                className="px-3 py-1.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-amber-400 border border-amber-500/30 active:scale-95 transition flex items-center gap-1.5 text-xs font-bold shadow"
-                title="قوانین و شرایط Match"
-              >
-                <ShieldCheck className="w-4 h-4 text-amber-400" />
-                <span>قوانین</span>
-              </button>
-
-              {/* Top Center: App Logo (لوگو برنامه وسط بالا) */}
-              <div className="flex items-center gap-2 cursor-pointer" onClick={() => setMatchMode('random')}>
-                <div className="relative w-9 h-9 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 p-0.5 shadow-lg shadow-pink-500/40 animate-pulse">
-                  <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-                    <Flame className="w-5 h-5 text-pink-400" />
-                  </div>
-                </div>
-                <div className="text-right">
-                  <h3 className="text-sm font-black text-white tracking-wide flex items-center gap-1">
-                    <span>V.LIVE</span>
-                    <span className="text-pink-500 font-extrabold text-xs">MATCH</span>
-                  </h3>
-                  <p className="text-[10px] text-slate-400 font-bold">پخش آنلاین & مچ فوری</p>
-                </div>
-              </div>
-
-              {/* Top Right: Wallet Balance (موجودی کیف پول بالا سمت راست) */}
-              <button 
-                onClick={() => setActiveTab('wallet')}
-                className="px-3 py-1.5 rounded-2xl bg-gradient-to-r from-amber-500/20 to-pink-500/20 hover:from-amber-500/30 hover:to-pink-500/30 text-amber-300 border border-amber-500/40 active:scale-95 transition flex items-center gap-1.5 text-xs font-black shadow-md"
-                title="افزایش موجودی سکه"
-              >
-                <Coins className="w-4 h-4 text-amber-400 animate-bounce" />
-                <span>{userCoins.toLocaleString()}</span>
-                <Plus className="w-3.5 h-3.5 text-emerald-400 bg-emerald-500/20 rounded-full" />
-              </button>
-
-            </div>
-
-            {/* 2. TOP MODE SWITCHER BAR (دو گزینه بالای صفحه: رندوم پیش فرض و انتخاب دستی اسکرول) */}
-            <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800/90 shadow-inner">
-              <button
-                onClick={() => setMatchMode('random')}
-                className={`py-2.5 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center gap-2 ${
-                  matchMode === 'random' 
-                    ? 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white shadow-lg shadow-pink-500/30 ring-1 ring-pink-400/50' 
-                    : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
+                onClick={() => setHomeSubTab('explore')}
+                className={`py-1.5 px-3 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center gap-1.5 ${
+                  homeSubTab === 'explore'
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <Shuffle className="w-4 h-4" />
-                <span>🎲 رندوم (پیش فرض)</span>
+                <Compass className="w-3.5 h-3.5" />
+                <span>Explore</span>
               </button>
-              
+
               <button
-                onClick={() => setMatchMode('manual')}
-                className={`py-2.5 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center gap-2 ${
-                  matchMode === 'manual' 
-                    ? 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white shadow-lg shadow-pink-500/30 ring-1 ring-pink-400/50' 
-                    : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
+                onClick={() => setHomeSubTab('live')}
+                className={`py-1.5 px-3 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center gap-1.5 ${
+                  homeSubTab === 'live'
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <Flame className="w-4 h-4" />
-                <span>👈👉 انتخاب دستی (اسکرول)</span>
+                <Radio className="w-3.5 h-3.5 text-pink-400 animate-pulse" />
+                <span>Live Streams</span>
               </button>
             </div>
 
-            {/* 3. MODE 1: RANDOM MATCH (صفحه پیش فرض / رندوم) */}
-            {matchMode === 'random' && (
-              <div className="space-y-5 animate-fadeIn">
+            {/* SUB-TAB 1: EXPLORE (USER DISCOVERY FEED) */}
+            {homeSubTab === 'explore' && (
+              <div className="space-y-3 animate-fadeIn">
                 
-                {/* A. SEARCH FILTER BAR (زیرش فیلتر جستجو سه تا ایکون زن ۱۰ سکه و مرد ۱۰ سکه و هردو رایگان) */}
-                <div className="card-3d p-3 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-lg space-y-2 dir-rtl">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-300 px-1">
-                    <span className="flex items-center gap-1.5 text-pink-400">
-                      <Filter className="w-3.5 h-3.5" />
-                      <span>فیلتر جنسیت جستجو:</span>
+                {/* VIP Users Stories Row */}
+                <div className="bg-slate-950/60 p-2 rounded-2xl border border-slate-800/80">
+                  <div className="flex items-center justify-between px-1 mb-1.5">
+                    <span className="text-xs font-black text-amber-300 flex items-center gap-1">
+                      <Crown className="w-3.5 h-3.5 text-amber-400" />
+                      <span>VIP Members</span>
                     </span>
-                    <span className="text-[11px] text-slate-400">انتخاب ترجیح مچینگ</span>
                   </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    {/* 1. Woman Filter (10 Coins) */}
-                    <button
-                      onClick={() => {
-                        setMatchGenderFilter('female');
-                        showToast('👩 فیلتر زن انتخاب شد (۱۰ سکه برای هر تماس)');
-                      }}
-                      className={`p-2 rounded-xl text-xs font-black transition flex flex-col items-center justify-center gap-1 border ${
-                        matchGenderFilter === 'female'
-                          ? 'bg-gradient-to-b from-pink-500/30 to-purple-600/30 border-pink-500 text-pink-300 shadow-md shadow-pink-500/20 ring-1 ring-pink-400'
-                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1">
-                        <span className="text-base">👩</span>
-                        <span>زن</span>
+                  <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
+                    {usersList.filter(u => u.isVip || u.is_vip || u.isTop).map(user => (
+                      <div key={user.id} className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group" onClick={() => { setSelectedUser(user); setIsUserProfileModalOpen(true); }}>
+                        <div className="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-orange-500 shadow-md group-hover:scale-105 transition">
+                          <img src={user.avatar || 'https://via.placeholder.com/150'} alt={user.name} className="w-full h-full object-cover rounded-full border border-slate-950" />
+                          {user.online && (
+                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border border-slate-950" />
+                          )}
+                        </div>
+                        <span className="text-[9px] font-bold text-slate-200 max-w-[50px] truncate">{user.name}</span>
                       </div>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${matchGenderFilter === 'female' ? 'bg-pink-500 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                        ۱۰ سکه
-                      </span>
-                    </button>
-
-                    {/* 2. Man Filter (10 Coins) */}
-                    <button
-                      onClick={() => {
-                        setMatchGenderFilter('male');
-                        showToast('👨 فیلتر مرد انتخاب شد (۱۰ سکه برای هر تماس)');
-                      }}
-                      className={`p-2 rounded-xl text-xs font-black transition flex flex-col items-center justify-center gap-1 border ${
-                        matchGenderFilter === 'male'
-                          ? 'bg-gradient-to-b from-cyan-500/30 to-blue-600/30 border-cyan-500 text-cyan-300 shadow-md shadow-cyan-500/20 ring-1 ring-cyan-400'
-                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1">
-                        <span className="text-base">👨</span>
-                        <span>مرد</span>
-                      </div>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${matchGenderFilter === 'male' ? 'bg-cyan-500 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                        ۱۰ سکه
-                      </span>
-                    </button>
-
-                    {/* 3. Both Filter (Free) */}
-                    <button
-                      onClick={() => {
-                        setMatchGenderFilter('both');
-                        showToast('👥 فیلتر هردو انتخاب شد (رایگان)');
-                      }}
-                      className={`p-2 rounded-xl text-xs font-black transition flex flex-col items-center justify-center gap-1 border ${
-                        matchGenderFilter === 'both'
-                          ? 'bg-gradient-to-b from-emerald-500/30 to-teal-600/30 border-emerald-500 text-emerald-300 shadow-md shadow-emerald-500/20 ring-1 ring-emerald-400'
-                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1">
-                        <span className="text-base">👥</span>
-                        <span>هردو</span>
-                      </div>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${matchGenderFilter === 'both' ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                        رایگان
-                      </span>
-                    </button>
+                    ))}
                   </div>
                 </div>
 
-                {/* B. CENTER GRAPHIC (وسط صفحه لوگو بزرگ برنامه به صورت ۳ بعدی به صورت چشمک زن و دورش عکس‌های کاربران رندوم چشمک زن) */}
-                <div className="relative min-h-[310px] flex items-center justify-center my-4 overflow-hidden py-4">
-                  
-                  {/* Radar Wave Rings */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-72 h-72 rounded-full border border-pink-500/20 animate-ping" />
-                    <div className="w-56 h-56 rounded-full border border-purple-500/30 animate-pulse" />
-                    <div className="w-40 h-40 rounded-full border border-cyan-500/20" />
-                  </div>
-
-                  {/* Surrounding Floating Random User Avatars (دور لوگو عکس‌های چشمک زن رندوم کاربران) */}
-                  {matchDeckProfiles.slice(0, 6).map((profile, i) => {
-                    const angles = [0, 60, 120, 180, 240, 300];
-                    const radius = 120;
-                    const angleRad = (angles[i] * Math.PI) / 180;
-                    const x = Math.cos(angleRad) * radius;
-                    const y = Math.sin(angleRad) * radius;
-
-                    return (
-                      <div
-                        key={profile.id || i}
-                        style={{
-                          transform: `translate(${x}px, ${y}px)`,
-                          animationDelay: `${i * 0.4}s`
-                        }}
-                        className="absolute z-10 w-13 h-13 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_20px_rgba(236,72,153,0.5)] animate-pulse cursor-pointer hover:scale-125 transition duration-300"
-                        onClick={() => {
-                          setSelectedUser(profile);
-                          setIsUserProfileModalOpen(true);
-                        }}
-                        title={profile.name}
+                {/* Compact User Filter Bar */}
+                <div className="flex items-center justify-between gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800/80">
+                  <div className="flex items-center gap-1">
+                    {['all', 'online', 'followers'].map(f => (
+                      <button 
+                        key={f}
+                        onClick={() => setUserFilter(f)}
+                        className={`px-3 py-1 rounded-lg text-[11px] font-extrabold transition ${
+                          userFilter === f 
+                            ? 'bg-pink-500 text-white shadow-sm' 
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
                       >
-                        <img
-                          src={profile.avatar}
-                          alt={profile.name}
-                          className="w-full h-full rounded-full object-cover border-2 border-slate-950"
-                        />
-                        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-950 animate-ping" />
-                      </div>
-                    );
-                  })}
-
-                  {/* Center 3D Blinking App Logo (لوگو بزرگ برنامه به صورت سه بعدی به صورت چشمک زن) */}
-                  <div className="relative z-20 flex flex-col items-center justify-center">
-                    <div 
-                      onClick={() => startRandomMatchSearch()}
-                      className="w-32 h-32 rounded-3xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 p-1 border-2 border-pink-300/60 shadow-[0_0_60px_rgba(236,72,153,0.7)] animate-bounce cursor-pointer group active:scale-95 transition flex items-center justify-center"
-                    >
-                      <div className="w-full h-full bg-slate-950/90 backdrop-blur-md rounded-[22px] flex flex-col items-center justify-center gap-1.5 p-2">
-                        <Flame className="w-14 h-14 text-pink-400 group-hover:scale-110 transition duration-300 animate-pulse drop-shadow-[0_0_20px_rgba(236,72,153,0.9)]" />
-                        <span className="text-[10px] font-black text-white uppercase tracking-wider bg-pink-500/30 px-2.5 py-0.5 rounded-full border border-pink-500/50">
-                          V.LIVE MATCH
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-xs font-black text-slate-300 mt-3 flex items-center gap-1.5 bg-slate-900/80 px-3.5 py-1 rounded-full border border-slate-800 shadow dir-rtl">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                      <span>آماده برای مچ فوری تصویری</span>
-                    </p>
+                        {f === 'all' ? 'All' : f === 'online' ? 'Online' : 'Following'}
+                      </button>
+                    ))}
                   </div>
-
+                  <button 
+                    onClick={() => setIsSmartMatchModalOpen(true)} 
+                    className="p-1.5 rounded-lg bg-slate-900 text-cyan-400 hover:bg-slate-800 transition"
+                    title="Filters"
+                  >
+                    <Filter className="w-3.5 h-3.5" />
+                  </button>
                 </div>
 
-                {/* SEARCHING RADAR OVERLAY STATE */}
-                {matchState === 'searching' && (
-                  <div className="card-3d p-6 rounded-3xl bg-slate-900/95 border border-pink-500/50 backdrop-blur-xl shadow-2xl text-center space-y-5 animate-fadeIn dir-rtl">
-                    <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
-                      <div className="w-full h-full rounded-full border-4 border-pink-500 border-t-transparent animate-spin shadow-lg" />
-                      <Flame className="w-10 h-10 text-pink-400 absolute animate-pulse" />
-                    </div>
-
-                    <div className="space-y-1">
-                      <h4 className="text-base font-black text-white">در حال جستجو و مچینگ کاربر...</h4>
-                      <p className="text-xs text-slate-400">اتصال رمزنگاری‌شده 1080p Full HD</p>
-                    </div>
-
-                    {/* Controls during search: End search and Next */}
-                    <div className="grid grid-cols-2 gap-3 pt-2">
-                      <button
+                {/* USER CARDS GRID (COMPACT, SLEEK ROUNDED EDGES, DENSE DISPLAY) */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                  {filteredUsersList.map(user => (
+                    <div key={user.id} className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800/90 shadow-md hover:border-pink-500/40 transition duration-300 group relative flex flex-col">
+                      
+                      {/* Image Container with aspect ratio */}
+                      <div 
+                        className="aspect-[4/5] relative cursor-pointer overflow-hidden"
                         onClick={() => {
-                          setMatchState('idle');
-                          showToast('❌ جستجوی مچ لغو شد');
+                          if (user.isStreaming || streamsList.some(s => s.host === user.name)) {
+                            const stream = streamsList.find(s => s.host === user.name) || { host: user.name, avatar: user.avatar, id: 'stream_'+user.id };
+                            setViewingStream(stream);
+                          } else {
+                            setSelectedUser(user);
+                            setIsUserProfileModalOpen(true);
+                          }
                         }}
-                        className="py-3 rounded-2xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-300 font-black text-xs transition flex items-center justify-center gap-1.5"
                       >
-                        <X className="w-4 h-4" />
-                        <span>قطع جستجو</span>
-                      </button>
+                        <img src={user.avatar || 'https://via.placeholder.com/150'} alt={user.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none" />
+                        
+                        {/* Top Left: Online Dot */}
+                        {user.online && (
+                          <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-slate-950/70 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-slate-800/60">
+                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                             <span className="text-[8px] font-black text-emerald-400">Online</span>
+                          </div>
+                        )}
 
-                      <button
-                        onClick={() => {
-                          startRandomMatchSearch();
-                        }}
-                        className="py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg transition flex items-center justify-center gap-1.5 active:scale-95"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                        <span>مچ بعدی (تسریع)</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* C. BOTTOM AREA (پایین صفحه ایکون بزرگ دوربین برجسته و ۳ بعدی + بالای ایکون دوربین عدد ۳ رایگان محدودیت روزانه) */}
-                {matchState === 'idle' && (
-                  <div className="flex flex-col items-center justify-center space-y-3 pt-2">
-                    
-                    {/* Daily Free Quota Badge / Filter Display above Camera */}
-                    <div className="px-4 py-1.5 rounded-full bg-slate-900/90 border border-pink-500/40 backdrop-blur-md shadow-lg flex items-center gap-2 text-xs font-black animate-pulse dir-rtl">
-                      {freeMatchCallsLeft > 0 ? (
-                        <span className="text-emerald-400 flex items-center gap-1.5">
-                          <span>🎁</span>
-                          <span>{freeMatchCallsLeft} رایگان</span>
-                          <span className="text-[10px] text-slate-400">(محدودیت روزانه)</span>
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1.5 text-amber-300">
-                          <span>هزینه انتخاب فیلتر:</span>
-                          <span className="text-white bg-amber-500/20 px-2.5 py-0.5 rounded-lg border border-amber-500/40 font-extrabold">
-                            {matchGenderFilter === 'both' ? '🆓 رایگان' : '💰 ۱۰ سکه'}
-                          </span>
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Large Elevated 3D Camera Icon (ایکون بزرگ دوربین برجسته و سه بعدی) */}
-                    <button
-                      onClick={() => startRandomMatchSearch()}
-                      className="w-24 h-24 rounded-full bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 p-1.5 shadow-[0_12px_45px_rgba(236,72,153,0.6)] active:scale-90 transition duration-300 group relative"
-                      title="شروع تماس تصویری مچ"
-                    >
-                      <div className="w-full h-full rounded-full bg-slate-950 flex items-center justify-center border-2 border-white/20 group-hover:bg-slate-900 transition">
-                        <Video className="w-10 h-10 text-white group-hover:scale-110 transition drop-shadow-[0_0_15px_rgba(236,72,153,0.9)]" />
+                        {/* Top Right: Live Badge */}
+                        {(user.isStreaming || streamsList.some(s => s.host === user.name)) && (
+                          <div className="absolute top-1.5 right-1.5 flex items-center gap-1 bg-rose-600/90 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-rose-400/60">
+                             <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                             <span className="text-[8px] font-black text-white">LIVE</span>
+                          </div>
+                        )}
+                        
+                        {/* Bottom Info Overlay */}
+                        <div className="absolute bottom-1.5 left-2 right-2 pointer-events-none">
+                          <h4 className="text-xs font-black text-white drop-shadow-md truncate">{user.name}, {user.age || 22}</h4>
+                          <p className="text-[9px] text-pink-300 font-bold drop-shadow-md truncate">📍 {user.city || 'Tehran'} • Lv.{user.level || 5}</p>
+                        </div>
                       </div>
-                      <div className="absolute -inset-1 rounded-full border-2 border-pink-500/50 animate-ping pointer-events-none" />
-                    </button>
-                    
-                    <span className="text-[11px] font-bold text-slate-400">برای شروع مچ لمس کنید</span>
-                  </div>
-                )}
 
-                {/* D. RULES SUMMARY BANNER */}
-                <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300 space-y-2 dir-rtl">
-                  <div className="flex items-center justify-between text-amber-400 font-bold border-b border-slate-800/80 pb-2">
-                    <span className="flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>خلاصه قوانین مهم سیستم Match</span>
-                    </span>
-                    <button 
-                      onClick={() => setIsMatchRulesModalOpen(true)}
-                      className="text-[10px] text-pink-400 underline hover:text-pink-300"
-                    >
-                      مشاهده متن کامل ➔
-                    </button>
-                  </div>
-                  <ul className="space-y-1.5 text-[11px] text-slate-400 list-disc list-inside">
-                    <li>۳ تماس رایگان روزانه ذخیره نمی‌شود و انتهای روز بازنشانی می‌گردد.</li>
-                    <li>زمان هر تماس رایگان ۳۰ ثانیه می‌باشد.</li>
-                    <li>استریمرهای تایید شده: ۲۰ ثانیه اول رایگان، سپس کسر سکه به‌صورت دقیقه‌ای.</li>
-                  </ul>
+                      {/* Action Buttons Row */}
+                      <div className="p-1.5 flex items-center gap-1 bg-slate-950 border-t border-slate-900">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setActiveCall({ user, isVideo: true, isIncoming: false }); }}
+                          className="flex-1 py-1 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400 flex items-center justify-center hover:bg-pink-500 hover:text-white transition"
+                          title="Video Call"
+                        >
+                          <Video className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setActiveConversationId(user.id);
+                            setActiveTab('messages');
+                          }}
+                          className="flex-1 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center hover:bg-cyan-500 hover:text-white transition"
+                          title="Direct Message"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                    </div>
+                  ))}
                 </div>
 
               </div>
             )}
 
-            {/* 4. MODE 2: MANUAL SELECTION SWIPE (صفحه انتخاب دستی با اسکرول به چپ تایید و به راست رد کردن) */}
-            {matchMode === 'manual' && (
-              <div className="space-y-4 animate-fadeIn">
-                
-                {/* Helper Instructions Banner */}
-                <div className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs font-bold text-slate-300 dir-rtl">
-                  <span className="flex items-center gap-1.5 text-emerald-400">
-                    <span>👈 اسکرول چپ: تایید (Like)</span>
-                  </span>
-                  <span className="flex items-center gap-1.5 text-rose-400">
-                    <span>اسکرول راست: رد کردن (Pass) 👉</span>
-                  </span>
+            {/* SUB-TAB 2: LIVE STREAMS (DEDICATED WATCHING EXPERIENCE) */}
+            {homeSubTab === 'live' && (
+              <div className="animate-fadeIn">
+                <LiveStreamSystem
+                  currentUser={{
+                    name: userName,
+                    avatar: userAvatar,
+                    isStreamer: isVerified || currentUsername === 'Rayan',
+                    isVerifiedStreamer: isVerified,
+                    user_type: isVerified ? 'STREAMER' : 'REAL_USER',
+                    username: currentUsername
+                  }}
+                  currentUsername={currentUsername}
+                  userCoins={userCoins}
+                  setUserCoins={setUserCoins}
+                  vipPlan={vipPlan}
+                  setVipPlan={setVipPlan}
+                  streamsList={streamsList}
+                  setStreamsList={setStreamsList}
+                  viewingStream={viewingStream}
+                  setViewingStream={setViewingStream}
+                  showToast={showToast}
+                  setActiveTab={setActiveTab}
+                  handleInitiateCall={handleInitiateCall}
+                  addAdminAuditLog={addAdminAuditLog}
+                  setAdminReportsList={setAdminReportsList}
+                />
+              </div>
+            )}
+
+          </div>
+        )}
+        {/* TAB: REDESIGNED STREAMLINED MATCH EXPERIENCE */}
+        {activeTab === 'match' && (
+          <div className="h-[calc(100vh-130px)] max-w-md mx-auto flex flex-col justify-between overflow-hidden px-2 py-1 select-none animate-fadeIn dir-ltr font-sans">
+            
+            {/* COMPACT TOP CONTROLS (3 SMALL COMPACT ROWS IN ENGLISH) */}
+            <div className="space-y-1.5 shrink-0">
+              
+              {/* Row 1: Gender Filter Buttons (Female, Male, All) */}
+              <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                <button
+                  onClick={() => {
+                    setMatchGenderFilter('female');
+                    showToast('Female filter selected (10 Coins / call)');
+                  }}
+                  className={`py-1 px-2 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 border ${
+                    matchGenderFilter === 'female'
+                      ? 'bg-pink-500/30 border-pink-500 text-pink-300'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <span>👩 Female</span>
+                  <span className="text-[9px] opacity-80">(10 Coins)</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setMatchGenderFilter('male');
+                    showToast('Male filter selected (10 Coins / call)');
+                  }}
+                  className={`py-1 px-2 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 border ${
+                    matchGenderFilter === 'male'
+                      ? 'bg-cyan-500/30 border-cyan-500 text-cyan-300'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <span>👨 Male</span>
+                  <span className="text-[9px] opacity-80">(10 Coins)</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setMatchGenderFilter('both');
+                    showToast('All filter selected (Free)');
+                  }}
+                  className={`py-1 px-2 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 border ${
+                    matchGenderFilter === 'both'
+                      ? 'bg-emerald-500/30 border-emerald-500 text-emerald-300'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <span>👥 All</span>
+                  <span className="text-[9px] opacity-80">(Free)</span>
+                </button>
+              </div>
+
+              {/* Row 2: Match Mode Toggle (Random / Manual Swipe) */}
+              <div className="grid grid-cols-2 gap-1.5 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80">
+                <button
+                  onClick={() => setMatchMode('random')}
+                  className={`py-1 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 ${
+                    matchMode === 'random'
+                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Shuffle className="w-3 h-3" />
+                  <span>Random Match</span>
+                </button>
+                <button
+                  onClick={() => setMatchMode('manual')}
+                  className={`py-1 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 ${
+                    matchMode === 'manual'
+                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Flame className="w-3 h-3" />
+                  <span>Swipe Cards</span>
+                </button>
+              </div>
+
+              {/* Row 3: Daily Free Quota Indicator & Balance */}
+              <div className="flex items-center justify-between px-2 py-1 rounded-xl bg-slate-900/90 border border-slate-800 text-[10px] font-bold text-slate-300">
+                <div className="flex items-center gap-1 text-emerald-400">
+                  <Coins className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{userCoins.toLocaleString()} Coins</span>
                 </div>
 
-                {/* Interactive Swipeable Card Deck */}
+                <div className="flex items-center gap-1 text-pink-400">
+                  <span>Daily Free: {freeMatchCallsLeft} Left</span>
+                </div>
+              </div>
+
+            </div>
+
+            {/* MAIN DISPLAY AREA DEDICATED TO USER DISPLAY (75-80% HEIGHT, NO VERTICAL SCROLL) */}
+            {matchMode === 'random' ? (
+              <div className="flex-1 flex flex-col justify-center items-center py-2 overflow-hidden relative">
+                
+                {matchState === 'searching' ? (
+                  <div className="p-4 rounded-3xl bg-slate-900/95 border border-pink-500/50 text-center space-y-3 animate-fadeIn w-full max-w-xs">
+                    <div className="relative w-16 h-16 mx-auto flex items-center justify-center">
+                      <div className="w-full h-full rounded-full border-3 border-pink-500 border-t-transparent animate-spin" />
+                      <Flame className="w-7 h-7 text-pink-400 absolute animate-pulse" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-white">Searching for Match...</h4>
+                      <p className="text-[10px] text-slate-400">1080p HD Encrypted Connection</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <button
+                        onClick={() => setMatchState('idle')}
+                        className="py-1.5 rounded-xl bg-rose-600/20 text-rose-300 font-bold text-[11px] border border-rose-500/40"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => startRandomMatchSearch()}
+                        className="py-1.5 rounded-xl bg-pink-600 text-white font-bold text-[11px]"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* USER DISPLAY GRID (CIRCULAR CARDS WITH FADE IN/OUT ANIMATION, SPACED APART) */
+                  <div className="w-full h-full flex flex-col items-center justify-center space-y-3">
+                    
+                    <p className="text-[11px] text-slate-400 font-medium tracking-wide flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>Tap any user to match instantly</span>
+                    </p>
+
+                    <div className="grid grid-cols-3 gap-3 sm:gap-5 items-center justify-items-center w-full max-w-sm px-2">
+                      {matchDeckProfiles.slice(0, 9).map((profile, i) => (
+                        <div
+                          key={profile.id || i}
+                          style={{
+                            animationDelay: `${(i % 3) * 0.8}s`
+                          }}
+                          onClick={() => {
+                            setSelectedUser(profile);
+                            setIsUserProfileModalOpen(true);
+                          }}
+                          className="animate-fade-in-out cursor-pointer flex flex-col items-center justify-center group"
+                        >
+                          {/* Circular Round Avatar Card */}
+                          <div className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-full p-1 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-lg shadow-pink-500/20 group-hover:scale-110 transition duration-300">
+                            <img
+                              src={profile.avatar}
+                              alt={profile.name}
+                              className="w-full h-full rounded-full object-cover border-2 border-slate-950"
+                            />
+                            {/* Online Green Indicator */}
+                            <div className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-950 flex items-center justify-center shadow">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-200 mt-1 truncate max-w-[75px]">
+                            {profile.name}
+                          </span>
+                          <span className="text-[9px] text-pink-400 font-semibold">
+                            {profile.age} yrs • Online
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Compact Start Call Button */}
+                    <button
+                      onClick={() => startRandomMatchSearch()}
+                      className="mt-1 px-6 py-2 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white font-black text-xs shadow-lg shadow-pink-500/40 active:scale-95 transition flex items-center gap-2"
+                    >
+                      <Video className="w-4 h-4" />
+                      <span>Start Quick Match</span>
+                    </button>
+
+                  </div>
+                )}
+
+              </div>
+            ) : (
+              /* MANUAL SWIPE MODE IN ENGLISH */
+              <div className="flex-1 flex flex-col justify-center items-center overflow-hidden py-1">
                 {matchCardIndex < matchDeckProfiles.length && matchDeckProfiles[matchCardIndex] ? (
                   <div
                     onTouchStart={(e) => {
@@ -5862,150 +5752,57 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     onTouchEnd={() => {
                       if (!isSwipeDragging) return;
                       setIsSwipeDragging(false);
-                      // Left swipe (< -70): Approve / Like
-                      // Right swipe (> 70): Reject / Pass
                       if (swipeDragPos.x < -70) triggerMatchAction('like');
                       else if (swipeDragPos.x > 70) triggerMatchAction('reject');
-                      else if (swipeDragPos.y < -70) triggerMatchAction('superlike');
-                      else setSwipeDragPos({ x: 0, y: 0 });
-                    }}
-                    onMouseDown={(e) => {
-                      setIsSwipeDragging(true);
-                      swipeStartPos.current = { x: e.clientX, y: e.clientY };
-                    }}
-                    onMouseMove={(e) => {
-                      if (!isSwipeDragging) return;
-                      setSwipeDragPos({
-                        x: e.clientX - swipeStartPos.current.x,
-                        y: e.clientY - swipeStartPos.current.y
-                      });
-                    }}
-                    onMouseUp={() => {
-                      if (!isSwipeDragging) return;
-                      setIsSwipeDragging(false);
-                      if (swipeDragPos.x < -70) triggerMatchAction('like');
-                      else if (swipeDragPos.x > 70) triggerMatchAction('reject');
-                      else if (swipeDragPos.y < -70) triggerMatchAction('superlike');
                       else setSwipeDragPos({ x: 0, y: 0 });
                     }}
                     style={{
                       transform: `translate(${swipeDragPos.x}px, ${swipeDragPos.y}px) rotate(${swipeDragPos.x * 0.05}deg)`,
                       transition: isSwipeDragging ? 'none' : 'transform 0.3s ease'
                     }}
-                    className="relative min-h-[460px] sm:min-h-[500px] rounded-3xl overflow-hidden bg-slate-950 border border-pink-500/30 shadow-[0_0_50px_rgba(236,72,153,0.3)] flex flex-col justify-end select-none cursor-grab active:cursor-grabbing group"
+                    className="relative w-full max-w-xs h-[340px] sm:h-[380px] rounded-2xl overflow-hidden bg-slate-950 border border-pink-500/30 shadow-xl flex flex-col justify-end select-none cursor-grab active:cursor-grabbing group"
                   >
-                    {/* Background Blur */}
-                    <div 
-                      className="absolute inset-0 bg-cover bg-center filter blur-2xl opacity-40 scale-125 pointer-events-none"
-                      style={{ backgroundImage: `url(${matchDeckProfiles[matchCardIndex].avatar})` }}
-                    />
-
-                    {/* Main Image */}
                     <img 
                       src={matchDeckProfiles[matchCardIndex].avatar} 
                       alt={matchDeckProfiles[matchCardIndex].name} 
-                      className="absolute inset-0 w-full h-full object-cover filter brightness-95 pointer-events-none group-hover:scale-105 transition duration-700" 
+                      className="absolute inset-0 w-full h-full object-cover filter brightness-95 pointer-events-none" 
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent pointer-events-none" />
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent pointer-events-none" />
+                    <div className="relative z-20 p-3 space-y-1">
+                      <h3 className="text-lg font-black text-white flex items-center gap-1.5">
+                        <span>{matchDeckProfiles[matchCardIndex].name}</span>
+                        <span className="text-xs text-pink-400 font-bold">({matchDeckProfiles[matchCardIndex].age})</span>
+                      </h3>
+                      <p className="text-[10px] text-slate-300 font-medium">📍 {matchDeckProfiles[matchCardIndex].city} • Online</p>
 
-                    {/* Visual Gesture Stamps */}
-                    {isSwipeDragging && swipeDragPos.x < -30 && (
-                      <div className="absolute top-12 right-6 z-30 px-5 py-2 rounded-2xl border-4 border-emerald-400 bg-emerald-500/20 text-emerald-300 font-black text-2xl uppercase tracking-widest rotate-[12deg] backdrop-blur-md shadow-2xl animate-pulse">
-                        ❤️ تایید / LIKE
-                      </div>
-                    )}
-                    {isSwipeDragging && swipeDragPos.x > 30 && (
-                      <div className="absolute top-12 left-6 z-30 px-5 py-2 rounded-2xl border-4 border-rose-500 bg-rose-500/20 text-rose-300 font-black text-2xl uppercase tracking-widest rotate-[-12deg] backdrop-blur-md shadow-2xl animate-pulse">
-                        ❌ رد / PASS
-                      </div>
-                    )}
-                    {isSwipeDragging && swipeDragPos.y < -30 && (
-                      <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 px-5 py-2 rounded-2xl border-4 border-amber-400 bg-amber-500/20 text-amber-300 font-black text-2xl uppercase tracking-widest backdrop-blur-md shadow-2xl animate-pulse">
-                        ⭐ سوپر لایک
-                      </div>
-                    )}
-
-                    {/* Profile Info & 3D Actions Bar */}
-                    <div className="relative z-20 p-5 space-y-3 pointer-events-auto dir-rtl">
-                      <div>
-                        <h2 className="text-2xl font-black text-white flex items-center gap-2">
-                          <span>{matchDeckProfiles[matchCardIndex].name}</span>
-                          <span className="px-2.5 py-0.5 rounded-xl bg-white/20 backdrop-blur-md text-white text-sm font-bold">
-                            {matchDeckProfiles[matchCardIndex].age}
-                          </span>
-                        </h2>
-                        <div className="flex items-center gap-2 text-xs text-slate-300 font-bold mt-1">
-                          <span>📍 {matchDeckProfiles[matchCardIndex].city}</span>
-                          <span>•</span>
-                          <span className="text-emerald-400 flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                            آنلاین
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons Row */}
-                      <div className="grid grid-cols-5 gap-2 pt-2">
-                        <button 
+                      <div className="flex items-center gap-2 pt-2">
+                        <button
                           onClick={() => triggerMatchAction('reject')}
-                          className="h-12 rounded-2xl bg-slate-900/90 border border-rose-500/40 text-rose-400 hover:bg-rose-500/20 flex items-center justify-center shadow-lg active:scale-90 transition"
-                          title="رد کردن"
+                          className="flex-1 py-1.5 rounded-xl bg-rose-600/80 text-white font-bold text-xs"
                         >
-                          <X className="w-6 h-6" />
+                          Pass ❌
                         </button>
-
-                        <button 
-                          onClick={() => triggerMatchAction('gift')}
-                          className="h-12 rounded-2xl bg-slate-900/90 border border-amber-500/40 text-amber-400 hover:bg-amber-500/20 flex items-center justify-center shadow-lg active:scale-90 transition"
-                          title="ارسال هدیه"
-                        >
-                          <Gift className="w-6 h-6 animate-bounce" />
-                        </button>
-
-                        <button 
-                          onClick={() => triggerMatchAction('superlike')}
-                          className="h-12 rounded-2xl bg-slate-900/90 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/20 flex items-center justify-center shadow-lg active:scale-90 transition"
-                          title="سوپر لایک"
-                        >
-                          <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
-                        </button>
-
-                        <button 
+                        <button
                           onClick={() => triggerMatchAction('like')}
-                          className="h-12 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.6)] active:scale-90 transition"
-                          title="تایید و لایک"
+                          className="flex-1 py-1.5 rounded-xl bg-emerald-600/80 text-white font-bold text-xs"
                         >
-                          <Heart className="w-7 h-7 fill-white" />
-                        </button>
-
-                        <button 
-                          onClick={() => {
-                            const target = matchDeckProfiles[matchCardIndex];
-                            handleInitiateCall(target, 'video', '1on1');
-                          }}
-                          className="h-12 rounded-2xl bg-slate-900/90 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/20 flex items-center justify-center shadow-lg active:scale-90 transition"
-                          title="تماس تصویری"
-                        >
-                          <Video className="w-6 h-6" />
+                          Like ❤️
                         </button>
                       </div>
-
                     </div>
                   </div>
                 ) : (
-                  <div className="py-16 text-center space-y-4 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-xl dir-rtl">
-                    <h4 className="text-lg font-black text-white">تمام پروفایل‌ها دیده‌شدند!</h4>
-                    <p className="text-xs text-slate-400">برای بازنشانی لیست کلیک کنید.</p>
+                  <div className="text-center space-y-2 p-4">
+                    <p className="text-xs text-slate-300 font-bold">No more profiles in deck!</p>
                     <button
                       onClick={() => setMatchCardIndex(0)}
-                      className="px-6 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-105 active:scale-95 transition"
+                      className="px-4 py-1.5 rounded-xl bg-pink-600 text-white font-bold text-xs"
                     >
-                      بازنشانی لیست 🔄
+                      Reset Deck 🔄
                     </button>
                   </div>
                 )}
-
               </div>
             )}
 

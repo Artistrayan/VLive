@@ -35,3 +35,13 @@
     opacity: 0;
   }
 }
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.25; transform: scale(0.93); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.animate-fade-in-out {
+  animation: fadeInOut 3.2s ease-in-out infinite;
+}
+
