@@ -393,14 +393,7 @@ export default function LiveStreamSystem({
               <p className="text-xs text-slate-400">
                 در حال حاضر لایواستریم مستقیمی در دسته‌بندی {selectedSubCategory} قرار ندارد.
               </p>
-              {isApprovedStreamer && (
-                <button
-                  onClick={() => setIsStartLiveModalOpen(true)}
-                  className="px-4 py-2 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-black transition"
-                >
-                  اولین لایواستریم را شروع کنید 🚀
-                </button>
-              )}
+
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:gap-4">

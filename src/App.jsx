@@ -42,7 +42,7 @@ import { LifeBuoy, ShoppingBag, Video, Shield, ShieldCheck, Star, Wallet, User, 
   Home, BarChart2, Tv, Megaphone, Target, Paperclip, Pin, Reply, MoreVertical,
   VolumeX, Trash2, Archive, FileText, CheckCheck, Laugh, Forward, SmilePlus,
   LockKeyhole, SendHorizontal, MessageCircle, Info, PhoneIncoming, PhoneOutgoing,
-  PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert, Shuffle, BarChart3, Palette
+  PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert, Shuffle, BarChart3, Palette, LogIn
 } from 'lucide-react';
 
 // PRESET HIGH-RES AVATARS FOR PROFILE EDITING
@@ -129,6 +129,12 @@ export default function App() {
 
   // AUTHENTICATION & ONBOARDING SYSTEM STATES (10-STEP SYSTEM)
   const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [hasRegistered, setHasRegistered] = useState(() => {
+    return safeStorage.getItem('vlive_has_registered') === 'true';
+  });
+  const [showEntrySplash, setShowEntrySplash] = useState(() => {
+    return safeStorage.getItem('vlive_has_registered') === 'true';
+  });
   const [authStep, setAuthStep] = useState('main');
   const [selectedUser, setSelectedUser] = useState(null);
   const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
@@ -4241,7 +4247,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               setAuthUsername(finalUsername);
               
               setIsLoggedIn(true);
+              setHasRegistered(true);
+              setShowEntrySplash(false);
+              setActiveTab('home');
               safeStorage.setItem('vlive_user_logged_in', 'true');
+              safeStorage.setItem('vlive_has_registered', 'true');
               safeStorage.setItem('vlive_current_username', finalUsername);
               safeStorage.setItem('vlive_user_name', finalName);
               safeStorage.setItem('vlive_user_avatar', finalAvatar);
@@ -4267,7 +4277,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             setUserName(guestName);
             setCurrentUsername(guestUser);
             setIsLoggedIn(true);
+            setHasRegistered(true);
+            setShowEntrySplash(false);
+            setActiveTab('home');
             safeStorage.setItem('vlive_user_logged_in', 'true');
+            safeStorage.setItem('vlive_has_registered', 'true');
             safeStorage.setItem('vlive_current_username', guestUser);
             safeStorage.setItem('vlive_user_name', guestName);
 
@@ -5283,6 +5297,116 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         </div>
       )}
 
+      {/* RETURNING USER ENTRY SPLASH SCREEN (صفحه اول ورود) */}
+      {showEntrySplash && (
+        <div className="fixed inset-0 z-50 bg-slate-950 text-slate-100 flex flex-col items-center justify-between p-6 overflow-hidden animate-fadeIn select-none dir-ltr">
+          
+          {/* Ambient Background Spotlights & Particles */}
+          <div className="absolute top-1/4 -left-20 w-80 h-80 rounded-full bg-gradient-to-br from-pink-500/25 via-purple-600/20 to-transparent blur-3xl pointer-events-none animate-pulse" />
+          <div className="absolute bottom-1/4 -right-20 w-80 h-80 rounded-full bg-gradient-to-tl from-cyan-500/25 via-blue-600/20 to-transparent blur-3xl pointer-events-none animate-pulse" style={{ animationDelay: '1.5s' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+
+          {/* Top Brand Bar */}
+          <div className="w-full max-w-sm flex items-center justify-between z-20 pt-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-pink-500/40">
+                <Video className="w-4 h-4 text-white animate-pulse" />
+              </div>
+              <span className="font-black text-lg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300">
+                V.LIVE
+              </span>
+            </div>
+
+            <div className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-black flex items-center gap-1.5 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span>Live System Active</span>
+            </div>
+          </div>
+
+          {/* Center User Profile & Glamorous Login Action */}
+          <div className="w-full max-w-sm my-auto flex flex-col items-center text-center space-y-7 z-20">
+            
+            {/* Returning User Avatar & Badge Card */}
+            <div className="relative group">
+              <div className="absolute -inset-3 rounded-full bg-gradient-to-tr from-pink-500 via-purple-600 via-cyan-400 to-amber-400 blur-xl opacity-75 group-hover:opacity-100 animate-pulse transition duration-700" />
+              
+              <div className="relative w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-2xl">
+                <img 
+                  src={userAvatar} 
+                  alt="Profile" 
+                  className="w-full h-full rounded-full object-cover border-2 border-slate-950" 
+                />
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-pink-600 to-purple-600 text-white font-black text-[9px] border border-slate-950 shadow-md whitespace-nowrap">
+                  {vipPlan === 'adult_vip' ? '🔞 VIP 18+' : isVerified ? '👑 VIP Streamer' : '✨ VIP Member'}
+                </div>
+              </div>
+            </div>
+
+            {/* User Greeting Info */}
+            <div className="space-y-1">
+              <h2 className="text-2xl font-black text-white flex items-center justify-center gap-2">
+                <span>خوش آمدید، {userName}</span>
+                <Sparkles className="w-5 h-5 text-amber-400 animate-bounce" />
+              </h2>
+              <p className="text-xs text-slate-400 font-medium dir-rtl">
+                @{currentUsername || 'rayan'} • {userCoins.toLocaleString()} 🪙 سکه موجود است
+              </p>
+            </div>
+
+            {/* THE SEXY GLOWING LOGIN ICON & ENTER BUTTON */}
+            <div className="w-full flex flex-col items-center space-y-3 pt-2">
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
+                    window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                  }
+                  setShowEntrySplash(false);
+                  setActiveTab('home');
+                  showToast(loc('✨ ورود به صفحه اصلی V.LIVE با موفقیت انجام شد', '✨ Entering V.LIVE Home Screen'));
+                }}
+                className="group relative w-full max-w-xs py-4 px-6 rounded-3xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 hover:from-pink-500 hover:via-purple-500 hover:to-cyan-400 text-white font-black text-base shadow-[0_0_40px_rgba(236,72,153,0.7)] hover:shadow-[0_0_60px_rgba(236,72,153,0.9)] active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 overflow-hidden"
+              >
+                {/* Shimmer Light Reflection Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+
+                {/* Animated Login / Play Icon */}
+                <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner group-hover:scale-110 transition duration-300">
+                  <LogIn className="w-5 h-5 text-white animate-pulse" />
+                </div>
+
+                <span className="tracking-wide">ورود به V.LIVE</span>
+
+                <ArrowRight className="w-5 h-5 text-cyan-200 group-hover:translate-x-1 transition duration-300" />
+              </button>
+
+              <p className="text-[11px] text-slate-400 font-medium dir-rtl">
+                برای ورود مستقیم به صفحه اصلی (Home) کلیک کنید
+              </p>
+            </div>
+
+          </div>
+
+          {/* Footer: Switch Account Option */}
+          <div className="w-full max-w-sm text-center z-20 pb-2">
+            <button
+              onClick={() => {
+                safeStorage.setItem('vlive_has_registered', 'false');
+                safeStorage.setItem('vlive_user_logged_in', 'false');
+                setHasRegistered(false);
+                setIsLoggedIn(false);
+                setAuthStep('welcome');
+                setShowEntrySplash(false);
+                showToast(loc('صفحه ثبت‌نام و ورود با تلگرام فعال شد', 'Switched to Telegram Register & Auth Screen'));
+              }}
+              className="text-xs text-slate-400 hover:text-pink-400 transition font-bold underline underline-offset-4 dir-rtl"
+            >
+              ورود با حساب دیگر یا تلگرام 🔄
+            </button>
+          </div>
+
+        </div>
+      )}
+
       {/* HEADER NAVBAR - COMPACT SLEEK REDESIGN */}
       <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/80 px-3 sm:px-4 py-2 shadow-md w-full overflow-hidden">
         <div className="flex items-center justify-between max-w-7xl mx-auto w-full gap-2">
@@ -5304,17 +5428,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </button>
             </div>
 
-            {/* Approved Streamer Go-Live Button (Camera with +) */}
-            {(isUserRayan || userRank === 'VIP Streamer' || isVerified) && (
-              <button 
-                onClick={() => setIsHostLiveOpen(true)} 
-                className="ml-1 w-7 h-7 rounded-full bg-slate-900 border border-pink-500/40 flex items-center justify-center text-pink-400 hover:text-pink-300 hover:border-pink-500 transition relative shrink-0 shadow-sm"
-                title="Start Live Broadcast"
-              >
-                <Video className="w-3.5 h-3.5" />
-                <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[7px] font-black w-3 h-3 flex items-center justify-center rounded-full">+</span>
-              </button>
-            )}
+            {/* Camera Go-Live Icon Button (Always opens Host Live Stream Broadcast) */}
+            <button 
+              onClick={() => setIsHostLiveOpen(true)} 
+              className="ml-1 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 border border-pink-400/80 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-300 relative shrink-0 shadow-[0_0_15px_rgba(236,72,153,0.7)] group"
+              title={loc('شروع و اجرای لایواستریم', 'Start Live Broadcast')}
+            >
+              <Video className="w-4 h-4 text-white animate-pulse" />
+              <span className="absolute -top-1 -right-1 bg-lime-400 text-slate-950 text-[8px] font-black w-3.5 h-3.5 flex items-center justify-center rounded-full border border-slate-950 shadow-md">+</span>
+            </button>
           </div>
 
           {/* Center App Title */}
