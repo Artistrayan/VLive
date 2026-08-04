@@ -4017,6 +4017,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   // Filtered Users computation based on userFilter state
   const filteredUsersList = usersList.filter(u => {
     if (userFilter === 'online') return u.online;
+    if (userFilter === 'followers') return u.isFollowed || u.following;
     if (userFilter === 'top') return u.isTop;
     if (userFilter === 'verified') return u.isVerified;
     return true;
@@ -5217,1616 +5218,216 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         </div>
       )}
 
-      {/* HEADER NAVBAR - RESTRUCTURED, COMPACT, ELEGANT & BALANCED FOR ALL SCREENS */}
-      <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/80 px-2.5 sm:px-5 py-2 shadow-md w-full overflow-hidden">
-        <div className="flex items-center justify-between gap-1.5 sm:gap-3 max-w-7xl mx-auto w-full">
+                  {/* HEADER NAVBAR - NEW REDESIGN */}
+      <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/80 px-3 sm:px-5 py-3 shadow-md w-full overflow-hidden">
+        <div className="flex flex-col gap-4 max-w-7xl mx-auto w-full">
           
-          {/* 1. PROFILE SECTION (SIDE A): AVATAR WITH USERNAME & WALLET BALANCE */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 min-w-0">
-            <button 
-              onClick={() => setActiveTab('profile')}
-              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-pink-500/80 p-0.5 hover:scale-105 transition shadow-lg shrink-0 group"
-              title="View Profile"
-            >
-              <img src={userAvatar} alt={userName} className="w-full h-full object-cover rounded-full" />
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-950" />
-            </button>
-
-            <div className="flex flex-col items-start text-left min-w-0">
-              <button 
-                onClick={() => setActiveTab('profile')}
-                className="font-black text-xs text-white hover:text-pink-400 transition truncate max-w-[65px] xs:max-w-[90px] sm:max-w-[130px] leading-tight"
-              >
-                @{currentUsername || userName}
-              </button>
-
-              {/* Wallet balance under profile picture */}
-              <button 
-                onClick={() => setActiveTab('wallet')}
-                className="flex items-center gap-1 text-[9px] sm:text-[10px] font-extrabold text-amber-300 hover:text-amber-200 transition bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded-full mt-0.5 shrink-0"
-                title="Wallet Balance"
-              >
-                <CoinsIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400 shrink-0" />
-                <span>{userCoins.toLocaleString()}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* 2. CENTER SECTION: LOGO + V.LIVE (HIDDEN ON VERY SMALL MOBILE TO PREVENT OVERFLOW) */}
-          <div className="hidden xs:flex flex-col items-center justify-center text-center px-1 shrink-0">
-            <div className="flex items-center gap-1.5">
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 p-0.5 shadow-md flex items-center justify-center">
-                <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-              </div>
-              <h1 className="font-black text-xs sm:text-base tracking-wider text-white">V.LIVE</h1>
-              <span className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-pink-300 text-[8px] sm:text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-pink-500/30 hidden sm:inline-block">
-                4K
-              </span>
-            </div>
-            <p className="text-[9px] sm:text-[10px] font-medium text-slate-400 tracking-tight mt-0.5 leading-none hidden sm:block">
-              Welcome back to V.LIVE
-            </p>
-          </div>
-
-          {/* 3. ICONS SECTION (OPPOSITE SIDE): SETTINGS, NOTIFICATIONS, SEARCH & LANGUAGE */}
-          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            {/* 🔍 Search Toggle */}
-            <button 
-              onClick={() => setIsChatSearchOpen(!isChatSearchOpen)}
-              className="p-1.5 sm:p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
-              title="Search"
-            >
-              <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
-
-            {/* 🔔 Notification Bell */}
-            <button 
-              onClick={() => setIsNotificationsOpen(true)}
-              className="relative p-1.5 sm:p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
-              title="Notifications"
-            >
-              <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              {notificationsList.some(n => n.unread) && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-pink-500" />
+          {/* Top Row: Small Icons */}
+          <div className="flex items-center justify-between w-full">
+            {/* Top-Left: Camera + (Streamer), Free Gift */}
+            <div className="flex items-center gap-2">
+              {(isUserRayan || userRank === 'VIP Streamer' || isVerified) && (
+                <button 
+                  onClick={() => setIsHostLiveOpen(true)} 
+                  className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-pink-400 hover:text-pink-300 hover:border-pink-500/50 transition relative"
+                  title="Go Live / Streamer Mode"
+                >
+                  <Video className="w-4 h-4" />
+                  <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[8px] font-black w-3.5 h-3.5 flex items-center justify-center rounded-full">+</span>
+                </button>
               )}
-            </button>
+              <button 
+                onClick={() => setIsRewardOpeningModalOpen(true)}
+                className="px-2.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center gap-1.5 text-amber-400 hover:scale-105 transition"
+                title="Free Daily Gifts"
+              >
+                <Gift className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-black uppercase tracking-wider">Free</span>
+              </button>
+            </div>
 
-            {/* ⚙️ Settings */}
-            <button 
-              onClick={() => setIsSettingsModalOpen(true)}
-              className="p-1.5 sm:p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
-              title={t('settings', 'Settings')}
-            >
-              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-300" />
-            </button>
+            {/* Top-Right: Notifications, Settings, Language, Messages */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <button 
+                onClick={() => setActiveTab('messages')}
+                className="relative p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-cyan-500/50 transition"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-pink-500" />
+              </button>
+              <button 
+                onClick={() => setIsNotificationsOpen(true)}
+                className="relative p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-cyan-500/50 transition"
+              >
+                <Bell className="w-4 h-4" />
+                {notificationsList.some(n => n.unread) && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-pink-500" />
+                )}
+              </button>
+              <button 
+                onClick={() => setIsSettingsModalOpen(true)}
+                className="p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-cyan-500/50 transition"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={() => setIsLanguageModalOpen(true)}
+                className="px-2 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-200 hover:border-cyan-500/50 transition flex items-center gap-1 font-bold text-[10px]"
+              >
+                <Globe className="w-3 h-3 text-cyan-400" />
+                <span>{currentLangObj.flag}</span>
+              </button>
+            </div>
+          </div>
 
-            {/* 🌐 Language Switcher */}
-            <button 
-              onClick={() => setIsLanguageModalOpen(true)}
-              className="px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-200 hover:border-cyan-500/50 transition flex items-center gap-1 font-bold text-[10px] sm:text-xs"
-              title={t('appLanguage', 'App Language')}
-            >
-              <Globe className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-cyan-400" />
-              <span>{currentLangObj.flag}</span>
-            </button>
+          {/* Bottom Row: Profile & App Logo */}
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setActiveTab('profile')} className="relative group shrink-0">
+                <div className="w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-cyan-500 shadow-lg">
+                  <img src={userAvatar} alt="Profile" className="w-full h-full object-cover rounded-full border-2 border-slate-950" />
+                </div>
+              </button>
+              <div className="flex flex-col items-start">
+                <button onClick={() => setActiveTab('profile')} className="font-black text-sm text-white hover:text-pink-400 transition tracking-tight">
+                  @{currentUsername || userName}
+                </button>
+                <button onClick={() => setActiveTab('wallet')} className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full mt-0.5 shadow-sm">
+                  <CoinsIcon className="w-3 h-3 text-amber-400" />
+                  <span className="text-[11px] font-black text-amber-300">{userCoins.toLocaleString()}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pr-1">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-600 via-purple-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-pink-500/20">
+                <Video className="w-4 h-4 text-white" />
+              </div>
+              <h1 className="font-black text-xl tracking-wider text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">V.LIVE</h1>
+            </div>
           </div>
 
         </div>
       </header>
-
       {/* BODY CONTENT AREA */}
       <main className="flex-1 p-3 sm:p-4 max-w-4xl mx-auto w-full space-y-5 sm:space-y-6">
 
         {/* TAB 1: HOME & LIVE STREAMS */}
         {activeTab === 'home' && (
-<div className="space-y-6">
-
-            {/* 1. SUB-HEADER / QUICK STATS BAR (زیر Header) */}
-            <VisualSectionWrapper pageId="home" sectionId="home_stories_bar" defaultLabel="Stories & Quick Stats Bar">
-            <div className="flex items-center justify-between gap-1.5 sm:gap-2 p-2.5 sm:p-3 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-md overflow-x-auto no-scrollbar">
-              {/* 👛 Coins Counter */}
-              <button 
-                onClick={() => setActiveTab('wallet')}
-                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition active:scale-95 shrink-0"
-              >
-                <CoinsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-pulse" />
-                <span className="text-[11px] sm:text-xs font-black">{userCoins.toLocaleString()} {loc('سکه', 'Coins')}</span>
-              </button>
-
-              {/* 👑 VIP Badge */}
-              <button 
-                onClick={() => setIsVipModalOpen(true)}
-                className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 text-amber-300 hover:scale-105 transition active:scale-95 shadow-sm shrink-0"
-              >
-                <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 fill-amber-400/30" />
-                <span className="text-[11px] sm:text-xs font-black">👑 {loc('اشتراک VIP', 'VIP Club')}</span>
-              </button>
-
-              {/* 🔥 Online Counter */}
-              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] sm:text-xs font-bold shrink-0">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>🔥 {loc('۱۴,۰۰۰ کاربر آنلاین', '14,000 Online')}</span>
-              </div>
-            </div>
-            </VisualSectionWrapper>
-
-            {/* Quick Live Search Bar (If Toggled) */}
-            {(isChatSearchOpen || homeSearchQuery) && (
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
-                <input 
-                  type="text"
-                  value={homeSearchQuery}
-                  onChange={e => setHomeSearchQuery(e.target.value)}
-                  placeholder={loc('جستجوی نام استریمر، شناسه، شهر یا موضوع لایو...', 'Search live streamer name, ID, city, or topic...')}
-                  className="w-full pr-10 pl-10 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 shadow-inner"
-                />
-                {homeSearchQuery && (
-                  <button 
-                    onClick={() => setHomeSearchQuery('')}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* 1.5 LIVE STORIES HORIZONTAL SLIDER */}
+          <div className="space-y-6 animate-fadeIn pb-12">
+            
+            {/* VIP Users (Stories Style) */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-black text-slate-300 px-1">
-                <span className="flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-pink-500 animate-pulse" /> {loc('استوری‌های زنده', 'Live Stories')}</span>
-                <span className="text-[11px] text-pink-400 font-bold cursor-pointer hover:underline" onClick={() => { setProfileSubPage('stories'); setActiveTab('profile'); }}>{loc('مشاهده همه', 'View All')}</span>
-              </div>
-              <div className="flex items-center gap-3 overflow-x-auto pb-1.5 no-scrollbar">
-                {/* Add Story Button */}
-                <button 
-                  onClick={() => setIsCreateStoryOpen(true)}
-                  className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
-                >
-                  <div className="relative w-14 h-14 rounded-full border-2 border-dashed border-pink-500/60 p-0.5 flex items-center justify-center bg-slate-900 group-hover:scale-105 transition shadow-md">
-                    <img src={userAvatar} alt="My Story" className="w-full h-full object-cover rounded-full opacity-60" />
-                    <div className="absolute inset-0 bg-slate-950/40 rounded-full flex items-center justify-center">
-                      <Plus className="w-5 h-5 text-white" />
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-300 max-w-[60px] truncate">{loc('استوری شما', 'Your Story')}</span>
-                </button>
-
-                {/* Live Streamers Stories */}
-                {usersList.slice(0, 10).map((u, idx) => (
-                  <button 
-                    key={u.id || u.username || idx}
-                    onClick={() => {
-                      setSelectedStreamerForProfile(u);
-                      setIsProfileModalOpen(true);
-                    }}
-                    className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
-                  >
-                    <div className="relative w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-600 to-amber-400 group-hover:scale-105 transition shadow-lg shadow-pink-500/20">
-                      <img src={u.avatar} alt={u.name} className="w-full h-full object-cover rounded-full border-2 border-slate-950" />
-                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[8px] font-black px-1.5 py-0.2 rounded-full border border-slate-950 uppercase shadow">
-                        LIVE
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-300 max-w-[64px] truncate">{u.name || u.username}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 1.8 QUICK ACTIONS GRID */}
-            <div className="grid grid-cols-4 gap-2.5 p-3 rounded-3xl bg-slate-900/90 border border-slate-800/80 backdrop-blur-md shadow-xl">
-              <button 
-                onClick={() => setIsLiveModalOpen(true)}
-                className="flex flex-col items-center justify-center p-2 rounded-2xl bg-gradient-to-br from-pink-600/20 to-rose-600/20 border border-pink-500/40 text-pink-300 hover:scale-105 active:scale-95 transition group"
-              >
-                <div className="w-8 h-8 rounded-xl bg-pink-600 text-white flex items-center justify-center shadow-md shadow-pink-600/30 group-hover:scale-110 transition">
-                  <Video className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] font-black mt-1 text-white">{loc('شروع لایو', 'Go Live')}</span>
-              </button>
-
-              <button 
-                onClick={() => setActiveTab('match')}
-                className="flex flex-col items-center justify-center p-2 rounded-2xl bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/40 text-purple-300 hover:scale-105 active:scale-95 transition group"
-              >
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500 to-purple-600 text-white flex items-center justify-center shadow-md shadow-purple-600/30 group-hover:scale-110 transition">
-                  <Flame className="w-4 h-4 fill-white" />
-                </div>
-                <span className="text-[10px] font-black mt-1 text-white">{loc('مچ‌یابی', 'Match')}</span>
-              </button>
-
-              <button 
-                onClick={() => setStreamSubTab('party')}
-                className="flex flex-col items-center justify-center p-2 rounded-2xl bg-gradient-to-br from-cyan-600/20 to-blue-600/20 border border-cyan-500/40 text-cyan-300 hover:scale-105 active:scale-95 transition group"
-              >
-                <div className="w-8 h-8 rounded-xl bg-cyan-600 text-white flex items-center justify-center shadow-md shadow-cyan-600/30 group-hover:scale-110 transition">
-                  <Users className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] font-black mt-1 text-white">{loc('اتاق پارتی', 'Party Stage')}</span>
-              </button>
-
-              <button 
-                onClick={() => setIsVipModalOpen(true)}
-                className="flex flex-col items-center justify-center p-2 rounded-2xl bg-gradient-to-br from-amber-600/20 to-yellow-600/20 border border-amber-500/40 text-amber-300 hover:scale-105 active:scale-95 transition group"
-              >
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 flex items-center justify-center shadow-md shadow-amber-500/30 group-hover:scale-110 transition font-black">
-                  <Crown className="w-4 h-4 fill-slate-950" />
-                </div>
-                <span className="text-[10px] font-black mt-1 text-white">{loc('باشگاه VIP', 'VIP Club')}</span>
-              </button>
-            </div>
-
-            {/* 2. HORIZONTAL CATEGORY SCROLL */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 px-1">
-                <span>Categories & Channels</span>
-                <span className="text-pink-400 font-mono">10 Active Channels</span>
-              </div>
-
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                {[
-                  { id: 'all', label: '🌍 All', count: '2.8K' },
-                  { id: 'trending', label: '🔥 Trending', count: '940' },
-                  { id: 'gaming', label: '🎮 Gaming', count: '410' },
-                  { id: 'music', label: '🎵 Music', count: '320' },
-                  { id: 'dance', label: '💃 Dance', count: '280' },
-                  { id: 'singing', label: '🎤 Singing', count: '210' },
-                  { id: 'chat', label: '💬 Chat', count: '550' },
-                  { id: 'education', label: '🎓 Education', count: '130' },
-                  { id: 'dating', label: '❤️ Dating', count: '380' },
-                  { id: 'vip', label: '👑 VIP 18+', count: '180' }
-                ].map(cat => (
-                  <button 
-                    key={cat.id}
-                    onClick={() => setStreamModeFilter(cat.id)}
-                    className={`px-3.5 py-2 rounded-2xl text-xs font-bold shrink-0 border transition-all flex items-center gap-1.5 ${streamModeFilter === cat.id ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.5)] scale-105' : 'bg-slate-900/90 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200'}`}
-                  >
-                    <span>{cat.label}</span>
-                    <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${streamModeFilter === cat.id ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                      {cat.count}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 5. TRENDING LIVE (کارت‌های بزرگ استریم) */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black text-white flex items-center gap-2">
-                  <Radio className="w-4 h-4 text-pink-500 animate-pulse" />
-                  {loc('استریم‌های زنده داغ', 'Trending Live Streams')}
-                </h3>
-                <span className="text-xs text-pink-400 font-bold cursor-pointer" onClick={() => setStreamSubTab('lives')}>{loc('مشاهده همه', 'View All')}</span>
-              </div>
-
-                {/* Stream Cards Horizontal Slider */}
-                <div className="flex items-center gap-4 overflow-x-auto pb-2.5 no-scrollbar">
-                  {streamsList
-                    .filter(s => {
-                      if (homeSearchQuery) {
-                        const q = homeSearchQuery.toLowerCase();
-                        return s.title.toLowerCase().includes(q) || s.host.toLowerCase().includes(q);
-                      }
-                      if (streamModeFilter === 'vip') return s.isVip18;
-                      return true;
-                    })
-                    .map(stream => (
-                      <div 
-                        key={stream.id} 
-                        className="w-72 sm:w-80 shrink-0 card-3d rounded-3xl overflow-hidden border border-slate-800 bg-slate-900/90 group hover:border-pink-500/50 transition duration-300 flex flex-col shadow-xl"
-                      >
-                        {/* Thumbnail Container */}
-                        <div className="relative aspect-video overflow-hidden bg-slate-950">
-                          <img 
-                            src={stream.thumbnail} 
-                            alt={stream.title} 
-                            className="w-full h-full object-cover group-hover:scale-110 transition duration-700" 
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
-
-                          {/* Top Left: LIVE Badge & VIP Status */}
-                          <div className="absolute top-3 right-3 flex items-center gap-1.5 flex-wrap">
-                            <span className="bg-red-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg border border-red-400/50">
-                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                              LIVE
-                            </span>
-                            {(stream.is_vip || stream.isVip || stream.isVip18) && (
-                              <VipStatusBadge size="small" showText={true} />
-                            )}
-                          </div>
-
-                          {/* Top Right: Viewers Count */}
-                          <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-200 flex items-center gap-1 border border-slate-800 shadow-md">
-                            <Eye className="w-3 h-3 text-cyan-400" />
-                            <span>👁 {(stream.viewers || 2300).toLocaleString()}</span>
-                          </div>
-
-                          {/* Bottom Left / Details Overlay */}
-                          <div className="absolute bottom-3 left-3 right-3 space-y-1">
-                            <div className="flex items-center justify-between text-xs font-bold text-white">
-                              <div className="flex items-center gap-1.5">
-                                <span>👤 {stream.host}</span>
-                                <VerifiedBadge className="w-3.5 h-3.5" />
-                                {(stream.is_vip || stream.isVip || stream.isVip18) && (
-                                  <VipStatusBadge size="small" showText={false} />
-                                )}
-                              </div>
-                              <span className="text-[10px] text-pink-300 font-mono flex items-center gap-0.5 bg-slate-950/80 px-2 py-0.5 rounded-full border border-slate-800">
-                                <Clock className="w-2.5 h-2.5 text-pink-400" />
-                                ⏱ 45m
-                              </span>
-                            </div>
-
-                            <p className="text-[10px] text-slate-300 font-medium line-clamp-1">
-                              {stream.title}
-                            </p>
-
-                            <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
-                              <span className="flex items-center gap-1 text-pink-400 font-semibold">
-                                <MapPin className="w-3 h-3" />
-                                📍 {loc('تهران', 'Tehran')}
-                              </span>
-                              <span>•</span>
-                              <span className="text-amber-300 flex items-center gap-0.5">
-                                <Gift className="w-3 h-3 text-amber-400" />
-                                {loc('۱.۴ هزار هدیه', '1.4K Gifts')}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Card Bottom Actions */}
-                        <div className="p-3 bg-slate-950/90 border-t border-slate-800/80 flex items-center justify-between gap-2 mt-auto">
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            {loc('ورودی:', 'Fee:')} {stream.entryFee > 0 ? `${stream.entryFee} ${loc('سکه', 'coins')}` : loc('رایگان', 'FREE')}
-                          </span>
-
-                          <div className="flex items-center gap-2">
-                            {/* Boost Stream Button */}
-                            <button 
-                              onClick={() => {
-                                if (userCoins < 100) {
-                                  showToast(loc('برای بوست لایو به ۱۰۰ سکه نیاز دارید', '100 coins required to Boost live stream'));
-                                  return;
-                                }
-                                setUserCoins(prev => prev - 100);
-                                showToast(loc(`لایو ${stream.host} با موفقیت بوست شد!`, `Live stream by ${stream.host} Boosted to top!`));
-                              }}
-                              className="p-1.5 px-2.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-500/40 text-purple-300 text-[10px] font-bold flex items-center gap-1"
-                              title="Boost Live to Top (100 coins)"
-                            >
-                              <Zap className="w-3.5 h-3.5 text-amber-400" />
-                              {loc('بوست ⚡', 'Boost ⚡')}
-                            </button>
-
-                            {/* Watch Live Button */}
-                            <button 
-                              onClick={() => handleTryEnterStream(stream)}
-                              className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-xs shadow-md flex items-center gap-1.5 hover:brightness-110 active:scale-95 transition"
-                            >
-                              <Play className="w-3.5 h-3.5 fill-white" />
-                              {loc('ورود به لایو', 'Enter Live')}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-            {/* DISCOVER & SEARCH APPROVED USERS SUBTAB */}
-            {streamSubTab === 'users' && (
-              <div className="space-y-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-                {/* Search Bar & Filter Controls */}
-                <div className="card-3d p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 shadow-xl">
-                  <div className="relative">
-                    <Search className="w-4 h-4 text-pink-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
-                    <input 
-                      type="text"
-                      value={homeSearchQuery}
-                      onChange={e => setHomeSearchQuery(e.target.value)}
-                      placeholder={loc('جستجوی کاربران تأییدشده دیتابیس (نام، شهر، بیو)...', 'Search approved database users (name, city, bio)...')}
-                      className="w-full pr-10 pl-10 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 shadow-inner"
-                    />
-                    {homeSearchQuery && (
-                      <button onClick={() => setHomeSearchQuery('')} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Filter Pills Bar */}
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-                    {[
-                      { id: 'all', label: loc('🌍 همه کاربران', '🌍 All Users') },
-                      { id: 'online', label: loc('🟢 آنلاین‌ها', '🟢 Online') },
-                      { id: 'top', label: loc('👑 برترین‌ها', '👑 Top Hosts') },
-                      { id: 'verified', label: loc('✅ تأییدشده‌ها', '✅ Verified') }
-                    ].map(f => (
-                      <button
-                        key={f.id}
-                        onClick={() => setUserFilter(f.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 border transition ${userFilter === f.id ? 'bg-pink-600 text-white border-pink-400 shadow' : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'}`}
-                      >
-                        {f.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Approved User Cards Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {usersList
-                    .filter(u => u.status === 'approved' || u.isApproved !== false)
-                    .filter(u => u.username !== currentUsername)
-                    .filter(u => {
-                      if (homeSearchQuery) {
-                        const q = homeSearchQuery.toLowerCase();
-                        return (u.name && u.name.toLowerCase().includes(q)) || 
-                               (u.username && u.username.toLowerCase().includes(q)) || 
-                               (u.city && u.city.toLowerCase().includes(q)) || 
-                               (u.bio && u.bio.toLowerCase().includes(q));
-                      }
-                      if (userFilter === 'online') return true; // Everyone is online for now
-                      if (userFilter === 'top') return u.isTop || u.is_vip || u.isVip;
-                      if (userFilter === 'verified') return u.isVerified || u.is_verified;
-                      return true;
-                    })
-                    .map(u => (
-                      <div key={u.id || u.username} className="card-3d p-4 rounded-3xl bg-slate-900 border border-slate-800 hover:border-pink-500/50 transition flex flex-col justify-between space-y-3">
-                        <div className="flex items-center gap-3">
-                          <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-pink-500/60 shrink-0">
-                            <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
-                            {u.online && <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full" />}
-                          </div>
-                          <div className="overflow-hidden">
-                            <div className="flex items-center gap-1">
-                              <h4 className="text-xs font-black text-white truncate">{u.name || u.username}</h4>
-                              <VerifiedBadge className="w-3.5 h-3.5" />
-                            </div>
-                            <p className="text-[10px] text-pink-400 font-bold">@{u.username}</p>
-                            <span className="text-[9px] text-slate-400 font-medium">📍 {u.city || 'Tehran'}</span>
-                          </div>
-                        </div>
-
-                        <p className="text-[11px] text-slate-300 line-clamp-2 italic">"{u.bio || 'استریمر تأییدشده V.Live+'}"</p>
-
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-                          <span className="text-[10px] font-mono text-amber-400 font-bold">🪙 {(u.coins || 5000).toLocaleString()}</span>
-                          <button
-                            onClick={() => {
-                              setSelectedHostForCall({
-                                name: u.name,
-                                username: u.username,
-                                avatar: u.avatar,
-                                role: u.role || 'VIP Host',
-                                isVerified: true,
-                                online: u.online !== false,
-                                isVip: u.isVip !== false
-                              });
-                              setIsDirectCallModalOpen(true);
-                            }}
-                            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-[11px] shadow hover:scale-105 active:scale-95 transition"
-                          >
-                            {loc('تماس / چت', 'Call / Chat')}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-            {streamSubTab === 'party' && (
-              <div className="space-y-4">
-                <div className="p-4 rounded-3xl bg-gradient-to-r from-purple-900/40 via-slate-900 to-pink-900/40 border border-purple-500/40 flex items-center justify-between flex-wrap gap-3">
-                  <div>
-                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                      <Users className="w-4 h-4 text-purple-400" />
-                      {loc('استیج پارتی چندنفره صوتی و تصویری', 'Multi-Guest Voice & Video Party Stage')}
-                    </h3>
-                    <p className="text-[10px] text-purple-300">{loc('روی استیج بنشینید، با میزبان چت کنید و هدیه گروهی بفرستید', 'Take a seat on stage, chat with hosts & send group gifts')}</p>
-                  </div>
-
-                  <button 
-                    onClick={() => {
-                      const newRoom = {
-                        id: `party_${Date.now()}`,
-                        title: loc(`اتاق VIP ${userName}`, `${userName}'s VIP Lounge`),
-                        hostName: userName,
-                        hostAvatar: userAvatar,
-                        totalSeats: 9,
-                        occupiedSeats: 1,
-                        seats: Array.from({ length: 9 }).map((_, i) => ({
-                          index: i,
-                          user: i === 0 ? userName : null,
-                          avatar: i === 0 ? userAvatar : null,
-                          isHost: i === 0,
-                          isMuted: false
-                        }))
-                      };
-                      setPartyRoomsList(prev => [newRoom, ...prev]);
-                      setActivePartyRoom(newRoom);
-                      setMySeatIndex(0);
-                      showToast(loc('اتاق پارتی شما با موفقیت ساخته شد!', 'Your Party Lounge has been created!'));
-                    }}
-                    className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white font-bold text-xs shadow-lg flex items-center gap-1.5 shrink-0 hover:brightness-110 active:scale-95 transition"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    {loc('ساخت اتاق پارتی', 'Create Party Room')}
-                  </button>
-                </div>
-
-                {/* Party Rooms Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {partyRoomsList.map(room => (
-                    <div key={room.id} className="card-3d p-4 rounded-3xl border border-purple-500/30 bg-slate-900/90 space-y-3">
-                      <div className="flex items-center gap-3">
-                        <img src={room.hostAvatar} alt={room.hostName} className="w-12 h-12 rounded-2xl object-cover border-2 border-purple-500 shadow-md shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-xs font-bold text-white truncate">{room.title}</h4>
-                          <p className="text-[10px] text-purple-300">{loc('میزبان:', 'Host:')} @{room.hostName}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-500/30 text-[9px] font-bold">
-                              {room.occupiedSeats} / {room.totalSeats} {loc('صندلی پر است', 'Seats Occupied')}
-                            </span>
-                            <span className="text-[9px] text-emerald-400 font-bold flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                              {loc('اتاق فعال', 'Active Lounge')}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Mini Seats Preview Grid */}
-                      <div className="flex items-center gap-1.5 bg-slate-950 p-2.5 rounded-2xl overflow-x-auto border border-slate-800">
-                        {room.seats.map((seat, idx) => (
-                          <div key={idx} className="w-8 h-8 rounded-full border border-purple-500/40 bg-slate-900 flex items-center justify-center shrink-0 overflow-hidden relative">
-                            {seat.avatar ? (
-                              <img src={seat.avatar} alt="Seat" className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-[9px] text-slate-500 font-bold">#{idx + 1}</span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-
-                      <button 
-                        onClick={() => setActivePartyRoom(room)}
-                        className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white text-xs font-bold shadow-lg flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-white" />
-                        {loc('ورود به استیج و نشستن', 'Enter Stage & Take Seat')}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* REDESIGNED ADVANCED DAILY MISSIONS & REWARDS CENTER */}
-            {streamSubTab === 'quests' && (
-              <div className="space-y-5 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-                
-                {/* 1. TOP HEADER & PROGRESS METER */}
-                <div className="card-3d p-5 rounded-3xl bg-gradient-to-br from-cyan-950/60 via-slate-900 to-purple-950/60 border border-cyan-500/40 space-y-4 shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-48 h-48 bg-cyan-500/10 blur-3xl rounded-full pointer-events-none" />
-                  
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-400 to-purple-500 p-0.5 shadow-lg shadow-cyan-500/20">
-                        <div className="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center">
-                          <Target className="w-6 h-6 text-cyan-400" />
-                        </div>
-                      </div>
-                      <div>
-                        <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
-                          🎯 مأموریت‌های روزانه (Daily Missions)
-                          <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-mono border border-cyan-500/30">
-                            Season Pass
-                          </span>
-                        </h2>
-                        <p className="text-xs text-slate-300 mt-0.5">مأموریت‌ها را انجام دهید، سکه، الماس و پاداش‌های VIP آزاد کنید!</p>
-                      </div>
-                    </div>
-
-                    {/* Streak & Level Info Pill */}
-                    <div className="flex items-center gap-2 self-start sm:self-auto">
-                      <div className="px-3 py-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-1.5 text-amber-300 text-xs font-black shadow-md">
-                        <Flame className="w-4 h-4 text-amber-400 fill-amber-400 animate-bounce" />
-                        <span>{loginStreakDays} روز استریک متوالی</span>
-                      </div>
-                      <div className="px-3 py-1.5 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center gap-1.5 text-purple-300 text-xs font-black shadow-md">
-                        <Award className="w-4 h-4 text-purple-400" />
-                        <span>Level {userLevel}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Daily Completion Progress Bar & XP Level Pass */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 relative z-10">
-                    {/* Missions Completion Rate */}
-                    <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-1.5">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-slate-300">پیشرفت کل مأموریت‌ها:</span>
-                        <span className="font-black font-mono text-cyan-400">
-                          {allMissions.filter(m => m.completed).length} / {allMissions.length} (
-                          {Math.round((allMissions.filter(m => m.completed).length / allMissions.length) * 100)}%)
-                        </span>
-                      </div>
-                      <div className="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
-                        <div 
-                          className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]"
-                          style={{ width: `${(allMissions.filter(m => m.completed).length / allMissions.length) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Level XP Meter */}
-                    <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-1.5">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-slate-300">امتیاز تجربی (Level Pass XP):</span>
-                        <span className="font-black font-mono text-purple-400">{userXP} / {userMaxXP} XP</span>
-                      </div>
-                      <div className="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
-                        <div 
-                          className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(168,85,247,0.8)]"
-                          style={{ width: `${(userXP / userMaxXP) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. 30-DAY DAILY LOGIN REWARD CALENDAR */}
-                <div className="card-3d p-4 rounded-3xl bg-slate-900 border border-amber-500/30 space-y-3 shadow-xl">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-amber-400" />
-                      <h3 className="text-xs font-black text-white">تقویم ۳۰ روزه جایزه ورود روزانه (Daily Login Calendar)</h3>
-                    </div>
-                    <button
-                      onClick={handleClaimDailyCheckIn}
-                      disabled={claimedCheckInDays.includes(todayCheckInDay)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1 shadow-md ${claimedCheckInDays.includes(todayCheckInDay) ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'btn-neon-pink animate-pulse'}`}
-                    >
-                      <Gift className="w-3.5 h-3.5" />
-                      <span>{claimedCheckInDays.includes(todayCheckInDay) ? 'ورود امروز ثبت شد ✅' : 'دریافت جایزه امروز 🎁'}</span>
-                    </button>
-                  </div>
-
-                  {/* Horizontal Scrollable Days */}
-                  <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                    {Array.from({ length: 30 }, (_, i) => i + 1).map(day => {
-                      const isClaimed = claimedCheckInDays.includes(day);
-                      const isToday = day === todayCheckInDay;
-                      const isMilestone = day === 7 || day === 14 || day === 21 || day === 30;
-
-                      return (
-                        <div
-                          key={day}
-                          className={`flex flex-col items-center justify-between p-2 rounded-2xl min-w-[70px] h-24 border transition shrink-0 relative overflow-hidden ${
-                            isToday ? 'bg-gradient-to-b from-amber-500/20 to-slate-900 border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.3)] ring-2 ring-amber-400/50' :
-                            isClaimed ? 'bg-slate-950/80 border-slate-800 opacity-60' :
-                            isMilestone ? 'bg-purple-950/40 border-purple-500/50' : 'bg-slate-950 border-slate-800'
-                          }`}
-                        >
-                          {isMilestone && (
-                            <span className="absolute top-0 right-0 left-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[8px] font-black text-center py-0.5 uppercase">
-                              {day === 7 ? '🎨 Frame' : day === 14 ? '👑 VIP' : day === 21 ? '💎 50' : '🏆 Badge'}
-                            </span>
-                          )}
-
-                          <span className="text-[10px] font-bold text-slate-400 mt-1">روز {day}</span>
-                          
-                          <div className="my-1">
-                            {isClaimed ? (
-                              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                            ) : isMilestone ? (
-                              <Crown className="w-5 h-5 text-amber-300 animate-pulse" />
-                            ) : (
-                              <Coins className="w-5 h-5 text-amber-400" />
-                            )}
-                          </div>
-
-                          <span className="text-[9px] font-black text-white font-mono">
-                            +{day * 10 + 30} 🪙
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* 3. BONUS LUCKY MISSION & MYSTERY CHESTS */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {/* Daily Bonus Lucky Mission */}
-                  <div className="card-3d p-3.5 rounded-2xl bg-gradient-to-br from-purple-900/40 to-slate-900 border border-purple-500/40 space-y-2 flex flex-col justify-between shadow-lg">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-purple-300 flex items-center gap-1 bg-purple-500/20 px-2 py-0.5 rounded-lg border border-purple-500/30">
-                        🎲 مأموریت شانس روزانه
-                      </span>
-                      <span className="text-[10px] font-mono text-amber-400 font-bold">+{bonusMission.rewardCoins} 🪙</span>
-                    </div>
-                    <h4 className="text-xs font-bold text-white leading-snug">{bonusMission.title}</h4>
-                    <button
-                      onClick={handleClaimBonusMission}
-                      disabled={bonusMission.claimed}
-                      className={`w-full py-1.5 rounded-xl text-xs font-black transition ${bonusMission.claimed ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-md animate-pulse'}`}
-                    >
-                      {bonusMission.claimed ? 'دریافت شده ✅' : 'دریافت جایزه شانس 🎲'}
-                    </button>
-                  </div>
-
-                  {/* Weekly Mystery Box */}
-                  <div className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-cyan-500/40 space-y-2 flex flex-col justify-between shadow-lg">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-cyan-300 flex items-center gap-1 bg-cyan-500/20 px-2 py-0.5 rounded-lg border border-cyan-500/30">
-                        🎁 جعبه هفتگی (Weekly Chest)
-                      </span>
-                      <span className="text-[10px] font-mono text-cyan-300 font-bold">{weeklyChest.completed}/{weeklyChest.required}</span>
-                    </div>
-                    <p className="text-[10px] text-slate-300 font-bold">{weeklyChest.reward}</p>
-                    <button
-                      onClick={handleClaimWeeklyChest}
-                      disabled={weeklyChest.claimed || weeklyChest.completed < weeklyChest.required}
-                      className={`w-full py-1.5 rounded-xl text-xs font-black transition ${weeklyChest.claimed ? 'bg-slate-800 text-slate-500' : weeklyChest.completed >= weeklyChest.required ? 'bg-cyan-500 text-slate-950 shadow-md animate-bounce' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
-                    >
-                      {weeklyChest.claimed ? 'باز شده ✅' : weeklyChest.completed >= weeklyChest.required ? 'باز کردن جعبه هفتگی 🎁' : 'در حال تکمیل...'}
-                    </button>
-                  </div>
-
-                  {/* Monthly Mega Reward Chest */}
-                  <div className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-amber-500/40 space-y-2 flex flex-col justify-between shadow-lg">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-amber-300 flex items-center gap-1 bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-500/30">
-                        🎉 ابر جعبه ماهانه (Mega Chest)
-                      </span>
-                      <span className="text-[10px] font-mono text-amber-300 font-bold">{monthlyChest.completed}/{monthlyChest.required}</span>
-                    </div>
-                    <p className="text-[10px] text-slate-300 font-bold">{monthlyChest.reward}</p>
-                    <button
-                      onClick={handleClaimMonthlyChest}
-                      disabled={monthlyChest.claimed || monthlyChest.completed < monthlyChest.required}
-                      className={`w-full py-1.5 rounded-xl text-xs font-black transition ${monthlyChest.claimed ? 'bg-slate-800 text-slate-500' : monthlyChest.completed >= monthlyChest.required ? 'btn-neon-pink shadow-md animate-bounce' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
-                    >
-                      {monthlyChest.claimed ? 'باز شده ✅' : monthlyChest.completed >= monthlyChest.required ? 'باز کردن ابر جعبه 🎉' : 'در حال تکمیل...'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* 4. CATEGORY SUBTABS NAVIGATION BAR */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-slate-800">
-                  {[
-                    { id: 'daily', label: '🎯 روزانه (Daily)', count: allMissions.filter(m => m.category === 'daily').length },
-                    { id: 'weekly', label: '📅 هفتگی (Weekly)', count: allMissions.filter(m => m.category === 'weekly').length },
-                    { id: 'monthly', label: '📆 ماهانه (Monthly)', count: allMissions.filter(m => m.category === 'monthly').length },
-                    { id: 'streamer', label: '🎥 استریمر (Streamer)', count: allMissions.filter(m => m.category === 'streamer').length },
-                    { id: 'vip', label: '👑 ویژه VIP', count: allMissions.filter(m => m.category === 'vip').length },
-                    { id: 'history', label: '📜 تاریخچه جوایز', count: claimedMissionsHistory.length }
-                  ].map(tab => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setMissionActiveTab(tab.id)}
-                      className={`px-4 py-2 rounded-2xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
-                        missionActiveTab === tab.id ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
-                      }`}
-                    >
-                      <span>{tab.label}</span>
-                      <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono">{tab.count}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* 5. MISSIONS CARDS LIST */}
-                {missionActiveTab !== 'history' ? (
-                  <div className="space-y-3">
-                    {allMissions.filter(m => m.category === missionActiveTab).map(m => (
-                      <div 
-                        key={m.id} 
-                        className={`card-3d p-4 rounded-3xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md ${
-                          m.isVipExclusive ? 'bg-gradient-to-r from-amber-950/30 via-slate-900 to-slate-900 border-amber-500/50' :
-                          m.isStreamerExclusive ? 'bg-gradient-to-r from-purple-950/30 via-slate-900 to-slate-900 border-purple-500/40' :
-                          m.completed ? 'bg-slate-900/90 border-slate-800' : 'bg-slate-900/70 border-slate-800/80'
-                        }`}
-                      >
-                        {/* Left Info Column */}
-                        <div className="space-y-1.5 min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {/* Difficulty Tag */}
-                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${
-                              m.difficulty === 'easy' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                              m.difficulty === 'medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                              'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                            }`}>
-                              {m.difficulty === 'easy' ? '🟢 آسان' : m.difficulty === 'medium' ? '🟡 متوسط' : '🔴 سخت'}
-                            </span>
-
-                            {m.isVipExclusive && (
-                              <span className="px-2 py-0.5 rounded-lg bg-amber-500 text-slate-950 text-[9px] font-black flex items-center gap-1">
-                                <Crown className="w-3 h-3 fill-slate-950" /> VIP Exclusive
-                              </span>
-                            )}
-
-                            {m.isStreamerExclusive && (
-                              <span className="px-2 py-0.5 rounded-lg bg-purple-600 text-white text-[9px] font-black flex items-center gap-1">
-                                <Radio className="w-3 h-3" /> Streamer Quest
-                              </span>
-                            )}
-                          </div>
-
-                          <h4 className="text-xs sm:text-sm font-bold text-white leading-snug">{m.title}</h4>
-                          <p className="text-[10px] text-slate-400">{m.desc}</p>
-
-                          {/* Progress Meter Bar */}
-                          <div className="space-y-1 max-w-md pt-1">
-                            <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
-                              <span>میزان پیشرفت:</span>
-                              <span className="font-bold text-cyan-300">{m.progress} / {m.total}</span>
-                            </div>
-                            <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
-                              <div 
-                                className="h-full bg-gradient-to-r from-pink-500 to-cyan-400 rounded-full transition-all duration-300"
-                                style={{ width: `${Math.min(100, (m.progress / m.total) * 100)}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Right Rewards & Action Column */}
-                        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800">
-                          <div className="flex flex-col items-start sm:items-end">
-                            <div className="flex items-center gap-1 text-xs font-black text-amber-300">
-                              {m.rewardType === 'coins' ? <Coins className="w-3.5 h-3.5 text-amber-400" /> :
-                               m.rewardType === 'diamonds' ? <Gem className="w-3.5 h-3.5 text-cyan-400" /> :
-                               m.rewardType === 'vip_trial' ? <Crown className="w-3.5 h-3.5 text-amber-400" /> :
-                               <Gift className="w-3.5 h-3.5 text-pink-400" />}
-                              <span>{typeof m.rewardVal === 'number' ? `+${m.rewardVal} ${m.rewardType.toUpperCase()}` : m.rewardVal}</span>
-                            </div>
-                            <span className="text-[10px] font-mono text-purple-400 font-bold">+{m.xpVal} XP</span>
-                          </div>
-
-                          <button
-                            onClick={() => handleMissionAction(m)}
-                            className={`px-4 py-2.5 rounded-2xl text-xs font-black shrink-0 transition shadow-lg flex items-center gap-1.5 active:scale-95 ${
-                              m.claimed ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700' :
-                              m.completed ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-black animate-pulse shadow-emerald-500/20' :
-                              'bg-slate-950 text-pink-400 border border-pink-500/40 hover:bg-pink-600 hover:text-white'
-                            }`}
-                          >
-                            {m.claimed ? (
-                              <>
-                                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                                <span>دریافت شده</span>
-                              </>
-                            ) : m.completed ? (
-                              <>
-                                <Gift className="w-4 h-4 fill-slate-950" />
-                                <span>دریافت جایزه (Claim)</span>
-                              </>
-                            ) : (
-                              <>
-                                <span>انجام مأموریت</span>
-                                <ChevronRight className="w-4 h-4" />
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  /* HISTORY LOG TAB */
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800">
-                      <span className="text-xs font-bold text-white flex items-center gap-2">
-                        <History className="w-4 h-4 text-purple-400" />
-                        سوابق جوایز دریافت شده مأموریت‌ها ({claimedMissionsHistory.length})
-                      </span>
-                    </div>
-
-                    {claimedMissionsHistory.map(h => (
-                      <div key={h.id} className="card-3d p-3.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <span className="text-xl">{h.icon}</span>
-                          <div>
-                            <h4 className="text-xs font-bold text-white">{h.title}</h4>
-                            <span className="text-[10px] text-slate-400 font-mono">{h.date}</span>
-                          </div>
-                        </div>
-                        <span className="text-xs font-black text-emerald-400 font-mono">{h.reward}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-{/* LEADERBOARD RANKING SUBTAB */}
-            {streamSubTab === 'leaderboard' && (
-              <div className="space-y-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-                {/* Header & Season Info */}
-                <div className="p-5 rounded-3xl bg-gradient-to-br from-amber-500/20 via-slate-900 to-yellow-900/20 border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
-                  
-                  <div className="flex items-center gap-4 relative z-10">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-600 p-0.5 shadow-lg shadow-amber-500/20">
-                      <div className="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center">
-                        <Trophy className="w-7 h-7 text-amber-400" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-black text-white flex items-center gap-2">
-                        لیدربرد جهانی
-                        <span className="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 text-[10px] border border-pink-500/30">
-                          {lbSeason}
-                        </span>
-                      </h3>
-                      <p className="text-xs text-slate-400 mt-1">رقابت کنید، مدال بگیرید و جایزه ببرید!</p>
-                    </div>
-                  </div>
-
-                  {/* My Rank Card */}
-                  <div className="bg-slate-950/80 backdrop-blur-md px-5 py-3 rounded-2xl border border-slate-700/50 flex flex-col items-center justify-center relative z-10">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Your Rank</span>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-amber-400 font-black text-xl">#158</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Filters Row */}
-                <div className="flex flex-col md:flex-row gap-3">
-                  {/* Category Tabs */}
-                  <div className="flex-1 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 flex items-center overflow-x-auto no-scrollbar">
-                    {[
-                      { id: 'streamers', icon: Video, label: 'استریمرها' },
-                      { id: 'gifters', icon: Gift, label: 'حمایت‌کنندگان' },
-                      { id: 'earnings', icon: DollarSign, label: 'درآمدها' },
-                      { id: 'popular', icon: Heart, label: 'محبوب‌ترین' },
-                      { id: 'rising', icon: TrendingUp, label: 'در حال رشد' },
-                      { id: 'vip', icon: Crown, label: 'وی‌آی‌پی' }
-                    ].map(tab => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setLbMainTab(tab.id)}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${lbMainTab === tab.id ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                      >
-                        <tab.icon className="w-3.5 h-3.5" />
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Time & Region Filters */}
-                  <div className="flex gap-2">
-                    <select 
-                      value={lbTimeFilter}
-                      onChange={e => setLbTimeFilter(e.target.value)}
-                      className="bg-slate-900 border border-slate-800 text-slate-300 text-xs font-bold rounded-xl px-3 outline-none cursor-pointer"
-                    >
-                      <option value="today">امروز</option>
-                      <option value="week">این هفته</option>
-                      <option value="month">این ماه</option>
-                      <option value="year">امسال</option>
-                      <option value="all">تمام زمان‌ها</option>
-                    </select>
-
-                    <select 
-                      value={lbRegionFilter}
-                      onChange={e => setLbRegionFilter(e.target.value)}
-                      className="bg-slate-900 border border-slate-800 text-slate-300 text-xs font-bold rounded-xl px-3 outline-none cursor-pointer"
-                    >
-                      <option value="global">🌍 جهانی</option>
-                      <option value="country">🌏 کشور</option>
-                      <option value="city">📍 شهر</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Top 3 Podium (Only show for first page of ranking) */}
-                <div className="flex items-end justify-center gap-2 sm:gap-6 mt-12 mb-8 h-48 px-2">
-                  {/* Rank 2 - Silver */}
-                  {leaderboardData[1] && (
-                    <div className="flex flex-col items-center animate-slideUp" style={{ animationDelay: '100ms' }}>
-                      <div className="relative mb-2">
-                        <img src={leaderboardData[1].avatar} className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-slate-300 shadow-[0_0_15px_rgba(203,213,225,0.5)]" />
-                        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-slate-300 border-2 border-slate-900 flex items-center justify-center font-black text-slate-900 text-sm shadow-lg">2</div>
-                      </div>
-                      <span className="text-white font-bold text-xs max-w-[80px] truncate text-center">{leaderboardData[1].user}</span>
-                      <span className="text-slate-400 text-[10px]">{leaderboardData[1].score}</span>
-                      <div className="w-16 sm:w-20 h-24 bg-gradient-to-t from-slate-400/20 to-slate-400/5 mt-2 rounded-t-xl border-t-2 border-slate-400/50" />
-                    </div>
-                  )}
-
-                  {/* Rank 1 - Gold */}
-                  {leaderboardData[0] && (
-                    <div className="flex flex-col items-center animate-slideUp z-10" style={{ animationDelay: '0ms' }}>
-                      <div className="relative mb-2">
-                        <Crown className="w-8 h-8 text-amber-400 absolute -top-8 left-1/2 -translate-x-1/2 drop-shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
-                        <img src={leaderboardData[0].avatar} className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.6)]" />
-                        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-amber-400 border-4 border-slate-900 flex items-center justify-center font-black text-slate-900 text-lg shadow-lg">1</div>
-                      </div>
-                      <span className="text-white font-black text-sm max-w-[100px] truncate text-center">{leaderboardData[0].user}</span>
-                      <span className="text-amber-400 text-xs font-bold">{leaderboardData[0].score}</span>
-                      <div className="w-20 sm:w-24 h-32 bg-gradient-to-t from-amber-400/30 to-amber-400/5 mt-2 rounded-t-xl border-t-2 border-amber-400/50 flex flex-col items-center justify-start pt-4">
-                        <span className="text-amber-300 text-[10px] font-bold">10000 🪙</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Rank 3 - Bronze */}
-                  {leaderboardData[2] && (
-                    <div className="flex flex-col items-center animate-slideUp" style={{ animationDelay: '200ms' }}>
-                      <div className="relative mb-2">
-                        <img src={leaderboardData[2].avatar} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-4 border-amber-700 shadow-[0_0_15px_rgba(180,83,9,0.5)]" />
-                        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-amber-700 border-2 border-slate-900 flex items-center justify-center font-black text-amber-100 text-sm shadow-lg">3</div>
-                      </div>
-                      <span className="text-white font-bold text-xs max-w-[70px] truncate text-center">{leaderboardData[2].user}</span>
-                      <span className="text-slate-400 text-[10px]">{leaderboardData[2].score}</span>
-                      <div className="w-14 sm:w-16 h-16 bg-gradient-to-t from-amber-700/20 to-amber-700/5 mt-2 rounded-t-xl border-t-2 border-amber-700/50" />
-                    </div>
-                  )}
-                </div>
-
-                {/* List View */}
-                <div className="space-y-3">
-                  {leaderboardData.slice(3).map((item, idx) => (
-                    <div 
-                      key={item.rank} 
-                      onClick={() => showToast(`مشاهده پروفایل ${item.user}`)}
-                      className={`card-3d p-4 rounded-3xl border flex items-center justify-between gap-3 cursor-pointer transition hover:bg-slate-800 ${item.isMe ? 'bg-amber-950/30 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : 'bg-slate-900 border-slate-800'}`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-8 font-black text-slate-500 text-sm text-center">
-                          {item.rank}
-                        </div>
-                        <img src={item.avatar} alt={item.user} className="w-12 h-12 rounded-2xl object-cover ring-2 ring-slate-700 shrink-0" />
-                        <div>
-                          <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
-                            {item.user}
-                            {item.isMe && <span className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[9px] font-black uppercase">You</span>}
-                          </h4>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] text-slate-400 font-medium bg-slate-950 px-2 py-0.5 rounded-lg border border-slate-800">
-                              LVL {item.level}
-                            </span>
-                            <span className="text-[10px] text-amber-400 font-bold">
-                              {item.badge}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col items-end">
-                        <div className="text-sm font-black text-white flex items-center gap-1">
-                          {item.score}
-                          <span className="text-[10px] text-slate-400 font-normal">{item.label}</span>
-                        </div>
-                        {lbMainTab === 'streamers' && (
-                          <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-1">
-                            <span className="flex items-center gap-0.5"><Eye className="w-3 h-3" /> {item.viewers}</span>
-                            <span className="flex items-center gap-0.5"><Gift className="w-3 h-3 text-pink-500/70" /> {item.gifts}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {/* STORIES REEL CAROUSEL BAR */}
-            <div className="bg-slate-900/80 p-3.5 rounded-3xl border border-slate-800/90 shadow-lg space-y-2" dir={isRtl ? "rtl" : "ltr"}>
               <div className="flex items-center justify-between px-1">
-                <span className="text-xs font-black text-white flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
-                  استوری‌های لحظه‌ای (Stories)
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setIsStoryArchiveOpen(true)}
-                    className="text-[10px] font-bold text-slate-400 hover:text-pink-400 flex items-center gap-1 transition"
-                  >
-                    <History className="w-3 h-3" />
-                    آرشیو استوری‌ها
-                  </button>
-                </div>
+                <h3 className="text-sm font-black text-white flex items-center gap-1.5">
+                  <Crown className="w-4 h-4 text-amber-400" />
+                  کاربران ویژه (VIP)
+                </h3>
               </div>
-
-              <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar">
-                {/* Create Story Button */}
-                <div className="flex flex-col items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => setIsCreateStoryOpen(true)}
-                    className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-950 p-0.5 border-2 border-dashed border-pink-500/60 hover:border-pink-400 transition flex items-center justify-center group shadow-md"
-                  >
-                    <img src={userAvatar} alt="My Avatar" className="w-full h-full rounded-full object-cover group-hover:scale-105 transition" />
-                    <div className="absolute inset-0 bg-slate-950/40 rounded-full flex items-center justify-center">
-                      <div className="w-6 h-6 rounded-full bg-pink-500 text-slate-950 flex items-center justify-center font-black shadow-lg">
-                        <Plus className="w-4 h-4" />
-                      </div>
+              <div className="flex items-center gap-4 overflow-x-auto pb-2 no-scrollbar px-1">
+                {usersList.filter(u => u.isVip || u.is_vip || u.isTop).map(user => (
+                  <div key={user.id} className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group" onClick={() => { setSelectedUser(user); setIsUserProfileModalOpen(true); }}>
+                    <div className="relative w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-orange-500 shadow-lg shadow-amber-500/20 group-hover:scale-105 transition">
+                      <img src={user.avatar || 'https://via.placeholder.com/150'} alt={user.name} className="w-full h-full object-cover rounded-full border-2 border-slate-950" />
+                      {user.online && (
+                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-950 shadow-sm" />
+                      )}
                     </div>
-                  </button>
-                  <span className="text-[10px] font-bold text-slate-300">افزودن استوری</span>
-                </div>
+                    <span className="text-[10px] font-bold text-white max-w-[60px] truncate">{user.name}</span>
+                    <span className="text-[9px] text-amber-400 bg-amber-500/10 px-1.5 rounded-full">Level {user.level || 5}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-                {/* Story Circles */}
-                {advancedStories.map(story => (
+            {/* Filter Header */}
+            <div className="flex items-center justify-between gap-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800">
+              <div className="flex items-center gap-1">
+                {['all', 'online', 'followers'].map(f => (
+                  <button 
+                    key={f}
+                    onClick={() => setUserFilter(f)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${userFilter === f ? 'bg-pink-500 text-white shadow-md shadow-pink-500/30' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    {f === 'all' ? 'همه کاربران' : f === 'online' ? 'آنلاین' : 'دنبال کننده ها'}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => setIsSmartMatchModalOpen(true)} className="p-2 rounded-xl bg-slate-800 text-cyan-400 hover:bg-slate-700 transition">
+                <Filter className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* User Grid */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              {filteredUsersList.map(user => (
+                <div key={user.id} className="card-3d bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 group relative">
+                  
+                  {/* Image & Click to View */}
                   <div 
-                    key={story.id} 
-                    onClick={() => handleOpenStory(story)}
-                    className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                    className="aspect-[3/4] relative cursor-pointer"
+                    onClick={() => {
+                      if (user.isStreaming || streamsList.some(s => s.host === user.name)) {
+                        const stream = streamsList.find(s => s.host === user.name) || { host: user.name, avatar: user.avatar, id: 'stream_'+user.id };
+                        setViewingStream(stream);
+                      } else {
+                        setSelectedUser(user);
+                        setIsUserProfileModalOpen(true);
+                      }
+                    }}
                   >
-                    <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 transition group-hover:scale-105 shadow-md ${story.hasUnseen ? 'bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 animate-pulse' : 'bg-slate-700'}`}>
-                      <div className="w-full h-full bg-slate-950 rounded-full p-0.5">
-                        <img src={story.user.avatar} alt={story.user.name} className="w-full h-full rounded-full object-cover" />
+                    <img src={user.avatar || 'https://via.placeholder.com/150'} alt={user.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
+                    
+                    {/* Top Left: Online Dot */}
+                    {user.online && (
+                      <div className="absolute top-2 left-2 flex items-center gap-1 bg-slate-950/60 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-slate-800/50">
+                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                         <span className="text-[9px] font-bold text-emerald-400">Online</span>
                       </div>
-                      {story.user.isVip && (
-                        <div className="absolute -top-1 -right-1 bg-amber-400 text-slate-950 rounded-full p-0.5 shadow-md">
-                          <Crown className="w-3 h-3 fill-slate-950" />
-                        </div>
-                      )}
-                      {story.user.isPromo && (
-                        <div className="absolute -bottom-1 -left-1 bg-pink-600 text-white text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase border border-slate-900 shadow">
-                          Ad
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-300 max-w-[65px] truncate text-center">
-                      {story.isMe ? 'استوری من' : story.user.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 2. SUBTABS NAVIGATION BAR */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar border-b border-slate-800/80">
-              <button
-                onClick={() => setCallMainSubTab('recent')}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'recent' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
-              >
-                <Clock className="w-4 h-4" />
-                <span>تاریخچه اخیر (Recent Calls)</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono">{callHistoryList.length}</span>
-              </button>
-
-              <button
-                onClick={() => setCallMainSubTab('contacts')}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'contacts' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
-              >
-                <Users className="w-4 h-4" />
-                <span>مخاطبین (Contacts)</span>
-              </button>
-
-              <button
-                onClick={() => setCallMainSubTab('favorites')}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'favorites' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
-              >
-                <Star className="w-4 h-4 text-amber-400 fill-amber-400/20" />
-                <span>علاقه‌مندی‌ها (Favorites)</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono">{favoriteContacts.length}</span>
-              </button>
-
-              <button
-                onClick={() => setCallMainSubTab('scheduled')}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'scheduled' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
-              >
-                <Calendar className="w-4 h-4 text-cyan-400" />
-                <span>تماس‌های برنامه‌ریزی‌شده</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono">{scheduledCallsList.length}</span>
-              </button>
-
-              <button
-                onClick={() => setCallMainSubTab('tariffs')}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'tariffs' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
-              >
-                <DollarSign className="w-4 h-4 text-amber-400" />
-                <span>تعرفه و تنظیمات پولی</span>
-              </button>
-
-              <button
-                onClick={() => setCallMainSubTab('dialpad')}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition whitespace-nowrap ${callMainSubTab === 'dialpad' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'}`}
-              >
-                <PhoneCall className="w-4 h-4 text-emerald-400" />
-                <span>شماره‌گیر (Dialpad)</span>
-              </button>
-            </div>
-
-            {/* SUBTAB 1: RECENT CALLS */}
-            {callMainSubTab === 'recent' && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-                    {['all', 'voice', 'video', 'missed', 'rejected', 'paid'].map(f => (
-                      <button
-                        key={f}
-                        onClick={() => setCallLogFilter(f)}
-                        className={`px-3 py-1 rounded-xl text-xs font-bold capitalize transition ${callLogFilter === f ? 'bg-pink-500 text-white shadow-md' : 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700'}`}
-                      >
-                        {f === 'all' ? 'همه' : f === 'voice' ? 'صوتی 📞' : f === 'video' ? 'تصویری 📹' : f === 'missed' ? 'از دست رفته 🔴' : f === 'rejected' ? 'رد شده 🚫' : 'پولی 🪙'}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 flex-1 max-w-xs">
-                    <Search className="w-3.5 h-3.5 text-slate-500" />
-                    <input
-                      type="text"
-                      value={callSearchQuery}
-                      onChange={e => setCallSearchQuery(e.target.value)}
-                      placeholder="جستجو در تاریخچه تماس..."
-                      className="w-full bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  {callHistoryList
-                    .filter(item => {
-                      if (callLogFilter === 'voice' && item.type !== 'voice') return false;
-                      if (callLogFilter === 'video' && item.type !== 'video') return false;
-                      if (callLogFilter === 'missed' && item.direction !== 'missed') return false;
-                      if (callLogFilter === 'rejected' && item.direction !== 'rejected') return false;
-                      if (callLogFilter === 'paid' && !item.isPaid) return false;
-                      if (callSearchQuery && !item.user.name.toLowerCase().includes(callSearchQuery.toLowerCase())) return false;
-                      return true;
-                    })
-                    .map(log => (
-                      <div key={log.id} className="card-3d p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-pink-500/40 flex items-center justify-between gap-3 transition">
-                        <div className="flex items-center gap-3">
-                          <div className="relative">
-                            <img src={log.user.avatar} alt={log.user.name} className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-700" />
-                            <span className={`absolute -bottom-1 -left-1 p-1 rounded-full border border-slate-950 text-[10px] ${log.type === 'video' ? 'bg-purple-600 text-white' : 'bg-cyan-600 text-white'}`}>
-                              {log.type === 'video' ? <Video className="w-2.5 h-2.5" /> : <PhoneCall className="w-2.5 h-2.5" />}
-                            </span>
-                          </div>
-
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <h4 className="text-xs font-bold text-white">{log.user.name}</h4>
-                              {log.user.isVip && <Crown className="w-3 h-3 text-amber-400 fill-amber-400/20" />}
-                              {log.isPaid && <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/30">پولی</span>}
-                            </div>
-
-                            <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-                              <span className="flex items-center gap-1">
-                                {log.direction === 'missed' ? <PhoneMissed className="w-3 h-3 text-rose-500" /> : log.direction === 'incoming' ? <PhoneIncoming className="w-3 h-3 text-emerald-400" /> : <PhoneOutgoing className="w-3 h-3 text-cyan-400" />}
-                                <span className={log.direction === 'missed' ? 'text-rose-400 font-bold' : ''}>
-                                  {log.direction === 'missed' ? 'از دست رفته' : log.direction === 'rejected' ? 'رد شده' : log.direction === 'incoming' ? 'ورودی' : 'خروجی'}
-                                </span>
-                              </span>
-                              <span>•</span>
-                              <span>{log.time} ({log.duration})</span>
-                              {log.coinsSpent > 0 && (
-                                <span className="text-amber-400 font-mono flex items-center gap-0.5">
-                                  <Coins className="w-2.5 h-2.5" /> {log.coinsSpent} سکه
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleInitiateCall(log.user, 'voice', '1on1')}
-                            className="p-2 rounded-xl bg-slate-950 border border-slate-800 text-cyan-400 hover:bg-cyan-600 hover:text-white transition"
-                            title="تماس صوتی"
-                          >
-                            <PhoneCall className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleInitiateCall(log.user, 'video', '1on1')}
-                            className="p-2 rounded-xl bg-pink-500/20 border border-pink-500/40 text-pink-300 hover:bg-pink-500 hover:text-white transition"
-                            title="تماس تصویری"
-                          >
-                            <Video className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-
-            {/* SUBTAB 2: CONTACTS */}
-            {callMainSubTab === 'contacts' && (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {conversations.map(conv => (
-                    <div key={conv.id} className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <img src={conv.user.avatar} alt={conv.user.name} className="w-12 h-12 rounded-2xl object-cover ring-2 ring-pink-500/30" />
-                          <span className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full ring-2 ring-slate-950 ${conv.user.online ? 'bg-emerald-500' : 'bg-slate-500'}`} />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <h4 className="text-xs font-bold text-white">{conv.user.name}</h4>
-                            {conv.user.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400 fill-cyan-400/20" />}
-                            {conv.user.isVip && <Crown className="w-3.5 h-3.5 text-amber-400" />}
-                          </div>
-                          <p className="text-[10px] text-slate-400">{conv.user.role || 'کاربر رسمی'} • {conv.user.city || 'ایران'}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => handleToggleFavoriteContact(conv.user.username)}
-                          className={`p-2 rounded-xl border transition ${favoriteContacts.includes(conv.user.username) ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-slate-950 text-slate-500 border-slate-800'}`}
-                        >
-                          <Star className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleInitiateCall(conv.user, 'voice', '1on1')}
-                          className="p-2 rounded-xl bg-slate-950 border border-slate-800 text-cyan-400 hover:bg-cyan-600 hover:text-white transition"
-                          title="Voice Call"
-                        >
-                          <PhoneCall className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleInitiateCall(conv.user, 'video', '1on1')}
-                          className="px-3 py-2 rounded-xl btn-neon-pink text-xs font-bold flex items-center gap-1"
-                        >
-                          <Video className="w-3.5 h-3.5" />
-                          <span>تماس</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* SUBTAB 3: FAVORITES */}
-            {callMainSubTab === 'favorites' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {conversations.filter(c => favoriteContacts.includes(c.user.username)).map(c => (
-                  <div key={c.id} className="card-3d p-4 rounded-3xl bg-slate-900 border border-amber-500/30 flex flex-col items-center text-center space-y-3 relative overflow-hidden">
-                    <span className="absolute top-2 right-2 text-amber-400">
-                      <Star className="w-4 h-4 fill-amber-400" />
-                    </span>
-                    <img src={c.user.avatar} alt={c.user.name} className="w-16 h-16 rounded-3xl object-cover ring-2 ring-amber-400/50 shadow-lg" />
-                    <div>
-                      <h4 className="text-sm font-black text-white">{c.user.name}</h4>
-                      <p className="text-[10px] text-amber-300 font-semibold">{c.user.role || 'مخاطب ویژه'}</p>
-                    </div>
-                    <div className="flex items-center gap-2 w-full pt-1">
-                      <button
-                        onClick={() => handleInitiateCall(c.user, 'voice', '1on1')}
-                        className="flex-1 py-2 rounded-2xl bg-slate-950 text-cyan-300 border border-slate-800 text-xs font-bold flex items-center justify-center gap-1"
-                      >
-                        <PhoneCall className="w-3.5 h-3.5" /> صوتی
-                      </button>
-                      <button
-                        onClick={() => handleInitiateCall(c.user, 'video', '1on1')}
-                        className="flex-1 py-2 rounded-2xl btn-neon-pink text-xs font-bold flex items-center justify-center gap-1"
-                      >
-                        <Video className="w-3.5 h-3.5" /> تصویری
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* SUBTAB 4: SCHEDULED CALLS */}
-            {callMainSubTab === 'scheduled' && (
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-sm font-bold text-white">تماس‌های رزرو شده آینده</h3>
-                  <button
-                    onClick={() => setIsScheduleCallModalOpen(true)}
-                    className="px-3 py-1.5 rounded-xl btn-neon-pink text-xs font-bold flex items-center gap-1"
-                  >
-                    <Plus className="w-4 h-4" /> افزودن رزرو جدید
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  {scheduledCallsList.map(sch => (
-                    <div key={sch.id} className="card-3d p-4 rounded-2xl bg-slate-900 border border-purple-500/30 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <img src={sch.user.avatar} alt={sch.user.name} className="w-12 h-12 rounded-2xl object-cover ring-2 ring-purple-500/40" />
-                        <div>
-                          <h4 className="text-xs font-bold text-white">{sch.user.name}</h4>
-                          <p className="text-[10px] text-purple-300 font-medium">{sch.note}</p>
-                          <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
-                            <Calendar className="w-3 h-3 text-cyan-400" /> {sch.dateTime}
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleInitiateCall(sch.user, sch.type, '1on1')}
-                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
-                      >
-                        <Video className="w-4 h-4" />
-                        <span>ورود به لابی</span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* SUBTAB 5: TARIFFS & CALL PRIVACY SETTINGS */}
-            {callMainSubTab === 'tariffs' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-amber-500/40 space-y-4">
-                  <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-                    <DollarSign className="w-5 h-5 text-amber-400" />
-                    <div>
-                      <h3 className="text-sm font-black text-white">تعرفه تماس پولی اختصاصی</h3>
-                      <p className="text-[10px] text-slate-400">تنظیم نرخ دریافت سکه از کاربران برای تماس‌های خصوصی 1 در 1</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800">
-                    <span className="text-xs font-bold text-white">فعال‌سازی تماس‌های پولی</span>
-                    <input
-                      type="checkbox"
-                      checked={streamerPaidCallEnabled}
-                      onChange={e => setStreamerPaidCallEnabled(e.target.checked)}
-                      className="w-4 h-4 accent-pink-500 cursor-pointer"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-300">نرخ تماس (سکه در هر دقیقه):</label>
-                    <div className="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-2xl border border-slate-800">
-                      <Coins className="w-4 h-4 text-amber-400" />
-                      <input
-                        type="number"
-                        value={streamerCallTariffPerMin}
-                        onChange={e => setStreamerCallTariffPerMin(Number(e.target.value))}
-                        className="w-full bg-transparent text-xs font-bold text-amber-300 outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs">
-                    💡 درآمد حاصل از تماس‌های پولی به بخش Earnings و کیف پول شما منتقل می‌شود (سهم ۸۰٪ استریمر).
-                  </div>
-                </div>
-
-                <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-cyan-500/40 space-y-4">
-                  <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-                    <ShieldCheck className="w-5 h-5 text-cyan-400" />
-                    <div>
-                      <h3 className="text-sm font-black text-white">حریم خصوصی و امنیت تماس</h3>
-                      <p className="text-[10px] text-slate-400">مدیریت افراد مجاز برای برقراری تماس و رمزنگاری 256 بیتی</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-300">دریافت تماس فقط از:</label>
-                    <select
-                      value={privacyWhoCall}
-                      onChange={e => setPrivacyWhoCall(e.target.value)}
-                      className="w-full bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs text-white outline-none cursor-pointer"
-                    >
-                      <option value="Everyone">همه کاربران (Everyone)</option>
-                      <option value="Friends">فقط دوستان (Friends Only)</option>
-                      <option value="Followers">فقط دنبال‌کنندگان (Followers Only)</option>
-                      <option value="VIP Only">فقط اعضای VIP 👑</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800">
-                    <div className="flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-cyan-400" />
-                      <span className="text-xs font-bold text-white">رمزنگاری سرتاسری (256-Bit E2E)</span>
-                    </div>
-                    <span className="text-xs font-bold text-emerald-400">فعال 🔒</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* SUBTAB 6: INTERACTIVE DIALPAD */}
-            {callMainSubTab === 'dialpad' && (
-              <div className="max-w-md mx-auto space-y-5 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-                {/* Input Display Screen */}
-                <div className="card-3d p-4 rounded-3xl bg-slate-900 border border-purple-500/40 flex flex-col items-center justify-center space-y-2 relative overflow-hidden shadow-2xl">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">شماره‌گیر مستقیم P2P</span>
-                  <div className="flex items-center justify-between w-full px-4 py-2 bg-slate-950 rounded-2xl border border-slate-800">
-                    <input
-                      type="text"
-                      value={dialpadInput}
-                      onChange={e => setDialpadInput(e.target.value)}
-                      placeholder="شماره یا آیدی کاربر..."
-                      className="bg-transparent text-lg font-black font-mono text-emerald-400 outline-none w-full text-center tracking-widest"
-                    />
-                    {dialpadInput && (
-                      <button 
-                        onClick={() => setDialpadInput(prev => prev.slice(0, -1))}
-                        className="p-1.5 text-slate-400 hover:text-rose-400 transition"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
                     )}
+
+                    {/* Top Right: Live Badge */}
+                    {(user.isStreaming || streamsList.some(s => s.host === user.name)) && (
+                      <div className="absolute top-2 right-2 flex items-center gap-1 bg-red-600/90 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-red-400/50">
+                         <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                         <span className="text-[9px] font-black text-white">LIVE</span>
+                      </div>
+                    )}
+                    
+                    {/* Bottom Info inside image */}
+                    <div className="absolute bottom-2 left-2 right-2 pointer-events-none">
+                      <h4 className="text-sm font-black text-white drop-shadow-md truncate">{user.name}, {user.age || 22}</h4>
+                      <p className="text-[10px] text-pink-300 font-bold drop-shadow-md truncate">Level {user.level || 5} • {user.city || 'Tehran'}</p>
+                    </div>
                   </div>
-                </div>
 
-                {/* Keypad Grid */}
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { num: '1', sub: '' },
-                    { num: '2', sub: 'ABC' },
-                    { num: '3', sub: 'DEF' },
-                    { num: '4', sub: 'GHI' },
-                    { num: '5', sub: 'JKL' },
-                    { num: '6', sub: 'MNO' },
-                    { num: '7', sub: 'PQRS' },
-                    { num: '8', sub: 'TUV' },
-                    { num: '9', sub: 'WXYZ' },
-                    { num: '*', sub: '' },
-                    { num: '0', sub: '+' },
-                    { num: '#', sub: '' }
-                  ].map(k => (
-                    <button
-                      key={k.num}
-                      onClick={() => setDialpadInput(prev => prev + k.num)}
-                      className="card-3d py-3.5 rounded-2xl bg-slate-900 border border-slate-800/80 hover:border-pink-500/50 hover:bg-slate-800 transition flex flex-col items-center justify-center shadow-md active:scale-95"
+                  {/* Action Buttons */}
+                  <div className="p-2.5 flex items-center gap-2 bg-slate-950">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setActiveCall({ user, isVideo: true, isIncoming: false }); }}
+                      className="flex-1 py-1.5 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400 flex items-center justify-center hover:bg-pink-500 hover:text-white transition group/btn"
                     >
-                      <span className="text-xl font-black text-white font-mono">{k.num}</span>
-                      {k.sub && <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{k.sub}</span>}
+                      <Video className="w-4 h-4 group-hover/btn:scale-110 transition" />
                     </button>
-                  ))}
-                </div>
+                    <button 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setActiveConversationId(user.id);
+                        setActiveTab('messages');
+                      }}
+                      className="flex-1 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center hover:bg-cyan-500 hover:text-white transition group/btn"
+                    >
+                      <MessageSquare className="w-4 h-4 group-hover/btn:scale-110 transition" />
+                    </button>
+                  </div>
 
-                {/* Call Action Buttons */}
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => {
-                      if (!dialpadInput) {
-                        showToast("لطفاً شماره یا آیدی کاربر را وارد کنید");
-                        return;
-                      }
-                      const matchedUser = conversations.find(c => c.user.username.toLowerCase().includes(dialpadInput.toLowerCase()) || c.user.name.toLowerCase().includes(dialpadInput.toLowerCase()))?.user || {
-                        username: dialpadInput,
-                        name: `User ${dialpadInput}`,
-                        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-                        isVip: false
-                      };
-                      handleInitiateCall(matchedUser, 'voice', '1on1');
-                      showToast(`برقراری تماس صوتی با ${matchedUser.name}...`);
-                    }}
-                    className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition"
-                  >
-                    <PhoneCall className="w-4 h-4" />
-                    <span>تماس صوتی</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      if (!dialpadInput) {
-                        showToast("لطفاً شماره یا آیدی کاربر را وارد کنید");
-                        return;
-                      }
-                      const matchedUser = conversations.find(c => c.user.username.toLowerCase().includes(dialpadInput.toLowerCase()) || c.user.name.toLowerCase().includes(dialpadInput.toLowerCase()))?.user || {
-                        username: dialpadInput,
-                        name: `User ${dialpadInput}`,
-                        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-                        isVip: true
-                      };
-                      handleInitiateCall(matchedUser, 'video', '1on1');
-                      showToast(`برقراری تماس تصویری HD با ${matchedUser.name}...`);
-                    }}
-                    className="flex-1 py-3.5 rounded-2xl btn-neon-pink text-xs font-black flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 active:scale-95 transition"
-                  >
-                    <Video className="w-4 h-4" />
-                    <span>تماس تصویری</span>
-                  </button>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
 
           </div>
         )}
-
         {/* TAB: REDESIGNED PREMIUM INTERACTIVE MATCH EXPERIENCE */}
         {activeTab === 'match' && (
           <div className="space-y-4 max-w-md mx-auto animate-fadeIn pb-12">
@@ -7378,124 +5979,64 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           loc={loc}
         />
         </main>
-      <nav className="fixed bottom-0 w-full max-w-[800px] z-40 bg-slate-900/90 backdrop-blur-2xl border-t border-slate-800/80 p-2 sm:px-6 flex justify-between items-center shadow-[0_-5px_30px_rgba(0,0,0,0.5)]">
+      <nav className="fixed bottom-0 w-full max-w-[800px] z-40 bg-slate-900/95 backdrop-blur-2xl border-t border-slate-800/80 p-2 sm:px-6 flex justify-between items-center shadow-[0_-5px_30px_rgba(0,0,0,0.5)]">
         
         {/* 1. Home (🏠) */}
         <button 
-          onClick={() => {
-            setViewingStream(null);
-            setIsHostLiveOpen(false);
-            setActivePartyRoom(null);
-            setIsMatchModalOpen(false);
-            setActiveTab('home');
-          }}
+          onClick={() => setActiveTab('home')}
           className={activeTab === 'home'
-            ? "relative -top-5 w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition-all duration-300 group"
+            ? "relative -top-4 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition-all duration-300 group"
             : "flex flex-col items-center gap-1 p-2 rounded-2xl text-slate-400 hover:text-slate-200 transition-all duration-300"
           }
-          title="Home"
         >
           {activeTab === 'home' ? (
             <Home className="w-6 h-6 font-black group-hover:scale-110 transition duration-300" />
           ) : (
-            <>
-              <Home className="w-5 h-5" />
-              <span className="text-[9px] tracking-wide">Home</span>
-            </>
+            <Home className="w-5 h-5" />
           )}
         </button>
 
-        {/* 2. Explore (🔍) */}
+        {/* 2. VIP (👑) */}
         <button 
-          onClick={() => {
-            setViewingStream(null);
-            setIsHostLiveOpen(false);
-            setActivePartyRoom(null);
-            setIsMatchModalOpen(false);
-            setActiveTab('explore');
-          }}
-          className={activeTab === 'explore'
-            ? "relative -top-5 w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition-all duration-300 group"
-            : "flex flex-col items-center gap-1 p-2 rounded-2xl text-slate-400 hover:text-slate-200 transition-all duration-300"
+          onClick={() => setIsVipModalOpen(true)}
+          className="flex flex-col items-center gap-1 p-2 rounded-2xl text-amber-500/70 hover:text-amber-400 transition-all duration-300"
+        >
+          <Crown className="w-5 h-5" />
+        </button>
+
+        {/* 3. Match (Center Fire) */}
+        <button 
+          onClick={() => setActiveTab('match')}
+          className={activeTab === 'match'
+            ? "relative -top-4 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition-all duration-300 group"
+            : "relative -top-5 w-14 h-14 rounded-full bg-gradient-to-tr from-pink-600 to-purple-600 p-0.5 shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:shadow-[0_0_30px_rgba(236,72,153,0.6)] transition-all group"
           }
-          title="Explore"
         >
-          {activeTab === 'explore' ? (
-            <Globe className="w-6 h-6 font-black group-hover:scale-110 transition duration-300" />
-          ) : (
-            <>
-              <Globe className="w-5 h-5" />
-              <span className="text-[9px] tracking-wide">Explore</span>
-            </>
-          )}
+           {activeTab === 'match' ? (
+              <Flame className="w-7 h-7 text-white font-black group-hover:scale-110 transition duration-300" />
+           ) : (
+              <div className="w-full h-full rounded-full bg-slate-900 flex flex-col items-center justify-center transition duration-300">
+                <Flame className="w-6 h-6 text-pink-400 group-hover:text-pink-300 group-hover:scale-110 transition duration-300" />
+              </div>
+           )}
         </button>
 
-        {/* 3. Go Live (🔥) */}
+        {/* 4. Support (Headphones) */}
         <button 
-          onClick={() => {
-            if(!isStreaming) {
-              setViewingStream(null);
-              setIsHostLiveOpen(true);
-              setActivePartyRoom(null);
-              setIsMatchModalOpen(false);
-            }
-          }}
-          className="relative -top-7 w-16 h-16 rounded-full bg-gradient-to-tr from-pink-600 to-purple-600 p-0.5 shadow-[0_0_40px_rgba(236,72,153,0.6)] animate-pulse hover:animate-none group"
+          onClick={() => setIsSupportModalOpen(true)}
+          className="flex flex-col items-center gap-1 p-2 rounded-2xl text-slate-400 hover:text-slate-200 transition-all duration-300"
         >
-          <div className="w-full h-full rounded-full bg-slate-900 flex flex-col items-center justify-center group-hover:bg-transparent transition duration-300">
-             <Video className="w-7 h-7 text-pink-400 group-hover:text-white group-hover:scale-110 transition duration-300" />
-          </div>
+          <Headphones className="w-5 h-5" />
         </button>
 
-        {/* 4. Messages (💬) */}
+        {/* 5. Request Streamer (Camera / Badge) */}
         <button 
-          onClick={() => {
-            setViewingStream(null);
-            setIsHostLiveOpen(false);
-            setActivePartyRoom(null);
-            setIsMatchModalOpen(false);
-            setActiveTab('messages');
-          }}
-          className={activeTab === 'messages'
-            ? "relative -top-5 w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition-all duration-300 group"
-            : "flex flex-col items-center gap-1 p-2 rounded-2xl text-slate-400 hover:text-slate-200 transition-all duration-300"
-          }
-          title="Messages"
+          onClick={() => setIsBecomeStreamerModalOpen(true)}
+          className="flex flex-col items-center gap-1 p-2 rounded-2xl text-pink-500/70 hover:text-pink-400 transition-all duration-300"
         >
-          {activeTab === 'messages' ? (
-            <MessageSquare className="w-6 h-6 font-black group-hover:scale-110 transition duration-300" />
-          ) : (
-            <>
-              <MessageSquare className="w-5 h-5" />
-              <span className="text-[9px] tracking-wide">Messages</span>
-            </>
-          )}
+          <Star className="w-5 h-5" />
         </button>
 
-        {/* 5. Profile (👤) */}
-        <button 
-          onClick={() => {
-            setViewingStream(null);
-            setIsHostLiveOpen(false);
-            setActivePartyRoom(null);
-            setIsMatchModalOpen(false);
-            setActiveTab('profile');
-          }}
-          className={activeTab === 'profile'
-            ? "relative -top-5 w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition-all duration-300 group"
-            : "flex flex-col items-center gap-1 p-2 rounded-2xl text-slate-400 hover:text-slate-200 transition-all duration-300"
-          }
-          title="Profile"
-        >
-          {activeTab === 'profile' ? (
-            <User className="w-6 h-6 font-black group-hover:scale-110 transition duration-300" />
-          ) : (
-            <>
-              <User className="w-5 h-5" />
-              <span className="text-[9px] tracking-wide">Profile</span>
-            </>
-          )}
-        </button>
       </nav>
 
       {/* MODAL: REDESIGNED NOTIFICATIONS SYSTEM */}
