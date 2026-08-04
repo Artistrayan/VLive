@@ -1,9 +1,16 @@
-@import "tailwindcss";
+@use './variables' as *;
+@use './functions' as *;
+@use './mixins' as *;
+@use './animations' as *;
+@use './pages/Home';
+@use './pages/Profile';
+@use './pages/Match';
+@use './pages/Messages';
+@use './pages/Wallet';
+@use './pages/Admin';
+@use './pages/Settings';
 
-@import './variables';
-@import './functions';
-@import './mixins';
-@import './animations';
+@import "tailwindcss";
 
 * {
   box-sizing: border-box;
@@ -106,11 +113,3 @@ body, html {
 .animate-gift-float {
   animation: giftFloatAnim 2.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
-
-@import './pages/Home';
-@import './pages/Profile';
-@import './pages/Match';
-@import './pages/Messages';
-@import './pages/Wallet';
-@import './pages/Admin';
-@import './pages/Settings';

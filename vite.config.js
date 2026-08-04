@@ -43,6 +43,14 @@ const syncAssetsToAndroidPlugin = () => ({
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), viteSingleFile(), syncAssetsToAndroidPlugin()],
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler',
+        silenceDeprecations: ['import', 'legacy-js-api']
+      }
+    }
+  },
   base: './',
   build: {
     outDir: 'dist',
