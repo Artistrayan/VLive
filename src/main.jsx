@@ -17,7 +17,7 @@ class ErrorBoundary extends React.Component {
     console.error("V.Live+ Render Error:", error, errorInfo);
   }
 
-  handleReset = () => {
+  handleReset() {
     try {
       localStorage.clear();
       sessionStorage.clear();
@@ -25,7 +25,7 @@ class ErrorBoundary extends React.Component {
       console.warn("Storage clear error:", e);
     }
     window.location.reload();
-  };
+  }
 
   render() {
     if (this.state.hasError) {
@@ -61,7 +61,7 @@ class ErrorBoundary extends React.Component {
             </p>
 
             <button
-              onClick={this.handleReset}
+              onClick={() => this.handleReset()}
               style={{
                 width: '100%',
                 padding: '12px',

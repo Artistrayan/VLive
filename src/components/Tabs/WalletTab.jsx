@@ -1,9 +1,10 @@
 import React from 'react';
+import { safeStorage } from '../../utils/safeStorage';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { 
   DollarSign, Wallet, CreditCard, RefreshCw, ArrowUpRight, History, Award,
   Users, Gift, Crown, ShieldCheck, Check, Sparkles, ChevronRight, Copy, Share2,
-  TrendingUp, BarChart2, Video, MessageSquare, Star, Clock, AlertTriangle, Filter, Search, Plus
+  TrendingUp, BarChart2, Video, MessageSquare, Star, Clock, AlertTriangle, Filter, Search, Plus, Radio, PhoneCall, Flame, Palette, BarChart3, Coins, Zap, Target, Calendar
 } from 'lucide-react';
 import { CoinsIcon } from '../CommonBadges';
 
@@ -26,6 +27,80 @@ export default function WalletTab(props) {
   const [localWithdrawAmountInput, setLocalWithdrawAmountInput] = React.useState('');
   const withdrawAmountInput = props.withdrawAmountInput !== undefined ? props.withdrawAmountInput : localWithdrawAmountInput;
   const setWithdrawAmountInput = props.setWithdrawAmountInput || setLocalWithdrawAmountInput;
+
+  const [creatorPollQuestionInput, setCreatorPollQuestionInput] = React.useState('');
+  const [creatorPollQuestion, setCreatorPollQuestion] = React.useState('');
+  const [creatorPollOptions, setCreatorPollOptions] = React.useState(['', '']);
+  const [pollOptionInputs, setPollOptionInputs] = React.useState(['', '']);
+  const [isCreatePollModalOpen, setIsCreatePollModalOpen] = React.useState(false);
+  const [creatorActiveTab, setCreatorActiveTab] = React.useState('dashboard');
+  const [withdrawMethodInput, setWithdrawMethodInput] = React.useState('USDT');
+  const [withdrawAddressInput, setWithdrawAddressInput] = React.useState('');
+  const [withdrawalsHistoryList, setWithdrawalsHistoryList] = React.useState([]);
+  const [creatorSupportSubject, setCreatorSupportSubject] = React.useState('');
+  const [creatorSupportMessage, setCreatorSupportMessage] = React.useState('');
+
+  const handleShareTelegramReferral = props.handleShareTelegramReferral || (() => showToast('Telegram referral link generated'));
+  const [isBonusEventActive] = React.useState(true);
+  const [totalInvitesCount] = React.useState(12);
+  const [totalReferralEarnings] = React.useState(1250);
+  const [activeInvitesCount] = React.useState(8);
+  const [referralTier] = React.useState('Gold Tier');
+  const [referralLink] = React.useState('https://t.me/vlive_app_bot?start=ref_rayan');
+  const [referralActiveTab, setReferralActiveTab] = React.useState('overview');
+  const [invitesList] = React.useState([]);
+  const [referralMilestones, setReferralMilestones] = React.useState([
+    { id: 1, target: 5, rewardCoins: 1000, claimed: true },
+    { id: 2, target: 10, rewardCoins: 2500, claimed: false },
+    { id: 3, target: 25, rewardCoins: 7500, claimed: false }
+  ]);
+  const [topInvitersLeaderboard] = React.useState([
+    { rank: 1, name: 'Sina_Pro', invites: 142, reward: '50,000 Coins' },
+    { rank: 2, name: 'Sara_Live', invites: 98, reward: '25,000 Coins' },
+    { rank: 3, name: 'Rayan_VLive', invites: 64, reward: '10,000 Coins' }
+  ]);
+
+  const vipPlan = props.vipPlan || 'Free';
+  const vipExpireDays = props.vipExpireDays || 0;
+  const [isVipMonthlyClaimed, setIsVipMonthlyClaimed] = React.useState(false);
+  const [selectedVipPlan, setSelectedVipPlan] = React.useState('VIP Platinum');
+  const [selectedVipDuration, setSelectedVipDuration] = React.useState(30);
+  const [selectedVipPayMethod, setSelectedVipPayMethod] = React.useState('USDT');
+  const [vipEliteRequested, setVipEliteRequested] = React.useState(false);
+  const setVipPlan = props.setVipPlan || (() => {});
+  const setVipExpireDays = props.setVipExpireDays || (() => {});
+  const setIsVipCelebrationOpen = props.setIsVipCelebrationOpen || (() => showToast('VIP Celebration!'));
+
+  const [txHistoryList, setTxHistoryList] = React.useState([
+    { id: 1, type: 'in', title: 'خرید کوین', amount: '+5,000 Coins', date: 'امروز', status: 'موفق' },
+    { id: 2, type: 'out', title: 'هدیه به استریمر', amount: '-1,200 Coins', date: 'دیروز', status: 'موفق' }
+  ]);
+  const [selectedCoinPackPayment, setSelectedCoinPackPayment] = React.useState('USDT');
+  const handleBuyCoinsPack = props.handleBuyCoinsPack || ((pack) => showToast('خرید بسته کوین با موفقیت انجام شد'));
+  const handleConvertDiamondsAction = props.handleConvertDiamondsAction || (() => showToast('تبدیل الماس انجام شد'));
+  const [withdrawPinInput, setWithdrawPinInput] = React.useState('');
+  const handleRequestWithdrawalAction = props.handleRequestWithdrawalAction || (() => showToast('درخواست برداشت ثبت شد'));
+  const [txCategoryFilter, setTxCategoryFilter] = React.useState('all');
+  const userAvatar = props.userAvatar || '';
+  const userName = props.userName || 'کاربر';
+  const setIsGoLiveOpen = props.setIsGoLiveOpen || (() => showToast('شروع پخش زنده'));
+  const [creatorLiveTitle, setCreatorLiveTitle] = React.useState('');
+  const [creatorLiveCategory, setCreatorLiveCategory] = React.useState('General');
+  const [creatorLiveTags, setCreatorLiveTags] = React.useState('');
+  const [creatorRecordStream, setCreatorRecordStream] = React.useState(true);
+  const [creatorMicrophone] = React.useState(true);
+  const [creatorCamera] = React.useState(true);
+  const [creatorBeautyFilter, setCreatorBeautyFilter] = React.useState(true);
+  const [creatorFollowersList, setCreatorFollowersList] = React.useState([]);
+  const [creatorContentList, setCreatorContentList] = React.useState([]);
+  const [creatorNewScheduleTitle, setCreatorNewScheduleTitle] = React.useState('');
+  const [creatorNewScheduleTime, setCreatorNewScheduleTime] = React.useState('20:00');
+  const [creatorNewScheduleDay] = React.useState('امروز');
+  const [creatorScheduleList, setCreatorScheduleList] = React.useState([]);
+  const [creatorBroadcastMsg, setCreatorBroadcastMsg] = React.useState('');
+  const setPollQuestionInput = setCreatorPollQuestionInput;
+
+
 
   if (activeTab !== 'earnings' && activeTab !== 'wallet') return null;
 

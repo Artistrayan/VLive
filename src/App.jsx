@@ -28,7 +28,7 @@ import {
 import { supabase } from './supabaseClient';
 import { compressImageFile, cacheManager, startKeepAlivePing, STREAM_QUALITY_PRESETS } from './services/performance';
 import { LifeBuoy, ShoppingBag, Video, Shield, ShieldCheck, Star, Wallet, User, Lock, Award, Calendar, 
-  MessageSquare, Send, Camera, Mic, MicOff, Settings, Search, Check, 
+  MessageSquare, Send, Camera, Mic, MicOff, Settings, Search, Check, Headphones,
   RefreshCw, LogOut, Flame, Heart, Crown, Plus, X, Globe, Sparkles, Coins,
   Sliders, ChevronLeft, ChevronRight, Eye, EyeOff, Radio, CreditCard, Gift, 
   PhoneCall, Play, Image, Layers, CheckCircle, AlertCircle, Bot,
