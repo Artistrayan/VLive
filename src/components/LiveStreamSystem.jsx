@@ -229,27 +229,12 @@ export default function LiveStreamSystem({
             </div>
             <div>
               <h2 className="text-base font-black text-white flex items-center gap-1.5">
-                <span>V.LIVE STREAMS</span>
+                <span>V.LIVE</span>
                 <span className="text-[10px] bg-pink-500/20 text-pink-400 px-2 py-0.5 rounded-full border border-pink-500/30">زنده</span>
               </h2>
-              <p className="text-[11px] text-slate-400 font-semibold">شبکه پخش زنده و استریمینگ ۲۴/۷</p>
+              <p className="text-[11px] text-slate-400 font-semibold">پخش زنده استریمرهای تایید شده</p>
             </div>
           </div>
-
-          {/* STREAMER ONLY START LIVE BUTTON */}
-          {isApprovedStreamer ? (
-            <button
-              onClick={() => setIsStartLiveModalOpen(true)}
-              className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 hover:opacity-90 text-white text-xs font-black shadow-lg shadow-pink-500/30 active:scale-95 transition flex items-center gap-1.5"
-            >
-              <Plus className="w-4 h-4" />
-              <span>شروع لایو</span>
-            </button>
-          ) : (
-            <div className="text-[10px] text-slate-400 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800 font-bold">
-              بیننده تایید شده
-            </div>
-          )}
         </div>
 
         {/* MAIN TYPE TOGGLE (Standard Live vs Adult Live 18+) */}

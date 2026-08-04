@@ -27,6 +27,7 @@ export default function NotificationsModal(props) {
 
   const filterOptions = [
     { id: 'all', label: 'All', icon: Bell },
+    { id: 'message', label: 'Messages', icon: MessageSquare },
     { id: 'gift', label: 'Gifts', icon: Gift },
     { id: 'call', label: 'Calls', icon: PhoneCall },
     { id: 'system', label: 'System', icon: Shield },
@@ -66,15 +67,26 @@ export default function NotificationsModal(props) {
               {/* Header Right Action Buttons */}
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
+                  onClick={() => {
+                    setIsNotificationsOpen(false);
+                    if (props.onSwitchMainTab) props.onSwitchMainTab('messages');
+                  }}
+                  className="px-2.5 py-2 rounded-2xl bg-pink-500/10 border border-pink-500/30 text-pink-400 hover:bg-pink-500 hover:text-white transition shadow-sm text-xs font-bold flex items-center gap-1"
+                  title="Open Messages"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>پیام‌ها</span>
+                </button>
+                <button
                   onClick={() => setIsNotifSettingsOpen(true)}
-                  className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition shadow-sm"
+                  className="p-2 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition shadow-sm"
                   title="Notification Settings"
                 >
                   <Settings className="w-4 h-4 text-purple-400" />
                 </button>
                 <button
                   onClick={() => setIsNotificationsOpen(false)}
-                  className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition shadow-sm"
+                  className="p-2 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition shadow-sm"
                 >
                   <X className="w-4 h-4" />
                 </button>

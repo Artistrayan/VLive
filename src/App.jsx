@@ -4073,8 +4073,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     showToast('Verification request rejected');
   };
 
-  // Filtered Users computation based on userFilter state
+  // Filtered Users computation: STRICT REQUIREMENT - Only verified female users displayed
   const filteredUsersList = usersList.filter(u => {
+    const isUserVerified = Boolean(u.isVerified || u.is_verified || u.isVerifiedStreamer || u.isVip || u.verified);
+    if (!isUserVerified) return false;
+
+    const isFemale = !u.gender || u.gender.toLowerCase() === 'female';
+    if (!isFemale) return false;
+
     if (userFilter === 'online') return u.online;
     if (userFilter === 'followers') return u.isFollowed || u.following;
     if (userFilter === 'top') return u.isTop;
@@ -5319,7 +5325,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             <h1 className="font-black text-base tracking-wider text-white">V.LIVE</h1>
           </div>
 
-          {/* Right Controls: Gifts, Notifications, Messages */}
+          {/* Right Controls: Gifts, Notifications, Settings */}
           <div className="flex items-center gap-1">
             <button 
               onClick={() => setIsRewardOpeningModalOpen(true)}
@@ -5330,16 +5336,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </button>
 
             <button 
-              onClick={() => setActiveTab('messages')}
-              className="relative p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition"
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-pink-500" />
-            </button>
-
-            <button 
               onClick={() => setIsNotificationsOpen(true)}
               className="relative p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition"
+              title="Notifications"
             >
               <Bell className="w-3.5 h-3.5" />
               {notificationsList.some(n => n.unread) && (
@@ -5484,7 +5483,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         
                         {/* Bottom Info Overlay */}
                         <div className="absolute bottom-1.5 left-2 right-2 pointer-events-none">
-                          <h4 className="text-xs font-black text-white drop-shadow-md truncate">{user.name}, {user.age || 22}</h4>
+                          <h4 className="text-xs font-black text-white drop-shadow-md truncate flex items-center gap-1">
+                            <span className="truncate">{user.name}, {user.age || 22}</span>
+                            <BadgeCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0 inline-block" />
+                          </h4>
                           <p className="text-[9px] text-pink-300 font-bold drop-shadow-md truncate">📍 {user.city || 'Tehran'} • Lv.{user.level || 5}</p>
                         </div>
                       </div>
@@ -5550,242 +5552,317 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
           </div>
         )}
-        {/* TAB: REDESIGNED STREAMLINED MATCH EXPERIENCE */}
+        {/* TAB: MATCH TAB (RADAR ORBIT RADAR SYSTEM BASED ON REFERENCE SCREENSHOT) */}
         {activeTab === 'match' && (
-          <div className="h-[calc(100vh-130px)] max-w-md mx-auto flex flex-col justify-between overflow-hidden px-2 py-1 select-none animate-fadeIn dir-ltr font-sans">
+          <div className="h-[calc(100vh-130px)] max-w-md mx-auto flex flex-col justify-between overflow-hidden px-3 py-2 select-none animate-fadeIn font-sans relative">
             
-            {/* COMPACT TOP CONTROLS (3 SMALL COMPACT ROWS IN ENGLISH) */}
-            <div className="space-y-1.5 shrink-0">
-              
-              {/* Row 1: Gender Filter Buttons (Female, Male, All) */}
-              <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+            {/* TOP BAR: COIN BALANCE (LEFT) + CALENDAR & CLOCK (RIGHT) */}
+            <div className="flex items-center justify-between w-full shrink-0 z-30 pt-1">
+              {/* Left: Lime Glowing Coin Badge [D {coins} +] */}
+              <button 
+                onClick={() => setActiveTab('wallet')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-lime-400 text-slate-950 font-black text-xs sm:text-sm shadow-[0_0_20px_rgba(163,230,53,0.7)] hover:bg-lime-300 active:scale-95 transition"
+              >
+                <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center text-slate-950 font-black text-xs shadow-inner">
+                  D
+                </div>
+                <span>{userCoins.toLocaleString()}</span>
+                <span className="w-4 h-4 rounded-full bg-slate-950 text-lime-400 text-[10px] font-black flex items-center justify-center ml-0.5">
+                  +
+                </span>
+              </button>
+
+              {/* Right: Calendar, Clock & Filter Controls */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsRewardOpeningModalOpen(true)}
+                  className="w-8 h-8 rounded-full bg-slate-900/90 border border-slate-800 text-slate-200 hover:text-amber-400 hover:border-amber-500/50 flex items-center justify-center transition shadow"
+                  title="Daily Rewards Calendar"
+                >
+                  <Calendar className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => showToast(`⏰ Daily free match quota: ${freeMatchCallsLeft}`)}
+                  className="w-8 h-8 rounded-full bg-slate-900/90 border border-slate-800 text-slate-200 hover:text-cyan-400 hover:border-cyan-500/50 flex items-center justify-center transition shadow"
+                  title="Timer & Quota"
+                >
+                  <Clock className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => setIsSmartMatchModalOpen(true)}
+                  className="w-8 h-8 rounded-full bg-slate-900/90 border border-slate-800 text-slate-200 hover:text-pink-400 hover:border-pink-500/50 flex items-center justify-center transition shadow"
+                  title="Match Filters"
+                >
+                  <Filter className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* GENDER & MODE SELECTOR PILLS */}
+            <div className="flex items-center justify-between gap-1 mt-2 z-30 bg-slate-950/80 p-1 rounded-2xl border border-slate-800/80 backdrop-blur-md">
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => {
                     setMatchGenderFilter('female');
-                    showToast('Female filter selected (10 Coins / call)');
+                    showToast('Female filter active');
                   }}
-                  className={`py-1 px-2 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 border ${
+                  className={`px-3 py-1 rounded-xl text-[11px] font-black transition ${
                     matchGenderFilter === 'female'
-                      ? 'bg-pink-500/30 border-pink-500 text-pink-300'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  <span>👩 Female</span>
-                  <span className="text-[9px] opacity-80">(10 Coins)</span>
+                  👩 Female
                 </button>
-
-                <button
-                  onClick={() => {
-                    setMatchGenderFilter('male');
-                    showToast('Male filter selected (10 Coins / call)');
-                  }}
-                  className={`py-1 px-2 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 border ${
-                    matchGenderFilter === 'male'
-                      ? 'bg-cyan-500/30 border-cyan-500 text-cyan-300'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <span>👨 Male</span>
-                  <span className="text-[9px] opacity-80">(10 Coins)</span>
-                </button>
-
                 <button
                   onClick={() => {
                     setMatchGenderFilter('both');
-                    showToast('All filter selected (Free)');
+                    showToast('All users selected (Free)');
                   }}
-                  className={`py-1 px-2 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 border ${
+                  className={`px-3 py-1 rounded-xl text-[11px] font-black transition ${
                     matchGenderFilter === 'both'
-                      ? 'bg-emerald-500/30 border-emerald-500 text-emerald-300'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <span>👥 All</span>
-                  <span className="text-[9px] opacity-80">(Free)</span>
-                </button>
-              </div>
-
-              {/* Row 2: Match Mode Toggle (Random / Manual Swipe) */}
-              <div className="grid grid-cols-2 gap-1.5 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80">
-                <button
-                  onClick={() => setMatchMode('random')}
-                  className={`py-1 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 ${
-                    matchMode === 'random'
-                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow'
+                      ? 'bg-lime-400 text-slate-950 shadow-md'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  <Shuffle className="w-3 h-3" />
-                  <span>Random Match</span>
+                  👥 Both
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setMatchMode('random')}
+                  className={`px-3 py-1 rounded-xl text-[11px] font-black transition ${
+                    matchMode === 'random' ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Radar 📡
                 </button>
                 <button
                   onClick={() => setMatchMode('manual')}
-                  className={`py-1 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 ${
-                    matchMode === 'manual'
-                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow'
-                      : 'text-slate-400 hover:text-white'
+                  className={`px-3 py-1 rounded-xl text-[11px] font-black transition ${
+                    matchMode === 'manual' ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  <Flame className="w-3 h-3" />
-                  <span>Swipe Cards</span>
+                  Swipe 🃏
                 </button>
               </div>
-
-              {/* Row 3: Daily Free Quota Indicator & Balance */}
-              <div className="flex items-center justify-between px-2 py-1 rounded-xl bg-slate-900/90 border border-slate-800 text-[10px] font-bold text-slate-300">
-                <div className="flex items-center gap-1 text-emerald-400">
-                  <Coins className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{userCoins.toLocaleString()} Coins</span>
-                </div>
-
-                <div className="flex items-center gap-1 text-pink-400">
-                  <span>Daily Free: {freeMatchCallsLeft} Left</span>
-                </div>
-              </div>
-
             </div>
 
-            {/* MAIN DISPLAY AREA DEDICATED TO USER DISPLAY (75-80% HEIGHT, NO VERTICAL SCROLL) */}
+            {/* MAIN RADAR ORBIT SYSTEM DISPLAY */}
             {matchMode === 'random' ? (
-              <div className="flex-1 flex flex-col justify-center items-center py-2 overflow-hidden relative">
+              <div className="flex-1 flex flex-col items-center justify-center relative w-full overflow-hidden my-1">
                 
-                {matchState === 'searching' ? (
-                  <div className="p-4 rounded-3xl bg-slate-900/95 border border-pink-500/50 text-center space-y-3 animate-fadeIn w-full max-w-xs">
-                    <div className="relative w-16 h-16 mx-auto flex items-center justify-center">
-                      <div className="w-full h-full rounded-full border-3 border-pink-500 border-t-transparent animate-spin" />
-                      <Flame className="w-7 h-7 text-pink-400 absolute animate-pulse" />
+                {/* Background Ambient Radial Glow */}
+                <div className="absolute inset-0 bg-radial from-lime-500/15 via-purple-500/10 to-transparent blur-3xl pointer-events-none" />
+
+                {/* RADAR SEARCHING STATE (EXPANDING RIPPLE WAVES) */}
+                {matchState === 'searching' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-40 bg-slate-950/85 backdrop-blur-md rounded-3xl p-4 animate-fadeIn">
+                    <div className="relative w-64 h-64 flex items-center justify-center">
+                      <div className="absolute w-64 h-64 rounded-full border-2 border-lime-400/80 animate-radar-ripple pointer-events-none" />
+                      <div className="absolute w-64 h-64 rounded-full border-2 border-yellow-300/80 animate-radar-ripple pointer-events-none" style={{ animationDelay: '0.8s' }} />
+                      <div className="absolute w-64 h-64 rounded-full border-2 border-pink-500/80 animate-radar-ripple pointer-events-none" style={{ animationDelay: '1.6s' }} />
+                      
+                      <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-lime-400 to-pink-500 shadow-[0_0_40px_rgba(163,230,53,0.8)] z-20">
+                        <img src={userAvatar} alt="Matching" className="w-full h-full rounded-full object-cover border-2 border-slate-950" />
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-black text-white">Searching for Match...</h4>
-                      <p className="text-[10px] text-slate-400">1080p HD Encrypted Connection</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 pt-1">
+
+                    <div className="text-center space-y-1 mt-4 z-40">
+                      <h4 className="text-base font-black text-white flex items-center justify-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-lime-400 animate-ping" />
+                        <span>Finding Streamer...</span>
+                      </h4>
+                      <p className="text-xs text-slate-400 font-medium">Connecting 1080p encrypted video match</p>
+                      
                       <button
                         onClick={() => setMatchState('idle')}
-                        className="py-1.5 rounded-xl bg-rose-600/20 text-rose-300 font-bold text-[11px] border border-rose-500/40"
+                        className="mt-3 px-6 py-2 rounded-full bg-rose-600/20 text-rose-300 border border-rose-500/40 text-xs font-bold hover:bg-rose-600 hover:text-white transition"
                       >
                         Cancel
                       </button>
-                      <button
-                        onClick={() => startRandomMatchSearch()}
-                        className="py-1.5 rounded-xl bg-pink-600 text-white font-bold text-[11px]"
-                      >
-                        Next
-                      </button>
                     </div>
-                  </div>
-                ) : (
-                  /* USER DISPLAY GRID (CIRCULAR CARDS WITH FADE IN/OUT ANIMATION, SPACED APART) */
-                  <div className="w-full h-full flex flex-col items-center justify-center space-y-3">
-                    
-                    <p className="text-[11px] text-slate-400 font-medium tracking-wide flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span>Tap any user to match instantly</span>
-                    </p>
-
-                    <div className="grid grid-cols-3 gap-3 sm:gap-5 items-center justify-items-center w-full max-w-sm px-2">
-                      {matchDeckProfiles.slice(0, 9).map((profile, i) => (
-                        <div
-                          key={profile.id || i}
-                          style={{
-                            animationDelay: `${(i % 3) * 0.8}s`
-                          }}
-                          onClick={() => {
-                            setSelectedUser(profile);
-                            setIsUserProfileModalOpen(true);
-                          }}
-                          className="animate-fade-in-out cursor-pointer flex flex-col items-center justify-center group"
-                        >
-                          {/* Circular Round Avatar Card */}
-                          <div className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-full p-1 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-lg shadow-pink-500/20 group-hover:scale-110 transition duration-300">
-                            <img
-                              src={profile.avatar}
-                              alt={profile.name}
-                              className="w-full h-full rounded-full object-cover border-2 border-slate-950"
-                            />
-                            {/* Online Green Indicator */}
-                            <div className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-950 flex items-center justify-center shadow">
-                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                            </div>
-                          </div>
-                          <span className="text-[10px] font-bold text-slate-200 mt-1 truncate max-w-[75px]">
-                            {profile.name}
-                          </span>
-                          <span className="text-[9px] text-pink-400 font-semibold">
-                            {profile.age} yrs • Online
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Compact Start Call Button */}
-                    <button
-                      onClick={() => startRandomMatchSearch()}
-                      className="mt-1 px-6 py-2 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white font-black text-xs shadow-lg shadow-pink-500/40 active:scale-95 transition flex items-center gap-2"
-                    >
-                      <Video className="w-4 h-4" />
-                      <span>Start Quick Match</span>
-                    </button>
-
                   </div>
                 )}
 
+                {/* CONCENTRIC RADAR ORBIT SYSTEM WITH FLOATING FEMALE CANDIDATE AVATARS */}
+                <div className="relative w-76 h-76 sm:w-84 sm:h-84 flex items-center justify-center">
+                  
+                  {/* OUTER ORBIT RING */}
+                  <div className="absolute w-72 h-72 sm:w-80 sm:h-80 rounded-full border border-lime-300/35 border-dashed animate-spin-slow flex items-center justify-center shadow-[0_0_30px_rgba(163,230,53,0.15)]">
+                    
+                    {/* Orbit Candidate 1 (Top) */}
+                    <div 
+                      onClick={() => {
+                        const target = usersList.find(u => u.isVerified) || matchDeckProfiles[0];
+                        setSelectedUser(target);
+                        setIsUserProfileModalOpen(true);
+                      }}
+                      className="absolute -top-5 left-1/2 -translate-x-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-lime-400 to-emerald-400 shadow-[0_0_15px_#a3e635] cursor-pointer hover:scale-130 transition duration-300 z-30 group"
+                      title={matchDeckProfiles[0]?.name || 'Sara'}
+                    >
+                      <img 
+                        src={matchDeckProfiles[0]?.avatar || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80'} 
+                        alt="Candidate" 
+                        className="w-full h-full rounded-full object-cover border border-slate-950" 
+                      />
+                      <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border border-slate-950 flex items-center justify-center">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                      </div>
+                    </div>
+
+                    {/* Orbit Candidate 2 (Right) */}
+                    <div 
+                      onClick={() => {
+                        const target = matchDeckProfiles[1] || usersList[0];
+                        setSelectedUser(target);
+                        setIsUserProfileModalOpen(true);
+                      }}
+                      className="absolute top-1/2 -right-5 -translate-y-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-purple-500 shadow-[0_0_15px_#ec4899] cursor-pointer hover:scale-130 transition duration-300 z-30 group"
+                      title={matchDeckProfiles[1]?.name || 'Elnaz'}
+                    >
+                      <img 
+                        src={matchDeckProfiles[1]?.avatar || 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80'} 
+                        alt="Candidate" 
+                        className="w-full h-full rounded-full object-cover border border-slate-950" 
+                      />
+                      <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-cyan-400 border border-slate-950 flex items-center justify-center text-[7px] text-slate-950 font-black">
+                        ✔
+                      </div>
+                    </div>
+
+                    {/* Orbit Candidate 3 (Bottom) */}
+                    <div 
+                      onClick={() => {
+                        const target = matchDeckProfiles[2] || usersList[0];
+                        setSelectedUser(target);
+                        setIsUserProfileModalOpen(true);
+                      }}
+                      className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-yellow-300 shadow-[0_0_15px_#fde047] cursor-pointer hover:scale-130 transition duration-300 z-30 group"
+                      title={matchDeckProfiles[2]?.name || 'Sahar'}
+                    >
+                      <img 
+                        src={matchDeckProfiles[2]?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'} 
+                        alt="Candidate" 
+                        className="w-full h-full rounded-full object-cover border border-slate-950" 
+                      />
+                      <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border border-slate-950 flex items-center justify-center">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                      </div>
+                    </div>
+
+                    {/* Orbit Candidate 4 (Left) */}
+                    <div 
+                      onClick={() => {
+                        const target = matchDeckProfiles[3] || usersList[0];
+                        setSelectedUser(target);
+                        setIsUserProfileModalOpen(true);
+                      }}
+                      className="absolute top-1/2 -left-5 -translate-y-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-cyan-400 to-blue-500 shadow-[0_0_15px_#22d3ee] cursor-pointer hover:scale-130 transition duration-300 z-30 group"
+                      title={matchDeckProfiles[3]?.name || 'Mina'}
+                    >
+                      <img 
+                        src={matchDeckProfiles[3]?.avatar || 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=200&q=80'} 
+                        alt="Candidate" 
+                        className="w-full h-full rounded-full object-cover border border-slate-950" 
+                      />
+                      <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-cyan-400 border border-slate-950 flex items-center justify-center text-[7px] text-slate-950 font-black">
+                        ✔
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* INNER ORBIT RING */}
+                  <div className="absolute w-48 h-48 sm:w-52 sm:h-52 rounded-full border border-yellow-300/40 animate-spin-slow-reverse flex items-center justify-center">
+                    
+                    {/* Inner Orbit Candidate 1 */}
+                    <div 
+                      onClick={() => {
+                        const target = matchDeckProfiles[0] || usersList[0];
+                        setSelectedUser(target);
+                        setIsUserProfileModalOpen(true);
+                      }}
+                      className="absolute top-2 right-2 w-9 h-9 rounded-full p-0.5 bg-lime-300 shadow-[0_0_10px_#a3e635] cursor-pointer hover:scale-125 transition z-30"
+                    >
+                      <img 
+                        src={matchDeckProfiles[0]?.avatar || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80'} 
+                        alt="Candidate" 
+                        className="w-full h-full rounded-full object-cover border border-slate-950" 
+                      />
+                    </div>
+
+                    {/* Inner Orbit Candidate 2 */}
+                    <div 
+                      onClick={() => {
+                        const target = matchDeckProfiles[1] || usersList[0];
+                        setSelectedUser(target);
+                        setIsUserProfileModalOpen(true);
+                      }}
+                      className="absolute bottom-2 left-2 w-9 h-9 rounded-full p-0.5 bg-pink-400 shadow-[0_0_10px_#ec4899] cursor-pointer hover:scale-125 transition z-30"
+                    >
+                      <img 
+                        src={matchDeckProfiles[1]?.avatar || 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80'} 
+                        alt="Candidate" 
+                        className="w-full h-full rounded-full object-cover border border-slate-950" 
+                      />
+                    </div>
+
+                    {/* Glowing Orbs */}
+                    <div className="absolute top-1/2 left-1 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-lime-300 shadow-[0_0_8px_#a3e635] animate-pulse" />
+                    <div className="absolute top-1/2 right-1 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-pink-400 shadow-[0_0_8px_#ec4899] animate-pulse" />
+                  </div>
+
+                  {/* CENTER PROFILE AVATAR WITH NEON AURA */}
+                  <div 
+                    onClick={() => startRandomMatchSearch()}
+                    className="relative w-22 h-22 sm:w-26 sm:h-26 rounded-full p-1 bg-gradient-to-tr from-lime-400 via-emerald-400 to-cyan-400 shadow-[0_0_40px_rgba(163,230,53,0.75)] z-30 cursor-pointer hover:scale-110 active:scale-95 transition duration-300 group"
+                  >
+                    <img 
+                      src={userAvatar} 
+                      alt={userName} 
+                      className="w-full h-full rounded-full object-cover border-2 border-slate-950" 
+                    />
+                    <div className="absolute inset-0 rounded-full bg-lime-400/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                      <Video className="w-8 h-8 text-slate-950 drop-shadow-md" />
+                    </div>
+                  </div>
+
+                </div>
+
               </div>
             ) : (
-              /* MANUAL SWIPE MODE IN ENGLISH */
+              /* CARD SWIPE MODE */
               <div className="flex-1 flex flex-col justify-center items-center overflow-hidden py-1">
                 {matchCardIndex < matchDeckProfiles.length && matchDeckProfiles[matchCardIndex] ? (
-                  <div
-                    onTouchStart={(e) => {
-                      const touch = e.touches[0];
-                      setIsSwipeDragging(true);
-                      swipeStartPos.current = { x: touch.clientX, y: touch.clientY };
-                    }}
-                    onTouchMove={(e) => {
-                      if (!isSwipeDragging) return;
-                      const touch = e.touches[0];
-                      setSwipeDragPos({
-                        x: touch.clientX - swipeStartPos.current.x,
-                        y: touch.clientY - swipeStartPos.current.y
-                      });
-                    }}
-                    onTouchEnd={() => {
-                      if (!isSwipeDragging) return;
-                      setIsSwipeDragging(false);
-                      if (swipeDragPos.x < -70) triggerMatchAction('like');
-                      else if (swipeDragPos.x > 70) triggerMatchAction('reject');
-                      else setSwipeDragPos({ x: 0, y: 0 });
-                    }}
-                    style={{
-                      transform: `translate(${swipeDragPos.x}px, ${swipeDragPos.y}px) rotate(${swipeDragPos.x * 0.05}deg)`,
-                      transition: isSwipeDragging ? 'none' : 'transform 0.3s ease'
-                    }}
-                    className="relative w-full max-w-xs h-[340px] sm:h-[380px] rounded-2xl overflow-hidden bg-slate-950 border border-pink-500/30 shadow-xl flex flex-col justify-end select-none cursor-grab active:cursor-grabbing group"
-                  >
+                  <div className="relative w-full max-w-xs h-[340px] rounded-3xl overflow-hidden bg-slate-950 border border-pink-500/30 shadow-2xl flex flex-col justify-end">
                     <img 
                       src={matchDeckProfiles[matchCardIndex].avatar} 
                       alt={matchDeckProfiles[matchCardIndex].name} 
-                      className="absolute inset-0 w-full h-full object-cover filter brightness-95 pointer-events-none" 
+                      className="absolute inset-0 w-full h-full object-cover filter brightness-95" 
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 
-                    <div className="relative z-20 p-3 space-y-1">
-                      <h3 className="text-lg font-black text-white flex items-center gap-1.5">
+                    <div className="relative z-20 p-3.5 space-y-1">
+                      <h3 className="text-xl font-black text-white flex items-center gap-1.5">
                         <span>{matchDeckProfiles[matchCardIndex].name}</span>
-                        <span className="text-xs text-pink-400 font-bold">({matchDeckProfiles[matchCardIndex].age})</span>
+                        <span className="text-sm text-pink-400 font-bold">({matchDeckProfiles[matchCardIndex].age})</span>
+                        <BadgeCheck className="w-4 h-4 text-cyan-400" />
                       </h3>
-                      <p className="text-[10px] text-slate-300 font-medium">📍 {matchDeckProfiles[matchCardIndex].city} • Online</p>
+                      <p className="text-xs text-slate-300 font-medium">📍 {matchDeckProfiles[matchCardIndex].city} • Online Streamer</p>
 
-                      <div className="flex items-center gap-2 pt-2">
+                      <div className="flex items-center gap-2 pt-3">
                         <button
                           onClick={() => triggerMatchAction('reject')}
-                          className="flex-1 py-1.5 rounded-xl bg-rose-600/80 text-white font-bold text-xs"
+                          className="flex-1 py-2 rounded-2xl bg-rose-600/80 hover:bg-rose-600 text-white font-black text-xs transition"
                         >
                           Pass ❌
                         </button>
                         <button
                           onClick={() => triggerMatchAction('like')}
-                          className="flex-1 py-1.5 rounded-xl bg-emerald-600/80 text-white font-bold text-xs"
+                          className="flex-1 py-2 rounded-2xl bg-emerald-600/80 hover:bg-emerald-600 text-white font-black text-xs transition"
                         >
                           Like ❤️
                         </button>
@@ -5797,7 +5874,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     <p className="text-xs text-slate-300 font-bold">No more profiles in deck!</p>
                     <button
                       onClick={() => setMatchCardIndex(0)}
-                      className="px-4 py-1.5 rounded-xl bg-pink-600 text-white font-bold text-xs"
+                      className="px-5 py-2 rounded-2xl bg-pink-600 text-white font-bold text-xs shadow-lg"
                     >
                       Reset Deck 🔄
                     </button>
@@ -5805,6 +5882,33 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 )}
               </div>
             )}
+
+            {/* SUB-CENTER BADGE: TICKET / PASS INDICATOR */}
+            <div className="flex items-center justify-center gap-1 shrink-0 my-1 z-20">
+              <div className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-purple-900/60 border border-purple-500/40 text-purple-300 text-xs font-black shadow-md backdrop-blur-md">
+                <span>🎟️</span>
+                <span>X{freeMatchCallsLeft} Free Passes</span>
+              </div>
+            </div>
+
+            {/* BOTTOM MAIN CALL BUTTON BAR (GIANT NEON LIME PILL BUTTON + GIFT ICON) */}
+            <div className="w-full flex items-center justify-center gap-3 shrink-0 pb-1 z-30">
+              <button
+                onClick={() => startRandomMatchSearch()}
+                className="flex-1 max-w-xs py-3.5 px-6 rounded-full bg-lime-400 hover:bg-lime-300 text-slate-950 font-black text-base sm:text-lg shadow-[0_0_35px_rgba(163,230,53,0.75)] hover:shadow-[0_0_50px_rgba(163,230,53,0.95)] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2.5"
+              >
+                <Video className="w-6 h-6 fill-slate-950 text-slate-950" />
+                <span>Free Match</span>
+              </button>
+
+              <button
+                onClick={() => setIsRewardOpeningModalOpen(true)}
+                className="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-amber-400 hover:bg-slate-800 hover:border-amber-500/50 shadow-lg active:scale-90 transition shrink-0"
+                title="Free Rewards & Gifts"
+              >
+                <Gift className="w-6 h-6 animate-bounce" />
+              </button>
+            </div>
 
           </div>
         )}
