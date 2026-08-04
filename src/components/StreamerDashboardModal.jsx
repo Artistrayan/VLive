@@ -686,19 +686,106 @@ export default function StreamerDashboardModal({
                 </div>
               )}
 
-              {/* 6. RULES & POLICIES */}
+              {/* 6. RULES, VIOLATIONS & APPEAL SYSTEM */}
               {activeTab === 'rules' && (
-                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3 text-xs leading-relaxed text-slate-300 animate-fadeIn">
-                  <h4 className="font-bold text-white border-b border-slate-800 pb-2 flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-amber-400" />
-                    <span>قوانین استریمینگ پلتفرم V.LIVE</span>
-                  </h4>
-                  <ul className="space-y-2 list-disc list-inside text-slate-400">
-                    <li>استریمر موظف است تمام قوانین رده‌بندی سنی (Standard و Adult 18+) را رعایت نماید.</li>
-                    <li>محتوای بزرگسال (Adult 18+) تحت هیچ شرایطی نباید در استریم‌های عمومی پخش گردد.</li>
-                    <li>سیستم هوش مصنوعی به صورت مداوم محتوای بصری را پایش کرده و هشدارهای امنیتی به ادمین ارسال می‌کند.</li>
-                    <li>حداقل برداشت درآمد ۲۰ تتر (USDT) می‌باشد.</li>
-                  </ul>
+                <div className="space-y-4 text-xs leading-relaxed text-slate-300 animate-fadeIn">
+                  
+                  {/* RULES CATEGORIES */}
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                    <h4 className="font-bold text-white border-b border-slate-800 pb-2 flex items-center gap-1.5">
+                      <FileText className="w-4 h-4 text-amber-400" />
+                      <span>قوانین، ضوابط و رده‌بندی تخلفات استریمرها</span>
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
+                      <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                        <span className="font-bold text-pink-400 block mb-1">۱. قوانین استریم و محتوای زنده:</span>
+                        <p className="text-slate-400 text-[10px]">
+                          تفکیک کامل استریم‌های عمومی (Standard) از ۱۸+ (Adult VIP). عدم پخش محتوای بزرگسال در دسته‌بندی عمومی و رعایت ضوابط رده‌بندی سنی.
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                        <span className="font-bold text-purple-400 block mb-1">۲. رفتار در چت و تماس تصویری:</span>
+                        <p className="text-slate-400 text-[10px]">
+                          حفظ احترام متقابل بین استریمر و بینندگان. عدم توهین، کلاهبرداری، اسپم و درخواست‌های غیرقانونی.
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                        <span className="font-bold text-emerald-400 block mb-1">۳. قوانین مالی و تسویه حساب:</span>
+                        <p className="text-slate-400 text-[10px]">
+                          حداقل برداشت ۵۰ تتر (TRC-20). کسر خودکار ۲۹٪ کارمزد پلتفرم. عدم استفاده از سکه‌های تقلبی یا رفتار مشکوک (Anti-Fraud Check).
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                        <span className="font-bold text-cyan-400 block mb-1">۴. پایش امنیتی هوش مصنوعی (AI Security):</span>
+                        <p className="text-slate-400 text-[10px]">
+                          پایش هوشمند عدم تطابق چهره، لایو خالی (Empty Live) و تخلفات. گزارش‌ها به ادمین جهت تصمیم‌گیری نهایی ارسال می‌شود.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* VIOLATION LEVELS EXPLANATION */}
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                    <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                      <ShieldAlert className="w-4 h-4 text-rose-400" />
+                      <span>سطوح تخلفات و جریمه‌های انضباطی (Violations & Penalties)</span>
+                    </h4>
+                    <div className="flex flex-wrap gap-2 text-[10px]">
+                      <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-amber-500/40 text-amber-300 font-bold">
+                        🟡 اخطار (Warning): تذکر انضباطی بدون کسر درآمد
+                      </span>
+                      <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-orange-500/40 text-orange-300 font-bold">
+                        🟠 تخلف جزیی (Minor): مسدودی ۱۲ ساعته لایو
+                      </span>
+                      <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-rose-500/40 text-rose-300 font-bold">
+                        🔴 تخلف جدی (Serious): مسدودی ۳ روزه لایو & کسر ۵۰٪ XP
+                      </span>
+                      <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-red-600/60 text-red-400 font-bold">
+                        ⛔ تخلف بحرانی (Critical): لغو مقام استریمر & مسدودی اکانت
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* APPEAL SUBMISSION FORM */}
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-purple-500/30 space-y-3">
+                    <h4 className="font-bold text-white text-xs flex items-center gap-1.5 border-b border-slate-800 pb-2">
+                      <HelpCircle className="w-4 h-4 text-purple-400" />
+                      <span>ثبت درخواست اعتراض / تجدیدنظر به ادمین (Submit Appeal)</span>
+                    </h4>
+                    <p className="text-[10px] text-slate-400">
+                      اگر اخطار یا محدودیتی بر روی حساب شما اعمال شده است، می‌توانید توضیحات و دلایل خود را برای بررسی ادمین ارسال کنید.
+                    </p>
+
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const appealText = e.target.appealInput?.value?.trim();
+                      if (!appealText) {
+                        showToast('⚠️ لطفاً توضیحات اعتراض خود را بنویسید');
+                        return;
+                      }
+                      addAdminAuditLog?.(`درخواست تجدیدنظر جدید از استریمر @${currentUsername} ثبت شد: ${appealText}`);
+                      showToast('✅ درخواست تجدیدنظر شما با موفقیت به ادمین ارسال گردید');
+                      e.target.reset();
+                    }} className="space-y-2">
+                      <textarea
+                        name="appealInput"
+                        rows={3}
+                        placeholder="توضیحات و مستندات اعتراض خود را به صورت کامل بنویسید..."
+                        className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs outline-none focus:border-purple-500 resize-none"
+                      />
+                      <button
+                        type="submit"
+                        className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
+                      >
+                        ارسال اعتراض به هیئت نظارت ادمین
+                      </button>
+                    </form>
+                  </div>
+
                 </div>
               )}
 
