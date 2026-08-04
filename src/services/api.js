@@ -447,3 +447,117 @@ export const apiAdmin = {
   },
   async getPosts() { return []; }
 };
+
+export const apiStreamer = {
+  async getStreamerProfile(userId) {
+    const uid = userId || getUserId();
+    if (!uid) return null;
+    try {
+      const { data, error } = await supabase
+        .from('streamer_profiles')
+        .select('*')
+        .eq('user_id', uid)
+        .single();
+      if (error) return null;
+      return data;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  async updateStreamerProfile(userId, updates) {
+    const uid = userId || getUserId();
+    if (!uid) return { success: false };
+    try {
+      const { data, error } = await supabase
+        .from('streamer_profiles')
+        .upsert([{ user_id: uid, ...updates }], { onConflict: 'user_id' })
+        .select();
+      return { success: !error, data: data ? data[0] : null };
+    } catch (e) {
+      return { success: false };
+    }
+  },
+
+  async getStreamerStatistics(userId) {
+    const uid = userId || getUserId();
+    if (!uid) return null;
+    try {
+      const { data, error } = await supabase
+        .from('streamer_statistics')
+        .select('*')
+        .eq('user_id', uid)
+        .single();
+      if (error) return null;
+      return data;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  async getStreamerSettings(userId) {
+    const uid = userId || getUserId();
+    if (!uid) return null;
+    try {
+      const { data, error } = await supabase
+        .from('streamer_settings')
+        .select('*')
+        .eq('user_id', uid)
+        .single();
+      if (error) return null;
+      return data;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  async updateStreamerSettings(userId, settings) {
+    const uid = userId || getUserId();
+    if (!uid) return { success: false };
+    try {
+      const { data, error } = await supabase
+        .from('streamer_settings')
+        .upsert([{ user_id: uid, ...settings }], { onConflict: 'user_id' })
+        .select();
+      return { success: !error, data: data ? data[0] : null };
+    } catch (e) {
+      return { success: false };
+    }
+  },
+
+  async getStreamerNotifications(userId) {
+    const uid = userId || getUserId();
+    if (!uid) return [];
+    try {
+      const { data, error } = await supabase
+        .from('streamer_notifications')
+        .select('*')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false });
+      if (error) return [];
+      return data || [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async requestPayout(userId, amountUsdt, walletAddress) {
+    const uid = userId || getUserId();
+    if (!uid) return { success: false, error: 'User not logged in' };
+    try {
+      const { data, error } = await supabase
+        .from('payout_requests')
+        .insert([{
+          user_id: uid,
+          amount_usdt: amountUsdt,
+          wallet_address: walletAddress,
+          status: 'pending'
+        }])
+        .select();
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data[0] };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+};

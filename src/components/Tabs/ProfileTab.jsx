@@ -24,6 +24,7 @@ export default function ProfileTab(props) {
     showToast = (() => {}), loc = ((a, b) => b || a),
     isVerified = true,
     setIsAdminPanelOpen,
+    setIsStreamerCenterOpen,
     authAvatar = '', authFullName = '', authCity = 'Tehran', userRank = 'VIP Streamer',
     authBio = '', dailyStreak = 5
   } = props;
@@ -77,7 +78,16 @@ export default function ProfileTab(props) {
                 </div>
 
                 {/* Quick Action Buttons */}
-                <div className="flex items-center gap-2.5 w-full sm:w-auto justify-center">
+                <div className="flex items-center gap-2.5 w-full sm:w-auto justify-center flex-wrap">
+                  {(isVerified || currentUsername?.toLowerCase() === 'rayan') && (
+                    <button
+                      onClick={() => setIsStreamerCenterOpen && setIsStreamerCenterOpen(true)}
+                      className="flex-1 sm:flex-initial px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-400 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-[0_0_25px_rgba(236,72,153,0.4)] hover:scale-105 transition border border-pink-400/30"
+                    >
+                      <Crown className="w-4 h-4 fill-white text-white" />
+                      <span>Streamer Center 👑</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => setIsVipModalOpen(true)}
                     className="flex-1 sm:flex-initial px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:scale-105 transition"

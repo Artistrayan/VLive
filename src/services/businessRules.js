@@ -10,9 +10,10 @@ export const PLATFORM_RULES = {
 
   // 2. STREAMER ROLES & STATUSES
   ROLES: {
-    USER: 'user',        // Default Viewer
-    STREAMER: 'streamer',// Approved Streamer
-    ADMIN: 'admin',      // System Admin
+    USER: 'user',              // Default Viewer / Normal User
+    STREAMER: 'streamer',      // Approved Streamer
+    MODERATOR: 'moderator',    // Content & Live Moderator
+    ADMIN: 'admin',            // System Admin
     SUPER_ADMIN: 'super_admin' // Platform Owner (Rayan)
   },
   STREAMER_STATUS: {

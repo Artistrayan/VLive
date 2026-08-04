@@ -1,5 +1,6 @@
 import SettingsModal from './modals/SettingsModal';
 import LiveStreamSystem from './components/LiveStreamSystem';
+import StreamerDashboardModal from './components/StreamerDashboardModal';
 import ProfileTab from './components/Tabs/ProfileTab';
 import WalletTab from './components/Tabs/WalletTab';
 import ChatTab from './components/Tabs/ChatTab';
@@ -905,6 +906,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
   }, [blockedCallUsers]);
 
   // Streamer Tariff & Call Privacy
+  const [isStreamerCenterOpen, setIsStreamerCenterOpen] = useState(false);
   const [streamerPaidCallEnabled, setStreamerPaidCallEnabled] = useState(true);
   const [streamerCallTariffPerMin, setStreamerCallTariffPerMin] = useState(20);
   const [streamerCallTariff10Min, setStreamerCallTariff10Min] = useState(150);
@@ -5377,9 +5379,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               currentUser={{
                 name: userName,
                 avatar: userAvatar,
-                isStreamer: currentUserType === 'STREAMER' || isVerified || currentUsername === 'Rayan',
+                isStreamer: isVerified || currentUsername === 'Rayan',
                 isVerifiedStreamer: isVerified,
-                user_type: currentUserType,
+                user_type: isVerified ? 'STREAMER' : 'REAL_USER',
                 username: currentUsername
               }}
               currentUsername={currentUsername}
@@ -6069,6 +6071,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         {/* TAB 4: PROFILE TAB */}
         <ProfileTab
           setIsAdminPanelOpen={setIsAdminPanelOpen}
+          setIsStreamerCenterOpen={setIsStreamerCenterOpen}
           activeTab={activeTab}
           userAvatar={userAvatar}
           setUserAvatar={setUserAvatar}
@@ -7944,6 +7947,25 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           </div>
         </div>
       )}
+
+      {/* MODAL: STREAMER CENTER DASHBOARD */}
+      <StreamerDashboardModal
+        isOpen={isStreamerCenterOpen}
+        onClose={() => setIsStreamerCenterOpen(false)}
+        currentUser={{
+          user_type: isVerified ? 'STREAMER' : 'REAL_USER',
+          isStreamer: isVerified || currentUsername?.toLowerCase() === 'rayan',
+          name: userName,
+          avatar: userAvatar,
+          username: currentUsername
+        }}
+        currentUsername={currentUsername}
+        userCoins={userCoins}
+        setUserCoins={setUserCoins}
+        showToast={showToast}
+        setIsStartLiveModalOpen={setIsStartLiveModalOpen}
+        addAdminAuditLog={addAdminAuditLog}
+      />
 
       {/* MODAL: ADMIN SECURITY & DASHBOARD */}
             <AdminDashboardModal

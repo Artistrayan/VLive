@@ -2807,13 +2807,23 @@ export default function AdminDashboardModal(props) {
                                 </button>
                                 <button
                                   onClick={() => {
+                                    setAiStreamerVerificationsList(prev => prev.map(k => k.id === kyc.id ? { ...k, status: 'Suspended' } : k));
+                                    addAdminAuditLog(`دسترسی استریمر @${kyc.username} تعلیق گردید`);
+                                    showToast(`⚠️ استریمر @${kyc.username} تعلیق شد`);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-amber-600 text-white font-bold text-xs"
+                                >
+                                  ⚠️ تعلیق موقت
+                                </button>
+                                <button
+                                  onClick={() => {
                                     setAiStreamerVerificationsList(prev => prev.map(k => k.id === kyc.id ? { ...k, status: 'Rejected' } : k));
                                     addAdminAuditLog(`درخواست استریمر @${kyc.username} رد شد`);
                                     showToast('❌ درخواست رد شد');
                                   }}
                                   className="px-3 py-1.5 rounded-xl bg-slate-800 text-rose-300 font-bold text-xs"
                                 >
-                                  ❌ رد درخواست
+                                  ❌ رد درخواست / لغو مقام
                                 </button>
                               </div>
                             </div>

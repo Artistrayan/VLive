@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Video, Flame, ShieldCheck, Lock, Unlock, Crown, Users, Eye, Search, Plus, 
   Filter, Sparkles, MessageSquare, Heart, Gift, AlertTriangle, X, Check, 
-  ChevronRight, Mic, MicOff, Camera, RefreshCw, Radio, Tag, ShieldAlert
+  ChevronRight, Mic, MicOff, Camera, RefreshCw, Radio, Tag, ShieldAlert, FileText
 } from 'lucide-react';
 import { apiLive, apiAdmin } from '../services/api';
 
