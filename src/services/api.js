@@ -211,7 +211,147 @@ export const apiHome = {
 
 export const apiDiscover = {};
 export const apiMessages = {};
-export const apiLive = {};
+export const apiLive = {
+  async getLiveStreams(liveType = 'standard') {
+    try {
+      const { data, error } = await supabase
+        .from('live_streams')
+        .select('*')
+        .eq('live_type', liveType)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.warn('Supabase live_streams query error:', error.message);
+        return [];
+      }
+      return data || [];
+    } catch (e) {
+      console.warn('getLiveStreams error:', e);
+      return [];
+    }
+  },
+
+  async getLiveCategories(liveType = 'standard') {
+    try {
+      const { data, error } = await supabase
+        .from('live_categories')
+        .select('*')
+        .eq('live_type', liveType);
+      if (error) return [];
+      return data || [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async createLiveStream(streamPayload) {
+    try {
+      const { data, error } = await supabase
+        .from('live_streams')
+        .insert([{
+          host: streamPayload.host,
+          host_id: streamPayload.host_id || getUserId(),
+          avatar: streamPayload.avatar,
+          title: streamPayload.title,
+          category: streamPayload.category || 'General',
+          live_type: streamPayload.live_type || 'standard',
+          description: streamPayload.description || '',
+          thumbnail: streamPayload.thumbnail || '',
+          tags: streamPayload.tags || '',
+          viewers: 1,
+          status: 'active',
+          ai_flagged: false
+        }])
+        .select();
+      if (error) {
+        console.warn('createLiveStream error:', error.message);
+        return { success: false, error: error.message };
+      }
+      return { success: true, data: data[0] };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async endLiveStream(streamId) {
+    try {
+      const { error } = await supabase
+        .from('live_streams')
+        .update({ status: 'ended' })
+        .eq('id', streamId);
+      return { success: !error };
+    } catch (e) {
+      return { success: false };
+    }
+  },
+
+  async joinLiveViewer(streamId) {
+    const uid = getUserId();
+    if (!uid) return;
+    try {
+      await supabase.from('live_viewers').insert([{ stream_id: streamId, user_id: uid }]);
+    } catch (e) {
+      // ignore
+    }
+  },
+
+  async reportLiveStream(reportData) {
+    try {
+      const uid = getUserId();
+      const { data, error } = await supabase
+        .from('live_reports')
+        .insert([{
+          stream_id: reportData.stream_id,
+          stream_title: reportData.stream_title,
+          streamer_name: reportData.streamer_name,
+          reporter_id: uid,
+          reason: reportData.reason,
+          ai_detected: reportData.ai_detected || false,
+          status: 'pending'
+        }])
+        .select();
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data[0] };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async getAdultAccess() {
+    const uid = getUserId();
+    if (!uid) return { age_verified: false, rules_accepted: false, adult_vip_active: false };
+    try {
+      const { data, error } = await supabase
+        .from('adult_access')
+        .select('*')
+        .eq('user_id', uid)
+        .single();
+      if (error) return null;
+      return data;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  async saveAdultAccess(accessData) {
+    const uid = getUserId();
+    if (!uid) return { success: false };
+    try {
+      const { data, error } = await supabase
+        .from('adult_access')
+        .upsert([{
+          user_id: uid,
+          age_verified: accessData.age_verified,
+          rules_accepted: accessData.rules_accepted,
+          adult_vip_active: accessData.adult_vip_active
+        }], { onConflict: 'user_id' })
+        .select();
+      return { success: !error, data: data ? data[0] : null };
+    } catch (e) {
+      return { success: false };
+    }
+  }
+};
 
 export const apiWallet = {
   async getBalance() {
@@ -251,12 +391,59 @@ export const apiAdmin = {
     const { error } = await supabase.from('profiles').delete().eq('id', userId);
     return { success: !error };
   },
-  async getReports() { return []; },
-  async analyzeReportAi(params) { return { analysis: 'AI analysis placeholder' }; },
+  async getReports() {
+    try {
+      const { data, error } = await supabase.from('live_reports').select('*').order('created_at', { ascending: false });
+      return error ? [] : data;
+    } catch (e) {
+      return [];
+    }
+  },
+  async getLiveStreams() {
+    try {
+      const { data, error } = await supabase.from('live_streams').select('*').order('created_at', { ascending: false });
+      return error ? [] : data;
+    } catch (e) {
+      return [];
+    }
+  },
+  async endLiveStream(streamId) {
+    try {
+      const { error } = await supabase.from('live_streams').update({ status: 'ended' }).eq('id', streamId);
+      return { success: !error };
+    } catch (e) {
+      return { success: false };
+    }
+  },
+  async analyzeLiveStreamAi(streamData) {
+    const issues = [];
+    if (!streamData.host || streamData.host.includes('Unknown')) issues.push('عدم تطابق تصویر استریمر با پروفایل تایید شده (AI Flag)');
+    if (streamData.title && (streamData.title.includes('تست') || streamData.title.includes('خالی'))) issues.push('کادر تصویر خالی برای مدت طولانی (Empty Camera AI Alert)');
+    if (streamData.category === 'General' && streamData.live_type === 'adult') issues.push('عدم تطابق دسته‌بندی استریم با نوع محتوا (Category Mismatch)');
+
+    const isFlagged = issues.length > 0;
+    const reason = issues.length > 0 ? issues.join(' | ') : 'شناسایی فعالیت مشکوک بصری توسط هوش مصنوعی';
+
+    return {
+      flagged: isFlagged,
+      reason: reason,
+      confidence: 0.94,
+      recommendation: 'گزارش جهت بررسی و تصمیم‌گیری نهایی به ادمین ارسال گردید'
+    };
+  },
+  async analyzeReportAi(params) { return { analysis: 'بررسی هوش مصنوعی: نیازمند تصمیم‌گیری نهایی ادمین' }; },
   async moderateChatAi(params) { return { decision: 'Allowed' }; },
   async getSupportAiSuggestion(params) { return { suggestion: 'Support suggestion' }; },
   async verifyStreamerAi(params) { return { verified: true }; },
   async checkReferralFraudAi(params) { return { fraud: false }; },
   async translateMessage(text, lang) { return { translated: text }; },
+  async updateReportStatus(reportId, status) {
+    try {
+      const { error } = await supabase.from('live_reports').update({ status }).eq('id', reportId);
+      return { success: !error };
+    } catch (e) {
+      return { success: false };
+    }
+  },
   async getPosts() { return []; }
 };

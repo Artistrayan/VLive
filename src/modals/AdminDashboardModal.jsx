@@ -787,13 +787,16 @@ export default function AdminDashboardModal(props) {
                 </div>
               )}
 
-              {/* 3. LIVE MANAGEMENT */}
+              {/* 3. LIVE MANAGEMENT & AI MONITORING */}
               {adminActiveTab === 'live' && (
-                <div className="space-y-3 text-xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="space-y-4 text-xs dir-rtl">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
                     <div>
-                      <h3 className="font-bold text-white text-sm">۳. مدیریت مستقیم لایواستریم‌ها (Live Management)</h3>
-                      <p className="text-[10px] text-slate-400">نظارت بر لایوهای فعال، قطع استریم، بستن چت و برخورد با متخلفین</p>
+                      <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                        <Video className="w-4 h-4 text-pink-400" />
+                        <span>۳. مدیریت لایواستریم‌ها و هشدارهای AI (Live Management & AI Check)</span>
+                      </h3>
+                      <p className="text-[10px] text-slate-400">نظارت تفکیک‌شده بر لایوهای استاندارد و ۱۸+، سیستم بررسی تصویر هوش مصنوعی و برخورد با متخلفین</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-pink-400 font-mono font-bold">{adminLivesList.length} لایو در حال پخش</span>
@@ -801,10 +804,11 @@ export default function AdminDashboardModal(props) {
                         onClick={() => {
                           const demoLive = {
                             id: Date.now(),
-                            title: 'لایو تست ادمین 🎵 (اجرای موسیقی زنده)',
+                            title: 'لایو تست موسیقی زنده 🎵',
                             streamer: 'Rayan Streamer',
                             viewers: 1450,
                             category: 'Music',
+                            live_type: 'standard',
                             duration: '12m'
                           };
                           setAdminLivesList(prev => [demoLive, ...prev]);
@@ -815,10 +819,11 @@ export default function AdminDashboardModal(props) {
                             thumbnail: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
                             viewers: demoLive.viewers,
                             category: demoLive.category,
+                            live_type: 'standard',
                             isVip18: false,
                             entryFee: 0
                           }, ...prev]);
-                          addAdminAuditLog('لایو جدید آزمایشی برای بررسی ساخته شد');
+                          addAdminAuditLog('لایو جدید استاندارد آزمایشی ساخته شد');
                         }}
                         className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-[10px] flex items-center gap-1 shadow"
                       >
@@ -827,6 +832,87 @@ export default function AdminDashboardModal(props) {
                     </div>
                   </div>
 
+                  {/* SUBTABS FILTER FOR ADMIN (ALL / STANDARD / ADULT 18+) */}
+                  <div className="flex items-center justify-between gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setAdminReportCategoryFilter('All_Lives')}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition ${
+                          adminReportCategoryFilter === 'All_Lives' || !adminReportCategoryFilter
+                            ? 'bg-pink-500 text-white shadow-md'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        همه لایوها ({adminLivesList.length})
+                      </button>
+                      <button
+                        onClick={() => setAdminReportCategoryFilter('Standard_Lives')}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition ${
+                          adminReportCategoryFilter === 'Standard_Lives'
+                            ? 'bg-purple-600 text-white shadow-md'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        📺 لایوهای استاندارد
+                      </button>
+                      <button
+                        onClick={() => setAdminReportCategoryFilter('Adult_Lives')}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition ${
+                          adminReportCategoryFilter === 'Adult_Lives'
+                            ? 'bg-rose-600 text-white shadow-md'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        🔥 لایوهای ۱۸+ (Adult)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* AI LIVE MONITOR ALERTS QUEUE (FOR ADMIN FINAL DECISION) */}
+                  {adminReportsList.some(r => r.ai_detected && r.status === 'pending') && (
+                    <div className="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-500/50 space-y-2">
+                      <h4 className="font-black text-amber-300 text-xs flex items-center gap-1.5">
+                        <ShieldAlert className="w-4 h-4 text-amber-400 animate-pulse" />
+                        <span>🤖 هشدارهای هوش مصنوعی (AI Live Security Alerts - نیازمند تصمیم ادمین):</span>
+                      </h4>
+                      <p className="text-[10px] text-amber-200/80">هوش مصنوعی موارد مشکوک زیر را شناسایی کرده است. ادمین تصمیم‌گیرنده نهایی می‌باشد.</p>
+
+                      <div className="space-y-2 pt-1">
+                        {adminReportsList.filter(r => r.ai_detected && r.status === 'pending').map(alert => (
+                          <div key={alert.id} className="p-2.5 rounded-xl bg-slate-950 border border-amber-500/30 flex items-center justify-between text-[11px]">
+                            <div>
+                              <span className="font-bold text-white block">استریمر: {alert.streamer_name || alert.targetUser || 'نامشخص'}</span>
+                              <span className="text-amber-400 font-medium">علت هشدار AI: {alert.reason}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  if (apiAdmin.updateReportStatus) apiAdmin.updateReportStatus(alert.id, 'resolved');
+                                  setAdminReportsList(prev => prev.map(a => a.id === alert.id ? { ...a, status: 'resolved' } : a));
+                                  addAdminAuditLog(`هشدار AI لایو ${alert.streamer_name} توسط ادمین تایید شد و لایو متوقف گردید`);
+                                }}
+                                className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px]"
+                              >
+                                قطع لایو & اخطار
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (apiAdmin.updateReportStatus) apiAdmin.updateReportStatus(alert.id, 'dismissed');
+                                  setAdminReportsList(prev => prev.map(a => a.id === alert.id ? { ...a, status: 'dismissed' } : a));
+                                  addAdminAuditLog(`هشدار AI لایو ${alert.streamer_name} توسط ادمین رد شد`);
+                                }}
+                                className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[10px]"
+                              >
+                                رد هشدار
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ACTIVE LIVES LIST */}
                   {adminLivesList.length === 0 ? (
                     <div className="p-8 text-center rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                       <Video className="w-8 h-8 text-slate-600 mx-auto" />
@@ -834,8 +920,8 @@ export default function AdminDashboardModal(props) {
                       <button
                         onClick={() => {
                           setAdminLivesList([
-                            { id: 1042, title: 'لایو موسیقی شبانه 🎸', streamer: 'Sara Miller', viewers: 3420, category: 'Music', duration: '45m' },
-                            { id: 1043, title: 'چت زنده و گپ شبانه 💬', streamer: 'Ali Streamer', viewers: 890, category: 'Chat', duration: '18m' }
+                            { id: 1042, title: 'لایو موسیقی شبانه 🎸', streamer: 'Sara Miller', viewers: 3420, category: 'Music', live_type: 'standard', duration: '45m' },
+                            { id: 1043, title: 'چت زنده ۱۸+ VIP 🔞', streamer: 'Ali Streamer', viewers: 890, category: 'VIP Chat', live_type: 'adult', duration: '18m' }
                           ]);
                           showToast('لیست لایوهای نمونه بازنشانی شد');
                         }}
@@ -846,57 +932,65 @@ export default function AdminDashboardModal(props) {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {adminLivesList.map(l => (
-                        <div key={l.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-white">{l.title}</span>
-                              <span className="bg-pink-500/20 text-pink-300 text-[9px] px-2 py-0.2 rounded-full border border-pink-500/30">Live #{l.id}</span>
+                      {adminLivesList
+                        .filter(l => {
+                          if (adminReportCategoryFilter === 'Standard_Lives') return l.live_type !== 'adult';
+                          if (adminReportCategoryFilter === 'Adult_Lives') return l.live_type === 'adult';
+                          return true;
+                        })
+                        .map(l => (
+                          <div key={l.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-white">{l.title}</span>
+                                <span className={`text-[9px] px-2 py-0.2 rounded-full font-bold border ${l.live_type === 'adult' ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' : 'bg-pink-500/20 text-pink-300 border-pink-500/30'}`}>
+                                  {l.live_type === 'adult' ? 'ADULT 18+' : 'Standard'} #{l.id}
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-slate-400 block font-mono mt-0.5">استریمر: {l.streamer} • {l.viewers} بیننده زنده • دسته‌بندی: {l.category} • مدت: {l.duration || '۱۰ دقیقه'}</span>
                             </div>
-                            <span className="text-[10px] text-slate-400 block font-mono mt-0.5">استریمر: {l.streamer} • {l.viewers} بیننده زنده • دسته‌بندی: {l.category} • مدت: {l.duration}</span>
+
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <button
+                                onClick={() => {
+                                  setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
+                                  setStreamsList(prev => prev.filter(item => item.host !== l.streamer && item.id !== `live_${l.id}`));
+                                  addAdminAuditLog(`لایو استریم شماره #${l.id} (${l.title}) متوقف و از سیستم حذف شد`);
+                                }}
+                                className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold"
+                              >
+                                پایان دادن به لایو
+                              </button>
+
+                              <button
+                                onClick={() => addAdminAuditLog(`چت عمومی لایو #${l.id} قفل گردید`)}
+                                className="px-2.5 py-1 rounded-xl bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px] font-bold"
+                              >
+                                بستن چت
+                              </button>
+
+                              <button
+                                onClick={() => addAdminAuditLog(`اخطار انضباطی به استریمر ${l.streamer} ارسال شد`)}
+                                className="px-2.5 py-1 rounded-xl bg-purple-950 border border-purple-500/40 text-purple-300 text-[10px] font-bold"
+                              >
+                                اخطار به استریمر
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
+                                  setStreamsList(prev => prev.filter(item => item.host !== l.streamer));
+                                  setAdminUsersList(prev => prev.map(u => (u.name === l.streamer || u.username === l.streamer) ? { ...u, status: 'Banned' } : u));
+                                  setUsersList(prev => prev.map(u => (u.name === l.streamer || u.username === l.streamer) ? { ...u, status: 'banned' } : u));
+                                  addAdminAuditLog(`استریمر ${l.streamer} مسدود شد و لایو قطع گردید`);
+                                }}
+                                className="px-2.5 py-1 rounded-xl bg-red-950 border border-red-500/50 text-red-300 text-[10px] font-bold"
+                              >
+                                مسدودسازی استریمر
+                              </button>
+                            </div>
                           </div>
-
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <button
-                              onClick={() => {
-                                setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
-                                setStreamsList(prev => prev.filter(item => item.host !== l.streamer && item.id !== `live_${l.id}`));
-                                addAdminAuditLog(`لایو استریم شماره #${l.id} (${l.title}) متوقف و از سیستم حذف شد`);
-                              }}
-                              className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold"
-                            >
-                              پایان دادن به لایو
-                            </button>
-
-                            <button
-                              onClick={() => addAdminAuditLog(`چت عمومی لایو #${l.id} قفل گردید`)}
-                              className="px-2.5 py-1 rounded-xl bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px] font-bold"
-                            >
-                              بستن چت
-                            </button>
-
-                            <button
-                              onClick={() => addAdminAuditLog(`اخطار انضباطی به استریمر ${l.streamer} ارسال شد`)}
-                              className="px-2.5 py-1 rounded-xl bg-purple-950 border border-purple-500/40 text-purple-300 text-[10px] font-bold"
-                            >
-                              اخطار به استریمر
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
-                                setStreamsList(prev => prev.filter(item => item.host !== l.streamer));
-                                setAdminUsersList(prev => prev.map(u => (u.name === l.streamer || u.username === l.streamer) ? { ...u, status: 'Banned' } : u));
-                                setUsersList(prev => prev.map(u => (u.name === l.streamer || u.username === l.streamer) ? { ...u, status: 'banned' } : u));
-                                addAdminAuditLog(`استریمر ${l.streamer} مسدود شد و لایو قطع گردید`);
-                              }}
-                              className="px-2.5 py-1 rounded-xl bg-red-950 border border-red-500/50 text-red-300 text-[10px] font-bold"
-                            >
-                              مسدودسازی استریمر
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   )}
                 </div>

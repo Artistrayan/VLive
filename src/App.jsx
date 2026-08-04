@@ -1,4 +1,5 @@
 import SettingsModal from './modals/SettingsModal';
+import LiveStreamSystem from './components/LiveStreamSystem';
 import ProfileTab from './components/Tabs/ProfileTab';
 import WalletTab from './components/Tabs/WalletTab';
 import ChatTab from './components/Tabs/ChatTab';
@@ -5371,6 +5372,32 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         {activeTab === 'home' && (
           <div className="space-y-6 animate-fadeIn pb-12">
             
+            {/* V.LIVE STREAMING SYSTEM (STANDARD & ADULT 18+) */}
+            <LiveStreamSystem
+              currentUser={{
+                name: userName,
+                avatar: userAvatar,
+                isStreamer: currentUserType === 'STREAMER' || isVerified || currentUsername === 'Rayan',
+                isVerifiedStreamer: isVerified,
+                user_type: currentUserType,
+                username: currentUsername
+              }}
+              currentUsername={currentUsername}
+              userCoins={userCoins}
+              setUserCoins={setUserCoins}
+              vipPlan={vipPlan}
+              setVipPlan={setVipPlan}
+              streamsList={streamsList}
+              setStreamsList={setStreamsList}
+              viewingStream={viewingStream}
+              setViewingStream={setViewingStream}
+              showToast={showToast}
+              setActiveTab={setActiveTab}
+              handleInitiateCall={handleInitiateCall}
+              addAdminAuditLog={addAdminAuditLog}
+              setAdminReportsList={setAdminReportsList}
+            />
+
             {/* VIP Users (Stories Style) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
