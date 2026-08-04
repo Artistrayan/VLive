@@ -7963,7 +7963,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         userCoins={userCoins}
         setUserCoins={setUserCoins}
         showToast={showToast}
-        setIsStartLiveModalOpen={setIsStartLiveModalOpen}
+        onSwitchMainTab={setActiveTab}
         addAdminAuditLog={addAdminAuditLog}
       />
 

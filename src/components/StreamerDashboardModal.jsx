@@ -16,6 +16,7 @@ export default function StreamerDashboardModal({
   userCoins,
   setUserCoins,
   showToast,
+  onSwitchMainTab,
   setIsStartLiveModalOpen,
   addAdminAuditLog
 }) {
@@ -273,7 +274,12 @@ export default function StreamerDashboardModal({
                     <button
                       onClick={() => {
                         onClose();
-                        if (setIsStartLiveModalOpen) setIsStartLiveModalOpen(true);
+                        if (setIsStartLiveModalOpen) {
+                          setIsStartLiveModalOpen(true);
+                        } else if (onSwitchMainTab) {
+                          onSwitchMainTab('home');
+                        }
+                        if (showToast) showToast('🎥 انتقال به بخش لایواستریم');
                       }}
                       className="px-5 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 hover:opacity-95 text-white font-black text-xs shadow-lg shadow-pink-500/30 shrink-0 flex items-center gap-2"
                     >
