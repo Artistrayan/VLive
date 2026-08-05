@@ -3282,6 +3282,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // HOST LIVE STREAMING & RECORDING STATE
   const [isHostLiveOpen, setIsHostLiveOpen] = useState(false);
+  const [hostLiveType, setHostLiveType] = useState('standard'); // 'standard' | 'adult' | 'private'
+  const [hostLiveTitle, setHostLiveTitle] = useState('');
+  const [hostLiveCategory, setHostLiveCategory] = useState('Chatting');
+  const [hostCoinRate, setHostCoinRate] = useState(10);
+  const [hostAdultConsent, setHostAdultConsent] = useState(true);
+  const [isCamEnabled, setIsCamEnabled] = useState(true);
+  const [isMicEnabled, setIsMicEnabled] = useState(true);
   const videoRef = useRef(null);
   const [mediaStream, setMediaStream] = useState(null);
   const mediaRecorderRef = useRef(null);
@@ -5430,11 +5437,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </button>
             </div>
 
-            {/* Camera Go-Live & Studio Icon Button (Opens Full Streamer Center & Live Studio) */}
+            {/* Camera Go-Live Icon Button (Opens Live Setup Modal with Adult 18+ & Streamer Studio) */}
             <button 
-              onClick={() => setIsStreamerCenterOpen(true)} 
+              onClick={() => setIsHostLiveOpen(true)} 
               className="ml-1 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 border border-pink-400/80 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-300 relative shrink-0 shadow-[0_0_15px_rgba(236,72,153,0.7)] group"
-              title={loc('استودیو و اجرای لایواستریم', 'Live Broadcast & Streamer Studio')}
+              title={loc('اجرا و شروع لایواستریم', 'Start Live & Adult Broadcast')}
             >
               <Video className="w-4 h-4 text-white animate-pulse" />
               <span className="absolute -top-1 -right-1 bg-lime-400 text-slate-950 text-[8px] font-black w-3.5 h-3.5 flex items-center justify-center rounded-full border border-slate-950 shadow-md">+</span>
@@ -6122,6 +6129,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           setWalletSubTab={setWalletSubTab}
           setIsLoggedIn={setIsLoggedIn}
           setAuthStep={setAuthStep}
+          setIsHostLiveOpen={setIsHostLiveOpen}
+          usersList={usersList}
+          setUsersList={setUsersList}
+          addAdminAuditLog={addAdminAuditLog}
           showToast={showToast}
           loc={loc}
         />
@@ -7664,71 +7675,345 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       )}
 
       
-      {/* MODAL: LIVE HOST SETUP & BROADCAST */}
+      {/* MODAL: LIVE HOST SETUP & BROADCAST (شروع استریم و لایو بزرگسال) */}
       {(isHostLiveOpen || isLiveModalOpen) && (
-        <div className="fixed inset-0 z-[60] bg-slate-950 flex flex-col p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-          <div className="flex-1 w-full max-w-md mx-auto space-y-6 flex flex-col justify-center">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-black text-white flex items-center gap-2">
-                <Video className="w-6 h-6 text-pink-500" />
-                Go Live
-              </h2>
+        <div className="fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-xl flex flex-col p-4 animate-fadeIn overflow-y-auto" dir={isRtl ? "rtl" : "ltr"}>
+          <div className="flex-1 w-full max-w-lg mx-auto space-y-5 my-auto py-6">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between bg-slate-900/80 p-4 rounded-3xl border border-pink-500/30">
+              <div className="flex items-center gap-3">
+                <div className={`w-11 h-11 rounded-2xl p-0.5 flex items-center justify-center shadow-lg ${
+                  hostLiveType === 'adult' 
+                    ? 'bg-gradient-to-tr from-rose-600 via-pink-600 to-amber-500 shadow-rose-500/40' 
+                    : hostLiveType === 'private'
+                    ? 'bg-gradient-to-tr from-purple-600 to-cyan-500 shadow-purple-500/40'
+                    : 'bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 shadow-pink-500/30'
+                }`}>
+                  <Video className="w-6 h-6 text-white animate-pulse" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                    <span>{loc('استودیو و اجرای لایواستریم', 'Live Broadcast Setup')}</span>
+                    {hostLiveType === 'adult' && (
+                      <span className="bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse">
+                        🔞 VIP 18+
+                      </span>
+                    )}
+                  </h2>
+                  <p className="text-xs text-slate-400 font-medium">
+                    {loc('تنظیمات پخش زنده عمومی، لایو بزرگسالان و لایو اختصاصی', 'Configure public live, adult 18+ live & private streams')}
+                  </p>
+                </div>
+              </div>
+
               <button 
                 onClick={() => {
                   setIsHostLiveOpen(false);
                   setIsLiveModalOpen(false);
                 }}
-                className="w-10 h-10 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold"
+                className="w-9 h-9 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-sm transition"
               >✕</button>
             </div>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-300">Broadcast Title</label>
-                <input 
-                  type="text"
-                  placeholder="Enter a catchy title..."
-                  className="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-pink-500"
-                />
+
+            {/* BROADCAST MODE SELECTOR (عمومی / بزرگسال 18+ / خصوصی) */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <Radio className="w-4 h-4 text-pink-400" />
+                <span>{loc('نوع و دسته‌بندی استریم', 'Broadcast Type')}</span>
+              </label>
+
+              <div className="grid grid-cols-3 gap-2 p-1.5 bg-slate-900 rounded-2xl border border-slate-800">
+                <button
+                  onClick={() => {
+                    setHostLiveType('standard');
+                    setHostLiveCategory('Chatting');
+                  }}
+                  className={`py-3 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 ${
+                    hostLiveType === 'standard'
+                      ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md font-black'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <Video className="w-4 h-4" />
+                  <span>🎥 {loc('لایو عمومی', 'Public Stream')}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setHostLiveType('adult');
+                    setHostLiveCategory('18+ VIP Adult');
+                  }}
+                  className={`py-3 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 relative overflow-hidden ${
+                    hostLiveType === 'adult'
+                      ? 'bg-gradient-to-r from-rose-600 via-pink-600 to-purple-700 text-white shadow-lg shadow-rose-500/30 font-black'
+                      : 'text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 border border-rose-500/20'
+                  }`}
+                >
+                  <Flame className="w-4 h-4 text-rose-300 animate-bounce" />
+                  <span className="flex items-center gap-1">
+                    <span>🔞 {loc('لایو بزرگسال', 'Adult 18+')}</span>
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setHostLiveType('private');
+                    setHostLiveCategory('Private 1-on-1');
+                  }}
+                  className={`py-3 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 ${
+                    hostLiveType === 'private'
+                      ? 'bg-gradient-to-r from-purple-600 to-cyan-600 text-white shadow-md font-black'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>🔒 {loc('لایو خصوصی', 'Private Stream')}</span>
+                </button>
               </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-300">Category / Tags</label>
-                <div className="flex gap-2">
-                  <span className="px-3 py-1.5 rounded-xl bg-pink-500/20 text-pink-300 border border-pink-500/40 text-xs font-bold cursor-pointer">Chatting</span>
-                  <span className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-400 border border-slate-700 text-xs font-bold cursor-pointer">Music</span>
-                  <span className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-400 border border-slate-700 text-xs font-bold cursor-pointer">Gaming</span>
+            </div>
+
+            {/* ADULT 18+ VIP BANNER & WARNING */}
+            {hostLiveType === 'adult' && (
+              <div className="p-4 rounded-3xl bg-gradient-to-r from-rose-950/80 via-slate-900 to-slate-900 border border-rose-500/40 space-y-3 animate-fadeIn">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-rose-400 font-black text-xs">
+                    <ShieldAlert className="w-4 h-4 text-rose-400" />
+                    <span>محیط اختصاصی بزرگسالان (VIP 18+ Adult Zone)</span>
+                  </div>
+                  <span className="bg-rose-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+                    🔞 18+ ONLY
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed dir-rtl">
+                  این لایواستریم فقط برای کاربران بالای ۱۸ سال و دارندگان اشتراک VIP نمایش داده می‌شود. لطفاً قوانین اخلاقی و قوانین بسترهای اجتماعی را رعایت کنید.
+                </p>
+
+                <div className="flex items-center justify-between pt-1 border-t border-rose-500/20">
+                  <span className="text-xs font-bold text-slate-300">قیمت ورود هر دقیقه (سکه):</span>
+                  <div className="flex items-center gap-2">
+                    {[5, 10, 20, 50].map(rate => (
+                      <button
+                        key={rate}
+                        onClick={() => setHostCoinRate(rate)}
+                        className={`px-2.5 py-1 rounded-xl text-xs font-black transition ${
+                          hostCoinRate === rate
+                            ? 'bg-amber-400 text-slate-950 font-black shadow-md'
+                            : 'bg-slate-800 text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        {rate} 🪙
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <label className="flex items-center gap-2 pt-2 cursor-pointer dir-rtl">
+                  <input 
+                    type="checkbox"
+                    checked={hostAdultConsent}
+                    onChange={(e) => setHostAdultConsent(e.target.checked)}
+                    className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500 bg-slate-900 border-slate-700"
+                  />
+                  <span className="text-xs text-slate-300 font-semibold">تأیید می‌کنم که محتوای این لایو ویژه بزرگسالان است</span>
+                </label>
+              </div>
+            )}
+
+            {/* PRIVATE STREAM RATE SELECTOR */}
+            {hostLiveType === 'private' && (
+              <div className="p-4 rounded-3xl bg-slate-900 border border-purple-500/30 space-y-3 animate-fadeIn">
+                <div className="flex items-center justify-between text-xs font-bold text-purple-300">
+                  <span className="flex items-center gap-1.5">
+                    <Lock className="w-4 h-4 text-purple-400" />
+                    <span>تنظیم قیمت لایواستریم اختصاصی / خصوصی:</span>
+                  </span>
+                  <span className="text-amber-400 font-black">{hostCoinRate} 🪙 / دقیقه</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {[10, 25, 50, 100].map(rate => (
+                    <button
+                      key={rate}
+                      onClick={() => setHostCoinRate(rate)}
+                      className={`py-2 rounded-xl text-xs font-black border transition ${
+                        hostCoinRate === rate
+                          ? 'bg-purple-600 text-white border-purple-400 shadow-md'
+                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      {rate} 🪙 / دقیقه
+                    </button>
+                  ))}
                 </div>
               </div>
-              
-              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-700 text-xs text-slate-300">
-                <p className="font-bold mb-2">Camera Preview (Simulated)</p>
-                <div className="w-full h-48 bg-slate-950 rounded-xl flex items-center justify-center border-2 border-dashed border-slate-800 text-slate-500">
-                  <Camera className="w-8 h-8 opacity-50" />
+            )}
+
+            {/* INPUTS: TITLE & CATEGORY */}
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300">
+                  {loc('عنوان لایواستریم', 'Broadcast Title')}
+                </label>
+                <input 
+                  type="text"
+                  value={hostLiveTitle}
+                  onChange={(e) => setHostLiveTitle(e.target.value)}
+                  placeholder={
+                    hostLiveType === 'adult'
+                      ? 'عنوان جذاب لایو بزرگسالان (مثلاً: دورهمی VIP امشب 🔞)...'
+                      : hostLiveType === 'private'
+                      ? 'عنوان لایواستریم اختصاصی و خصوصی...'
+                      : 'عنوان جذاب برای لایواستریم امشب...'
+                  }
+                  className="w-full p-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-pink-500 text-sm font-medium"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300">
+                  {loc('برچسب دسته‌بندی', 'Category Tags')}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {['Chatting', 'Gaming', '18+ VIP', 'Music', 'Dance', 'Talk Show'].map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setHostLiveCategory(cat)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                        hostLiveCategory === cat
+                          ? 'bg-pink-500/20 text-pink-300 border-pink-500/50 shadow-sm'
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      #{cat}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
-            
-            <button 
-              onClick={() => {
-                showToast('Starting Broadcast...');
-                setTimeout(() => {
+
+            {/* CAMERA & MIC PREVIEW BOX */}
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                <span>{loc('پیش‌نمایش دوربین و صدا', 'Camera & Audio Preview')}</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsCamEnabled(!isCamEnabled)}
+                    className={`p-2 rounded-xl text-xs font-bold border transition flex items-center gap-1 ${
+                      isCamEnabled ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                    }`}
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>{isCamEnabled ? 'دوربین روشن' : 'دوربین خاموش'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsMicEnabled(!isMicEnabled)}
+                    className={`p-2 rounded-xl text-xs font-bold border transition flex items-center gap-1 ${
+                      isMicEnabled ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                    }`}
+                  >
+                    {isMicEnabled ? <Mic className="w-3.5 h-3.5" /> : <MicOff className="w-3.5 h-3.5" />}
+                    <span>{isMicEnabled ? 'میکروفون فعال' : 'میکروفون قطع'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="relative w-full h-44 bg-slate-950 rounded-2xl overflow-hidden border-2 border-dashed border-slate-800 flex flex-col items-center justify-center text-slate-500">
+                {isCamEnabled ? (
+                  <div className="relative w-full h-full flex items-center justify-center bg-slate-900">
+                    <img
+                      src={userAvatar}
+                      alt="Host Preview"
+                      className="w-full h-full object-cover opacity-60"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/50" />
+                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs font-bold text-white z-10">
+                      <span className="flex items-center gap-1 bg-emerald-500/80 px-2.5 py-0.5 rounded-full text-[10px]">
+                        <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                        <span>Ready to Broadcast</span>
+                      </span>
+                      <span className="text-slate-300 text-[10px]">@{currentUsername || userName}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-slate-500">
+                    <Video className="w-8 h-8 opacity-40" />
+                    <span className="text-xs">تصویر دوربین غیرفعال است</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ACTION BUTTONS */}
+            <div className="space-y-2.5 pt-1">
+              <button 
+                onClick={() => {
+                  if (hostLiveType === 'adult' && !hostAdultConsent) {
+                    showToast('⚠️ لطفاً قوانین و تاییدیه محتوای 18+ را علامت بزنید');
+                    return;
+                  }
+                  
+                  const finalTitle = hostLiveTitle.trim() || (
+                    hostLiveType === 'adult' 
+                      ? `🔞 لایو بزرگسالان @${currentUsername || userName}`
+                      : hostLiveType === 'private'
+                      ? `🔒 لایواستریم اختصاصی @${currentUsername || userName}`
+                      : `🎥 لایواستریم زنده @${currentUsername || userName}`
+                  );
+
+                  showToast(loc('در حال آماده‌سازی و شروع لایواستریم...', 'Starting Live Broadcast...'));
+                  setTimeout(() => {
+                    setIsHostLiveOpen(false);
+                    setIsLiveModalOpen(false);
+                    setIsStreaming(true);
+                    setViewingStream({
+                      id: 'self_' + Date.now(),
+                      host: currentUsername || userName,
+                      hostName: userName,
+                      title: finalTitle,
+                      category: hostLiveCategory,
+                      type: hostLiveType,
+                      isAdult: hostLiveType === 'adult',
+                      badge: hostLiveType === 'adult' ? '🔞 18+ VIP' : hostLiveType === 'private' ? '🔒 Private' : '🎥 Public',
+                      coinRate: hostLiveType === 'standard' ? 0 : hostCoinRate,
+                      isSelfStream: true,
+                      thumbnail: userAvatar,
+                      viewersCount: 1,
+                      likesCount: 0
+                    });
+                  }, 1200);
+                }}
+                className={`w-full py-4 rounded-2xl text-white font-black text-base shadow-xl active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 ${
+                  hostLiveType === 'adult'
+                    ? 'bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 shadow-rose-500/40 hover:from-rose-500 hover:to-purple-500'
+                    : hostLiveType === 'private'
+                    ? 'bg-gradient-to-r from-purple-600 to-cyan-500 shadow-purple-500/40'
+                    : 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 shadow-pink-500/30'
+                }`}
+              >
+                <Sparkles className="w-5 h-5 animate-spin" />
+                <span>
+                  {hostLiveType === 'adult' 
+                    ? '🚀 شروع لایو بزرگسالان (VIP 18+)' 
+                    : hostLiveType === 'private'
+                    ? '🔒 شروع لایواستریم اختصاصی'
+                    : '🚀 شروع و پخش زنده استریم'}
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
                   setIsHostLiveOpen(false);
                   setIsLiveModalOpen(false);
-                  setIsStreaming(true);
-                  setViewingStream({
-                    id: 'self',
-                    host: currentUsername || userName,
-                    title: 'My Live Stream',
-                    isSelfStream: true,
-                    thumbnail: userAvatar
-                  });
-                }, 1500);
-              }}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-lg shadow-[0_0_30px_rgba(236,72,153,0.5)] hover:scale-105 active:scale-95 transition"
-            >
-              Start Streaming
-            </button>
+                  setIsStreamerCenterOpen(true);
+                }}
+                className="w-full py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs flex items-center justify-center gap-2 transition"
+              >
+                <Crown className="w-4 h-4 text-amber-400" />
+                <span>{loc('ورود به استودیو و داشبورد استریمر', 'Open Full Streamer Studio & Center')}</span>
+              </button>
+            </div>
+
           </div>
         </div>
       )}
