@@ -10,6 +10,7 @@ import TermsModal from './modals/TermsModal';
 import VipAndRewardModals from './modals/VipAndRewardModals';
 import SecurityModal from './modals/SecurityModal';
 import NotificationsModal from './modals/NotificationsModal';
+import UserProfileViewModal from './modals/UserProfileViewModal';
 import { VisualUiEditorProvider } from './context/VisualUiEditorContext';
 import VisualUiEditorToolbar from './components/VisualUiEditor/VisualUiEditorToolbar';
 import InspectorPanel from './components/VisualUiEditor/InspectorPanel';
@@ -8951,6 +8952,57 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           </div>
         </div>
       )}
+
+      {/* VIEW OTHER USER PROFILE MODAL */}
+      <UserProfileViewModal
+        isOpen={isUserProfileModalOpen}
+        onClose={() => {
+          setIsUserProfileModalOpen(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+        currentUser={{ username: currentUsername, name: userName, role: isSuperAdmin ? 'admin' : 'user' }}
+        isUserRayan={isUserRayan}
+        isSuperAdmin={isSuperAdmin}
+        showToast={showToast}
+        loc={loc}
+        onFollowToggle={(targetUser, isFollowed) => {
+          setUsersList(prev => prev.map(u => u.id === targetUser.id ? { ...u, isFollowing: isFollowed } : u));
+        }}
+        onStartMessage={(targetUser) => {
+          if (typeof setSelectedChatUser === 'function') setSelectedChatUser(targetUser);
+          setActiveTab('chat');
+        }}
+        onStartCall={(targetUser, callType) => {
+          if (typeof setSelectedHostForCall === 'function') setSelectedHostForCall(targetUser);
+          if (callType === 'video') {
+            setIsDirectCallModalOpen(true);
+          } else {
+            if (typeof setIsAudioCallOpen === 'function') setIsAudioCallOpen(true);
+          }
+        }}
+        onSendGift={(targetUser) => {
+          if (typeof setSelectedGiftRecipient === 'function') setSelectedGiftRecipient(targetUser);
+          if (typeof setIsGiftModalOpen === 'function') setIsGiftModalOpen(true);
+        }}
+        onReportUser={(targetId, reason, notes) => {
+          if (typeof addAdminAuditLog === 'function') {
+            addAdminAuditLog('Report User', `Reported user ${targetId} for ${reason}: ${notes}`);
+          }
+        }}
+        onAdminAction={(actionType, data) => {
+          if (actionType === 'ban') {
+            setUsersList(prev => prev.map(u => u.id === data.userId || u.username === data.username ? { ...u, isBanned: data.isBanned } : u));
+            if (typeof addAdminAuditLog === 'function') addAdminAuditLog('Admin Ban', `Toggled ban for ${data.username}`);
+          } else if (actionType === 'verify') {
+            setUsersList(prev => prev.map(u => u.id === data.userId || u.username === data.username ? { ...u, isVerified: data.isVerified, verified: data.isVerified } : u));
+            if (typeof addAdminAuditLog === 'function') addAdminAuditLog('Admin Verify', `Toggled verify for ${data.username}`);
+          } else if (actionType === 'streamer') {
+            setUsersList(prev => prev.map(u => u.id === data.userId || u.username === data.username ? { ...u, isStreamer: data.isStreamer, isHost: data.isStreamer } : u));
+            if (typeof addAdminAuditLog === 'function') addAdminAuditLog('Admin Streamer', `Toggled streamer status for ${data.username}`);
+          }
+        }}
+      />
   
 </div>
       </DevicePreviewFrame>

@@ -2,6 +2,7 @@ import React from 'react';
 import VisualSectionWrapper from '../components/VisualUiEditor/VisualSectionWrapper';
 import { useVisualUiEditor } from '../context/VisualUiEditorContext';
 import { safeStorage } from '../utils/safeStorage';
+import FinanceCenter from '../components/Admin/FinanceCenter';
 import { 
   ShieldCheck, Globe, Eye, EyeOff, ShieldAlert, Users, Video, DollarSign,
   BarChart2, FileText, Settings, Search, Plus, Trash2, Edit3, CheckCircle2,
@@ -337,6 +338,7 @@ export default function AdminDashboardModal(props) {
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar text-xs border-b border-slate-800/80">
               {[
                 { id: 'dashboard', label: loc('📊 داشبورد', '📊 Dashboard') },
+                { id: 'finance', label: loc('💵 مرکز امور مالی', '💵 Finance Center') },
                 { id: 'users', label: loc('👥 کاربران', '👥 Users') },
                 { id: 'live', label: loc('🎥 لایوها', '🎥 Live Streams') },
                 { id: 'reports', label: loc('💬 گزارش‌ها', '💬 Reports') },
@@ -1059,149 +1061,32 @@ export default function AdminDashboardModal(props) {
                 </div>
               )}
 
-              {/* 5. WALLET & FINANCIALS */}
-              {/* 5. WALLET & WITHDRAWALS MANAGEMENT */}
-              {adminActiveTab === 'wallet' && (
-                <div className="space-y-4 text-xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
-                    <div>
-                      <h3 className="font-bold text-white text-sm flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-emerald-400" />
-                        ۵. مدیریت مالی، کمیسیون ۲۹٪ و درخواست‌های تسویه (Financials & Withdrawals)
-                      </h3>
-                      <p className="text-[10px] text-slate-400">بررسی درخواست‌های واریز و برداشت، کمیسیون ۲۹٪ لایو و کارمزد شبکه TRC20</p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          setIsPayoutFrozen(!isPayoutFrozen);
-                          addAdminAuditLog(isPayoutFrozen ? 'توقیف واریزها (Payout Freeze) لغو گردید' : 'توقیف کلیه واریزهای مالی فعال گردید');
-                        }}
-                        className={`px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1.5 border transition ${isPayoutFrozen ? 'bg-rose-600 text-white border-rose-400 animate-pulse' : 'bg-slate-800 text-emerald-400 border-emerald-500/30 hover:bg-slate-700'}`}
-                      >
-                        {isPayoutFrozen ? '⛔ Payout Frozen (توقیف فعال)' : '⚡ Freeze Payouts (توقیف واریز)'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* PLATFORM FINANCIAL SUMMARY CARDS */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-950/80 to-slate-950 border border-emerald-500/40 space-y-1">
-                      <span className="text-[10px] text-emerald-400 font-bold uppercase">تراکنش‌های کل سیستم</span>
-                      <p className="text-xl font-black text-white font-mono">$148,200.00 USDT</p>
-                      <span className="text-[10px] text-slate-400 block">حجم تراکنش خروجی و ورودی</span>
-                    </div>
-
-                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-950/80 to-slate-950 border border-amber-500/40 space-y-1">
-                      <span className="text-[10px] text-amber-400 font-bold uppercase">درآمد کمیسیون پلتفرم (۲۹٪)</span>
-                      <p className="text-xl font-black text-amber-300 font-mono">$42,978.00 USDT</p>
-                      <span className="text-[10px] text-amber-200 block">کسر ۲۹٪ لحظه‌ای از کلیه هدایای لایو</span>
-                    </div>
-
-                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-purple-950/80 to-slate-950 border border-purple-500/40 space-y-1">
-                      <span className="text-[10px] text-purple-400 font-bold uppercase">صافی پرداختی استریمرها (۷۱٪)</span>
-                      <p className="text-xl font-black text-purple-300 font-mono">$105,222.00 USDT</p>
-                      <span className="text-[10px] text-slate-400 block">مجموع سود واریز شده به بانوان استریمر</span>
-                    </div>
-                  </div>
-
-                  {/* SYSTEM FEE CONFIGURATION */}
-                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-                    <h4 className="font-bold text-amber-300 text-[11px] flex items-center gap-1.5">
-                      <Sliders className="w-4 h-4 text-amber-400" />
-                      تنظیمات حد نصاب و کارمزد شبکه برداشت TRC20
-                    </h4>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="text-[10px] text-slate-400 block mb-1">حداقل برداشت (USDT)</label>
-                        <input
-                          type="text"
-                          value={adminMinWithdrawal}
-                          onChange={e => setAdminMinWithdrawal(e.target.value)}
-                          placeholder="$50 USDT"
-                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono outline-none focus:border-amber-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] text-slate-400 block mb-1">کارمزد شبکه ترون (Network Gas Fee)</label>
-                        <input
-                          type="number"
-                          step="0.10"
-                          value={adminNetworkFee}
-                          onChange={e => setAdminNetworkFee(parseFloat(e.target.value) || 0)}
-                          placeholder="1.50"
-                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono outline-none focus:border-amber-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] text-slate-400 block mb-1">حداکثر سقف برداشت روزانه (USDT)</label>
-                        <input
-                          type="number"
-                          value={adminMaxWithdrawal}
-                          onChange={e => setAdminMaxWithdrawal(parseInt(e.target.value, 10) || 5000)}
-                          placeholder="5000"
-                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono outline-none focus:border-amber-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* WITHDRAWALS QUEUE LIST */}
-                  <div className="space-y-2">
-                    <h4 className="font-bold text-slate-300 text-[11px] flex items-center justify-between">
-                      <span>لیست درخواست‌های تسویه حساب و برداشت درآمد</span>
-                      <span className="text-slate-400 text-[10px]">تعداد درخواست‌ها: {adminWithdrawalsList.length}</span>
-                    </h4>
-
-                    {adminWithdrawalsList.map(w => (
-                      <div key={w.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-slate-700 transition">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-black text-white">{w.user}</span>
-                            <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">{w.amount}</span>
-                          </div>
-                          <span className="text-[10px] text-slate-400 block font-mono mt-1">
-                            آدرس کیف پول TRC20: {w.txHash} • زمان درخواست: {w.time}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {w.status === 'Pending' || w.status === 'Pending Review' ? (
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                onClick={() => {
-                                  setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Completed' } : item));
-                                  addAdminAuditLog(`درخواست برداشت #${w.id} به مبلغ ${w.amount} تأیید و در شبکه TRON واریز گردید`);
-                                }}
-                                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] shadow"
-                              >
-                                ✓ تأیید و واریز
-                              </button>
-
-                              <button
-                                onClick={() => {
-                                  setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Rejected' } : item));
-                                  addAdminAuditLog(`درخواست برداشت #${w.id} رد شد و سکه‌ها به کیف پول استریمر عودت داده شد`);
-                                }}
-                                className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] shadow"
-                              >
-                                ✕ رد درخواست
-                              </button>
-                            </div>
-                          ) : (
-                            <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${w.status === 'Completed' || w.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'}`}>
-                              {w.status}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              {/* CENTRALIZED FINANCE CENTER */}
+              {(adminActiveTab === 'finance' || adminActiveTab === 'wallet') && (
+                <FinanceCenter
+                  usersList={usersList}
+                  setUsersList={setUsersList}
+                  adminWithdrawalsList={adminWithdrawalsList}
+                  setAdminWithdrawalsList={setAdminWithdrawalsList}
+                  financialTransactionsList={financialTransactionsList}
+                  setFinancialTransactionsList={setFinancialTransactionsList}
+                  adminVipPlans={adminVipPlans}
+                  setAdminVipPlans={setAdminVipPlans}
+                  adminPlatformFee={adminPlatformFee}
+                  setAdminPlatformFee={setAdminPlatformFee}
+                  adminNetworkFee={adminNetworkFee}
+                  setAdminNetworkFee={setAdminNetworkFee}
+                  adminMinWithdrawal={adminMinWithdrawal}
+                  setAdminMinWithdrawal={setAdminMinWithdrawal}
+                  adminMaxWithdrawal={adminMaxWithdrawal}
+                  setAdminMaxWithdrawal={setAdminMaxWithdrawal}
+                  isPayoutFrozen={isPayoutFrozen}
+                  setIsPayoutFrozen={setIsPayoutFrozen}
+                  addAdminAuditLog={addAdminAuditLog}
+                  showToast={showToast}
+                  loc={loc}
+                  isRtl={isRtl}
+                />
               )}
 
               {/* 6. GIFTS */}
