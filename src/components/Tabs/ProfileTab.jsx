@@ -7,7 +7,7 @@ import {
   CheckCircle, Plus, DollarSign, LogOut, ChevronRight, MapPin, Wallet, Flame, Video, Gift, PhoneCall, Image,
   User, Users, Eye, ThumbsUp, Heart, Share2, Award, Calendar, Globe, Briefcase, GraduationCap,
   MessageSquare, Shield, Activity, Radio, Check, X, Smartphone, Copy, ExternalLink, Zap, Star, ShieldCheck,
-  Filter, Play, AlertCircle
+  Filter, Play, AlertCircle, Trash2, Upload
 } from 'lucide-react';
 import { CoinsIcon, VerifiedBadge, VipStatusBadge } from '../CommonBadges';
 
@@ -89,6 +89,53 @@ export default function ProfileTab(props) {
     avatar: userAvatar || authAvatar || PRESET_AVATARS[0],
     cover: coverPhoto
   });
+
+  // --- IMAGE UPLOAD HANDLERS ---
+  const handleAvatarFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      let result = null;
+      if (typeof compressImageFile === 'function') {
+        result = await compressImageFile(file, 400, 400, 0.85);
+      } else {
+        result = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+      }
+      if (result) {
+        setEditForm(prev => ({ ...prev, avatar: result }));
+        showToast('تصویر آواتار با موفقیت بارگذاری شد 🖼️');
+      }
+    } catch (err) {
+      showToast('خطا در بارگذاری عکس ❌');
+    }
+  };
+
+  const handleCoverFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      let result = null;
+      if (typeof compressImageFile === 'function') {
+        result = await compressImageFile(file, 800, 400, 0.85);
+      } else {
+        result = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+      }
+      if (result) {
+        setEditForm(prev => ({ ...prev, cover: result }));
+        showToast('تصویر کاور با موفقیت بارگذاری شد 🎨');
+      }
+    } catch (err) {
+      showToast('خطا در بارگذاری کاور ❌');
+    }
+  };
 
   // --- PRIVACY & SECURITY TOGGLES ---
   const [allowDirectMessages, setAllowDirectMessages] = useState(() => safeStorage.getItem('vlive_priv_dm') || 'everyone');
@@ -1045,25 +1092,129 @@ export default function ProfileTab(props) {
                 />
               </div>
 
-              {/* Avatar & Cover URLs */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">لینک تصویر آواتار</label>
-                  <input
-                    type="text"
-                    value={editForm.avatar}
-                    onChange={(e) => setEditForm({ ...editForm, avatar: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-[11px] outline-none"
-                  />
+              {/* Profile Image & Cover Upload & Management Card */}
+              <div className="space-y-3 bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
+                <h4 className="text-xs font-black text-pink-400 flex items-center gap-1.5 border-b border-slate-800 pb-2">
+                  <Camera className="w-4 h-4 text-pink-400" />
+                  <span>تغییر و مدیریت تصویر پروفایل و کاور</span>
+                </h4>
+
+                {/* Avatar Section */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-300 block">تصویر آواتار (Profile Picture)</label>
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-pink-500 shadow-lg bg-slate-900 shrink-0">
+                      {editForm.avatar ? (
+                        <img src={editForm.avatar} alt="Avatar Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold text-[10px]">بدون عکس</div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-2 flex-1">
+                      <div className="flex items-center gap-2">
+                        <label className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition">
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>آپلود عکس جدید</span>
+                          <input type="file" accept="image/*" onChange={handleAvatarFileUpload} className="hidden" />
+                        </label>
+
+                        {editForm.avatar && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditForm(prev => ({ ...prev, avatar: '' }));
+                              showToast('تصویر آواتار حذف شد 🗑️');
+                            }}
+                            className="px-2.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-xs flex items-center gap-1 border border-rose-500/30 transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>حذف</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="یا آدرس لینک تصویر (URL)..."
+                        value={editForm.avatar}
+                        onChange={(e) => setEditForm({ ...editForm, avatar: e.target.value })}
+                        className="w-full p-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-[11px] outline-none focus:border-pink-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Preset Avatar Selection Grid */}
+                  <div className="pt-2">
+                    <span className="text-[10px] text-slate-400 font-bold block mb-1.5">یا انتخاب از آواتارهای آماده:</span>
+                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                      {(PRESET_AVATARS.length > 0 ? PRESET_AVATARS : [
+                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+                        'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+                        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+                        'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80',
+                        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80'
+                      ]).map((presetUrl, pIdx) => (
+                        <button
+                          key={pIdx}
+                          type="button"
+                          onClick={() => {
+                            setEditForm(prev => ({ ...prev, avatar: presetUrl }));
+                            showToast('آواتار انتخابی اعمال شد ✨');
+                          }}
+                          className={`w-10 h-10 rounded-full border-2 overflow-hidden shrink-0 transition ${
+                            editForm.avatar === presetUrl ? 'border-pink-500 scale-110 shadow-[0_0_10px_rgba(236,72,153,0.5)]' : 'border-slate-800 hover:border-slate-600'
+                          }`}
+                        >
+                          <img src={presetUrl} alt={`Preset ${pIdx}`} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">لینک تصویر کاور</label>
-                  <input
-                    type="text"
-                    value={editForm.cover}
-                    onChange={(e) => setEditForm({ ...editForm, cover: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-[11px] outline-none"
-                  />
+
+                {/* Cover Photo Section */}
+                <div className="space-y-2 border-t border-slate-800 pt-3">
+                  <label className="text-xs font-bold text-slate-300 block">تصویر کاور پروفایل (Cover Photo)</label>
+                  <div className="flex flex-col gap-2">
+                    <div className="relative w-full h-20 rounded-xl overflow-hidden border border-slate-800 bg-slate-900 shadow-inner">
+                      {editForm.cover ? (
+                        <img src={editForm.cover} alt="Cover Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold text-xs">بدون تصویر کاور</div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <label className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:bg-slate-800 text-cyan-300 font-black text-xs flex items-center gap-1.5 cursor-pointer transition">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>آپلود کاور جدید</span>
+                        <input type="file" accept="image/*" onChange={handleCoverFileUpload} className="hidden" />
+                      </label>
+
+                      {editForm.cover && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditForm(prev => ({ ...prev, cover: '' }));
+                            showToast('تصویر کاور حذف شد 🗑️');
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-xs flex items-center gap-1 border border-rose-500/30 transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>حذف کاور</span>
+                        </button>
+                      )}
+
+                      <input
+                        type="text"
+                        placeholder="لینک مستقیم کاور..."
+                        value={editForm.cover}
+                        onChange={(e) => setEditForm({ ...editForm, cover: e.target.value })}
+                        className="flex-1 p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white text-[11px] outline-none focus:border-cyan-500"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 

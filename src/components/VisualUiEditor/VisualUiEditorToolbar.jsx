@@ -60,125 +60,131 @@ export default function VisualUiEditorToolbar({ activeTab, setActiveTab, setIsAd
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-slate-950/95 border-b border-amber-500/50 p-2 sm:px-4 shadow-[0_4px_30px_rgba(245,158,11,0.2)] backdrop-blur-2xl text-xs flex flex-wrap items-center justify-between gap-2 dir-ltr">
-      {/* LEFT: SUPER ADMIN BADGE & EDIT MODE TOGGLE */}
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/50 px-3 py-1.5 rounded-2xl text-amber-300 font-black">
-          <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-          <span>V.LIVE Visual UI Builder</span>
-          <span className="bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-lg text-[10px] uppercase font-bold">Super Admin</span>
-        </div>
-
-        <button
-          onClick={() => {
-            const next = !isEditMode;
-            setIsEditMode(next);
-            if (next) setIsInspectorOpen(true);
-          }}
-          className={`px-3 py-1.5 rounded-2xl font-black flex items-center gap-1.5 transition shadow-lg ${
-            isEditMode
-              ? 'bg-amber-400 text-slate-950 hover:bg-amber-300 animate-pulse'
-              : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
-          }`}
-        >
-          <Power className="w-4 h-4" />
-          <span>{isEditMode ? 'Visual Edit Mode: ON' : 'Enable Visual Edit Mode'}</span>
-        </button>
-      </div>
-
-      {/* MIDDLE: PAGE SELECTOR & DEVICE PREVIEW SWITCHER */}
-      {isEditMode && (
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Page Dropdown */}
-          <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-2xl p-1">
-            <span className="text-[10px] text-slate-400 pl-2 font-bold">Page:</span>
-            <select
-              value={selectedPage}
-              onChange={e => handlePageSelect(e.target.value)}
-              className="bg-transparent text-amber-300 font-bold outline-none text-xs cursor-pointer px-1 py-0.5"
-            >
-              {SUPPORTED_PAGES_LIST.map(p => (
-                <option key={p.id} value={p.id} className="bg-slate-900 text-white">
-                  {p.label}
-                </option>
-              ))}
-            </select>
+    <header className="sticky top-0 z-[60] bg-slate-950/95 border-b border-amber-500/40 p-2 sm:px-4 shadow-[0_4px_30px_rgba(245,158,11,0.25)] backdrop-blur-2xl text-xs w-full dir-ltr overflow-hidden">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 overflow-x-auto no-scrollbar py-0.5">
+        
+        {/* LEFT: SUPER ADMIN BADGE & EDIT MODE TOGGLE */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-purple-500/20 border border-amber-500/50 px-2.5 py-1.5 rounded-2xl text-amber-300 font-black shadow-inner whitespace-nowrap">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse shrink-0" />
+            <span className="text-xs">V.LIVE Visual Builder</span>
+            <span className="bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-md text-[9px] uppercase font-black">Super Admin</span>
           </div>
 
-          {/* Device Frame Switcher */}
-          <div className="hidden md:flex items-center bg-slate-900 border border-slate-800 rounded-2xl p-1 gap-1">
-            {DEVICE_PREVIEWS.map(d => {
-              const IconComp = d.icon;
-              const isActive = devicePreview === d.id;
-              return (
-                <button
-                  key={d.id}
-                  onClick={() => setDevicePreview(d.id)}
-                  title={d.label}
-                  className={`p-1.5 rounded-xl transition ${
-                    isActive ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <IconComp className="w-3.5 h-3.5" />
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Inspector Toggle */}
           <button
-            onClick={() => setIsInspectorOpen(!isInspectorOpen)}
-            className={`p-1.5 rounded-xl border transition flex items-center gap-1 font-bold ${
-              isInspectorOpen ? 'bg-amber-500/20 text-amber-300 border-amber-500/50' : 'bg-slate-900 text-slate-400 border-slate-800'
+            onClick={() => {
+              const next = !isEditMode;
+              setIsEditMode(next);
+              if (next) setIsInspectorOpen(true);
+            }}
+            className={`px-3 py-1.5 rounded-2xl font-black flex items-center gap-1.5 transition shadow-lg shrink-0 whitespace-nowrap ${
+              isEditMode
+                ? 'bg-amber-400 text-slate-950 hover:bg-amber-300'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
             }`}
-            title="Toggle Inspector Side Panel"
           >
-            <Sliders className="w-3.5 h-3.5" />
-            <span className="text-[10px]">Inspector</span>
+            <Power className="w-3.5 h-3.5" />
+            <span>{isEditMode ? 'Visual Edit: ON' : 'Enable Visual Edit'}</span>
           </button>
         </div>
-      )}
 
-      {/* RIGHT: THEME MANAGER, UNDO, REDO, PUBLISH ACTIONS */}
-      {isEditMode && (
-        <div className="flex items-center gap-1.5">
-          {/* Theme Manager */}
-          <button
-            onClick={() => setIsThemeModalOpen(true)}
-            className="px-2.5 py-1.5 rounded-xl bg-purple-950/60 hover:bg-purple-900/60 border border-purple-500/40 text-purple-300 font-bold flex items-center gap-1 transition"
-          >
-            <Palette className="w-3.5 h-3.5" />
-            <span>Theme Manager</span>
-          </button>
+        {/* MIDDLE: PAGE SELECTOR, DEVICE PREVIEWS & INSPECTOR TOGGLE */}
+        {isEditMode && (
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Page Dropdown */}
+            <div className="flex items-center gap-1 bg-slate-900/90 border border-slate-700/80 rounded-2xl px-2 py-1 shadow-inner">
+              <span className="text-[10px] text-slate-400 font-bold uppercase whitespace-nowrap">Page:</span>
+              <select
+                value={selectedPage}
+                onChange={e => handlePageSelect(e.target.value)}
+                className="bg-transparent text-amber-300 font-black outline-none text-xs cursor-pointer px-1 py-0.5"
+              >
+                {SUPPORTED_PAGES_LIST.map(p => (
+                  <option key={p.id} value={p.id} className="bg-slate-900 text-white font-bold">
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* Undo / Redo */}
-          <button
-            onClick={undo}
-            disabled={!canUndo}
-            title="Undo"
-            className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <Undo className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={redo}
-            disabled={!canRedo}
-            title="Redo"
-            className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <Redo className="w-3.5 h-3.5" />
-          </button>
+            {/* Device Frame Switcher */}
+            <div className="hidden lg:flex items-center bg-slate-900/90 border border-slate-700/80 rounded-2xl p-1 gap-1">
+              {DEVICE_PREVIEWS.map(d => {
+                const IconComp = d.icon;
+                const isActive = devicePreview === d.id;
+                return (
+                  <button
+                    key={d.id}
+                    onClick={() => setDevicePreview(d.id)}
+                    title={d.label}
+                    className={`p-1.5 rounded-xl transition ${
+                      isActive ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 shadow' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <IconComp className="w-3.5 h-3.5" />
+                  </button>
+                );
+              })}
+            </div>
 
-          {/* Save & Publish */}
-          <button
-            onClick={publishChanges}
-            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black shadow-lg hover:brightness-110 active:scale-95 transition flex items-center gap-1"
-          >
-            <Save className="w-3.5 h-3.5" />
-            <span>Publish to Supabase</span>
-          </button>
-        </div>
-      )}
+            {/* Inspector Toggle */}
+            <button
+              onClick={() => setIsInspectorOpen(!isInspectorOpen)}
+              className={`px-2.5 py-1.5 rounded-2xl border transition flex items-center gap-1 font-bold shrink-0 whitespace-nowrap ${
+                isInspectorOpen ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow' : 'bg-slate-900 text-slate-400 border-slate-700/80 hover:text-white'
+              }`}
+              title="Toggle Inspector Side Panel"
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span className="text-[11px]">Inspector</span>
+            </button>
+          </div>
+        )}
+
+        {/* RIGHT: THEME MANAGER, UNDO, REDO, PUBLISH ACTIONS */}
+        {isEditMode && (
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Theme Manager */}
+            <button
+              onClick={() => setIsThemeModalOpen(true)}
+              className="px-2.5 py-1.5 rounded-2xl bg-purple-950/80 hover:bg-purple-900 border border-purple-500/50 text-purple-300 font-black flex items-center gap-1 transition shadow-md whitespace-nowrap"
+            >
+              <Palette className="w-3.5 h-3.5 text-purple-400" />
+              <span className="text-[11px]">Theme</span>
+            </button>
+
+            {/* Undo / Redo */}
+            <div className="flex items-center bg-slate-900 border border-slate-700/80 rounded-2xl p-0.5">
+              <button
+                onClick={undo}
+                disabled={!canUndo}
+                title="Undo"
+                className="p-1.5 rounded-xl text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition"
+              >
+                <Undo className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={redo}
+                disabled={!canRedo}
+                title="Redo"
+                className="p-1.5 rounded-xl text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition"
+              >
+                <Redo className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Save & Publish */}
+            <button
+              onClick={publishChanges}
+              className="px-3.5 py-1.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center gap-1 whitespace-nowrap"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>Publish</span>
+            </button>
+          </div>
+        )}
+
+      </div>
     </header>
   );
 }
