@@ -20,7 +20,7 @@ import DevicePreviewFrame from './components/VisualUiEditor/DevicePreviewFrame';
 import DynamicThemeStyleInjector from './components/VisualUiEditor/DynamicThemeStyleInjector';
 import VisualSectionWrapper from './components/VisualUiEditor/VisualSectionWrapper';
 import { APP_LANGUAGES, I18N_DICTIONARY } from './constants/i18n';
-import { CoinsIcon, VerifiedBadge, VipStatusBadge } from './components/CommonBadges';
+import { CoinsIcon, VerifiedBadge, VipStatusBadge, StreamerScoresBadges } from './components/CommonBadges';
 import { safeStorage } from './utils/safeStorage';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -894,13 +894,6 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
   useEffect(() => {
     safeStorage.setItem('vlive_call_history_v1', JSON.stringify(callHistoryList));
   }, [callHistoryList]);
-
-  // Scheduled Calls List
-  const [scheduledCallsList, setScheduledCallsList] = useState([]);
-
-  useEffect(() => {
-    safeStorage.setItem('vlive_scheduled_calls_v1', JSON.stringify(scheduledCallsList));
-  }, [scheduledCallsList]);
 
   // Contacts & Favorites
   const [favoriteContacts, setFavoriteContacts] = useState([]);
@@ -2755,12 +2748,27 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   // PRE-STREAM WARNING & STREAM WATCHING STATE
   const [preStreamWarningStream, setPreStreamWarningStream] = useState(null);
   const [viewingStream, setViewingStream] = useState(null);
+  
+  // LIVE VIEWER ROOM ENHANCED STATES
+  const [isLiveInfoPanelOpen, setIsLiveInfoPanelOpen] = useState(false);
+  const [isLiveMembersOpen, setIsLiveMembersOpen] = useState(false);
+  const [guestRequestStatus, setGuestRequestStatus] = useState('idle'); // 'idle' | 'pending' | 'accepted'
+  const [isExitLiveModalOpen, setIsExitLiveModalOpen] = useState(false);
+  const [recentlyViewedStreams, setRecentlyViewedStreams] = useState([]);
+  const [isMuteStreamChat, setIsMuteStreamChat] = useState(false);
+  const [isHideStreamChat, setIsHideStreamChat] = useState(false);
+  const [streamPinnedMessages, setStreamPinnedMessages] = useState([
+    { id: 'p1', user: 'V.LIVE System', text: 'به بث زنده خوش آمدید! قوانین احترام متقابل را رعایت کنید 🌟' }
+  ]);
+  const [replyingToChatMessage, setReplyingToChatMessage] = useState(null);
+  const [isStreamerFollowed, setIsStreamerFollowed] = useState(false);
+
   // REAL-TIME WEBSOCKET & BROADCAST CHANNEL LIVE STREAM NETWORK ENGINE
   const [streamLikes, setStreamLikes] = useState(1240);
   const [floatingHearts, setFloatingHearts] = useState([]);
   const [streamChatMessages, setStreamChatMessages] = useState([
-    { user: 'Arash_VIP', text: 'Hello! Wonderful stream quality!', isVip: true },
-    { user: 'Omid', text: '4K video is super smooth', isVip: false }
+    { id: 'm1', user: 'Arash_VIP', text: 'کیفیت استریم عالیه! 🔥', isVip: true, level: 12 },
+    { id: 'm2', user: 'Omid_Tehran', text: 'سلام به همه دوستان', isVip: false, level: 5 }
   ]);
   const [streamChatInput, setStreamChatInput] = useState('');
 
@@ -3620,7 +3628,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       mediaStream.getTracks().forEach(track => track.stop());
       setMediaStream(null);
     }
-    setViewingStream(null);
+    if (viewingStream) {
+      setRecentlyViewedStreams(prev => {
+        if (prev.some(s => s.id === viewingStream.id)) return prev;
+        return [viewingStream, ...prev].slice(0, 8);
+      });
+    }
+    setIsExitLiveModalOpen(true);
   };
 
   // SWITCH BETWEEN LIVE STREAMS NEXT / PREVIOUS
@@ -7179,68 +7193,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           </div>
         </div>
       )}
-{/* ==================== SCHEDULE CALL MODAL ==================== */}
-      {isScheduleCallModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-          <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-purple-500/40 max-w-sm w-full space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-              <h3 className="text-sm font-black text-white flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-purple-400" />
-                رزرو و برنامه‌ریزی تماس
-              </h3>
-              <button onClick={() => setIsScheduleCallModalOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-slate-300 font-bold">انتخاب کاربر:</label>
-                <select
-                  onChange={e => {
-                    const u = conversations.find(c => c.user.username === e.target.value)?.user;
-                    setScheduleTargetUser(u);
-                  }}
-                  className="w-full bg-slate-950 p-2.5 rounded-2xl border border-slate-800 text-xs text-white outline-none mt-1 cursor-pointer"
-                >
-                  <option value="">انتخاب از مخاطبین...</option>
-                  {conversations.map(c => (
-                    <option key={c.id} value={c.user.username}>{c.user.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-300 font-bold">تاریخ و زمان تماس:</label>
-                <input
-                  type="datetime-local"
-                  value={scheduleDateTime}
-                  onChange={e => setScheduleDateTime(e.target.value)}
-                  className="w-full bg-slate-950 p-2.5 rounded-2xl border border-slate-800 text-xs text-white outline-none mt-1"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-300 font-bold">توضیحات و موضوع تماس:</label>
-                <input
-                  type="text"
-                  value={scheduleNote}
-                  onChange={e => setScheduleNote(e.target.value)}
-                  placeholder="مثلا: مشاوره اختصاصی استریم..."
-                  className="w-full bg-slate-950 p-2.5 rounded-2xl border border-slate-800 text-xs text-white outline-none mt-1"
-                />
-              </div>
-            </div>
-
-            <button
-              onClick={handleSaveScheduledCall}
-              className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 text-white font-black text-xs shadow-lg"
-            >
-              ثبت نهایی رزرو تماس
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ==================== RECORD CONSENT MODAL ==================== */}
       {isRecordConsentModalOpen && (
@@ -7320,10 +7273,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         </div>
       )}
 
-      {/* MODAL 6: STREAM VIEWING FULLSCREEN WITH PK BATTLES, 3D ENTRANCE BANNER & AI TRANSLATION */}
+      {/* MODAL 6: PREMIUM ENHANCED LIVE VIEWER ROOM OVERLAY */}
       {viewingStream && (
-        <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
+        <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col animate-fadeIn select-none">
           <div className="relative flex-1 bg-slate-900 overflow-hidden">
+            
             {/* Split Screen Video in PK Mode */}
             {isPkBattleActive ? (
               <div className="w-full h-full grid grid-cols-2 gap-0.5 relative">
@@ -7341,7 +7295,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 </div>
 
                 {/* PK VS Center Badge */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 bg-gradient-to-r from-red-600 to-blue-600 text-white font-black text-sm px-3 py-1 rounded-2xl shadow-[0_0_20px_rgba(255,0,127,0.8)] border border-white/50 animate-bounce">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 bg-gradient-to-r from-red-600 to-blue-600 text-white font-black text-sm px-3.5 py-1.5 rounded-2xl shadow-[0_0_20px_rgba(255,0,127,0.8)] border border-white/50 animate-bounce">
                   VS
                 </div>
               </div>
@@ -7351,7 +7305,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <img src={viewingStream.thumbnail} alt="Stream" className="w-full h-full object-cover" />
             )}
 
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/60 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/80 pointer-events-none" />
 
             {/* ANIMATED FLOATING GIFT OVERLAY ON VIDEO PREVIEW AREA */}
             <div className="absolute inset-0 pointer-events-none z-35 overflow-hidden">
@@ -7380,7 +7334,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
             {/* 3D VIP Entrance Vehicle Banner */}
             {showEntranceBanner && (
-              <div className="absolute top-16 left-4 right-4 z-30 bg-gradient-to-r from-amber-600/90 via-purple-600/90 to-pink-600/90 p-3 rounded-2xl border-2 border-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.8)] backdrop-blur-md flex items-center gap-3 animate-pulse">
+              <div className="absolute top-20 left-4 right-4 z-30 bg-gradient-to-r from-amber-600/90 via-purple-600/90 to-pink-600/90 p-3 rounded-2xl border-2 border-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.8)] backdrop-blur-md flex items-center gap-3 animate-pulse">
                 <div className="w-9 h-9 rounded-xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center text-amber-200">
                   <Crown className="w-5 h-5" />
                 </div>
@@ -7395,7 +7349,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
             {/* PK BATTLE PROGRESS SCORE BAR */}
             {isPkBattleActive && (
-              <div className="absolute top-16 left-4 right-4 z-20 bg-slate-950/90 p-2.5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
+              <div className="absolute top-20 left-4 right-4 z-20 bg-slate-950/90 p-2.5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
                 <div className="flex items-center justify-between text-[10px] font-bold text-white">
                   <span className="text-red-400 font-mono">RED: {pkRedScore.toLocaleString()} pts</span>
                   <span className="text-amber-300 font-mono flex items-center gap-1">
@@ -7418,84 +7372,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </div>
             )}
 
-            {/* REAL-TIME LIVE BROADCAST POLL OVERLAY CARD */}
-            {activeLivePoll && activeLivePoll.isActive && (
-              <div className="absolute top-16 left-4 z-30 max-w-xs w-full bg-slate-950/90 border-2 border-purple-500/80 rounded-3xl p-3.5 shadow-[0_0_30px_rgba(168,85,247,0.4)] backdrop-blur-xl animate-fadeIn space-y-2.5">
-                <div className="flex items-center justify-between pb-1.5 border-b border-purple-500/30">
-                  <div className="flex items-center gap-1.5">
-                    <span className="p-1 rounded-lg bg-purple-600/30 text-purple-300">
-                      <BarChart2 className="w-4 h-4 text-purple-400" />
-                    </span>
-                    <span className="text-[11px] font-black text-purple-200 uppercase tracking-wider">
-                      {loc('نظرسنجی زنده لایو', 'Live Stream Poll')}
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-400 bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
-                    👥 {activeLivePoll.totalVotes.toLocaleString()} {loc('رای', 'votes')}
-                  </span>
-                </div>
-
-                <p className="text-xs font-black text-white leading-snug">
-                  {activeLivePoll.question}
-                </p>
-
-                <div className="space-y-1.5">
-                  {activeLivePoll.options.map(opt => {
-                    const percentage = activeLivePoll.totalVotes > 0 
-                      ? Math.round((opt.votes / activeLivePoll.totalVotes) * 100) 
-                      : 0;
-                    const isVotedThis = activeLivePoll.userVotedOptionId === opt.id;
-
-                    return (
-                      <button
-                        key={opt.id}
-                        onClick={() => handleCastPollVote(opt.id)}
-                        disabled={Boolean(activeLivePoll.userVotedOptionId)}
-                        className={`w-full relative overflow-hidden p-2 rounded-2xl text-left border transition text-xs font-bold ${
-                          isVotedThis 
-                            ? 'border-pink-500 bg-pink-950/60 text-white shadow-[0_0_15px_rgba(236,72,153,0.4)]' 
-                            : activeLivePoll.userVotedOptionId
-                            ? 'border-slate-800 bg-slate-900/80 text-slate-300 cursor-default'
-                            : 'border-slate-800 bg-slate-900/90 text-white hover:border-purple-400 hover:bg-slate-850 active:scale-98'
-                        }`}
-                      >
-                        {/* Animated Percentage Background Progress Bar */}
-                        <div 
-                          className={`absolute top-0 bottom-0 left-0 transition-all duration-700 opacity-30 ${
-                            isVotedThis ? 'bg-gradient-to-r from-pink-500 to-purple-600' : 'bg-gradient-to-r from-purple-600 to-cyan-500'
-                          }`}
-                          style={{ width: `${percentage}%` }}
-                        />
-
-                        <div className="relative z-10 flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                            {isVotedThis && <CheckCircle2 className="w-3.5 h-3.5 text-pink-400 shrink-0" />}
-                            <span className="truncate">{opt.text}</span>
-                          </div>
-                          <span className="text-[10px] font-mono font-bold text-purple-300 bg-slate-950/80 px-1.5 py-0.5 rounded-lg border border-purple-500/30 shrink-0">
-                            {percentage}% ({opt.votes})
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Host control inline button if viewer is the host */}
-                {(viewingStream?.isSelfStream || viewingStream?.host === userName || currentUsername === activeLivePoll?.hostUsername) && (
-                  <div className="pt-1.5 border-t border-slate-800 flex justify-between items-center text-[10px]">
-                    <span className="text-amber-400 font-bold">👑 {loc('مدیریت استودیو میزبان', 'Host Studio Control')}</span>
-                    <button 
-                      onClick={handleEndActivePoll}
-                      className="text-red-400 hover:text-red-300 font-black underline"
-                    >
-                      {loc('پایان نظرسنجی ⏹️', 'End Poll ⏹️')}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Side Floating Stream Switcher Arrows */}
             <div className="absolute top-1/2 left-3 -translate-y-1/2 z-30">
               <button 
@@ -7503,7 +7379,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 className="p-3 rounded-full bg-slate-950/80 border border-slate-700/80 text-white hover:bg-pink-600 hover:border-pink-500 shadow-[0_0_15px_rgba(0,0,0,0.8)] backdrop-blur-md transition active:scale-90 flex items-center justify-center group"
                 title={loc('پخش زنده قبلی', 'Previous Live Stream')}
               >
-                <ChevronRight className="w-6 h-6 text-pink-400 group-hover:text-white" />
+                <ChevronRight className="w-5 h-5 text-pink-400 group-hover:text-white" />
               </button>
             </div>
 
@@ -7513,120 +7389,354 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 className="p-3 rounded-full bg-slate-950/80 border border-slate-700/80 text-white hover:bg-pink-600 hover:border-pink-500 shadow-[0_0_15px_rgba(0,0,0,0.8)] backdrop-blur-md transition active:scale-90 flex items-center justify-center group"
                 title={loc('پخش زنده بعدی', 'Next Live Stream')}
               >
-                <ChevronLeft className="w-6 h-6 text-pink-400 group-hover:text-white" />
+                <ChevronLeft className="w-5 h-5 text-pink-400 group-hover:text-white" />
               </button>
             </div>
 
-            {/* Top Bar Controls */}
-            <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between">
-              <div className="flex items-center gap-2 bg-slate-950/80 p-2 rounded-2xl border border-slate-800">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
-                <span className="text-xs font-bold text-white">{viewingStream.host}</span>
-                <VerifiedBadge className="w-3.5 h-3.5" />
-              </div>
+            {/* ================= TOP BAR CONTROLS ================= */}
+            <div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2 flex-wrap">
+              
+              {/* Streamer Profile Badge & Scores */}
+              <div className="flex items-center gap-2 bg-slate-950/85 p-1.5 pr-3 rounded-2xl border border-slate-800/80 backdrop-blur-md shadow-xl">
+                <img 
+                  src={viewingStream.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'} 
+                  alt={viewingStream.host}
+                  className="w-9 h-9 rounded-xl object-cover ring-2 ring-pink-500/50 cursor-pointer"
+                  onClick={() => setSelectedUserProfile(viewingStream)}
+                />
 
-              {/* STREAM SWITCHER TOP BUTTONS */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-slate-950/90 p-1 rounded-2xl border border-slate-800 backdrop-blur-md">
-                  <button 
-                    onClick={handlePrevStream}
-                    className="px-2.5 py-1 rounded-xl bg-slate-900 hover:bg-slate-800 text-pink-300 font-bold text-[10px] flex items-center gap-0.5"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" /> {loc('قبلی', 'Prev')}
-                  </button>
-                  <button 
-                    onClick={handleNextStream}
-                    className="px-2.5 py-1 rounded-xl bg-slate-900 hover:bg-slate-800 text-pink-300 font-bold text-[10px] flex items-center gap-0.5"
-                  >
-                    {loc('بعدی', 'Next')} <ChevronLeft className="w-3.5 h-3.5" />
-                  </button>
+                <div className="flex flex-col text-right dir-rtl">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-black text-white">{viewingStream.host}</span>
+                    <VerifiedBadge className="w-3.5 h-3.5" />
+                    {viewingStream.isVip && <VipStatusBadge size="small" showText={false} />}
+                  </div>
+
+                  {/* 3 SCORE BADGES: Level, Trust, Rank */}
+                  <div className="flex items-center gap-1 text-[8px] font-bold text-slate-300">
+                    <span className="px-1.5 py-0.2 rounded-full bg-pink-500 text-white font-black">Lvl 18</span>
+                    <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/30 text-emerald-300 border border-emerald-500/40">9.8/10</span>
+                    <span className="px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/40">#3 Rank</span>
+                  </div>
                 </div>
 
-                {/* Host Poll Creation Button */}
-                <button 
+                {/* Follow Button */}
+                <button
                   onClick={() => {
-                    setIsCreatePollModalOpen(true);
-                    if (activeLivePoll?.question) {
-                      setPollQuestionInput(activeLivePoll.question);
-                      setPollOptionInputs(activeLivePoll.options.map(o => o.text).concat(['', '', '', '']).slice(0, 4));
-                    }
+                    const next = !isStreamerFollowed;
+                    setIsStreamerFollowed(next);
+                    showToast(next ? `با موفقیت ${viewingStream.host} دنبال شد 👤` : `آنفالو شد`);
                   }}
-                  className="px-2.5 py-1.5 rounded-xl text-xs font-black border border-purple-500/50 bg-purple-950/80 text-purple-200 hover:bg-purple-900 shadow-md backdrop-blur-md flex items-center gap-1.5 transition active:scale-95"
-                  title={loc('نظرسنجی لایو', 'Live Poll')}
+                  className={`px-2.5 py-1 rounded-xl text-[10px] font-black shadow transition ml-1 ${
+                    isStreamerFollowed 
+                      ? 'bg-slate-800 text-slate-300 border border-slate-700' 
+                      : 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
+                  }`}
                 >
-                  <BarChart2 className="w-3.5 h-3.5 text-purple-400" />
-                  <span>{loc('نظرسنجی', 'Poll')}</span>
-                  {activeLivePoll?.isActive && (
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  )}
+                  {isStreamerFollowed ? 'دنبال شده' : '+ دنبال کردن'}
+                </button>
+              </div>
+
+              {/* Status Indicators: Timer, Viewers, Quality & Action Tools */}
+              <div className="flex items-center gap-1.5">
+                
+                {/* Live Timer & Viewers */}
+                <div className="flex items-center gap-2 bg-slate-950/85 px-3 py-1.5 rounded-2xl border border-slate-800 text-[10px] font-mono text-slate-200 backdrop-blur-md">
+                  <span className="flex items-center gap-1 text-rose-400 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                    00:45:12
+                  </span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1 text-cyan-300 font-bold">
+                    <Eye className="w-3 h-3 text-cyan-400" />
+                    {(viewingStream.viewers || 3820).toLocaleString()}
+                  </span>
+                  <span>•</span>
+                  <span className="text-emerald-400 font-bold">🟢 HD 60fps</span>
+                </div>
+
+                {/* Info Panel Button */}
+                <button
+                  onClick={() => setIsLiveInfoPanelOpen(!isLiveInfoPanelOpen)}
+                  className={`p-2 rounded-2xl border transition ${isLiveInfoPanelOpen ? 'bg-pink-600 text-white border-pink-400' : 'bg-slate-950/85 text-slate-300 border-slate-800 hover:text-white'}`}
+                  title="اطلاعات استریم و قوانین"
+                >
+                  <FileText className="w-4 h-4" />
                 </button>
 
-                {/* PK Toggle Button */}
-                <button 
-                  onClick={() => {
-                    setIsPkBattleActive(!isPkBattleActive);
-                    if (!isPkBattleActive) {
-                      setPkTimeLeft(180);
-                      showToast('PK Battle Mode Launched! Send gifts to boost scores!');
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black border transition ${isPkBattleActive ? 'bg-red-600 text-white border-red-400 shadow-[0_0_12px_rgba(220,38,38,0.8)]' : 'bg-slate-900 text-pink-300 border-pink-500/40'}`}
+                {/* Members Panel Button */}
+                <button
+                  onClick={() => setIsLiveMembersOpen(!isLiveMembersOpen)}
+                  className={`p-2 rounded-2xl border transition ${isLiveMembersOpen ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-950/85 text-slate-300 border-slate-800 hover:text-white'}`}
+                  title="لیست بینندگان و مهمانان"
                 >
-                  {isPkBattleActive ? 'Stop PK' : 'Start PK'}
+                  <Users className="w-4 h-4" />
                 </button>
 
-                <button onClick={handleLeaveStream} className="p-2 rounded-2xl bg-slate-950/80 border border-slate-800 text-slate-300 hover:text-white hover:bg-rose-950/80">
+                {/* Guest Request Button */}
+                <button
+                  onClick={() => {
+                    if (guestRequestStatus === 'idle') {
+                      setGuestRequestStatus('pending');
+                      showToast('🎤 درخواست بالا آمدن به عنوان مهمان ارسال شد. منتظر تایید استریمر...');
+                    } else if (guestRequestStatus === 'pending') {
+                      setGuestRequestStatus('idle');
+                      showToast('درخواست مهمان لغو شد');
+                    } else {
+                      setGuestRequestStatus('idle');
+                      showToast('از حالت مهمان خارج شدید');
+                    }
+                  }}
+                  className={`px-2.5 py-1.5 rounded-2xl border text-[10px] font-black flex items-center gap-1 shadow-md transition ${
+                    guestRequestStatus === 'pending'
+                      ? 'bg-amber-500/30 text-amber-300 border-amber-500/50 animate-pulse'
+                      : guestRequestStatus === 'accepted'
+                      ? 'bg-emerald-500/30 text-emerald-300 border-emerald-500/50'
+                      : 'bg-purple-600/20 text-purple-300 border-purple-500/40 hover:bg-purple-600 hover:text-white'
+                  }`}
+                  title="درخواست مهمان"
+                >
+                  <Mic className="w-3.5 h-3.5" />
+                  <span>
+                    {guestRequestStatus === 'pending' ? 'در انتظار...' : guestRequestStatus === 'accepted' ? 'مهمان فعال ✅' : 'درخواست مهمان'}
+                  </span>
+                </button>
+
+                {/* Share Button */}
+                <button
+                  onClick={() => {
+                    navigator.clipboard?.writeText(window.location.href);
+                    showToast('🔗 لینک استریم با موفقیت کپی شد!');
+                  }}
+                  className="p-2 rounded-2xl bg-slate-950/85 border border-slate-800 text-cyan-300 hover:text-white"
+                  title="اشتراک‌گذاری"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </button>
+
+                {/* Report Button */}
+                <button
+                  onClick={() => {
+                    showToast('🚩 گزارش تخلف لایواستریم برای ادمین ارسال شد.');
+                  }}
+                  className="p-2 rounded-2xl bg-slate-950/85 border border-slate-800 text-rose-400 hover:bg-rose-950/80"
+                  title="گزارش استریم"
+                >
+                  <ShieldAlert className="w-4 h-4" />
+                </button>
+
+                {/* Exit Button */}
+                <button 
+                  onClick={handleLeaveStream} 
+                  className="p-2.5 rounded-2xl bg-slate-950/90 border border-slate-800 text-slate-300 hover:text-white hover:bg-rose-950/80 shadow-lg"
+                  title="خروج از استریم"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
+
             </div>
 
-            {/* Chat overlay & AI Translation */}
-            <div className="absolute bottom-4 left-4 right-4 z-20 space-y-3">
-              <div className="max-h-48 overflow-y-auto space-y-2 p-2.5 bg-slate-950/80 rounded-2xl backdrop-blur-md border border-slate-800/80">
-                {streamChatMessages.map((msg, i) => (
-                  <div key={i} className="text-xs space-y-0.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-pink-400">{msg.user}: <span className="text-white font-normal">{msg.text}</span></span>
-                      {isAutoTranslateActive && (
-                        <span className="text-[8px] px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/30">
-                          AI Translated
-                        </span>
-                      )}
+            {/* ================= EXPANDABLE LIVE INFORMATION PANEL ================= */}
+            {isLiveInfoPanelOpen && (
+              <div className="absolute top-16 left-4 z-40 max-w-sm w-full bg-slate-950/95 border border-pink-500/40 rounded-3xl p-4 shadow-2xl backdrop-blur-xl animate-fadeIn space-y-3 dir-rtl text-right">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <h3 className="text-sm font-black text-white flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-pink-400" />
+                    <span>اطلاعات لایواستریم & قوانین</span>
+                  </h3>
+                  <button onClick={() => setIsLiveInfoPanelOpen(false)} className="text-slate-400 hover:text-white">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-2 text-xs text-slate-300 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                  <div>
+                    <span className="text-[10px] text-pink-400 font-bold block">عنوان استریم:</span>
+                    <p className="font-bold text-white">{viewingStream.title || 'لایواستریم اختصاصی V.LIVE'}</p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-1.5 text-[10px] text-center">
+                    <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                      <span className="text-slate-400 block">دسته‌بندی</span>
+                      <span className="font-bold text-cyan-300">{viewingStream.category || 'General'}</span>
+                    </div>
+                    <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                      <span className="text-slate-400 block">زبان</span>
+                      <span className="font-bold text-emerald-300">🇮🇷 فارسی</span>
+                    </div>
+                    <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                      <span className="text-slate-400 block">کشور</span>
+                      <span className="font-bold text-amber-300">ایران 🇮🇷</span>
                     </div>
                   </div>
-                ))}
-              </div>
 
-              {/* In-Stream Sound FX Soundboard & Mystery Box Toolbar */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                  <div>
+                    <span className="text-[10px] text-pink-400 font-bold block">برچسب‌ها:</span>
+                    <p className="text-[11px] font-mono text-cyan-300">{viewingStream.tags || '#vlive #stream #live'}</p>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] text-pink-400 font-bold block">توضیحات استریمر:</span>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      {viewingStream.description || 'به پخش زنده خوش آمدید! برای حمایت می‌توانید هدیه ارسال کنید و در چت گفتگو نمایید.'}
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1 text-[11px]">
+                    <span className="font-black text-amber-400 flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>قوانین روم و چت زنده:</span>
+                    </span>
+                    <ul className="list-disc list-inside text-slate-400 space-y-0.5 text-[10px]">
+                      <li>احترام متقابل به استریمر و سایر بینندگان الزامی است.</li>
+                      <li>ارسال لینک‌های مشکوک، تبلیغات و پیام‌های تکراری ممنوع است.</li>
+                      <li>هوش مصنوعی هوشمند تمام پیام‌ها را بررسی می‌کند.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ================= EXPANDABLE LIVE MEMBERS PANEL ================= */}
+            {isLiveMembersOpen && (
+              <div className="absolute top-16 right-4 z-40 max-w-xs w-full bg-slate-950/95 border border-purple-500/40 rounded-3xl p-4 shadow-2xl backdrop-blur-xl animate-fadeIn space-y-3 dir-rtl text-right">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <h3 className="text-sm font-black text-white flex items-center gap-1.5">
+                    <Users className="w-4 h-4 text-purple-400" />
+                    <span>اعضای آنلاین روم ({(viewingStream.viewers || 3820).toLocaleString()})</span>
+                  </h3>
+                  <button onClick={() => setIsLiveMembersOpen(false)} className="text-slate-400 hover:text-white">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-2 text-xs text-slate-300 max-h-60 overflow-y-auto custom-scrollbar">
+                  <span className="text-[10px] font-bold text-amber-400 block">👑 حامیان برتر (Top Supporters):</span>
+                  <div className="space-y-1">
+                    {[
+                      { name: 'Arash_VIP', coins: '12,500 🪙', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80' },
+                      { name: 'Sahar_Royal', coins: '8,200 🪙', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80' }
+                    ].map((sup, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-amber-500/20">
+                        <div className="flex items-center gap-2">
+                          <img src={sup.avatar} alt={sup.name} className="w-7 h-7 rounded-full object-cover" />
+                          <span className="font-bold text-white text-[11px]">{sup.name}</span>
+                        </div>
+                        <span className="text-[10px] font-black text-amber-400">{sup.coins}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <span className="text-[10px] font-bold text-cyan-400 block pt-1">🎙️ مهمانان فعال روم:</span>
+                  {guestRequestStatus === 'accepted' ? (
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-emerald-500/30">
+                      <span className="font-bold text-emerald-300 text-[11px]">شما (مهمان صوتی)</span>
+                      <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">متصل</span>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-slate-500">هیچ مهمان فعالی روی استیج نیست.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ================= CHAT OVERLAY & CONTROLS ================= */}
+            <div className="absolute bottom-4 left-4 right-4 z-20 space-y-2">
+              
+              {/* PINNED MESSAGES BANNER */}
+              {streamPinnedMessages.length > 0 && (
+                <div className="p-2 rounded-2xl bg-amber-500/15 border border-amber-500/30 backdrop-blur-md flex items-center justify-between text-xs text-amber-200 dir-rtl">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
+                    <span className="font-black text-[10px] text-amber-400 shrink-0">سنجاق‌شده:</span>
+                    <span className="truncate text-[11px]">{streamPinnedMessages[0].text}</span>
+                  </div>
+                  <button onClick={() => setStreamPinnedMessages([])} className="text-slate-400 hover:text-white p-1">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+
+              {/* CHAT MESSAGES DISPLAY BOX */}
+              {!isHideStreamChat && (
+                <div className="max-h-48 overflow-y-auto space-y-2 p-3 bg-slate-950/85 rounded-3xl backdrop-blur-xl border border-slate-800/80 dir-rtl text-right custom-scrollbar">
+                  {streamChatMessages.map((msg) => (
+                    <div key={msg.id || Math.random()} className="text-xs group flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-black text-pink-400 hover:underline cursor-pointer" onClick={() => setSelectedUserProfile({ name: msg.user })}>
+                          {msg.user}:
+                        </span>
+                        <span className="text-white font-medium leading-relaxed">{msg.text}</span>
+                        {msg.isVip && (
+                          <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[8px] font-black border border-amber-500/30">
+                            VIP
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Quick Hover Message Actions */}
+                      <div className="hidden group-hover:flex items-center gap-1 text-[10px] shrink-0">
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard?.writeText(msg.text);
+                            showToast('متن پیام کپی شد');
+                          }}
+                          className="text-slate-400 hover:text-white"
+                          title="کپی"
+                        >
+                          کپی
+                        </button>
+                        <button 
+                          onClick={() => {
+                            showToast(`ترجمه: ${msg.text}`);
+                          }}
+                          className="text-cyan-400 hover:text-cyan-300 font-bold"
+                          title="ترجمه"
+                        >
+                          🌐
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* FLOATING SOUNDBOARD & GIFT TOOLBAR */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar dir-rtl">
                 <button 
                   onClick={() => playSoundEffect('applause')}
-                  className="px-2.5 py-1 rounded-xl bg-purple-950/80 border border-purple-500/40 text-purple-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-purple-900"
+                  className="px-3 py-1 rounded-xl bg-purple-950/80 border border-purple-500/40 text-purple-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-purple-900"
                 >
                   <ThumbsUp className="w-3 h-3 text-purple-300" />
-                  Applause
+                  تشویق 👏
                 </button>
                 <button 
                   onClick={() => playSoundEffect('cheer')}
-                  className="px-2.5 py-1 rounded-xl bg-pink-950/80 border border-pink-500/40 text-pink-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-pink-900"
+                  className="px-3 py-1 rounded-xl bg-pink-950/80 border border-pink-500/40 text-pink-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-pink-900"
                 >
                   <Sparkles className="w-3 h-3 text-pink-300" />
-                  Cheer
+                  هورا 🎉
                 </button>
                 <button 
                   onClick={() => playSoundEffect('horn')}
-                  className="px-2.5 py-1 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-cyan-900"
+                  className="px-3 py-1 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-cyan-900"
                 >
                   <Radio className="w-3 h-3 text-cyan-300" />
-                  Horn
+                  بوق 🎺
                 </button>
                 <button 
                   onClick={handleOpenLuckyBox}
-                  className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 text-slate-950 text-[10px] font-black shrink-0 flex items-center gap-1 shadow-md hover:brightness-110"
+                  className="px-3 py-1 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 text-slate-950 text-[10px] font-black shrink-0 flex items-center gap-1 shadow-md hover:brightness-110"
                 >
                   <Gift className="w-3 h-3 text-slate-950" />
-                  Mystery Box (100c)
+                  جعبه شانس (100c) 🎁
+                </button>
+                <button 
+                  onClick={() => setIsHideStreamChat(!isHideStreamChat)}
+                  className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-[10px] font-bold shrink-0"
+                >
+                  {isHideStreamChat ? 'نمایش چت' : 'مخفی چت'}
                 </button>
               </div>
 
@@ -7643,37 +7753,101 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 ))}
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* CHAT INPUT BAR & LIKE / GIFT BUTTONS */}
+              <div className="flex items-center gap-2 dir-rtl">
                 <input 
                   type="text" 
                   value={streamChatInput}
                   onChange={e => setStreamChatInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSendStreamChat()}
-                  placeholder="Send real-time live comment..."
+                  placeholder="ارسال پیام زنده در لایواستریم..."
                   className="flex-1 px-4 py-2.5 rounded-2xl bg-slate-950/90 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
                 />
                 
                 <button 
                   onClick={handleSendStreamChat}
-                  className="px-3 py-2.5 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1 active:scale-95 transition"
+                  className="px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 hover:opacity-90 text-white font-bold text-xs flex items-center gap-1 active:scale-95 transition shadow-lg"
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-4 h-4 rotate-180" />
                 </button>
 
                 <button 
                   onClick={handleLikeStream}
                   className="p-2.5 rounded-2xl bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/40 active:scale-90 transition flex items-center gap-1"
-                  title="Send Real-time Like"
+                  title="ارسال لایک زنده"
                 >
                   <Heart className="w-5 h-5 fill-red-500 text-red-500 animate-pulse" />
                   <span className="text-[10px] font-black text-red-300">{streamLikes}</span>
                 </button>
 
                 <button onClick={() => setIsGiftCatalogOpen(true)} className="p-2.5 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30">
-                  <Gift className="w-5 h-5" />
+                  <Gift className="w-5 h-5 text-amber-400 animate-bounce" />
                 </button>
               </div>
+
             </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: EXIT LIVE RECOMMENDATIONS MODAL ================= */}
+      {isExitLiveModalOpen && (
+        <div className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn dir-rtl">
+          <div className="card-3d w-full max-w-md bg-slate-900 rounded-3xl border border-pink-500/40 p-5 space-y-4 shadow-2xl text-right">
+            
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-2xl bg-pink-500/20 text-pink-400 border border-pink-500/40 flex items-center justify-center">
+                  <Video className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">خروج از پخش زنده</h3>
+                  <p className="text-[11px] text-slate-400">پیشنهاد استریم‌های مشابه و استریمرهای محبوب</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  setIsExitLiveModalOpen(false);
+                  setViewingStream(null);
+                }} 
+                className="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Recently Viewed / Similar Lives List */}
+            <div className="space-y-3">
+              <span className="text-xs font-black text-white block">🔥 لایواستریم‌های پیشنهادی مشابه:</span>
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
+                {(streamsList || []).slice(0, 4).map(st => (
+                  <div
+                    key={st.id}
+                    onClick={() => {
+                      setIsExitLiveModalOpen(false);
+                      setViewingStream(st);
+                    }}
+                    className="p-2 rounded-2xl bg-slate-950 border border-slate-800 hover:border-pink-500 cursor-pointer space-y-1 transition"
+                  >
+                    <img src={st.thumbnail || st.avatar} alt={st.title} className="w-full h-20 object-cover rounded-xl" />
+                    <h4 className="text-[11px] font-bold text-white truncate">{st.title || st.host}</h4>
+                    <span className="text-[9px] text-pink-400 font-bold block">{st.category} • 👁️ {st.viewers || 120}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setIsExitLiveModalOpen(false);
+                setViewingStream(null);
+              }}
+              className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
+            >
+              بستن و بازگشت به لیست استریم‌ها
+            </button>
+
           </div>
         </div>
       )}
@@ -8987,9 +9161,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           setSelectedUser(null);
         }}
         user={selectedUser}
-        currentUser={{ username: currentUsername, name: userName, role: isSuperAdmin ? 'admin' : 'user' }}
+        currentUser={{ username: currentUsername, name: userName, role: isUserSuperAdmin ? 'admin' : 'user' }}
         isUserRayan={isUserRayan}
-        isSuperAdmin={isSuperAdmin}
+        isSuperAdmin={isUserSuperAdmin}
         showToast={showToast}
         loc={loc}
         onFollowToggle={(targetUser, isFollowed) => {

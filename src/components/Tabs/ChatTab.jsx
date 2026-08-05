@@ -517,7 +517,7 @@ export default function ChatTab(props) {
                                     </div>
                                   </div>
 
-                                  <div className="hidden group-hover:flex items-center gap-1 absolute -top-3 right-2 bg-slate-900 border border-slate-700 rounded-full px-2 py-0.5 shadow-xl text-[10px] z-20">
+                                  <div className="hidden group-hover:flex items-center gap-1.5 absolute -top-3 right-2 bg-slate-900/95 border border-slate-700/80 rounded-full px-2.5 py-1 shadow-2xl text-[10px] z-20 backdrop-blur-md">
                                     <button 
                                       onClick={() => {
                                         setConversations(prev => prev.map(c => {
@@ -553,18 +553,49 @@ export default function ChatTab(props) {
                                       🔥
                                     </button>
                                     <button 
-                                      onClick={() => handleTranslateChatMessage(msg.id, msg.text)}
-                                      className="text-cyan-400 hover:text-white font-bold ml-1 flex items-center gap-0.5"
-                                      title="Translate Message"
+                                      onClick={() => {
+                                        navigator.clipboard?.writeText(msg.text);
+                                        showToast('متن پیام کپی شد 📋');
+                                      }}
+                                      className="text-slate-300 hover:text-white font-bold"
+                                      title="کپی متن"
                                     >
-                                      🌍 {msg.translated ? 'Original' : 'Translate'}
+                                      📋
                                     </button>
                                     <button 
-                                      onClick={() => setPinnedMessage(msg)}
-                                      className="text-amber-400 hover:text-white ml-1"
-                                      title="Pin Message"
+                                      onClick={() => {
+                                        setPinnedMessage(msg);
+                                        showToast('پیام سنجاق شد 📌');
+                                      }}
+                                      className="text-amber-400 hover:text-white"
+                                      title="سنجاق پیام"
                                     >
                                       📌
+                                    </button>
+                                    <button 
+                                      onClick={() => handleTranslateChatMessage(msg.id, msg.text)}
+                                      className="text-cyan-400 hover:text-white font-bold"
+                                      title="ترجمه پیام"
+                                    >
+                                      🌍
+                                    </button>
+                                    <button 
+                                      onClick={() => {
+                                        setConversations(prev => prev.map(c => {
+                                          if (c.id === activeConversationId) {
+                                            return {
+                                              ...c,
+                                              messages: c.messages.filter(m => m.id !== msg.id)
+                                            };
+                                          }
+                                          return c;
+                                        }));
+                                        showToast('پیام حذف شد 🗑️');
+                                      }}
+                                      className="text-rose-400 hover:text-rose-300 font-bold"
+                                      title="حذف پیام"
+                                    >
+                                      🗑️
                                     </button>
                                   </div>
                                 </div>

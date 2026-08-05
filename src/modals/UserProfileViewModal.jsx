@@ -5,7 +5,7 @@ import {
   Radio, Camera, Play, Flame, Star, Lock, Eye, AlertCircle, ShieldCheck,
   Zap, Award, Globe, Briefcase, GraduationCap, Copy, Check, Users, Shield
 } from 'lucide-react';
-import { CoinsIcon, VerifiedBadge, VipStatusBadge } from '../components/CommonBadges';
+import { CoinsIcon, VerifiedBadge, VipStatusBadge, StreamerScoresBadges } from '../components/CommonBadges';
 
 export default function UserProfileViewModal({
   isOpen,
@@ -240,6 +240,13 @@ export default function UserProfileViewModal({
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed pt-1 dir-rtl">{bio}</p>
+
+            {/* STREAMER SCORES 3 INDEPENDENT BADGES */}
+            {isStreamer && (
+              <div className="pt-2">
+                <StreamerScoresBadges userObj={user} compact={false} />
+              </div>
+            )}
           </div>
 
           {/* Action Row: Message, Audio Call, Video Call, Gift */}
@@ -319,7 +326,7 @@ export default function UserProfileViewModal({
                 <span className="text-amber-400 text-xs font-black">10 🪙 / min</span>
               </div>
               <p className="text-[11px] text-slate-300 dir-rtl">
-                امکان رزرو و برقراری تماس تصویری آنلاین یا شرکت در روم‌های خصوصی این استریمر.
+                امکان برقراری تماس تصویری مستقیم یا شرکت در روم‌های اختصاصی و لایواستریم این استریمر.
               </p>
             </div>
           )}
