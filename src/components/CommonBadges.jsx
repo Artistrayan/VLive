@@ -1,5 +1,6 @@
 import React from 'react';
-import { Coins, CheckCircle, BadgeCheck, Crown } from 'lucide-react';
+import { Coins, CheckCircle, BadgeCheck, Crown, ShieldCheck, Award } from 'lucide-react';
+import { getStreamerScores } from '../services/streamerScoring';
 
 export function CoinsIcon({ className = "w-4 h-4 text-amber-400" }) {
   return <Coins className={className} />;
@@ -35,3 +36,49 @@ export function VipStatusBadge({ size = "normal", showText = true, className = "
     </span>
   );
 }
+
+export function StreamerScoresBadges({ userObj = {}, compact = false }) {
+  const scores = getStreamerScores(userObj);
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-1 flex-wrap text-[9px] font-bold">
+        <span className={`px-2 py-0.5 rounded-full bg-gradient-to-r ${scores.badgeColor} text-white shadow-sm`}>
+          Lvl {scores.level}
+        </span>
+        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          Rep: {scores.reputationScore}/10
+        </span>
+        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+          Rank: {scores.creatorRank}/10
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-3 gap-1.5 p-2 rounded-2xl bg-slate-950/80 border border-slate-800 text-center">
+      <div className="space-y-0.5">
+        <span className="text-[8px] text-slate-400 font-bold block">سطح (Level)</span>
+        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r ${scores.badgeColor} text-white inline-block shadow`}>
+          Lvl {scores.level} {scores.levelName}
+        </span>
+      </div>
+
+      <div className="space-y-0.5">
+        <span className="text-[8px] text-slate-400 font-bold block">اعتبار (Trust)</span>
+        <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-full inline-block">
+          {scores.reputationScore}/10
+        </span>
+      </div>
+
+      <div className="space-y-0.5">
+        <span className="text-[8px] text-slate-400 font-bold block">رتبه محتوا (Rank)</span>
+        <span className="text-[9px] font-black text-amber-300 bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded-full inline-block">
+          {scores.creatorRank}/10
+        </span>
+      </div>
+    </div>
+  );
+}
+

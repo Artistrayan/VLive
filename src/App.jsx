@@ -1,6 +1,7 @@
 import SettingsModal from './modals/SettingsModal';
 import LiveStreamSystem from './components/LiveStreamSystem';
 import StreamerDashboardModal from './components/StreamerDashboardModal';
+import LiveStudioModal from './components/LiveStudioModal';
 import ProfileTab from './components/Tabs/ProfileTab';
 import WalletTab from './components/Tabs/WalletTab';
 import ChatTab from './components/Tabs/ChatTab';
@@ -917,6 +918,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
 
   // Streamer Tariff & Call Privacy
   const [isStreamerCenterOpen, setIsStreamerCenterOpen] = useState(false);
+  const [isLiveStudioOpen, setIsLiveStudioOpen] = useState(false);
   const [streamerPaidCallEnabled, setStreamerPaidCallEnabled] = useState(true);
   const [streamerCallTariffPerMin, setStreamerCallTariffPerMin] = useState(20);
   const [streamerCallTariff10Min, setStreamerCallTariff10Min] = useState(150);
@@ -5678,6 +5680,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   handleInitiateCall={handleInitiateCall}
                   addAdminAuditLog={addAdminAuditLog}
                   setAdminReportsList={setAdminReportsList}
+                  setIsLiveStudioOpen={setIsLiveStudioOpen}
                 />
               </div>
             )}
@@ -8275,8 +8278,31 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         setUserCoins={setUserCoins}
         showToast={showToast}
         onSwitchMainTab={setActiveTab}
-        setIsStartLiveModalOpen={() => setIsHostLiveOpen(true)}
+        setIsStartLiveModalOpen={() => setIsLiveStudioOpen(true)}
         addAdminAuditLog={addAdminAuditLog}
+      />
+
+      {/* MODAL: LIVE STUDIO (INTERNAL STREAMER PANEL) */}
+      <LiveStudioModal
+        isOpen={isLiveStudioOpen}
+        onClose={() => setIsLiveStudioOpen(false)}
+        currentUser={{
+          name: userName,
+          avatar: userAvatar,
+          username: currentUsername,
+          isStreamer: isVerified || currentUsername?.toLowerCase() === 'rayan'
+        }}
+        currentUsername={currentUsername}
+        userCoins={userCoins}
+        setUserCoins={setUserCoins}
+        streamsList={streamsList}
+        setStreamsList={setStreamsList}
+        setViewingStream={setViewingStream}
+        showToast={showToast}
+        addAdminAuditLog={addAdminAuditLog}
+        setAdminReportsList={setAdminReportsList}
+        loc={loc}
+        isRtl={isRtl}
       />
 
       {/* MODAL: ADMIN SECURITY & DASHBOARD */}

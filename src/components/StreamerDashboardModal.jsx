@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { apiStreamer, apiWallet } from '../services/api';
 import { PLATFORM_RULES, canAccessCreatorStudio } from '../services/businessRules';
+import { getStreamerScores } from '../services/streamerScoring';
 
 export default function StreamerDashboardModal({
   isOpen,
@@ -327,56 +328,73 @@ export default function StreamerDashboardModal({
                     </div>
                   </div>
 
-                  {/* STREAMER LEVEL, XP & RISK SCORE MODULE */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    
-                    {/* STREAMER LEVEL & XP */}
-                    <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <Crown className="w-4 h-4 text-amber-400" />
-                          <span className="text-xs font-black text-white">سطح استریمر: Professional Streamer (سطح ۳)</span>
+                  {/* STREAMER LEVEL, XP & REPUTATION / CREATOR RANK MODULE */}
+                  {(() => {
+                    const scores = getStreamerScores(currentUser || {});
+                    return (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* STREAMER LEVEL & XP */}
+                          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <Crown className="w-4 h-4 text-amber-400" />
+                                <span className="text-xs font-black text-white">۱. سطح استریمر: {scores.levelName} (سطح {scores.level})</span>
+                              </div>
+                              <span className="text-[10px] text-amber-300 font-mono font-bold">{scores.xp.toLocaleString()} XP</span>
+                            </div>
+                            
+                            {/* XP Progress Bar */}
+                            <div className="w-full h-2 rounded-full bg-slate-900 overflow-hidden border border-slate-800">
+                              <div className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-amber-400 rounded-full" style={{ width: `${scores.progressPercent}%` }} />
+                            </div>
+
+                            <div className="flex items-center justify-between text-[10px] text-slate-400">
+                              <span>{scores.xpToNext.toLocaleString()} XP تا سطح {scores.nextLevelObj.name}</span>
+                              <span className="text-pink-300 font-bold">پیشرفت {scores.progressPercent}%</span>
+                            </div>
+                          </div>
+
+                          {/* REPUTATION & CREATOR RANK INDEPENDENT BADGES */}
+                          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                            <span className="text-xs font-black text-white block">۲ و ۳. مدال‌های اعتبار و رتبه محتوا (مستقل)</span>
+                            <div className="grid grid-cols-2 gap-2 pt-1">
+                              {/* Reputation Badge */}
+                              <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 space-y-1 text-center">
+                                <span className="text-[9px] text-slate-400 font-bold block">اعتبار (Reputation)</span>
+                                <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30 inline-block">
+                                  {scores.reputationScore}/10 ({scores.reputationStatus})
+                                </span>
+                              </div>
+
+                              {/* Creator Rank Badge */}
+                              <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 space-y-1 text-center">
+                                <span className="text-[9px] text-slate-400 font-bold block">رتبه محتوا (Rank)</span>
+                                <span className="text-[10px] font-black text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30 inline-block">
+                                  {scores.creatorRank}/10 ({scores.creatorRankName})
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <span className="text-[10px] text-amber-300 font-mono font-bold">4,250 / 5,000 XP</span>
-                      </div>
-                      
-                      {/* XP Progress Bar */}
-                      <div className="w-full h-2 rounded-full bg-slate-900 overflow-hidden border border-slate-800">
-                        <div className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-amber-400 rounded-full w-[85%]" />
-                      </div>
 
-                      <div className="flex items-center justify-between text-[10px] text-slate-400">
-                        <span>۷۵۰ XP تا سطح Elite Streamer</span>
-                        <div className="flex items-center gap-1">
-                          <span className="px-1.5 py-0.2 rounded bg-pink-500/20 text-pink-300 font-bold border border-pink-500/30">Verified 🛡️</span>
-                          <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">Top Creator 👑</span>
+                        {/* UNLOCKED BENEFITS IN THIS LEVEL */}
+                        <div className="p-3 rounded-2xl bg-slate-950/80 border border-pink-500/20 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-pink-400 shrink-0" />
+                            <span className="text-[10px] font-bold text-slate-300">مزایای فعال سطح {scores.level}:</span>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {scores.benefits.map((b, idx) => (
+                                <span key={idx} className="px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-300 text-[9px] font-bold border border-pink-500/20">
+                                  ✓ {b}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-
-                    {/* RISK SCORE & AI ANTI-FRAUD STATUS */}
-                    <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                          <span className="text-xs font-black text-white">شاخص ریسک و امنیت (Risk Score)</span>
-                        </div>
-                        <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-black px-2 py-0.5 rounded-full border border-emerald-500/30">
-                          Low (5/100) 🟢
-                        </span>
-                      </div>
-
-                      <p className="text-[10px] text-slate-400">
-                        سیستم هوش مصنوعی اکانت شما را پاک، بدون تخلف و کاملاً امن ارزیابی کرده است.
-                      </p>
-
-                      <div className="flex items-center gap-2 text-[9px] text-slate-300 font-mono">
-                        <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">AI Monitor: Active 🤖</span>
-                        <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">Fraud Protection: Passed 🔒</span>
-                      </div>
-                    </div>
-
-                  </div>
+                    );
+                  })()}
 
                   {/* SCHEDULED STREAMS PREVIEW */}
                   <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">

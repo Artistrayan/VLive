@@ -3,6 +3,11 @@ import VisualSectionWrapper from '../components/VisualUiEditor/VisualSectionWrap
 import { useVisualUiEditor } from '../context/VisualUiEditorContext';
 import { safeStorage } from '../utils/safeStorage';
 import FinanceCenter from '../components/Admin/FinanceCenter';
+import UserManagementCenter from '../components/Admin/UserManagementCenter';
+import StreamerManagementCenter from '../components/Admin/StreamerManagementCenter';
+import SystemMonitorCenter from '../components/Admin/SystemMonitorCenter';
+import AiAdminCopilot from '../components/Admin/AiAdminCopilot';
+import AnalyticsCenter from '../components/Admin/AnalyticsCenter';
 import { 
   ShieldCheck, Globe, Eye, EyeOff, ShieldAlert, Users, Video, DollarSign,
   BarChart2, FileText, Settings, Search, Plus, Trash2, Edit3, CheckCircle2,
@@ -355,6 +360,7 @@ export default function AdminDashboardModal(props) {
                 { id: 'roles', label: loc('👥 ادمین‌ها', '👥 Admin Roles') },
                 { id: 'security', label: loc('🔒 امنیت', '🔒 Security') },
                 { id: 'settings', label: loc('⚙️ تنظیمات', '⚙️ Settings') },
+                { id: 'aicopilot', label: loc('✨ کوپایلوت هوشمند', '✨ AI Copilot') },
                 { id: 'aimod', label: loc('🤖 هوش مصنوعی', '🤖 AI Mod') },
                 { id: 'aisecurity', label: loc('🛡 مرکز امنیت AI', '🛡 AI Security') },
                 { id: 'backup', label: loc('💾 بکاپ', '💾 Backups') },
@@ -479,314 +485,16 @@ export default function AdminDashboardModal(props) {
                 </div>
               )}
 
-              {/* 2. USER MANAGEMENT */}
+              {/* 2. USER MANAGEMENT CENTER */}
               {adminActiveTab === 'users' && (
-                <div className="space-y-3 text-xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <h3 className="font-bold text-white text-sm">{loc('۲. مدیریت کامل کاربران', '2. User Management')}</h3>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          const mockUsernames = ['sahar_m', 'ali_streamer', 'spambot99', 'elena_r', 'unknown_99'];
-                          setAdminUsersList(prev => {
-                            const cleaned = prev.filter(u => !mockUsernames.includes(u.username.toLowerCase()));
-                            safeStorage.setItem('vlive_admin_users_list', JSON.stringify(cleaned));
-                            return cleaned;
-                          });
-                          setUsersList(prev => {
-                            const cleaned = prev.filter(u => !mockUsernames.includes(u.username.toLowerCase()));
-                            safeStorage.setItem('vlive_app_users_v8', JSON.stringify(cleaned));
-                            return cleaned;
-                          });
-                          addAdminAuditLog('کاربران فیک و دمو با موفقیت پاکسازی شدند');
-                          showToast(loc('✅ کاربران فیک با موفقیت پاکسازی شدند! فقط کاربران واقعی باقی ماندند.', '✅ Fake users cleared! Only real users remain.'));
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-rose-950 hover:bg-rose-900 border border-rose-500/50 text-rose-300 font-bold text-[11px] flex items-center gap-1 shadow-sm"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> {loc('حذف کاربرهای فیک (دمو)', 'Clear Demo Users')}
-                      </button>
-
-                      <button
-                        onClick={() => setIsAddUserModalOpen(true)}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 shadow-sm"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> {loc('کاربر جدید', 'New User')}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* USER FILTER STATUS BUTTONS */}
-                  <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
-                    {['All', 'Active', 'Banned', 'Suspended', 'Verified', 'VIP User', 'Streamer'].map(st => (
-                      <button
-                        key={st}
-                        onClick={() => setAdminUserFilterStatus(st)}
-                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition ${adminUserFilterStatus === st ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-950 border border-slate-800 text-slate-400'}`}
-                      >
-                        {st}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* ADD USER INLINE MODAL */}
-                  {isAddUserModalOpen && (
-                    <div className="p-4 rounded-2xl bg-slate-950 border border-emerald-500/50 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-emerald-300">ساخت کاربر جدید توسط ادمین</h4>
-                        <button onClick={() => setIsAddUserModalOpen(false)} className="text-slate-400"><X className="w-4 h-4" /></button>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <input
-                          type="text"
-                          value={adminNewUser.name}
-                          onChange={e => setAdminNewUser({ ...adminNewUser, name: e.target.value })}
-                          placeholder="نام کامل..."
-                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
-                        />
-                        <input
-                          type="text"
-                          value={adminNewUser.username}
-                          onChange={e => setAdminNewUser({ ...adminNewUser, username: e.target.value })}
-                          placeholder="نام کاربری (username)..."
-                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
-                        />
-                        <input
-                          type="email"
-                          value={adminNewUser.email}
-                          onChange={e => setAdminNewUser({ ...adminNewUser, email: e.target.value })}
-                          placeholder="ایمیل..."
-                          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
-                        />
-                      </div>
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            const cleanName = adminNewUser.name.trim();
-                            const cleanUsername = adminNewUser.username.trim();
-                            if (!cleanName || !cleanUsername) {
-                              showToast(loc('لطفاً نام و نام کاربری را وارد کنید', 'Please enter name and username'));
-                              return;
-                            }
-                            const isDup = usersList.some(u => u.username?.toLowerCase() === cleanUsername.toLowerCase()) ||
-                                          adminUsersList.some(u => u.username?.toLowerCase() === cleanUsername.toLowerCase());
-                            if (isDup) {
-                              showToast(loc('❌ این نام کاربری قبلاً ثبت شده است! هر نام کاربری فقط یکبار امکان ثبت دارد.', '❌ Username already exists! Every username must be unique.'));
-                              return;
-                            }
-                            const createdUser = {
-                              id: Date.now(),
-                              name: adminNewUser.name,
-                              username: adminNewUser.username,
-                              email: adminNewUser.email || `${adminNewUser.username}@vlive.com`,
-                              coins: 10000,
-                              status: 'Active',
-                              isVerified: true,
-                              role: adminNewUser.role,
-                              reportsCount: 0,
-                              avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-                              registeredAt: new Date().toISOString().slice(0, 10)
-                            };
-
-                            setAdminUsersList(prev => {
-                              const updated = [createdUser, ...prev];
-                              safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
-                              return updated;
-                            });
-
-                            setUsersList(prev => {
-                              const updated = [createdUser, ...prev];
-                              safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
-                              return updated;
-                            });
-
-                            addAdminAuditLog(`کاربر جدید @${adminNewUser.username} توسط ادمین ساخته شد`);
-                            showToast(loc(`کاربر جدید @${adminNewUser.username} اضافه شد`, `New user @${adminNewUser.username} created`));
-                            setAdminNewUser({ name: '', username: '', email: '', coins: 10000, role: 'User' });
-                            setIsAddUserModalOpen(false);
-                          }}
-                          className="px-4 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs"
-                        >
-                          {loc('تأیید و ساخت کاربر', 'Confirm & Create User')}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* EDIT USER INLINE FORM */}
-                  {adminEditingUser && (
-                    <div className="p-4 rounded-2xl bg-slate-950 border border-amber-500/50 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-amber-300">{loc(`ویرایش اطلاعات کاربر @${adminEditingUser.username}`, `Edit User @${adminEditingUser.username}`)}</h4>
-                        <button onClick={() => setAdminEditingUser(null)} className="text-slate-400"><X className="w-4 h-4" /></button>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div>
-                          <label className="text-[10px] text-slate-400 block">{loc('نام کامل:', 'Full Name:')}</label>
-                          <input
-                            type="text"
-                            value={adminEditingUser.name}
-                            onChange={e => setAdminEditingUser({ ...adminEditingUser, name: e.target.value })}
-                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-slate-400 block">{loc('موجودی سکه:', 'Coin Balance:')}</label>
-                          <input
-                            type="number"
-                            value={adminEditingUser.coins}
-                            onChange={e => setAdminEditingUser({ ...adminEditingUser, coins: parseInt(e.target.value) || 0 })}
-                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-slate-400 block">{loc('نقش:', 'Role:')}</label>
-                          <select
-                            value={adminEditingUser.role}
-                            onChange={e => setAdminEditingUser({ ...adminEditingUser, role: e.target.value })}
-                            className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
-                          >
-                            <option value="User">{loc('کاربر عادی', 'Regular User')}</option>
-                            <option value="Streamer">{loc('استریمر', 'Streamer')}</option>
-                            <option value="VIP User">{loc('کاربر VIP', 'VIP User')}</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            setAdminUsersList(prev => {
-                              const updated = prev.map(u => u.id === adminEditingUser.id ? adminEditingUser : u);
-                              safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
-                              return updated;
-                            });
-                            setUsersList(prev => {
-                              const updated = prev.map(u => u.id === adminEditingUser.id ? { ...u, ...adminEditingUser } : u);
-                              safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
-                              return updated;
-                            });
-                            addAdminAuditLog(`اطلاعات کاربر @${adminEditingUser.username} بروزرسانی شد`);
-                            setAdminEditingUser(null);
-                          }}
-                          className="px-4 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
-                        >
-                          {loc('ذخیره تغییرات کاربر', 'Save User Changes')}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* USERS LIST */}
-                  <div className="space-y-2">
-                    {adminUsersList
-                      .filter(u => {
-                        const matchSearch = adminGlobalSearch === '' || (u.name || '').toLowerCase().includes(adminGlobalSearch.toLowerCase()) || (u.username || '').toLowerCase().includes(adminGlobalSearch.toLowerCase());
-                        const matchStatus = adminUserFilterStatus === 'All' || u.status === adminUserFilterStatus || u.role === adminUserFilterStatus || (adminUserFilterStatus === 'Verified' && u.isVerified);
-                        return matchSearch && matchStatus;
-                      })
-                      .map(u => (
-                        <div key={u.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div className="flex items-center gap-2.5">
-                            <img src={u.avatar} alt={u.name} className="w-10 h-10 rounded-full object-cover border border-pink-500/40" />
-                            <div>
-                              <p className="font-bold text-white flex items-center gap-1.5">
-                                {u.name}
-                                {u.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400" />}
-                                <span className={`text-[9px] px-1.5 py-0.2 rounded font-normal ${u.status === 'Banned' ? 'bg-rose-950 text-rose-300' : 'bg-slate-800 text-slate-300'}`}>{u.status} • {u.role}</span>
-                              </p>
-                              <span className="text-[10px] text-slate-400 block font-mono">@{u.username} • {u.email} • {u.coins.toLocaleString()} {loc('سکه', 'coins')}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1 flex-wrap">
-                            <button
-                              onClick={() => setAdminEditingUser(u)}
-                              className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold"
-                            >
-                              {loc('ویرایش', 'Edit')}
-                            </button>
-
-                            <button
-                              onClick={async () => {
-                                const newStatus = (u.status === 'Banned' || u.status === 'banned') ? 'approved' : 'banned';
-                                
-                                if (apiAdmin && typeof apiAdmin.updateUserStatus === 'function') {
-                                    await apiAdmin.updateUserStatus(u.id, newStatus);
-                                }
-                                
-                                setAdminUsersList(prev => {
-                                  const updated = prev.map(item => item.id === u.id ? { ...item, status: newStatus } : item);
-                                  return updated;
-                                });
-                                setUsersList(prev => {
-                                  const updated = prev.map(item => item.id === u.id ? { ...item, status: newStatus } : item);
-                                  return updated;
-                                });
-                                addAdminAuditLog(`وضعیت کاربر @${u.username} به ${newStatus} تغییر یافت`);
-                              }}
-                              className={`px-2 py-1 rounded-xl text-[10px] font-bold ${(u.status === 'Banned' || u.status === 'banned') ? 'bg-emerald-600 text-white' : 'bg-rose-950 border border-rose-500/40 text-rose-300'}`}
-                            >
-                              {u.status === 'Banned' ? loc('رفع مسدودیت', 'Unban') : loc('مسدودسازی (Ban)', 'Ban User')}
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                const newStatus = u.status === 'Suspended' ? 'Active' : 'Suspended';
-                                setAdminUsersList(prev => {
-                                  const updated = prev.map(item => item.id === u.id ? { ...item, status: newStatus } : item);
-                                  safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
-                                  return updated;
-                                });
-                                addAdminAuditLog(`وضعیت تعلیق کاربر @${u.username} تغییر کرد`);
-                              }}
-                              className="px-2 py-1 rounded-xl bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px] font-bold"
-                            >
-                              {u.status === 'Suspended' ? loc('لغو تعلیق', 'Unsuspend') : loc('تعلیق (Suspend)', 'Suspend')}
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                const newVerified = !u.isVerified;
-                                setAdminUsersList(prev => {
-                                  const updated = prev.map(item => item.id === u.id ? { ...item, isVerified: newVerified } : item);
-                                  safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
-                                  return updated;
-                                });
-                                setUsersList(prev => {
-                                  const updated = prev.map(item => item.id === u.id ? { ...item, isVerified: newVerified } : item);
-                                  safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
-                                  return updated;
-                                });
-                                addAdminAuditLog(`نشان تأیید هویت برای @${u.username} ${newVerified ? 'اعطا شد' : 'لغو شد'}`);
-                              }}
-                              className="px-2 py-1 rounded-xl bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10px] font-bold"
-                            >
-                              {u.isVerified ? loc('حذف نشان Cyan', 'Remove Badge') : loc('اعطای نشان Cyan', 'Give Badge')}
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setAdminUsersList(prev => {
-                                  const updated = prev.filter(item => item.id !== u.id);
-                                  safeStorage.setItem('vlive_admin_users_list', JSON.stringify(updated));
-                                  return updated;
-                                });
-                                setUsersList(prev => {
-                                  const updated = prev.filter(item => item.id !== u.id);
-                                  safeStorage.setItem('vlive_app_users_v8', JSON.stringify(updated));
-                                  return updated;
-                                });
-                                addAdminAuditLog(`حساب کاربر @${u.username} برای همیشه حذف شد`);
-                                showToast(loc(`کاربر @${u.username} حذف شد`, `User @${u.username} deleted`));
-                              }}
-                              className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
+                <UserManagementCenter
+                  usersList={usersList}
+                  setUsersList={setUsersList}
+                  addAdminAuditLog={addAdminAuditLog}
+                  showToast={showToast}
+                  loc={loc}
+                  isRtl={isRtl}
+                />
               )}
 
               {/* 3. LIVE MANAGEMENT & AI MONITORING */}
@@ -1475,38 +1183,17 @@ export default function AdminDashboardModal(props) {
                 </div>
               )}
 
-              {/* 12. STATISTICS */}
+              {/* 12. ANALYTICS CENTER & STATISTICS */}
               {adminActiveTab === 'statistics' && (
-                <div className="space-y-3 text-xs">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-white text-sm">۱۲. آمار پیشرفته و نمودار رشد برنامه (Statistics)</h3>
-                    <div className="flex gap-1">
-                      {['24h', '7d', '30d', '1y'].map(tf => (
-                        <button
-                          key={tf}
-                          onClick={() => setAdminStatsTimeframe(tf)}
-                          className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${adminStatsTimeframe === tf ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-400'}`}
-                        >
-                          {tf}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
-                      <span className="text-slate-400">نرخ رشد کاربران روزانه</span>
-                      <p className="text-lg font-black text-emerald-400">+۲۸.۴٪ رشد</p>
-                    </div>
-                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
-                      <span className="text-slate-400">میانگین مدت لایوها</span>
-                      <p className="text-lg font-black text-cyan-400">۴۲ دقیقه</p>
-                    </div>
-                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
-                      <span className="text-slate-400">نرخ تبدیل خرید سکه</span>
-                      <p className="text-lg font-black text-amber-400">۸۴.۲٪</p>
-                    </div>
-                  </div>
-                </div>
+                <AnalyticsCenter
+                  usersList={usersList}
+                  adminWithdrawalsList={adminWithdrawalsList}
+                  financialTransactionsList={financialTransactionsList}
+                  addAdminAuditLog={addAdminAuditLog}
+                  showToast={showToast}
+                  loc={loc}
+                  isRtl={isRtl}
+                />
               )}
 
               {/* 13. SUPPORT TICKETS */}
@@ -1665,102 +1352,17 @@ export default function AdminDashboardModal(props) {
                 </div>
               )}
 
-              {/* 14. VERIFICATION KYC */}
+              {/* 14. STREAMER MANAGEMENT CENTER & VERIFICATION */}
               {adminActiveTab === 'verification' && (
-                <div className="space-y-3 text-xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <h3 className="font-bold text-white text-sm">۱۴. تأیید هویت و مدارک شناسایی (Verification)</h3>
-                      <p className="text-[10px] text-slate-400">بررسی درخواست‌های تیک آبی (Cyan Badge) و احراز هویت کاربران</p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        const newReq = {
-                          id: Date.now(),
-                          username: 'elena_r',
-                          name: 'النا راد',
-                          nationalId: '0082394812',
-                          photo: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
-                          status: 'pending',
-                          date: new Date().toLocaleDateString('fa-IR')
-                        };
-                        setVerificationsList(prev => [newReq, ...prev]);
-                        showToast(loc('درخواست نمونه احراز هویت اضافه شد', 'Sample verification request added'));
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[10px] flex items-center gap-1 shadow shrink-0"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> + درخواست نمونه (تست)
-                    </button>
-                  </div>
-
-                  {verificationsList.length === 0 ? (
-                    <div className="p-8 text-center rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                      <BadgeCheck className="w-8 h-8 text-cyan-400 mx-auto" />
-                      <p className="font-bold text-slate-300">هیچ درخواست تأیید هویتی در صف انتظار نیست.</p>
-                      <button
-                        onClick={() => {
-                          setVerificationsList([
-                            { id: 1, username: 'sahar_m', name: 'سحر میلر', nationalId: '۴۸۲۰۹۳۲۰۱', photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', status: 'pending', date: '۱۴۰۴/۰۵/۱۰' },
-                            { id: 2, username: 'ali_streamer', name: 'علی رضایی', nationalId: '۰۰۷۹۱۲۳۴۵۶', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', status: 'pending', date: '۱۴۰۴/۰۵/۱۱' }
-                          ]);
-                          showToast('درخواست‌های احراز هویت بازنشانی شدند');
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-slate-800 text-cyan-300 font-bold text-[10px]"
-                      >
-                        بازنشانی لیست احراز هویت
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {verificationsList.map(item => (
-                        <div key={item.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            {item.photo && (
-                              <img src={item.photo} alt={item.name} className="w-12 h-12 rounded-xl object-cover border border-cyan-500/40" />
-                            )}
-                            <div>
-                              <p className="font-bold text-white flex items-center gap-1.5">
-                                <span>{item.name || item.username}</span>
-                                <span className="text-[10px] text-cyan-400 font-mono">@{item.username}</span>
-                              </p>
-                              <span className="text-[10px] text-slate-400 block font-mono">کد ملی / مدارک: {item.nationalId || 'ثبت شده'} • تاریخ: {item.date || 'امروز'}</span>
-                              <span className={`text-[9px] px-2 py-0.2 rounded-full inline-block mt-1 ${item.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300' : item.status === 'rejected' ? 'bg-rose-500/20 text-rose-300' : 'bg-amber-500/20 text-amber-300'}`}>
-                                وضعیت: {item.status === 'approved' ? 'تأیید شده ✅' : item.status === 'rejected' ? 'رد شده ❌' : 'در انتظار بررسی ⏳'}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <button
-                              onClick={() => {
-                                setVerificationsList(prev => prev.map(v => v.id === item.id ? { ...v, status: 'approved' } : v));
-                                setAdminUsersList(prev => prev.map(u => u.username === item.username ? { ...u, isVerified: true } : u));
-                                setUsersList(prev => prev.map(u => u.username === item.username ? { ...u, isVerified: true } : u));
-                                if (item.username === currentUsername) setIsVerified(true);
-                                addAdminAuditLog(`مدارک هویت ${item.username} تأیید شد و نشان تیک آبی اعطا گردید`);
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[10px] flex items-center gap-1 shadow"
-                            >
-                              <BadgeCheck className="w-3.5 h-3.5" /> تأیید مدارک (Cyan Badge)
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setVerificationsList(prev => prev.map(v => v.id === item.id ? { ...v, status: 'rejected' } : v));
-                                setAdminUsersList(prev => prev.map(u => u.username === item.username ? { ...u, isVerified: false } : u));
-                                setUsersList(prev => prev.map(u => u.username === item.username ? { ...u, isVerified: false } : u));
-                                addAdminAuditLog(`مدارک هویت ${item.username} رد شد`);
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px]"
-                            >
-                              رد مدارک
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <StreamerManagementCenter
+                  usersList={usersList}
+                  setUsersList={setUsersList}
+                  adminWithdrawalsList={adminWithdrawalsList}
+                  setAdminWithdrawalsList={setAdminWithdrawalsList}
+                  addAdminAuditLog={addAdminAuditLog}
+                  showToast={showToast}
+                  loc={loc}
+                />
               )}
 
               {/* 15. ROLES & ACCESS WHITELIST BY TELEGRAM NUMERIC ID */}
@@ -2294,6 +1896,19 @@ export default function AdminDashboardModal(props) {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {/* 17.5 AI ADMIN COPILOT */}
+              {adminActiveTab === 'aicopilot' && (
+                <AiAdminCopilot
+                  usersList={usersList}
+                  adminWithdrawalsList={adminWithdrawalsList}
+                  financialTransactionsList={financialTransactionsList}
+                  addAdminAuditLog={addAdminAuditLog}
+                  showToast={showToast}
+                  loc={loc}
+                  isRtl={isRtl}
+                />
               )}
 
               {/* 18. AI MODERATION */}
@@ -2838,22 +2453,13 @@ export default function AdminDashboardModal(props) {
                 </div>
               )}
 
-              {/* 20. LOGS & AUDIT TRAIL */}
+              {/* 20. SYSTEM MONITOR CENTER & AUDIT LOGS */}
               {adminActiveTab === 'logs' && (
-                <div className="space-y-3 text-xs">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-white text-sm">۲۰. لاگ لحظه‌ای فعالیت‌های مدیران (Audit Logs)</h3>
-                    <span className="text-[10px] text-slate-400">{adminLogsList.length} فعالیت ثبت شده</span>
-                  </div>
-                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-2 font-mono text-[11px] max-h-80 overflow-y-auto">
-                    {adminLogsList.map((log, i) => (
-                      <div key={i} className="flex items-center gap-2 border-b border-slate-900 pb-1.5 text-slate-300 dir-rtl">
-                        <span className="text-amber-400 font-bold">[{log.time}]</span>
-                        <span>{log.log}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <SystemMonitorCenter
+                  addAdminAuditLog={addAdminAuditLog}
+                  showToast={showToast}
+                  loc={loc}
+                />
               )}
 
             </div>

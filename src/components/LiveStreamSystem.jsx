@@ -21,7 +21,8 @@ export default function LiveStreamSystem({
   setActiveTab,
   handleInitiateCall,
   addAdminAuditLog,
-  setAdminReportsList
+  setAdminReportsList,
+  setIsLiveStudioOpen
 }) {
   // Category & Subtab Switchers
   const [liveTypeTab, setLiveTypeTab] = useState('standard'); // 'standard' | 'adult'
@@ -235,6 +236,22 @@ export default function LiveStreamSystem({
               <p className="text-[11px] text-slate-400 font-semibold">پخش زنده استریمرهای تایید شده</p>
             </div>
           </div>
+
+          {isApprovedStreamer && (
+            <button
+              onClick={() => {
+                if (setIsLiveStudioOpen) {
+                  setIsLiveStudioOpen(true);
+                } else {
+                  setIsStartLiveModalOpen(true);
+                }
+              }}
+              className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 hover:opacity-95 text-white font-black text-xs shadow-lg shadow-pink-500/30 flex items-center gap-1.5 hover:scale-102 active:scale-95 transition"
+            >
+              <Video className="w-4 h-4 animate-pulse" />
+              <span>ورود به Live Studio 🎥</span>
+            </button>
+          )}
         </div>
 
         {/* MAIN TYPE TOGGLE (Standard Live vs Adult Live 18+) */}
