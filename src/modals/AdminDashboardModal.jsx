@@ -12,7 +12,7 @@ import {
   ShieldCheck, Globe, Eye, EyeOff, ShieldAlert, Users, Video, DollarSign,
   BarChart2, FileText, Settings, Search, Plus, Trash2, Edit3, CheckCircle2,
   XCircle, Lock, Unlock, AlertTriangle, Send, RefreshCw, X, Check, Award,
-  Activity, Crown, Shield, HelpCircle, MessageSquare, Heart, PhoneCall, Sparkles, Filter
+  Activity, Crown, Shield, HelpCircle, MessageSquare, Heart, PhoneCall, Sparkles, Filter, Download
 } from 'lucide-react';
 
 export default function AdminDashboardModal(props) {

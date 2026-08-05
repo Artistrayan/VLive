@@ -1,5 +1,6 @@
 import React from 'react';
 import { safeStorage } from '../../utils/safeStorage';
+import { economyService } from '../../services/economyService';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { 
   DollarSign, Wallet, CreditCard, RefreshCw, ArrowUpRight, History, Award,
@@ -469,14 +470,8 @@ export default function WalletTab(props) {
 
                 {/* COIN PACKAGES GRID */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                  {[
-                    { coins: 100, price: '1.99', badge: 'پک برنز', bonus: '' },
-                    { coins: 500, price: '8.99', badge: 'محبوب‌ترین 🔥', bonus: '+25 سکه هدیه' },
-                    { coins: 1000, price: '16.99', badge: 'پک طلایی 🌟', bonus: '+100 سکه هدیه' },
-                    { coins: 5000, price: '79.99', badge: 'پک الماس 💎', bonus: '+750 سکه هدیه' },
-                    { coins: 10000, price: '149.99', badge: 'پک وی‌آی‌پی 👑', bonus: '+2,000 سکه بونوس' }
-                  ].map((pack, i) => (
-                    <div key={i} className="p-4 rounded-3xl bg-slate-950 border border-amber-500/30 hover:border-amber-400 transition space-y-3 flex flex-col justify-between text-center relative overflow-hidden group">
+                  {economyService.getConfig().coinPackages.map((pack) => (
+                    <div key={pack.id} className="p-4 rounded-3xl bg-slate-950 border border-amber-500/30 hover:border-amber-400 transition space-y-3 flex flex-col justify-between text-center relative overflow-hidden group">
                       {pack.badge && (
                         <span className="absolute top-2 left-2 text-[11px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full shadow">
                           {pack.badge}
@@ -485,13 +480,13 @@ export default function WalletTab(props) {
                       <div className="pt-3">
                         <span className="text-3xl block">🪙</span>
                         <h4 className="text-xl font-black text-white mt-1 font-mono">{pack.coins.toLocaleString()} <span className="text-xs text-amber-300">Coins</span></h4>
-                        {pack.bonus && <span className="text-xs text-emerald-400 font-bold block mt-0.5">{pack.bonus}</span>}
+                        {pack.bonusPercent > 0 && <span className="text-xs text-emerald-400 font-bold block mt-0.5">+{pack.bonusPercent}% سکه هدیه</span>}
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-base font-black text-amber-400 font-mono">${pack.price} USD</p>
+                        <p className="text-base font-black text-amber-400 font-mono">${pack.priceUsd} USD</p>
                         <button
-                          onClick={() => handleBuyCoinsPack(pack.coins, pack.price)}
+                          onClick={() => handleBuyCoinsPack(pack.coins, pack.priceUsd)}
                           className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow-md transition transform group-hover:scale-105"
                         >
                           خرید آنلاین سکه

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import { economyService } from '../../services/economyService';
 import { 
   DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, Wallet, Gift,
   Crown, RefreshCw, Filter, Search, Download, FileText, CheckCircle2,
   XCircle, AlertTriangle, ShieldCheck, ShieldAlert, Cpu, Sparkles, Sliders,
   PieChart, BarChart3, Database, Lock, Unlock, Eye, Calendar, UserCheck,
-  Building, Layers, Receipt, Zap, AlertCircle, Clock, ChevronRight
+  Building, Layers, Receipt, Zap, AlertCircle, Clock, ChevronRight, Coins, PhoneCall, Shield
 } from 'lucide-react';
 
 export default function FinanceCenter({
@@ -170,6 +171,7 @@ export default function FinanceCenter({
       <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar border-b border-slate-800">
         {[
           { id: 'dashboard', label: '📊 داشبورد مالی', icon: BarChart3 },
+          { id: 'economy_pricing', label: '🪙 بانک مرکزی & قیمت‌گذاری', icon: Coins },
           { id: 'revenue', label: '📈 درآمد و کارمزد', icon: TrendingUp },
           { id: 'transactions', label: '💳 تراکنش‌ها', icon: Receipt },
           { id: 'wallets', label: '👛 کیف پول‌ها', icon: Wallet },
@@ -731,6 +733,179 @@ export default function FinanceCenter({
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ================= TAB: CENTRALIZED ECONOMY & FAIR PRICING ENGINE ================= */}
+      {financeSubTab === 'economy_pricing' && (
+        <div className="space-y-5 animate-fadeIn dir-rtl text-right">
+          
+          {/* Header Card */}
+          <div className="p-5 rounded-3xl bg-gradient-to-r from-slate-900 via-amber-950/40 to-purple-950/40 border border-amber-500/30 shadow-2xl space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center">
+                  <Coins className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">بانک مرکزی و موتور قیمت‌گذاری عادلانه (Central Economy Engine)</h3>
+                  <p className="text-xs text-slate-300">مدیریت متمرکز بسته‌های سکه، الماس استریمرها، قیمت هدایا، اشتراک VIP و تعرفه تماس‌ها</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const recs = economyService.generateAIEconomyInsights();
+                    showToast(`🤖 ${recs.length} پیشنهاد هوشمند قیمت‌گذاری تولید شد`);
+                  }}
+                  className="px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>تحلیل هوشمند اقتصاد</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs font-mono">
+              <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
+                <span className="text-slate-400 block text-[10px]">ارز اصلی (سکه 🪙)</span>
+                <span className="font-bold text-amber-400">خرید با دلار / USDT</span>
+              </div>
+              <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
+                <span className="text-slate-400 block text-[10px]">ارز استریمر (الماس 💎)</span>
+                <span className="font-bold text-cyan-300">درآمد هدایا & تسویه</span>
+              </div>
+              <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
+                <span className="text-slate-400 block text-[10px]">کمیسیون پلتفرم</span>
+                <span className="font-bold text-emerald-400">{economyService.getConfig().commissionRules.platformCommissionPercent}% درصد</span>
+              </div>
+              <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
+                <span className="text-slate-400 block text-[10px]">نرخ تبدیل الماس به دلار</span>
+                <span className="font-bold text-purple-300">100 💎 = $1.00 USDT</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 1: Coin Purchase Packages */}
+          <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+            <h4 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-2">
+              <Coins className="w-4 h-4 text-amber-400" />
+              <span>تنظیم بسته‌های فروش سکه (Coin Purchase Packages)</span>
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {economyService.getConfig().coinPackages.map((pack) => (
+                <div key={pack.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-amber-300 text-sm">{pack.coins.toLocaleString()} سکه 🪙</span>
+                    {pack.badge && <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">{pack.badge}</span>}
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-300">
+                    <span>قیمت (دلار):</span>
+                    <span className="font-mono font-bold text-emerald-400">${pack.priceUsd} USDT</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-300">
+                    <span>بونوس هدیه:</span>
+                    <span className="font-mono font-bold text-purple-300">{pack.bonusPercent}%+</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Section 2: Call Rates & VIP Plans */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Call Rates Card */}
+            <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+              <h4 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-2">
+                <PhoneCall className="w-4 h-4 text-cyan-400" />
+                <span>تعرفه تماس‌های صوتی و تصویری (Call Billing Rates)</span>
+              </h4>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-slate-300">تماس صوتی (دقیقه):</span>
+                  <span className="font-mono font-bold text-amber-300">{economyService.getConfig().callRates.audioCostPerMin} سکه</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-slate-300">تماس تصویری استاندارد (دقیقه):</span>
+                  <span className="font-mono font-bold text-amber-300">{economyService.getConfig().callRates.videoCostPerMin} سکه</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-slate-300">تماس تصویری بزرگسال 18+ (دقیقه):</span>
+                  <span className="font-mono font-bold text-rose-400">{economyService.getConfig().callRates.adultVideoCostPerMin} سکه</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-slate-300">ثانیه‌های اولیه رایگان (Free Grace):</span>
+                  <span className="font-mono font-bold text-emerald-400">{economyService.getConfig().callRates.freeFirstSeconds} ثانیه</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-slate-300">تخفیف ویژه کاربران VIP:</span>
+                  <span className="font-mono font-bold text-purple-300">{economyService.getConfig().callRates.vipDiscountPercent}% تخفیف</span>
+                </div>
+              </div>
+            </div>
+
+            {/* VIP Pricing Card */}
+            <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+              <h4 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-2">
+                <Crown className="w-4 h-4 text-amber-400" />
+                <span>تعرفه اشتراک‌های VIP & Adult VIP</span>
+              </h4>
+
+              <div className="space-y-2 text-xs">
+                <span className="font-bold text-amber-400 block">👑 اشتراک VIP عمومی:</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">
+                    <span className="text-slate-400 block text-[10px]">ماهانه</span>
+                    <span className="font-mono font-bold text-amber-300">{economyService.getConfig().vipPricing.monthly} سکه</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">
+                    <span className="text-slate-400 block text-[10px]">سالانه</span>
+                    <span className="font-mono font-bold text-amber-300">{economyService.getConfig().vipPricing.yearly} سکه</span>
+                  </div>
+                </div>
+
+                <span className="font-bold text-pink-400 block pt-2">🔞 اشتراک Adult VIP (18+):</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">
+                    <span className="text-slate-400 block text-[10px]">ماهانه</span>
+                    <span className="font-mono font-bold text-pink-300">{economyService.getConfig().adultVipPricing.monthly} سکه</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">
+                    <span className="text-slate-400 block text-[10px]">سالانه</span>
+                    <span className="font-mono font-bold text-pink-300">{economyService.getConfig().adultVipPricing.yearly} سکه</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Section 3: AI Anti-Fraud Audit */}
+          <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+            <h4 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-2">
+              <Shield className="w-4 h-4 text-emerald-400" />
+              <span>پایش هوشمند ضد تورم و ضد تقلب مالی (Anti-Fraud & Anti-Inflation)</span>
+            </h4>
+
+            <div className="space-y-2">
+              {economyService.runAntiFraudCheck().map((alert, idx) => (
+                <div key={idx} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${alert.severity === 'HIGH' ? 'bg-rose-500/20 text-rose-400' : alert.severity === 'MEDIUM' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
+                      {alert.severity}
+                    </span>
+                    <span className="text-slate-200">{alert.description}</span>
+                  </div>
+                  <span className="text-slate-400 font-mono text-[10px] shrink-0">{alert.suggestedAction}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       )}
 
