@@ -128,14 +128,16 @@ export default function App() {
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
   // AUTHENTICATION & ONBOARDING SYSTEM STATES (10-STEP SYSTEM)
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [hasRegistered, setHasRegistered] = useState(() => {
     return safeStorage.getItem('vlive_has_registered') === 'true';
+  });
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return safeStorage.getItem('vlive_has_registered') === 'true' && safeStorage.getItem('vlive_user_logged_in') !== 'false';
   });
   const [showEntrySplash, setShowEntrySplash] = useState(() => {
     return safeStorage.getItem('vlive_has_registered') === 'true';
   });
-  const [authStep, setAuthStep] = useState('main');
+  const [authStep, setAuthStep] = useState('welcome');
   const [selectedUser, setSelectedUser] = useState(null);
   const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
   const [isSmartMatchModalOpen, setIsSmartMatchModalOpen] = useState(false);
@@ -5428,11 +5430,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </button>
             </div>
 
-            {/* Camera Go-Live Icon Button (Always opens Host Live Stream Broadcast) */}
+            {/* Camera Go-Live & Studio Icon Button (Opens Full Streamer Center & Live Studio) */}
             <button 
-              onClick={() => setIsHostLiveOpen(true)} 
+              onClick={() => setIsStreamerCenterOpen(true)} 
               className="ml-1 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 border border-pink-400/80 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-300 relative shrink-0 shadow-[0_0_15px_rgba(236,72,153,0.7)] group"
-              title={loc('شروع و اجرای لایواستریم', 'Start Live Broadcast')}
+              title={loc('استودیو و اجرای لایواستریم', 'Live Broadcast & Streamer Studio')}
             >
               <Video className="w-4 h-4 text-white animate-pulse" />
               <span className="absolute -top-1 -right-1 bg-lime-400 text-slate-950 text-[8px] font-black w-3.5 h-3.5 flex items-center justify-center rounded-full border border-slate-950 shadow-md">+</span>
@@ -7987,6 +7989,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         setUserCoins={setUserCoins}
         showToast={showToast}
         onSwitchMainTab={setActiveTab}
+        setIsStartLiveModalOpen={() => setIsHostLiveOpen(true)}
         addAdminAuditLog={addAdminAuditLog}
       />
 
