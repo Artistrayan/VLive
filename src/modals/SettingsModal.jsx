@@ -3,7 +3,8 @@ import { safeStorage } from '../utils/safeStorage';
 import { 
   Settings, X, Search, User, ShieldCheck, Bell, Lock, Globe, Palette,
   Volume2, Video, Database, Award, HelpCircle, FileText, Info, Camera,
-  Crown, Smartphone, Check, ChevronRight, Sparkles, LogOut, Moon, Sun, Monitor
+  Crown, Smartphone, Check, ChevronRight, Sparkles, LogOut, Moon, Sun, Monitor,
+  Send, CheckCircle2, EyeOff, Eye, Shield, Sliders, MessageSquare, Wallet, Disc, Zap, Ban, Key, Share2, Copy, Trash2, AlertTriangle
 } from 'lucide-react';
 
 export default function SettingsModal(props) {

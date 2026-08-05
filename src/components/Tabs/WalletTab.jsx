@@ -5,7 +5,8 @@ import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { 
   DollarSign, Wallet, CreditCard, RefreshCw, ArrowUpRight, History, Award,
   Users, Gift, Crown, ShieldCheck, Check, Sparkles, ChevronRight, Copy, Share2,
-  TrendingUp, BarChart2, Video, MessageSquare, Star, Clock, AlertTriangle, Filter, Search, Plus, Radio, PhoneCall, Flame, Palette, BarChart3, Coins, Zap, Target, Calendar
+  TrendingUp, BarChart2, Video, MessageSquare, Star, Clock, AlertTriangle, Filter, Search, Plus, Radio, PhoneCall, Flame, Palette, BarChart3, Coins, Zap, Target, Calendar,
+  Play, CheckCircle2, Heart, Eye, Settings, Shield, LifeBuoy, Link, Send, Camera, Trophy, ShieldAlert, UserCheck
 } from 'lucide-react';
 import { CoinsIcon } from '../CommonBadges';
 

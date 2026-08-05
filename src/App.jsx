@@ -264,6 +264,15 @@ export default function App() {
   const [isLiveModalOpen, setIsLiveModalOpen] = useState(false);
   const [selectedHostForCall, setSelectedHostForCall] = useState(null);
   const [isDirectCallModalOpen, setIsDirectCallModalOpen] = useState(false);
+  const [scheduledCallsList, setScheduledCallsList] = useState([]);
+  const [selectedChatUser, setSelectedChatUser] = useState(null);
+  const [isAudioCallOpen, setIsAudioCallOpen] = useState(false);
+  const [selectedGiftRecipient, setSelectedGiftRecipient] = useState(null);
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
+  const setSelectedUserProfile = (userObj) => {
+    setSelectedUser(userObj);
+    setIsUserProfileModalOpen(true);
+  };
   const showTab = (tab) => setActiveTab(tab);
 const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     return safeStorage.getItem('vlive_host_usdt_address') || 'TKh8zXpQ7yM3vN1L9R2W4b6K8a0C';

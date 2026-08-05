@@ -12,7 +12,8 @@ import {
   ShieldCheck, Globe, Eye, EyeOff, ShieldAlert, Users, Video, DollarSign,
   BarChart2, FileText, Settings, Search, Plus, Trash2, Edit3, CheckCircle2,
   XCircle, Lock, Unlock, AlertTriangle, Send, RefreshCw, X, Check, Award,
-  Activity, Crown, Shield, HelpCircle, MessageSquare, Heart, PhoneCall, Sparkles, Filter, Download, AlertCircle
+  Activity, Crown, Shield, HelpCircle, MessageSquare, Heart, PhoneCall, Sparkles, Filter, Download, AlertCircle,
+  UserPlus, LifeBuoy, BadgeCheck, UserCheck
 } from 'lucide-react';
 
 export default function AdminDashboardModal(props) {
@@ -268,53 +269,67 @@ export default function AdminDashboardModal(props) {
 
       {/* MODAL 8: 100% REAL & FULLY EXECUTABLE 20-SECTION ADMIN DASHBOARD */}
       {isAdminPanelOpen && (
-<div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
-          <div className="w-full max-w-6xl card-3d p-4 sm:p-6 border border-amber-500/50 bg-slate-900/95 rounded-3xl space-y-4 max-h-[94vh] flex flex-col shadow-[0_0_80px_rgba(245,158,11,0.25)] text-right" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4">
+          <div className="w-full max-w-7xl card-3d p-3.5 sm:p-6 border border-amber-500/50 bg-slate-900/98 rounded-3xl space-y-3.5 max-h-[96vh] flex flex-col shadow-[0_0_100px_rgba(245,158,11,0.25)] text-right" dir={isRtl ? "rtl" : "ltr"}>
             
-            {/* TOP HEADER */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3" dir="ltr">
-              <div className="flex items-center gap-2.5 dir-rtl">
-                <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-slate-950 font-black shadow-lg">
+            {/* TOP HEADER - CLEAN RESPONSIVE FLEX LAYOUT */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-800/90 pb-3.5">
+              
+              {/* Title & Badge */}
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-black shadow-[0_0_20px_rgba(245,158,11,0.4)] shrink-0">
                   <ShieldCheck className="w-6 h-6 animate-pulse" />
                 </div>
                 <div>
-                  <h2 className="text-base sm:text-lg font-black text-amber-300 tracking-wide flex items-center gap-2">
-                    <span>👑 {loc('پنل مدیریت ارشد vLive+', 'vLive+ Super Admin Dashboard')}</span>
-                  </h2>
-                  <p className="text-[11px] text-slate-400">{loc('پنل کنترل مدیریت کامل کاربران، لایوها، مالی، امنیت و هوش مصنوعی', 'Full admin control panel for users, streams, finances, security, and AI')}</p>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base sm:text-lg font-black text-amber-300 tracking-wide">
+                      {loc('👑 پنل مدیریت ارشد vLive+', '👑 vLive+ Super Admin Dashboard')}
+                    </h2>
+                    <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold text-[10px] items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      LIVE
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">
+                    {loc('پنل کنترل مدیریت کامل کاربران، لایوها، مالی، امنیت و هوش مصنوعی', 'Full admin control panel for users, streams, finances, security, and AI')}
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                {/* Global Search Bar */}
-                <div className="relative flex-1 sm:w-60">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              {/* Action Toolbar & Search Bar */}
+              <div className="flex flex-wrap items-center justify-between lg:justify-end gap-2 w-full lg:w-auto">
+                {/* Global Search Input */}
+                <div className="relative flex-1 sm:flex-initial sm:w-64 min-w-[200px]">
+                  <Search className={`w-3.5 h-3.5 text-slate-400 absolute top-1/2 -translate-y-1/2 ${isRtl ? 'right-3' : 'left-3'}`} />
                   <input
                     type="text"
                     value={adminGlobalSearch}
                     onChange={e => setAdminGlobalSearch(e.target.value)}
                     placeholder="جستجوی سراسری (کاربر، لایو، تراکنش)..."
-                    className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-amber-500"
+                    className={`w-full py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder:text-slate-500 outline-none focus:border-amber-500/80 transition ${isRtl ? 'pr-8 pl-3' : 'pl-8 pr-3'}`}
                   />
                 </div>
 
                 {/* Export Buttons */}
-                <button
-                  onClick={() => addAdminAuditLog('گزارش خروجی اکسل (Excel) دانلود شد')}
-                  className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold border border-amber-500/30 flex items-center gap-1"
-                >
-                  <Download className="w-3 h-3" />
-                  Excel
-                </button>
-                
-                <button
-                  onClick={() => addAdminAuditLog('گزارش خروجی پی‌دی‌اف (PDF) تولید شد')}
-                  className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 text-[10px] font-bold border border-rose-500/30 flex items-center gap-1"
-                >
-                  <FileText className="w-3 h-3" />
-                  PDF
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => addAdminAuditLog('گزارش خروجی اکسل (Excel) دانلود شد')}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-amber-300 text-[11px] font-bold border border-amber-500/30 flex items-center gap-1 transition"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Excel</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => addAdminAuditLog('گزارش خروجی پی‌دی‌اف (PDF) تولید شد')}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-rose-300 text-[11px] font-bold border border-rose-500/30 flex items-center gap-1 transition"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>PDF</span>
+                  </button>
+                </div>
 
+                {/* Visual UI Builder Toggle */}
                 {(isUserRayan || activeAdminSession?.role === 'Super Admin') && (
                   <button
                     onClick={() => {
@@ -323,57 +338,67 @@ export default function AdminDashboardModal(props) {
                       setIsInspectorOpen(true);
                       if (showToast) showToast('🎨 Visual UI Builder Mode Activated!');
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black text-[11px] shadow-lg hover:brightness-110 active:scale-95 transition flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black text-[11px] shadow-lg hover:brightness-110 active:scale-95 transition flex items-center gap-1.5 shrink-0"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>🎨 Visual UI Builder</span>
+                    <Sparkles className="w-3.5 h-3.5 text-slate-950 shrink-0" />
+                    <span>Visual Builder</span>
                   </button>
                 )}
 
+                {/* Close Button */}
                 <button 
                   onClick={() => setIsAdminPanelOpen(false)} 
-                  className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition"
+                  className="p-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition shrink-0 ml-auto lg:ml-0"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            {/* 20 SIDEBAR / CHIPS NAV TABS */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar text-xs border-b border-slate-800/80">
-              {[
-                { id: 'dashboard', label: loc('📊 داشبورد', '📊 Dashboard') },
-                { id: 'finance', label: loc('💵 مرکز امور مالی', '💵 Finance Center') },
-                { id: 'users', label: loc('👥 کاربران', '👥 Users') },
-                { id: 'live', label: loc('🎥 لایوها', '🎥 Live Streams') },
-                { id: 'reports', label: loc('💬 گزارش‌ها', '💬 Reports') },
-                { id: 'wallet', label: loc('💰 کیف پول', '💰 Wallet') },
-                { id: 'gifts', label: loc('🎁 هدایا', '🎁 Gifts') },
-                { id: 'vip', label: loc('👑 VIP اشتراک', '👑 VIP Club') },
-                { id: 'ads', label: loc('📢 تبلیغات', '📢 Ads & Banners') },
-                { id: 'events', label: loc('🏆 مسابقات', '🏆 Events') },
-                { id: 'notifications', label: loc('🔔 اعلان‌ها', '🔔 Notifications') },
-                { id: 'moderation', label: loc('🛡 محتوا', '🛡 Moderation') },
-                { id: 'statistics', label: loc('📈 آمار', '📈 Statistics') },
-                { id: 'support', label: loc('🎫 تیکت‌ها', '🎫 Support') },
-                { id: 'verification', label: loc('🔑 تأیید هویت', '🔑 Verification') },
-                { id: 'roles', label: loc('👥 ادمین‌ها', '👥 Admin Roles') },
-                { id: 'security', label: loc('🔒 امنیت', '🔒 Security') },
-                { id: 'settings', label: loc('⚙️ تنظیمات', '⚙️ Settings') },
-                { id: 'aicopilot', label: loc('✨ کوپایلوت هوشمند', '✨ AI Copilot') },
-                { id: 'aimod', label: loc('🤖 هوش مصنوعی', '🤖 AI Mod') },
-                { id: 'aisecurity', label: loc('🛡 مرکز امنیت AI', '🛡 AI Security') },
-                { id: 'backup', label: loc('💾 بکاپ', '💾 Backups') },
-                { id: 'logs', label: loc('📜 لاگ‌ها', '📜 System Logs') }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setAdminActiveTab(tab.id)}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap border transition ${adminActiveTab === tab.id ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 border-amber-300 shadow-md font-black scale-105' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'}`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            {/* 23 CATEGORIZED NAV TABS - TOUCH-FRIENDLY & SCROLLABLE WITH SHRINK-0 */}
+            <div className="bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800/80 shadow-inner">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth text-xs">
+                {[
+                  { id: 'dashboard', label: loc('📊 داشبورد', '📊 Dashboard') },
+                  { id: 'finance', label: loc('💵 مرکز امور مالی', '💵 Finance Center') },
+                  { id: 'users', label: loc('👥 کاربران', '👥 Users') },
+                  { id: 'live', label: loc('🎥 لایوها', '🎥 Live Streams') },
+                  { id: 'reports', label: loc('💬 گزارش‌ها', '💬 Reports') },
+                  { id: 'wallet', label: loc('💰 کیف پول', '💰 Wallet') },
+                  { id: 'gifts', label: loc('🎁 هدایا', '🎁 Gifts') },
+                  { id: 'vip', label: loc('👑 VIP اشتراک', '👑 VIP Club') },
+                  { id: 'ads', label: loc('📢 تبلیغات', '📢 Ads & Banners') },
+                  { id: 'events', label: loc('🏆 مسابقات', '🏆 Events') },
+                  { id: 'notifications', label: loc('🔔 اعلان‌ها', '🔔 Notifications') },
+                  { id: 'moderation', label: loc('🛡 محتوا', '🛡 Moderation') },
+                  { id: 'statistics', label: loc('📈 آمار', '📈 Statistics') },
+                  { id: 'support', label: loc('🎫 تیکت‌ها', '🎫 Support') },
+                  { id: 'verification', label: loc('🔑 تأیید هویت', '🔑 Verification') },
+                  { id: 'roles', label: loc('👥 ادمین‌ها', '👥 Admin Roles') },
+                  { id: 'security', label: loc('🔒 امنیت', '🔒 Security') },
+                  { id: 'settings', label: loc('⚙️ تنظیمات', '⚙️ Settings') },
+                  { id: 'aicopilot', label: loc('✨ کوپایلوت', '✨ AI Copilot') },
+                  { id: 'aimod', label: loc('🤖 هوش مصنوعی', '🤖 AI Mod') },
+                  { id: 'aisecurity', label: loc('🛡 امنیت AI', '🛡 AI Security') },
+                  { id: 'backup', label: loc('💾 بکاپ', '💾 Backups') },
+                  { id: 'logs', label: loc('📜 لاگ‌ها', '📜 System Logs') }
+                ].map(tab => {
+                  const isActive = adminActiveTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setAdminActiveTab(tab.id)}
+                      className={`shrink-0 px-3.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                        isActive
+                          ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 border-amber-300 shadow-md shadow-amber-500/20 font-black scale-100'
+                          : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* PANEL BODY CONTENT AREA */}
