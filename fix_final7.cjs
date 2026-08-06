@@ -1,0 +1,5 @@
+const fs = require('fs');
+let code = fs.readFileSync('src/App.jsx', 'utf8');
+// Fix missing opening tag for div around 7110
+code = code.replace(/<button\n\s*onClick=\{\(\) \=\> setIsLiveInfoPanelOpen\(!isLiveInfoPanelOpen\)\}\n\s*className="p-1\.5 rounded-xl bg-slate-900\/50 border border-slate-700\/50 text-slate-300 hover:text-white hover:bg-slate-800 transition"\n\s*>\n\s*<Info className="w-4 h-4" \/>\n\s*<\/button>\n\s*<\/div>\n\s*<\/div>\n\s*\{\/\* ================= EXPANDABLE LIVE INFORMATION/g, "<button\n                    onClick={() => setIsLiveInfoPanelOpen(!isLiveInfoPanelOpen)}\n                    className=\"p-1.5 rounded-xl bg-slate-900/50 border border-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-800 transition\"\n                  >\n                    <Info className=\"w-4 h-4\" />\n                  </button>\n                </div>\n              </div>\n\n            {/* ================= EXPANDABLE LIVE INFORMATION");
+fs.writeFileSync('src/App.jsx', code, 'utf8');

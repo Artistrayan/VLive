@@ -6,11 +6,11 @@ import {
 } from 'lucide-react';
 
 const BG_PRESETS = [
-  { name: 'شفاف (Transparent)', value: 'transparent' },
-  { name: 'شیشه‌ای تیره (Glass Slate)', value: 'rgba(15, 23, 42, 0.85)' },
-  { name: 'گرادیان طلایی (Gold Gradient)', value: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.9))' },
-  { name: 'گرادیان صورتی (Pink Gradient)', value: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(15, 23, 42, 0.9))' },
-  { name: 'گرادیان سایبر (Cyber Cyan)', value: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(15, 23, 42, 0.9))' }
+  { name: window.loc('شفاف (Transparent)', 'Transparent'), value: 'transparent' },
+  { name: window.loc('شیشه‌ای تیره (Glass Slate)', 'Dark glass (Glass Slate)'), value: 'rgba(15, 23, 42, 0.85)' },
+  { name: window.loc('گرادیان طلایی (Gold Gradient)', 'Gold Gradient'), value: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.9))' },
+  { name: window.loc('گرادیان صورتی (Pink Gradient)', 'Pink Gradient'), value: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(15, 23, 42, 0.9))' },
+  { name: window.loc('گرادیان سایبر (Cyber Cyan)', 'Cyber ​​gradient (Cyber ​​Cyan)'), value: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(15, 23, 42, 0.9))' }
 ];
 
 export default function InspectorPanel() {
@@ -44,7 +44,7 @@ export default function InspectorPanel() {
         className="fixed left-3 top-20 z-40 p-3 rounded-2xl bg-slate-900 border border-amber-500/60 text-amber-400 shadow-2xl hover:scale-105 transition flex items-center gap-2 font-bold text-xs"
       >
         <Sliders className="w-4 h-4 animate-pulse" />
-        <span>باز کردن پنل تنظیمات UI</span>
+        <span>{window.loc('باز کردن پنل تنظیمات UI', 'Open the UI settings panel')}</span>
       </button>
     );
   }
@@ -56,8 +56,8 @@ export default function InspectorPanel() {
         <div className="flex items-center gap-2">
           <Sliders className="w-5 h-5 text-amber-400" />
           <div>
-            <h3 className="text-xs font-black text-amber-300">پنل تنظیمات و ویرایشگر UI</h3>
-            <p className="text-[10px] text-slate-400">صفحه فعال: <span className="text-cyan-400 font-bold">{pageConfig.title || selectedPage}</span></p>
+            <h3 className="text-xs font-black text-amber-300">{window.loc('پنل تنظیمات و ویرایشگر UI', 'Settings panel and UI editor')}</h3>
+            <p className="text-[10px] text-slate-400">{window.loc('صفحه فعال:', 'Active page:')} <span className="text-cyan-400 font-bold">{pageConfig.title || selectedPage}</span></p>
           </div>
         </div>
         <button
@@ -79,7 +79,7 @@ export default function InspectorPanel() {
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
-          <span>بخش‌ها ({sections.length})</span>
+          <span>{window.loc('بخش‌ها (', 'Sections (')}{sections.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('properties')}
@@ -90,7 +90,7 @@ export default function InspectorPanel() {
           }`}
         >
           <Sliders className="w-3.5 h-3.5" />
-          <span>استایل بخش</span>
+          <span>{window.loc('استایل بخش', 'Style section')}</span>
         </button>
       </div>
 
@@ -99,13 +99,13 @@ export default function InspectorPanel() {
         {activeTab === 'sections' ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between text-[11px] text-slate-400">
-              <span>ترتیب و نمایش بخش‌های صفحه</span>
+              <span>{window.loc('ترتیب و نمایش بخش‌های صفحه', 'Arrangement and display of page sections')}</span>
               <button
                 onClick={() => resetPage(selectedPage)}
                 className="text-amber-400 hover:underline flex items-center gap-1"
               >
                 <RotateCcw className="w-3 h-3" />
-                <span>بازنشانی</span>
+                <span>{window.loc('بازنشانی', 'reset')}</span>
               </button>
             </div>
 
@@ -170,14 +170,14 @@ export default function InspectorPanel() {
             {selectedSection ? (
               <>
                 <div className="p-3 rounded-2xl bg-slate-950 border border-amber-500/30 space-y-1">
-                  <span className="text-[10px] text-amber-400 font-bold block">بخش انتخاب‌شده:</span>
+                  <span className="text-[10px] text-amber-400 font-bold block">{window.loc('بخش انتخاب‌شده:', 'Selected section:')}</span>
                   <h4 className="font-black text-white text-xs">{selectedSection.label}</h4>
                   <span className="font-mono text-[10px] text-slate-500 block">{selectedSection.id}</span>
                 </div>
 
                 {/* VISIBILITY TOGGLE */}
                 <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                  <span className="text-slate-300 font-medium">وضعیت نمایش در صفحه:</span>
+                  <span className="text-slate-300 font-medium">{window.loc('وضعیت نمایش در صفحه:', 'Display status on the page:')}</span>
                   <button
                     onClick={() => toggleSectionVisibility(selectedPage, selectedSection.id)}
                     className={`px-3 py-1 rounded-xl text-xs font-bold ${
@@ -186,14 +186,14 @@ export default function InspectorPanel() {
                         : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
                     }`}
                   >
-                    {selectedSection.visible ? 'نمایش داده می‌شود' : 'مخفی شده'}
+                    {selectedSection.visible ? window.loc('نمایش داده می‌شود', 'is displayed') : window.loc('مخفی شده', 'hidden')}
                   </button>
                 </div>
 
                 {/* PADDING SLIDER */}
                 <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
                   <div className="flex justify-between text-slate-300 font-medium">
-                    <span>فاصله داخلی (Padding):</span>
+                    <span>{window.loc('فاصله داخلی (Padding):', 'Internal distance (Padding):')}</span>
                     <span className="font-mono text-amber-300">{selectedSection.padding ?? 16}px</span>
                   </div>
                   <input
@@ -210,7 +210,7 @@ export default function InspectorPanel() {
                 {/* MARGIN SLIDER */}
                 <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
                   <div className="flex justify-between text-slate-300 font-medium">
-                    <span>فاصله بیرونی (Margin):</span>
+                    <span>{window.loc('فاصله بیرونی (Margin):', 'Margin:')}</span>
                     <span className="font-mono text-amber-300">{selectedSection.margin ?? 12}px</span>
                   </div>
                   <input
@@ -227,7 +227,7 @@ export default function InspectorPanel() {
                 {/* BORDER RADIUS SLIDER */}
                 <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
                   <div className="flex justify-between text-slate-300 font-medium">
-                    <span>انحنای گوشه (Border Radius):</span>
+                    <span>{window.loc('انحنای گوشه (Border Radius):', 'Corner curvature (Border Radius):')}</span>
                     <span className="font-mono text-amber-300">{selectedSection.borderRadius ?? 16}px</span>
                   </div>
                   <input
@@ -243,23 +243,23 @@ export default function InspectorPanel() {
 
                 {/* SHADOW SELECTOR */}
                 <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
-                  <label className="block text-slate-300 font-medium">سایه و افکت پیرامون (Shadow):</label>
+                  <label className="block text-slate-300 font-medium">{window.loc('سایه و افکت پیرامون (Shadow):', 'Shadow and surrounding effect (Shadow):')}</label>
                   <select
                     value={selectedSection.shadow || 'sm'}
                     onChange={e => updateSectionStyle(selectedPage, selectedSection.id, { shadow: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-amber-300 outline-none"
                   >
-                    <option value="none">بدون سایه (None)</option>
-                    <option value="sm">ملایم (Soft)</option>
-                    <option value="md">متوسط (Medium)</option>
-                    <option value="lg">سایه عمیق (Heavy)</option>
-                    <option value="glow">درخشش نئونی (Glow)</option>
+                    <option value="none">{window.loc('بدون سایه (None)', 'No shadow (None)')}</option>
+                    <option value="sm">{window.loc('ملایم (Soft)', 'Soft')}</option>
+                    <option value="md">{window.loc('متوسط (Medium)', 'Medium')}</option>
+                    <option value="lg">{window.loc('سایه عمیق (Heavy)', 'heavy shadow')}</option>
+                    <option value="glow">{window.loc('درخشش نئونی (Glow)', 'Glow')}</option>
                   </select>
                 </div>
 
                 {/* BACKGROUND PRESET */}
                 <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <label className="block text-slate-300 font-medium">پس‌زمینه اختصاصی بخش (Background):</label>
+                  <label className="block text-slate-300 font-medium">{window.loc('پس‌زمینه اختصاصی بخش (Background):', 'Specific background of the section (Background):')}</label>
                   <div className="space-y-1.5">
                     {BG_PRESETS.map((preset, idx) => (
                       <button
@@ -281,7 +281,7 @@ export default function InspectorPanel() {
             ) : (
               <div className="text-center py-12 text-slate-500 space-y-2">
                 <Sliders className="w-8 h-8 mx-auto opacity-30 text-amber-400" />
-                <p>لطفاً یک بخش را از تب "بخش‌ها" یا با کلیک روی صفحه انتخاب کنید.</p>
+                <p>{window.loc('لطفاً یک بخش را از تب "بخش‌ها" یا با کلیک روی صفحه انتخاب کنید.', 'Please select a section from the Sections tab or by clicking on the page.')}</p>
               </div>
             )}
           </div>

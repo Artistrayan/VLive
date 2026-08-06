@@ -417,21 +417,21 @@ export const apiAdmin = {
   },
   async analyzeLiveStreamAi(streamData) {
     const issues = [];
-    if (!streamData.host || streamData.host.includes('Unknown')) issues.push('عدم تطابق تصویر استریمر با پروفایل تایید شده (AI Flag)');
-    if (streamData.title && (streamData.title.includes('تست') || streamData.title.includes('خالی'))) issues.push('کادر تصویر خالی برای مدت طولانی (Empty Camera AI Alert)');
-    if (streamData.category === 'General' && streamData.live_type === 'adult') issues.push('عدم تطابق دسته‌بندی استریم با نوع محتوا (Category Mismatch)');
+    if (!streamData.host || streamData.host.includes('Unknown')) issues.push(window.loc('عدم تطابق تصویر استریمر با پروفایل تایید شده (AI Flag)', 'The streamer\'s image does not match the approved profile (AI Flag)'));
+    if (streamData.title && (streamData.title.includes(window.loc('تست', 'Test')) || streamData.title.includes(window.loc('خالی', 'vacant')))) issues.push(window.loc('کادر تصویر خالی برای مدت طولانی (Empty Camera AI Alert)', 'Empty image frame for a long time (Empty Camera AI Alert)'));
+    if (streamData.category === 'General' && streamData.live_type === 'adult') issues.push(window.loc('عدم تطابق دسته‌بندی استریم با نوع محتوا (Category Mismatch)', 'Stream category mismatch with content type (Category Mismatch)'));
 
     const isFlagged = issues.length > 0;
-    const reason = issues.length > 0 ? issues.join(' | ') : 'شناسایی فعالیت مشکوک بصری توسط هوش مصنوعی';
+    const reason = issues.length > 0 ? issues.join(' | ') : window.loc('شناسایی فعالیت مشکوک بصری توسط هوش مصنوعی', 'Identification of suspicious visual activity by artificial intelligence');
 
     return {
       flagged: isFlagged,
       reason: reason,
       confidence: 0.94,
-      recommendation: 'گزارش جهت بررسی و تصمیم‌گیری نهایی به ادمین ارسال گردید'
+      recommendation: window.loc('گزارش جهت بررسی و تصمیم‌گیری نهایی به ادمین ارسال گردید', 'The report was sent to the administrator for review and final decision')
     };
   },
-  async analyzeReportAi(params) { return { analysis: 'بررسی هوش مصنوعی: نیازمند تصمیم‌گیری نهایی ادمین' }; },
+  async analyzeReportAi(params) { return { analysis: window.loc('بررسی هوش مصنوعی: نیازمند تصمیم‌گیری نهایی ادمین', 'Artificial intelligence review: requires the final decision of the admin') }; },
   async moderateChatAi(params) { return { decision: 'Allowed' }; },
   async getSupportAiSuggestion(params) { return { suggestion: 'Support suggestion' }; },
   async verifyStreamerAi(params) { return { verified: true }; },

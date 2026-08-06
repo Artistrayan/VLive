@@ -157,10 +157,10 @@ export default function AdminDashboardModal(props) {
             
             <div className="text-center">
               <h3 className="text-base sm:text-lg font-black text-amber-300">
-                🔑 ورود به بخش مدیریت (احراز هویت دو مرحله‌ای)
+                {window.loc('🔑 ورود به بخش مدیریت (احراز هویت دو مرحله‌ای)', '🔑 Entering the management section (two-step authentication)')}
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                تأیید ای‌دی عددی تلگرام و ورود با نام کاربری و رمز عبور اختصاصی مدیریت
+                {window.loc('تأیید ای‌دی عددی تلگرام و ورود با نام کاربری و رمز عبور اختصاصی مدیریت', 'Verification of Telegram\'s numeric ID and login with the username and password of management')}
               </p>
             </div>
 
@@ -168,7 +168,7 @@ export default function AdminDashboardModal(props) {
             <div className="p-3.5 rounded-2xl bg-slate-950 border border-cyan-800/60 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4 text-cyan-400" />
-                <span className="text-slate-300 font-medium">ای‌دی عددی تلگرام شناسایی‌شده:</span>
+                <span className="text-slate-300 font-medium">{window.loc('ای‌دی عددی تلگرام شناسایی‌شده:', 'Identified Telegram numeric ID:')}</span>
               </div>
               <span className="font-mono font-bold text-cyan-300 bg-cyan-950 px-2.5 py-1 rounded-xl border border-cyan-500/30">
                 {currentTelegramId || '8973478139'}
@@ -179,20 +179,20 @@ export default function AdminDashboardModal(props) {
             <div className="space-y-3 pt-1 text-xs text-right">
               <div>
                 <label className="block text-slate-300 font-bold mb-1">
-                  👤 نام کاربری ادمین (Admin Username):
+                  {window.loc('👤 نام کاربری ادمین (Admin Username):', '👤 Admin Username:')}
                 </label>
                 <input
                   type="text"
                   value={enteredAdminUsername}
                   onChange={e => setEnteredAdminUsername(e.target.value)}
-                  placeholder={loc('نام کاربری ادمین', 'Admin Username')}
+                  placeholder={window.loc('نام کاربری ادمین', 'Admin Username')}
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-semibold text-xs outline-none focus:border-amber-500"
                 />
               </div>
 
               <div>
                 <label className="block text-slate-300 font-bold mb-1">
-                  🔒 رمز عبور ادمین (Admin Password):
+                  {window.loc('🔒 رمز عبور ادمین (Admin Password):', '🔒 Admin Password:')}
                 </label>
                 <div className="relative">
                   <input
@@ -222,7 +222,7 @@ export default function AdminDashboardModal(props) {
                     const cleanTg = String(currentTelegramId).trim();
 
                     if (!cleanUser || !cleanPass) {
-                      showToast('❌ لطفاً نام کاربری و رمز عبور ادمین را وارد کنید');
+                      showToast(window.loc('❌ لطفاً نام کاربری و رمز عبور ادمین را وارد کنید', '❌ Please enter admin username and password'));
                       return;
                     }
 
@@ -242,14 +242,14 @@ export default function AdminDashboardModal(props) {
                       setIsAdminPanelOpen(true);
                       setEnteredAdminUsername('');
                       setEnteredAdminPassword('');
-                      showToast('👑 ورود موفقیت‌آمیز ادمین! خوش آمدید.');
+                      showToast(window.loc('👑 ورود موفقیت‌آمیز ادمین! خوش آمدید.', '👑 Successful admin login! welcome'));
                     } else {
-                      showToast('❌ نام کاربری، رمز عبور یا ای‌دی تلگرام اشتباه است');
+                      showToast(window.loc('❌ نام کاربری، رمز عبور یا ای‌دی تلگرام اشتباه است', '❌ username, password or Telegram ID is wrong'));
                     }
                   }}
                   className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition"
                 >
-                  تأیید و ورود به پنل ادمین
+                  {window.loc('تأیید و ورود به پنل ادمین', 'Verification and login to the admin panel')}
                 </button>
                 <button
                   onClick={() => {
@@ -259,7 +259,7 @@ export default function AdminDashboardModal(props) {
                   }}
                   className="px-4 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-xs hover:text-white"
                 >
-                  انصراف
+                  {window.loc('انصراف', 'opt out')}
                 </button>
               </div>
             </div>
@@ -283,7 +283,7 @@ export default function AdminDashboardModal(props) {
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-base sm:text-lg font-black text-amber-300 tracking-wide">
-                      {loc('👑 پنل مدیریت ارشد vLive+', '👑 vLive+ Super Admin Dashboard')}
+                      {window.loc('👑 پنل مدیریت ارشد vLive+', '👑 vLive+ Super Admin Dashboard')}
                     </h2>
                     <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold text-[10px] items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
@@ -291,7 +291,7 @@ export default function AdminDashboardModal(props) {
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">
-                    {loc('پنل کنترل مدیریت کامل کاربران، لایوها، مالی، امنیت و هوش مصنوعی', 'Full admin control panel for users, streams, finances, security, and AI')}
+                    {window.loc('پنل کنترل مدیریت کامل کاربران، لایوها، مالی، امنیت و هوش مصنوعی', 'Full admin control panel for users, streams, finances, security, and AI')}
                   </p>
                 </div>
               </div>
@@ -305,7 +305,7 @@ export default function AdminDashboardModal(props) {
                     type="text"
                     value={adminGlobalSearch}
                     onChange={e => setAdminGlobalSearch(e.target.value)}
-                    placeholder="جستجوی سراسری (کاربر، لایو، تراکنش)..."
+                    placeholder={window.loc('جستجوی سراسری (کاربر، لایو، تراکنش)...', 'Global search (user, live, transaction)...')}
                     className={`w-full py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder:text-slate-500 outline-none focus:border-amber-500/80 transition ${isRtl ? 'pr-8 pl-3' : 'pl-8 pr-3'}`}
                   />
                 </div>
@@ -313,7 +313,7 @@ export default function AdminDashboardModal(props) {
                 {/* Export Buttons */}
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
-                    onClick={() => addAdminAuditLog('گزارش خروجی اکسل (Excel) دانلود شد')}
+                    onClick={() => addAdminAuditLog(window.loc('گزارش خروجی اکسل (Excel) دانلود شد', 'Excel output report was downloaded'))}
                     className="px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-amber-300 text-[11px] font-bold border border-amber-500/30 flex items-center gap-1 transition"
                   >
                     <Download className="w-3.5 h-3.5" />
@@ -321,7 +321,7 @@ export default function AdminDashboardModal(props) {
                   </button>
                   
                   <button
-                    onClick={() => addAdminAuditLog('گزارش خروجی پی‌دی‌اف (PDF) تولید شد')}
+                    onClick={() => addAdminAuditLog(window.loc('گزارش خروجی پی‌دی‌اف (PDF) تولید شد', 'A PDF output report was generated'))}
                     className="px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-rose-300 text-[11px] font-bold border border-rose-500/30 flex items-center gap-1 transition"
                   >
                     <FileText className="w-3.5 h-3.5" />
@@ -359,29 +359,29 @@ export default function AdminDashboardModal(props) {
             <div className="bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800/80 shadow-inner">
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth text-xs">
                 {[
-                  { id: 'dashboard', label: loc('📊 داشبورد', '📊 Dashboard') },
-                  { id: 'finance', label: loc('💵 مرکز امور مالی', '💵 Finance Center') },
-                  { id: 'users', label: loc('👥 کاربران', '👥 Users') },
-                  { id: 'live', label: loc('🎥 لایوها', '🎥 Live Streams') },
-                  { id: 'reports', label: loc('💬 گزارش‌ها', '💬 Reports') },
-                  { id: 'wallet', label: loc('💰 کیف پول', '💰 Wallet') },
-                  { id: 'gifts', label: loc('🎁 هدایا', '🎁 Gifts') },
-                  { id: 'vip', label: loc('👑 VIP اشتراک', '👑 VIP Club') },
-                  { id: 'ads', label: loc('📢 تبلیغات', '📢 Ads & Banners') },
-                  { id: 'events', label: loc('🏆 مسابقات', '🏆 Events') },
-                  { id: 'notifications', label: loc('🔔 اعلان‌ها', '🔔 Notifications') },
-                  { id: 'moderation', label: loc('🛡 محتوا', '🛡 Moderation') },
-                  { id: 'statistics', label: loc('📈 آمار', '📈 Statistics') },
-                  { id: 'support', label: loc('🎫 تیکت‌ها', '🎫 Support') },
-                  { id: 'verification', label: loc('🔑 تأیید هویت', '🔑 Verification') },
-                  { id: 'roles', label: loc('👥 ادمین‌ها', '👥 Admin Roles') },
-                  { id: 'security', label: loc('🔒 امنیت', '🔒 Security') },
-                  { id: 'settings', label: loc('⚙️ تنظیمات', '⚙️ Settings') },
-                  { id: 'aicopilot', label: loc('✨ کوپایلوت', '✨ AI Copilot') },
-                  { id: 'aimod', label: loc('🤖 هوش مصنوعی', '🤖 AI Mod') },
-                  { id: 'aisecurity', label: loc('🛡 امنیت AI', '🛡 AI Security') },
-                  { id: 'backup', label: loc('💾 بکاپ', '💾 Backups') },
-                  { id: 'logs', label: loc('📜 لاگ‌ها', '📜 System Logs') }
+                  { id: 'dashboard', label: window.loc('📊 داشبورد', '📊 Dashboard') },
+                  { id: 'finance', label: window.loc('💵 مرکز امور مالی', '💵 Finance Center') },
+                  { id: 'users', label: window.loc('👥 کاربران', '👥 Users') },
+                  { id: 'live', label: window.loc('🎥 لایوها', '🎥 Live Streams') },
+                  { id: 'reports', label: window.loc('💬 گزارش‌ها', '💬 Reports') },
+                  { id: 'wallet', label: window.loc('💰 کیف پول', '💰 Wallet') },
+                  { id: 'gifts', label: window.loc('🎁 هدایا', '🎁 Gifts') },
+                  { id: 'vip', label: window.loc('👑 VIP اشتراک', '👑 VIP Club') },
+                  { id: 'ads', label: window.loc('📢 تبلیغات', '📢 Ads & Banners') },
+                  { id: 'events', label: window.loc('🏆 مسابقات', '🏆 Events') },
+                  { id: 'notifications', label: window.loc('🔔 اعلان‌ها', '🔔 Notifications') },
+                  { id: 'moderation', label: window.loc('🛡 محتوا', '🛡 Moderation') },
+                  { id: 'statistics', label: window.loc('📈 آمار', '📈 Statistics') },
+                  { id: 'support', label: window.loc('🎫 تیکت‌ها', '🎫 Support') },
+                  { id: 'verification', label: window.loc('🔑 تأیید هویت', '🔑 Verification') },
+                  { id: 'roles', label: window.loc('👥 ادمین‌ها', '👥 Admin Roles') },
+                  { id: 'security', label: window.loc('🔒 امنیت', '🔒 Security') },
+                  { id: 'settings', label: window.loc('⚙️ تنظیمات', '⚙️ Settings') },
+                  { id: 'aicopilot', label: window.loc('✨ کوپایلوت', '✨ AI Copilot') },
+                  { id: 'aimod', label: window.loc('🤖 هوش مصنوعی', '🤖 AI Mod') },
+                  { id: 'aisecurity', label: window.loc('🛡 امنیت AI', '🛡 AI Security') },
+                  { id: 'backup', label: window.loc('💾 بکاپ', '💾 Backups') },
+                  { id: 'logs', label: window.loc('📜 لاگ‌ها', '📜 System Logs') }
                 ].map(tab => {
                   const isActive = adminActiveTab === tab.id;
                   return (
@@ -412,15 +412,15 @@ export default function AdminDashboardModal(props) {
                     <div className="flex items-center gap-2 text-rose-200">
                       <AlertTriangle className="w-5 h-5 text-rose-400 animate-bounce" />
                       <div>
-                        <p className="font-bold">🚨 هشدار فوریت: افزایش غیرعادی گزارش‌های تخلف!</p>
-                        <span className="text-[10px] text-slate-300">لایو استریم شماره ۱۰۴۲ در ۵ دقیقه گذشته ۱۴ گزارش دریافت کرده است. بررسی فوری لازم است.</span>
+                        <p className="font-bold">{window.loc('🚨 هشدار فوریت: افزایش غیرعادی گزارش‌های تخلف!', '🚨 Urgent warning: unusual increase in violation reports!')}</p>
+                        <span className="text-[10px] text-slate-300">{window.loc('لایو استریم شماره ۱۰۴۲ در ۵ دقیقه گذشته ۱۴ گزارش دریافت کرده است. بررسی فوری لازم است.', 'Live stream number 1042 has received 14 reports in the last 5 minutes. Immediate investigation is required.')}</span>
                       </div>
                     </div>
                     <button
                       onClick={() => setAdminActiveTab('live')}
                       className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] whitespace-nowrap"
                     >
-                      بررسی لایو استریم
+                      {window.loc('بررسی لایو استریم', 'Live stream review')}
                     </button>
                   </div>
 
@@ -428,82 +428,82 @@ export default function AdminDashboardModal(props) {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5 text-cyan-400" /> کل کاربران
+                        <Users className="w-3.5 h-3.5 text-cyan-400" /> {window.loc('کل کاربران', 'Total users')}
                       </span>
                       <p className="text-base font-black text-white">{adminUsersList.length + 12836}</p>
-                      <span className="text-[9px] text-emerald-400">+۱۴٪ این هفته</span>
+                      <span className="text-[9px] text-emerald-400">{window.loc('+۱۴٪ این هفته', '+14% this week')}</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <Activity className="w-3.5 h-3.5 text-emerald-400" /> کاربران آنلاین
+                        <Activity className="w-3.5 h-3.5 text-emerald-400" /> {window.loc('کاربران آنلاین', 'Online users')}
                       </span>
-                      <p className="text-base font-black text-emerald-400">۱,۴۹۲ نفر</p>
-                      <span className="text-[9px] text-slate-400">هم‌اکنون فعال</span>
+                      <p className="text-base font-black text-emerald-400">{window.loc('۱,۴۹۲ نفر', '1,492 people')}</p>
+                      <span className="text-[9px] text-slate-400">{window.loc('هم‌اکنون فعال', 'Active now')}</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <Video className="w-3.5 h-3.5 text-pink-400" /> لایوهای فعال
+                        <Video className="w-3.5 h-3.5 text-pink-400" /> {window.loc('لایوهای فعال', 'active live')}
                       </span>
-                      <p className="text-base font-black text-pink-400">{adminLivesList.length} لایو</p>
-                      <span className="text-[9px] text-slate-400">در حال پخش زنده</span>
+                      <p className="text-base font-black text-pink-400">{adminLivesList.length} {window.loc('لایو', 'live')}</p>
+                      <span className="text-[9px] text-slate-400">{window.loc('در حال پخش زنده', 'Streaming live')}</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <DollarSign className="w-3.5 h-3.5 text-amber-400" /> درآمد امروز
+                        <DollarSign className="w-3.5 h-3.5 text-amber-400" /> {window.loc('درآمد امروز', 'Today\'s income')}
                       </span>
                       <p className="text-base font-black text-amber-400">$4,820 USDT</p>
-                      <span className="text-[9px] text-emerald-400">۹۶۴,۰۰۰ سکه فروخته شد</span>
+                      <span className="text-[9px] text-emerald-400">{window.loc('۹۶۴,۰۰۰ سکه فروخته شد', '964,000 coins were sold')}</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <MessageSquare className="w-3.5 h-3.5 text-purple-400" /> کل پیام‌ها
+                        <MessageSquare className="w-3.5 h-3.5 text-purple-400" /> {window.loc('کل پیام‌ها', 'All messages')}
                       </span>
-                      <p className="text-base font-black text-white">۸۴,۲۰۰</p>
-                      <span className="text-[9px] text-slate-400">پیام‌های امروز</span>
+                      <p className="text-base font-black text-white">{window.loc('۸۴,۲۰۰', '84,200')}</p>
+                      <span className="text-[9px] text-slate-400">{window.loc('پیام‌های امروز', 'Today\'s messages')}</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <PhoneCall className="w-3.5 h-3.5 text-cyan-400" /> کل تماس‌ها
+                        <PhoneCall className="w-3.5 h-3.5 text-cyan-400" /> {window.loc('کل تماس‌ها', 'Total calls')}
                       </span>
-                      <p className="text-base font-black text-cyan-300">۱,۲۳۰ تماس</p>
-                      <span className="text-[9px] text-slate-400">صوتی و تصویری</span>
+                      <p className="text-base font-black text-cyan-300">{window.loc('۱,۲۳۰ تماس', '1,230 calls')}</p>
+                      <span className="text-[9px] text-slate-400">{window.loc('صوتی و تصویری', 'Audio and video')}</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1 sm:col-span-2">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <AlertCircle className="w-3.5 h-3.5 text-rose-400" /> گزارش‌های جدید
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-400" /> {window.loc('گزارش‌های جدید', 'New reports')}
                       </span>
-                      <p className="text-base font-black text-rose-400">{adminReportsList.filter(r => r.status === 'Pending').length} گزارش بررسی‌نشده</p>
-                      <span className="text-[9px] text-rose-300">اقدام سریع لازم است</span>
+                      <p className="text-base font-black text-rose-400">{adminReportsList.filter(r => r.status === 'Pending').length} {window.loc('گزارش بررسی‌نشده', 'Report not reviewed')}</p>
+                      <span className="text-[9px] text-rose-300">{window.loc('اقدام سریع لازم است', 'Quick action is required')}</span>
                     </div>
                   </div>
 
                   {/* QUICK ACTIONS */}
                   <div className="p-4 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-2">
-                    <h3 className="text-xs font-bold text-white">اقدامات سریع سیستم</h3>
+                    <h3 className="text-xs font-bold text-white">{window.loc('اقدامات سریع سیستم', 'Quick system actions')}</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                       <button onClick={() => setAdminActiveTab('notifications')} className="p-2.5 rounded-xl bg-purple-950/60 border border-purple-500/30 text-purple-300 font-bold hover:bg-purple-900 text-center">
-                        📢 ارسال اعلان عمومی
+                        {window.loc('📢 ارسال اعلان عمومی', '📢 Send public notice')}
                       </button>
                       <button onClick={() => {
-                        addAdminAuditLog('بکاپ اضطراری از دیتابیس ساخته شد');
+                        addAdminAuditLog(window.loc('بکاپ اضطراری از دیتابیس ساخته شد', 'An emergency backup of the database was made'));
                         setAdminBackupsList(prev => [{ id: `BK-${Date.now()}`, size: '49.5 MB', date: new Date().toLocaleString() }, ...prev]);
                       }} className="p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 font-bold hover:bg-cyan-900 text-center">
-                        💾 پشتیبان‌گیری دیتابیس
+                        {window.loc('💾 پشتیبان‌گیری دیتابیس', '💾 Database backup')}
                       </button>
                       <button onClick={() => setAdminActiveTab('aimod')} className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 font-bold hover:bg-emerald-900 text-center">
-                        🤖 قوانین هوش مصنوعی
+                        {window.loc('🤖 قوانین هوش مصنوعی', '🤖 Rules of artificial intelligence')}
                       </button>
                       <button onClick={() => {
                         setAdminMaintenanceMode(prev => !prev);
-                        addAdminAuditLog(!adminMaintenanceMode ? 'حالت تعمیرات فعال شد 🚨' : 'حالت تعمیرات غیرفعال شد');
+                        addAdminAuditLog(!adminMaintenanceMode ? window.loc('حالت تعمیرات فعال شد 🚨', 'Repair mode is activated') : window.loc('حالت تعمیرات غیرفعال شد', 'Repair mode disabled'));
                       }} className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/30 text-amber-300 font-bold hover:bg-amber-900 text-center">
-                        {adminMaintenanceMode ? '🟢 غیرفعال‌سازی تعمیرات' : '🛠 فعال‌سازی تعمیرات'}
+                        {adminMaintenanceMode ? window.loc('🟢 غیرفعال‌سازی تعمیرات', '🟢 Disable repairs') : window.loc('🛠 فعال‌سازی تعمیرات', '🛠 Activation of repairs')}
                       </button>
                     </div>
                   </div>
@@ -529,17 +529,17 @@ export default function AdminDashboardModal(props) {
                     <div>
                       <h3 className="font-bold text-white text-sm flex items-center gap-2">
                         <Video className="w-4 h-4 text-pink-400" />
-                        <span>۳. مدیریت لایواستریم‌ها و هشدارهای AI (Live Management & AI Check)</span>
+                        <span>{window.loc('۳. مدیریت لایواستریم‌ها و هشدارهای AI (Live Management & AI Check)', '3. Management of live streams and AI alerts (Live Management & AI Check)')}</span>
                       </h3>
-                      <p className="text-[10px] text-slate-400">نظارت تفکیک‌شده بر لایوهای استاندارد و ۱۸+، سیستم بررسی تصویر هوش مصنوعی و برخورد با متخلفین</p>
+                      <p className="text-[10px] text-slate-400">{window.loc('نظارت تفکیک‌شده بر لایوهای استاندارد و ۱۸+، سیستم بررسی تصویر هوش مصنوعی و برخورد با متخلفین', 'Separate monitoring of standard and 18+ live streams, artificial intelligence image review system and dealing with violators')}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-pink-400 font-mono font-bold">{adminLivesList.length} لایو در حال پخش</span>
+                      <span className="text-[10px] text-pink-400 font-mono font-bold">{adminLivesList.length} {window.loc('لایو در حال پخش', 'Live is playing')}</span>
                       <button
                         onClick={() => {
                           const demoLive = {
                             id: Date.now(),
-                            title: 'لایو تست موسیقی زنده 🎵',
+                            title: window.loc('لایو تست موسیقی زنده 🎵', 'Live music live test 🎵'),
                             streamer: 'Rayan Streamer',
                             viewers: 1450,
                             category: 'Music',
@@ -558,11 +558,11 @@ export default function AdminDashboardModal(props) {
                             isVip18: false,
                             entryFee: 0
                           }, ...prev]);
-                          addAdminAuditLog('لایو جدید استاندارد آزمایشی ساخته شد');
+                          addAdminAuditLog(window.loc('لایو جدید استاندارد آزمایشی ساخته شد', 'A new live test standard was created'));
                         }}
                         className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-[10px] flex items-center gap-1 shadow"
                       >
-                        <Plus className="w-3.5 h-3.5" /> ساخت لایو آزمایشی
+                        <Plus className="w-3.5 h-3.5" /> {window.loc('ساخت لایو آزمایشی', 'Experimental live production')}
                       </button>
                     </div>
                   </div>
@@ -578,7 +578,7 @@ export default function AdminDashboardModal(props) {
                             : 'text-slate-400 hover:text-white'
                         }`}
                       >
-                        همه لایوها ({adminLivesList.length})
+                        {window.loc('همه لایوها (', 'all live (')}{adminLivesList.length})
                       </button>
                       <button
                         onClick={() => setAdminReportCategoryFilter('Standard_Lives')}
@@ -588,7 +588,7 @@ export default function AdminDashboardModal(props) {
                             : 'text-slate-400 hover:text-white'
                         }`}
                       >
-                        📺 لایوهای استاندارد
+                        {window.loc('📺 لایوهای استاندارد', '📺 Standard Lives')}
                       </button>
                       <button
                         onClick={() => setAdminReportCategoryFilter('Adult_Lives')}
@@ -598,7 +598,7 @@ export default function AdminDashboardModal(props) {
                             : 'text-slate-400 hover:text-white'
                         }`}
                       >
-                        🔥 لایوهای ۱۸+ (Adult)
+                        {window.loc('🔥 لایوهای ۱۸+ (Adult)', '🔥 Lives 18+ (Adult)')}
                       </button>
                     </div>
                   </div>
@@ -608,37 +608,37 @@ export default function AdminDashboardModal(props) {
                     <div className="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-500/50 space-y-2">
                       <h4 className="font-black text-amber-300 text-xs flex items-center gap-1.5">
                         <ShieldAlert className="w-4 h-4 text-amber-400 animate-pulse" />
-                        <span>🤖 هشدارهای هوش مصنوعی (AI Live Security Alerts - نیازمند تصمیم ادمین):</span>
+                        <span>{window.loc('🤖 هشدارهای هوش مصنوعی (AI Live Security Alerts - نیازمند تصمیم ادمین):', '🤖 AI Live Security Alerts - requires admin decision:')}</span>
                       </h4>
-                      <p className="text-[10px] text-amber-200/80">هوش مصنوعی موارد مشکوک زیر را شناسایی کرده است. ادمین تصمیم‌گیرنده نهایی می‌باشد.</p>
+                      <p className="text-[10px] text-amber-200/80">{window.loc('هوش مصنوعی موارد مشکوک زیر را شناسایی کرده است. ادمین تصمیم‌گیرنده نهایی می‌باشد.', 'Artificial intelligence has identified the following suspicious items. The admin is the final decision maker.')}</p>
 
                       <div className="space-y-2 pt-1">
                         {adminReportsList.filter(r => r.ai_detected && r.status === 'pending').map(alert => (
                           <div key={alert.id} className="p-2.5 rounded-xl bg-slate-950 border border-amber-500/30 flex items-center justify-between text-[11px]">
                             <div>
-                              <span className="font-bold text-white block">استریمر: {alert.streamer_name || alert.targetUser || 'نامشخص'}</span>
-                              <span className="text-amber-400 font-medium">علت هشدار AI: {alert.reason}</span>
+                              <span className="font-bold text-white block">{window.loc('استریمر:', 'Streamer:')} {alert.streamer_name || alert.targetUser || window.loc('نامشخص', 'Uncertain')}</span>
+                              <span className="text-amber-400 font-medium">{window.loc('علت هشدار AI:', 'Cause of AI warning:')} {alert.reason}</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <button
                                 onClick={() => {
                                   if (apiAdmin.updateReportStatus) apiAdmin.updateReportStatus(alert.id, 'resolved');
                                   setAdminReportsList(prev => prev.map(a => a.id === alert.id ? { ...a, status: 'resolved' } : a));
-                                  addAdminAuditLog(`هشدار AI لایو ${alert.streamer_name} توسط ادمین تایید شد و لایو متوقف گردید`);
+                                  addAdminAuditLog(window.loc(`هشدار AI لایو ${alert.streamer_name} توسط ادمین تایید شد و لایو متوقف گردید`, `هشدار AI لایو ${alert.streamer_name} توسط ادمین تایید شد و لایو متوقف گردید`));
                                 }}
                                 className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px]"
                               >
-                                قطع لایو & اخطار
+                                {window.loc('قطع لایو & اخطار', 'Live interruption & warning')}
                               </button>
                               <button
                                 onClick={() => {
                                   if (apiAdmin.updateReportStatus) apiAdmin.updateReportStatus(alert.id, 'dismissed');
                                   setAdminReportsList(prev => prev.map(a => a.id === alert.id ? { ...a, status: 'dismissed' } : a));
-                                  addAdminAuditLog(`هشدار AI لایو ${alert.streamer_name} توسط ادمین رد شد`);
+                                  addAdminAuditLog(window.loc(`هشدار AI لایو ${alert.streamer_name} توسط ادمین رد شد`, `هشدار AI لایو ${alert.streamer_name} توسط ادمین رد شد`));
                                 }}
                                 className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[10px]"
                               >
-                                رد هشدار
+                                {window.loc('رد هشدار', 'Reject warning')}
                               </button>
                             </div>
                           </div>
@@ -651,18 +651,18 @@ export default function AdminDashboardModal(props) {
                   {adminLivesList.length === 0 ? (
                     <div className="p-8 text-center rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                       <Video className="w-8 h-8 text-slate-600 mx-auto" />
-                      <p className="font-bold text-slate-400">هیچ لایو در حال پخشی وجود ندارد</p>
+                      <p className="font-bold text-slate-400">{window.loc('هیچ لایو در حال پخشی وجود ندارد', 'There is no live streaming')}</p>
                       <button
                         onClick={() => {
                           setAdminLivesList([
-                            { id: 1042, title: 'لایو موسیقی شبانه 🎸', streamer: 'Sara Miller', viewers: 3420, category: 'Music', live_type: 'standard', duration: '45m' },
-                            { id: 1043, title: 'چت زنده ۱۸+ VIP 🔞', streamer: 'Ali Streamer', viewers: 890, category: 'VIP Chat', live_type: 'adult', duration: '18m' }
+                            { id: 1042, title: window.loc('لایو موسیقی شبانه 🎸', 'Live night music 🎸'), streamer: 'Sara Miller', viewers: 3420, category: 'Music', live_type: 'standard', duration: '45m' },
+                            { id: 1043, title: window.loc('چت زنده ۱۸+ VIP 🔞', 'Live chat 18+ VIP 🔞'), streamer: 'Ali Streamer', viewers: 890, category: 'VIP Chat', live_type: 'adult', duration: '18m' }
                           ]);
-                          showToast('لیست لایوهای نمونه بازنشانی شد');
+                          showToast(window.loc('لیست لایوهای نمونه بازنشانی شد', 'The sample live list was reset'));
                         }}
                         className="px-3 py-1.5 rounded-xl bg-slate-800 text-pink-300 font-bold text-[10px]"
                       >
-                        بازنشانی لایوهای نمونه
+                        {window.loc('بازنشانی لایوهای نمونه', 'Reset sample live')}
                       </button>
                     </div>
                   ) : (
@@ -682,7 +682,7 @@ export default function AdminDashboardModal(props) {
                                   {l.live_type === 'adult' ? 'ADULT 18+' : 'Standard'} #{l.id}
                                 </span>
                               </div>
-                              <span className="text-[10px] text-slate-400 block font-mono mt-0.5">استریمر: {l.streamer} • {l.viewers} بیننده زنده • دسته‌بندی: {l.category} • مدت: {l.duration || '۱۰ دقیقه'}</span>
+                              <span className="text-[10px] text-slate-400 block font-mono mt-0.5">{window.loc('استریمر:', 'Streamer:')} {l.streamer} • {l.viewers} {window.loc('بیننده زنده • دسته‌بندی:', 'Live viewer • Category:')} {l.category} {window.loc('• مدت:', 'Duration:')} {l.duration || window.loc('۱۰ دقیقه', '10 minutes')}</span>
                             </div>
 
                             <div className="flex items-center gap-1.5 flex-wrap">
@@ -690,25 +690,25 @@ export default function AdminDashboardModal(props) {
                                 onClick={() => {
                                   setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
                                   setStreamsList(prev => prev.filter(item => item.host !== l.streamer && item.id !== `live_${l.id}`));
-                                  addAdminAuditLog(`لایو استریم شماره #${l.id} (${l.title}) متوقف و از سیستم حذف شد`);
+                                  addAdminAuditLog(window.loc(`لایو استریم شماره #${l.id} (${l.title}) متوقف و از سیستم حذف شد`, `لایو استریم شماره #${l.id} (${l.title}) متوقف و از سیستم حذف شد`));
                                 }}
                                 className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold"
                               >
-                                پایان دادن به لایو
+                                {window.loc('پایان دادن به لایو', 'Ending the live')}
                               </button>
 
                               <button
-                                onClick={() => addAdminAuditLog(`چت عمومی لایو #${l.id} قفل گردید`)}
+                                onClick={() => addAdminAuditLog(window.loc(`چت عمومی لایو #${l.id} قفل گردید`, `چت عمومی لایو #${l.id} قفل گردید`))}
                                 className="px-2.5 py-1 rounded-xl bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px] font-bold"
                               >
-                                بستن چت
+                                {window.loc('بستن چت', 'close chat')}
                               </button>
 
                               <button
-                                onClick={() => addAdminAuditLog(`اخطار انضباطی به استریمر ${l.streamer} ارسال شد`)}
+                                onClick={() => addAdminAuditLog(window.loc(`اخطار انضباطی به استریمر ${l.streamer} ارسال شد`, `اخطار انضباطی به استریمر ${l.streamer} ارسال شد`))}
                                 className="px-2.5 py-1 rounded-xl bg-purple-950 border border-purple-500/40 text-purple-300 text-[10px] font-bold"
                               >
-                                اخطار به استریمر
+                                {window.loc('اخطار به استریمر', 'Warning to the streamer')}
                               </button>
 
                               <button
@@ -717,11 +717,11 @@ export default function AdminDashboardModal(props) {
                                   setStreamsList(prev => prev.filter(item => item.host !== l.streamer));
                                   setAdminUsersList(prev => prev.map(u => (u.name === l.streamer || u.username === l.streamer) ? { ...u, status: 'Banned' } : u));
                                   setUsersList(prev => prev.map(u => (u.name === l.streamer || u.username === l.streamer) ? { ...u, status: 'banned' } : u));
-                                  addAdminAuditLog(`استریمر ${l.streamer} مسدود شد و لایو قطع گردید`);
+                                  addAdminAuditLog(window.loc(`استریمر ${l.streamer} مسدود شد و لایو قطع گردید`, `استریمر ${l.streamer} مسدود شد و لایو قطع گردید`));
                                 }}
                                 className="px-2.5 py-1 rounded-xl bg-red-950 border border-red-500/50 text-red-300 text-[10px] font-bold"
                               >
-                                مسدودسازی استریمر
+                                {window.loc('مسدودسازی استریمر', 'Blocking the streamer')}
                               </button>
                             </div>
                           </div>
@@ -735,8 +735,8 @@ export default function AdminDashboardModal(props) {
               {adminActiveTab === 'reports' && (
                 <div className="space-y-3 text-xs">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-white text-sm">۴. بررسی گزارش تخلفات کاربران (Reports)</h3>
-                    <span className="text-[10px] text-amber-400">{adminReportsList.length} گزارش ثبتی</span>
+                    <h3 className="font-bold text-white text-sm">{window.loc('۴. بررسی گزارش تخلفات کاربران (Reports)', '4. Checking user violation reports (Reports)')}</h3>
+                    <span className="text-[10px] text-amber-400">{adminReportsList.length} {window.loc('گزارش ثبتی', 'Registration report')}</span>
                   </div>
 
                   {/* Filter tabs */}
@@ -758,33 +758,33 @@ export default function AdminDashboardModal(props) {
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-rose-300 flex items-center gap-1.5">
                             <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-                            [{r.category}] کاربر متخلف: {r.targetUser}
+                            [{r.category}{window.loc('] کاربر متخلف:', '] Offending user:')} {r.targetUser}
                           </span>
                           <span className={`text-[10px] px-2 py-0.5 rounded-full ${r.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>{r.status}</span>
                         </div>
-                        <p className="text-slate-300 text-[11px] bg-slate-900 p-2 rounded-xl">دلیل گزارش: "{r.reason}"</p>
+                        <p className="text-slate-300 text-[11px] bg-slate-900 p-2 rounded-xl">{window.loc('دلیل گزارش: "', 'Report reason: \"')}{r.reason}"</p>
                         <div className="flex items-center justify-between pt-1">
-                          <span className="text-[10px] text-slate-400">گزارش‌شده توسط: {r.reportedBy} • {r.time}</span>
+                          <span className="text-[10px] text-slate-400">{window.loc('گزارش‌شده توسط:', 'Reported by:')} {r.reportedBy} • {r.time}</span>
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => {
                                 setAdminReportsList(prev => prev.map(item => item.id === r.id ? { ...item, status: 'Approved' } : item));
                                 setAdminUsersList(prev => prev.map(u => u.username === r.targetUser ? { ...u, reportsCount: (u.reportsCount || 0) + 1 } : u));
-                                addAdminAuditLog(`گزارش #${r.id} تأیید شد و با کاربر متخلف برخورد گردید`);
+                                addAdminAuditLog(window.loc(`گزارش #${r.id} تأیید شد و با کاربر متخلف برخورد گردید`, `گزارش #${r.id} تأیید شد و با کاربر متخلف برخورد گردید`));
                               }}
                               className="px-2.5 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[10px]"
                             >
-                              تأیید و برخورد با کاربر
+                              {window.loc('تأیید و برخورد با کاربر', 'Verify and deal with the user')}
                             </button>
 
                             <button
                               onClick={() => {
                                 setAdminReportsList(prev => prev.map(item => item.id === r.id ? { ...item, status: 'Rejected' } : item));
-                                addAdminAuditLog(`گزارش #${r.id} رد شد (فاقد مصداق تخلف)`);
+                                addAdminAuditLog(window.loc(`گزارش #${r.id} رد شد (فاقد مصداق تخلف)`, `گزارش #${r.id} رد شد (فاقد مصداق تخلف)`));
                               }}
                               className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-300 font-bold text-[10px]"
                             >
-                              رد گزارش
+                              {window.loc('رد گزارش', 'Reject the report')}
                             </button>
                           </div>
                         </div>
@@ -825,36 +825,36 @@ export default function AdminDashboardModal(props) {
               {/* 6. GIFTS */}
               {adminActiveTab === 'gifts' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۶. مدیریت هدایای مجازی لایو (Gifts)</h3>
+                  <h3 className="font-bold text-white text-sm">{window.loc('۶. مدیریت هدایای مجازی لایو (Gifts)', '6. Management of live virtual gifts (Gifts)')}</h3>
                   
                   {/* Add gift form */}
                   <div className="p-3.5 rounded-2xl bg-slate-950 border border-pink-500/30 space-y-2">
-                    <p className="font-bold text-pink-300">افزودن هدیه جدید به فروشگاه</p>
+                    <p className="font-bold text-pink-300">{window.loc('افزودن هدیه جدید به فروشگاه', 'Add a new gift to the store')}</p>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="text"
                         value={newAdminGiftName}
                         onChange={e => setNewAdminGiftName(e.target.value)}
-                        placeholder="نام هدیه (مثلاً: اژدهای پرنده 🐲)..."
+                        placeholder={window.loc('نام هدیه (مثلاً: اژدهای پرنده 🐲)...', 'The name of the gift (for example: flying dragon 🐲)...')}
                         className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
                       />
                       <input
                         type="number"
                         value={newAdminGiftCoins}
                         onChange={e => setNewAdminGiftCoins(e.target.value)}
-                        placeholder="قیمت به سکه (مثلاً: ۵۰۰۰)..."
+                        placeholder={window.loc('قیمت به سکه (مثلاً: ۵۰۰۰)...', 'Price in coins (for example: 5000)...')}
                         className="w-full sm:w-36 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
                       />
                       <button
                         onClick={() => {
                           if (!newAdminGiftName || !newAdminGiftCoins) return;
-                          addAdminAuditLog(`هدیه جدید "${newAdminGiftName}" با قیمت ${newAdminGiftCoins} سکه به فروشگاه اضافه شد`);
+                          addAdminAuditLog(window.loc(`هدیه جدید "${newAdminGiftName}" با قیمت ${newAdminGiftCoins} سکه به فروشگاه اضافه شد`, `هدیه جدید "${newAdminGiftName}" با قیمت ${newAdminGiftCoins} سکه به فروشگاه اضافه شد`));
                           setNewAdminGiftName('');
                           setNewAdminGiftCoins('');
                         }}
                         className="px-4 py-2 rounded-xl bg-pink-600 text-white font-bold whitespace-nowrap"
                       >
-                        + افزودن هدیه
+                        {window.loc('+ افزودن هدیه', '+ Add gift')}
                       </button>
                     </div>
                   </div>
@@ -866,14 +866,14 @@ export default function AdminDashboardModal(props) {
                 <div className="space-y-3 text-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <h3 className="font-bold text-white text-sm">۷. مدیریت پلن‌های اشتراک VIP (VIP Subscriptions)</h3>
-                      <p className="text-[10px] text-slate-400">تنظیم قیمت پلن‌ها، فعال/غیرفعال‌سازی و ایجاد پلن جدید</p>
+                      <h3 className="font-bold text-white text-sm">{window.loc('۷. مدیریت پلن‌های اشتراک VIP (VIP Subscriptions)', '7. Managing VIP Subscriptions')}</h3>
+                      <p className="text-[10px] text-slate-400">{window.loc('تنظیم قیمت پلن‌ها، فعال/غیرفعال‌سازی و ایجاد پلن جدید', 'Setting the price of plans, activating/deactivating and creating a new plan')}</p>
                     </div>
                     <button
                       onClick={() => setIsAddVipPlanModalOpen(true)}
                       className="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-[11px] flex items-center gap-1 shrink-0 shadow"
                     >
-                      <Plus className="w-3.5 h-3.5" /> + پلن جدید VIP
+                      <Plus className="w-3.5 h-3.5" /> {window.loc('+ پلن جدید VIP', '+ New VIP plan')}
                     </button>
                   </div>
 
@@ -881,7 +881,7 @@ export default function AdminDashboardModal(props) {
                   {isAddVipPlanModalOpen && (
                     <div className="p-4 rounded-2xl bg-slate-950 border border-amber-500/50 space-y-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-amber-300">افزودن پلن VIP جدید</h4>
+                        <h4 className="font-bold text-amber-300">{window.loc('افزودن پلن VIP جدید', 'Add new VIP plan')}</h4>
                         <button onClick={() => setIsAddVipPlanModalOpen(false)} className="text-slate-400"><X className="w-4 h-4" /></button>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -889,21 +889,21 @@ export default function AdminDashboardModal(props) {
                           type="text"
                           value={newVipPlanTitle}
                           onChange={e => setNewVipPlanTitle(e.target.value)}
-                          placeholder="عنوان پلن (مثلاً VIP 6 Months)..."
+                          placeholder={window.loc('عنوان پلن (مثلاً VIP 6 Months)...', 'Plan title (eg VIP 6 Months)...')}
                           className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
                         />
                         <input
                           type="number"
                           value={newVipPlanCoins}
                           onChange={e => setNewVipPlanCoins(e.target.value)}
-                          placeholder="قیمت سکه (مثلاً 2500)..."
+                          placeholder={window.loc('قیمت سکه (مثلاً 2500)...', 'The price of the coin (for example 2500)...')}
                           className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
                         />
                         <input
                           type="text"
                           value={newVipPlanUsdt}
                           onChange={e => setNewVipPlanUsdt(e.target.value)}
-                          placeholder="قیمت تتر (مثلاً $12.00)..."
+                          placeholder={window.loc('قیمت تتر (مثلاً $12.00)...', 'Tether price (eg $12.00)...')}
                           className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
                         />
                       </div>
@@ -911,7 +911,7 @@ export default function AdminDashboardModal(props) {
                         <button
                           onClick={() => {
                             if (!newVipPlanTitle || !newVipPlanCoins) {
-                              showToast(loc('لطفاً عنوان و قیمت سکه را وارد کنید', 'Please fill title and coins'));
+                              showToast(window.loc('لطفاً عنوان و قیمت سکه را وارد کنید', 'Please fill title and coins'));
                               return;
                             }
                             const newPlan = {
@@ -926,7 +926,7 @@ export default function AdminDashboardModal(props) {
                               safeStorage.setItem('vlive_admin_vip_plans', JSON.stringify(updated));
                               return updated;
                             });
-                            addAdminAuditLog(`پلن VIP جدید "${newVipPlanTitle}" ایجاد گردید`);
+                            addAdminAuditLog(window.loc(`پلن VIP جدید "${newVipPlanTitle}" ایجاد گردید`, `پلن VIP جدید "${newVipPlanTitle}" ایجاد گردید`));
                             setNewVipPlanTitle('');
                             setNewVipPlanCoins('');
                             setNewVipPlanUsdt('');
@@ -934,7 +934,7 @@ export default function AdminDashboardModal(props) {
                           }}
                           className="px-4 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
                         >
-                          تأیید و ساخت پلن
+                          {window.loc('تأیید و ساخت پلن', 'Approval and creation of the plan')}
                         </button>
                       </div>
                     </div>
@@ -944,12 +944,12 @@ export default function AdminDashboardModal(props) {
                   {editingVipPlan && (
                     <div className="p-4 rounded-2xl bg-slate-950 border border-cyan-500/50 space-y-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-cyan-300">ویرایش پلن VIP ({editingVipPlan.title})</h4>
+                        <h4 className="font-bold text-cyan-300">{window.loc('ویرایش پلن VIP (', 'VIP plan editing (')}{editingVipPlan.title})</h4>
                         <button onClick={() => setEditingVipPlan(null)} className="text-slate-400"><X className="w-4 h-4" /></button>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div>
-                          <label className="text-[10px] text-slate-400 block">عنوان پلن:</label>
+                          <label className="text-[10px] text-slate-400 block">{window.loc('عنوان پلن:', 'Plan title:')}</label>
                           <input
                             type="text"
                             value={editingVipPlan.title}
@@ -958,7 +958,7 @@ export default function AdminDashboardModal(props) {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] text-slate-400 block">قیمت سکه:</label>
+                          <label className="text-[10px] text-slate-400 block">{window.loc('قیمت سکه:', 'Coin price:')}</label>
                           <input
                             type="number"
                             value={editingVipPlan.priceCoins}
@@ -967,7 +967,7 @@ export default function AdminDashboardModal(props) {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] text-slate-400 block">قیمت به USDT:</label>
+                          <label className="text-[10px] text-slate-400 block">{window.loc('قیمت به USDT:', 'Price in USDT:')}</label>
                           <input
                             type="text"
                             value={editingVipPlan.priceUsdt}
@@ -984,12 +984,12 @@ export default function AdminDashboardModal(props) {
                               safeStorage.setItem('vlive_admin_vip_plans', JSON.stringify(updated));
                               return updated;
                             });
-                            addAdminAuditLog(`قیمت و اطلاعات پلن ${editingVipPlan.title} بروزرسانی گردید`);
+                            addAdminAuditLog(window.loc(`قیمت و اطلاعات پلن ${editingVipPlan.title} بروزرسانی گردید`, `قیمت و اطلاعات پلن ${editingVipPlan.title} بروزرسانی گردید`));
                             setEditingVipPlan(null);
                           }}
                           className="px-4 py-1.5 rounded-xl bg-cyan-600 text-white font-bold text-xs"
                         >
-                          ذخیره تغییرات پلن
+                          {window.loc('ذخیره تغییرات پلن', 'Save plan changes')}
                         </button>
                       </div>
                     </div>
@@ -1001,16 +1001,16 @@ export default function AdminDashboardModal(props) {
                         <div className="flex items-center justify-between">
                           <p className="font-bold text-amber-300">{plan.title}</p>
                           <span className={`text-[9px] px-2 py-0.2 rounded-full ${plan.status === 'Active' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
-                            {plan.status === 'Active' ? 'فعال' : 'متوقف'}
+                            {plan.status === 'Active' ? window.loc('فعال', 'active') : window.loc('متوقف', 'stopped')}
                           </span>
                         </div>
-                        <p className="text-base font-black text-white">{plan.priceCoins} سکه <span className="text-[10px] text-slate-400">({plan.priceUsdt})</span></p>
+                        <p className="text-base font-black text-white">{plan.priceCoins} {window.loc('سکه', 'coin')} <span className="text-[10px] text-slate-400">({plan.priceUsdt})</span></p>
                         <div className="flex items-center gap-1.5 pt-1">
                           <button
                             onClick={() => setEditingVipPlan(plan)}
                             className="flex-1 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold hover:brightness-110 transition"
                           >
-                            تغییر قیمت / ویرایش
+                            {window.loc('تغییر قیمت / ویرایش', 'Price change / edit')}
                           </button>
                           <button
                             onClick={() => {
@@ -1020,11 +1020,11 @@ export default function AdminDashboardModal(props) {
                                 safeStorage.setItem('vlive_admin_vip_plans', JSON.stringify(updated));
                                 return updated;
                               });
-                              addAdminAuditLog(`وضعیت پلن ${plan.title} به ${newStatus} تغییر یافت`);
+                              addAdminAuditLog(window.loc(`وضعیت پلن ${plan.title} به ${newStatus} تغییر یافت`, `وضعیت پلن ${plan.title} به ${newStatus} تغییر یافت`));
                             }}
                             className={`px-2 py-1.5 rounded-xl font-bold ${plan.status === 'Active' ? 'bg-slate-800 text-slate-300' : 'bg-emerald-700 text-white'}`}
                           >
-                            {plan.status === 'Active' ? 'غیرفعال' : 'فعال‌سازی'}
+                            {plan.status === 'Active' ? window.loc('غیرفعال', 'disabled') : window.loc('فعال‌سازی', 'Activation')}
                           </button>
                         </div>
                       </div>
@@ -1036,22 +1036,22 @@ export default function AdminDashboardModal(props) {
               {/* 8. ADVERTISEMENTS */}
               {adminActiveTab === 'ads' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۸. مدیریت تبلیغات و بنرها (Advertisements)</h3>
+                  <h3 className="font-bold text-white text-sm">{window.loc('۸. مدیریت تبلیغات و بنرها (Advertisements)', '8. Management of advertisements and banners (Advertisements)')}</h3>
                   <div className="space-y-2">
                     {adminAdsList.map(ad => (
                       <div key={ad.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                         <div>
                           <p className="font-bold text-white">{ad.title}</p>
-                          <span className="text-[10px] text-slate-400 block">{ad.type} • مکان: {ad.location} • {ad.clicks.toLocaleString()} کلیک</span>
+                          <span className="text-[10px] text-slate-400 block">{ad.type} {window.loc('• مکان:', 'Location:')} {ad.location} • {ad.clicks.toLocaleString()} {window.loc('کلیک', 'click')}</span>
                         </div>
                         <button
                           onClick={() => {
                             setAdminAdsList(prev => prev.map(a => a.id === ad.id ? { ...a, status: a.status === 'Active' ? 'Paused' : 'Active' } : a));
-                            addAdminAuditLog(`وضعیت کمپین تبلیغاتی "${ad.title}" تغییر کرد`);
+                            addAdminAuditLog(window.loc(`وضعیت کمپین تبلیغاتی "${ad.title}" تغییر کرد`, `وضعیت کمپین تبلیغاتی "${ad.title}" تغییر کرد`));
                           }}
                           className={`px-3 py-1 rounded-xl text-white font-bold text-[10px] ${ad.status === 'Active' ? 'bg-emerald-600' : 'bg-slate-700'}`}
                         >
-                          {ad.status === 'Active' ? 'فعال (Active)' : 'متوقف شده'}
+                          {ad.status === 'Active' ? window.loc('فعال (Active)', 'Active') : window.loc('متوقف شده', 'stopped')}
                         </button>
                       </div>
                     ))}
@@ -1062,19 +1062,19 @@ export default function AdminDashboardModal(props) {
               {/* 9. EVENTS */}
               {adminActiveTab === 'events' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۹. مدیریت مسابقات و رویدادها (Events)</h3>
+                  <h3 className="font-bold text-white text-sm">{window.loc('۹. مدیریت مسابقات و رویدادها (Events)', '9. Management of competitions and events (Events)')}</h3>
                   <div className="space-y-2">
                     {adminEventsList.map(ev => (
                       <div key={ev.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                         <div>
                           <p className="font-bold text-white">{ev.title}</p>
-                          <span className="text-[10px] text-amber-400 block font-mono">مجموع جوایز: {ev.prizePool} • {ev.participants} شرکت‌کننده</span>
+                          <span className="text-[10px] text-amber-400 block font-mono">{window.loc('مجموع جوایز:', 'Total prizes:')} {ev.prizePool} • {ev.participants} {window.loc('شرکت‌کننده', 'Participant')}</span>
                         </div>
                         <button
-                          onClick={() => addAdminAuditLog(`جدول رتبه‌بندی رویداد ${ev.title} مشاهده شد`)}
+                          onClick={() => addAdminAuditLog(window.loc(`جدول رتبه‌بندی رویداد ${ev.title} مشاهده شد`, `جدول رتبه‌بندی رویداد ${ev.title} مشاهده شد`))}
                           className="px-3 py-1 rounded-xl bg-amber-500 text-slate-950 font-bold text-[10px]"
                         >
-                          رتبه‌بندی و جوایز
+                          {window.loc('رتبه‌بندی و جوایز', 'Ratings and awards')}
                         </button>
                       </div>
                     ))}
@@ -1085,19 +1085,19 @@ export default function AdminDashboardModal(props) {
               {/* 10. NOTIFICATIONS BROADCAST */}
               {adminActiveTab === 'notifications' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۰. ارسال اعلان عمومی و پیام نوتیفیکیشن (Notifications)</h3>
+                  <h3 className="font-bold text-white text-sm">{window.loc('۱۰. ارسال اعلان عمومی و پیام نوتیفیکیشن (Notifications)', '10. Sending public announcements and notification messages (Notifications)')}</h3>
                   <div className="p-4 rounded-3xl bg-slate-950 border border-purple-500/30 space-y-3">
                     <input
                       type="text"
                       value={adminNotifTitle}
                       onChange={e => setAdminNotifTitle(e.target.value)}
-                      placeholder="عنوان اعلان همگانی..."
+                      placeholder={window.loc('عنوان اعلان همگانی...', 'Public announcement title...')}
                       className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none"
                     />
                     <textarea
                       value={adminNotifBody}
                       onChange={e => setAdminNotifBody(e.target.value)}
-                      placeholder="متن کامل پیام اعلان (تخفیف، بروزرسانی، رویداد)..."
+                      placeholder={window.loc('متن کامل پیام اعلان (تخفیف، بروزرسانی، رویداد)...', 'The full text of the notification message (discount, update, event)...')}
                       className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none h-24"
                     />
                     <div className="flex flex-col sm:flex-row gap-2">
@@ -1106,21 +1106,21 @@ export default function AdminDashboardModal(props) {
                         onChange={e => setAdminNotifCategory(e.target.value)}
                         className="bg-slate-900 border border-slate-800 text-white text-xs rounded-xl px-3 py-2 outline-none"
                       >
-                        <option value="Update">🚀 اعلان بروزرسانی سیستم</option>
-                        <option value="Discount">💰 تخفیف ویژه خرید سکه</option>
-                        <option value="Event">🏆 شروع مسابقه جدید</option>
-                        <option value="Maintenance">🛠 اطلاعیه تعمیرات سیستم</option>
+                        <option value="Update">{window.loc('🚀 اعلان بروزرسانی سیستم', '🚀 System update notification')}</option>
+                        <option value="Discount">{window.loc('💰 تخفیف ویژه خرید سکه', '💰 Special discount for buying coins')}</option>
+                        <option value="Event">{window.loc('🏆 شروع مسابقه جدید', '🏆 Start of a new race')}</option>
+                        <option value="Maintenance">{window.loc('🛠 اطلاعیه تعمیرات سیستم', '🛠 Notification of system repairs')}</option>
                       </select>
                       <button
                         onClick={() => {
                           if (!adminNotifTitle || !adminNotifBody) return;
-                          addAdminAuditLog(`اعلان همگانی "${adminNotifTitle}" به تمامی کاربران ارسال شد`);
+                          addAdminAuditLog(window.loc(`اعلان همگانی "${adminNotifTitle}" به تمامی کاربران ارسال شد`, `اعلان همگانی "${adminNotifTitle}" به تمامی کاربران ارسال شد`));
                           setAdminNotifTitle('');
                           setAdminNotifBody('');
                         }}
                         className="flex-1 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black"
                       >
-                        ارسال فوری اعلان به تمام کاربران
+                        {window.loc('ارسال فوری اعلان به تمام کاربران', 'Instant notification to all users')}
                       </button>
                     </div>
                   </div>
@@ -1132,8 +1132,8 @@ export default function AdminDashboardModal(props) {
                 <div className="space-y-3 text-xs">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-bold text-white text-sm">۱۱. نظارت و مدیریت محتوا (Content Moderation)</h3>
-                      <p className="text-[10px] text-slate-400">بررسی تصاویر پروفایل، لایو و محتوای ارسال شده توسط کاربران</p>
+                      <h3 className="font-bold text-white text-sm">{window.loc('۱۱. نظارت و مدیریت محتوا (Content Moderation)', '11. Monitoring and managing content (Content Moderation)')}</h3>
+                      <p className="text-[10px] text-slate-400">{window.loc('بررسی تصاویر پروفایل، لایو و محتوای ارسال شده توسط کاربران', 'Checking profile pictures, live and content sent by users')}</p>
                     </div>
                     <button
                       onClick={() => {
@@ -1145,29 +1145,29 @@ export default function AdminDashboardModal(props) {
                           status: 'Pending Review'
                         };
                         setAdminModerationQueue(prev => [newModItem, ...prev]);
-                        showToast(loc('نمونه محتوای جدید برای بررسی اضافه شد', 'Sample media added for moderation'));
+                        showToast(window.loc('نمونه محتوای جدید برای بررسی اضافه شد', 'Sample media added for moderation'));
                       }}
                       className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center gap-1"
                     >
-                      <Plus className="w-3.5 h-3.5" /> افزودن نمونه محتوا
+                      <Plus className="w-3.5 h-3.5" /> {window.loc('افزودن نمونه محتوا', 'Add sample content')}
                     </button>
                   </div>
 
                   {adminModerationQueue.length === 0 ? (
                     <div className="p-8 text-center rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                       <ShieldCheck className="w-8 h-8 text-emerald-400 mx-auto" />
-                      <p className="font-bold text-slate-300">تمام محتواها بررسی شدند! هیچ محتوای معلقی وجود ندارد.</p>
+                      <p className="font-bold text-slate-300">{window.loc('تمام محتواها بررسی شدند! هیچ محتوای معلقی وجود ندارد.', 'All contents have been checked! There is no pending content.')}</p>
                       <button
                         onClick={() => {
                           setAdminModerationQueue([
                             { id: 1, user: '@sahar_m', type: 'Profile Photo', mediaUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', status: 'Pending Review' },
                             { id: 2, user: '@ali_streamer', type: 'Live Thumbnail', mediaUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', status: 'Pending Review' }
                           ]);
-                          showToast('صف نظارت بر محتوا بازنشانی گردید');
+                          showToast(window.loc('صف نظارت بر محتوا بازنشانی گردید', 'The content monitoring queue has been reset'));
                         }}
                         className="px-3 py-1.5 rounded-xl bg-slate-800 text-pink-300 font-bold text-[10px]"
                       >
-                        بازنشانی صف محتوا
+                        {window.loc('بازنشانی صف محتوا', 'Reset the content queue')}
                       </button>
                     </div>
                   ) : (
@@ -1185,20 +1185,20 @@ export default function AdminDashboardModal(props) {
                             <button
                               onClick={() => {
                                 setAdminModerationQueue(prev => prev.filter(i => i.id !== item.id));
-                                addAdminAuditLog(`تصویر/محتوای ${item.user} با موفقیت تأیید شد`);
+                                addAdminAuditLog(window.loc(`تصویر/محتوای ${item.user} با موفقیت تأیید شد`, `تصویر/محتوای ${item.user} با موفقیت تأیید شد`));
                               }}
                               className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px]"
                             >
-                              تأیید محتوا
+                              {window.loc('تأیید محتوا', 'Content verification')}
                             </button>
                             <button
                               onClick={() => {
                                 setAdminModerationQueue(prev => prev.filter(i => i.id !== item.id));
-                                addAdminAuditLog(`تصویر/محتوای نامناسب ${item.user} با موفقیت حذف گردید`);
+                                addAdminAuditLog(window.loc(`تصویر/محتوای نامناسب ${item.user} با موفقیت حذف گردید`, `تصویر/محتوای نامناسب ${item.user} با موفقیت حذف گردید`));
                               }}
                               className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px]"
                             >
-                              حذف تصویر
+                              {window.loc('حذف تصویر', 'Delete image')}
                             </button>
                           </div>
                         </div>
@@ -1226,29 +1226,29 @@ export default function AdminDashboardModal(props) {
                 <div className="space-y-3 text-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <h3 className="font-bold text-white text-sm">۱۳. مدیریت تیکت‌های پشتیبانی کاربران (Support)</h3>
-                      <p className="text-[10px] text-slate-400">پاسخ به سوالات، پیگیری مشکلات پرداخت و لایو استریم</p>
+                      <h3 className="font-bold text-white text-sm">{window.loc('۱۳. مدیریت تیکت‌های پشتیبانی کاربران (Support)', '13. Management of user support tickets (Support)')}</h3>
+                      <p className="text-[10px] text-slate-400">{window.loc('پاسخ به سوالات، پیگیری مشکلات پرداخت و لایو استریم', 'Answering questions, tracking payment issues and live streaming')}</p>
                     </div>
                     <button
                       onClick={() => {
                         const newT = {
                           id: `T-${Date.now().toString().slice(-3)}`,
-                          user: 'کاربر تست',
-                          subject: 'سوال درباره نحوه نقد کردن درآمد سکه‌ها',
+                          user: window.loc('کاربر تست', 'Test user'),
+                          subject: window.loc('سوال درباره نحوه نقد کردن درآمد سکه‌ها', 'Question about how to cash the income of coins'),
                           category: 'Financial',
                           status: 'Open',
-                          message: 'سلام، پس از رسیدن به 50,000 سکه چگونه درخواست تسویه بدهم؟'
+                          message: window.loc('سلام، پس از رسیدن به 50,000 سکه چگونه درخواست تسویه بدهم؟', 'Hi, how do I request a payout after reaching 50,000 coins?')
                         };
                         setAdminTicketsList(prev => {
                           const updated = [newT, ...prev];
                           safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
                           return updated;
                         });
-                        showToast(loc('تیکت جدید نمونه اضافه شد', 'New support ticket created'));
+                        showToast(window.loc('تیکت جدید نمونه اضافه شد', 'New support ticket created'));
                       }}
                       className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center gap-1 shadow"
                     >
-                      <Plus className="w-3.5 h-3.5" /> تیکت جدید (تست)
+                      <Plus className="w-3.5 h-3.5" /> {window.loc('تیکت جدید (تست)', 'New ticket (test)')}
                     </button>
                   </div>
 
@@ -1287,7 +1287,7 @@ export default function AdminDashboardModal(props) {
 
                           {t.reply && (
                             <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 text-purple-200 text-[11px]">
-                              <p className="font-bold text-purple-300 text-[10px]">پاسخ ادمین:</p>
+                              <p className="font-bold text-purple-300 text-[10px]">{window.loc('پاسخ ادمین:', 'Admin response:')}</p>
                               <p>{t.reply}</p>
                             </div>
                           )}
@@ -1297,7 +1297,7 @@ export default function AdminDashboardModal(props) {
                               <textarea
                                 value={adminTicketReplyText}
                                 onChange={e => setAdminTicketReplyText(e.target.value)}
-                                placeholder="متن پاسخ ادمین به تیکت کاربر..."
+                                placeholder={window.loc('متن پاسخ ادمین به تیکت کاربر...', 'The text of the admin\'s response to the user\'s ticket...')}
                                 className="w-full p-2.5 rounded-xl bg-slate-900 border border-purple-500/50 text-white text-xs outline-none h-20"
                               />
                               <div className="flex items-center justify-end gap-2">
@@ -1305,7 +1305,7 @@ export default function AdminDashboardModal(props) {
                                   onClick={() => setAdminReplyingTicket(null)}
                                   className="px-3 py-1 rounded-xl bg-slate-800 text-slate-400 font-bold text-[10px]"
                                 >
-                                  انصراف
+                                  {window.loc('انصراف', 'opt out')}
                                 </button>
                                 <button
                                   onClick={() => {
@@ -1315,20 +1315,20 @@ export default function AdminDashboardModal(props) {
                                       safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
                                       return updated;
                                     });
-                                    addAdminAuditLog(`پاسخ ادمین به تیکت #${t.id} ثبت گردید`);
+                                    addAdminAuditLog(window.loc(`پاسخ ادمین به تیکت #${t.id} ثبت گردید`, `پاسخ ادمین به تیکت #${t.id} ثبت گردید`));
                                     setAdminReplyingTicket(null);
                                     setAdminTicketReplyText('');
                                   }}
                                   className="px-3.5 py-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px]"
                                 >
-                                  ارسال پاسخ
+                                  {window.loc('ارسال پاسخ', 'Post a reply')}
                                 </button>
                               </div>
                             </div>
                           )}
 
                           <div className="flex items-center justify-between pt-1">
-                            <span className="text-[9px] text-slate-500 font-mono">دسته‌بندی: {t.category}</span>
+                            <span className="text-[9px] text-slate-500 font-mono">{window.loc('دسته‌بندی:', 'Category:')} {t.category}</span>
                             <div className="flex items-center gap-1.5">
                               <button
                                 onClick={() => {
@@ -1337,7 +1337,7 @@ export default function AdminDashboardModal(props) {
                                 }}
                                 className="px-3 py-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px]"
                               >
-                                {t.reply ? 'ویرایش پاسخ' : 'پاسخ به تیکت'}
+                                {t.reply ? window.loc('ویرایش پاسخ', 'Edit answer') : window.loc('پاسخ به تیکت', 'Reply to the ticket')}
                               </button>
 
                               {t.status !== 'Closed' && (
@@ -1348,11 +1348,11 @@ export default function AdminDashboardModal(props) {
                                       safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
                                       return updated;
                                     });
-                                    addAdminAuditLog(`تیکت #${t.id} بسته شد`);
+                                    addAdminAuditLog(window.loc(`تیکت #${t.id} بسته شد`, `تیکت #${t.id} بسته شد`));
                                   }}
                                   className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-300 font-bold text-[10px]"
                                 >
-                                  بستن تیکت
+                                  {window.loc('بستن تیکت', 'Close the ticket')}
                                 </button>
                               )}
 
@@ -1363,7 +1363,7 @@ export default function AdminDashboardModal(props) {
                                     safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
                                     return updated;
                                   });
-                                  addAdminAuditLog(`تیکت #${t.id} حذف شد`);
+                                  addAdminAuditLog(window.loc(`تیکت #${t.id} حذف شد`, `تیکت #${t.id} حذف شد`));
                                 }}
                                 className="p-1 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white"
                               >
@@ -1397,10 +1397,10 @@ export default function AdminDashboardModal(props) {
                     <div>
                       <h3 className="font-bold text-white text-sm flex items-center gap-2">
                         <ShieldCheck className="w-4 h-4 text-amber-400" />
-                        <span>۱۵. سطوح دسترسی و اضافه کردن ادمین با ای‌دی عددی تلگرام</span>
+                        <span>{window.loc('۱۵. سطوح دسترسی و اضافه کردن ادمین با ای‌دی عددی تلگرام', '15. Access levels and adding an admin with Telegram\'s numeric ID')}</span>
                       </h3>
                       <p className="text-[11px] text-slate-400 mt-0.5">
-                        افزودن دستی ادمین جدید با ای‌دی عددی تلگرام، تعیین وظیفه و مشخص کردن محدودیت دسترسی به بخش‌های برنامه
+                        {window.loc('افزودن دستی ادمین جدید با ای‌دی عددی تلگرام، تعیین وظیفه و مشخص کردن محدودیت دسترسی به بخش‌های برنامه', 'Manually adding a new admin with Telegram\'s numeric ID, assigning tasks and specifying access restrictions to program sections')}
                       </p>
                     </div>
                     <button
@@ -1424,7 +1424,7 @@ export default function AdminDashboardModal(props) {
                       className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md hover:brightness-110 active:scale-95 transition shrink-0"
                     >
                       <UserPlus className="w-4 h-4" />
-                      <span>+ افزودن ادمین جدید (ای‌دی تلگرام)</span>
+                      <span>{window.loc('+ افزودن ادمین جدید (ای‌دی تلگرام)', '+ Add a new admin (Telegram ID)')}</span>
                     </button>
                   </div>
 
@@ -1435,8 +1435,8 @@ export default function AdminDashboardModal(props) {
                         <ShieldCheck className="w-5 h-5" />
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 block">تعداد ادمین‌های ثبت‌شده</span>
-                        <span className="text-base font-bold text-white">{adminRolesList.length} نفر</span>
+                        <span className="text-[10px] text-slate-400 block">{window.loc('تعداد ادمین‌های ثبت‌شده', 'The number of registered admins')}</span>
+                        <span className="text-base font-bold text-white">{adminRolesList.length} {window.loc('نفر', 'person')}</span>
                       </div>
                     </div>
                     <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
@@ -1444,8 +1444,8 @@ export default function AdminDashboardModal(props) {
                         <Lock className="w-5 h-5" />
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 block">ماژول‌های قابل تخصیص</span>
-                        <span className="text-base font-bold text-white">۸ بخش اصلی</span>
+                        <span className="text-[10px] text-slate-400 block">{window.loc('ماژول‌های قابل تخصیص', 'Customizable modules')}</span>
+                        <span className="text-base font-bold text-white">{window.loc('۸ بخش اصلی', '8 main sections')}</span>
                       </div>
                     </div>
                     <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
@@ -1453,7 +1453,7 @@ export default function AdminDashboardModal(props) {
                         <Globe className="w-5 h-5" />
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 block">احراز هویت تلگرامی</span>
+                        <span className="text-[10px] text-slate-400 block">{window.loc('احراز هویت تلگرامی', 'Telegram authentication')}</span>
                         <span className="text-xs font-bold text-cyan-400">Telegram Numeric ID Verification</span>
                       </div>
                     </div>
@@ -1470,10 +1470,10 @@ export default function AdminDashboardModal(props) {
                             </div>
                             <div>
                               <h3 className="font-bold text-white text-sm">
-                                {editingAdminObj ? 'ویرایش ادمین و سطح دسترسی‌ها' : 'افزودن ادمین جدید با ای‌دی عددی تلگرام'}
+                                {editingAdminObj ? window.loc('ویرایش ادمین و سطح دسترسی‌ها', 'Edit admin and access level') : window.loc('افزودن ادمین جدید با ای‌دی عددی تلگرام', 'Adding a new admin with Telegram\'s numeric ID')}
                               </h3>
                               <p className="text-[11px] text-slate-400">
-                                مشخص کردن وظیفه، ای‌دی عددی تلگرام و محدودیت دسترسی به ماژول‌های برنامه
+                                {window.loc('مشخص کردن وظیفه، ای‌دی عددی تلگرام و محدودیت دسترسی به ماژول‌های برنامه', 'Specifying the task, Telegram numeric ID and limiting access to program modules')}
                               </p>
                             </div>
                           </div>
@@ -1492,31 +1492,31 @@ export default function AdminDashboardModal(props) {
                           {/* TELEGRAM NUMERIC ID */}
                           <div>
                             <label className="block text-slate-300 font-bold mb-1 flex items-center justify-between">
-                              <span>🆔 ای‌دی عددی تلگرام (Telegram Numeric ID):</span>
-                              <span className="text-[10px] text-cyan-400 font-mono">الزامی جهت احراز سیستم</span>
+                              <span>{window.loc('🆔 ای‌دی عددی تلگرام (Telegram Numeric ID):', '🆔 Telegram Numeric ID:')}</span>
+                              <span className="text-[10px] text-cyan-400 font-mono">{window.loc('الزامی جهت احراز سیستم', 'Required for system authentication')}</span>
                             </label>
                             <input
                               type="text"
                               value={newAdminTelegramId}
                               onChange={e => setNewAdminTelegramId(e.target.value)}
-                              placeholder="مثال: 8973478139"
+                              placeholder={window.loc('مثال: 8973478139', 'Example: 8973478139')}
                               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-cyan-300 font-mono text-xs outline-none focus:border-cyan-500"
                             />
                             <p className="text-[10px] text-slate-500 mt-1">
-                              ای‌دی عددی تلگرام کاربری که می‌خواهید دسترسی ادمین به او بدهید را وارد کنید (با ثبت ای‌دی، منوی ادمین در پروفایل او فعال می‌شود).
+                              {window.loc('ای‌دی عددی تلگرام کاربری که می‌خواهید دسترسی ادمین به او بدهید را وارد کنید (با ثبت ای‌دی، منوی ادمین در پروفایل او فعال می‌شود).', 'Enter the Telegram ID number of the user you want to give admin access to (by registering the ID, the admin menu will be activated in his profile).')}
                             </p>
                           </div>
 
                           {/* ADMIN NAME / TITLE */}
                           <div>
                             <label className="block text-slate-300 font-bold mb-1">
-                              👤 نام ادمین یا عنوان مسئولیت:
+                              {window.loc('👤 نام ادمین یا عنوان مسئولیت:', '👤 Admin name or title of responsibility:')}
                             </label>
                             <input
                               type="text"
                               value={newAdminName}
                               onChange={e => setNewAdminName(e.target.value)}
-                              placeholder="مثال: رایان - مدیر ارشد کل"
+                              placeholder={window.loc('مثال: رایان - مدیر ارشد کل', 'Example: Ryan - General Manager')}
                               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-amber-500"
                             />
                           </div>
@@ -1525,25 +1525,25 @@ export default function AdminDashboardModal(props) {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                               <label className="block text-slate-300 font-bold mb-1">
-                                🔑 نام کاربری ورود (Admin Username):
+                                {window.loc('🔑 نام کاربری ورود (Admin Username):', '🔑 Login username (Admin Username):')}
                               </label>
                               <input
                                 type="text"
                                 value={newAdminUsername}
                                 onChange={e => setNewAdminUsername(e.target.value)}
-                                placeholder="مثال: Rayan_Super_Admin"
+                                placeholder={window.loc('مثال: Rayan_Super_Admin', 'Example: Rayan_Super_Admin')}
                                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-mono text-xs outline-none focus:border-amber-500"
                               />
                             </div>
                             <div>
                               <label className="block text-slate-300 font-bold mb-1">
-                                🔒 رمز عبور ورود (Admin Password):
+                                {window.loc('🔒 رمز عبور ورود (Admin Password):', '🔒 Login password (Admin Password):')}
                               </label>
                               <input
                                 type="text"
                                 value={newAdminPassword}
                                 onChange={e => setNewAdminPassword(e.target.value)}
-                                placeholder="مثال: Rayan_0935"
+                                placeholder={window.loc('مثال: Rayan_0935', 'Example: Rayan_0935')}
                                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-mono text-xs outline-none focus:border-amber-500"
                               />
                             </div>
@@ -1552,7 +1552,7 @@ export default function AdminDashboardModal(props) {
                           {/* ASSIGNED ROLE / DUTY */}
                           <div>
                             <label className="block text-slate-300 font-bold mb-1">
-                              🎯 وظیفه و عنوان نقش ادمین:
+                              {window.loc('🎯 وظیفه و عنوان نقش ادمین:', '🎯 Duties and title of admin role:')}
                             </label>
                             <select
                               value={newAdminRole}
@@ -1574,19 +1574,19 @@ export default function AdminDashboardModal(props) {
                               }}
                               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-bold text-xs outline-none focus:border-amber-500"
                             >
-                              <option value="Live Moderator">🎥 ناظر لایو و چت (Live Moderator)</option>
-                              <option value="Financial Inspector">💰 بازرس امور مالی و تسویه (Financial Inspector)</option>
-                              <option value="Support Specialist">🎧 کارشناس پشتیبانی (Support Specialist)</option>
-                              <option value="AI Security Inspector">🛡️ بازرس امنیت و هوش مصنوعی (AI & Security Inspector)</option>
-                              <option value="Super Admin">⭐ مدیر ارشد کل (Super Admin - Full Access)</option>
-                              <option value="Custom Admin">⚙️ ادمین با دسترسی سفارشی (Custom Restrictions)</option>
+                              <option value="Live Moderator">{window.loc('🎥 ناظر لایو و چت (Live Moderator)', '🎥 Live Moderator')}</option>
+                              <option value="Financial Inspector">{window.loc('💰 بازرس امور مالی و تسویه (Financial Inspector)', '💰 Financial inspector and settlement (Financial Inspector)')}</option>
+                              <option value="Support Specialist">{window.loc('🎧 کارشناس پشتیبانی (Support Specialist)', '🎧 Support Specialist')}</option>
+                              <option value="AI Security Inspector">{window.loc('🛡️ بازرس امنیت و هوش مصنوعی (AI & Security Inspector)', '🛡️ Security and Artificial Intelligence Inspector (AI & Security Inspector)')}</option>
+                              <option value="Super Admin">{window.loc('⭐ مدیر ارشد کل (Super Admin - Full Access)', '⭐ Super Admin - Full Access')}</option>
+                              <option value="Custom Admin">{window.loc('⚙️ ادمین با دسترسی سفارشی (Custom Restrictions)', '⚙️ Admin with custom access (Custom Restrictions)')}</option>
                             </select>
                           </div>
 
                           {/* PERMISSIONS & RESTRICTIONS CHECKLIST */}
                           <div className="pt-2">
                             <label className="block text-slate-200 font-bold mb-2">
-                              🔒 تعیین دقیق محدودیت‌ها و دسترسی به بخش‌های برنامه:
+                              {window.loc('🔒 تعیین دقیق محدودیت‌ها و دسترسی به بخش‌های برنامه:', '🔒 Accurate determination of restrictions and access to parts of the program:')}
                             </label>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-950 p-3 rounded-2xl border border-slate-800">
                               <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/80 cursor-pointer hover:bg-slate-900 transition">
@@ -1597,8 +1597,8 @@ export default function AdminDashboardModal(props) {
                                   className="w-4 h-4 accent-amber-500 rounded"
                                 />
                                 <div>
-                                  <span className="font-bold text-white text-[11px] block">👥 مدیریت کاربران</span>
-                                  <span className="text-[9px] text-slate-400">مشاهده، ویرایش و بن کردن کاربران</span>
+                                  <span className="font-bold text-white text-[11px] block">{window.loc('👥 مدیریت کاربران', '👥 User management')}</span>
+                                  <span className="text-[9px] text-slate-400">{window.loc('مشاهده، ویرایش و بن کردن کاربران', 'View, edit and ban users')}</span>
                                 </div>
                               </label>
 
@@ -1610,8 +1610,8 @@ export default function AdminDashboardModal(props) {
                                   className="w-4 h-4 accent-amber-500 rounded"
                                 />
                                 <div>
-                                  <span className="font-bold text-white text-[11px] block">🎥 مدیریت لایو‌ها</span>
-                                  <span className="text-[9px] text-slate-400">قطع استریم‌ها و نظارت زنده</span>
+                                  <span className="font-bold text-white text-[11px] block">{window.loc('🎥 مدیریت لایو‌ها', '🎥 Live management')}</span>
+                                  <span className="text-[9px] text-slate-400">{window.loc('قطع استریم‌ها و نظارت زنده', 'Interrupting streams and live monitoring')}</span>
                                 </div>
                               </label>
 
@@ -1623,8 +1623,8 @@ export default function AdminDashboardModal(props) {
                                   className="w-4 h-4 accent-amber-500 rounded"
                                 />
                                 <div>
-                                  <span className="font-bold text-white text-[11px] block">🚨 رسیدگی به گزارشات</span>
-                                  <span className="text-[9px] text-slate-400">بررسی تخلفات و ریپورت‌ها</span>
+                                  <span className="font-bold text-white text-[11px] block">{window.loc('🚨 رسیدگی به گزارشات', 'Handling reports')}</span>
+                                  <span className="text-[9px] text-slate-400">{window.loc('بررسی تخلفات و ریپورت‌ها', 'Investigation of violations and reports')}</span>
                                 </div>
                               </label>
 
@@ -1636,8 +1636,8 @@ export default function AdminDashboardModal(props) {
                                   className="w-4 h-4 accent-amber-500 rounded"
                                 />
                                 <div>
-                                  <span className="font-bold text-white text-[11px] block">💰 امور مالی و تسویه</span>
-                                  <span className="text-[9px] text-slate-400">تایید برداشت USDT و سکه</span>
+                                  <span className="font-bold text-white text-[11px] block">{window.loc('💰 امور مالی و تسویه', '💰 Financial affairs and settlement')}</span>
+                                  <span className="text-[9px] text-slate-400">{window.loc('تایید برداشت USDT و سکه', 'Validate USDT and coin withdrawals')}</span>
                                 </div>
                               </label>
 
@@ -1649,8 +1649,8 @@ export default function AdminDashboardModal(props) {
                                   className="w-4 h-4 accent-amber-500 rounded"
                                 />
                                 <div>
-                                  <span className="font-bold text-white text-[11px] block">🛡️ امنیت و هوش مصنوعی</span>
-                                  <span className="text-[9px] text-slate-400">تنظیمات الگوریتم فیلتر AI</span>
+                                  <span className="font-bold text-white text-[11px] block">{window.loc('🛡️ امنیت و هوش مصنوعی', '🛡️ Security and artificial intelligence')}</span>
+                                  <span className="text-[9px] text-slate-400">{window.loc('تنظیمات الگوریتم فیلتر AI', 'AI filter algorithm settings')}</span>
                                 </div>
                               </label>
 
@@ -1662,8 +1662,8 @@ export default function AdminDashboardModal(props) {
                                   className="w-4 h-4 accent-amber-500 rounded"
                                 />
                                 <div>
-                                  <span className="font-bold text-white text-[11px] block">📢 تبلیغات و رویدادها</span>
-                                  <span className="text-[9px] text-slate-400">ایجاد بنر و چالش‌های جایزه‌دار</span>
+                                  <span className="font-bold text-white text-[11px] block">{window.loc('📢 تبلیغات و رویدادها', '📢 Advertisements and events')}</span>
+                                  <span className="text-[9px] text-slate-400">{window.loc('ایجاد بنر و چالش‌های جایزه‌دار', 'Banner creation and award winning challenges')}</span>
                                 </div>
                               </label>
 
@@ -1675,8 +1675,8 @@ export default function AdminDashboardModal(props) {
                                   className="w-4 h-4 accent-amber-500 rounded"
                                 />
                                 <div>
-                                  <span className="font-bold text-white text-[11px] block">🎧 پشتیبانی و تیکت‌ها</span>
-                                  <span className="text-[9px] text-slate-400">پاسخگویی به پیام‌های پشتیبانی</span>
+                                  <span className="font-bold text-white text-[11px] block">{window.loc('🎧 پشتیبانی و تیکت‌ها', '🎧 support and tickets')}</span>
+                                  <span className="text-[9px] text-slate-400">{window.loc('پاسخگویی به پیام‌های پشتیبانی', 'Respond to support messages')}</span>
                                 </div>
                               </label>
 
@@ -1688,8 +1688,8 @@ export default function AdminDashboardModal(props) {
                                   className="w-4 h-4 accent-amber-500 rounded"
                                 />
                                 <div>
-                                  <span className="font-bold text-white text-[11px] block">📜 مشاهده لاگ‌های سیستم</span>
-                                  <span className="text-[9px] text-slate-400">بررسی تاریخچه اقدامات مدیریتی</span>
+                                  <span className="font-bold text-white text-[11px] block">{window.loc('📜 مشاهده لاگ‌های سیستم', 'View system logs')}</span>
+                                  <span className="text-[9px] text-slate-400">{window.loc('بررسی تاریخچه اقدامات مدیریتی', 'Reviewing the history of management actions')}</span>
                                 </div>
                               </label>
                             </div>
@@ -1705,12 +1705,12 @@ export default function AdminDashboardModal(props) {
                             }}
                             className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
                           >
-                            انصراف
+                            {window.loc('انصراف', 'opt out')}
                           </button>
                           <button
                             onClick={() => {
                               if (!newAdminTelegramId || !newAdminName) {
-                                showToast('❌ لطفاً ای‌دی عددی تلگرام و نام ادمین را وارد کنید');
+                                showToast(window.loc('❌ لطفاً ای‌دی عددی تلگرام و نام ادمین را وارد کنید', '❌ Please enter Telegram ID number and admin name'));
                                 return;
                               }
 
@@ -1736,8 +1736,8 @@ export default function AdminDashboardModal(props) {
                                 });
                                 setAdminRolesList(updated);
                                 safeStorage.setItem('vlive_admin_roles_list', JSON.stringify(updated));
-                                addAdminAuditLog(`اطلاعات و دسترسی‌های ادمین ${newAdminName} (Telegram ID: ${cleanTelegramId}) بروزرسانی شد`);
-                                showToast(`✅ دسترسی ادمین ${newAdminName} با موفقیت ویرایش شد`);
+                                addAdminAuditLog(window.loc(`اطلاعات و دسترسی‌های ادمین ${newAdminName} (Telegram ID: ${cleanTelegramId}) بروزرسانی شد`, `اطلاعات و دسترسی‌های ادمین ${newAdminName} (Telegram ID: ${cleanTelegramId}) بروزرسانی شد`));
+                                showToast(window.loc(`✅ دسترسی ادمین ${newAdminName} با موفقیت ویرایش شد`, `✅ دسترسی ادمین ${newAdminName} با موفقیت ویرایش شد`));
                               } else {
                                 // Add new admin
                                 const newAdminEntry = {
@@ -1748,7 +1748,7 @@ export default function AdminDashboardModal(props) {
                                   password: adminPassVal,
                                   role: newAdminRole,
                                   permissions: newAdminPermissions,
-                                  addedAt: new Date().toLocaleDateString('fa-IR')
+                                  addedAt: new Date().toLocaleDateString((window.langCode === 'fa' ? 'fa-IR' : 'en-US'))
                                 };
                                 const updated = [newAdminEntry, ...adminRolesList];
                                 setAdminRolesList(updated);
@@ -1760,8 +1760,8 @@ export default function AdminDashboardModal(props) {
                                   setAdminWhitelist(prev => [...prev, cleanHandle]);
                                 }
 
-                                addAdminAuditLog(`ادمین جدید ${newAdminName} با ای‌دی تلگرام ${cleanTelegramId} و نقش ${newAdminRole} اضافه گردید`);
-                                showToast(`✅ ادمین جدید اضافه شد! منوی ادمین برای ای‌دی تلگرام ${cleanTelegramId} فعال گردید.`);
+                                addAdminAuditLog(window.loc(`ادمین جدید ${newAdminName} با ای‌دی تلگرام ${cleanTelegramId} و نقش ${newAdminRole} اضافه گردید`, `ادمین جدید ${newAdminName} با ای‌دی تلگرام ${cleanTelegramId} و نقش ${newAdminRole} اضافه گردید`));
+                                showToast(window.loc(`✅ ادمین جدید اضافه شد! منوی ادمین برای ای‌دی تلگرام ${cleanTelegramId} فعال گردید.`, `✅ ادمین جدید اضافه شد! منوی ادمین برای ای‌دی تلگرام ${cleanTelegramId} فعال گردید.`));
                               }
 
                               setIsAddAdminModalOpen(false);
@@ -1773,7 +1773,7 @@ export default function AdminDashboardModal(props) {
                             }}
                             className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-bold text-xs shadow-md hover:brightness-110 active:scale-95 transition"
                           >
-                            {editingAdminObj ? 'ذخیره تغییرات دسترسی' : 'تأیید و افزودن ادمین جدید'}
+                            {editingAdminObj ? window.loc('ذخیره تغییرات دسترسی', 'Save access changes') : window.loc('تأیید و افزودن ادمین جدید', 'Confirm and add new admin')}
                           </button>
                         </div>
                       </div>
@@ -1782,7 +1782,7 @@ export default function AdminDashboardModal(props) {
 
                   {/* ADMIN DIRECTORY LIST */}
                   <div className="space-y-3 pt-1">
-                    <h4 className="font-bold text-slate-300 text-xs">فهرست مدیران و بازرسین ثبت‌شده:</h4>
+                    <h4 className="font-bold text-slate-300 text-xs">{window.loc('فهرست مدیران و بازرسین ثبت‌شده:', 'List of registered managers and inspectors:')}</h4>
                     <div className="grid grid-cols-1 gap-3">
                       {adminRolesList.map((admin) => {
                         const perms = admin.permissions || {};
@@ -1810,7 +1810,7 @@ export default function AdminDashboardModal(props) {
                                     🔑 {admin.username || 'Rayan_Super_Admin'} : <strong className="text-amber-200 font-bold">{admin.password || 'Rayan_0935'}</strong>
                                   </span>
                                   {admin.addedAt && (
-                                    <span className="text-slate-500 text-[10px]">تاریخ ثبت: {admin.addedAt}</span>
+                                    <span className="text-slate-500 text-[10px]">{window.loc('تاریخ ثبت:', 'Registration date:')} {admin.addedAt}</span>
                                   )}
                                 </div>
 
@@ -1818,18 +1818,18 @@ export default function AdminDashboardModal(props) {
                                 <div className="flex flex-wrap gap-1.5 pt-1">
                                   {isFull ? (
                                     <span className="px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-400 text-[10px] font-bold border border-emerald-800/80">
-                                      ⭐ دسترسی کامل بدون محدودیت (Full Access)
+                                      {window.loc('⭐ دسترسی کامل بدون محدودیت (Full Access)', '⭐ full access without restrictions (Full Access)')}
                                     </span>
                                   ) : (
                                     <>
-                                      {perms.users ? <span className="px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300 text-[10px] border border-purple-800/60">👥 کاربران</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">👥 کاربران</span>}
-                                      {perms.live ? <span className="px-2 py-0.5 rounded-md bg-pink-950/80 text-pink-300 text-[10px] border border-pink-800/60">🎥 لایو</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">🎥 لایو</span>}
-                                      {perms.reports ? <span className="px-2 py-0.5 rounded-md bg-rose-950/80 text-rose-300 text-[10px] border border-rose-800/60">🚨 گزارشات</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">🚨 گزارشات</span>}
-                                      {perms.wallet ? <span className="px-2 py-0.5 rounded-md bg-emerald-950/80 text-emerald-300 text-[10px] border border-emerald-800/60">💰 کیف پول</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">💰 کیف پول</span>}
-                                      {perms.security ? <span className="px-2 py-0.5 rounded-md bg-amber-950/80 text-amber-300 text-[10px] border border-amber-800/60">🛡️ امنیت AI</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">🛡️ امنیت AI</span>}
-                                      {perms.ads ? <span className="px-2 py-0.5 rounded-md bg-cyan-950/80 text-cyan-300 text-[10px] border border-cyan-800/60">📢 تبلیغات</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">📢 تبلیغات</span>}
-                                      {perms.support ? <span className="px-2 py-0.5 rounded-md bg-blue-950/80 text-blue-300 text-[10px] border border-blue-800/60">🎧 پشتیبانی</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">🎧 پشتیبانی</span>}
-                                      {perms.logs ? <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-300 text-[10px] border border-slate-700">📜 لاگ‌ها</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">📜 لاگ‌ها</span>}
+                                      {perms.users ? <span className="px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300 text-[10px] border border-purple-800/60">{window.loc('👥 کاربران', '👥 Users')}</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">{window.loc('👥 کاربران', '👥 Users')}</span>}
+                                      {perms.live ? <span className="px-2 py-0.5 rounded-md bg-pink-950/80 text-pink-300 text-[10px] border border-pink-800/60">{window.loc('🎥 لایو', '🎥 Live')}</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">{window.loc('🎥 لایو', '🎥 Live')}</span>}
+                                      {perms.reports ? <span className="px-2 py-0.5 rounded-md bg-rose-950/80 text-rose-300 text-[10px] border border-rose-800/60">{window.loc('🚨 گزارشات', '🚨 Reports')}</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">{window.loc('🚨 گزارشات', '🚨 Reports')}</span>}
+                                      {perms.wallet ? <span className="px-2 py-0.5 rounded-md bg-emerald-950/80 text-emerald-300 text-[10px] border border-emerald-800/60">{window.loc('💰 کیف پول', '💰 Wallet')}</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">{window.loc('💰 کیف پول', '💰 Wallet')}</span>}
+                                      {perms.security ? <span className="px-2 py-0.5 rounded-md bg-amber-950/80 text-amber-300 text-[10px] border border-amber-800/60">{window.loc('🛡️ امنیت AI', '🛡️ AI security')}</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">{window.loc('🛡️ امنیت AI', '🛡️ AI security')}</span>}
+                                      {perms.ads ? <span className="px-2 py-0.5 rounded-md bg-cyan-950/80 text-cyan-300 text-[10px] border border-cyan-800/60">{window.loc('📢 تبلیغات', '📢 Advertisements')}</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">{window.loc('📢 تبلیغات', '📢 Advertisements')}</span>}
+                                      {perms.support ? <span className="px-2 py-0.5 rounded-md bg-blue-950/80 text-blue-300 text-[10px] border border-blue-800/60">{window.loc('🎧 پشتیبانی', '🎧 support')}</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">{window.loc('🎧 پشتیبانی', '🎧 support')}</span>}
+                                      {perms.logs ? <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-300 text-[10px] border border-slate-700">{window.loc('📜 لاگ‌ها', '📜 Logs')}</span> : <span className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-600 text-[10px] line-through">{window.loc('📜 لاگ‌ها', '📜 Logs')}</span>}
                                     </>
                                   )}
                                 </div>
@@ -1850,7 +1850,7 @@ export default function AdminDashboardModal(props) {
                                 }}
                                 className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition"
                               >
-                                ✏️ ویرایش دسترسی
+                                {window.loc('✏️ ویرایش دسترسی', '✏️ Edit access')}
                               </button>
                               {admin.role !== 'Super Admin' && admin.telegramId !== '689123456' && (
                                 <button
@@ -1858,12 +1858,12 @@ export default function AdminDashboardModal(props) {
                                     const updated = adminRolesList.filter(a => a.id !== admin.id && a.telegramId !== admin.telegramId);
                                     setAdminRolesList(updated);
                                     safeStorage.setItem('vlive_admin_roles_list', JSON.stringify(updated));
-                                    addAdminAuditLog(`دسترسی ادمین ${admin.name} (Telegram ID: ${admin.telegramId}) لغو گردید`);
-                                    showToast(`دسترسی ادمین ${admin.name} لغو شد.`);
+                                    addAdminAuditLog(window.loc(`دسترسی ادمین ${admin.name} (Telegram ID: ${admin.telegramId}) لغو گردید`, `دسترسی ادمین ${admin.name} (Telegram ID: ${admin.telegramId}) لغو گردید`));
+                                    showToast(window.loc(`دسترسی ادمین ${admin.name} لغو شد.`, `دسترسی ادمین ${admin.name} لغو شد.`));
                                   }}
                                   className="px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800/60 font-bold text-xs transition"
                                 >
-                                  🗑️ لغو دسترسی
+                                  {window.loc('🗑️ لغو دسترسی', '🗑️ Cancel access')}
                                 </button>
                               )}
                             </div>
@@ -1878,10 +1878,10 @@ export default function AdminDashboardModal(props) {
               {/* 16. SECURITY */}
               {adminActiveTab === 'security' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۶. امنیت سیستم و لاگ ورود مدیران (Security)</h3>
+                  <h3 className="font-bold text-white text-sm">{window.loc('۱۶. امنیت سیستم و لاگ ورود مدیران (Security)', '16. System security and administrator login log (Security)')}</h3>
                   <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 font-mono text-[10px]">
-                    <p className="text-slate-300">• 12:15 - ورود مدیر ارشد رایان از IP: 185.220.101.4 (تهران)</p>
-                    <p className="text-slate-300">• 10:40 - ورود مدیر سارا از IP: 91.108.4.12 (لندن)</p>
+                    <p className="text-slate-300">{window.loc('• 12:15 - ورود مدیر ارشد رایان از IP: 185.220.101.4 (تهران)', '• 12:15 - Arrival of senior manager Rayan from IP: 185.220.101.4 (Tehran)')}</p>
+                    <p className="text-slate-300">{window.loc('• 10:40 - ورود مدیر سارا از IP: 91.108.4.12 (لندن)', '• 10:40 - Admin Sarah login from IP: 91.108.4.12 (London)')}</p>
                   </div>
                 </div>
               )}
@@ -1889,19 +1889,19 @@ export default function AdminDashboardModal(props) {
               {/* 17. SYSTEM SETTINGS */}
               {adminActiveTab === 'settings' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۷. تنظیمات عمومی سیستم (System Settings)</h3>
+                  <h3 className="font-bold text-white text-sm">{window.loc('۱۷. تنظیمات عمومی سیستم (System Settings)', '17. General system settings (System Settings)')}</h3>
                   <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">حالت تعمیرات (Maintenance Mode)</p>
-                        <span className="text-[10px] text-slate-400">قفل دسترسی کاربران غیرادمین</span>
+                        <p className="font-bold text-white">{window.loc('حالت تعمیرات (Maintenance Mode)', 'Maintenance Mode')}</p>
+                        <span className="text-[10px] text-slate-400">{window.loc('قفل دسترسی کاربران غیرادمین', 'Access lock for non-admin users')}</span>
                       </div>
                       <input
                         type="checkbox"
                         checked={adminMaintenanceMode}
                         onChange={e => {
                           setAdminMaintenanceMode(e.target.checked);
-                          addAdminAuditLog(e.target.checked ? 'حالت تعمیرات فعال شد 🚨' : 'حالت تعمیرات غیرفعال شد');
+                          addAdminAuditLog(e.target.checked ? window.loc('حالت تعمیرات فعال شد 🚨', 'Repair mode is activated') : window.loc('حالت تعمیرات غیرفعال شد', 'Repair mode disabled'));
                         }}
                         className="accent-amber-500 w-4 h-4 rounded cursor-pointer"
                       />
@@ -1909,7 +1909,7 @@ export default function AdminDashboardModal(props) {
 
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">کارمزد پلتفرم از سکه‌ها</p>
+                        <p className="font-bold text-white">{window.loc('کارمزد پلتفرم از سکه‌ها', 'Platform fees from coins')}</p>
                         <span className="text-[10px] text-amber-300">{adminPlatformFee}</span>
                       </div>
                       <input
@@ -1939,19 +1939,19 @@ export default function AdminDashboardModal(props) {
               {/* 18. AI MODERATION */}
               {adminActiveTab === 'aimod' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۸. سیستم نظارت خودکار هوش مصنوعی (AI Moderation)</h3>
+                  <h3 className="font-bold text-white text-sm">{window.loc('۱۸. سیستم نظارت خودکار هوش مصنوعی (AI Moderation)', '18. Artificial intelligence automatic monitoring system (AI Moderation)')}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">تشخیص خودکار تصاویر نامناسب</p>
-                        <span className="text-[10px] text-slate-400">شناسایی هوشمند عکس‌های متخلف</span>
+                        <p className="font-bold text-white">{window.loc('تشخیص خودکار تصاویر نامناسب', 'Automatic detection of inappropriate images')}</p>
+                        <span className="text-[10px] text-slate-400">{window.loc('شناسایی هوشمند عکس‌های متخلف', 'Intelligent identification of infringing photos')}</span>
                       </div>
                       <input
                         type="checkbox"
                         checked={adminAiBadImages}
                         onChange={e => {
                           setAdminAiBadImages(e.target.checked);
-                          addAdminAuditLog(`تشخیص تصاویر نامناسب هوش مصنوعی ${!adminAiBadImages ? 'فعال' : 'غیرفعال'} شد`);
+                          addAdminAuditLog(window.loc(`تشخیص تصاویر نامناسب هوش مصنوعی ${!adminAiBadImages ? window.loc('فعال', 'active') : window.loc('غیرفعال', 'disabled')} شد`, `تشخیص تصاویر نامناسب هوش مصنوعی ${!adminAiBadImages ? window.loc('فعال', 'active') : window.loc('غیرفعال', 'disabled')} شد`));
                         }}
                         className="accent-emerald-500 w-4 h-4 rounded cursor-pointer"
                       />
@@ -1959,15 +1959,15 @@ export default function AdminDashboardModal(props) {
 
                     <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">فیلتر هوشمند کلمات توهین‌آمیز</p>
-                        <span className="text-[10px] text-slate-400">مسدودسازی خودکار چت نامناسب</span>
+                        <p className="font-bold text-white">{window.loc('فیلتر هوشمند کلمات توهین‌آمیز', 'Smart filter of offensive words')}</p>
+                        <span className="text-[10px] text-slate-400">{window.loc('مسدودسازی خودکار چت نامناسب', 'Automatic blocking of inappropriate chat')}</span>
                       </div>
                       <input
                         type="checkbox"
                         checked={adminAiOffensiveText}
                         onChange={e => {
                           setAdminAiOffensiveText(e.target.checked);
-                          addAdminAuditLog(`فیلتر کلمات توهین‌آمیز هوش مصنوعی ${!adminAiOffensiveText ? 'فعال' : 'غیرفعال'} شد`);
+                          addAdminAuditLog(window.loc(`فیلتر کلمات توهین‌آمیز هوش مصنوعی ${!adminAiOffensiveText ? window.loc('فعال', 'active') : window.loc('غیرفعال', 'disabled')} شد`, `فیلتر کلمات توهین‌آمیز هوش مصنوعی ${!adminAiOffensiveText ? window.loc('فعال', 'active') : window.loc('غیرفعال', 'disabled')} شد`));
                         }}
                         className="accent-emerald-500 w-4 h-4 rounded cursor-pointer"
                       />
@@ -1988,13 +1988,13 @@ export default function AdminDashboardModal(props) {
                         </div>
                         <div>
                           <h3 className="font-black text-white text-base flex items-center gap-2">
-                            <span>🛡 مرکز امنیت هوش مصنوعی (AI Security Center)</span>
+                            <span>{window.loc('🛡 مرکز امنیت هوش مصنوعی (AI Security Center)', 'AI Security Center')}</span>
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40">
                               Gemini 1.5 Powered
                             </span>
                           </h3>
                           <p className="text-[11px] text-purple-200/90 mt-0.5">
-                            اتصال امن پروکسی بک‌اند (بررسی هوشمند گزارش‌ها، چت‌ها، تیکت‌ها، مدارک استریمر و تقلب دعوت)
+                            {window.loc('اتصال امن پروکسی بک‌اند (بررسی هوشمند گزارش‌ها، چت‌ها، تیکت‌ها، مدارک استریمر و تقلب دعوت)', 'Secure backend proxy connection (intelligent checking of logs, chats, tickets, streamer credentials and invite fraud)')}
                           </p>
                         </div>
                       </div>
@@ -2002,9 +2002,9 @@ export default function AdminDashboardModal(props) {
                       {/* AI SECURITY STATUS & MASTER TOGGLE */}
                       <div className="flex items-center gap-3 bg-slate-950/80 p-2.5 rounded-2xl border border-purple-500/30">
                         <div className="text-right">
-                          <span className="text-[10px] text-slate-400 block font-bold">وضعیت هوش مصنوعی:</span>
+                          <span className="text-[10px] text-slate-400 block font-bold">{window.loc('وضعیت هوش مصنوعی:', 'State of artificial intelligence:')}</span>
                           <span className={`text-[10px] font-black ${aiSecuritySettings.enabled ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            {aiSecuritySettings.enabled ? '🟢 فعال و آماده‌به‌کار' : '🔴 غیرفعال'}
+                            {aiSecuritySettings.enabled ? window.loc('🟢 فعال و آماده‌به‌کار', '🟢 active and standby') : window.loc('🔴 غیرفعال', '🔴 disabled')}
                           </span>
                         </div>
                         <input
@@ -2012,7 +2012,7 @@ export default function AdminDashboardModal(props) {
                           checked={aiSecuritySettings.enabled}
                           onChange={e => {
                             setAiSecuritySettings({ ...aiSecuritySettings, enabled: e.target.checked });
-                            addAdminAuditLog(`سیستم AI Security Center ${e.target.checked ? 'فعال' : 'غیرفعال'} گردید`);
+                            addAdminAuditLog(window.loc(`سیستم AI Security Center ${e.target.checked ? window.loc('فعال', 'active') : window.loc('غیرفعال', 'disabled')} گردید`, `سیستم AI Security Center ${e.target.checked ? window.loc('فعال', 'active') : window.loc('غیرفعال', 'disabled')} گردید`));
                           }}
                           className="w-5 h-5 accent-purple-500 cursor-pointer"
                         />
@@ -2022,7 +2022,7 @@ export default function AdminDashboardModal(props) {
                     {/* RISK THRESHOLD SELECTOR */}
                     <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-purple-500/20 text-[11px]">
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-300 font-bold">آستانه حساسیت ریسک:</span>
+                        <span className="text-slate-300 font-bold">{window.loc('آستانه حساسیت ریسک:', 'Risk sensitivity threshold:')}</span>
                         {['Low', 'Medium', 'High'].map(lvl => (
                           <button
                             key={lvl}
@@ -2033,13 +2033,13 @@ export default function AdminDashboardModal(props) {
                                 : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
                             }`}
                           >
-                            {lvl === 'Low' ? 'کم (۴۰+)' : lvl === 'Medium' ? 'متوسط (۶۰+)' : 'بالا (۸۰+)'}
+                            {lvl === 'Low' ? window.loc('کم (۴۰+)', 'low (40+)') : lvl === 'Medium' ? window.loc('متوسط (۶۰+)', 'medium (60+)') : window.loc('بالا (۸۰+)', 'high (80+)')}
                           </button>
                         ))}
                       </div>
 
                       <div className="text-[10px] text-amber-300 font-mono bg-amber-950/40 px-2.5 py-1 rounded-xl border border-amber-500/30">
-                        🔒 GEMINI_API_KEY کاملاً محرمانه در بک‌اند (Render) محافظت می‌شود
+                        {window.loc('🔒 GEMINI_API_KEY کاملاً محرمانه در بک‌اند (Render) محافظت می‌شود', '🔒 GEMINI_API_KEY is completely confidentially protected in the backend (Render).')}
                       </div>
                     </div>
                   </div>
@@ -2049,9 +2049,9 @@ export default function AdminDashboardModal(props) {
                     <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                       <h4 className="font-bold text-white text-sm flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 text-amber-400" />
-                        ۱. تحلیل‌گر گزارشات کاربران (Report Analyzer)
+                        {window.loc('۱. تحلیل‌گر گزارشات کاربران (Report Analyzer)', '1. Report Analyzer')}
                       </h4>
-                      <span className="text-[10px] text-amber-300 font-bold">{aiReportList.length} گزارش فعال</span>
+                      <span className="text-[10px] text-amber-300 font-bold">{aiReportList.length} {window.loc('گزارش فعال', 'Active reporting')}</span>
                     </div>
 
                     <div className="space-y-3">
@@ -2060,13 +2060,13 @@ export default function AdminDashboardModal(props) {
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
                             <div>
                               <p className="font-bold text-white flex items-center gap-2">
-                                <span>گزارش {rep.id}</span>
+                                <span>{window.loc('گزارش', 'Report')} {rep.id}</span>
                                 <span className="text-[10px] px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/30">
-                                  دسته‌بندی: {rep.category}
+                                  {window.loc('دسته‌بندی:', 'Category:')} {rep.category}
                                 </span>
                               </p>
                               <span className="text-[10px] text-slate-400 block font-mono">
-                                گزارش‌دهنده: @{rep.reporter} • متخلف: @{rep.reportedUser} • زمان: {rep.time}
+                                {window.loc('گزارش‌دهنده: @', 'Reporter: @')}{rep.reporter} {window.loc('• متخلف: @', 'Offender: @')}{rep.reportedUser} {window.loc('• زمان:', '• Time:')} {rep.time}
                               </span>
                             </div>
 
@@ -2076,12 +2076,12 @@ export default function AdminDashboardModal(props) {
                               className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 shadow-md transition"
                             >
                               <Sparkles className={`w-3.5 h-3.5 ${rep.isAnalyzing ? 'animate-spin' : ''}`} />
-                              {rep.isAnalyzing ? 'در حال تحلیل با Gemini...' : '🤖 تحلیل هوشمند گزارش با Gemini'}
+                              {rep.isAnalyzing ? window.loc('در حال تحلیل با Gemini...', 'Analyzing with Gemini...') : window.loc('🤖 تحلیل هوشمند گزارش با Gemini', '🤖 Smart report analysis with Gemini')}
                             </button>
                           </div>
 
                           <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200">
-                            <span className="text-[10px] text-slate-400 font-bold block mb-0.5">متن گزارش کاربر:</span>
+                            <span className="text-[10px] text-slate-400 font-bold block mb-0.5">{window.loc('متن گزارش کاربر:', 'User report text:')}</span>
                             "{rep.reportText}"
                           </div>
 
@@ -2090,50 +2090,50 @@ export default function AdminDashboardModal(props) {
                             <div className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/40 space-y-2 text-[11px] animate-fadeIn">
                               <div className="flex items-center justify-between">
                                 <span className="font-bold text-purple-300 flex items-center gap-1.5">
-                                  <Sparkles className="w-3.5 h-3.5 text-purple-400" /> نتیجه تحلیل Gemini:
+                                  <Sparkles className="w-3.5 h-3.5 text-purple-400" /> {window.loc('نتیجه تحلیل Gemini:', 'Gemini analysis result:')}
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  <span className="font-bold text-white">امتیاز ریسک: {rep.aiRiskScore}/100</span>
+                                  <span className="font-bold text-white">{window.loc('امتیاز ریسک:', 'Risk score:')} {rep.aiRiskScore}/100</span>
                                   <span className={`px-2 py-0.5 rounded-full font-black text-[10px] ${
                                     rep.aiRiskLevel === 'High' ? 'bg-rose-600 text-white animate-pulse' :
                                     rep.aiRiskLevel === 'Medium' ? 'bg-amber-500 text-slate-950' :
                                     'bg-emerald-600 text-white'
                                   }`}>
-                                    {rep.aiRiskLevel === 'High' ? '🔴 ریسک بالا (High Risk)' :
-                                     rep.aiRiskLevel === 'Medium' ? '🟡 ریسک متوسط' : '🟢 ریسک پایین'}
+                                    {rep.aiRiskLevel === 'High' ? window.loc('🔴 ریسک بالا (High Risk)', '🔴 high risk') :
+                                     rep.aiRiskLevel === 'Medium' ? window.loc('🟡 ریسک متوسط', 'Medium risk') : window.loc('🟢 ریسک پایین', '🟢 Low risk')}
                                   </span>
                                 </div>
                               </div>
 
                               <p className="text-slate-300">
-                                <span className="font-bold text-purple-200">دسته‌بندی هوشمند: </span>
+                                <span className="font-bold text-purple-200">{window.loc('دسته‌بندی هوشمند:', 'Smart category:')} </span>
                                 <span className="text-amber-300 font-bold">{rep.aiClassification}</span> — {rep.aiReasoning}
                               </p>
 
                               {/* ADMIN DECISION CONTROLS */}
                               <div className="flex items-center gap-2 pt-2 border-t border-purple-500/30">
-                                <span className="text-[10px] font-bold text-slate-300">تصمیم نهایی مدیر:</span>
+                                <span className="text-[10px] font-bold text-slate-300">{window.loc('تصمیم نهایی مدیر:', 'Manager\'s final decision:')}</span>
                                 <button
                                   onClick={() => {
                                     setAiReportList(prev => prev.map(r => r.id === rep.id ? { ...r, status: 'Banned' } : r));
-                                    addAdminAuditLog(`کاربر @${rep.reportedUser} بر اساس گزارش ${rep.id} و تحلیل AI مسدود شد`);
-                                    showToast(`⛔ کاربر @${rep.reportedUser} مسدود گردید`);
+                                    addAdminAuditLog(window.loc(`کاربر @${rep.reportedUser} بر اساس گزارش ${rep.id} و تحلیل AI مسدود شد`, `کاربر @${rep.reportedUser} بر اساس گزارش ${rep.id} و تحلیل AI مسدود شد`));
+                                    showToast(window.loc(`⛔ کاربر @${rep.reportedUser} مسدود گردید`, `⛔ کاربر @${rep.reportedUser} مسدود گردید`));
                                   }}
                                   className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px]"
                                 >
-                                  ⛔ مسدودسازی کاربر (Ban)
+                                  {window.loc('⛔ مسدودسازی کاربر (Ban)', '⛔ User blocking (Ban)')}
                                 </button>
                                 <button
                                   onClick={() => {
                                     setAiReportList(prev => prev.map(r => r.id === rep.id ? { ...r, status: 'Rejected' } : r));
-                                    addAdminAuditLog(`گزارش ${rep.id} توسط مدیر رد گردید`);
-                                    showToast('❌ گزارش رد شد');
+                                    addAdminAuditLog(window.loc(`گزارش ${rep.id} توسط مدیر رد گردید`, `گزارش ${rep.id} توسط مدیر رد گردید`));
+                                    showToast(window.loc('❌ گزارش رد شد', '❌ The report was rejected'));
                                   }}
                                   className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[10px]"
                                 >
-                                  ❌ رد گزارش
+                                  {window.loc('❌ رد گزارش', 'Rejection of the report')}
                                 </button>
-                                <span className="text-[10px] text-slate-400 mr-auto font-mono">وضعیت: {rep.status}</span>
+                                <span className="text-[10px] text-slate-400 mr-auto font-mono">{window.loc('وضعیت:', 'Status:')} {rep.status}</span>
                               </div>
                             </div>
                           )}
@@ -2148,10 +2148,10 @@ export default function AdminDashboardModal(props) {
                       <div>
                         <h4 className="font-bold text-white text-sm flex items-center gap-2">
                           <MessageSquare className="w-4 h-4 text-cyan-400" />
-                          ۲. نظارت هوشمند چت‌های گزارش‌شده (Reported Chat Moderation)
+                          {window.loc('۲. نظارت هوشمند چت‌های گزارش‌شده (Reported Chat Moderation)', '2. Smart monitoring of reported chats (Reported Chat Moderation)')}
                         </h4>
                         <p className="text-[10px] text-emerald-400 font-bold mt-0.5">
-                          📌 قانون حریم خصوصی: تنها پیام‌هایی که گزارش شده‌اند برای تحلیل Gemini ارسال می‌شوند (نه تمام پیام‌ها).
+                          {window.loc('📌 قانون حریم خصوصی: تنها پیام‌هایی که گزارش شده‌اند برای تحلیل Gemini ارسال می‌شوند (نه تمام پیام‌ها).', '📌 PRIVACY RULE: Only reported messages are submitted for Gemini analysis (not all messages).')}
                         </p>
                       </div>
                     </div>
@@ -2162,10 +2162,10 @@ export default function AdminDashboardModal(props) {
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
                             <div>
                               <p className="font-bold text-white">
-                                چت گزارش‌شده {chat.id} — <span className="text-cyan-300">علت: {chat.reportReason}</span>
+                                {window.loc('چت گزارش‌شده', 'Reported chat')} {chat.id} — <span className="text-cyan-300">{window.loc('علت:', 'Cause:')} {chat.reportReason}</span>
                               </p>
                               <span className="text-[10px] text-slate-400 block font-mono">
-                                فرستنده: @{chat.sender} • گیرنده: @{chat.recipient} • زمان: {chat.time}
+                                {window.loc('فرستنده: @', 'Sender: @')}{chat.sender} {window.loc('• گیرنده: @', '• Recipient: @')}{chat.recipient} {window.loc('• زمان:', '• Time:')} {chat.time}
                               </span>
                             </div>
 
@@ -2175,7 +2175,7 @@ export default function AdminDashboardModal(props) {
                               className="px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition"
                             >
                               <Sparkles className={`w-3.5 h-3.5 ${chat.isAnalyzing ? 'animate-spin' : ''}`} />
-                              {chat.isAnalyzing ? 'در حال تحلیل چت...' : '🔍 تحلیل پیام با Gemini'}
+                              {chat.isAnalyzing ? window.loc('در حال تحلیل چت...', 'Analyzing chat...') : window.loc('🔍 تحلیل پیام با Gemini', '🔍 Message analysis with Gemini')}
                             </button>
                           </div>
 
@@ -2186,27 +2186,27 @@ export default function AdminDashboardModal(props) {
                           {chat.aiAnalysis && (
                             <div className="p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/40 space-y-2 text-[11px]">
                               <div className="flex items-center justify-between">
-                                <span className="font-bold text-cyan-300">تحلیل Gemini: {chat.aiAnalysis.summary || 'بررسی انجام شد'}</span>
-                                <span className="font-black text-amber-300">ریسک: {chat.aiAnalysis.riskScore || 80}/100</span>
+                                <span className="font-bold text-cyan-300">{window.loc('تحلیل Gemini:', 'Gemini Analysis:')} {chat.aiAnalysis.summary || window.loc('بررسی انجام شد', 'The review was done')}</span>
+                                <span className="font-black text-amber-300">{window.loc('ریسک:', 'Risk:')} {chat.aiAnalysis.riskScore || 80}/100</span>
                               </div>
                               <div className="flex items-center gap-2 pt-1 border-t border-cyan-500/20">
                                 <button
                                   onClick={() => {
-                                    addAdminAuditLog(`فرستنده پیام اسپم @${chat.sender} مسدود گردید`);
-                                    showToast(`⛔ کاربر @${chat.sender} مسدود شد`);
+                                    addAdminAuditLog(window.loc(`فرستنده پیام اسپم @${chat.sender} مسدود گردید`, `فرستنده پیام اسپم @${chat.sender} مسدود گردید`));
+                                    showToast(window.loc(`⛔ کاربر @${chat.sender} مسدود شد`, `⛔ کاربر @${chat.sender} مسدود شد`));
                                   }}
                                   className="px-2.5 py-1 rounded-xl bg-rose-600 text-white font-bold text-[10px]"
                                 >
-                                  ⛔ مسدودسازی فرستنده
+                                  {window.loc('⛔ مسدودسازی فرستنده', '⛔ Blocking the sender')}
                                 </button>
                                 <button
                                   onClick={() => {
                                     setAiReportedChatsList(prev => prev.filter(c => c.id !== chat.id));
-                                    showToast('🗑 پیام از دیتابیس پاک گردید');
+                                    showToast(window.loc('🗑 پیام از دیتابیس پاک گردید', '🗑 The message was deleted from the database'));
                                   }}
                                   className="px-2.5 py-1 rounded-xl bg-slate-800 text-rose-300 font-bold text-[10px]"
                                 >
-                                  🗑 حذف پیام
+                                  {window.loc('🗑 حذف پیام', '🗑 Delete message')}
                                 </button>
                               </div>
                             </div>
@@ -2221,9 +2221,9 @@ export default function AdminDashboardModal(props) {
                     <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                       <h4 className="font-bold text-white text-sm flex items-center gap-2">
                         <LifeBuoy className="w-4 h-4 text-emerald-400" />
-                        ۳. دستیار هوشمند پشتیبانی و تیکت‌ها (Support Assistant)
+                        {window.loc('۳. دستیار هوشمند پشتیبانی و تیکت‌ها (Support Assistant)', '3. Support Assistant and tickets (Support Assistant)')}
                       </h4>
-                      <span className="text-[10px] text-emerald-300 font-bold">پیشنهاد اولیه با AI • تایید نهایی با ادمین</span>
+                      <span className="text-[10px] text-emerald-300 font-bold">{window.loc('پیشنهاد اولیه با AI • تایید نهایی با ادمین', 'Initial proposal with AI • Final approval with admin')}</span>
                     </div>
 
                     <div className="space-y-3">
@@ -2232,9 +2232,9 @@ export default function AdminDashboardModal(props) {
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
                             <div>
                               <p className="font-bold text-white flex items-center gap-2">
-                                <span>تیکت {ticket.id}: {ticket.subject}</span>
+                                <span>{window.loc('تیکت', 'ticket')} {ticket.id}: {ticket.subject}</span>
                               </p>
-                              <span className="text-[10px] text-slate-400 block font-mono">کاربر: @{ticket.user} • زمان: {ticket.time}</span>
+                              <span className="text-[10px] text-slate-400 block font-mono">{window.loc('کاربر: @', 'User: @')}{ticket.user} {window.loc('• زمان:', '• Time:')} {ticket.time}</span>
                             </div>
 
                             <button
@@ -2243,7 +2243,7 @@ export default function AdminDashboardModal(props) {
                               className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition"
                             >
                               <Sparkles className={`w-3.5 h-3.5 ${ticket.isGenerating ? 'animate-spin' : ''}`} />
-                              {ticket.isGenerating ? 'تولید پاسخ با Gemini...' : '✨ پاسخ پیشنهادی Gemini'}
+                              {ticket.isGenerating ? window.loc('تولید پاسخ با Gemini...', 'Generating responses with Gemini...') : window.loc('✨ پاسخ پیشنهادی Gemini', '✨ Gemini\'s suggested answer')}
                             </button>
                           </div>
 
@@ -2253,7 +2253,7 @@ export default function AdminDashboardModal(props) {
 
                           {ticket.aiSuggestedReply && (
                             <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2">
-                              <span className="font-bold text-emerald-300 text-[11px] block">پاسخ پیشنهادی Gemini (پیش‌نویس):</span>
+                              <span className="font-bold text-emerald-300 text-[11px] block">{window.loc('پاسخ پیشنهادی Gemini (پیش‌نویس):', 'Gemini Suggested Answer (Draft):')}</span>
                               <textarea
                                 value={ticket.aiSuggestedReply}
                                 onChange={e => {
@@ -2266,12 +2266,12 @@ export default function AdminDashboardModal(props) {
                                 <button
                                   onClick={() => {
                                     setAiSupportTicketsList(prev => prev.map(t => t.id === ticket.id ? { ...t, status: 'Closed' } : t));
-                                    addAdminAuditLog(`پاسخ تیکت ${ticket.id} توسط مدیر تایید و ارسال شد`);
-                                    showToast('📤 پاسخ تیکت با موفقیت برای کاربر ارسال شد');
+                                    addAdminAuditLog(window.loc(`پاسخ تیکت ${ticket.id} توسط مدیر تایید و ارسال شد`, `پاسخ تیکت ${ticket.id} توسط مدیر تایید و ارسال شد`));
+                                    showToast(window.loc('📤 پاسخ تیکت با موفقیت برای کاربر ارسال شد', '📤 The ticket response was successfully sent to the user'));
                                   }}
                                   className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md"
                                 >
-                                  📤 تایید و ارسال پاسخ برای کاربر
+                                  {window.loc('📤 تایید و ارسال پاسخ برای کاربر', '📤 Confirm and send the answer to the user')}
                                 </button>
                               </div>
                             </div>
@@ -2286,9 +2286,9 @@ export default function AdminDashboardModal(props) {
                     <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                       <h4 className="font-bold text-white text-sm flex items-center gap-2">
                         <BadgeCheck className="w-4 h-4 text-pink-400" />
-                        ۴. بررسی هوشمند مدارک استریمرها (Streamer Verification)
+                        {window.loc('۴. بررسی هوشمند مدارک استریمرها (Streamer Verification)', '4. Intelligent review of streamer documents (Streamer Verification)')}
                       </h4>
-                      <span className="text-[10px] text-pink-300 font-bold">بررسی کامل بودن مدارک با AI • تصمیم با ادمین</span>
+                      <span className="text-[10px] text-pink-300 font-bold">{window.loc('بررسی کامل بودن مدارک با AI • تصمیم با ادمین', 'Checking the completeness of documents with AI • Decision with admin')}</span>
                     </div>
 
                     <div className="space-y-3">
@@ -2299,7 +2299,7 @@ export default function AdminDashboardModal(props) {
                               <img src={kyc.photoUrl} alt={kyc.name} className="w-10 h-10 rounded-full object-cover border border-pink-500/40" />
                               <div>
                                 <p className="font-bold text-white">{kyc.name} (@{kyc.username})</p>
-                                <span className="text-[10px] text-slate-400 block">مدارک ارسالی: {kyc.docsSubmitted.join(' ، ')}</span>
+                                <span className="text-[10px] text-slate-400 block">{window.loc('مدارک ارسالی:', 'Submitted documents:')} {kyc.docsSubmitted.join(window.loc(' ، ', ','))}</span>
                               </div>
                             </div>
 
@@ -2309,46 +2309,46 @@ export default function AdminDashboardModal(props) {
                               className="px-3.5 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition"
                             >
                               <Sparkles className={`w-3.5 h-3.5 ${kyc.isAnalyzing ? 'animate-spin' : ''}`} />
-                              {kyc.isAnalyzing ? 'در حال بررسی وضوح تصویر...' : '🔎 بررسی وضوح مدارک با Gemini'}
+                              {kyc.isAnalyzing ? window.loc('در حال بررسی وضوح تصویر...', 'Checking resolution...') : window.loc('🔎 بررسی وضوح مدارک با Gemini', '🔎 Check document clarity with Gemini')}
                             </button>
                           </div>
 
                           {kyc.aiCheck && (
                             <div className="p-3 rounded-xl bg-pink-950/40 border border-pink-500/40 space-y-2 text-[11px]">
                               <p className="text-slate-200">
-                                <span className="font-bold text-pink-300">ارزیابی کیفیت Gemini: </span>
-                                {kyc.aiCheck.isClear ? '✅ مدارک کامل و تصویر واضح است.' : '⚠️ وضوح مدارک نیاز به بررسی دقیق‌تر دارد.'}
+                                <span className="font-bold text-pink-300">{window.loc('ارزیابی کیفیت Gemini:', 'Gemini Quality Assessment:')} </span>
+                                {kyc.aiCheck.isClear ? window.loc('✅ مدارک کامل و تصویر واضح است.', '✅ The documents are complete and the image is clear.') : window.loc('⚠️ وضوح مدارک نیاز به بررسی دقیق‌تر دارد.', '⚠️ The clarity of the documents needs to be checked more carefully.')}
                               </p>
                               <div className="flex items-center gap-2 pt-1 border-t border-pink-500/20">
                                 <button
                                   onClick={() => {
                                     setAiStreamerVerificationsList(prev => prev.map(k => k.id === kyc.id ? { ...k, status: 'Approved' } : k));
-                                    addAdminAuditLog(`درخواست استریمر @${kyc.username} تایید گردید`);
-                                    showToast(`👑 استریمر @${kyc.username} تایید شد`);
+                                    addAdminAuditLog(window.loc(`درخواست استریمر @${kyc.username} تایید گردید`, `درخواست استریمر @${kyc.username} تایید گردید`));
+                                    showToast(window.loc(`👑 استریمر @${kyc.username} تایید شد`, `👑 استریمر @${kyc.username} تایید شد`));
                                   }}
                                   className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs"
                                 >
-                                  ✅ تایید نهایی استریمر
+                                  {window.loc('✅ تایید نهایی استریمر', '✅ Final approval of the streamer')}
                                 </button>
                                 <button
                                   onClick={() => {
                                     setAiStreamerVerificationsList(prev => prev.map(k => k.id === kyc.id ? { ...k, status: 'Suspended' } : k));
-                                    addAdminAuditLog(`دسترسی استریمر @${kyc.username} تعلیق گردید`);
-                                    showToast(`⚠️ استریمر @${kyc.username} تعلیق شد`);
+                                    addAdminAuditLog(window.loc(`دسترسی استریمر @${kyc.username} تعلیق گردید`, `دسترسی استریمر @${kyc.username} تعلیق گردید`));
+                                    showToast(window.loc(`⚠️ استریمر @${kyc.username} تعلیق شد`, `⚠️ استریمر @${kyc.username} تعلیق شد`));
                                   }}
                                   className="px-3 py-1.5 rounded-xl bg-amber-600 text-white font-bold text-xs"
                                 >
-                                  ⚠️ تعلیق موقت
+                                  {window.loc('⚠️ تعلیق موقت', '⚠️ Temporary suspension')}
                                 </button>
                                 <button
                                   onClick={() => {
                                     setAiStreamerVerificationsList(prev => prev.map(k => k.id === kyc.id ? { ...k, status: 'Rejected' } : k));
-                                    addAdminAuditLog(`درخواست استریمر @${kyc.username} رد شد`);
-                                    showToast('❌ درخواست رد شد');
+                                    addAdminAuditLog(window.loc(`درخواست استریمر @${kyc.username} رد شد`, `درخواست استریمر @${kyc.username} رد شد`));
+                                    showToast(window.loc('❌ درخواست رد شد', 'The request was rejected'));
                                   }}
                                   className="px-3 py-1.5 rounded-xl bg-slate-800 text-rose-300 font-bold text-xs"
                                 >
-                                  ❌ رد درخواست / لغو مقام
+                                  {window.loc('❌ رد درخواست / لغو مقام', '❌ application rejection / cancellation of the position')}
                                 </button>
                               </div>
                             </div>
@@ -2363,9 +2363,9 @@ export default function AdminDashboardModal(props) {
                     <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                       <h4 className="font-bold text-white text-sm flex items-center gap-2">
                         <UserCheck className="w-4 h-4 text-indigo-400" />
-                        ۵. شناسایی تقلب سیستم دعوت (Referral Fraud Detection)
+                        {window.loc('۵. شناسایی تقلب سیستم دعوت (Referral Fraud Detection)', '5. Referral Fraud Detection')}
                       </h4>
-                      <span className="text-[10px] text-indigo-300 font-bold">شناسایی آی‌پی‌های تکراری و الگوی مشکوک</span>
+                      <span className="text-[10px] text-indigo-300 font-bold">{window.loc('شناسایی آی‌پی‌های تکراری و الگوی مشکوک', 'Identify duplicate IPs and suspicious patterns')}</span>
                     </div>
 
                     <div className="space-y-3">
@@ -2373,9 +2373,9 @@ export default function AdminDashboardModal(props) {
                         <div key={ref.id} className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
                             <div>
-                              <p className="font-bold text-white">کاربر: @{ref.username} ({ref.userId})</p>
+                              <p className="font-bold text-white">{window.loc('کاربر: @', 'User: @')}{ref.username} ({ref.userId})</p>
                               <span className="text-[10px] text-slate-400 block font-mono">
-                                تعداد دعوت: {ref.referralCount} کاربر • آی‌پی‌های ثبت‌شده: {ref.registeredIps.join(', ')}
+                                {window.loc('تعداد دعوت:', 'Number of invitations:')} {ref.referralCount} {window.loc('کاربر • آی‌پی‌های ثبت‌شده:', 'User • Registered IPs:')} {ref.registeredIps.join(', ')}
                               </span>
                             </div>
 
@@ -2385,31 +2385,31 @@ export default function AdminDashboardModal(props) {
                               className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition"
                             >
                               <Sparkles className={`w-3.5 h-3.5 ${ref.isAnalyzing ? 'animate-spin' : ''}`} />
-                              {ref.isAnalyzing ? 'تحلیل الگوی دعوت...' : '🔍 تحلیل تقلب با Gemini'}
+                              {ref.isAnalyzing ? window.loc('تحلیل الگوی دعوت...', 'Analysis of invitation pattern...') : window.loc('🔍 تحلیل تقلب با Gemini', '🔍 Fraud analysis with Gemini')}
                             </button>
                           </div>
 
                           {ref.aiAnalysis && (
                             <div className="p-3 rounded-xl bg-indigo-950/40 border border-indigo-500/40 space-y-2 text-[11px]">
                               <div className="flex items-center justify-between">
-                                <span className="font-bold text-indigo-300">تحلیل Gemini: {ref.aiAnalysis.recommendation || 'الگوی مشکوک مشاهده شد'}</span>
-                                <span className="font-black text-rose-400">احتمال تقلب: {ref.aiAnalysis.fraudScore || 85}%</span>
+                                <span className="font-bold text-indigo-300">{window.loc('تحلیل Gemini:', 'Gemini Analysis:')} {ref.aiAnalysis.recommendation || window.loc('الگوی مشکوک مشاهده شد', 'A suspicious pattern was observed')}</span>
+                                <span className="font-black text-rose-400">{window.loc('احتمال تقلب:', 'Probability of fraud:')} {ref.aiAnalysis.fraudScore || 85}%</span>
                               </div>
                               <div className="flex items-center gap-2 pt-1 border-t border-indigo-500/20">
                                 <button
                                   onClick={() => {
-                                    addAdminAuditLog(`پاداش دعوت کاربر @${ref.username} مسدود شد`);
-                                    showToast(`🚨 پاداش دعوت @${ref.username} مسدود گردید`);
+                                    addAdminAuditLog(window.loc(`پاداش دعوت کاربر @${ref.username} مسدود شد`, `پاداش دعوت کاربر @${ref.username} مسدود شد`));
+                                    showToast(window.loc(`🚨 پاداش دعوت @${ref.username} مسدود گردید`, `🚨 پاداش دعوت @${ref.username} مسدود گردید`));
                                   }}
                                   className="px-3 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-xs"
                                 >
-                                  🚨 مسدودسازی پاداش دعوت
+                                  {window.loc('🚨 مسدودسازی پاداش دعوت', '🚨 Blocking invitation bonus')}
                                 </button>
                                 <button
-                                  onClick={() => showToast('✅ حساب کاربر تایید شد')}
+                                  onClick={() => showToast(window.loc('✅ حساب کاربر تایید شد', '✅ The user account has been verified'))}
                                   className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
                                 >
-                                  ✅ تایید حساب
+                                  {window.loc('✅ تایید حساب', 'Account verification')}
                                 </button>
                               </div>
                             </div>
@@ -2422,20 +2422,20 @@ export default function AdminDashboardModal(props) {
                   {/* SCOPE EXCLUSIONS ROADMAP BANNER */}
                   <div className="p-4 rounded-3xl bg-slate-950/80 border border-slate-800/80 space-y-2 text-slate-400 text-[11px]">
                     <h5 className="font-bold text-slate-300 flex items-center gap-2">
-                      <span>🛑 قابلیت‌های غیرفعال طبق دستور مدیریت (ویژه نسخه بعدی V2)</span>
+                      <span>{window.loc('🛑 قابلیت‌های غیرفعال طبق دستور مدیریت (ویژه نسخه بعدی V2)', '🛑 Disabled features according to the management command (especially the next version V2)')}</span>
                     </h5>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
                       <p className="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
-                        • بررسی زنده تمام لایو استریم‌ها: <span className="text-rose-400 font-bold">غیرفعال</span>
+                        {window.loc('• بررسی زنده تمام لایو استریم‌ها:', '• Live review of all live streams:')} <span className="text-rose-400 font-bold">{window.loc('غیرفعال', 'disabled')}</span>
                       </p>
                       <p className="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
-                        • بررسی زنده تمام تماس‌های صوتی و تصویری: <span className="text-rose-400 font-bold">غیرفعال</span>
+                        {window.loc('• بررسی زنده تمام تماس‌های صوتی و تصویری:', '• Live review of all audio and video calls:')} <span className="text-rose-400 font-bold">{window.loc('غیرفعال', 'disabled')}</span>
                       </p>
                       <p className="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
-                        • بررسی زنده تمام پیام‌های عمومی چت: <span className="text-rose-400 font-bold">غیرفعال (فقط پیام‌های گزارش‌شده)</span>
+                        {window.loc('• بررسی زنده تمام پیام‌های عمومی چت:', '• Live review of all public chat messages:')} <span className="text-rose-400 font-bold">{window.loc('غیرفعال (فقط پیام‌های گزارش‌شده)', 'Disabled (reported messages only)')}</span>
                       </p>
                       <p className="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
-                        • سیستم Ban و مسدودسازی اتوماتیک: <span className="text-rose-400 font-bold">غیرفعال (تصمیم نهایی با ادمین)</span>
+                        {window.loc('• سیستم Ban و مسدودسازی اتوماتیک:', '• Ban system and automatic blocking:')} <span className="text-rose-400 font-bold">{window.loc('غیرفعال (تصمیم نهایی با ادمین)', 'Disabled (final decision with admin)')}</span>
                       </p>
                     </div>
                   </div>
@@ -2445,31 +2445,31 @@ export default function AdminDashboardModal(props) {
               {/* 19. BACKUP & RESTORE */}
               {adminActiveTab === 'backup' && (
                 <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">۱۹. تهیه نسخه پشتیبان و بازیابی (Backup & Restore)</h3>
+                  <h3 className="font-bold text-white text-sm">{window.loc('۱۹. تهیه نسخه پشتیبان و بازیابی (Backup & Restore)', '19. Backup & Restore')}</h3>
                   <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
                     <div className="flex justify-between items-center">
-                      <p className="font-bold text-cyan-300">لیست نسخه‌های پشتیبان ثبت‌شده</p>
+                      <p className="font-bold text-cyan-300">{window.loc('لیست نسخه‌های پشتیبان ثبت‌شده', 'List of registered backups')}</p>
                       <button
                         onClick={() => {
                           const newB = { id: `BK-${Date.now()}`, size: '49.8 MB', date: new Date().toLocaleString() };
                           setAdminBackupsList(prev => [newB, ...prev]);
-                          addAdminAuditLog(`نسخه پشتیبان جدید ${newB.id} با موفقیت ایجاد گردید`);
+                          addAdminAuditLog(window.loc(`نسخه پشتیبان جدید ${newB.id} با موفقیت ایجاد گردید`, `نسخه پشتیبان جدید ${newB.id} با موفقیت ایجاد گردید`));
                         }}
                         className="px-4 py-2 rounded-xl bg-cyan-600 text-white font-bold"
                       >
-                        + بکاپ‌گیری فوری
+                        {window.loc('+ بکاپ‌گیری فوری', '+ Instant backup')}
                       </button>
                     </div>
 
                     <div className="space-y-1.5">
                       {adminBackupsList.map(b => (
                         <div key={b.id} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center text-[11px]">
-                          <span>{b.id} • حجم: {b.size} • تاریخ: {b.date}</span>
+                          <span>{b.id} {window.loc('• حجم:', 'Volume:')} {b.size} {window.loc('• تاریخ:', 'Date:')} {b.date}</span>
                           <button
-                            onClick={() => addAdminAuditLog(`دیتابیس از روی فایل ${b.id} بازیابی گردید`)}
+                            onClick={() => addAdminAuditLog(window.loc(`دیتابیس از روی فایل ${b.id} بازیابی گردید`, `دیتابیس از روی فایل ${b.id} بازیابی گردید`))}
                             className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold"
                           >
-                            بازیابی اطلاعات
+                            {window.loc('بازیابی اطلاعات', 'data recovery')}
                           </button>
                         </div>
                       ))}

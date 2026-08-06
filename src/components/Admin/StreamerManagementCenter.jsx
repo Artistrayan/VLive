@@ -25,12 +25,12 @@ export default function StreamerManagementCenter({
   const [editXp, setEditXp] = useState(4250);
   const [editReputation, setEditReputation] = useState(9);
   const [editRank, setEditRank] = useState(7);
-  const [editReason, setEditReason] = useState('تعدیل دستی توسط ادمین ارشد');
+  const [editReason, setEditReason] = useState(window.loc('تعدیل دستی توسط ادمین ارشد', 'Manual adjustment by senior admin'));
 
   // Level History Logs State
   const [levelHistoryLogs, setLevelHistoryLogs] = useState([
-    { id: 'LOG-101', username: 'Rayan_Streamer', oldLevel: 'Level 2 Bronze', newLevel: 'Level 3 Silver', xp: 3200, reason: 'تکمیل ۵۰ ساعت لایواستریم فعال', date: '2026-08-04 14:20', admin: 'AI Studio System' },
-    { id: 'LOG-102', username: 'Elnaz_Live', oldLevel: 'Level 1 New', newLevel: 'Level 2 Bronze', xp: 1100, reason: 'احراز هویت و اولین استریم موفق', date: '2026-08-05 09:10', admin: 'Admin_Super' }
+    { id: 'LOG-101', username: 'Rayan_Streamer', oldLevel: 'Level 2 Bronze', newLevel: 'Level 3 Silver', xp: 3200, reason: window.loc('تکمیل ۵۰ ساعت لایواستریم فعال', 'Completion of 50 hours of active live streaming'), date: '2026-08-04 14:20', admin: 'AI Studio System' },
+    { id: 'LOG-102', username: 'Elnaz_Live', oldLevel: 'Level 1 New', newLevel: 'Level 2 Bronze', xp: 1100, reason: window.loc('احراز هویت و اولین استریم موفق', 'Authentication and first successful stream'), date: '2026-08-05 09:10', admin: 'Admin_Super' }
   ]);
 
   // Admin Config State for Levels
@@ -44,7 +44,7 @@ export default function StreamerManagementCenter({
     {
       id: 'KYC-801',
       username: 'Elnaz_Live',
-      name: 'الناز محمدی',
+      name: window.loc('الناز محمدی', 'Elnaz Mohammadi'),
       age: 22,
       city: 'Shiraz',
       submittedAt: '2026-08-05 10:30',
@@ -56,7 +56,7 @@ export default function StreamerManagementCenter({
     {
       id: 'KYC-802',
       username: 'Nigar_Host',
-      name: 'نگار احمدی',
+      name: window.loc('نگار احمدی', 'Negar Ahmadi'),
       age: 24,
       city: 'Tehran',
       submittedAt: '2026-08-05 09:15',
@@ -71,14 +71,14 @@ export default function StreamerManagementCenter({
     setKycApplications(prev => prev.filter(a => a.id !== app.id));
     setUsersList(prev => prev.map(u => u.username === app.username ? { ...u, isStreamer: true, isHost: true, isVerified: true, xp: 1000, reputationScore: 10, creatorRank: 5 } : u));
     addAdminAuditLog(`Approved Streamer KYC Application #${app.id} for @${app.username}`);
-    showToast(`✅ درخواست استریمی @${app.username} با موفقیت تایید شد`);
+    showToast(window.loc(`✅ درخواست استریمی @${app.username} با موفقیت تایید شد`, `✅ درخواست استریمی @${app.username} با موفقیت تایید شد`));
     setSelectedApplication(null);
   };
 
   const handleRejectKyc = (app) => {
     setKycApplications(prev => prev.filter(a => a.id !== app.id));
     addAdminAuditLog(`Rejected Streamer KYC Application #${app.id} for @${app.username}`);
-    showToast(`✕ درخواست استریمی @${app.username} رد شد`);
+    showToast(window.loc(`✕ درخواست استریمی @${app.username} رد شد`, `✕ درخواست استریمی @${app.username} رد شد`));
     setSelectedApplication(null);
   };
 
@@ -86,7 +86,7 @@ export default function StreamerManagementCenter({
     const nextFrozen = !streamer.incomeFrozen;
     setUsersList(prev => prev.map(u => u.id === streamer.id ? { ...u, incomeFrozen: nextFrozen } : u));
     addAdminAuditLog(`Admin Action: ${nextFrozen ? 'Frozen' : 'Unfrozen'} streamer income for @${streamer.username}`);
-    showToast(nextFrozen ? `🧊 درآمد و تسویه‌حساب @${streamer.username} مسدود شد` : `🔥 تسویه‌حساب @${streamer.username} فعال گردید`);
+    showToast(nextFrozen ? window.loc(`🧊 درآمد و تسویه‌حساب @${streamer.username} مسدود شد`, `🧊 درآمد و تسویه‌حساب @${streamer.username} مسدود شد`));
   };
 
   // Handle manual score/level updates by admin
@@ -116,7 +116,7 @@ export default function StreamerManagementCenter({
 
     setLevelHistoryLogs(prev => [newLog, ...prev]);
     addAdminAuditLog(`Admin updated Streamer Scores for @${editingStreamer.username}: XP=${editXp}, Rep=${editReputation}, Rank=${editRank}`);
-    showToast(`✅ امتیازات استریمر @${editingStreamer.username} بروزرسانی شد`);
+    showToast(window.loc(`✅ امتیازات استریمر @${editingStreamer.username} بروزرسانی شد`, `✅ امتیازات استریمر @${editingStreamer.username} بروزرسانی شد`));
     setEditingStreamer(null);
   };
 
@@ -131,13 +131,13 @@ export default function StreamerManagementCenter({
           </div>
           <div>
             <h2 className="text-base font-black text-white flex items-center gap-2">
-              <span>مرکز مدیریت سطح، اعتبار و رتبه‌بندی استریمرها</span>
+              <span>{window.loc('مرکز مدیریت سطح، اعتبار و رتبه‌بندی استریمرها', 'Level management center, credit and rating of streamers')}</span>
               <span className="text-[10px] bg-pink-500/20 text-pink-300 font-mono px-2 py-0.5 rounded-full border border-pink-500/30">
                 {streamersList.length} HOSTS
               </span>
             </h2>
             <p className="text-[11px] text-slate-400">
-              مدیریت ۳ شاخص مستقل (Level, Reputation, Creator Rank)، آنتی‌چیت هوشمند و پیکربندی سطح‌ها
+              {window.loc('مدیریت ۳ شاخص مستقل (Level, Reputation, Creator Rank)، آنتی‌چیت هوشمند و پیکربندی سطح‌ها', 'Management of 3 independent indicators (Level, Reputation, Creator Rank), intelligent anti-cheat and level configuration')}
             </p>
           </div>
         </div>
@@ -146,7 +146,7 @@ export default function StreamerManagementCenter({
         <div className="flex items-center gap-2 text-[11px]">
           <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-rose-300 font-bold flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" />
-            <span>درخواست‌های معلق: {kycApplications.length}</span>
+            <span>{window.loc('درخواست‌های معلق:', 'Pending requests:')} {kycApplications.length}</span>
           </span>
         </div>
       </div>
@@ -154,12 +154,12 @@ export default function StreamerManagementCenter({
       {/* ================= NAVIGATION TABS ================= */}
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto no-scrollbar">
         {[
-          { id: 'streamers', label: '🎥 استریمرهای فعال' },
-          { id: 'scores', label: '👑 امتیازبندی و مدال‌ها (3 Badges)' },
-          { id: 'kyc', label: '🔑 احراز هویت (KYC)', badge: kycApplications.length },
-          { id: 'ai_risk', label: '🤖 آنتی‌چیت و ریسک' },
-          { id: 'settings', label: '⚙️ پیکربندی ۱۰ سطح' },
-          { id: 'logs', label: '📜 تاریخچه ارتقا (Logs)' }
+          { id: 'streamers', label: window.loc('🎥 استریمرهای فعال', '🎥 Active streamers') },
+          { id: 'scores', label: window.loc('👑 امتیازبندی و مدال‌ها (3 Badges)', '👑 Rating and medals (3 Badges)') },
+          { id: 'kyc', label: window.loc('🔑 احراز هویت (KYC)', '🔑 Authentication (KYC)'), badge: kycApplications.length },
+          { id: 'ai_risk', label: window.loc('🤖 آنتی‌چیت و ریسک', '🤖 Anti-cheat and risk') },
+          { id: 'settings', label: window.loc('⚙️ پیکربندی ۱۰ سطح', '⚙️ 10 level configuration') },
+          { id: 'logs', label: window.loc('📜 تاریخچه ارتقا (Logs)', '📜 Upgrade History (Logs)') }
         ].map(t => (
           <button
             key={t.id}
@@ -197,7 +197,7 @@ export default function StreamerManagementCenter({
                           <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
                         </h4>
                         <span className="text-[10px] text-pink-400 font-mono block">@{s.username}</span>
-                        <span className="text-[10px] text-slate-400">دنبال‌کنندگان: {(s.followers || 1200).toLocaleString()}</span>
+                        <span className="text-[10px] text-slate-400">{window.loc('دنبال‌کنندگان:', 'Followers:')} {(s.followers || 1200).toLocaleString()}</span>
                       </div>
                     </div>
 
@@ -211,7 +211,7 @@ export default function StreamerManagementCenter({
                             : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-rose-900'
                         }`}
                       >
-                        {s.incomeFrozen ? '🧊 درآمد توقیف‌شده' : 'توقیف واریز تسویه'}
+                        {s.incomeFrozen ? window.loc('🧊 درآمد توقیف‌شده', '🧊 Forfeited income') : window.loc('توقیف واریز تسویه', 'Seizure of settlement deposit')}
                       </button>
                     </div>
                   </div>
@@ -220,7 +220,7 @@ export default function StreamerManagementCenter({
                   <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-800/80 text-center">
                     {/* Badge 1: LEVEL */}
                     <div className="p-2 rounded-2xl bg-slate-950 border border-slate-800/80 space-y-0.5">
-                      <span className="text-[9px] text-slate-400 block font-bold">۱. سطح استریمر</span>
+                      <span className="text-[9px] text-slate-400 block font-bold">{window.loc('۱. سطح استریمر', '1. streamer level')}</span>
                       <span className={`text-[10px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r ${scores.badgeColor} text-white inline-block shadow`}>
                         Lvl {scores.level} {scores.levelName}
                       </span>
@@ -228,7 +228,7 @@ export default function StreamerManagementCenter({
 
                     {/* Badge 2: REPUTATION */}
                     <div className="p-2 rounded-2xl bg-slate-950 border border-slate-800/80 space-y-0.5">
-                      <span className="text-[9px] text-slate-400 block font-bold">۲. اعتبار (Reputation)</span>
+                      <span className="text-[9px] text-slate-400 block font-bold">{window.loc('۲. اعتبار (Reputation)', '2. reputation')}</span>
                       <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full inline-block">
                         {scores.reputationScore}/10 ({scores.reputationStatus})
                       </span>
@@ -236,7 +236,7 @@ export default function StreamerManagementCenter({
 
                     {/* Badge 3: CREATOR RANK */}
                     <div className="p-2 rounded-2xl bg-slate-950 border border-slate-800/80 space-y-0.5">
-                      <span className="text-[9px] text-slate-400 block font-bold">۳. رتبه محتوا (Rank)</span>
+                      <span className="text-[9px] text-slate-400 block font-bold">{window.loc('۳. رتبه محتوا (Rank)', '3. Content Rank')}</span>
                       <span className="text-[10px] font-black text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full inline-block">
                         {scores.creatorRank}/10 ({scores.creatorRankName})
                       </span>
@@ -255,10 +255,10 @@ export default function StreamerManagementCenter({
           <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
             <h3 className="text-xs font-black text-white flex items-center gap-2">
               <Crown className="w-4 h-4 text-amber-400" />
-              <span>تعدیل و ارتقای دستی امتیازات ۳ گانه استریمرها</span>
+              <span>{window.loc('تعدیل و ارتقای دستی امتیازات ۳ گانه استریمرها', 'Adjusting and manually upgrading the scores of the 3 streamers')}</span>
             </h3>
             <p className="text-[11px] text-slate-400">
-              سطح (Level)، اعتبار (Reputation) و رتبه (Creator Rank) کاملاً مستقل بوده و می‌توانند بر اساس عملکرد ارزیابی شوند.
+              {window.loc('سطح (Level)، اعتبار (Reputation) و رتبه (Creator Rank) کاملاً مستقل بوده و می‌توانند بر اساس عملکرد ارزیابی شوند.', 'Level, Reputation and Creator Rank are completely independent and can be evaluated based on performance.')}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -287,7 +287,7 @@ export default function StreamerManagementCenter({
                       }}
                       className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] shadow"
                     >
-                      ویرایش امتیازات
+                      {window.loc('ویرایش امتیازات', 'Edit scores')}
                     </button>
                   </div>
                 );
@@ -300,7 +300,7 @@ export default function StreamerManagementCenter({
             <div className="p-4 rounded-3xl bg-slate-900 border border-purple-500/50 space-y-4 shadow-2xl animate-fadeIn">
               <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                 <span className="font-black text-white text-xs">
-                  ویرایش امتیازات استریمر: @{editingStreamer.username || editingStreamer.name}
+                  {window.loc('ویرایش امتیازات استریمر: @', 'Edit Streamer Ratings: @')}{editingStreamer.username || editingStreamer.name}
                 </span>
                 <button onClick={() => setEditingStreamer(null)} className="text-slate-400 hover:text-white">✕</button>
               </div>
@@ -308,19 +308,19 @@ export default function StreamerManagementCenter({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* 1. XP / Level */}
                 <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <label className="text-[10px] font-bold text-amber-300 block">۱. مقدار امتیاز XP (تغییر سطح):</label>
+                  <label className="text-[10px] font-bold text-amber-300 block">{window.loc('۱. مقدار امتیاز XP (تغییر سطح):', '1. Amount of XP (level change):')}</label>
                   <input
                     type="number"
                     value={editXp}
                     onChange={(e) => setEditXp(parseInt(e.target.value) || 0)}
                     className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono text-xs outline-none"
                   />
-                  <span className="text-[9px] text-slate-400 block">سطح محاسبه‌شده: Lvl {getStreamerScores({ xp: editXp }).level} ({getStreamerScores({ xp: editXp }).levelName})</span>
+                  <span className="text-[9px] text-slate-400 block">{window.loc('سطح محاسبه‌شده: Lvl', 'Calculated level: Lvl')} {getStreamerScores({ xp: editXp }).level} ({getStreamerScores({ xp: editXp }).levelName})</span>
                 </div>
 
                 {/* 2. Reputation */}
                 <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <label className="text-[10px] font-bold text-emerald-300 block">۲. امتیاز اعتبار (Reputation 1-10):</label>
+                  <label className="text-[10px] font-bold text-emerald-300 block">{window.loc('۲. امتیاز اعتبار (Reputation 1-10):', '2. Credit score (Reputation 1-10):')}</label>
                   <input
                     type="number"
                     min="1"
@@ -329,12 +329,12 @@ export default function StreamerManagementCenter({
                     onChange={(e) => setEditReputation(Math.min(10, Math.max(1, parseInt(e.target.value) || 1)))}
                     className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono text-xs outline-none"
                   />
-                  <span className="text-[9px] text-slate-400 block">وضعیت: {editReputation >= 8 ? 'عالی 🟢' : editReputation >= 5 ? 'متوسط 🟡' : 'ریسک بالا 🔴'}</span>
+                  <span className="text-[9px] text-slate-400 block">{window.loc('وضعیت:', 'Status:')} {editReputation >= 8 ? window.loc('عالی 🟢', 'Excellent 🟢') : editReputation >= 5 ? window.loc('متوسط 🟡', 'Medium 🟡') : window.loc('ریسک بالا 🔴', 'High risk')}</span>
                 </div>
 
                 {/* 3. Creator Rank */}
                 <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <label className="text-[10px] font-bold text-cyan-300 block">۳. رتبه تولیدکننده (Rank 1-10):</label>
+                  <label className="text-[10px] font-bold text-cyan-300 block">{window.loc('۳. رتبه تولیدکننده (Rank 1-10):', '3. Producer rank (Rank 1-10):')}</label>
                   <input
                     type="number"
                     min="1"
@@ -343,12 +343,12 @@ export default function StreamerManagementCenter({
                     onChange={(e) => setEditRank(Math.min(10, Math.max(1, parseInt(e.target.value) || 1)))}
                     className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono text-xs outline-none"
                   />
-                  <span className="text-[9px] text-slate-400 block">رتبه: Class {editRank} Creator</span>
+                  <span className="text-[9px] text-slate-400 block">{window.loc('رتبه: Class', 'Rank: Class')} {editRank} Creator</span>
                 </div>
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-slate-300 block mb-1">دلیل تغییر و ثبت در تاریخچه:</label>
+                <label className="text-[10px] font-bold text-slate-300 block mb-1">{window.loc('دلیل تغییر و ثبت در تاریخچه:', 'The reason for the change and recording in the history:')}</label>
                 <input
                   type="text"
                   value={editReason}
@@ -362,13 +362,13 @@ export default function StreamerManagementCenter({
                   onClick={handleSaveStreamerScores}
                   className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow"
                 >
-                  تایید و ذخیره‌سازی امتیازات جدید
+                  {window.loc('تایید و ذخیره‌سازی امتیازات جدید', 'Confirm and save new points')}
                 </button>
                 <button
                   onClick={() => setEditingStreamer(null)}
                   className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-400 font-bold text-xs"
                 >
-                  انصراف
+                  {window.loc('انصراف', 'opt out')}
                 </button>
               </div>
             </div>
@@ -382,7 +382,7 @@ export default function StreamerManagementCenter({
           {kycApplications.length === 0 ? (
             <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 text-center text-slate-400">
               <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-              <span>کلیه درخواست‌های احراز هویت استریمرها بررسی شده‌اند.</span>
+              <span>{window.loc('کلیه درخواست‌های احراز هویت استریمرها بررسی شده‌اند.', 'All streamers authentication requests have been checked.')}</span>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -391,7 +391,7 @@ export default function StreamerManagementCenter({
                   <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                     <div>
                       <h4 className="font-bold text-white text-xs">{app.name} (@{app.username})</h4>
-                      <span className="text-[10px] text-slate-400 font-mono">شهر: {app.city} • سن: {app.age}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">{window.loc('شهر:', 'City:')} {app.city} {window.loc('• سن:', '• Age:')} {app.age}</span>
                     </div>
                     <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold border border-emerald-500/30">
                       {app.aiConfidence}
@@ -400,11 +400,11 @@ export default function StreamerManagementCenter({
 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <span className="text-[9px] text-slate-400 font-bold">عکس کارت ملی / پاسپورت:</span>
+                      <span className="text-[9px] text-slate-400 font-bold">{window.loc('عکس کارت ملی / پاسپورت:', 'National card/passport photo:')}</span>
                       <img src={app.idCardPhoto} alt="ID Card" className="w-full h-28 object-cover rounded-2xl border border-slate-800" />
                     </div>
                     <div className="space-y-1">
-                      <span className="text-[9px] text-slate-400 font-bold">سلفی تایید چهره:</span>
+                      <span className="text-[9px] text-slate-400 font-bold">{window.loc('سلفی تایید چهره:', 'Face verification selfie:')}</span>
                       <img src={app.selfiePhoto} alt="Selfie" className="w-full h-28 object-cover rounded-2xl border border-slate-800" />
                     </div>
                   </div>
@@ -414,13 +414,13 @@ export default function StreamerManagementCenter({
                       onClick={() => handleApproveKyc(app)}
                       className="flex-1 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow"
                     >
-                      ✓ تایید نهایی و اعطای استریمر
+                      {window.loc('✓ تایید نهایی و اعطای استریمر', '✓ Final approval and granting of the streamer')}
                     </button>
                     <button
                       onClick={() => handleRejectKyc(app)}
                       className="flex-1 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow"
                     >
-                      ✕ رد درخواست مدارک
+                      {window.loc('✕ رد درخواست مدارک', '✕ Rejection of document request')}
                     </button>
                   </div>
                 </div>
@@ -436,10 +436,10 @@ export default function StreamerManagementCenter({
           <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
             <h3 className="text-xs font-black text-white flex items-center gap-2">
               <Cpu className="w-4 h-4 text-cyan-400 animate-pulse" />
-              <span>پایش هوشمند آنتی‌چیت و آنومالی رشد لایوها (Anti-Cheat Engine)</span>
+              <span>{window.loc('پایش هوشمند آنتی‌چیت و آنومالی رشد لایوها (Anti-Cheat Engine)', 'Intelligent monitoring of anti-cheat and the anomaly of live growth (Anti-Cheat Engine)')}</span>
             </h3>
             <p className="text-[11px] text-slate-400">
-              شناسایی هوشمند بینندگان فیک، هدیه‌های مشکوک، اسپم فالوور و تبانی. هشدارهای هوش مصنوعی نیازمند تصمیم نهایی ادمین می‌باشند.
+              {window.loc('شناسایی هوشمند بینندگان فیک، هدیه‌های مشکوک، اسپم فالوور و تبانی. هشدارهای هوش مصنوعی نیازمند تصمیم نهایی ادمین می‌باشند.', 'Intelligent detection of fake viewers, suspicious gifts, follower spam and collusion. Artificial intelligence alerts require the final decision of the admin.')}
             </p>
 
             {/* Simulated Alerts */}
@@ -448,15 +448,15 @@ export default function StreamerManagementCenter({
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5 text-rose-400 animate-bounce" />
                   <div>
-                    <h4 className="font-bold text-rose-300 text-xs">هشدار رشد غیرطبیعی: @Elnaz_Live</h4>
-                    <p className="text-[10px] text-slate-300">افزایش ۶۰۰٪ بینندگان لایو در ۳ دقیقه بدون لینک معرف خروجی.</p>
+                    <h4 className="font-bold text-rose-300 text-xs">{window.loc('هشدار رشد غیرطبیعی: @Elnaz_Live', 'Abnormal growth alert: @Elnaz_Live')}</h4>
+                    <p className="text-[10px] text-slate-300">{window.loc('افزایش ۶۰۰٪ بینندگان لایو در ۳ دقیقه بدون لینک معرف خروجی.', '600% increase in live viewers in 3 minutes without outgoing referral link.')}</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => showToast('🔒 حساب @Elnaz_Live تحت نظارت موقت قرار گرفت')}
+                  onClick={() => showToast(window.loc('🔒 حساب @Elnaz_Live تحت نظارت موقت قرار گرفت', '🔒 @Elnaz_Live account was placed under temporary supervision'))}
                   className="px-3 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-[10px]"
                 >
-                  بررسی و جریمه XP
+                  {window.loc('بررسی و جریمه XP', 'Check and XP penalty')}
                 </button>
               </div>
 
@@ -464,15 +464,15 @@ export default function StreamerManagementCenter({
                 <div className="flex items-center gap-2">
                   <ShieldAlert className="w-5 h-5 text-amber-400" />
                   <div>
-                    <h4 className="font-bold text-amber-300 text-xs">احتمال هدیه سفارشی فیک: @Rayan_Streamer</h4>
-                    <p className="text-[10px] text-slate-300">دریافت ۴۰ هزار سکه از ۳ اکانت تازه ساخت در کمتر از ۱۰ دقیقه.</p>
+                    <h4 className="font-bold text-amber-300 text-xs">{window.loc('احتمال هدیه سفارشی فیک: @Rayan_Streamer', 'Possibility of Custom Gift Fic: @Rayan_Streamer')}</h4>
+                    <p className="text-[10px] text-slate-300">{window.loc('دریافت ۴۰ هزار سکه از ۳ اکانت تازه ساخت در کمتر از ۱۰ دقیقه.', 'Receive 40,000 coins from 3 newly created accounts in less than 10 minutes.')}</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => showToast('✅ بررسی هدیه‌ها تایید گردید')}
+                  onClick={() => showToast(window.loc('✅ بررسی هدیه‌ها تایید گردید', '✅ The review of gifts has been confirmed'))}
                   className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-[10px]"
                 >
-                  تایید دستی
+                  {window.loc('تایید دستی', 'Manual confirmation')}
                 </button>
               </div>
             </div>
@@ -486,7 +486,7 @@ export default function StreamerManagementCenter({
           <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
             <h3 className="text-xs font-black text-white flex items-center gap-2">
               <Settings className="w-4 h-4 text-amber-400" />
-              <span>تنظیمات و پیکربندی سطح‌های ۱۰ گانه استریمرها</span>
+              <span>{window.loc('تنظیمات و پیکربندی سطح‌های ۱۰ گانه استریمرها', 'Settings and configuration of 10 levels of streamers')}</span>
             </h3>
 
             <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
@@ -498,12 +498,12 @@ export default function StreamerManagementCenter({
                     </span>
                     <div>
                       <span className="font-bold text-white text-xs">{lvl.name}</span>
-                      <span className="text-[10px] text-slate-400 block font-mono">حداقل XP: {lvl.minXp.toLocaleString()} • ساعت: {lvl.minHours}h • بیننده: {lvl.minViewers}</span>
+                      <span className="text-[10px] text-slate-400 block font-mono">{window.loc('حداقل XP:', 'Minimum XP:')} {lvl.minXp.toLocaleString()} {window.loc('• ساعت:', 'Clock:')} {lvl.minHours}{window.loc('h • بیننده:', 'h • viewer:')} {lvl.minViewers}</span>
                     </div>
                   </div>
 
                   <span className="text-[10px] text-pink-300 font-bold bg-pink-500/10 px-2 py-1 rounded-xl border border-pink-500/20">
-                    مزایا: {lvl.benefits.length} مورد
+                    {window.loc('مزایا:', 'Advantages:')} {lvl.benefits.length} {window.loc('مورد', 'item')}
                   </span>
                 </div>
               ))}
@@ -518,7 +518,7 @@ export default function StreamerManagementCenter({
           <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
             <h3 className="text-xs font-black text-white flex items-center gap-2">
               <History className="w-4 h-4 text-purple-400" />
-              <span>تاریخچه ارتقا، تنزیل و تغییرات سطح استریمرها</span>
+              <span>{window.loc('تاریخچه ارتقا، تنزیل و تغییرات سطح استریمرها', 'History of upgrade, downgrade and level changes of streamers')}</span>
             </h3>
 
             <div className="space-y-2">
@@ -527,13 +527,13 @@ export default function StreamerManagementCenter({
                   <div>
                     <span className="font-bold text-white">@{log.username}</span>
                     <span className="text-slate-400 block text-[10px]">
-                      از {log.oldLevel} ➔ {log.newLevel} (XP: {log.xp})
+                      {window.loc('از', 'from')} {log.oldLevel} ➔ {log.newLevel} (XP: {log.xp})
                     </span>
-                    <span className="text-slate-500 text-[9px]">دلیل: {log.reason}</span>
+                    <span className="text-slate-500 text-[9px]">{window.loc('دلیل:', 'Reason:')} {log.reason}</span>
                   </div>
                   <div className="text-left font-mono text-[9px] text-slate-400">
                     <span>{log.date}</span>
-                    <span className="block text-pink-400">توسط: {log.admin}</span>
+                    <span className="block text-pink-400">{window.loc('توسط:', 'by:')} {log.admin}</span>
                   </div>
                 </div>
               ))}

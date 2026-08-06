@@ -94,9 +94,9 @@ export const cacheManager = {
 
 // 3. ADAPTIVE STREAM QUALITY PRESETS (استریم با کیفیت مناسب)
 export const STREAM_QUALITY_PRESETS = [
-  { id: '480p', label: '480p SD (کم مصرف)', bitrate: '800 kbps', fps: 30, icon: '📱' },
-  { id: '720p', label: '720p HD (استاندارد)', bitrate: '2500 kbps', fps: 30, icon: '⚡' },
-  { id: '1080p', label: '1080p Full HD (فوق‌العاده)', bitrate: '4500 kbps', fps: 60, icon: '🌟' }
+  { id: '480p', label: window.loc('480p SD (کم مصرف)', '480p SD (low consumption)'), bitrate: '800 kbps', fps: 30, icon: '📱' },
+  { id: '720p', label: window.loc('720p HD (استاندارد)', '720p HD (standard)'), bitrate: '2500 kbps', fps: 30, icon: '⚡' },
+  { id: '1080p', label: window.loc('1080p Full HD (فوق‌العاده)', '1080p Full HD (super)'), bitrate: '4500 kbps', fps: 60, icon: '🌟' }
 ];
 
 // 4. SERVER KEEP-ALIVE HEALTH PING (جلوگیری از خوابیدن سرور Render)

@@ -51,7 +51,7 @@ export default function UserManagementCenter({
       setSelectedUserDetail(prev => ({ ...prev, isBanned: nextBanned }));
     }
     addAdminAuditLog(`Admin Action: ${nextBanned ? 'Banned' : 'Unbanned'} user @${user.username || user.name}`);
-    showToast(nextBanned ? `🚫 کاربر @${user.username} مسدود شد` : `✅ رفع مسدودی کاربر @${user.username}`);
+    showToast(nextBanned ? window.loc(`🚫 کاربر @${user.username} مسدود شد`, `🚫 کاربر @${user.username} مسدود شد`));
   };
 
   const handleToggleMute = (user) => {
@@ -61,7 +61,7 @@ export default function UserManagementCenter({
       setSelectedUserDetail(prev => ({ ...prev, isMuted: nextMuted }));
     }
     addAdminAuditLog(`Admin Action: ${nextMuted ? 'Muted' : 'Unmuted'} user @${user.username}`);
-    showToast(nextMuted ? `🔇 کاربر @${user.username} بی صدا شد` : `🔊 صدا خروج از بی صدایی کاربر @${user.username}`);
+    showToast(nextMuted ? window.loc(`🔇 کاربر @${user.username} بی صدا شد`, `🔇 کاربر @${user.username} بی صدا شد`));
   };
 
   const handleToggleVerify = (user) => {
@@ -71,7 +71,7 @@ export default function UserManagementCenter({
       setSelectedUserDetail(prev => ({ ...prev, isVerified: nextVerified, verified: nextVerified }));
     }
     addAdminAuditLog(`Admin Action: ${nextVerified ? 'Granted' : 'Removed'} verification for @${user.username}`);
-    showToast(nextVerified ? `✅ نشان تایید آبی به @${user.username} اعطا شد` : `نشان تایید @${user.username} لغو شد`);
+    showToast(nextVerified ? window.loc(`✅ نشان تایید آبی به @${user.username} اعطا شد`, `✅ نشان تایید آبی به @${user.username} اعطا شد`));
   };
 
   const handleToggleStreamer = (user) => {
@@ -81,12 +81,12 @@ export default function UserManagementCenter({
       setSelectedUserDetail(prev => ({ ...prev, isStreamer: nextStreamer, isHost: nextStreamer }));
     }
     addAdminAuditLog(`Admin Action: ${nextStreamer ? 'Promoted to Streamer' : 'Demoted Streamer'} @${user.username}`);
-    showToast(nextStreamer ? `🎥 مقام استریمر به @${user.username} داده شد` : `مقام استریمر @${user.username} لغو شد`);
+    showToast(nextStreamer ? window.loc(`🎥 مقام استریمر به @${user.username} داده شد`, `🎥 مقام استریمر به @${user.username} داده شد`));
   };
 
   const handleResetPassword = (user) => {
     addAdminAuditLog(`Admin Action: Reset password & session tokens for @${user.username}`);
-    showToast(`🔑 لینک بازنشانی رمز عبور برای @${user.username} ارسال گردید`);
+    showToast(window.loc(`🔑 لینک بازنشانی رمز عبور برای @${user.username} ارسال گردید`, `🔑 لینک بازنشانی رمز عبور برای @${user.username} ارسال گردید`));
   };
 
   const handleSaveAdminNote = (user) => {
@@ -98,7 +98,7 @@ export default function UserManagementCenter({
     }
     addAdminAuditLog(`Admin Note Added for @${user.username}: ${adminNoteInput}`);
     setAdminNoteInput('');
-    showToast('📜 یادداشت مدیریتی ذخیره شد');
+    showToast(window.loc('📜 یادداشت مدیریتی ذخیره شد', '📜 Management note saved'));
   };
 
   return (
@@ -112,13 +112,13 @@ export default function UserManagementCenter({
           </div>
           <div>
             <h2 className="text-base font-black text-white flex items-center gap-2">
-              <span>مرکز تخصصی مدیریت کاربران (User Management Center)</span>
+              <span>{window.loc('مرکز تخصصی مدیریت کاربران (User Management Center)', 'User Management Center')}</span>
               <span className="text-[10px] bg-cyan-500/20 text-cyan-300 font-mono px-2 py-0.5 rounded-full border border-cyan-500/30">
                 {usersList.length} USERS
               </span>
             </h2>
             <p className="text-[11px] text-slate-400">
-              جستجوی پیشرفته، وضعیت آنلاین، سابقه ورود و IP، وضعیت مالی، تعلیق و مسدودی
+              {window.loc('جستجوی پیشرفته، وضعیت آنلاین، سابقه ورود و IP، وضعیت مالی، تعلیق و مسدودی', 'Advanced search, online status, login and IP history, financial status, suspension and blocking')}
             </p>
           </div>
         </div>
@@ -127,7 +127,7 @@ export default function UserManagementCenter({
         <div className="flex items-center gap-2 overflow-x-auto text-[11px]">
           <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-emerald-400 font-bold flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>آنلاین: {usersList.filter(u => u.online).length}</span>
+            <span>{window.loc('آنلاین:', 'Online:')} {usersList.filter(u => u.online).length}</span>
           </span>
           <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-amber-300 font-bold flex items-center gap-1">
             <Crown className="w-3.5 h-3.5" />
@@ -135,7 +135,7 @@ export default function UserManagementCenter({
           </span>
           <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-pink-400 font-bold flex items-center gap-1">
             <Video className="w-3.5 h-3.5" />
-            <span>استریمر: {usersList.filter(u => u.isStreamer || u.isHost).length}</span>
+            <span>{window.loc('استریمر:', 'Streamer:')} {usersList.filter(u => u.isStreamer || u.isHost).length}</span>
           </span>
         </div>
       </div>
@@ -149,7 +149,7 @@ export default function UserManagementCenter({
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="جستجو بر اساس نام، نام کاربری، شناسه، ایمیل یا شهر..."
+              placeholder={window.loc('جستجو بر اساس نام، نام کاربری، شناسه، ایمیل یا شهر...', 'Search by name, username, ID, email or city...')}
               className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-cyan-500"
             />
           </div>
@@ -158,13 +158,13 @@ export default function UserManagementCenter({
         {/* Filter Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-[11px]">
           {[
-            { id: 'ALL', label: 'همه کاربران' },
-            { id: 'ONLINE', label: '🟢 آنلاین' },
-            { id: 'VERIFIED', label: '✅ تاییدشده' },
-            { id: 'VIP', label: '👑 اعضای VIP' },
-            { id: 'STREAMERS', label: '🎥 استریمرها' },
-            { id: 'BANNED', label: '🚫 مسدودشده' },
-            { id: 'MUTED', label: '🔇 بی صدا' }
+            { id: 'ALL', label: window.loc('همه کاربران', 'All users') },
+            { id: 'ONLINE', label: window.loc('🟢 آنلاین', '🟢 online') },
+            { id: 'VERIFIED', label: window.loc('✅ تاییدشده', '✅ Confirmed') },
+            { id: 'VIP', label: window.loc('👑 اعضای VIP', '👑 VIP members') },
+            { id: 'STREAMERS', label: window.loc('🎥 استریمرها', '🎥 Streamers') },
+            { id: 'BANNED', label: window.loc('🚫 مسدودشده', '🚫 Blocked') },
+            { id: 'MUTED', label: window.loc('🔇 بی صدا', '🔇 Silently') }
           ].map(f => (
             <button
               key={f.id}
@@ -187,19 +187,19 @@ export default function UserManagementCenter({
           <table className="w-full text-right border-collapse">
             <thead>
               <tr className="bg-slate-950 text-slate-400 border-b border-slate-800 text-[11px]">
-                <th className="p-3.5">کاربر</th>
-                <th className="p-3.5">نقش و نشان‌ها</th>
-                <th className="p-3.5">موقعیت / کشور</th>
-                <th className="p-3.5">موجودی سکه</th>
-                <th className="p-3.5">وضعیت آنلاین</th>
-                <th className="p-3.5">اقدامات سریع مدیر</th>
+                <th className="p-3.5">{window.loc('کاربر', 'user')}</th>
+                <th className="p-3.5">{window.loc('نقش و نشان‌ها', 'Roles and badges')}</th>
+                <th className="p-3.5">{window.loc('موقعیت / کشور', 'Location / Country')}</th>
+                <th className="p-3.5">{window.loc('موجودی سکه', 'Coin inventory')}</th>
+                <th className="p-3.5">{window.loc('وضعیت آنلاین', 'online status')}</th>
+                <th className="p-3.5">{window.loc('اقدامات سریع مدیر', 'Quick actions of the manager')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="p-6 text-center text-slate-500 font-bold">
-                    هیچ کاربری با این مشخصات یافت نشد.
+                    {window.loc('هیچ کاربری با این مشخصات یافت نشد.', 'No users were found with this profile.')}
                   </td>
                 </tr>
               ) : (
@@ -257,10 +257,10 @@ export default function UserManagementCenter({
                       {u.online ? (
                         <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold inline-flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                          آنلاین
+                          {window.loc('آنلاین', 'Online')}
                         </span>
                       ) : (
-                        <span className="text-slate-500 text-[10px]">آفلاین</span>
+                        <span className="text-slate-500 text-[10px]">{window.loc('آفلاین', 'Offline')}</span>
                       )}
                     </td>
 
@@ -271,7 +271,7 @@ export default function UserManagementCenter({
                           className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-[10px] flex items-center gap-1 transition"
                         >
                           <Eye className="w-3 h-3" />
-                          <span>جزئیات</span>
+                          <span>{window.loc('جزئیات', 'Details')}</span>
                         </button>
 
                         <button
@@ -281,7 +281,7 @@ export default function UserManagementCenter({
                               ? 'bg-emerald-600/20 text-emerald-300 border-emerald-500/30' 
                               : 'bg-rose-600/20 text-rose-300 border-rose-500/30 hover:bg-rose-600 hover:text-white'
                           }`}
-                          title={u.isBanned ? 'رفع مسدودی' : 'مسدود کردن'}
+                          title={u.isBanned ? window.loc('رفع مسدودی', 'Unblock') : window.loc('مسدود کردن', 'blocking')}
                         >
                           <Ban className="w-3.5 h-3.5" />
                         </button>
@@ -289,7 +289,7 @@ export default function UserManagementCenter({
                         <button
                           onClick={() => handleToggleVerify(u)}
                           className="p-1.5 rounded-xl bg-slate-800 text-cyan-300 hover:bg-cyan-600 hover:text-white transition"
-                          title="تغییر تایید هویت"
+                          title={window.loc('تغییر تایید هویت', 'Change authentication')}
                         >
                           <ShieldCheck className="w-3.5 h-3.5" />
                         </button>
@@ -315,33 +315,33 @@ export default function UserManagementCenter({
               </div>
             </div>
 
-            <button onClick={() => setSelectedUserDetail(null)} className="text-slate-400 hover:text-white font-bold">✕ بستن</button>
+            <button onClick={() => setSelectedUserDetail(null)} className="text-slate-400 hover:text-white font-bold">{window.loc('✕ بستن', '✕ Close')}</button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-[10px] text-slate-400 font-bold block">دستگاه و IP ثبت‌شده:</span>
+              <span className="text-[10px] text-slate-400 font-bold block">{window.loc('دستگاه و IP ثبت‌شده:', 'Registered device and IP:')}</span>
               <p className="font-mono text-slate-200 text-xs">IP: 185.102.40.12</p>
               <p className="text-[10px] text-slate-400">Device: iPhone 14 Pro / iOS 17</p>
             </div>
 
             <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-[10px] text-slate-400 font-bold block">کیف پول و فعالیت:</span>
+              <span className="text-[10px] text-slate-400 font-bold block">{window.loc('کیف پول و فعالیت:', 'Wallet and Activity:')}</span>
               <p className="font-mono text-amber-400 font-bold text-xs">{(selectedUserDetail.coins || 0).toLocaleString()} Coins</p>
-              <p className="text-[10px] text-slate-400">پیام‌ها: 1,420 • لایوها: 14</p>
+              <p className="text-[10px] text-slate-400">{window.loc('پیام‌ها: 1,420 • لایوها: 14', 'Messages: 1,420 • Lives: 14')}</p>
             </div>
 
             <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-[10px] text-slate-400 font-bold block">اقدامات مدیریتی:</span>
+              <span className="text-[10px] text-slate-400 font-bold block">{window.loc('اقدامات مدیریتی:', 'Management measures:')}</span>
               <div className="flex items-center gap-1.5 pt-1">
                 <button onClick={() => handleToggleBan(selectedUserDetail)} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-bold text-[10px]">
-                  {selectedUserDetail.isBanned ? 'رفع Ban' : 'Ban کاربر'}
+                  {selectedUserDetail.isBanned ? window.loc('رفع Ban', 'Fix Ban') : window.loc('Ban کاربر', 'Ban the user')}
                 </button>
                 <button onClick={() => handleToggleMute(selectedUserDetail)} className="px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold text-[10px]">
-                  {selectedUserDetail.isMuted ? 'رفع Mute' : 'Mute کاربر'}
+                  {selectedUserDetail.isMuted ? window.loc('رفع Mute', 'Fix Mute') : window.loc('Mute کاربر', 'Mute the user')}
                 </button>
                 <button onClick={() => handleResetPassword(selectedUserDetail)} className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold text-[10px]">
-                  ریست رمز
+                  {window.loc('ریست رمز', 'password reset')}
                 </button>
               </div>
             </div>
@@ -349,20 +349,20 @@ export default function UserManagementCenter({
 
           {/* Admin Notes Section */}
           <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
-            <h4 className="font-bold text-slate-300 text-xs">یادداشت‌ها و اخطارهای ادمین:</h4>
+            <h4 className="font-bold text-slate-300 text-xs">{window.loc('یادداشت‌ها و اخطارهای ادمین:', 'Admin notes and warnings:')}</h4>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={adminNoteInput}
                 onChange={e => setAdminNoteInput(e.target.value)}
-                placeholder="افزودن یادداشت جدید درباره این کاربر..."
+                placeholder={window.loc('افزودن یادداشت جدید درباره این کاربر...', 'Add new note about this user...')}
                 className="flex-1 p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none"
               />
               <button
                 onClick={() => handleSaveAdminNote(selectedUserDetail)}
                 className="px-4 py-2 rounded-xl bg-cyan-600 text-slate-950 font-bold text-xs"
               >
-                ذخیره یادداشت
+                {window.loc('ذخیره یادداشت', 'Save note')}
               </button>
             </div>
 

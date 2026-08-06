@@ -118,15 +118,15 @@ export default function ThemeManagerModal() {
               <Palette className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-amber-300">🎨 مدیر تم و رنگ‌بندی نرم‌افزار (Theme Manager)</h3>
-              <p className="text-xs text-slate-400">تنظیمات تم، رنگ‌ها، فونت، استایل کارت‌ها و انیمیشن‌ها</p>
+              <h3 className="text-lg font-black text-amber-300">{window.loc('🎨 مدیر تم و رنگ‌بندی نرم‌افزار (Theme Manager)', '🎨 Software theme and color scheme (Theme Manager)')}</h3>
+              <p className="text-xs text-slate-400">{window.loc('تنظیمات تم، رنگ‌ها، فونت، استایل کارت‌ها و انیمیشن‌ها', 'Theme settings, colors, fonts, style cards and animations')}</p>
             </div>
           </div>
         </div>
 
         {/* PRESET THEMES LIST */}
         <div className="space-y-2 text-xs">
-          <label className="block text-slate-300 font-bold">✨ تم‌های پیش‌فرض آماده (Presets):</label>
+          <label className="block text-slate-300 font-bold">{window.loc('✨ تم‌های پیش‌فرض آماده (Presets):', '✨ Ready default themes (Presets):')}</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {PRESET_THEMES.map(preset => (
               <button
@@ -147,11 +147,11 @@ export default function ThemeManagerModal() {
 
         {/* COLOR PICKERS GRID */}
         <div className="space-y-3 pt-2">
-          <h4 className="font-bold text-amber-400 text-xs border-b border-slate-800 pb-1">🎨 پالت رنگ اختصاصی (Custom Palette):</h4>
+          <h4 className="font-bold text-amber-400 text-xs border-b border-slate-800 pb-1">{window.loc('🎨 پالت رنگ اختصاصی (Custom Palette):', '🎨 Dedicated color palette (Custom Palette):')}</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             {/* Primary Color */}
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-              <span className="text-slate-300 font-medium">رنگ اصلی (Primary Color):</span>
+              <span className="text-slate-300 font-medium">{window.loc('رنگ اصلی (Primary Color):', 'Primary Color:')}</span>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -165,7 +165,7 @@ export default function ThemeManagerModal() {
 
             {/* Secondary Color */}
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-              <span className="text-slate-300 font-medium">رنگ ثانویه (Secondary Color):</span>
+              <span className="text-slate-300 font-medium">{window.loc('رنگ ثانویه (Secondary Color):', 'Secondary Color:')}</span>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -179,7 +179,7 @@ export default function ThemeManagerModal() {
 
             {/* Accent Color */}
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-              <span className="text-slate-300 font-medium">رنگ تأکیدی (Accent Color):</span>
+              <span className="text-slate-300 font-medium">{window.loc('رنگ تأکیدی (Accent Color):', 'Accent Color:')}</span>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -193,7 +193,7 @@ export default function ThemeManagerModal() {
 
             {/* Background Color */}
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-              <span className="text-slate-300 font-medium">پس‌زمینه برنامه (Background):</span>
+              <span className="text-slate-300 font-medium">{window.loc('پس‌زمینه برنامه (Background):', 'Background of the program:')}</span>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -207,7 +207,7 @@ export default function ThemeManagerModal() {
 
             {/* Card Background Color */}
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-              <span className="text-slate-300 font-medium">پس‌زمینه کارت‌ها (Card Background):</span>
+              <span className="text-slate-300 font-medium">{window.loc('پس‌زمینه کارت‌ها (Card Background):', 'Card Background:')}</span>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -221,7 +221,7 @@ export default function ThemeManagerModal() {
 
             {/* Text Color */}
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-              <span className="text-slate-300 font-medium">رنگ متون (Text Color):</span>
+              <span className="text-slate-300 font-medium">{window.loc('رنگ متون (Text Color):', 'Text Color:')}</span>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -237,42 +237,42 @@ export default function ThemeManagerModal() {
 
         {/* COMPONENT STYLING & SHAPES */}
         <div className="space-y-3 pt-2">
-          <h4 className="font-bold text-amber-400 text-xs border-b border-slate-800 pb-1">📐 استایل و انحنای کارت‌ها (Card & Button Style):</h4>
+          <h4 className="font-bold text-amber-400 text-xs border-b border-slate-800 pb-1">{window.loc('📐 استایل و انحنای کارت‌ها (Card & Button Style):', '📐 Card & Button Style:')}</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             {/* Button Style */}
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
-              <label className="block text-slate-300 font-medium">استایل دکمه‌ها (Button Style):</label>
+              <label className="block text-slate-300 font-medium">{window.loc('استایل دکمه‌ها (Button Style):', 'Button Style:')}</label>
               <select
                 value={theme.buttonStyle || 'gradient'}
                 onChange={e => updateTheme({ buttonStyle: e.target.value })}
                 className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-amber-300 outline-none"
               >
-                <option value="solid">ساده (Solid Color)</option>
-                <option value="gradient">گرادیان ملایم (Gradient)</option>
-                <option value="outline">دورخط دار (Outline)</option>
-                <option value="glass">شیشه‌ای (Glassmorphism)</option>
+                <option value="solid">{window.loc('ساده (Solid Color)', 'Simple (Solid Color)')}</option>
+                <option value="gradient">{window.loc('گرادیان ملایم (Gradient)', 'gentle gradient')}</option>
+                <option value="outline">{window.loc('دورخط دار (Outline)', 'outline')}</option>
+                <option value="glass">{window.loc('شیشه‌ای (Glassmorphism)', 'glass (Glassmorphism)')}</option>
               </select>
             </div>
 
             {/* Card Style */}
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
-              <label className="block text-slate-300 font-medium">استایل کارت‌ها (Card Style):</label>
+              <label className="block text-slate-300 font-medium">{window.loc('استایل کارت‌ها (Card Style):', 'Card Style:')}</label>
               <select
                 value={theme.cardStyle || 'glassmorphism'}
                 onChange={e => updateTheme({ cardStyle: e.target.value })}
                 className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-amber-300 outline-none"
               >
-                <option value="flat">تخت ساده (Flat 2D)</option>
-                <option value="card3d">سه‌بعدی با سایه (3D Depth Card)</option>
-                <option value="glassmorphism">شیشه‌ای مات (Glassmorphism)</option>
-                <option value="neon">نئونی درخشان (Neon Border)</option>
+                <option value="flat">{window.loc('تخت ساده (Flat 2D)', 'Flat 2D')}</option>
+                <option value="card3d">{window.loc('سه‌بعدی با سایه (3D Depth Card)', '3D with shadow (3D Depth Card)')}</option>
+                <option value="glassmorphism">{window.loc('شیشه‌ای مات (Glassmorphism)', 'Glassmorphism')}</option>
+                <option value="neon">{window.loc('نئونی درخشان (Neon Border)', 'Bright neon (Neon Border)')}</option>
               </select>
             </div>
 
             {/* Border Radius Slider */}
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
               <div className="flex justify-between text-slate-300 font-medium">
-                <span>انحنای گوشه‌ها (Border Radius):</span>
+                <span>{window.loc('انحنای گوشه‌ها (Border Radius):', 'The curvature of the corners (Border Radius):')}</span>
                 <span className="font-mono text-amber-300">{theme.borderRadius || 16}px</span>
               </div>
               <input
@@ -288,17 +288,17 @@ export default function ThemeManagerModal() {
 
             {/* Shadow Level */}
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
-              <label className="block text-slate-300 font-medium">شدت سایه (Shadow Level):</label>
+              <label className="block text-slate-300 font-medium">{window.loc('شدت سایه (Shadow Level):', 'Shadow Level:')}</label>
               <select
                 value={theme.shadowLevel || 'glow'}
                 onChange={e => updateTheme({ shadowLevel: e.target.value })}
                 className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-amber-300 outline-none"
               >
-                <option value="none">بدون سایه (None)</option>
-                <option value="sm">ملایم (Soft)</option>
-                <option value="md">متوسط (Medium)</option>
-                <option value="lg">عمیق (Heavy)</option>
-                <option value="glow">درخشان نئونی (Neon Glow)</option>
+                <option value="none">{window.loc('بدون سایه (None)', 'No shadow (None)')}</option>
+                <option value="sm">{window.loc('ملایم (Soft)', 'Soft')}</option>
+                <option value="md">{window.loc('متوسط (Medium)', 'Medium')}</option>
+                <option value="lg">{window.loc('عمیق (Heavy)', 'heavy')}</option>
+                <option value="glow">{window.loc('درخشان نئونی (Neon Glow)', 'Neon Glow')}</option>
               </select>
             </div>
           </div>
@@ -306,10 +306,10 @@ export default function ThemeManagerModal() {
 
         {/* ANIMATIONS & SPEED */}
         <div className="space-y-3 pt-2">
-          <h4 className="font-bold text-amber-400 text-xs border-b border-slate-800 pb-1">⚡ انیمیشن‌ها و سرعت اجرا (Animations):</h4>
+          <h4 className="font-bold text-amber-400 text-xs border-b border-slate-800 pb-1">{window.loc('⚡ انیمیشن‌ها و سرعت اجرا (Animations):', '⚡ Animations and execution speed (Animations):')}</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-              <span className="text-slate-300 font-medium">فعال بودن انیمیشن‌های برنامه:</span>
+              <span className="text-slate-300 font-medium">{window.loc('فعال بودن انیمیشن‌های برنامه:', 'Activation of program animations:')}</span>
               <button
                 onClick={() => updateTheme({ animationsEnabled: !theme.animationsEnabled })}
                 className={`px-3 py-1.5 rounded-xl font-bold transition ${
@@ -318,13 +318,13 @@ export default function ThemeManagerModal() {
                     : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
                 }`}
               >
-                {theme.animationsEnabled ? '⚡ فعال (Enabled)' : '🚫 غیرفعال (Disabled)'}
+                {theme.animationsEnabled ? window.loc('⚡ فعال (Enabled)', '⚡ Enabled') : window.loc('🚫 غیرفعال (Disabled)', 'Disabled')}
               </button>
             </div>
 
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
               <div className="flex justify-between text-slate-300 font-medium">
-                <span>سرعت انیمیشن‌ها (Animation Speed):</span>
+                <span>{window.loc('سرعت انیمیشن‌ها (Animation Speed):', 'Animation Speed:')}</span>
                 <span className="font-mono text-amber-300">{theme.animationSpeed || 1.0}x</span>
               </div>
               <input
@@ -347,14 +347,14 @@ export default function ThemeManagerModal() {
             className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 transition flex items-center gap-1.5"
           >
             <Check className="w-4 h-4" />
-            <span>تأیید و بستن (Done)</span>
+            <span>{window.loc('تأیید و بستن (Done)', 'Confirm and close (Done)')}</span>
           </button>
           <button
             onClick={resetTheme}
             className="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-rose-400 font-bold text-xs transition flex items-center gap-1.5"
           >
             <RotateCcw className="w-4 h-4" />
-            <span>بازنشانی تم به حالت پیش‌فرض</span>
+            <span>{window.loc('بازنشانی تم به حالت پیش‌فرض', 'Reset theme to default')}</span>
           </button>
         </div>
       </div>

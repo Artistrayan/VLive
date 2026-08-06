@@ -89,7 +89,7 @@ export default function ChatTab(props) {
                 <div>
                   <div className="flex items-center gap-1.5">
                     <h2 className="text-base font-black text-white tracking-tight flex items-center gap-1.5">
-                      💬 Messages (پیام‌ها)
+                      {window.loc('💬 Messages (پیام‌ها)', '💬 Messages')}
                     </h2>
                     {totalUnreadMessages > 0 && (
                       <span className="px-2 py-0.5 rounded-full bg-pink-500 text-white font-black text-[10px] shadow-lg animate-pulse">
@@ -154,7 +154,7 @@ export default function ChatTab(props) {
                     { id: 'all', label: 'All Fields' },
                     { id: 'name', label: 'Name' },
                     { id: 'id', label: 'Username ID' },
-                    { id: 'city', label: 'City (شهر)' },
+                    { id: 'city', label: window.loc('City (شهر)', 'City') },
                     { id: 'phone', label: 'Phone' }
                   ].map(f => (
                     <button
@@ -174,10 +174,10 @@ export default function ChatTab(props) {
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs font-bold">
               {[
                 { id: 'all', label: 'All', icon: MessageSquare, badge: conversations.length },
-                { id: 'private', label: 'Private (خصوصی)', icon: User, badge: conversations.filter(c => !c.isGroup && !c.archived).length },
-                { id: 'groups', label: 'Groups (گروه‌ها)', icon: Users, badge: conversations.filter(c => c.isGroup).length },
-                { id: 'calls', label: 'Calls (تماس‌ها)', icon: Phone, badge: conversations.filter(c => c.type === 'call').length },
-                { id: 'archived', label: 'Archived (بایگانی)', icon: Archive, badge: conversations.filter(c => c.archived).length }
+                { id: 'private', label: window.loc('Private (خصوصی)', 'Private'), icon: User, badge: conversations.filter(c => !c.isGroup && !c.archived).length },
+                { id: 'groups', label: window.loc('Groups (گروه‌ها)', 'Groups'), icon: Users, badge: conversations.filter(c => c.isGroup).length },
+                { id: 'calls', label: window.loc('Calls (تماس‌ها)', 'Calls'), icon: Phone, badge: conversations.filter(c => c.type === 'call').length },
+                { id: 'archived', label: window.loc('Archived (بایگانی)', 'Archived'), icon: Archive, badge: conversations.filter(c => c.archived).length }
               ].map(tab => {
                 const IconComponent = tab.icon;
                 const isActive = msgFilterTab === tab.id;
@@ -497,7 +497,7 @@ export default function ChatTab(props) {
                                          {msg.translated && msg.translation && (
                                            <span className="inline-flex items-center gap-1 text-[9px] text-cyan-300 font-mono bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-500/30 w-fit mt-1">
                                              <Globe className="w-2.5 h-2.5 text-cyan-400" />
-                                             🌐 {t('translated', 'ترجمه‌شده')} ({msg.translationLang || langCode})
+                                             🌐 {t('translated', window.loc('ترجمه‌شده', 'Translated'))} ({msg.translationLang || langCode})
                                            </span>
                                          )}
                                        </>
@@ -555,27 +555,27 @@ export default function ChatTab(props) {
                                     <button 
                                       onClick={() => {
                                         navigator.clipboard?.writeText(msg.text);
-                                        showToast('متن پیام کپی شد 📋');
+                                        showToast(window.loc('متن پیام کپی شد 📋', 'The text of the message was copied 📋'));
                                       }}
                                       className="text-slate-300 hover:text-white font-bold"
-                                      title="کپی متن"
+                                      title={window.loc('کپی متن', 'Copy text')}
                                     >
                                       📋
                                     </button>
                                     <button 
                                       onClick={() => {
                                         setPinnedMessage(msg);
-                                        showToast('پیام سنجاق شد 📌');
+                                        showToast(window.loc('پیام سنجاق شد 📌', 'The message has been pinned'));
                                       }}
                                       className="text-amber-400 hover:text-white"
-                                      title="سنجاق پیام"
+                                      title={window.loc('سنجاق پیام', 'Message pin')}
                                     >
                                       📌
                                     </button>
                                     <button 
                                       onClick={() => handleTranslateChatMessage(msg.id, msg.text)}
                                       className="text-cyan-400 hover:text-white font-bold"
-                                      title="ترجمه پیام"
+                                      title={window.loc('ترجمه پیام', 'Translation of the message')}
                                     >
                                       🌍
                                     </button>
@@ -590,10 +590,10 @@ export default function ChatTab(props) {
                                           }
                                           return c;
                                         }));
-                                        showToast('پیام حذف شد 🗑️');
+                                        showToast(window.loc('پیام حذف شد 🗑️', 'The message was deleted 🗑️'));
                                       }}
                                       className="text-rose-400 hover:text-rose-300 font-bold"
-                                      title="حذف پیام"
+                                      title={window.loc('حذف پیام', 'Delete message')}
                                     >
                                       🗑️
                                     </button>
@@ -610,7 +610,7 @@ export default function ChatTab(props) {
                             <div className="flex items-center justify-between text-xs font-bold text-purple-300">
                               <span className="flex items-center gap-1.5">
                                 <Bot className="w-4 h-4 text-purple-400" />
-                                🤖 AI Chat Assistant (هوش مصنوعی)
+                                {window.loc('🤖 AI Chat Assistant (هوش مصنوعی)', '🤖 AI Chat Assistant')}
                               </span>
                               <button onClick={() => setShowAiAssistant(false)} className="text-slate-400 hover:text-white">
                                 <X className="w-4 h-4" />
@@ -760,7 +760,7 @@ export default function ChatTab(props) {
                               value={directInputText}
                               onChange={e => setDirectInputText(e.target.value)}
                               onKeyDown={e => e.key === 'Enter' && handleSendDirectMessage()}
-                              placeholder="Write a message... (تایپ پیام)"
+                              placeholder={window.loc('Write a message... (تایپ پیام)', 'Write a message...')}
                               className="flex-1 min-w-[120px] px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500/80 transition"
                             />
 
@@ -972,7 +972,7 @@ export default function ChatTab(props) {
                   <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                     <h3 className="text-xs font-bold text-white flex items-center gap-2">
                       <Users className="w-4 h-4 text-purple-400" />
-                      👥 Create New Group (ساخت گروه جدید)
+                      {window.loc('👥 Create New Group (ساخت گروه جدید)', '👥 Create New Group')}
                     </h3>
                     <button onClick={() => setIsCreateGroupModalOpen(false)} className="text-slate-400 hover:text-white">
                       <X className="w-4 h-4" />
@@ -981,7 +981,7 @@ export default function ChatTab(props) {
 
                   <div className="space-y-3 text-xs">
                     <div>
-                      <label className="text-slate-400 text-[10px] block font-bold mb-1">Group Name (نام گروه)</label>
+                      <label className="text-slate-400 text-[10px] block font-bold mb-1">{window.loc('Group Name (نام گروه)', 'Group Name')}</label>
                       <input 
                         type="text"
                         value={newGroupName}
@@ -992,7 +992,7 @@ export default function ChatTab(props) {
                     </div>
 
                     <div>
-                      <label className="text-slate-400 text-[10px] block font-bold mb-1">Description (توضیحات)</label>
+                      <label className="text-slate-400 text-[10px] block font-bold mb-1">{window.loc('Description (توضیحات)', 'Description')}</label>
                       <input 
                         type="text"
                         value={newGroupDesc}

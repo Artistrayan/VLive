@@ -59,21 +59,21 @@ export function StreamerScoresBadges({ userObj = {}, compact = false }) {
   return (
     <div className="grid grid-cols-3 gap-1.5 p-2 rounded-2xl bg-slate-950/80 border border-slate-800 text-center">
       <div className="space-y-0.5">
-        <span className="text-[8px] text-slate-400 font-bold block">سطح (Level)</span>
+        <span className="text-[8px] text-slate-400 font-bold block">{window.loc('سطح (Level)', 'Level')}</span>
         <span className={`text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r ${scores.badgeColor} text-white inline-block shadow`}>
           Lvl {scores.level} {scores.levelName}
         </span>
       </div>
 
       <div className="space-y-0.5">
-        <span className="text-[8px] text-slate-400 font-bold block">اعتبار (Trust)</span>
+        <span className="text-[8px] text-slate-400 font-bold block">{window.loc('اعتبار (Trust)', 'Trust')}</span>
         <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-full inline-block">
           {scores.reputationScore}/10
         </span>
       </div>
 
       <div className="space-y-0.5">
-        <span className="text-[8px] text-slate-400 font-bold block">رتبه محتوا (Rank)</span>
+        <span className="text-[8px] text-slate-400 font-bold block">{window.loc('رتبه محتوا (Rank)', 'Content Rank')}</span>
         <span className="text-[9px] font-black text-amber-300 bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded-full inline-block">
           {scores.creatorRank}/10
         </span>

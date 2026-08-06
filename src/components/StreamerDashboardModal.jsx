@@ -46,15 +46,15 @@ export default function StreamerDashboardModal({
 
   // Scheduled Live State
   const [scheduledStreams, setScheduledStreams] = useState([
-    { id: 'sch_1', title: 'شب‌نشینی زنده موسیقی 🎸', date: 'فردا - ساعت ۲۱:۰۰', category: 'Music', live_type: 'standard' },
-    { id: 'sch_2', title: 'چت اختصاصی و پاسخ به سوالات 💬', date: 'جمعه - ساعت ۲۲:۳۰', category: 'VIP Chat', live_type: 'adult' }
+    { id: 'sch_1', title: window.loc('شب‌نشینی زنده موسیقی 🎸', 'Live music party 🎸'), date: window.loc('فردا - ساعت ۲۱:۰۰', 'Tomorrow - 21:00'), category: 'Music', live_type: 'standard' },
+    { id: 'sch_2', title: window.loc('چت اختصاصی و پاسخ به سوالات 💬', 'Exclusive chat and answers to questions 💬'), date: window.loc('جمعه - ساعت ۲۲:۳۰', 'Friday - 22:30'), category: 'VIP Chat', live_type: 'adult' }
   ]);
 
   // Past Live History State
   const [liveHistory, setLiveHistory] = useState([
-    { id: 'h_1', title: 'لایو ویژه آخر هفته 🔥', date: 'دیروز', duration: '2h 15m', viewers: 4200, earnedCoins: 12400 },
-    { id: 'h_2', title: 'استریم گیمینگ PUBG 🎮', date: '۳ روز پیش', duration: '1h 45m', viewers: 2890, earnedCoins: 8500 },
-    { id: 'h_3', title: 'گپ و گفت ۱۸+ VIP 🔞', date: '۵ روز پیش', duration: '3h 10m', viewers: 5600, earnedCoins: 24000 }
+    { id: 'h_1', title: window.loc('لایو ویژه آخر هفته 🔥', 'Weekend special live 🔥'), date: window.loc('دیروز', 'yesterday'), duration: '2h 15m', viewers: 4200, earnedCoins: 12400 },
+    { id: 'h_2', title: window.loc('استریم گیمینگ PUBG 🎮', 'PUBG gaming stream 🎮'), date: window.loc('۳ روز پیش', '3 days ago'), duration: '1h 45m', viewers: 2890, earnedCoins: 8500 },
+    { id: 'h_3', title: window.loc('گپ و گفت ۱۸+ VIP 🔞', 'Chat and say 18+ VIP 🔞'), date: window.loc('۵ روز پیش', '5 days ago'), duration: '3h 10m', viewers: 5600, earnedCoins: 24000 }
   ]);
 
   // Top Supporters State
@@ -101,15 +101,15 @@ export default function StreamerDashboardModal({
     e.preventDefault();
     const amount = parseFloat(withdrawAmountUsdt);
     if (isNaN(amount) || amount < PLATFORM_RULES.MIN_WITHDRAWAL_USDT) {
-      showToast(`⚠️ حداقل مبلغ برداشت ${PLATFORM_RULES.MIN_WITHDRAWAL_USDT} تتر (USDT) می‌باشد`);
+      showToast(window.loc(`⚠️ حداقل مبلغ برداشت ${PLATFORM_RULES.MIN_WITHDRAWAL_USDT} تتر (USDT) می‌باشد`, `⚠️ حداقل مبلغ برداشت ${PLATFORM_RULES.MIN_WITHDRAWAL_USDT} تتر (USDT) می‌باشد`));
       return;
     }
     if (amount > streamerData.availableUsdt) {
-      showToast('⚠️ موجودی قابل برداشت شما کافی نیست');
+      showToast(window.loc('⚠️ موجودی قابل برداشت شما کافی نیست', '⚠️ Your withdrawable balance is not enough'));
       return;
     }
     if (!walletAddress.trim() || walletAddress.length < 10) {
-      showToast('⚠️ لطفاً آدرس کیف پول معتبر TRC-20 وارد نمایید');
+      showToast(window.loc('⚠️ لطفاً آدرس کیف پول معتبر TRC-20 وارد نمایید', '⚠️ Please enter valid TRC-20 wallet address'));
       return;
     }
 
@@ -123,10 +123,10 @@ export default function StreamerDashboardModal({
         availableUsdt: prev.availableUsdt - amount,
         pendingUsdt: prev.pendingUsdt + amount
       }));
-      showToast('✅ درخواست برداشت با موفقیت ثبت شد و به ادمین ارسال گردید');
-      addAdminAuditLog?.(`درخواست برداشت ${amount} تتر توسط استریمر @${currentUsername} ثبت شد`);
+      showToast(window.loc('✅ درخواست برداشت با موفقیت ثبت شد و به ادمین ارسال گردید', '✅ The withdrawal request was successfully registered and sent to the admin'));
+      addAdminAuditLog?.(window.loc(`درخواست برداشت ${amount} تتر توسط استریمر @${currentUsername} ثبت شد`, `درخواست برداشت ${amount} تتر توسط استریمر @${currentUsername} ثبت شد`));
     } else {
-      showToast('❌ خطایی در ثبت درخواست برداشت رخ داد: ' + (res.error || ''));
+      showToast(window.loc('❌ خطایی در ثبت درخواست برداشت رخ داد: ', '❌ An error occurred in registering the withdrawal request:') + (res.error || ''));
     }
   };
 
@@ -134,19 +134,19 @@ export default function StreamerDashboardModal({
   const handleAddScheduledStream = (e) => {
     e.preventDefault();
     if (!newScheduleTitle.trim()) {
-      showToast('⚠️ لطفاً عنوان استریم را وارد نمایید');
+      showToast(window.loc('⚠️ لطفاً عنوان استریم را وارد نمایید', '⚠️ Please enter the title of the stream'));
       return;
     }
     const newSch = {
       id: `sch_${Date.now()}`,
       title: newScheduleTitle.trim(),
-      date: newScheduleDate || 'فردا - ساعت ۲۰:۰۰',
+      date: newScheduleDate || window.loc('فردا - ساعت ۲۰:۰۰', 'Tomorrow - 20:00'),
       category: newScheduleCategory,
       live_type: newScheduleType
     };
     setScheduledStreams(prev => [newSch, ...prev]);
     setNewScheduleTitle('');
-    showToast('📅 استریم با موفقیت برنامه‌ریزی گردید');
+    showToast(window.loc('📅 استریم با موفقیت برنامه‌ریزی گردید', '📅 The stream was successfully programmed'));
   };
 
   // Save Settings Changes
@@ -159,7 +159,7 @@ export default function StreamerDashboardModal({
       notify_followers: streamerData.notifyFollowers,
       notify_withdrawals: streamerData.notifyWithdrawals
     });
-    showToast('💾 تنظیمات استریمر با موفقیت ذخیره شد');
+    showToast(window.loc('💾 تنظیمات استریمر با موفقیت ذخیره شد', '💾 Streamer settings saved successfully'));
   };
 
   return (
@@ -176,10 +176,10 @@ export default function StreamerDashboardModal({
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-black text-white">STREAMER CENTER</h2>
                 <span className="bg-pink-500/20 text-pink-300 border border-pink-500/40 text-[10px] font-black px-2.5 py-0.5 rounded-full">
-                  استریمر تایید شده 👑
+                  {window.loc('استریمر تایید شده 👑', 'Verified Streamer 👑')}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-semibold">داشبورد اختصاصی، درآمد، آمار و مدیریت استریم‌ها</p>
+              <p className="text-xs text-slate-400 font-semibold">{window.loc('داشبورد اختصاصی، درآمد، آمار و مدیریت استریم‌ها', 'Exclusive dashboard, income, statistics and stream management')}</p>
             </div>
           </div>
 
@@ -197,15 +197,15 @@ export default function StreamerDashboardModal({
             <div className="w-16 h-16 rounded-3xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center mx-auto shadow-inner">
               <Lock className="w-8 h-8 text-rose-400" />
             </div>
-            <h3 className="text-lg font-black text-white">عدم دسترسی به پنل استریمر</h3>
+            <h3 className="text-lg font-black text-white">{window.loc('عدم دسترسی به پنل استریمر', 'Lack of access to the streamer panel')}</h3>
             <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-              این بخش فقط برای استریمرهای تایید شده V.LIVE فعال می‌باشد. جهت درخواست فعال‌سازی پنل استریمر به ادمین پیام ارسال کنید یا احراز هویت را انجام دهید.
+              {window.loc('این بخش فقط برای استریمرهای تایید شده V.LIVE فعال می‌باشد. جهت درخواست فعال‌سازی پنل استریمر به ادمین پیام ارسال کنید یا احراز هویت را انجام دهید.', 'This section is only active for verified V.LIVE streamers. To request the activation of the streamer panel, send a message to the admin or perform authentication.')}
             </p>
             <button
               onClick={onClose}
               className="px-6 py-2.5 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs"
             >
-              متوجه شدم
+              {window.loc('متوجه شدم', 'I understand')}
             </button>
           </div>
         ) : (
@@ -214,13 +214,13 @@ export default function StreamerDashboardModal({
             {/* STREAMER CENTER SIDEBAR MENU */}
             <div className="w-full md:w-56 bg-slate-950/80 border-b md:border-b-0 md:border-l border-slate-800 p-3 flex md:flex-col gap-1.5 overflow-x-auto md:overflow-y-auto shrink-0 no-scrollbar">
               {[
-                { id: 'dashboard', label: 'داشبورد اصلی', icon: Crown },
-                { id: 'live', label: 'مدیریت استریم', icon: Video },
-                { id: 'income', label: 'درآمد & تسویه', icon: DollarSign },
-                { id: 'analytics', label: 'آمار & حامیان', icon: BarChart3 },
-                { id: 'settings', label: 'تنظیمات استریمر', icon: Settings },
-                { id: 'rules', label: 'قوانین استریم', icon: FileText },
-                { id: 'support', label: 'پشتیبانی اختصاصی', icon: HelpCircle }
+                { id: 'dashboard', label: window.loc('داشبورد اصلی', 'The main dashboard'), icon: Crown },
+                { id: 'live', label: window.loc('مدیریت استریم', 'Stream management'), icon: Video },
+                { id: 'income', label: window.loc('درآمد & تسویه', 'Income & Settlement'), icon: DollarSign },
+                { id: 'analytics', label: window.loc('آمار & حامیان', 'Stats & Supporters'), icon: BarChart3 },
+                { id: 'settings', label: window.loc('تنظیمات استریمر', 'Streamer settings'), icon: Settings },
+                { id: 'rules', label: window.loc('قوانین استریم', 'Stream rules'), icon: FileText },
+                { id: 'support', label: window.loc('پشتیبانی اختصاصی', 'Dedicated support'), icon: HelpCircle }
               ].map(item => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -265,7 +265,7 @@ export default function StreamerDashboardModal({
                         <div className="flex items-center gap-2 justify-center sm:justify-start">
                           <h3 className="text-base font-black text-white">{currentUser?.name || currentUsername}</h3>
                           <span className="bg-amber-400/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-full border border-amber-400/30 font-bold">
-                            امتیاز: {streamerData.rating} ★
+                            {window.loc('امتیاز:', 'Points:')} {streamerData.rating} ★
                           </span>
                         </div>
                         <p className="text-xs text-slate-300 max-w-md">{streamerData.bio}</p>
@@ -280,12 +280,12 @@ export default function StreamerDashboardModal({
                         } else if (onSwitchMainTab) {
                           onSwitchMainTab('home');
                         }
-                        if (showToast) showToast('🎥 انتقال به بخش لایواستریم');
+                        if (showToast) showToast(window.loc('🎥 انتقال به بخش لایواستریم', '🎥 transfer to the live stream section'));
                       }}
                       className="px-5 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 hover:opacity-95 text-white font-black text-xs shadow-lg shadow-pink-500/30 shrink-0 flex items-center gap-2"
                     >
                       <Video className="w-4 h-4 animate-pulse" />
-                      <span>شروع فوری لایواستریم 🎥</span>
+                      <span>{window.loc('شروع فوری لایواستریم 🎥', 'Instant start of livestream 🎥')}</span>
                     </button>
                   </div>
 
@@ -293,38 +293,38 @@ export default function StreamerDashboardModal({
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                       <div className="flex items-center justify-between text-slate-400 text-xs">
-                        <span>دنبال‌کنندگان</span>
+                        <span>{window.loc('دنبال‌کنندگان', 'Followers')}</span>
                         <Users className="w-4 h-4 text-pink-400" />
                       </div>
                       <span className="text-lg font-black text-white block">{streamerData.followers.toLocaleString()}</span>
-                      <span className="text-[10px] text-emerald-400 font-bold">↑ +۱۵٪ این ماه</span>
+                      <span className="text-[10px] text-emerald-400 font-bold">{window.loc('↑ +۱۵٪ این ماه', '↑ +15% this month')}</span>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                       <div className="flex items-center justify-between text-slate-400 text-xs">
-                        <span>کل بازدیدها</span>
+                        <span>{window.loc('کل بازدیدها', 'Total views')}</span>
                         <Eye className="w-4 h-4 text-cyan-400" />
                       </div>
                       <span className="text-lg font-black text-white block">{streamerData.totalViews.toLocaleString()}</span>
-                      <span className="text-[10px] text-cyan-300 font-bold">استریم‌های 4K</span>
+                      <span className="text-[10px] text-cyan-300 font-bold">{window.loc('استریم‌های 4K', '4K streams')}</span>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                       <div className="flex items-center justify-between text-slate-400 text-xs">
-                        <span>ساعات لایو</span>
+                        <span>{window.loc('ساعات لایو', 'Live hours')}</span>
                         <Clock className="w-4 h-4 text-purple-400" />
                       </div>
-                      <span className="text-lg font-black text-white block">{streamerData.liveHours} ساعت</span>
-                      <span className="text-[10px] text-purple-300 font-bold">فعالیت مستمر</span>
+                      <span className="text-lg font-black text-white block">{streamerData.liveHours} {window.loc('ساعت', 'hour')}</span>
+                      <span className="text-[10px] text-purple-300 font-bold">{window.loc('فعالیت مستمر', 'Continuous activity')}</span>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                       <div className="flex items-center justify-between text-slate-400 text-xs">
-                        <span>موجودی قابل برداشت</span>
+                        <span>{window.loc('موجودی قابل برداشت', 'Withdrawal balance')}</span>
                         <DollarSign className="w-4 h-4 text-amber-400" />
                       </div>
                       <span className="text-lg font-black text-amber-400 block">${streamerData.availableUsdt} USDT</span>
-                      <span className="text-[10px] text-amber-300 font-bold">معادل سکه‌ها</span>
+                      <span className="text-[10px] text-amber-300 font-bold">{window.loc('معادل سکه‌ها', 'The equivalent of coins')}</span>
                     </div>
                   </div>
 
@@ -339,7 +339,7 @@ export default function StreamerDashboardModal({
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-1.5">
                                 <Crown className="w-4 h-4 text-amber-400" />
-                                <span className="text-xs font-black text-white">۱. سطح استریمر: {scores.levelName} (سطح {scores.level})</span>
+                                <span className="text-xs font-black text-white">{window.loc('۱. سطح استریمر:', '1. Streamer level:')} {scores.levelName} {window.loc('(سطح', '(level')} {scores.level})</span>
                               </div>
                               <span className="text-[10px] text-amber-300 font-mono font-bold">{scores.xp.toLocaleString()} XP</span>
                             </div>
@@ -350,18 +350,18 @@ export default function StreamerDashboardModal({
                             </div>
 
                             <div className="flex items-center justify-between text-[10px] text-slate-400">
-                              <span>{scores.xpToNext.toLocaleString()} XP تا سطح {scores.nextLevelObj.name}</span>
-                              <span className="text-pink-300 font-bold">پیشرفت {scores.progressPercent}%</span>
+                              <span>{scores.xpToNext.toLocaleString()} {window.loc('XP تا سطح', 'XP to level up')} {scores.nextLevelObj.name}</span>
+                              <span className="text-pink-300 font-bold">{window.loc('پیشرفت', 'progress')} {scores.progressPercent}%</span>
                             </div>
                           </div>
 
                           {/* REPUTATION & CREATOR RANK INDEPENDENT BADGES */}
                           <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                            <span className="text-xs font-black text-white block">۲ و ۳. مدال‌های اعتبار و رتبه محتوا (مستقل)</span>
+                            <span className="text-xs font-black text-white block">{window.loc('۲ و ۳. مدال‌های اعتبار و رتبه محتوا (مستقل)', '2 and 3. Credit Medals and Content Rating (Independent)')}</span>
                             <div className="grid grid-cols-2 gap-2 pt-1">
                               {/* Reputation Badge */}
                               <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 space-y-1 text-center">
-                                <span className="text-[9px] text-slate-400 font-bold block">اعتبار (Reputation)</span>
+                                <span className="text-[9px] text-slate-400 font-bold block">{window.loc('اعتبار (Reputation)', 'reputation')}</span>
                                 <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30 inline-block">
                                   {scores.reputationScore}/10 ({scores.reputationStatus})
                                 </span>
@@ -369,7 +369,7 @@ export default function StreamerDashboardModal({
 
                               {/* Creator Rank Badge */}
                               <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 space-y-1 text-center">
-                                <span className="text-[9px] text-slate-400 font-bold block">رتبه محتوا (Rank)</span>
+                                <span className="text-[9px] text-slate-400 font-bold block">{window.loc('رتبه محتوا (Rank)', 'Content Rank')}</span>
                                 <span className="text-[10px] font-black text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30 inline-block">
                                   {scores.creatorRank}/10 ({scores.creatorRankName})
                                 </span>
@@ -382,7 +382,7 @@ export default function StreamerDashboardModal({
                         <div className="p-3 rounded-2xl bg-slate-950/80 border border-pink-500/20 flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
                             <Sparkles className="w-4 h-4 text-pink-400 shrink-0" />
-                            <span className="text-[10px] font-bold text-slate-300">مزایای فعال سطح {scores.level}:</span>
+                            <span className="text-[10px] font-bold text-slate-300">{window.loc('مزایای فعال سطح', 'Level active benefits')} {scores.level}:</span>
                             <div className="flex items-center gap-1 flex-wrap">
                               {scores.benefits.map((b, idx) => (
                                 <span key={idx} className="px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-300 text-[9px] font-bold border border-pink-500/20">
@@ -401,10 +401,10 @@ export default function StreamerDashboardModal({
                     <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                       <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
                         <Calendar className="w-4 h-4 text-pink-400" />
-                        <span>استریم‌های برنامه‌ریزی‌شده بعدی</span>
+                        <span>{window.loc('استریم‌های برنامه‌ریزی‌شده بعدی', 'Next scheduled streams')}</span>
                       </h4>
                       <button onClick={() => setActiveTab('live')} className="text-[11px] text-pink-400 font-bold hover:underline">
-                        مدیریت برنامه →
+                        {window.loc('مدیریت برنامه →', '→ Application management')}
                       </button>
                     </div>
 
@@ -416,7 +416,7 @@ export default function StreamerDashboardModal({
                             <span className="text-[10px] text-slate-400">{s.date} • {s.category}</span>
                           </div>
                           <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${s.live_type === 'adult' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-pink-500/20 text-pink-300 border border-pink-500/30'}`}>
-                            {s.live_type === 'adult' ? '۱۸+' : 'Standard'}
+                            {s.live_type === 'adult' ? window.loc('۱۸+', '18+') : 'Standard'}
                           </span>
                         </div>
                       ))}
@@ -434,55 +434,55 @@ export default function StreamerDashboardModal({
                   <form onSubmit={handleAddScheduledStream} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
                     <h4 className="font-bold text-white text-xs flex items-center gap-1.5 border-b border-slate-800 pb-2">
                       <Calendar className="w-4 h-4 text-purple-400" />
-                      <span>برنامه‌ریزی لایواستریم جدید</span>
+                      <span>{window.loc('برنامه‌ریزی لایواستریم جدید', 'New livestream programming')}</span>
                     </h4>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       <div>
-                        <label className="block text-slate-400 mb-1">عنوان استریم:</label>
+                        <label className="block text-slate-400 mb-1">{window.loc('عنوان استریم:', 'Stream title:')}</label>
                         <input
                           type="text"
                           value={newScheduleTitle}
                           onChange={(e) => setNewScheduleTitle(e.target.value)}
-                          placeholder="عنوان استریم آینده را بنویسید..."
+                          placeholder={window.loc('عنوان استریم آینده را بنویسید...', 'Write the title of the future stream...')}
                           className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-slate-400 mb-1">زمان برگزاری:</label>
+                        <label className="block text-slate-400 mb-1">{window.loc('زمان برگزاری:', 'Time of holding:')}</label>
                         <input
                           type="text"
                           value={newScheduleDate}
                           onChange={(e) => setNewScheduleDate(e.target.value)}
-                          placeholder="مثال: پنج‌شنبه - ساعت ۲۱:۰۰"
+                          placeholder={window.loc('مثال: پنج‌شنبه - ساعت ۲۱:۰۰', 'Example: Thursday - 21:00')}
                           className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-slate-400 mb-1">دسته‌بندی:</label>
+                        <label className="block text-slate-400 mb-1">{window.loc('دسته‌بندی:', 'Category:')}</label>
                         <select
                           value={newScheduleCategory}
                           onChange={(e) => setNewScheduleCategory(e.target.value)}
                           className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500"
                         >
-                          <option value="Gaming">گیمینگ 🎮</option>
-                          <option value="Music">موسیقی 🎵</option>
-                          <option value="Chat">چت & گپ 💬</option>
-                          <option value="VIP Chat">چت ۱۸+ VIP 🔞</option>
+                          <option value="Gaming">{window.loc('گیمینگ 🎮', 'Gaming 🎮')}</option>
+                          <option value="Music">{window.loc('موسیقی 🎵', 'Music 🎵')}</option>
+                          <option value="Chat">{window.loc('چت & گپ 💬', 'Chat & Chat 💬')}</option>
+                          <option value="VIP Chat">{window.loc('چت ۱۸+ VIP 🔞', 'Chat 18+ VIP 🔞')}</option>
                         </select>
                       </div>
 
                       <div>
-                        <label className="block text-slate-400 mb-1">نوع استریم:</label>
+                        <label className="block text-slate-400 mb-1">{window.loc('نوع استریم:', 'Stream type:')}</label>
                         <select
                           value={newScheduleType}
                           onChange={(e) => setNewScheduleType(e.target.value)}
                           className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500"
                         >
-                          <option value="standard">عمومی (Standard)</option>
-                          <option value="adult">بزرگسال (Adult 18+)</option>
+                          <option value="standard">{window.loc('عمومی (Standard)', 'General (Standard)')}</option>
+                          <option value="adult">{window.loc('بزرگسال (Adult 18+)', 'Adult (Adult 18+)')}</option>
                         </select>
                       </div>
                     </div>
@@ -491,7 +491,7 @@ export default function StreamerDashboardModal({
                       type="submit"
                       className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
                     >
-                      افزودن به جدول برنامه‌ها
+                      {window.loc('افزودن به جدول برنامه‌ها', 'Add to schedule')}
                     </button>
                   </form>
 
@@ -499,7 +499,7 @@ export default function StreamerDashboardModal({
                   <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
                     <h4 className="font-bold text-white text-xs flex items-center gap-1.5 border-b border-slate-800 pb-2">
                       <Clock className="w-4 h-4 text-cyan-400" />
-                      <span>تاریخچه لایواستریم‌های گذشته</span>
+                      <span>{window.loc('تاریخچه لایواستریم‌های گذشته', 'History of past livestreams')}</span>
                     </h4>
 
                     <div className="space-y-2">
@@ -507,11 +507,11 @@ export default function StreamerDashboardModal({
                         <div key={h.id} className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
                           <div>
                             <span className="font-bold text-white block">{h.title}</span>
-                            <span className="text-[10px] text-slate-400">تاریخ: {h.date} • مدت زمان: {h.duration}</span>
+                            <span className="text-[10px] text-slate-400">{window.loc('تاریخ:', 'Date:')} {h.date} {window.loc('• مدت زمان:', 'Duration:')} {h.duration}</span>
                           </div>
                           <div className="text-left font-mono">
                             <span className="block text-amber-400 font-bold">+{h.earnedCoins.toLocaleString()} Coins</span>
-                            <span className="text-[10px] text-slate-400">{h.viewers.toLocaleString()} بیننده</span>
+                            <span className="text-[10px] text-slate-400">{h.viewers.toLocaleString()} {window.loc('بیننده', 'the viewer')}</span>
                           </div>
                         </div>
                       ))}
@@ -528,21 +528,21 @@ export default function StreamerDashboardModal({
                   {/* INCOME OVERVIEW BANNER */}
                   <div className="p-5 rounded-3xl bg-slate-950 border border-amber-500/30 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
-                      <span className="text-xs text-slate-400 block">درآمد کل از هدایا</span>
+                      <span className="text-xs text-slate-400 block">{window.loc('درآمد کل از هدایا', 'Total income from gifts')}</span>
                       <span className="text-xl font-black text-amber-400 block mt-1">
-                        {streamerData.totalEarnedCoins.toLocaleString()} سکه
+                        {streamerData.totalEarnedCoins.toLocaleString()} {window.loc('سکه', 'coin')}
                       </span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
-                      <span className="text-xs text-slate-400 block">موجودی در انتظار تایید</span>
+                      <span className="text-xs text-slate-400 block">{window.loc('موجودی در انتظار تایید', 'Inventory pending confirmation')}</span>
                       <span className="text-xl font-black text-purple-300 block mt-1">
                         ${streamerData.pendingUsdt} USDT
                       </span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950 border border-emerald-500/40">
-                      <span className="text-xs text-emerald-400 font-bold block">موجودی آماده برداشت</span>
+                      <span className="text-xs text-emerald-400 font-bold block">{window.loc('موجودی آماده برداشت', 'Inventory ready for pickup')}</span>
                       <span className="text-xl font-black text-emerald-400 block mt-1">
                         ${streamerData.availableUsdt} USDT
                       </span>
@@ -554,25 +554,25 @@ export default function StreamerDashboardModal({
                     <div className="border-b border-slate-800 pb-2">
                       <h4 className="font-bold text-white text-sm flex items-center gap-2">
                         <CreditCard className="w-4 h-4 text-emerald-400" />
-                        <span>درخواست تسویه حساب و برداشت درآمد (TRC-20 USDT)</span>
+                        <span>{window.loc('درخواست تسویه حساب و برداشت درآمد (TRC-20 USDT)', 'Settlement request and income withdrawal (TRC-20 USDT)')}</span>
                       </h4>
-                      <p className="text-[11px] text-slate-400">حداقل مبلغ برداشت طبق قوانین پلتفرم {PLATFORM_RULES.MIN_WITHDRAWAL_USDT} تتر می‌باشد.</p>
+                      <p className="text-[11px] text-slate-400">{window.loc('حداقل مبلغ برداشت طبق قوانین پلتفرم', 'Minimum withdrawal amount according to platform rules')} {PLATFORM_RULES.MIN_WITHDRAWAL_USDT} {window.loc('تتر می‌باشد.', 'It is Tether.')}</p>
                     </div>
 
                     <div className="space-y-3 text-xs">
                       <div>
-                        <label className="block text-slate-300 font-bold mb-1">مبلغ برداشت به تتر (USDT):</label>
+                        <label className="block text-slate-300 font-bold mb-1">{window.loc('مبلغ برداشت به تتر (USDT):', 'Withdrawal amount in Tether (USDT):')}</label>
                         <input
                           type="number"
                           value={withdrawAmountUsdt}
                           onChange={(e) => setWithdrawAmountUsdt(e.target.value)}
-                          placeholder="مثال: 50"
+                          placeholder={window.loc('مثال: 50', 'Example: 50')}
                           className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono text-sm outline-none focus:border-emerald-500"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-slate-300 font-bold mb-1">آدرس کیف پول تتر (TRC-20 USDT Address):</label>
+                        <label className="block text-slate-300 font-bold mb-1">{window.loc('آدرس کیف پول تتر (TRC-20 USDT Address):', 'Tether wallet address (TRC-20 USDT Address):')}</label>
                         <input
                           type="text"
                           value={walletAddress}
@@ -583,9 +583,9 @@ export default function StreamerDashboardModal({
                       </div>
 
                       <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400 space-y-1">
-                        <p className="text-pink-400 font-bold">• سهم استریمر: ۷۱٪ • سهم کارمزد پلتفرم: ۲۹٪ (محاسبه و کسر خودکار)</p>
-                        <p>• حداقل مبلغ برداشت: ۵۰ تتر (50 USDT TRC-20)</p>
-                        <p>• زمان واریز تتر پس از تایید ادمین: بین ۲ الی ۱۲ ساعت کاری</p>
+                        <p className="text-pink-400 font-bold">{window.loc('• سهم استریمر: ۷۱٪ • سهم کارمزد پلتفرم: ۲۹٪ (محاسبه و کسر خودکار)', '• Streamer share: 71% • Platform fee share: 29% (automatic calculation and deduction)')}</p>
+                        <p>{window.loc('• حداقل مبلغ برداشت: ۵۰ تتر (50 USDT TRC-20)', '• Minimum withdrawal amount: 50 Tether (50 USDT TRC-20)')}</p>
+                        <p>{window.loc('• زمان واریز تتر پس از تایید ادمین: بین ۲ الی ۱۲ ساعت کاری', '• Tether deposit time after admin approval: between 2 and 12 working hours')}</p>
                       </div>
                     </div>
 
@@ -595,7 +595,7 @@ export default function StreamerDashboardModal({
                       className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 text-white font-black text-xs shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2"
                     >
                       <DollarSign className="w-4 h-4" />
-                      <span>{isSubmittingPayout ? 'در حال ثبت درخواست...' : 'ثبت درخواست تسویه تتر'}</span>
+                      <span>{isSubmittingPayout ? window.loc('در حال ثبت درخواست...', 'Applying for...') : window.loc('ثبت درخواست تسویه تتر', 'Registration of Tether settlement request')}</span>
                     </button>
                   </form>
 
@@ -611,13 +611,13 @@ export default function StreamerDashboardModal({
                     <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                       <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
                         <Crown className="w-4 h-4 text-amber-400" />
-                        <span>رتبه‌بندی و حامیان برتر استریم (Ranking & Supporters)</span>
+                        <span>{window.loc('رتبه‌بندی و حامیان برتر استریم (Ranking & Supporters)', 'Ranking and Top Stream Supporters (Ranking & Supporters)')}</span>
                       </h4>
                       <div className="flex items-center gap-1 text-[10px]">
-                        <button className="px-2 py-0.5 rounded-lg bg-pink-500 text-white font-bold">روزانه</button>
-                        <button className="px-2 py-0.5 rounded-lg bg-slate-900 text-slate-400 font-bold hover:text-white">هفتگی</button>
-                        <button className="px-2 py-0.5 rounded-lg bg-slate-900 text-slate-400 font-bold hover:text-white">ماهانه</button>
-                        <button className="px-2 py-0.5 rounded-lg bg-slate-900 text-slate-400 font-bold hover:text-white">کل زمان‌ها</button>
+                        <button className="px-2 py-0.5 rounded-lg bg-pink-500 text-white font-bold">{window.loc('روزانه', 'daily')}</button>
+                        <button className="px-2 py-0.5 rounded-lg bg-slate-900 text-slate-400 font-bold hover:text-white">{window.loc('هفتگی', 'weekly')}</button>
+                        <button className="px-2 py-0.5 rounded-lg bg-slate-900 text-slate-400 font-bold hover:text-white">{window.loc('ماهانه', 'monthly')}</button>
+                        <button className="px-2 py-0.5 rounded-lg bg-slate-900 text-slate-400 font-bold hover:text-white">{window.loc('کل زمان‌ها', 'All times')}</button>
                       </div>
                     </div>
 
@@ -648,12 +648,12 @@ export default function StreamerDashboardModal({
                   <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-4 text-xs">
                     <h4 className="font-bold text-white text-xs border-b border-slate-800 pb-2 flex items-center gap-1.5">
                       <Settings className="w-4 h-4 text-pink-400" />
-                      <span>تنظیمات عمومی استریمر</span>
+                      <span>{window.loc('تنظیمات عمومی استریمر', 'General streamer settings')}</span>
                     </h4>
 
                     {/* CALL TARIFF PER MINUTE */}
                     <div>
-                      <label className="block text-slate-300 font-bold mb-1">تعرفه تماس تصویری خصوصی (سکه بر دقیقه):</label>
+                      <label className="block text-slate-300 font-bold mb-1">{window.loc('تعرفه تماس تصویری خصوصی (سکه بر دقیقه):', 'Private video call tariff (coins per minute):')}</label>
                       <input
                         type="number"
                         value={streamerData.tariffPerMin}
@@ -664,14 +664,14 @@ export default function StreamerDashboardModal({
 
                     {/* STREAM QUALITY */}
                     <div>
-                      <label className="block text-slate-300 font-bold mb-1">کیفیت پیش‌فرض استریم:</label>
+                      <label className="block text-slate-300 font-bold mb-1">{window.loc('کیفیت پیش‌فرض استریم:', 'Default stream quality:')}</label>
                       <select
                         value={streamerData.streamQuality}
                         onChange={(e) => setStreamerData(prev => ({ ...prev, streamQuality: e.target.value }))}
                         className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-semibold outline-none focus:border-pink-500"
                       >
-                        <option value="4K">4K Ultra HD (مخصوص VIP)</option>
-                        <option value="1080p">1080p Full HD (استاندارد)</option>
+                        <option value="4K">{window.loc('4K Ultra HD (مخصوص VIP)', '4K Ultra HD (for VIP)')}</option>
+                        <option value="1080p">{window.loc('1080p Full HD (استاندارد)', '1080p Full HD (standard)')}</option>
                         <option value="720p">720p HD</option>
                       </select>
                     </div>
@@ -679,7 +679,7 @@ export default function StreamerDashboardModal({
                     {/* TOGGLES */}
                     <div className="space-y-2 pt-2 border-t border-slate-800">
                       <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl bg-slate-900 border border-slate-800">
-                        <span>چت اختصاصی فقط برای مشترکین (Subscribers Only)</span>
+                        <span>{window.loc('چت اختصاصی فقط برای مشترکین (Subscribers Only)', 'Exclusive chat only for subscribers (Subscribers Only)')}</span>
                         <input
                           type="checkbox"
                           checked={streamerData.subscribersOnlyChat}
@@ -689,7 +689,7 @@ export default function StreamerDashboardModal({
                       </label>
 
                       <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl bg-slate-900 border border-slate-800">
-                        <span>اعلام اعلان دریافت هدیه در استریم</span>
+                        <span>{window.loc('اعلام اعلان دریافت هدیه در استریم', 'Announcing the receipt of a gift in the stream')}</span>
                         <input
                           type="checkbox"
                           checked={streamerData.notifyGifts}
@@ -703,7 +703,7 @@ export default function StreamerDashboardModal({
                       onClick={handleSaveSettings}
                       className="w-full py-2.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs"
                     >
-                      ذخیره تنظیمات استریمر
+                      {window.loc('ذخیره تنظیمات استریمر', 'Save streamer settings')}
                     </button>
                   </div>
 
@@ -718,35 +718,35 @@ export default function StreamerDashboardModal({
                   <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
                     <h4 className="font-bold text-white border-b border-slate-800 pb-2 flex items-center gap-1.5">
                       <FileText className="w-4 h-4 text-amber-400" />
-                      <span>قوانین، ضوابط و رده‌بندی تخلفات استریمرها</span>
+                      <span>{window.loc('قوانین، ضوابط و رده‌بندی تخلفات استریمرها', 'Rules, regulations and classification of violations of streamers')}</span>
                     </h4>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
                       <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                        <span className="font-bold text-pink-400 block mb-1">۱. قوانین استریم و محتوای زنده:</span>
+                        <span className="font-bold text-pink-400 block mb-1">{window.loc('۱. قوانین استریم و محتوای زنده:', '1. Streaming rules and live content:')}</span>
                         <p className="text-slate-400 text-[10px]">
-                          تفکیک کامل استریم‌های عمومی (Standard) از ۱۸+ (Adult VIP). عدم پخش محتوای بزرگسال در دسته‌بندی عمومی و رعایت ضوابط رده‌بندی سنی.
+                          {window.loc('تفکیک کامل استریم‌های عمومی (Standard) از ۱۸+ (Adult VIP). عدم پخش محتوای بزرگسال در دسته‌بندی عمومی و رعایت ضوابط رده‌بندی سنی.', 'Complete separation of public streams (Standard) from 18+ (Adult VIP). Not broadcasting adult content in the general category and complying with age classification criteria.')}
                         </p>
                       </div>
 
                       <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                        <span className="font-bold text-purple-400 block mb-1">۲. رفتار در چت و تماس تصویری:</span>
+                        <span className="font-bold text-purple-400 block mb-1">{window.loc('۲. رفتار در چت و تماس تصویری:', '2. Behavior in chat and video call:')}</span>
                         <p className="text-slate-400 text-[10px]">
-                          حفظ احترام متقابل بین استریمر و بینندگان. عدم توهین، کلاهبرداری، اسپم و درخواست‌های غیرقانونی.
+                          {window.loc('حفظ احترام متقابل بین استریمر و بینندگان. عدم توهین، کلاهبرداری، اسپم و درخواست‌های غیرقانونی.', 'Maintain mutual respect between streamer and viewers. Non-offensive, fraudulent, spam and illegal solicitations.')}
                         </p>
                       </div>
 
                       <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                        <span className="font-bold text-emerald-400 block mb-1">۳. قوانین مالی و تسویه حساب:</span>
+                        <span className="font-bold text-emerald-400 block mb-1">{window.loc('۳. قوانین مالی و تسویه حساب:', '3. Financial and settlement rules:')}</span>
                         <p className="text-slate-400 text-[10px]">
-                          حداقل برداشت ۵۰ تتر (TRC-20). کسر خودکار ۲۹٪ کارمزد پلتفرم. عدم استفاده از سکه‌های تقلبی یا رفتار مشکوک (Anti-Fraud Check).
+                          {window.loc('حداقل برداشت ۵۰ تتر (TRC-20). کسر خودکار ۲۹٪ کارمزد پلتفرم. عدم استفاده از سکه‌های تقلبی یا رفتار مشکوک (Anti-Fraud Check).', 'Minimum harvest of 50 tetras (TRC-20). Automatic deduction of 29% platform fee. No use of counterfeit coins or suspicious behavior (Anti-Fraud Check).')}
                         </p>
                       </div>
 
                       <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                        <span className="font-bold text-cyan-400 block mb-1">۴. پایش امنیتی هوش مصنوعی (AI Security):</span>
+                        <span className="font-bold text-cyan-400 block mb-1">{window.loc('۴. پایش امنیتی هوش مصنوعی (AI Security):', '4. Artificial intelligence security monitoring (AI Security):')}</span>
                         <p className="text-slate-400 text-[10px]">
-                          پایش هوشمند عدم تطابق چهره، لایو خالی (Empty Live) و تخلفات. گزارش‌ها به ادمین جهت تصمیم‌گیری نهایی ارسال می‌شود.
+                          {window.loc('پایش هوشمند عدم تطابق چهره، لایو خالی (Empty Live) و تخلفات. گزارش‌ها به ادمین جهت تصمیم‌گیری نهایی ارسال می‌شود.', 'Intelligent monitoring of face mismatch, empty live and violations. The reports are sent to the administrator for final decision.')}
                         </p>
                       </div>
                     </div>
@@ -756,20 +756,20 @@ export default function StreamerDashboardModal({
                   <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                     <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
                       <ShieldAlert className="w-4 h-4 text-rose-400" />
-                      <span>سطوح تخلفات و جریمه‌های انضباطی (Violations & Penalties)</span>
+                      <span>{window.loc('سطوح تخلفات و جریمه‌های انضباطی (Violations & Penalties)', 'Levels of Violations & Penalties')}</span>
                     </h4>
                     <div className="flex flex-wrap gap-2 text-[10px]">
                       <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-amber-500/40 text-amber-300 font-bold">
-                        🟡 اخطار (Warning): تذکر انضباطی بدون کسر درآمد
+                        {window.loc('🟡 اخطار (Warning): تذکر انضباطی بدون کسر درآمد', '🟡 Warning: Disciplinary warning without income deduction')}
                       </span>
                       <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-orange-500/40 text-orange-300 font-bold">
-                        🟠 تخلف جزیی (Minor): مسدودی ۱۲ ساعته لایو
+                        {window.loc('🟠 تخلف جزیی (Minor): مسدودی ۱۲ ساعته لایو', '🟠 Minor violation: 12-hour live blocking')}
                       </span>
                       <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-rose-500/40 text-rose-300 font-bold">
-                        🔴 تخلف جدی (Serious): مسدودی ۳ روزه لایو & کسر ۵۰٪ XP
+                        {window.loc('🔴 تخلف جدی (Serious): مسدودی ۳ روزه لایو & کسر ۵۰٪ XP', '🔴 Serious violation: 3-day live ban & 50% XP deduction')}
                       </span>
                       <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-red-600/60 text-red-400 font-bold">
-                        ⛔ تخلف بحرانی (Critical): لغو مقام استریمر & مسدودی اکانت
+                        {window.loc('⛔ تخلف بحرانی (Critical): لغو مقام استریمر & مسدودی اکانت', '⛔ Critical violation: cancellation of streamer status & blocking of account')}
                       </span>
                     </div>
                   </div>
@@ -778,34 +778,34 @@ export default function StreamerDashboardModal({
                   <div className="p-4 rounded-2xl bg-slate-950 border border-purple-500/30 space-y-3">
                     <h4 className="font-bold text-white text-xs flex items-center gap-1.5 border-b border-slate-800 pb-2">
                       <HelpCircle className="w-4 h-4 text-purple-400" />
-                      <span>ثبت درخواست اعتراض / تجدیدنظر به ادمین (Submit Appeal)</span>
+                      <span>{window.loc('ثبت درخواست اعتراض / تجدیدنظر به ادمین (Submit Appeal)', 'Submit Appeal')}</span>
                     </h4>
                     <p className="text-[10px] text-slate-400">
-                      اگر اخطار یا محدودیتی بر روی حساب شما اعمال شده است، می‌توانید توضیحات و دلایل خود را برای بررسی ادمین ارسال کنید.
+                      {window.loc('اگر اخطار یا محدودیتی بر روی حساب شما اعمال شده است، می‌توانید توضیحات و دلایل خود را برای بررسی ادمین ارسال کنید.', 'If a warning or restriction has been applied to your account, you can send your explanation and reasons for admin review.')}
                     </p>
 
                     <form onSubmit={(e) => {
                       e.preventDefault();
                       const appealText = e.target.appealInput?.value?.trim();
                       if (!appealText) {
-                        showToast('⚠️ لطفاً توضیحات اعتراض خود را بنویسید');
+                        showToast(window.loc('⚠️ لطفاً توضیحات اعتراض خود را بنویسید', '⚠️ Please write the description of your objection'));
                         return;
                       }
-                      addAdminAuditLog?.(`درخواست تجدیدنظر جدید از استریمر @${currentUsername} ثبت شد: ${appealText}`);
-                      showToast('✅ درخواست تجدیدنظر شما با موفقیت به ادمین ارسال گردید');
+                      addAdminAuditLog?.(window.loc(`درخواست تجدیدنظر جدید از استریمر @${currentUsername} ثبت شد: ${appealText}`, `درخواست تجدیدنظر جدید از استریمر @${currentUsername} ثبت شد: ${appealText}`));
+                      showToast(window.loc('✅ درخواست تجدیدنظر شما با موفقیت به ادمین ارسال گردید', 'Your appeal has been successfully sent to the admin'));
                       e.target.reset();
                     }} className="space-y-2">
                       <textarea
                         name="appealInput"
                         rows={3}
-                        placeholder="توضیحات و مستندات اعتراض خود را به صورت کامل بنویسید..."
+                        placeholder={window.loc('توضیحات و مستندات اعتراض خود را به صورت کامل بنویسید...', 'Write the explanation and documentation of your protest in full...')}
                         className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs outline-none focus:border-purple-500 resize-none"
                       />
                       <button
                         type="submit"
                         className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
                       >
-                        ارسال اعتراض به هیئت نظارت ادمین
+                        {window.loc('ارسال اعتراض به هیئت نظارت ادمین', 'Send a protest to the admin supervisory board')}
                       </button>
                     </form>
                   </div>
@@ -817,13 +817,13 @@ export default function StreamerDashboardModal({
               {activeTab === 'support' && (
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3 text-xs animate-fadeIn text-center">
                   <HelpCircle className="w-10 h-10 text-pink-400 mx-auto" />
-                  <h4 className="font-bold text-white">پشتیبانی اختصاصی استریمرها</h4>
-                  <p className="text-slate-400">در صورت داشتن سوال یا نیاز به پشتیبانی فنی فوری، مستقیماً به تلگرام پشتیبانی پیام دهید.</p>
+                  <h4 className="font-bold text-white">{window.loc('پشتیبانی اختصاصی استریمرها', 'Exclusive support for streamers')}</h4>
+                  <p className="text-slate-400">{window.loc('در صورت داشتن سوال یا نیاز به پشتیبانی فنی فوری، مستقیماً به تلگرام پشتیبانی پیام دهید.', 'If you have any questions or need immediate technical support, send a direct message to Telegram Support.')}</p>
                   <button
-                    onClick={() => showToast('💬 لینک تلگرام پشتیبانی: @VLive_Support')}
+                    onClick={() => showToast(window.loc('💬 لینک تلگرام پشتیبانی: @VLive_Support', '💬 Telegram support link: @VLive_Support'))}
                     className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold"
                   >
-                    ارتباط با پشتیبانی تلگرام
+                    {window.loc('ارتباط با پشتیبانی تلگرام', 'Communication with Telegram support')}
                   </button>
                 </div>
               )}

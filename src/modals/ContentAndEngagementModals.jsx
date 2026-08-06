@@ -58,7 +58,7 @@ export default function ContentAndEngagementModals(props) {
   const setNewStoryImage = props.setNewStoryImage || setLocalNewStoryImage;
 
   const handlePublishPost = props.handlePublishPost || (() => {
-    showToast && showToast('پست با موفقیت منتشر شد ✅');
+    showToast && showToast(window.loc('پست با موفقیت منتشر شد ✅', 'The post has been published successfully'));
     setIsAddPostModalOpen && setIsAddPostModalOpen(false);
   });
   return (
@@ -153,7 +153,7 @@ export default function ContentAndEngagementModals(props) {
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-sm font-black text-white flex items-center gap-2">
                 <Image className="w-5 h-5 text-pink-400" />
-                {loc('انتشار تصویر جدید در گالری moments', 'Publish New Photo to Moments Gallery')}
+                {window.loc('انتشار تصویر جدید در گالری moments', 'Publish New Photo to Moments Gallery')}
               </h3>
               <button onClick={() => setIsAddPostModalOpen(false)} className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white">
                 <X className="w-4 h-4" />
@@ -162,14 +162,14 @@ export default function ContentAndEngagementModals(props) {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">
-                  {loc('انتخاب تصویر:', 'Select Photo:')}
+                  {window.loc('انتخاب تصویر:', 'Select Photo:')}
                 </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={newPostImage}
                     onChange={e => setNewPostImage(e.target.value)}
-                    placeholder="URL تصویر یا انتخاب از لیست پایین..."
+                    placeholder={window.loc('URL تصویر یا انتخاب از لیست پایین...', 'Image URL or select from the list below...')}
                     className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
                   />
                   <label className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer text-xs font-bold shrink-0 flex items-center gap-1">
@@ -184,9 +184,9 @@ export default function ContentAndEngagementModals(props) {
                           try {
                             const compressed = await compressImageFile(file);
                             setNewPostImage(compressed);
-                            showToast('تصویر با موفقیت فشرده شد! 📸');
+                            showToast(window.loc('تصویر با موفقیت فشرده شد! 📸', 'Image compressed successfully! 📸'));
                           } catch (err) {
-                            showToast('خطا در بارگذاری تصویر');
+                            showToast(window.loc('خطا در بارگذاری تصویر', 'Error loading image'));
                           }
                         }
                       }}
@@ -212,12 +212,12 @@ export default function ContentAndEngagementModals(props) {
               )}
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">
-                  {loc('کپشن و توضیحات:', 'Caption & Description:')}
+                  {window.loc('کپشن و توضیحات:', 'Caption & Description:')}
                 </label>
                 <textarea
                   value={newPostCaption}
                   onChange={e => setNewPostCaption(e.target.value)}
-                  placeholder={loc('کپشن جدید بنویسید...', 'Write a caption...')}
+                  placeholder={window.loc('کپشن جدید بنویسید...', 'Write a caption...')}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 h-20"
                 />
               </div>
@@ -227,13 +227,13 @@ export default function ContentAndEngagementModals(props) {
                 onClick={handlePublishPost}
                 className="flex-1 py-3 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs shadow-lg"
               >
-                {loc('انتشار تصویر 🚀', 'Publish Moment 🚀')}
+                {window.loc('انتشار تصویر 🚀', 'Publish Moment 🚀')}
               </button>
               <button
                 onClick={() => setIsAddPostModalOpen(false)}
                 className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
               >
-                {loc('انصراف', 'Cancel')}
+                {window.loc('انصراف', 'Cancel')}
               </button>
             </div>
           </div>
@@ -247,7 +247,7 @@ export default function ContentAndEngagementModals(props) {
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-sm font-black text-white flex items-center gap-2">
                 <Plus className="w-5 h-5 text-purple-400" />
-                {loc('انتشار استوری جدید ۲۴ ساعته', 'Publish New 24h Story')}
+                {window.loc('انتشار استوری جدید ۲۴ ساعته', 'Publish New 24h Story')}
               </h3>
               <button onClick={() => setIsAddStoryModalOpen(false)} className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white">
                 <X className="w-4 h-4" />
@@ -256,14 +256,14 @@ export default function ContentAndEngagementModals(props) {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">
-                  {loc('تصویر یا ویدیو استوری:', 'Story Media:')}
+                  {window.loc('تصویر یا ویدیو استوری:', 'Story Media:')}
                 </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={newStoryImage}
                     onChange={e => setNewStoryImage(e.target.value)}
-                    placeholder="URL تصویر استوری..."
+                    placeholder={window.loc('URL تصویر استوری...', 'Story image URL...')}
                     className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-purple-500"
                   />
                   <label className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer text-xs font-bold shrink-0 flex items-center gap-1">
@@ -278,9 +278,9 @@ export default function ContentAndEngagementModals(props) {
                           try {
                             const compressed = await compressImageFile(file);
                             setNewStoryImage(compressed);
-                            showToast('استوری آماده شد! 📸');
+                            showToast(window.loc('استوری آماده شد! 📸', 'The story is ready! 📸'));
                           } catch (err) {
-                            showToast('خطا در بارگذاری تصویر');
+                            showToast(window.loc('خطا در بارگذاری تصویر', 'Error loading image'));
                           }
                         }
                       }}
@@ -306,13 +306,13 @@ export default function ContentAndEngagementModals(props) {
               )}
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">
-                  {loc('متن کوتاه استوری:', 'Story Caption:')}
+                  {window.loc('متن کوتاه استوری:', 'Story Caption:')}
                 </label>
                 <input
                   type="text"
                   value={newStoryCaption}
                   onChange={e => setNewStoryCaption(e.target.value)}
-                  placeholder={loc('متن روی استوری...', 'Story text...')}
+                  placeholder={window.loc('متن روی استوری...', 'Story text...')}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-purple-500"
                 />
               </div>
@@ -322,13 +322,13 @@ export default function ContentAndEngagementModals(props) {
                 onClick={handlePublishStory}
                 className="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg"
               >
-                {loc('انتشار استوری در پروفایل ⚡', 'Publish Story ⚡')}
+                {window.loc('انتشار استوری در پروفایل ⚡', 'Publish Story ⚡')}
               </button>
               <button
                 onClick={() => setIsAddStoryModalOpen(false)}
                 className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
               >
-                {loc('انصراف', 'Cancel')}
+                {window.loc('انصراف', 'Cancel')}
               </button>
             </div>
           </div>
@@ -347,10 +347,10 @@ export default function ContentAndEngagementModals(props) {
                 </div>
                 <div>
                   <h3 className="text-base font-black text-white">
-                    {loc('ایجاد نظرسنجی زنده - استودیو میزبان', 'Create Live Stream Poll - Host Studio')}
+                    {window.loc('ایجاد نظرسنجی زنده - استودیو میزبان', 'Create Live Stream Poll - Host Studio')}
                   </h3>
                   <p className="text-xs text-purple-300 font-medium">
-                    {loc('سوال و گزینه‌ها را تعریف کنید تا همزمان برای همه بینندگان لایو پخش شود', 'Define question and options to broadcast in real-time to all live viewers')}
+                    {window.loc('سوال و گزینه‌ها را تعریف کنید تا همزمان برای همه بینندگان لایو پخش شود', 'Define question and options to broadcast in real-time to all live viewers')}
                   </p>
                 </div>
               </div>
@@ -368,13 +368,13 @@ export default function ContentAndEngagementModals(props) {
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-amber-300 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                    {loc('نظرسنجی فعال در حال پخش است:', 'Active Poll Currently Live:')}
+                    {window.loc('نظرسنجی فعال در حال پخش است:', 'Active Poll Currently Live:')}
                   </span>
                   <button 
                     onClick={handleEndActivePoll}
                     className="px-2.5 py-1 rounded-xl bg-red-600/80 hover:bg-red-600 text-white text-[10px] font-black shadow transition"
                   >
-                    {loc('پایان نظرسنجی ⏹️', 'End Poll ⏹️')}
+                    {window.loc('پایان نظرسنجی ⏹️', 'End Poll ⏹️')}
                   </button>
                 </div>
                 <p className="text-xs font-bold text-white">{activeLivePoll.question}</p>
@@ -395,13 +395,13 @@ export default function ContentAndEngagementModals(props) {
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  {loc('سوال نظرسنجی (Question):', 'Poll Question:')}
+                  {window.loc('سوال نظرسنجی (Question):', 'Poll Question:')}
                 </label>
                 <input 
                   type="text"
                   value={pollQuestionInput}
                   onChange={e => setPollQuestionInput(e.target.value)}
-                  placeholder={loc('مثلاً: چه آدرسی یا چه سبکی در لایو بعدی اجرا بشه؟', 'e.g. Which track or game should we play next?')}
+                  placeholder={window.loc('مثلاً: چه آدرسی یا چه سبکی در لایو بعدی اجرا بشه؟', 'e.g. Which track or game should we play next?')}
                   className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-purple-500 shadow-inner"
                 />
               </div>
@@ -409,10 +409,10 @@ export default function ContentAndEngagementModals(props) {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-bold text-slate-300">
-                    {loc('گزینه‌های پاسخ (حداکثر ۴ گزینه):', 'Response Options (Up to 4 options):')}
+                    {window.loc('گزینه‌های پاسخ (حداکثر ۴ گزینه):', 'Response Options (Up to 4 options):')}
                   </label>
                   <span className="text-[10px] text-purple-300 font-mono">
-                    {pollOptionInputs.filter(o => o.trim()).length} / 4 {loc('پر شده', 'filled')}
+                    {pollOptionInputs.filter(o => o.trim()).length} / 4 {window.loc('پر شده', 'filled')}
                   </span>
                 </div>
 
@@ -430,7 +430,7 @@ export default function ContentAndEngagementModals(props) {
                           newOpts[index] = e.target.value;
                           setPollOptionInputs(newOpts);
                         }}
-                        placeholder={loc(`گزینه ${index + 1}${index < 2 ? ' (اجباری)' : ' (اختیاری)'}`, `Option ${index + 1}${index < 2 ? ' (Required)' : ' (Optional)'}`)}
+                        placeholder={window.loc(window.loc(`گزینه ${index + 1}${index < 2 ? window.loc(' (اجباری)', '(mandatory)') : window.loc(' (اختیاری)', '(optional)')}`, `گزینه ${index + 1}${index < 2 ? window.loc(' (اجباری)', '(mandatory)') : window.loc(' (اختیاری)', '(optional)')}`), `Option ${index + 1}${index < 2 ? ' (Required)' : ' (Optional)'}`)}
                         className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-purple-500"
                       />
                       {index >= 2 && (
@@ -441,7 +441,7 @@ export default function ContentAndEngagementModals(props) {
                             setPollOptionInputs(newOpts);
                           }}
                           className="p-2 rounded-xl bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-400"
-                          title={loc('پاک کردن', 'Clear')}
+                          title={window.loc('پاک کردن', 'Clear')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -459,13 +459,13 @@ export default function ContentAndEngagementModals(props) {
                 className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white font-black text-xs shadow-lg hover:scale-102 active:scale-98 transition flex items-center justify-center gap-2"
               >
                 <Send className="w-4 h-4" />
-                {loc('انتشار نظرسنجی زنده در لایو 📊🚀', 'Broadcast Poll to Live Stream 📊🚀')}
+                {window.loc('انتشار نظرسنجی زنده در لایو 📊🚀', 'Broadcast Poll to Live Stream 📊🚀')}
               </button>
               <button 
                 onClick={() => setIsCreatePollModalOpen(false)}
                 className="px-5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
               >
-                {loc('انصراف', 'Cancel')}
+                {window.loc('انصراف', 'Cancel')}
               </button>
             </div>
           </div>

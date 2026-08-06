@@ -96,7 +96,7 @@ const INITIAL_CONVERSATIONS = [];
 export default function App() {
   // Current User State
   const [userName, setUserName] = useState(() => {
-    return safeStorage.getItem('vlive_user_name') || 'کاربر VIP';
+    return safeStorage.getItem('vlive_user_name') || loc('کاربر VIP', 'VIP user');
   });
   const [currentUsername, setCurrentUsername] = useState(() => {
     return safeStorage.getItem('vlive_current_username') || '';
@@ -118,7 +118,7 @@ export default function App() {
     return safeStorage.getItem('vlive_user_avatar') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
   });
   const [userBio, setUserBio] = useState(() => {
-    return safeStorage.getItem('vlive_user_bio') || 'استریمر رسمی V.Live+ | پخش زنده باکیفیت و چت تعاملی';
+    return safeStorage.getItem('vlive_user_bio') || loc('استریمر رسمی V.Live+ | پخش زنده باکیفیت و چت تعاملی', 'V.Live+ official streamer | High quality live streaming and interactive chat');
   });
   const [isVerified, setIsVerified] = useState(true);
 
@@ -235,7 +235,7 @@ export default function App() {
   const [activeDevices, setActiveDevices] = useState([]);
 
   // Main UI State
-  const [activeTab, setActiveTab] = useState('streams'); // 'streams', 'messages', 'wallet', 'profile'
+  const [activeTab, setActiveTab] = useState('home'); // 'streams', 'messages', 'wallet', 'profile'
   const [profileMainTab, setProfileMainTab] = useState('overview'); // 'gallery', 'level', 'wallet', 'settings'
   const [profileSubPage, setProfileSubPage] = useState('main');
   const [activeProfileTab, setActiveProfileTab] = useState('overview'); // 'main' | 'account' | 'privacy' | 'wallet' | 'vip' | 'gifts' | 'gallery' | 'stories' | 'notifications' | 'language' | 'support' | 'about'
@@ -586,19 +586,19 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
   const startRandomMatchSearch = () => {
     if (freeMatchCallsLeft > 0) {
       setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));
-      showToast(`🎁 از سهمیه تماس رایگان استفاده شد (باقی‌مانده: ${freeMatchCallsLeft - 1})`);
+      showToast(window.loc(`🎁 از سهمیه تماس رایگان استفاده شد (باقی‌مانده: ${freeMatchCallsLeft - 1})`, `🎁 از سهمیه تماس رایگان استفاده شد (باقی‌مانده: ${freeMatchCallsLeft - 1})`));
     } else {
       if (matchGenderFilter === 'female' || matchGenderFilter === 'male') {
         if (userCoins < 10) {
-          showToast('⚠️ موجودی سکه شما برای فیلتر کافی نیست! لطفاً کیف پول را شارژ کنید.');
+          showToast(loc('⚠️ موجودی سکه شما برای فیلتر کافی نیست! لطفاً کیف پول را شارژ کنید.', '⚠️ Your coin balance is not enough for the filter! Please charge the wallet.'));
           setActiveTab('wallet');
           return;
         } else {
           setUserCoins(c => Math.max(0, c - 10));
-          showToast('🪙 ۱۰ سکه بابت فیلتر جنسیت کسر شد');
+          showToast(loc('🪙 ۱۰ سکه بابت فیلتر جنسیت کسر شد', '🪙 10 coins were deducted for the gender filter'));
         }
       } else {
-        showToast('🆓 شروع مچ هوشمند هر دو (رایگان)');
+        showToast(loc('🆓 شروع مچ هوشمند هر دو (رایگان)', '🆓 Smart wrist start both (free)'));
       }
     }
 
@@ -607,9 +607,9 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
       const validTargets = (Array.isArray(usersList) && usersList.length > 0)
         ? usersList.filter(u => u && u.username !== currentUsername && u.user_type !== 'TEST_USER' && u.user_type !== 'DEMO_USER')
         : [
-            { id: 101, name: 'سارا ملکی', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80', city: 'تهران', isVerified: true, isStreamer: true },
-            { id: 102, name: 'الناز کریمی', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80', city: 'شیراز', isVerified: true, isStreamer: false },
-            { id: 103, name: 'سحر محمودی', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', city: 'مشهد', isVerified: true, isStreamer: true }
+            { id: 101, name: loc('سارا ملکی', 'Sarah Maleki'), avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80', city: loc('تهران', 'Tehran'), isVerified: true, isStreamer: true },
+            { id: 102, name: loc('الناز کریمی', 'Elnaz Karimi'), avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80', city: loc('شیراز', 'Shiraz'), isVerified: true, isStreamer: false },
+            { id: 103, name: loc('سحر محمودی', 'Sahar Mahmoudi'), avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', city: loc('مشهد', 'Mashhad'), isVerified: true, isStreamer: true }
           ];
 
       const randomTarget = validTargets[Math.floor(Math.random() * validTargets.length)] || validTargets[0];
@@ -618,9 +618,9 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
 
       const isStreamer = randomTarget.isStreamer || randomTarget.user_type === 'STREAMER' || randomTarget.isVerifiedStreamer;
       if (isStreamer) {
-        showToast(`⭐ اتصال با استریمر ${randomTarget.name}: ۲۰ ثانیه اول رایگان است!`);
+        showToast(window.loc(`⭐ اتصال با استریمر ${randomTarget.name}: ۲۰ ثانیه اول رایگان است!`, `⭐ اتصال با استریمر ${randomTarget.name}: ۲۰ ثانیه اول رایگان است!`));
       } else {
-        showToast(`🎉 اتصال با ${randomTarget.name}! مهلت تماس رایگان: ۳۰ ثانیه`);
+        showToast(window.loc(`🎉 اتصال با ${randomTarget.name}! مهلت تماس رایگان: ۳۰ ثانیه`, `🎉 اتصال با ${randomTarget.name}! مهلت تماس رایگان: ۳۰ ثانیه`));
       }
 
       handleInitiateCall(randomTarget, 'video', '1on1');
@@ -679,7 +679,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
           if (prev <= 1) {
             setMatchState('idle');
             setIsMatchModalOpen(false);
-            showToast('⏰ تماس ۳۰ ثانیه‌ای مچ رندوم به پایان رسید.');
+            showToast(loc('⏰ تماس ۳۰ ثانیه‌ای مچ رندوم به پایان رسید.', '⏰ The 30-second random call has ended.'));
             return 30;
           }
           return prev - 1;
@@ -841,16 +841,16 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      showToast('لطفاً یک فایل تصویری معتبر انتخاب کنید');
+      showToast(loc('لطفاً یک فایل تصویری معتبر انتخاب کنید', 'Please select a valid image file'));
       return;
     }
 
     try {
-      showToast('⚡ در حال فشرده‌سازی و بهینه‌سازی تصویر...');
+      showToast(loc('⚡ در حال فشرده‌سازی و بهینه‌سازی تصویر...', '⚡ Compressing and optimizing the image...'));
       const compressedDataUrl = await compressImageFile(file, 1080, 0.8);
       setEditAvatarUrl(compressedDataUrl);
       setUserAvatar(compressedDataUrl);
-      showToast('✅ تصویر پروفایل با موفقیت فشرده و جایگزین شد');
+      showToast(loc('✅ تصویر پروفایل با موفقیت فشرده و جایگزین شد', 'Profile picture has been compressed and replaced successfully'));
     } catch (err) {
       console.warn('Compression error, fallback to reader:', err);
       const reader = new FileReader();
@@ -952,17 +952,17 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     if (!targetUser) return;
 
     if (isDndActive) {
-      showToast('⚠️ حالت "مزاحم نشوید" فعال است. ابتدا آن را غیرفعال کنید.');
+      showToast(loc('⚠️ حالت "مزاحم نشوید" فعال است. ابتدا آن را غیرفعال کنید.', '⚠️ \"Do not disturb\" mode is active. Disable it first.'));
       return;
     }
 
     if (blockedCallUsers.includes(targetUser.username)) {
-      showToast(`⚠️ کاربر ${targetUser.name} در لیست مسدودشده‌ها است.`);
+      showToast(window.loc(`⚠️ کاربر ${targetUser.name} در لیست مسدودشده‌ها است.`, `⚠️ کاربر ${targetUser.name} در لیست مسدودشده‌ها است.`));
       return;
     }
 
     if (privacyWhoCall === 'VIP Only' && !targetUser.isVip) {
-      showToast('👑 تنظیمات تماس فقط برای کاربران VIP فعال است.');
+      showToast(loc('👑 تنظیمات تماس فقط برای کاربران VIP فعال است.', '👑 Call settings are only active for VIP users.'));
       return;
     }
 
@@ -1013,7 +1013,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
       quality: '1080p Full HD',
       isPiP: false,
       translationLang: 'fa',
-      translatedSubtitles: 'ارتباط رمزنگاری‌شده 256 بیتی برقرار شد. آماده گفتگو 🔒',
+      translatedSubtitles: loc('ارتباط رمزنگاری‌شده 256 بیتی برقرار شد. آماده گفتگو 🔒', 'A 256-bit encrypted connection was established. Ready to talk 🔒'),
       securityEncrypted: true
     };
 
@@ -1032,7 +1032,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
         });
     }
 
-    showToast(`📞 تماس ${type === 'video' ? 'تصویری' : 'صوتی'} با ${targetUser.name} برقرار شد`);
+    showToast(window.loc(`📞 تماس ${type === 'video' ? loc('تصویری', 'visual') : loc('صوتی', 'Audio')} با ${targetUser.name} برقرار شد`, `📞 تماس ${type === 'video' ? loc('تصویری', 'visual') : loc('صوتی', 'Audio')} با ${targetUser.name} برقرار شد`));
   };
 
   const handleEndActiveCall = () => {
@@ -1047,8 +1047,8 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
       type: activeCall.type,
       direction: 'outgoing',
       user: activeCall.user,
-      time: 'هم‌اکنون',
-      date: 'امروز',
+      time: loc('هم‌اکنون', 'right now'),
+      date: loc('امروز', 'today'),
       duration: durationStr,
       isPaid: activeCall.isPaid,
       tariffRate: activeCall.tariffPerMin,
@@ -1093,9 +1093,9 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
               setUserCoins(c => Math.max(0, c - prev.tariffPerMin));
               nextCoins += prev.tariffPerMin;
               setTotalEarnings(e => e + (prev.tariffPerMin * 0.8));
-              showToast(`🪙 ${prev.tariffPerMin} سکه بابت زمان تماس کسر شد`);
+              showToast(window.loc(`🪙 ${prev.tariffPerMin} سکه بابت زمان تماس کسر شد`, `🪙 ${prev.tariffPerMin} سکه بابت زمان تماس کسر شد`));
             } else {
-              showToast('⚠️ اعتبار سکه شما برای ادامه تماس پولی کافی نیست!');
+              showToast(loc('⚠️ اعتبار سکه شما برای ادامه تماس پولی کافی نیست!', '⚠️ Your coin credit is not enough to continue the payment call!'));
               setTimeout(() => {
                 handleEndActiveCall();
               }, 500);
@@ -1105,10 +1105,10 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
           let nextSubtitle = prev.translatedSubtitles;
           if (prev.translationLang !== 'off' && nextSec % 4 === 0) {
             const subtitlesFA = [
-              'سلام! صدای من رو به خوبی داری؟ 🎙️',
-              'بله تصویر بسیار شفاف و 1080p هست ✨',
-              'ممنون بابت حمایتت در V.Live Pro! 💖',
-              'می‌تونیم نظرات کاربرها رو هم بررسی کنیم 🚀'
+              loc('سلام! صدای من رو به خوبی داری؟ 🎙️', 'Hello! Do you hear my voice well? 🎙️'),
+              loc('بله تصویر بسیار شفاف و 1080p هست ✨', 'Yes, the image is very clear and 1080p'),
+              loc('ممنون بابت حمایتت در V.Live Pro! 💖', 'Thank you for supporting V.Live Pro! 💖'),
+              loc('می‌تونیم نظرات کاربرها رو هم بررسی کنیم 🚀', 'We can also check user comments 🚀')
             ];
             const subtitlesEN = [
               'Hello! Can you hear me clearly? 🎙️',
@@ -1134,49 +1134,49 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
 
   const handleToggleMuteCall = () => {
     setActiveCall(prev => prev ? { ...prev, isMuted: !prev.isMuted } : null);
-    showToast(activeCall?.isMuted ? '🎙️ میکروفون روشن شد' : '🔇 میکروفون قطع شد');
+    showToast(activeCall?.isMuted ? loc('🎙️ میکروفون روشن شد', '🎙️ The microphone turned on') : loc('🔇 میکروفون قطع شد', '🔇 The microphone was cut off'));
   };
 
   const handleToggleSpeakerCall = () => {
     setActiveCall(prev => prev ? { ...prev, isSpeakerOn: !prev.isSpeakerOn } : null);
-    showToast(activeCall?.isSpeakerOn ? '🔈 حالت گوشی' : '🔊 اسپیکر فعال شد');
+    showToast(activeCall?.isSpeakerOn ? loc('🔈 حالت گوشی', '🔈 phone mode') : loc('🔊 اسپیکر فعال شد', '🔊 The speaker is activated'));
   };
 
   const handleToggleHoldCall = () => {
     setActiveCall(prev => prev ? { ...prev, isOnHold: !prev.isOnHold } : null);
-    showToast(activeCall?.isOnHold ? '▶️ تماس ادامه یافت' : '⏸️ تماس در حالت انتظار قرار گرفت');
+    showToast(activeCall?.isOnHold ? loc('▶️ تماس ادامه یافت', '▶️ The call continued') : loc('⏸️ تماس در حالت انتظار قرار گرفت', '⏸️ The call was put on hold'));
   };
 
   const handleToggleCameraCall = () => {
     setActiveCall(prev => prev ? { ...prev, isCameraOn: !prev.isCameraOn } : null);
-    showToast(activeCall?.isCameraOn ? '📷 دوربین خاموش شد' : '📹 دوربین روشن شد');
+    showToast(activeCall?.isCameraOn ? loc('📷 دوربین خاموش شد', '📷 The camera turned off') : loc('📹 دوربین روشن شد', '📹 The camera turned on'));
   };
 
   const handleSwitchCameraFacing = () => {
     setActiveCall(prev => prev ? { ...prev, facingMode: prev.facingMode === 'user' ? 'environment' : 'user' } : null);
-    showToast('🔄 تغییر دوربین جلو / عقب انجام شد');
+    showToast(loc('🔄 تغییر دوربین جلو / عقب انجام شد', '🔄 The change of front / rear camera was done'));
   };
 
   const handleToggleBeautyFilter = () => {
     setActiveCall(prev => prev ? { ...prev, beautyFilter: !prev.beautyFilter } : null);
-    showToast(activeCall?.beautyFilter ? '✨ فیلتر زیبایی غیرفعال شد' : '✨ فیلتر زیبایی فعال شد');
+    showToast(activeCall?.beautyFilter ? loc('✨ فیلتر زیبایی غیرفعال شد', '✨ The beauty filter has been disabled') : loc('✨ فیلتر زیبایی فعال شد', '✨ The beauty filter is activated'));
   };
 
   const handleSelectEffect = (effect) => {
     setActiveCall(prev => prev ? { ...prev, activeEffect: effect } : null);
     setShowInCallEffectsMenu(false);
-    showToast(`🎨 افکت ${effect} اعمال شد`);
+    showToast(window.loc(`🎨 افکت ${effect} اعمال شد`, `🎨 افکت ${effect} اعمال شد`));
   };
 
   const handleToggleBgBlur = () => {
     setActiveCall(prev => prev ? { ...prev, isBgBlurred: !prev.isBgBlurred } : null);
-    showToast(activeCall?.isBgBlurred ? '🌫️ پس‌زمینه عادی شد' : '🌫️ پس‌زمینه تار شد');
+    showToast(activeCall?.isBgBlurred ? loc('🌫️ پس‌زمینه عادی شد', '🌫️ The background became normal') : loc('🌫️ پس‌زمینه تار شد', '🌫️ The background is blurred'));
   };
 
   const handleSelectCallQuality = (q) => {
     setActiveCall(prev => prev ? { ...prev, quality: q } : null);
     setShowInCallQualityMenu(false);
-    showToast(`⚙️ کیفیت تماس به ${q} تغییر یافت`);
+    showToast(window.loc(`⚙️ کیفیت تماس به ${q} تغییر یافت`, `⚙️ کیفیت تماس به ${q} تغییر یافت`));
   };
 
   const handleToggleRecordCall = () => {
@@ -1185,19 +1185,19 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
       setIsRecordConsentModalOpen(true);
     } else {
       setActiveCall(prev => ({ ...prev, isRecording: !prev.isRecording }));
-      showToast(activeCall.isRecording ? '⏺️ ضبط تماس متوقف شد' : '🔴 ضبط مکالمه آغاز شد');
+      showToast(activeCall.isRecording ? loc('⏺️ ضبط تماس متوقف شد', 'Call recording stopped') : loc('🔴 ضبط مکالمه آغاز شد', '🔴 Conversation recording has started'));
     }
   };
 
   const handleConfirmRecordConsent = () => {
     setIsRecordConsentModalOpen(false);
     setActiveCall(prev => prev ? { ...prev, recordingPermissionGranted: true, isRecording: true } : null);
-    showToast('🔴 اجازه ضبط تایید شد. ضبط مکالمه فعال است.');
+    showToast(loc('🔴 اجازه ضبط تایید شد. ضبط مکالمه فعال است.', '🔴 Recording permission has been confirmed. Call recording is active.'));
   };
 
   const handleSendInCallGift = (gift) => {
     if (userCoins < gift.coins) {
-      showToast('⚠️ موجودی سکه شما کافی نیست!');
+      showToast(loc('⚠️ موجودی سکه شما کافی نیست!', '⚠️ Your coin balance is not enough!'));
       return;
     }
 
@@ -1252,7 +1252,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
   const handleAddParticipantToCall = (newUser) => {
     if (!activeCall) return;
     if (activeCall.participants.some(p => p.username === newUser.username)) {
-      showToast('این کاربر قبلاً در تماس حضور دارد.');
+      showToast(loc('این کاربر قبلاً در تماس حضور دارد.', 'This user is already in contact.'));
       return;
     }
     const updatedList = [...activeCall.participants, { ...newUser, isMuted: false }];
@@ -1262,21 +1262,21 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
       participants: updatedList
     });
     setIsAddParticipantModalOpen(false);
-    showToast(`👥 ${newUser.name} به تماس اضافه شد`);
+    showToast(window.loc(`👥 ${newUser.name} به تماس اضافه شد`, `👥 ${newUser.name} به تماس اضافه شد`));
   };
 
   const handleTogglePiPCall = () => {
     setActiveCall(prev => prev ? { ...prev, isPiP: !prev.isPiP } : null);
-    showToast(activeCall?.isPiP ? '🔳 تماس به حالت تمام‌صفحه بازگشت' : '🔳 تماس در حالت پنجره کوچک (PiP) قرار گرفت');
+    showToast(activeCall?.isPiP ? loc('🔳 تماس به حالت تمام‌صفحه بازگشت', '🔳 call back to full screen mode') : loc('🔳 تماس در حالت پنجره کوچک (PiP) قرار گرفت', '🔳 The call was placed in small window (PiP) mode'));
   };
 
   const handleToggleFavoriteContact = (username) => {
     setFavoriteContacts(prev => {
       if (prev.includes(username)) {
-        showToast('از علاقه‌مندی‌ها حذف شد');
+        showToast(loc('از علاقه‌مندی‌ها حذف شد', 'Removed from favorites'));
         return prev.filter(u => u !== username);
       } else {
-        showToast('به لیست علاقه‌مندی‌ها اضافه شد ⭐');
+        showToast(loc('به لیست علاقه‌مندی‌ها اضافه شد ⭐', 'Added to favorites ⭐'));
         return [...prev, username];
       }
     });
@@ -1284,7 +1284,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
 
   const handleSaveScheduledCall = () => {
     if (!scheduleTargetUser) {
-      showToast('لطفاً یک کاربر را انتخاب کنید');
+      showToast(loc('لطفاً یک کاربر را انتخاب کنید', 'Please select a user'));
       return;
     }
     const newSch = {
@@ -1292,7 +1292,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
       user: scheduleTargetUser,
       type: scheduleType,
       dateTime: scheduleDateTime,
-      note: scheduleNote || 'تماس برنامه‌ریزی‌شده',
+      note: scheduleNote || loc('تماس برنامه‌ریزی‌شده', 'Scheduled call'),
       isPaid: streamerPaidCallEnabled,
       tariffRate: streamerCallTariffPerMin,
       status: 'pending'
@@ -1300,23 +1300,23 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     setScheduledCallsList(prev => [newSch, ...prev]);
     setIsScheduleCallModalOpen(false);
     setScheduleNote('');
-    showToast('📅 تماس با موفقیت رزرو و زمان‌بندی شد!');
+    showToast(loc('📅 تماس با موفقیت رزرو و زمان‌بندی شد!', '📅 The call was successfully booked and scheduled!'));
   };
 
   const handleSubmitPostCallRating = () => {
-    showToast(`⭐ امتیاز ${ratingStarsCall} ستاره با موفقیت ثبت شد!`);
+    showToast(window.loc(`⭐ امتیاز ${ratingStarsCall} ستاره با موفقیت ثبت شد!`, `⭐ امتیاز ${ratingStarsCall} ستاره با موفقیت ثبت شد!`));
     setPostCallRatingData(null);
     setRatingCommentCall('');
   };
 
   const handleReportUserInCall = (reason) => {
-    showToast(`🚩 گزارش با علت "${reason}" ثبت شد و توسط تیم نظارت V.Live بررسی می‌شود.`);
+    showToast(window.loc(`🚩 گزارش با علت "${reason}" ثبت شد و توسط تیم نظارت V.Live بررسی می‌شود.`, `🚩 گزارش با علت "${reason}" ثبت شد و توسط تیم نظارت V.Live بررسی می‌شود.`));
     setPostCallRatingData(null);
   };
 
   const handleBlockUserInCall = (username) => {
     setBlockedCallUsers(prev => [...prev, username]);
-    showToast(`🚫 کاربر ${username} مسدود شد.`);
+    showToast(window.loc(`🚫 کاربر ${username} مسدود شد.`, `🚫 کاربر ${username} مسدود شد.`));
     setPostCallRatingData(null);
   };
 
@@ -1438,13 +1438,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         aiClassification: res.classification || 'Spam',
         aiRiskScore: res.riskScore || 50,
         aiRiskLevel: res.riskLevel || 'Medium',
-        aiReasoning: res.reasoning || 'تحلیل امنیت توسط هوش مصنوعی تکمیل شد'
+        aiReasoning: res.reasoning || loc('تحلیل امنیت توسط هوش مصنوعی تکمیل شد', 'Security analysis completed by artificial intelligence')
       } : r));
 
-      showToast(`🤖 تحلیل هوش مصنوعی برای گزارش ${reportId} دریافت شد`);
+      showToast(window.loc(`🤖 تحلیل هوش مصنوعی برای گزارش ${reportId} دریافت شد`, `🤖 تحلیل هوش مصنوعی برای گزارش ${reportId} دریافت شد`));
     } catch (e) {
       setAiReportList(prev => prev.map(r => r.id === reportId ? { ...r, isAnalyzing: false } : r));
-      showToast('⚠️ خطا در دریافت پاسخ هوش مصنوعی');
+      showToast(loc('⚠️ خطا در دریافت پاسخ هوش مصنوعی', '⚠️ Error in receiving artificial intelligence response'));
     }
   };
 
@@ -1467,7 +1467,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         aiAnalysis: res
       } : c));
 
-      showToast('🤖 تحلیل چت توسط Gemini انجام شد');
+      showToast(loc('🤖 تحلیل چت توسط Gemini انجام شد', '🤖 Chat analysis was done by Gemini'));
     } catch (e) {
       setAiReportedChatsList(prev => prev.map(c => c.id === chatId ? { ...c, isAnalyzing: false } : c));
     }
@@ -1492,7 +1492,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         aiSuggestedReply: res.suggestedReply
       } : t));
 
-      showToast('✨ پاسخ پیشنهادی Gemini تولید شد');
+      showToast(loc('✨ پاسخ پیشنهادی Gemini تولید شد', '✨ The answer suggested by Gemini has been generated'));
     } catch (e) {
       setAiSupportTicketsList(prev => prev.map(t => t.id === ticketId ? { ...t, isGenerating: false } : t));
     }
@@ -1517,7 +1517,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         aiCheck: res
       } : k));
 
-      showToast('🤖 بررسی هوشمند مدارک استریمر انجام شد');
+      showToast(loc('🤖 بررسی هوشمند مدارک استریمر انجام شد', '🤖 Smart verification of streamer documents was done'));
     } catch (e) {
       setAiStreamerVerificationsList(prev => prev.map(k => k.id === kycId ? { ...k, isAnalyzing: false } : k));
     }
@@ -1542,7 +1542,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         aiAnalysis: res
       } : f));
 
-      showToast('🔍 تحلیل تقلب دعوت توسط هوش مصنوعی تکمیل شد');
+      showToast(loc('🔍 تحلیل تقلب دعوت توسط هوش مصنوعی تکمیل شد', '🔍 Invitation fraud analysis completed by artificial intelligence'));
     } catch (e) {
       setAiReferralFraudList(prev => prev.map(f => f.id === fraudId ? { ...f, isAnalyzing: false } : f));
     }
@@ -1601,9 +1601,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       try { return JSON.parse(saved); } catch (e) {}
     }
     return [
-      { id: 'monthly', title: 'VIP Monthly (ماهانه)', priceCoins: 500, priceUsdt: '$2.50', status: 'Active' },
-      { id: 'quarterly', title: 'VIP 3 Months (سه ماهه)', priceCoins: 1200, priceUsdt: '$6.00', status: 'Active' },
-      { id: 'annual', title: 'VIP Annual (سالانه)', priceCoins: 4000, priceUsdt: '$20.00', status: 'Active' }
+      { id: 'monthly', title: loc('VIP Monthly (ماهانه)', 'VIP Monthly'), priceCoins: 500, priceUsdt: '$2.50', status: 'Active' },
+      { id: 'quarterly', title: loc('VIP 3 Months (سه ماهه)', 'VIP 3 Months'), priceCoins: 1200, priceUsdt: '$6.00', status: 'Active' },
+      { id: 'annual', title: loc('VIP Annual (سالانه)', 'VIP Annual'), priceCoins: 4000, priceUsdt: '$20.00', status: 'Active' }
     ];
   });
   const [editingVipPlan, setEditingVipPlan] = useState(null);
@@ -1630,8 +1630,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       try { return JSON.parse(saved); } catch (e) {}
     }
     return [
-      { id: 'T-101', user: 'Sahar Miller', subject: 'Coin Purchase Not Credited (عدم واریز سکه)', category: 'Wallet', status: 'Open', message: 'I bought 5000 coins via TRC20 but balance did not update automatically.' },
-      { id: 'T-102', user: 'Ali Reza', subject: 'Stream Key Connection Drop (قطع ارتباط لایو)', category: 'Live', status: 'Open', message: 'Live stream disconnected twice during last broadcast.' }
+      { id: 'T-101', user: 'Sahar Miller', subject: loc('Coin Purchase Not Credited (عدم واریز سکه)', 'Coin Purchase Not Credited'), category: 'Wallet', status: 'Open', message: 'I bought 5000 coins via TRC20 but balance did not update automatically.' },
+      { id: 'T-102', user: 'Ali Reza', subject: loc('Stream Key Connection Drop (قطع ارتباط لایو)', 'Stream Key Connection Drop'), category: 'Live', status: 'Open', message: 'Live stream disconnected twice during last broadcast.' }
     ];
   });
   const [adminTicketFilter, setAdminTicketFilter] = useState('All');
@@ -1831,8 +1831,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   const getLangCode = (langName) => {
     if (langName === 'en' || langName === 'English') return 'en';
-    if (langName === 'fa' || langName === 'فارسی' || langName === 'Farsi' || langName === 'Persian') return 'fa';
-    if (langName === 'ar' || langName === 'العربية' || langName === 'Arabic') return 'ar';
+    if (langName === 'fa' || langName === loc('فارسی', 'Farsi') || langName === 'Farsi' || langName === 'Persian') return 'fa';
+    if (langName === 'ar' || langName === loc('العربية', 'Arabic') || langName === 'Arabic') return 'ar';
     if (langName === 'tr' || langName === 'Türkçe' || langName === 'Turkish') return 'tr';
     if (langName === 'ru' || langName === 'Русский' || langName === 'Russian') return 'ru';
     return langName || 'en';
@@ -2017,22 +2017,22 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   };
 
   const handlePublishStory = () => {
-    showToast('استوری با موفقیت منتشر شد و تا ۲۴ ساعت فعال خواهد بود.');
+    showToast(loc('استوری با موفقیت منتشر شد و تا ۲۴ ساعت فعال خواهد بود.', 'The story has been published successfully and will be active for 24 hours.'));
     setIsCreateStoryOpen(false);
   };
 
   const handleLikeStory = () => {
-    showToast('❤️ استوری لایک شد');
+    showToast(loc('❤️ استوری لایک شد', '❤️ The story was liked'));
   };
 
   const handleSendStoryReply = () => {
     if (!storyReplyText) return;
-    showToast(`پاسخ شما به استوری ${activeStoryView?.group?.user?.name} ارسال شد.`);
+    showToast(window.loc(`پاسخ شما به استوری ${activeStoryView?.group?.user?.name} ارسال شد.`, `پاسخ شما به استوری ${activeStoryView?.group?.user?.name} ارسال شد.`));
     setStoryReplyText('');
   };
 
   const handleStoryLinkClick = (link) => {
-    showToast(`انتقال به: ${link.text}`);
+    showToast(window.loc(`انتقال به: ${link.text}`, `انتقال به: ${link.text}`));
   };
 
 
@@ -2071,7 +2071,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   // Bonus Lucky Mission & Chests
   const [bonusMission, setBonusMission] = useState({
     id: 'bonus_today',
-    title: '🎥 تماشای ۲ لایو استریم (Join 2 Live Streams)',
+    title: loc('🎥 تماشای ۲ لایو استریم (Join 2 Live Streams)', '🎥 Watch 2 Live Streams (Join 2 Live Streams)'),
     rewardCoins: 100,
     rewardXP: 50,
     progress: 1,
@@ -2100,51 +2100,51 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   // 20+ Comprehensive Missions Data
   const [allMissions, setAllMissions] = useState([
     // DAILY (10 Tasks)
-    { id: 'm_d1', category: 'daily', title: '💬 ارسال ۵ پیام در گفتگوها', difficulty: 'easy', progress: 4, total: 5, rewardType: 'coins', rewardVal: 50, xpVal: 30, completed: false, claimed: false, actionRoute: 'messages', desc: '5 پیام در بخش پیام‌ها ارسال کنید' },
-    { id: 'm_d2', category: 'daily', title: '❤️ لایک کردن ۱۰ پروفایل استریمر', difficulty: 'easy', progress: 10, total: 10, rewardType: 'coins', rewardVal: 30, xpVal: 20, completed: true, claimed: false, actionRoute: 'streams', desc: '۱۰ پروفایل کاربر یا استریمر را لایک کنید' },
-    { id: 'm_d3', category: 'daily', title: '👥 دنبال کردن ۳ کاربر جدید', difficulty: 'easy', progress: 3, total: 3, rewardType: 'coins', rewardVal: 40, xpVal: 25, completed: true, claimed: true, actionRoute: 'streams', desc: '۳ استریمر جدید را فالو کنید' },
-    { id: 'm_d4', category: 'daily', title: '📖 مشاهده ۵ استوری روزانه', difficulty: 'easy', progress: 5, total: 5, rewardType: 'coins', rewardVal: 30, xpVal: 20, completed: true, claimed: false, actionRoute: 'stories', desc: '۵ استوری روزانه کاربران را مشاهده کنید' },
-    { id: 'm_d5', category: 'daily', title: '🎥 تماشای ۱۵ دقیقه لایو استریم', difficulty: 'medium', progress: 12, total: 15, rewardType: 'coins', rewardVal: 100, xpVal: 50, completed: false, claimed: false, actionRoute: 'streams', desc: 'به مدت ۱۵ دقیقه به لایوهای 4K بپیوندید' },
-    { id: 'm_d6', category: 'daily', title: '🎁 ارسال یک هدیه در لایو یا چت', difficulty: 'medium', progress: 1, total: 1, rewardType: 'diamonds', rewardVal: 20, xpVal: 60, completed: true, claimed: false, actionRoute: 'giftshop', desc: 'حداقل یک هدیه در لایو یا چت ارسال کنید' },
-    { id: 'm_d7', category: 'daily', title: '🔍 بازدید از بخش Discover & Explore', difficulty: 'easy', progress: 1, total: 1, rewardType: 'coins', rewardVal: 25, xpVal: 15, completed: true, claimed: true, actionRoute: 'discover', desc: 'از بخش اکسپلور دیدن کنید' },
-    { id: 'm_d8', category: 'daily', title: '✍️ تکمیل اطلاعات و آواتار پروفایل', difficulty: 'easy', progress: 1, total: 1, rewardType: 'badge', rewardVal: '🏅 Profile Star', xpVal: 40, completed: true, claimed: false, actionRoute: 'profile', desc: 'آواتار و بیوگرافی پروفایل خود را تکمیل کنید' },
-    { id: 'm_d9', category: 'daily', title: '📞 برقراری یک تماس صوتی یا تصویری', difficulty: 'hard', progress: 1, total: 1, rewardType: 'coins', rewardVal: 150, xpVal: 80, completed: true, claimed: false, actionRoute: 'call', desc: 'یک تماس صوتی یا تصویری برقرار نمایید' },
-    { id: 'm_d10', category: 'daily', title: '📲 ورود روزانه موفق به حساب', difficulty: 'easy', progress: 1, total: 1, rewardType: 'coins', rewardVal: 20, xpVal: 10, completed: true, claimed: true, actionRoute: 'home', desc: 'ورود موفق به حساب کاربری V.Live' },
+    { id: 'm_d1', category: 'daily', title: loc('💬 ارسال ۵ پیام در گفتگوها', '💬 Send 5 messages in conversations'), difficulty: 'easy', progress: 4, total: 5, rewardType: 'coins', rewardVal: 50, xpVal: 30, completed: false, claimed: false, actionRoute: 'messages', desc: loc('5 پیام در بخش پیام‌ها ارسال کنید', '5 Send a message in the messages section') },
+    { id: 'm_d2', category: 'daily', title: loc('❤️ لایک کردن ۱۰ پروفایل استریمر', '❤️ Like 10 streamer profiles'), difficulty: 'easy', progress: 10, total: 10, rewardType: 'coins', rewardVal: 30, xpVal: 20, completed: true, claimed: false, actionRoute: 'streams', desc: loc('۱۰ پروفایل کاربر یا استریمر را لایک کنید', 'Like 10 user or streamer profiles') },
+    { id: 'm_d3', category: 'daily', title: loc('👥 دنبال کردن ۳ کاربر جدید', '👥 Follow 3 new users'), difficulty: 'easy', progress: 3, total: 3, rewardType: 'coins', rewardVal: 40, xpVal: 25, completed: true, claimed: true, actionRoute: 'streams', desc: loc('۳ استریمر جدید را فالو کنید', 'Follow 3 new streamers') },
+    { id: 'm_d4', category: 'daily', title: loc('📖 مشاهده ۵ استوری روزانه', '📖 View 5 daily stories'), difficulty: 'easy', progress: 5, total: 5, rewardType: 'coins', rewardVal: 30, xpVal: 20, completed: true, claimed: false, actionRoute: 'stories', desc: loc('۵ استوری روزانه کاربران را مشاهده کنید', 'View 5 daily user stories') },
+    { id: 'm_d5', category: 'daily', title: loc('🎥 تماشای ۱۵ دقیقه لایو استریم', '🎥 Watch 15 minutes of live stream'), difficulty: 'medium', progress: 12, total: 15, rewardType: 'coins', rewardVal: 100, xpVal: 50, completed: false, claimed: false, actionRoute: 'streams', desc: loc('به مدت ۱۵ دقیقه به لایوهای 4K بپیوندید', 'Join 4K Lives for 15 minutes') },
+    { id: 'm_d6', category: 'daily', title: loc('🎁 ارسال یک هدیه در لایو یا چت', '🎁 Send a gift in live or chat'), difficulty: 'medium', progress: 1, total: 1, rewardType: 'diamonds', rewardVal: 20, xpVal: 60, completed: true, claimed: false, actionRoute: 'giftshop', desc: loc('حداقل یک هدیه در لایو یا چت ارسال کنید', 'Send at least one gift in live or chat') },
+    { id: 'm_d7', category: 'daily', title: loc('🔍 بازدید از بخش Discover & Explore', '🔍 Visit the Discover & Explore section'), difficulty: 'easy', progress: 1, total: 1, rewardType: 'coins', rewardVal: 25, xpVal: 15, completed: true, claimed: true, actionRoute: 'discover', desc: loc('از بخش اکسپلور دیدن کنید', 'Visit the Explore section') },
+    { id: 'm_d8', category: 'daily', title: loc('✍️ تکمیل اطلاعات و آواتار پروفایل', '✍️ Complete information and profile avatar'), difficulty: 'easy', progress: 1, total: 1, rewardType: 'badge', rewardVal: '🏅 Profile Star', xpVal: 40, completed: true, claimed: false, actionRoute: 'profile', desc: loc('آواتار و بیوگرافی پروفایل خود را تکمیل کنید', 'Complete your profile avatar and bio') },
+    { id: 'm_d9', category: 'daily', title: loc('📞 برقراری یک تماس صوتی یا تصویری', '📞 Making a voice or video call'), difficulty: 'hard', progress: 1, total: 1, rewardType: 'coins', rewardVal: 150, xpVal: 80, completed: true, claimed: false, actionRoute: 'call', desc: loc('یک تماس صوتی یا تصویری برقرار نمایید', 'Make a voice or video call') },
+    { id: 'm_d10', category: 'daily', title: loc('📲 ورود روزانه موفق به حساب', '📲 Successful daily login to the account'), difficulty: 'easy', progress: 1, total: 1, rewardType: 'coins', rewardVal: 20, xpVal: 10, completed: true, claimed: true, actionRoute: 'home', desc: loc('ورود موفق به حساب کاربری V.Live', 'Successful login to V.Live account') },
 
     // WEEKLY (5 Tasks)
-    { id: 'm_w1', category: 'weekly', title: '📹 برگزاری ۳ لایو استریم مستقل', difficulty: 'hard', progress: 2, total: 3, rewardType: 'coins', rewardVal: 500, xpVal: 200, completed: false, claimed: false, actionRoute: 'start_live', desc: 'حداقل ۳ بار لایو استریم شروع کنید' },
-    { id: 'm_w2', category: 'weekly', title: '🪙 دریافت ۵۰۰ سکه هدیه از بینندگان', difficulty: 'hard', progress: 500, total: 500, rewardType: 'diamonds', rewardVal: 100, xpVal: 250, completed: true, claimed: false, actionRoute: 'wallet', desc: 'از بینندگان لایو ۵۰۰ سکه هدیه دریافت کنید' },
-    { id: 'm_w3', category: 'weekly', title: '👥 دعوت ۲ دوست جدید با کد اختصاصی', difficulty: 'medium', progress: 1, total: 2, rewardType: 'coins', rewardVal: 200, xpVal: 100, completed: false, claimed: false, actionRoute: 'invite', desc: 'کد دعوت اختصاصی خود را به دوستان ارسال کنید' },
-    { id: 'm_w4', category: 'weekly', title: '⏱️ تماشای ۵ ساعت لایو استریم', difficulty: 'medium', progress: 3.5, total: 5, rewardType: 'vip_trial', rewardVal: '👑 1-Day VIP Trial', xpVal: 150, completed: false, claimed: false, actionRoute: 'streams', desc: 'در مجموع ۵ ساعت لایو مشاهده کنید' },
-    { id: 'm_w5', category: 'weekly', title: '🎯 تکمیل همه مأموریت‌های روزانه', difficulty: 'hard', progress: 6, total: 7, rewardType: 'coupon', rewardVal: '🎟 30% VIP Coupon', xpVal: 300, completed: false, claimed: false, actionRoute: 'quests', desc: 'تمام مأموریت‌های روزانه را کامل کنید' },
+    { id: 'm_w1', category: 'weekly', title: loc('📹 برگزاری ۳ لایو استریم مستقل', '📹 Holding 3 independent live streams'), difficulty: 'hard', progress: 2, total: 3, rewardType: 'coins', rewardVal: 500, xpVal: 200, completed: false, claimed: false, actionRoute: 'start_live', desc: loc('حداقل ۳ بار لایو استریم شروع کنید', 'Start live streaming at least 3 times') },
+    { id: 'm_w2', category: 'weekly', title: loc('🪙 دریافت ۵۰۰ سکه هدیه از بینندگان', '🪙 Receive 500 gift coins from viewers'), difficulty: 'hard', progress: 500, total: 500, rewardType: 'diamonds', rewardVal: 100, xpVal: 250, completed: true, claimed: false, actionRoute: 'wallet', desc: loc('از بینندگان لایو ۵۰۰ سکه هدیه دریافت کنید', 'Receive 500 coins as a gift from live viewers') },
+    { id: 'm_w3', category: 'weekly', title: loc('👥 دعوت ۲ دوست جدید با کد اختصاصی', '👥 Invite 2 new friends with a special code'), difficulty: 'medium', progress: 1, total: 2, rewardType: 'coins', rewardVal: 200, xpVal: 100, completed: false, claimed: false, actionRoute: 'invite', desc: loc('کد دعوت اختصاصی خود را به دوستان ارسال کنید', 'Send your exclusive invitation code to friends') },
+    { id: 'm_w4', category: 'weekly', title: loc('⏱️ تماشای ۵ ساعت لایو استریم', '⏱️ Watch 5 hours of live stream'), difficulty: 'medium', progress: 3.5, total: 5, rewardType: 'vip_trial', rewardVal: '👑 1-Day VIP Trial', xpVal: 150, completed: false, claimed: false, actionRoute: 'streams', desc: loc('در مجموع ۵ ساعت لایو مشاهده کنید', 'Watch a total of 5 hours of live') },
+    { id: 'm_w5', category: 'weekly', title: loc('🎯 تکمیل همه مأموریت‌های روزانه', '🎯 Complete all daily missions'), difficulty: 'hard', progress: 6, total: 7, rewardType: 'coupon', rewardVal: '🎟 30% VIP Coupon', xpVal: 300, completed: false, claimed: false, actionRoute: 'quests', desc: loc('تمام مأموریت‌های روزانه را کامل کنید', 'Complete all daily missions') },
 
     // MONTHLY (5 Tasks)
-    { id: 'm_m1', category: 'monthly', title: '📅 ۳۰ روز حضور و ورود مستمر ماهانه', difficulty: 'hard', progress: 17, total: 30, rewardType: 'badge', rewardVal: '🏅 Legend 30-Day Badge', xpVal: 500, completed: false, claimed: false, actionRoute: 'home', desc: '۳۰ روز متوالی وارد برنامه شوید' },
-    { id: 'm_m2', category: 'monthly', title: '🎥 برگزاری ۲۰ لایو استریم ماهانه', difficulty: 'hard', progress: 12, total: 20, rewardType: 'coins', rewardVal: 2000, xpVal: 800, completed: false, claimed: false, actionRoute: 'start_live', desc: '۲۰ لایو استریم موفق در طول ماه برگزار کنید' },
-    { id: 'm_m3', category: 'monthly', title: '💬 ارسال ۱,۰۰۰ پیام تعاملی در چت', difficulty: 'medium', progress: 680, total: 1000, rewardType: 'coins', rewardVal: 800, xpVal: 400, completed: false, claimed: false, actionRoute: 'messages', desc: '۱,۰۰۰ پیام در گفتگوها ارسال نمایید' },
-    { id: 'm_m4', category: 'monthly', title: '🎁 ارسال ۵۰ هدیه به دوستان و استریمرها', difficulty: 'medium', progress: 50, total: 50, rewardType: 'frame', rewardVal: '🎨 Golden Crown Profile Frame', xpVal: 450, completed: true, claimed: false, actionRoute: 'giftshop', desc: '۵۰ هدیه مختلف اهدا کنید' },
-    { id: 'm_m5', category: 'monthly', title: '🤝 اضافه کردن ۵ دوست جدید به لیست', difficulty: 'easy', progress: 5, total: 5, rewardType: 'diamonds', rewardVal: 150, xpVal: 200, completed: true, claimed: true, actionRoute: 'messages', desc: '۵ دوست جدید به لیست مخاطبین اضافه نمایید' },
+    { id: 'm_m1', category: 'monthly', title: loc('📅 ۳۰ روز حضور و ورود مستمر ماهانه', '📅 30 days of continuous monthly attendance and entry'), difficulty: 'hard', progress: 17, total: 30, rewardType: 'badge', rewardVal: '🏅 Legend 30-Day Badge', xpVal: 500, completed: false, claimed: false, actionRoute: 'home', desc: loc('۳۰ روز متوالی وارد برنامه شوید', 'Enter the program for 30 consecutive days') },
+    { id: 'm_m2', category: 'monthly', title: loc('🎥 برگزاری ۲۰ لایو استریم ماهانه', '🎥 Holding 20 monthly live streams'), difficulty: 'hard', progress: 12, total: 20, rewardType: 'coins', rewardVal: 2000, xpVal: 800, completed: false, claimed: false, actionRoute: 'start_live', desc: loc('۲۰ لایو استریم موفق در طول ماه برگزار کنید', 'Hold 20 successful live streams during the month') },
+    { id: 'm_m3', category: 'monthly', title: loc('💬 ارسال ۱,۰۰۰ پیام تعاملی در چت', '💬 Send 1,000 interactive messages in chat'), difficulty: 'medium', progress: 680, total: 1000, rewardType: 'coins', rewardVal: 800, xpVal: 400, completed: false, claimed: false, actionRoute: 'messages', desc: loc('۱,۰۰۰ پیام در گفتگوها ارسال نمایید', 'Send 1,000 messages in conversations') },
+    { id: 'm_m4', category: 'monthly', title: loc('🎁 ارسال ۵۰ هدیه به دوستان و استریمرها', '🎁 Sending 50 gifts to friends and streamers'), difficulty: 'medium', progress: 50, total: 50, rewardType: 'frame', rewardVal: '🎨 Golden Crown Profile Frame', xpVal: 450, completed: true, claimed: false, actionRoute: 'giftshop', desc: loc('۵۰ هدیه مختلف اهدا کنید', 'Give 50 different gifts') },
+    { id: 'm_m5', category: 'monthly', title: loc('🤝 اضافه کردن ۵ دوست جدید به لیست', '🤝 Add 5 new friends to the list'), difficulty: 'easy', progress: 5, total: 5, rewardType: 'diamonds', rewardVal: 150, xpVal: 200, completed: true, claimed: true, actionRoute: 'messages', desc: loc('۵ دوست جدید به لیست مخاطبین اضافه نمایید', 'Add 5 new friends to the contact list') },
 
     // STREAMER TASKS
-    { id: 'm_s1', category: 'streamer', isStreamerExclusive: true, title: '🔴 شروع لایو و ۱۰ دقیقه استریم 4K', difficulty: 'medium', progress: 1, total: 1, rewardType: 'coins', rewardVal: 300, xpVal: 120, completed: true, claimed: false, actionRoute: 'start_live', desc: 'لایو 4K شروع کرده و حداقل ۱۰ دقیقه بمانید' },
-    { id: 'm_s2', category: 'streamer', isStreamerExclusive: true, title: '👑 دریافت هدیه Supercar یا Crown', difficulty: 'hard', progress: 1, total: 1, rewardType: 'diamonds', rewardVal: 200, xpVal: 250, completed: true, claimed: false, actionRoute: 'start_live', desc: 'یک هدیه سلطنتی در لایو دریافت نمایید' },
-    { id: 'm_s3', category: 'streamer', isStreamerExclusive: true, title: '👥 رسیدن به ۵0 بیننده همزمان', difficulty: 'hard', progress: 35, total: 50, rewardType: 'coins', rewardVal: 500, xpVal: 300, completed: false, claimed: false, actionRoute: 'start_live', desc: '۵۰ بیننده آنلاین به لایو بپیوندند' },
+    { id: 'm_s1', category: 'streamer', isStreamerExclusive: true, title: loc('🔴 شروع لایو و ۱۰ دقیقه استریم 4K', '🔴 Live start and 10 minutes of 4K streaming'), difficulty: 'medium', progress: 1, total: 1, rewardType: 'coins', rewardVal: 300, xpVal: 120, completed: true, claimed: false, actionRoute: 'start_live', desc: loc('لایو 4K شروع کرده و حداقل ۱۰ دقیقه بمانید', 'Start live 4K and stay for at least 10 minutes') },
+    { id: 'm_s2', category: 'streamer', isStreamerExclusive: true, title: loc('👑 دریافت هدیه Supercar یا Crown', '👑 Receive Supercar or Crown gift'), difficulty: 'hard', progress: 1, total: 1, rewardType: 'diamonds', rewardVal: 200, xpVal: 250, completed: true, claimed: false, actionRoute: 'start_live', desc: loc('یک هدیه سلطنتی در لایو دریافت نمایید', 'Receive a royal gift in live') },
+    { id: 'm_s3', category: 'streamer', isStreamerExclusive: true, title: loc('👥 رسیدن به ۵0 بیننده همزمان', '👥 reaching 50 simultaneous viewers'), difficulty: 'hard', progress: 35, total: 50, rewardType: 'coins', rewardVal: 500, xpVal: 300, completed: false, claimed: false, actionRoute: 'start_live', desc: loc('۵۰ بیننده آنلاین به لایو بپیوندند', '50 online viewers join the live') },
 
     // VIP EXCLUSIVE TASKS
-    { id: 'm_v1', category: 'vip', isVipExclusive: true, title: '👑 تماس تصویری 4K اختصاصی با استریمر VIP', difficulty: 'hard', progress: 1, total: 1, rewardType: 'frame', rewardVal: '🎨 Gold Crown VIP Frame', xpVal: 350, completed: true, claimed: false, actionRoute: 'call', desc: 'با عضویت VIP یک تماس 4K ثبت کنید' },
-    { id: 'm_v2', category: 'vip', isVipExclusive: true, title: '💎 ارسال هدیه ویژه VIP Diamond', difficulty: 'medium', progress: 1, total: 1, rewardType: 'coins', rewardVal: 500, xpVal: 200, completed: true, claimed: true, actionRoute: 'giftshop', desc: 'هدیه اختصاصی VIP اهدا کنید' },
+    { id: 'm_v1', category: 'vip', isVipExclusive: true, title: loc('👑 تماس تصویری 4K اختصاصی با استریمر VIP', '👑 Exclusive 4K video call with VIP streamer'), difficulty: 'hard', progress: 1, total: 1, rewardType: 'frame', rewardVal: '🎨 Gold Crown VIP Frame', xpVal: 350, completed: true, claimed: false, actionRoute: 'call', desc: loc('با عضویت VIP یک تماس 4K ثبت کنید', 'Record a 4K call with VIP membership') },
+    { id: 'm_v2', category: 'vip', isVipExclusive: true, title: loc('💎 ارسال هدیه ویژه VIP Diamond', '💎 Send a special VIP Diamond gift'), difficulty: 'medium', progress: 1, total: 1, rewardType: 'coins', rewardVal: 500, xpVal: 200, completed: true, claimed: true, actionRoute: 'giftshop', desc: loc('هدیه اختصاصی VIP اهدا کنید', 'Give an exclusive VIP gift') },
 
     // AD & REFERRAL TASKS
-    { id: 'm_ad', category: 'daily', title: '📺 تماشای ویدیو تبلیغاتی جایزه‌دار (Rewarded Ad)', difficulty: 'easy', progress: 0, total: 1, rewardType: 'coins', rewardVal: 20, xpVal: 10, completed: false, claimed: false, actionRoute: 'watch_ad', desc: 'یک ویدیو کوتاه تماشا کنید و ۲۰ سکه بگیرید' },
-    { id: 'm_ref', category: 'daily', title: '📲 دعوت دوست با کد اختصاصی (Invite Friend)', difficulty: 'medium', progress: 1, total: 1, rewardType: 'coins', rewardVal: 100, xpVal: 50, completed: true, claimed: false, actionRoute: 'invite', desc: 'کد دعوت V.Live را برای دوستان بفرستید' }
+    { id: 'm_ad', category: 'daily', title: loc('📺 تماشای ویدیو تبلیغاتی جایزه‌دار (Rewarded Ad)', '📺 Watch the rewarded advertising video (Rewarded Ad)'), difficulty: 'easy', progress: 0, total: 1, rewardType: 'coins', rewardVal: 20, xpVal: 10, completed: false, claimed: false, actionRoute: 'watch_ad', desc: loc('یک ویدیو کوتاه تماشا کنید و ۲۰ سکه بگیرید', 'Watch a short video and get 20 coins') },
+    { id: 'm_ref', category: 'daily', title: loc('📲 دعوت دوست با کد اختصاصی (Invite Friend)', '📲 invite a friend with a special code (Invite Friend)'), difficulty: 'medium', progress: 1, total: 1, rewardType: 'coins', rewardVal: 100, xpVal: 50, completed: true, claimed: false, actionRoute: 'invite', desc: loc('کد دعوت V.Live را برای دوستان بفرستید', 'Send V.Live invite code to friends') }
   ]);
 
   const [claimedMissionsHistory, setClaimedMissionsHistory] = useState([
-    { id: 'h_1', title: '📲 ورود روزانه به اپلیکیشن', reward: '+20 Coins & +10 XP', date: 'امروز ۰۹:۰۰', icon: '🪙' },
-    { id: 'h_2', title: '👥 دنبال کردن ۳ کاربر جدید', reward: '+40 Coins & +25 XP', date: 'امروز ۱۰:۳۰', icon: '🪙' },
-    { id: 'h_3', title: '🔍 بازدید از بخش Discover', reward: '+25 Coins & +15 XP', date: 'امروز ۱۱:۱۵', icon: '🪙' },
-    { id: 'h_4', title: '🤝 اضافه کردن ۵ دوست جدید', reward: '+150 Diamonds & +200 XP', date: 'دیروز ۱۶:۴۰', icon: '💎' },
-    { id: 'h_5', title: '💎 ارسال هدیه ویژه VIP Diamond', reward: '+500 Coins & +200 XP', date: '۲ روز پیش', icon: '👑' }
+    { id: 'h_1', title: loc('📲 ورود روزانه به اپلیکیشن', '📲 Daily login to the application'), reward: '+20 Coins & +10 XP', date: loc('امروز ۰۹:۰۰', 'Today 09:00'), icon: '🪙' },
+    { id: 'h_2', title: loc('👥 دنبال کردن ۳ کاربر جدید', '👥 Follow 3 new users'), reward: '+40 Coins & +25 XP', date: loc('امروز ۱۰:۳۰', 'Today at 10:30'), icon: '🪙' },
+    { id: 'h_3', title: loc('🔍 بازدید از بخش Discover', '🔍 Visit the Discover section'), reward: '+25 Coins & +15 XP', date: loc('امروز ۱۱:۱۵', 'today 11:15'), icon: '🪙' },
+    { id: 'h_4', title: loc('🤝 اضافه کردن ۵ دوست جدید', '🤝 Add 5 new friends'), reward: '+150 Diamonds & +200 XP', date: loc('دیروز ۱۶:۴۰', 'Yesterday 16:40'), icon: '💎' },
+    { id: 'h_5', title: loc('💎 ارسال هدیه ویژه VIP Diamond', '💎 Send a special VIP Diamond gift'), reward: '+500 Coins & +200 XP', date: loc('۲ روز پیش', '2 days ago'), icon: '👑' }
   ]);
 
   // Handler for Claiming a Mission Reward
@@ -2156,16 +2156,16 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         } else if (m.rewardType === 'diamonds' && typeof m.rewardVal === 'number') {
           setUserDiamonds(d => d + m.rewardVal);
         } else if (m.rewardType === 'vip_trial') {
-          showToast(`👑 اشتراک ${m.rewardVal} برای شما فعال گردید!`);
+          showToast(window.loc(`👑 اشتراک ${m.rewardVal} برای شما فعال گردید!`, `👑 اشتراک ${m.rewardVal} برای شما فعال گردید!`));
         } else if (m.rewardType === 'frame' || m.rewardType === 'badge' || m.rewardType === 'coupon') {
-          showToast(`🎁 جایزه ویژه "${m.rewardVal}" دریافت شد!`);
+          showToast(window.loc(`🎁 جایزه ویژه "${m.rewardVal}" دریافت شد!`, `🎁 جایزه ویژه "${m.rewardVal}" دریافت شد!`));
         }
 
         const newXP = userXP + m.xpVal;
         if (newXP >= userMaxXP) {
           setUserLevel(lvl => lvl + 1);
           setUserXP(newXP - userMaxXP);
-          showToast(`🎉 تبریک! شما به سطح Level ${userLevel + 1} ارتقا یافتید!`);
+          showToast(window.loc(`🎉 تبریک! شما به سطح Level ${userLevel + 1} ارتقا یافتید!`, `🎉 تبریک! شما به سطح Level ${userLevel + 1} ارتقا یافتید!`));
         } else {
           setUserXP(newXP);
         }
@@ -2175,13 +2175,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             id: `h_${Date.now()}`,
             title: m.title,
             reward: `${typeof m.rewardVal === 'number' ? '+' + m.rewardVal : m.rewardVal} & +${m.xpVal} XP`,
-            date: 'هم‌اکنون',
+            date: loc('هم‌اکنون', 'right now'),
             icon: m.rewardType === 'diamonds' ? '💎' : m.rewardType === 'coins' ? '🪙' : '🎁'
           },
           ...h
         ]);
 
-        showToast(`✅ جایزه مأموریت دریافت شد!`);
+        showToast(window.loc(`✅ جایزه مأموریت دریافت شد!`, `✅ جایزه مأموریت دریافت شد!`));
         return { ...m, claimed: true };
       }
       return m;
@@ -2294,14 +2294,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     setUserCoins(c => c + bonusMission.rewardCoins);
     setUserXP(x => x + bonusMission.rewardXP);
     setBonusMission(b => ({ ...b, claimed: true }));
-    showToast(`🎁 جایزه مأموریت شانس روزانه (+${bonusMission.rewardCoins} سکه) دریافت شد!`);
+    showToast(window.loc(`🎁 جایزه مأموریت شانس روزانه (+${bonusMission.rewardCoins} سکه) دریافت شد!`, `🎁 جایزه مأموریت شانس روزانه (+${bonusMission.rewardCoins} سکه) دریافت شد!`));
   };
 
   // Handler for Claiming Weekly Chest
   const handleClaimWeeklyChest = () => {
     if (weeklyChest.claimed) return;
     setUserCoins(c => c + 500);
-    showToast('🎉 جعبه هفتگی (Mystery Box) باز شد! +500 سکه و قاب سایبر دریافت کردید!');
+    showToast(loc('🎉 جعبه هفتگی (Mystery Box) باز شد! +500 سکه و قاب سایبر دریافت کردید!', '🎉 The weekly box (Mystery Box) has been opened! You got +500 coins and cyber frames!'));
     setWeeklyChest(w => ({ ...w, claimed: true }));
   };
 
@@ -2375,7 +2375,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     if (monthlyChest.claimed) return;
     setUserCoins(c => c + 2000);
     setUserDiamonds(d => d + 100);
-    showToast('🎉 ابر جعبه ماهانه (Mega Reward) باز شد! +2000 سکه، +100 الماس و ۷ روز VIP دریافت کردید!');
+    showToast(loc('🎉 ابر جعبه ماهانه (Mega Reward) باز شد! +2000 سکه، +100 الماس و ۷ روز VIP دریافت کردید!', '🎉 The monthly cloud box (Mega Reward) has been opened! You got +2000 coins, +100 diamonds and 7 days VIP!'));
     setMonthlyChest(m => ({ ...m, claimed: true }));
   };
 
@@ -2392,7 +2392,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         setIsWatchingAdModal(false);
         setUserCoins(c => c + 20);
         setAllMissions(prev => prev.map(m => m.id === 'm_ad' ? { ...m, progress: 1, completed: true, claimed: true } : m));
-        showToast('🎬 تماشای تبلیغ به پایان رسید! +20 سکه به موجودی اضافه شد.');
+        showToast(loc('🎬 تماشای تبلیغ به پایان رسید! +20 سکه به موجودی اضافه شد.', '🎬 Watching the ad is over! +20 coins added to inventory.'));
       }
     }, 1000);
   };
@@ -2404,44 +2404,44 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       return;
     }
     if (m.claimed) {
-      showToast('پاداش این مأموریت قبلاً دریافت شده است');
+      showToast(loc('پاداش این مأموریت قبلاً دریافت شده است', 'The reward for this mission has already been received'));
       return;
     }
 
     switch (m.actionRoute) {
       case 'messages':
         setActiveTab('messages');
-        showToast('انتقال به بخش گفتگوها 💬');
+        showToast(loc('انتقال به بخش گفتگوها 💬', 'Transfer to the conversation section 💬'));
         break;
       case 'streams':
         setStreamSubTab('lives');
-        showToast('انتقال به لایوهای آنلاین 🎥');
+        showToast(loc('انتقال به لایوهای آنلاین 🎥', 'Transfer to online live 🎥'));
         break;
       case 'stories':
         setStreamSubTab('lives');
         setIsCreateStoryOpen(true);
-        showToast('بخش استوری‌های روزانه 📖');
+        showToast(loc('بخش استوری‌های روزانه 📖', 'Daily stories section 📖'));
         break;
       case 'giftshop':
         setIsGiftCatalogOpen(true);
-        showToast('فروشگاه و ارسال هدایا 🎁');
+        showToast(loc('فروشگاه و ارسال هدایا 🎁', 'Shop and send gifts 🎁'));
         break;
       case 'wallet':
         setActiveTab('wallet');
-        showToast('کیف پول و مدیریت سکه‌ها 👛');
+        showToast(loc('کیف پول و مدیریت سکه‌ها 👛', 'Wallet and coin management 👛'));
         break;
       case 'profile':
         setActiveTab('profile');
-        showToast('ویرایش اطلاعات پروفایل 👤');
+        showToast(loc('ویرایش اطلاعات پروفایل 👤', 'Edit profile information 👤'));
         break;
       case 'call':
         setCallMainSubTab('dialpad');
         showTab('messages');
-        showToast('بخش شماره‌گیر و تماس 📞');
+        showToast(loc('بخش شماره‌گیر و تماس 📞', 'Dialer and call section 📞'));
         break;
       case 'discover':
         setStreamSubTab('lives');
-        showToast('اکسپلور و کشف محتوا 🔍');
+        showToast(loc('اکسپلور و کشف محتوا 🔍', 'Explore and discover content 🔍'));
         break;
       case 'watch_ad':
         handleCompleteRewardedAd();
@@ -2449,14 +2449,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       case 'invite':
         setActiveTab('wallet');
         setWalletSubTab('referral');
-        showToast('کد دعوت اختصاصی کپی شد 📲');
+        showToast(loc('کد دعوت اختصاصی کپی شد 📲', 'The exclusive invitation code was copied 📲'));
         break;
       case 'start_live':
         setIsGoLiveOpen(true);
-        showToast('استودیو شروع لایو استریم 🔴');
+        showToast(loc('استودیو شروع لایو استریم 🔴', 'The studio starts the live stream 🔴'));
         break;
       default:
-        showToast('هدایت به بخش مربوطه...');
+        showToast(loc('هدایت به بخش مربوطه...', 'Directed to the relevant section...'));
     }
   };
 
@@ -2475,18 +2475,18 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // Community & Polls State
   const [creatorBroadcastMsg, setCreatorBroadcastMsg] = useState('');
-  const [creatorPollQuestion, setCreatorPollQuestion] = useState('چه سبکی برای لایو فردا شب اجرا بشه؟');
+  const [creatorPollQuestion, setCreatorPollQuestion] = useState(loc('چه سبکی برای لایو فردا شب اجرا بشه؟', 'What style will be performed for live tomorrow night?'));
   const [creatorPollOptions, setCreatorPollOptions] = useState(['🎵 DJ & EDM Remix', '🎮 PK Battle Clash', '💬 Chat & Live Q&A']);
 
   // Schedule State
   const [creatorScheduleList, setCreatorScheduleList] = useState([
-    { id: 1, day: 'جمعه (Friday)', time: '۲۱:۰۰', title: 'Music Live & DJ Night 🎵', category: 'Music', description: 'اجرای زنده موسیقی الکترونیک با کیفیت 4K' },
-    { id: 2, day: 'یکشنبه (Sunday)', time: '۲۰:۰۰', title: 'PK Battle Clash vs @Soren 🥊', category: 'Gaming', description: 'مسابقه چالش نهایی هیجان‌انگیز' },
-    { id: 3, day: 'سه‌شنبه (Tuesday)', time: '۲۲:۳۰', title: 'Late Night Q&A & Chill ☕', category: 'Talk', description: 'گفتگوی صمیمانه و پاسخ به سوالات بینندگان' }
+    { id: 1, day: loc('جمعه (Friday)', 'Friday'), time: loc('۲۱:۰۰', '21:00'), title: 'Music Live & DJ Night 🎵', category: 'Music', description: loc('اجرای زنده موسیقی الکترونیک با کیفیت 4K', 'Live performance of electronic music with 4K quality') },
+    { id: 2, day: loc('یکشنبه (Sunday)', 'Sunday'), time: loc('۲۰:۰۰', '20:00'), title: 'PK Battle Clash vs @Soren 🥊', category: 'Gaming', description: loc('مسابقه چالش نهایی هیجان‌انگیز', 'Exciting ultimate challenge race') },
+    { id: 3, day: loc('سه‌شنبه (Tuesday)', 'Tuesday'), time: loc('۲۲:۳۰', '22:30'), title: 'Late Night Q&A & Chill ☕', category: 'Talk', description: loc('گفتگوی صمیمانه و پاسخ به سوالات بینندگان', 'Sincere conversation and answers to viewers\' questions') }
   ]);
   const [creatorNewScheduleTitle, setCreatorNewScheduleTitle] = useState('');
   const [creatorNewScheduleTime, setCreatorNewScheduleTime] = useState('21:00');
-  const [creatorNewScheduleDay, setCreatorNewScheduleDay] = useState('پنج‌شنبه (Thursday)');
+  const [creatorNewScheduleDay, setCreatorNewScheduleDay] = useState(loc('پنج‌شنبه (Thursday)', 'Thursday'));
 
   // Support Ticket State
   const [creatorSupportSubject, setCreatorSupportSubject] = useState('');
@@ -2502,9 +2502,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // Content List
   const [creatorContentList, setCreatorContentList] = useState([
-    { id: 'c1', title: '🔴 4K DJ Festival Party Live', type: 'vod', duration: '1h 45m', views: '24,500', date: 'دیروز', likes: 3200 },
-    { id: 'c2', title: '🏆 Final PK Battle Victory Clips', type: 'vod', duration: '45m', views: '18,200', date: '۳ روز پیش', likes: 2100 },
-    { id: 'c3', title: '📖 Behind the Scenes Backstage Story', type: 'story', duration: '15s', views: '5,400', date: 'امروز', likes: 890 }
+    { id: 'c1', title: '🔴 4K DJ Festival Party Live', type: 'vod', duration: '1h 45m', views: '24,500', date: loc('دیروز', 'yesterday'), likes: 3200 },
+    { id: 'c2', title: '🏆 Final PK Battle Victory Clips', type: 'vod', duration: '45m', views: '18,200', date: loc('۳ روز پیش', '3 days ago'), likes: 2100 },
+    { id: 'c3', title: '📖 Behind the Scenes Backstage Story', type: 'story', duration: '15s', views: '5,400', date: loc('امروز', 'today'), likes: 890 }
   ]);
   
   // ==================== REDESIGNED REFERRAL SYSTEM STATE (18 FEATURES) ====================
@@ -2520,11 +2520,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [isReferralRulesModalOpen, setIsReferralRulesModalOpen] = useState(false);
 
   const [invitesList, setInvitesList] = useState([
-    { id: 'inv1', name: 'Ali Reza 🔥', handle: '@ali_reza84', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80', date: 'امروز ۱۴:۲۰', status: 'Active', rewardUnlocked: true, rewardAmount: 200, minutesUsed: 25 },
-    { id: 'inv2', name: 'Sara Model 💎', handle: '@sara_m', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80', date: 'دیروز ۱۸:۴۵', status: 'Active', rewardUnlocked: true, rewardAmount: 200, minutesUsed: 42 },
-    { id: 'inv3', name: 'Mehdi Gamer 🎮', handle: '@mehdi_g', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=300&q=80', date: '۲ روز پیش', status: 'Pending', rewardUnlocked: false, rewardAmount: 100, minutesUsed: 4 },
-    { id: 'inv4', name: 'Neda Streamer 🎥', handle: '@neda_live', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', date: '۳ روز پیش', status: 'Active', rewardUnlocked: true, rewardAmount: 100, minutesUsed: 15 },
-    { id: 'inv5', name: 'Arash Cyber 🚀', handle: '@arash_c', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', date: '۴ روز پیش', status: 'Active', rewardUnlocked: true, rewardAmount: 100, minutesUsed: 60 }
+    { id: 'inv1', name: 'Ali Reza 🔥', handle: '@ali_reza84', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80', date: loc('امروز ۱۴:۲۰', 'Today 14:20'), status: 'Active', rewardUnlocked: true, rewardAmount: 200, minutesUsed: 25 },
+    { id: 'inv2', name: 'Sara Model 💎', handle: '@sara_m', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80', date: loc('دیروز ۱۸:۴۵', 'Yesterday 18:45'), status: 'Active', rewardUnlocked: true, rewardAmount: 200, minutesUsed: 42 },
+    { id: 'inv3', name: 'Mehdi Gamer 🎮', handle: '@mehdi_g', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=300&q=80', date: loc('۲ روز پیش', '2 days ago'), status: 'Pending', rewardUnlocked: false, rewardAmount: 100, minutesUsed: 4 },
+    { id: 'inv4', name: 'Neda Streamer 🎥', handle: '@neda_live', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', date: loc('۳ روز پیش', '3 days ago'), status: 'Active', rewardUnlocked: true, rewardAmount: 100, minutesUsed: 15 },
+    { id: 'inv5', name: 'Arash Cyber 🚀', handle: '@arash_c', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', date: loc('۴ روز پیش', '4 days ago'), status: 'Active', rewardUnlocked: true, rewardAmount: 100, minutesUsed: 60 }
   ]);
 
   const [referralMilestones, setReferralMilestones] = useState([
@@ -2554,36 +2554,36 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [levelActiveTab, setLevelActiveTab] = useState('overview'); // 'overview' | 'badges' | 'achievements' | 'roadmap' | 'leaderboard' | 'store'
 
   const [xpActivitiesList, setXpActivitiesList] = useState([
-    { id: 'xp1', title: 'ورود روزانه (Daily Login)', xp: '+50 XP', category: 'daily', isClaimed: true },
-    { id: 'xp2', title: 'تماشای لایو (Watch Stream 15m)', xp: '+100 XP', category: 'live', isClaimed: false },
-    { id: 'xp3', title: 'برگزاری لایو استریم (Host Stream)', xp: '+300 XP', category: 'host', isClaimed: false },
-    { id: 'xp4', title: 'ارسال هدیه به استریمر (Send Gift)', xp: '+150 XP', category: 'gift', isClaimed: false },
-    { id: 'xp5', title: 'دریافت هدیه از بینندگان (Receive Gift)', xp: '+200 XP', category: 'gift', isClaimed: true },
-    { id: 'xp6', title: 'تکمیل ماموریت روزانه (Daily Mission)', xp: '+100 XP', category: 'mission', isClaimed: false },
-    { id: 'xp7', title: 'دعوت دوست جدید (Referral Invite)', xp: '+250 XP', category: 'referral', isClaimed: true },
-    { id: 'xp8', title: 'تکمیل اطلاعات پروفایل (Complete Profile)', xp: '+150 XP', category: 'profile', isClaimed: true }
+    { id: 'xp1', title: loc('ورود روزانه (Daily Login)', 'Daily Login'), xp: '+50 XP', category: 'daily', isClaimed: true },
+    { id: 'xp2', title: loc('تماشای لایو (Watch Stream 15m)', 'Watch Live (Watch Stream 15m)'), xp: '+100 XP', category: 'live', isClaimed: false },
+    { id: 'xp3', title: loc('برگزاری لایو استریم (Host Stream)', 'Holding a live stream (Host Stream)'), xp: '+300 XP', category: 'host', isClaimed: false },
+    { id: 'xp4', title: loc('ارسال هدیه به استریمر (Send Gift)', 'Send a gift to the streamer (Send Gift)'), xp: '+150 XP', category: 'gift', isClaimed: false },
+    { id: 'xp5', title: loc('دریافت هدیه از بینندگان (Receive Gift)', 'Receive gift from viewers (Receive Gift)'), xp: '+200 XP', category: 'gift', isClaimed: true },
+    { id: 'xp6', title: loc('تکمیل ماموریت روزانه (Daily Mission)', 'Completing the Daily Mission'), xp: '+100 XP', category: 'mission', isClaimed: false },
+    { id: 'xp7', title: loc('دعوت دوست جدید (Referral Invite)', 'Invite a new friend (Referral Invite)'), xp: '+250 XP', category: 'referral', isClaimed: true },
+    { id: 'xp8', title: loc('تکمیل اطلاعات پروفایل (Complete Profile)', 'Completing profile information (Complete Profile)'), xp: '+150 XP', category: 'profile', isClaimed: true }
   ]);
 
   const [userBadgesList, setUserBadgesList] = useState([
-    { id: 'b1', name: '🥇 Top Streamer', icon: '🥇', rarity: 'Legendary', isUnlocked: true, isEquipped: false, desc: 'استریمر برتر ماه با بیش از ۵۰ ساعت لایو' },
-    { id: 'b2', name: '👑 VIP Member', icon: '👑', rarity: 'Epic', isUnlocked: true, isEquipped: true, desc: 'عضویت ویژه طلایی V.Live Premium' },
-    { id: 'b3', name: '💎 Diamond Master', icon: '💎', rarity: 'Mythic', isUnlocked: true, isEquipped: false, desc: 'کسب بیش از ۱۰,۰۰۰ الماس از لایو' },
-    { id: 'b4', name: '🎁 Top Gifter', icon: '🎁', rarity: 'Legendary', isUnlocked: true, isEquipped: false, desc: 'ارسال بیش از ۱,۰۰۰ هدیه به دوستان' },
-    { id: 'b5', name: '⭐ Verified Official', icon: '⭐', rarity: 'Unique', isUnlocked: true, isEquipped: false, desc: 'تایید رسمی هویت توسط پشتیبانی' },
-    { id: 'b6', name: '🔥 Popular Host', icon: '🔥', rarity: 'Rare', isUnlocked: true, isEquipped: false, desc: 'بیش از ۱,۰۰۰ بیننده همزمان در لایو' },
-    { id: 'b7', name: '🏆 Champion 2026', icon: '🏆', rarity: 'Seasonal', isUnlocked: true, isEquipped: false, desc: 'قهرمان تورنمنت تابستان ۲۰۲۶' },
-    { id: 'b8', name: '❤️ Supporter', icon: '❤️', rarity: 'Common', isUnlocked: true, isEquipped: false, desc: 'حمایت مداوم از استریمرها' },
-    { id: 'b9', name: '🚀 Early Supporter', icon: '🚀', rarity: 'Rare', isUnlocked: true, isEquipped: false, desc: 'پیوستن به برنامه در فاز اولیه' },
-    { id: 'b10', name: '🛡️ Founder Badge', icon: '🛡️', rarity: 'Mythic', isUnlocked: false, isEquipped: false, desc: 'مدال بنیان‌گذاران اولیه شبکه' }
+    { id: 'b1', name: '🥇 Top Streamer', icon: '🥇', rarity: 'Legendary', isUnlocked: true, isEquipped: false, desc: loc('استریمر برتر ماه با بیش از ۵۰ ساعت لایو', 'The best streamer of the month with more than 50 live hours') },
+    { id: 'b2', name: '👑 VIP Member', icon: '👑', rarity: 'Epic', isUnlocked: true, isEquipped: true, desc: loc('عضویت ویژه طلایی V.Live Premium', 'V.Live Premium Golden Special Membership') },
+    { id: 'b3', name: '💎 Diamond Master', icon: '💎', rarity: 'Mythic', isUnlocked: true, isEquipped: false, desc: loc('کسب بیش از ۱۰,۰۰۰ الماس از لایو', 'Earn more than 10,000 diamonds from Live') },
+    { id: 'b4', name: '🎁 Top Gifter', icon: '🎁', rarity: 'Legendary', isUnlocked: true, isEquipped: false, desc: loc('ارسال بیش از ۱,۰۰۰ هدیه به دوستان', 'Send over 1,000 gifts to friends') },
+    { id: 'b5', name: '⭐ Verified Official', icon: '⭐', rarity: 'Unique', isUnlocked: true, isEquipped: false, desc: loc('تایید رسمی هویت توسط پشتیبانی', 'Official confirmation of identity by support') },
+    { id: 'b6', name: '🔥 Popular Host', icon: '🔥', rarity: 'Rare', isUnlocked: true, isEquipped: false, desc: loc('بیش از ۱,۰۰۰ بیننده همزمان در لایو', 'More than 1,000 simultaneous live viewers') },
+    { id: 'b7', name: '🏆 Champion 2026', icon: '🏆', rarity: 'Seasonal', isUnlocked: true, isEquipped: false, desc: loc('قهرمان تورنمنت تابستان ۲۰۲۶', 'Summer 2026 tournament champion') },
+    { id: 'b8', name: '❤️ Supporter', icon: '❤️', rarity: 'Common', isUnlocked: true, isEquipped: false, desc: loc('حمایت مداوم از استریمرها', 'Continued support for streamers') },
+    { id: 'b9', name: '🚀 Early Supporter', icon: '🚀', rarity: 'Rare', isUnlocked: true, isEquipped: false, desc: loc('پیوستن به برنامه در فاز اولیه', 'Join the program in the initial phase') },
+    { id: 'b10', name: '🛡️ Founder Badge', icon: '🛡️', rarity: 'Mythic', isUnlocked: false, isEquipped: false, desc: loc('مدال بنیان‌گذاران اولیه شبکه', 'Medal of the original founders of the network') }
   ]);
 
   const [userAchievementsList, setUserAchievementsList] = useState([
-    { id: 'a1', title: '🎥 اولین لایو استریم', progress: 100, current: 1, target: 1, reward: '+100 XP & 🪙 50 Coins', isCompleted: true },
-    { id: 'a2', title: '🎁 اولین هدیه ارسالی', progress: 100, current: 1, target: 1, reward: '+150 XP & 🎁 Gift Box', isCompleted: true },
-    { id: 'a3', title: '❤️ کسب ۱۰۰ دنبال‌کننده', progress: 100, current: 100, target: 100, reward: '+200 XP & 👑 VIP 3 Days', isCompleted: true },
-    { id: 'a4', title: '👥 کسب ۱,۰۰۰ دنبال‌کننده', progress: 65, current: 650, target: 1000, reward: '+500 XP & 💎 Diamond Badge', isCompleted: false },
-    { id: 'a5', title: '🔥 ۱۰۰ ساعت لایو استریم', progress: 40, current: 40, target: 100, reward: '+1,000 XP & 🏆 Trophy', isCompleted: false },
-    { id: 'a6', title: '👥 دعوت ۱۰ دوست فعال', progress: 90, current: 9, target: 10, reward: '+300 XP & 🪙 200 Coins', isCompleted: false }
+    { id: 'a1', title: loc('🎥 اولین لایو استریم', '🎥 The first live stream'), progress: 100, current: 1, target: 1, reward: '+100 XP & 🪙 50 Coins', isCompleted: true },
+    { id: 'a2', title: loc('🎁 اولین هدیه ارسالی', '🎁 The first gift sent'), progress: 100, current: 1, target: 1, reward: '+150 XP & 🎁 Gift Box', isCompleted: true },
+    { id: 'a3', title: loc('❤️ کسب ۱۰۰ دنبال‌کننده', '❤️ Gain 100 followers'), progress: 100, current: 100, target: 100, reward: '+200 XP & 👑 VIP 3 Days', isCompleted: true },
+    { id: 'a4', title: loc('👥 کسب ۱,۰۰۰ دنبال‌کننده', '👥 Gain 1,000 followers'), progress: 65, current: 650, target: 1000, reward: '+500 XP & 💎 Diamond Badge', isCompleted: false },
+    { id: 'a5', title: loc('🔥 ۱۰۰ ساعت لایو استریم', '🔥 100 hours of live stream'), progress: 40, current: 40, target: 100, reward: '+1,000 XP & 🏆 Trophy', isCompleted: false },
+    { id: 'a6', title: loc('👥 دعوت ۱۰ دوست فعال', '👥 Invite 10 active friends'), progress: 90, current: 9, target: 10, reward: '+300 XP & 🪙 200 Coins', isCompleted: false }
   ]);
 
   const [levelRoadmapList, setLevelRoadmapList] = useState([
@@ -2607,9 +2607,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       setLevelUpModalData({ newLevel: nextLevel, rewardText: `🎁 200 Coins + 👑 VIP Level ${nextLevel} Unlocked!` });
       setIsLevelUpModalOpen(true);
       setUserCoins(prev => prev + 200);
-      showToast(`🎉 تبریک! شما به Level ${nextLevel} ارتقا یافتید! +200 سکه پاداش واریز شد.`);
+      showToast(window.loc(`🎉 تبریک! شما به Level ${nextLevel} ارتقا یافتید! +200 سکه پاداش واریز شد.`, `🎉 تبریک! شما به Level ${nextLevel} ارتقا یافتید! +200 سکه پاداش واریز شد.`));
     } else {
-      showToast(`⚡ +${xpAmount} XP برای ${sourceTitle} دریافت شد!`);
+      showToast(window.loc(`⚡ +${xpAmount} XP برای ${sourceTitle} دریافت شد!`, `⚡ +${xpAmount} XP برای ${sourceTitle} دریافت شد!`));
     }
 
     setUserXP(nextXP);
@@ -2618,9 +2618,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   };
 
   const handleShareTelegramReferral = () => {
-    const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('عضو شبکه V.Live شو و ۱۰۰ سکه رایگان هدیه بگیر! 🎁🔥')}`;
+    const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(loc('عضو شبکه V.Live شو و ۱۰۰ سکه رایگان هدیه بگیر! 🎁🔥', 'Become a member of the V. Live network and get 100 free coins as a gift! 🎁🔥'))}`;
     window.open(telegramShareUrl, '_blank');
-    showToast('لینک دعوت مستقیم تلگرام باز گردید ✈️');
+    showToast(loc('لینک دعوت مستقیم تلگرام باز گردید ✈️', 'Telegram direct invitation link is open ✈️'));
   };
 // REDESIGNED WALLET SYSTEM STATES & HELPERS
   const [userDiamonds, setUserDiamonds] = useState(10000); // 10,000 Diamonds
@@ -2628,12 +2628,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [walletSubTab, setWalletSubTab] = useState('overview'); // 'overview' | 'buy' | 'convert' | 'withdraw' | 'history' | 'creator' | 'referral' | 'security' | 'giftshop'
   
   const [txHistoryList, setTxHistoryList] = useState([
-    { id: 'TX-901', type: 'Received Gift', description: 'دریافت هدیه تاج سلطنتی 👑 از Soren', amount: '+500 Diamonds', category: 'Gifts', time: 'امروز ۱۴:۳۰', status: 'Completed', icon: '🎁', color: 'text-pink-400' },
-    { id: 'TX-902', type: 'Buy Coins', description: 'خرید ۱,۰۰۰ سکه با USDT TRC20', amount: '+1,000 Coins', category: 'Coins', time: 'امروز ۱۱:۱۵', status: 'Completed', icon: '🪙', color: 'text-amber-400' },
-    { id: 'TX-903', type: 'Convert Diamonds', description: 'تبدیل ۵,۰۰۰ الماس به ارز نقد USDT', amount: '+$50.00 USDT', category: 'Convert', time: 'دیروز ۱۹:۴۰', status: 'Completed', icon: '💎', color: 'text-cyan-400' },
-    { id: 'TX-904', type: 'Withdrawal', description: 'برداشت درآمد به ولت TRC20', amount: '-$100.00 USDT', category: 'Withdrawals', time: '۲ روز پیش', status: 'Pending', icon: '💸', color: 'text-rose-400' },
-    { id: 'TX-905', type: 'VIP Purchase', description: 'خرید اشتراک ۱ ماهه VIP', amount: '-500 Coins', category: 'VIP', time: '۳ روز پیش', status: 'Completed', icon: '👑', color: 'text-amber-300' },
-    { id: 'TX-906', type: 'Referral Reward', description: 'پاداش دعوت دوست (@ali_user)', amount: '+2,500 Coins', category: 'Referral', time: '۴ روز پیش', status: 'Completed', icon: '👥', color: 'text-emerald-400' }
+    { id: 'TX-901', type: 'Received Gift', description: loc('دریافت هدیه تاج سلطنتی 👑 از Soren', 'Receive the gift of Royal Crown 👑 from Soren'), amount: '+500 Diamonds', category: 'Gifts', time: loc('امروز ۱۴:۳۰', 'Today at 14:30'), status: 'Completed', icon: '🎁', color: 'text-pink-400' },
+    { id: 'TX-902', type: 'Buy Coins', description: loc('خرید ۱,۰۰۰ سکه با USDT TRC20', 'Buy 1,000 coins with USDT TRC20'), amount: '+1,000 Coins', category: 'Coins', time: loc('امروز ۱۱:۱۵', 'today 11:15'), status: 'Completed', icon: '🪙', color: 'text-amber-400' },
+    { id: 'TX-903', type: 'Convert Diamonds', description: loc('تبدیل ۵,۰۰۰ الماس به ارز نقد USDT', 'Convert 5,000 diamonds to USDT cash'), amount: '+$50.00 USDT', category: 'Convert', time: loc('دیروز ۱۹:۴۰', 'Yesterday 19:40'), status: 'Completed', icon: '💎', color: 'text-cyan-400' },
+    { id: 'TX-904', type: 'Withdrawal', description: loc('برداشت درآمد به ولت TRC20', 'Withdraw income to TRC20 volts'), amount: '-$100.00 USDT', category: 'Withdrawals', time: loc('۲ روز پیش', '2 days ago'), status: 'Pending', icon: '💸', color: 'text-rose-400' },
+    { id: 'TX-905', type: 'VIP Purchase', description: loc('خرید اشتراک ۱ ماهه VIP', 'Buy a 1-month VIP subscription'), amount: '-500 Coins', category: 'VIP', time: loc('۳ روز پیش', '3 days ago'), status: 'Completed', icon: '👑', color: 'text-amber-300' },
+    { id: 'TX-906', type: 'Referral Reward', description: loc('پاداش دعوت دوست (@ali_user)', 'friend invitation bonus (@ali_user)'), amount: '+2,500 Coins', category: 'Referral', time: loc('۴ روز پیش', '4 days ago'), status: 'Completed', icon: '👥', color: 'text-emerald-400' }
   ]);
   const [txCategoryFilter, setTxCategoryFilter] = useState('All');
 
@@ -2645,7 +2645,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [withdrawalsHistoryList, setWithdrawalsHistoryList] = useState([
     { id: 'W-801', amount: '$100.00 USDT', method: 'USDT TRC20', address: 'TBMvBi...1NSnB', date: '2026-07-26 18:20', status: 'Pending', reason: '', txHash: '' },
     { id: 'W-800', amount: '$250.00 USDT', method: 'USDT TRC20', address: 'TBMvBi...1NSnB', date: '2026-07-20 14:10', status: 'Completed', reason: '', txHash: 'f4b23c9...a1b2' },
-    { id: 'W-799', amount: '$50.00 USDT', method: 'Bank Transfer', address: 'IR4829...901', date: '2026-07-15 10:00', status: 'Rejected', reason: 'عدم تطابق نام حساب با کارت ملی', txHash: '' }
+    { id: 'W-799', amount: '$50.00 USDT', method: 'Bank Transfer', address: 'IR4829...901', date: '2026-07-15 10:00', status: 'Rejected', reason: loc('عدم تطابق نام حساب با کارت ملی', 'The account name does not match with the national card'), txHash: '' }
   ]);
 
   const [convertDiamondsInput, setConvertDiamondsInput] = useState('5000');
@@ -2659,26 +2659,21 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     const newTx = {
       id: `TX-${Date.now().toString().slice(-4)}`,
       type: 'Buy Coins',
-      description: `خرید ${coinsCount.toLocaleString()} سکه ($${priceUsdt} USDT)`,
-      amount: `+${coinsCount.toLocaleString()} Coins`,
-      category: 'Coins',
-      time: 'هم‌اکنون',
-      status: 'Completed',
-      icon: '🪙',
-      color: 'text-amber-400'
-    };
+      description: window.loc(`خرید ${coinsCount.toLocaleString()} سکه ($${priceUsdt} USDT)`, `خرید ${coinsCount.toLocaleString()} سکه ($${priceUsdt} USDT)`)
+      };
+
     setTxHistoryList(prev => [newTx, ...prev]);
-    showToast(`🎉 ${coinsCount.toLocaleString()} سکه با موفقیت خریداری شد!`);
+    showToast(window.loc(`🎉 ${coinsCount.toLocaleString()} سکه با موفقیت خریداری شد!`, `🎉 ${coinsCount.toLocaleString()} سکه با موفقیت خریداری شد!`));
   };
 
   const handleConvertDiamondsAction = () => {
     const diamondsToConvert = parseInt(convertDiamondsInput) || 0;
     if (diamondsToConvert <= 0) {
-      showToast('لطفاً مقدار معتبری از الماس وارد کنید');
+      showToast(loc('لطفاً مقدار معتبری از الماس وارد کنید', 'Please enter a valid amount of diamonds'));
       return;
     }
     if (diamondsToConvert > userDiamonds) {
-      showToast('موجودی الماس شما کافی نیست!');
+      showToast(loc('موجودی الماس شما کافی نیست!', 'Your diamond inventory is not enough!'));
       return;
     }
 
@@ -2689,34 +2684,28 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     const newTx = {
       id: `TX-${Date.now().toString().slice(-4)}`,
       type: 'Convert Diamonds',
-      description: `تبدیل ${diamondsToConvert.toLocaleString()} الماس به ارز نقد`,
-      amount: `+$${usdGained.toFixed(2)} USDT`,
-      category: 'Convert',
-      time: 'هم‌اکنون',
-      status: 'Completed',
-      icon: '💎',
-      color: 'text-cyan-400'
-    };
+      description: window.loc(`تبدیل ${diamondsToConvert.toLocaleString()} الماس به ارز نقد`, `تبدیل ${diamondsToConvert.toLocaleString()} الماس به ارز نقد`)
+      };
     setTxHistoryList(prev => [newTx, ...prev]);
-    showToast(`✨ ${diamondsToConvert.toLocaleString()} الماس با موفقیت به $${usdGained.toFixed(2)} USDT نقد تبدیل شد!`);
+    showToast(window.loc(`✨ ${diamondsToConvert.toLocaleString()} الماس با موفقیت به $${usdGained.toFixed(2)} USDT نقد تبدیل شد!`, `✨ ${diamondsToConvert.toLocaleString()} الماس با موفقیت به $${usdGained.toFixed(2)} USDT نقد تبدیل شد!`));
   };
 
   const handleRequestWithdrawalAction = () => {
     const amountUsd = parseFloat(withdrawAmountInput) || 0;
     if (amountUsd <= 0) {
-      showToast('لطفاً مبلغ برداشت معتبری وارد کنید');
+      showToast(loc('لطفاً مبلغ برداشت معتبری وارد کنید', 'Please enter a valid withdrawal amount'));
       return;
     }
     if (amountUsd > userCashBalance) {
-      showToast('موجودی قابل برداشت شما کافی نیست!');
+      showToast(loc('موجودی قابل برداشت شما کافی نیست!', 'Your withdrawal balance is insufficient!'));
       return;
     }
     if (!withdrawAddressInput.trim()) {
-      showToast('لطفاً آدرس کیف پول مقصد را وارد کنید');
+      showToast(loc('لطفاً آدرس کیف پول مقصد را وارد کنید', 'Please enter the destination wallet address'));
       return;
     }
     if (withdrawPinInput !== walletSecurityPin) {
-      showToast('رمز برداشت اشتباه است!');
+      showToast(loc('رمز برداشت اشتباه است!', 'The password is wrong!'));
       return;
     }
 
@@ -2727,7 +2716,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       amount: `$${amountUsd.toFixed(2)} USDT`,
       method: withdrawMethodInput,
       address: `${withdrawAddressInput.slice(0, 6)}...${withdrawAddressInput.slice(-4)}`,
-      date: new Date().toLocaleString('fa-IR'),
+      date: new Date().toLocaleString((window.langCode === 'fa' ? 'fa-IR' : 'en-US')),
       status: 'Pending',
       reason: ''
     };
@@ -2736,18 +2725,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     const newTx = {
       id: `TX-${Date.now().toString().slice(-4)}`,
       type: 'Withdrawal',
-      description: `درخواست برداشت به آدرس ${withdrawMethodInput}`,
-      amount: `-$${amountUsd.toFixed(2)} USDT`,
-      category: 'Withdrawals',
-      time: 'هم‌اکنون',
-      status: 'Pending',
-      icon: '💸',
-      color: 'text-rose-400'
-    };
+      description: window.loc(`درخواست برداشت به آدرس ${withdrawMethodInput}`, `درخواست برداشت به آدرس ${withdrawMethodInput}`)
+      };
     setTxHistoryList(prev => [newTx, ...prev]);
 
     setWithdrawPinInput('');
-    showToast(`💸 درخواست برداشت $${amountUsd.toFixed(2)} USDT ثبت شد و در حال بررسی توسط بخش مالی است!`);
+    showToast(window.loc(`💸 درخواست برداشت $${amountUsd.toFixed(2)} USDT ثبت شد و در حال بررسی توسط بخش مالی است!`, `💸 درخواست برداشت $${amountUsd.toFixed(2)} USDT ثبت شد و در حال بررسی توسط بخش مالی است!`));
   };
   const [selectedPack, setSelectedPack] = useState(null);
   const [depositTxId, setDepositTxId] = useState('');
@@ -2767,7 +2750,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [isMuteStreamChat, setIsMuteStreamChat] = useState(false);
   const [isHideStreamChat, setIsHideStreamChat] = useState(false);
   const [streamPinnedMessages, setStreamPinnedMessages] = useState([
-    { id: 'p1', user: 'V.LIVE System', text: 'به بث زنده خوش آمدید! قوانین احترام متقابل را رعایت کنید 🌟' }
+    { id: 'p1', user: 'V.LIVE System', text: loc('به بث زنده خوش آمدید! قوانین احترام متقابل را رعایت کنید 🌟', 'Welcome to Beth Live! Follow the rules of mutual respect') }
   ]);
   const [replyingToChatMessage, setReplyingToChatMessage] = useState(null);
   const [isStreamerFollowed, setIsStreamerFollowed] = useState(false);
@@ -2776,8 +2759,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [streamLikes, setStreamLikes] = useState(1240);
   const [floatingHearts, setFloatingHearts] = useState([]);
   const [streamChatMessages, setStreamChatMessages] = useState([
-    { id: 'm1', user: 'Arash_VIP', text: 'کیفیت استریم عالیه! 🔥', isVip: true, level: 12 },
-    { id: 'm2', user: 'Omid_Tehran', text: 'سلام به همه دوستان', isVip: false, level: 5 }
+    { id: 'm1', user: 'Arash_VIP', text: loc('کیفیت استریم عالیه! 🔥', 'The quality of the stream is great! 🔥'), isVip: true, level: 12 },
+    { id: 'm2', user: 'Omid_Tehran', text: loc('سلام به همه دوستان', 'Hello to all friends'), isVip: false, level: 5 }
   ]);
   const [streamChatInput, setStreamChatInput] = useState('');
 
@@ -3000,7 +2983,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       return;
     }
 
-    showToast('🌐 در حال ترجمه پیام با AI...');
+    showToast(loc('🌐 در حال ترجمه پیام با AI...', '🌐 Translating the message with AI...'));
     try {
       const res = await apiAdmin.translateMessage(messageText, langCode);
       const translatedText = res?.translatedText || messageText;
@@ -3015,9 +2998,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         } : m)
       } : c));
 
-      showToast('✨ ترجمه پیام تکمیل شد');
+      showToast(loc('✨ ترجمه پیام تکمیل شد', '✨ Translation of the message has been completed'));
     } catch (e) {
-      showToast('⚠️ خطا در ترجمه پیام');
+      showToast(loc('⚠️ خطا در ترجمه پیام', '⚠️ Error in message translation'));
     }
   };
 
@@ -3320,7 +3303,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       id: 'poll_demo_1',
       streamId: 'default',
       hostUsername: 'Sahar_Miller',
-      question: 'برای لایو فردا شب چه سبکی اجرا بشه؟ 🎵',
+      question: loc('برای لایو فردا شب چه سبکی اجرا بشه؟ 🎵', 'What style should be performed for tomorrow night\'s live? 🎵'),
       options: [
         { id: 1, text: '🎵 DJ & Electronic Remix', votes: 142 },
         { id: 2, text: '🎸 Acoustic Guitar Solo', votes: 89 },
@@ -4292,7 +4275,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               safeStorage.setItem('vlive_user_avatar', finalAvatar);
               showToast(loc(`✨ ورود موفق با تلگرام! خوش آمدید @${finalUsername}`, `✨ Authenticated via Telegram! Welcome @${finalUsername}`));
             } else {
-              showToast(loc('❌ خطا در ورود: ' + (authRes?.error || 'Unknown Error'), '❌ Login Failed: ' + (authRes?.error || 'Unknown Error')));
+              showToast(loc(loc('❌ خطا در ورود: ', '❌ Login error:') + (authRes?.error || 'Unknown Error'), '❌ Login Failed: ' + (authRes?.error || 'Unknown Error')));
             }
           };
 
@@ -4349,12 +4332,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   <button
                     onClick={() => {
                       setCurrentAppLang('fa');
-                      showToast('زبان به فارسی تغییر یافت 🇮🇷');
+                      showToast(loc('زبان به فارسی تغییر یافت 🇮🇷', 'The language was changed to Persian 🇮🇷'));
                     }}
                     className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${currentAppLang === 'fa' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/30' : 'text-slate-400 hover:text-white'}`}
                   >
                     <span>🇮🇷</span>
-                    <span>فارسی</span>
+                    <span>{loc('فارسی', 'Farsi')}</span>
                   </button>
                 </div>
 
@@ -4604,7 +4587,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <div>
                   <label className="text-xs text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-pink-400" />
-                    Select Unique Username (نام کاربری یکتا)
+                    {loc('Select Unique Username (نام کاربری یکتا)', 'Select Unique Username')}
                   </label>
                   <input
                     type="text"
@@ -4633,7 +4616,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <div>
                   <label className="text-xs text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5 text-pink-400" />
-                    Password (رمز عبور)
+                    {loc('Password (رمز عبور)', 'Password')}
                   </label>
                   <div className="relative">
                     <input
@@ -4657,7 +4640,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <div>
                   <label className="text-xs text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5 text-pink-400" />
-                    Confirm Password (تکرار رمز عبور)
+                    {loc('Confirm Password (تکرار رمز عبور)', 'Confirm Password')}
                   </label>
                   <div className="relative">
                     <input
@@ -4698,7 +4681,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 }}
                 className="w-full py-3.5 rounded-2xl btn-neon-pink font-bold text-xs shadow-xl flex items-center justify-center gap-2"
               >
-                <span>Next: Complete Profile (تکمیل پروفایل)</span>
+                <span>{loc('Next: Complete Profile (تکمیل پروفایل)', 'Next: Complete Profile')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -4786,7 +4769,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     }}
                     className="text-[11px] text-pink-400 hover:underline font-bold"
                   >
-                    Forgot Password? (فراموشی رمز)
+                    {loc('Forgot Password? (فراموشی رمز)', 'Forgot Password? (forgot the password)')}
                   </button>
                 </div>
                 <div className="relative">
@@ -4982,7 +4965,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     }}
                     className="text-[11px] text-pink-400 hover:underline font-bold"
                   >
-                    Forgot Password? (فراموشی رمز)
+                    {loc('Forgot Password? (فراموشی رمز)', 'Forgot Password? (forgot the password)')}
                   </button>
                 </div>
                 <input
@@ -5140,7 +5123,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-slate-300 font-semibold mb-1 block">City (شهر)</label>
+                <label className="text-xs text-slate-300 font-semibold mb-1 block">{loc('City (شهر)', 'City')}</label>
                 <select
                   value={authCity}
                   onChange={e => setAuthCity(e.target.value)}
@@ -5176,7 +5159,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
             {/* Interests Chips */}
             <div>
-              <label className="text-xs text-slate-300 font-semibold mb-1.5 block">Select Interests (علایق)</label>
+              <label className="text-xs text-slate-300 font-semibold mb-1.5 block">{loc('Select Interests (علایق)', 'Select Interests')}</label>
               <div className="flex flex-wrap gap-1.5">
                 {['🎥 4K Live', '👑 VIP Chat', '🔥 PK Battles', '🎵 Music & DJ', '🎮 Gaming', '🎨 Art & Beauty', '🚀 Tech'].map(item => {
                   const isSelected = authInterests.includes(item);
@@ -5203,7 +5186,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               }}
               className="w-full py-3.5 rounded-2xl btn-neon-pink font-bold text-xs shadow-xl flex items-center justify-center gap-2"
             >
-              <span>Next: Identity Verification (تأیید هویت)</span>
+              <span>{loc('Next: Identity Verification (تأیید هویت)', 'Next: Identity Verification')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -5231,9 +5214,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <span>Mandatory requirement for:</span>
               </div>
               <ul className="pl-6 text-[11px] text-slate-300 space-y-1 list-disc">
-                <li>Starting 4K Live Broadcasts (شروع لایو)</li>
-                <li>Withdrawing USDT cashout earnings (برداشت درآمد)</li>
-                <li>Receiving official Blue Verified Badge (نشان Verified)</li>
+                <li>{loc('Starting 4K Live Broadcasts (شروع لایو)', 'Starting 4K Live Broadcasts')}</li>
+                <li>{loc('Withdrawing USDT cashout earnings (برداشت درآمد)', 'Withdrawing USDT cashout earnings')}</li>
+                <li>{loc('Receiving official Blue Verified Badge (نشان Verified)', 'Receiving official Blue Verified Badge')}</li>
               </ul>
             </div>
 
@@ -5306,7 +5289,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-black text-xs shadow-2xl hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2"
             >
               <ArrowRight className="w-5 h-5" />
-              <span>Enter App (ورود به برنامه)</span>
+              <span>{loc('Enter App (ورود به برنامه)', 'Enter App')}</span>
             </button>
           </div>
         )}
@@ -5380,11 +5363,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             {/* User Greeting Info */}
             <div className="space-y-1">
               <h2 className="text-2xl font-black text-white flex items-center justify-center gap-2">
-                <span>خوش آمدید، {userName}</span>
+                <span>{loc('خوش آمدید،', 'welcome,')} {userName}</span>
                 <Sparkles className="w-5 h-5 text-amber-400 animate-bounce" />
               </h2>
               <p className="text-xs text-slate-400 font-medium dir-rtl">
-                @{currentUsername || 'rayan'} • {userCoins.toLocaleString()} 🪙 سکه موجود است
+                @{currentUsername || 'rayan'} • {userCoins.toLocaleString()} {loc('🪙 سکه موجود است', '🪙 coins available')}
               </p>
             </div>
 
@@ -5409,13 +5392,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   <LogIn className="w-5 h-5 text-white animate-pulse" />
                 </div>
 
-                <span className="tracking-wide">ورود به V.LIVE</span>
+                <span className="tracking-wide">{loc('ورود به V.LIVE', 'Login to V.LIVE')}</span>
 
                 <ArrowRight className="w-5 h-5 text-cyan-200 group-hover:translate-x-1 transition duration-300" />
               </button>
 
               <p className="text-[11px] text-slate-400 font-medium dir-rtl">
-                برای ورود مستقیم به صفحه اصلی (Home) کلیک کنید
+                {loc('برای ورود مستقیم به صفحه اصلی (Home) کلیک کنید', 'Click to enter directly to the main page (Home).')}
               </p>
             </div>
 
@@ -5435,7 +5418,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               }}
               className="text-xs text-slate-400 hover:text-pink-400 transition font-bold underline underline-offset-4 dir-rtl"
             >
-              ورود با حساب دیگر یا تلگرام 🔄
+              {loc('ورود با حساب دیگر یا تلگرام 🔄', 'Login with another account or Telegram 🔄')}
             </button>
           </div>
 
@@ -6432,16 +6415,16 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               {/* Reward breakdown */}
               <div className="p-4 rounded-2xl bg-slate-950/90 border border-amber-500/30 space-y-2 text-xs">
                 <div className="flex items-center justify-between font-mono font-bold text-amber-300">
-                  <span>Coins Received (سکه):</span>
+                  <span>{loc('Coins Received (سکه):', 'Coins Received:')}</span>
                   <span className="text-sm text-amber-400">+{unlockedRewardData.coins.toLocaleString()} 🪙</span>
                 </div>
                 <div className="flex items-center justify-between font-mono font-bold text-cyan-300 border-t border-slate-800 pt-1.5">
-                  <span>Diamonds Received (الماس):</span>
+                  <span>{loc('Diamonds Received (الماس):', 'Diamonds Received:')}</span>
                   <span className="text-sm text-cyan-400">+{unlockedRewardData.diamonds.toLocaleString()} 💎</span>
                 </div>
                 {unlockedRewardData.bonusTitle && (
                   <div className="flex items-center justify-between font-bold text-purple-300 border-t border-slate-800 pt-1.5">
-                    <span>Bonus Perk (بونوس):</span>
+                    <span>{loc('Bonus Perk (بونوس):', 'Bonus Perk:')}</span>
                     <span className="text-xs text-purple-400">{unlockedRewardData.bonusTitle}</span>
                   </div>
                 )}
@@ -6455,7 +6438,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-4 h-4" />
-                Claim & Continue (دریافت و ادامه)
+                {loc('Claim & Continue (دریافت و ادامه)', 'Claim & Continue')}
               </button>
             </div>
           </div>
@@ -6490,19 +6473,19 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   <ShieldCheck className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-black text-amber-300 text-xs">احراز هویت و حساب بانوان استریمر الزامی است</h3>
+                  <h3 className="font-black text-amber-300 text-xs">{loc('احراز هویت و حساب بانوان استریمر الزامی است', 'Authentication and account of female streamers is required')}</h3>
                   <p className="text-[11px] text-slate-300 mt-1">
-                    برداشت درآمد اختصاصاً برای حساب‌های بانوان استریمر تأییدشده فعال می‌باشد. برای ارسال درخواست تسویه، ابتدا مدارک هویت خود را ثبت نمایید.
+                    {loc('برداشت درآمد اختصاصاً برای حساب‌های بانوان استریمر تأییدشده فعال می‌باشد. برای ارسال درخواست تسویه، ابتدا مدارک هویت خود را ثبت نمایید.', 'Earnings are only active for verified female streamer accounts. To send a settlement request, first register your identity documents.')}
                   </p>
                 </div>
 
                 <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-right text-[10px] space-y-1.5 text-slate-300">
                   <p className="flex items-center gap-1.5 font-bold text-amber-400">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" /> شرایط ثبت درخواست برداشت:
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" /> {loc('شرایط ثبت درخواست برداشت:', 'Conditions for registration of withdrawal request:')}
                   </p>
-                  <p className="pr-4">• حساب بانوان استریمر (Female Creator Account)</p>
-                  <p className="pr-4">• آپلود کارت ملی / پاسپورت و تصویر سلفی</p>
-                  <p className="pr-4">• تأیید حساب توسط تیم مدیریت vLive+</p>
+                  <p className="pr-4">{loc('• حساب بانوان استریمر (Female Creator Account)', 'Female Creator Account')}</p>
+                  <p className="pr-4">{loc('• آپلود کارت ملی / پاسپورت و تصویر سلفی', '• Upload national card/passport and selfie picture')}</p>
+                  <p className="pr-4">{loc('• تأیید حساب توسط تیم مدیریت vLive+', '• Account verification by vLive+ management team')}</p>
                 </div>
 
                 <button
@@ -6513,14 +6496,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-md hover:brightness-110 transition flex items-center justify-center gap-1.5"
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  شروع احراز هویت (Start KYC Verification)
+                  {loc('شروع احراز هویت (Start KYC Verification)', 'Start authentication (Start KYC Verification)')}
                 </button>
               </div>
             ) : (
               <div className="space-y-3 text-xs">
                 <div>
                   <label className="text-[10px] text-slate-400 block mb-1 font-bold">
-                    Coins to Withdraw (سکه برای تبدیل به تتر)
+                    {loc('Coins to Withdraw (سکه برای تبدیل به تتر)', 'Coins to Withdraw')}
                   </label>
                   <input 
                     type="number"
@@ -6530,13 +6513,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-white font-mono outline-none focus:border-emerald-500"
                   />
                   <span className="text-[10px] text-emerald-400 block mt-1 font-mono">
-                    موجودی قابل برداشت شما: {userCoins.toLocaleString()} سکه (≈ ${(userCoins / 50).toFixed(2)} USDT)
+                    {loc('موجودی قابل برداشت شما:', 'Your withdrawable balance:')} {userCoins.toLocaleString()} {loc('سکه (≈ $', 'coin (≈ $')}{(userCoins / 50).toFixed(2)} USDT)
                   </span>
                 </div>
 
                 <div>
                   <label className="text-[10px] text-slate-400 block mb-1 font-bold">
-                    TRON (TRC20) USDT Wallet Address (آدرس کیف پول تتر)
+                    {loc('TRON (TRC20) USDT Wallet Address (آدرس کیف پول تتر)', 'TRON (TRC20) USDT Wallet Address')}
                   </label>
                   <input 
                     type="text"
@@ -6555,15 +6538,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   return (
                     <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-2 text-[11px]">
                       <div className="flex justify-between text-slate-300">
-                        <span>مبلغ درخواستی (Gross USDT):</span>
+                        <span>{loc('مبلغ درخواستی (Gross USDT):', 'Amount requested (Gross USDT):')}</span>
                         <span className="font-mono font-bold text-white">${grossUsdtNum.toFixed(2)} USDT</span>
                       </div>
                       <div className="flex justify-between text-amber-300 border-t border-slate-800/80 pt-1.5">
-                        <span>کارمزد شبکه (TRC20 Gas Fee):</span>
+                        <span>{loc('کارمزد شبکه (TRC20 Gas Fee):', 'Network fee (TRC20 Gas Fee):')}</span>
                         <span className="font-mono font-bold text-amber-400">-${adminNetworkFee.toFixed(2)} USDT</span>
                       </div>
                       <div className="flex justify-between text-emerald-300 border-t border-slate-800/80 pt-1.5 font-bold">
-                        <span>صافی واریزی به کیف پول (Net Payout):</span>
+                        <span>{loc('صافی واریزی به کیف پول (Net Payout):', 'Net Payout:')}</span>
                         <span className="font-mono text-sm text-emerald-400">${netUsdtNum} USDT</span>
                       </div>
                     </div>
@@ -6574,13 +6557,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <div className="p-3 bg-emerald-950/30 rounded-2xl border border-emerald-500/30 text-[10px] text-emerald-300 space-y-1">
                   <p className="font-bold flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                    اطلاعیه زمان‌بندی تسویه شبکه:
+                    {loc('اطلاعیه زمان‌بندی تسویه شبکه:', 'Network settlement schedule notice:')}
                   </p>
                   <p className="text-slate-300">
                     * Withdrawal completion time depends on blockchain network conditions.
                   </p>
                   <p className="text-slate-400">
-                    (زمان نهایی شدن تسویه حساب بسته به ترافیک شبکه بلاک‌چین ترون متغیر می‌باشد)
+                    {loc('(زمان نهایی شدن تسویه حساب بسته به ترافیک شبکه بلاک‌چین ترون متغیر می‌باشد)', '(The finalization time of the account settlement varies depending on the Tron blockchain network traffic)')}
                   </p>
                 </div>
 
@@ -6589,7 +6572,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-1.5"
                 >
                   <ArrowUpRight className="w-4 h-4" />
-                  ارسال درخواست برداشت درآمد
+                  {loc('ارسال درخواست برداشت درآمد', 'Send income withdrawal request')}
                 </button>
               </div>
             )}
@@ -6656,12 +6639,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   {activeCall.isRecording && <span className="px-1.5 py-0.2 rounded bg-rose-600 text-white text-[9px] font-mono animate-pulse">REC</span>}
                 </div>
                 <div className="flex items-center gap-2 text-[10px] text-emerald-400 font-mono">
-                  <span>{activeCall.type === 'video' ? '📹 ویدیو HD' : '📞 صوتی کریستالی'}</span>
+                  <span>{activeCall.type === 'video' ? loc('📹 ویدیو HD', '📹 HD video') : loc('📞 صوتی کریستالی', '📞 Crystal audio')}</span>
                   <span>•</span>
                   <span>{Math.floor(activeCall.seconds / 60).toString().padStart(2, '0')}:{(activeCall.seconds % 60).toString().padStart(2, '0')}</span>
                   {activeCall.isPaid && (
                     <span className="text-amber-300 flex items-center gap-0.5">
-                      <Coins className="w-2.5 h-2.5" /> {activeCall.consumedCoins} سکه
+                      <Coins className="w-2.5 h-2.5" /> {activeCall.consumedCoins} {loc('سکه', 'coin')}
                     </span>
                   )}
                 </div>
@@ -6673,7 +6656,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <button
                 onClick={() => setIsEncryptedCertModalOpen(true)}
                 className="px-2.5 py-1 rounded-xl bg-slate-900/80 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold flex items-center gap-1"
-                title="مشاهده گواهی امنیت 256 بیتی"
+                title={loc('مشاهده گواهی امنیت 256 بیتی', 'View 256-bit security certificate')}
               >
                 <Lock className="w-3 h-3 text-emerald-400" />
                 <span className="hidden sm:inline">E2E Encrypted</span>
@@ -6682,7 +6665,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <button
                 onClick={handleTogglePiPCall}
                 className="p-2 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-200 hover:text-white transition"
-                title={activeCall.isPiP ? "تمام‌صفحه" : "پنجره کوچک (PiP)"}
+                title={activeCall.isPiP ? loc('تمام‌صفحه', 'full page') : loc('پنجره کوچک (PiP)', 'small window (PiP)')}
               >
                 {activeCall.isPiP ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
               </button>
@@ -6738,7 +6721,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <div className="absolute bottom-24 left-4 right-4 z-20 bg-slate-950/85 backdrop-blur-md p-3 rounded-2xl border border-cyan-500/40 text-center shadow-2xl">
                 <div className="flex items-center justify-center gap-1.5 text-[10px] font-black text-cyan-400 mb-0.5">
                   <Globe className="w-3 h-3" />
-                  <span>ترجمه همزمان هوشمند (AI Translation)</span>
+                  <span>{loc('ترجمه همزمان هوشمند (AI Translation)', 'Intelligent Simultaneous Translation (AI Translation)')}</span>
                 </div>
                 <p className="text-xs font-bold text-white leading-relaxed">{activeCall.translatedSubtitles}</p>
               </div>
@@ -6781,7 +6764,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <button
                   onClick={handleSwitchCameraFacing}
                   className="p-3.5 rounded-2xl bg-slate-900 text-slate-200 border border-slate-700 hover:border-pink-500/50 transition shadow-lg"
-                  title="تغییر دوربین جلو / عقب"
+                  title={loc('تغییر دوربین جلو / عقب', 'Change front / rear camera')}
                 >
                   <SwitchCamera className="w-5 h-5" />
                 </button>
@@ -6791,7 +6774,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <button
                 onClick={handleToggleBeautyFilter}
                 className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.beautyFilter ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
-                title="فیلتر زیبایی"
+                title={loc('فیلتر زیبایی', 'beauty filter')}
               >
                 <Sparkles className="w-5 h-5 text-amber-300" />
               </button>
@@ -6800,7 +6783,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <button
                 onClick={() => setIsSendGiftInChatOpen(true)}
                 className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/50 text-amber-300 hover:text-white transition shadow-lg"
-                title="ارسال هدیه وسط تماس"
+                title={loc('ارسال هدیه وسط تماس', 'Send a gift in the middle of a call')}
               >
                 <Gift className="w-5 h-5" />
               </button>
@@ -6809,7 +6792,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <button
                 onClick={handleToggleRecordCall}
                 className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isRecording ? 'bg-rose-600 text-white border-rose-500 animate-pulse' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
-                title="ضبط مکالمه"
+                title={loc('ضبط مکالمه', 'Record the conversation')}
               >
                 <Disc className="w-5 h-5 text-rose-400" />
               </button>
@@ -6818,7 +6801,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <button
                 onClick={handleEndActiveCall}
                 className="p-4 rounded-3xl bg-rose-600 text-white shadow-[0_0_30px_rgba(225,29,72,0.8)] hover:bg-rose-700 active:scale-95 transition"
-                title="پایان تماس"
+                title={loc('پایان تماس', 'end call')}
               >
                 <PhoneCall className="w-6 h-6 rotate-[135deg]" />
               </button>
@@ -6836,20 +6819,20 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </div>
 
             <div>
-              <h3 className="text-base font-black text-white">تایید تماس خصوصی پولی با {preCallConfirmHost.user.name}</h3>
-              <p className="text-xs text-slate-400 mt-1">این استریمر برای پاسخگویی به تماس، هزینه تعیین کرده است.</p>
+              <h3 className="text-base font-black text-white">{loc('تایید تماس خصوصی پولی با', 'Confirm paid private contact with')} {preCallConfirmHost.user.name}</h3>
+              <p className="text-xs text-slate-400 mt-1">{loc('این استریمر برای پاسخگویی به تماس، هزینه تعیین کرده است.', 'This streamer has set a fee to answer the call.')}</p>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-right">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-400">نرخ تماس:</span>
+                <span className="text-slate-400">{loc('نرخ تماس:', 'call rate:')}</span>
                 <span className="font-bold text-amber-400 flex items-center gap-1">
-                  <Coins className="w-3.5 h-3.5 text-amber-400" /> {preCallConfirmHost.tariffRate} سکه در هر دقیقه
+                  <Coins className="w-3.5 h-3.5 text-amber-400" /> {preCallConfirmHost.tariffRate} {loc('سکه در هر دقیقه', 'Coins per minute')}
                 </span>
               </div>
               <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-400">موجودی کیف پول شما:</span>
-                <span className="font-bold text-emerald-400">{userCoins.toLocaleString()} سکه</span>
+                <span className="text-slate-400">{loc('موجودی کیف پول شما:', 'Your wallet balance:')}</span>
+                <span className="font-bold text-emerald-400">{userCoins.toLocaleString()} {loc('سکه', 'coin')}</span>
               </div>
             </div>
 
@@ -6858,13 +6841,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 onClick={() => setPreCallConfirmHost(null)}
                 className="flex-1 py-2.5 rounded-2xl bg-slate-800 text-slate-300 font-bold text-xs"
               >
-                انصراف
+                {loc('انصراف', 'opt out')}
               </button>
               <button
                 onClick={() => handleStartCallDirect(preCallConfirmHost.user, preCallConfirmHost.type, preCallConfirmHost.mode, true, preCallConfirmHost.tariffRate)}
                 className="flex-1 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-lg"
               >
-                تایید و اتصال تماس
+                {loc('تایید و اتصال تماس', 'Confirm and connect the call')}
               </button>
             </div>
           </div>
@@ -6880,8 +6863,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </div>
 
             <div>
-              <h3 className="text-base font-black text-white">ثبت امتیاز کیفیت تماس با {postCallRatingData.user.name}</h3>
-              <p className="text-xs text-slate-400 mt-1">مدت زمان: {postCallRatingData.duration} • کیفیت: {postCallRatingData.quality}</p>
+              <h3 className="text-base font-black text-white">{loc('ثبت امتیاز کیفیت تماس با', 'Call quality score registration')} {postCallRatingData.user.name}</h3>
+              <p className="text-xs text-slate-400 mt-1">{loc('مدت زمان:', 'Duration:')} {postCallRatingData.duration} {loc('• کیفیت:', 'Quality:')} {postCallRatingData.quality}</p>
             </div>
 
             {/* Stars Rating */}
@@ -6902,29 +6885,29 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 type="text"
                 value={ratingCommentCall}
                 onChange={e => setRatingCommentCall(e.target.value)}
-                placeholder="نظر شما درباره این تماس (اختیاری)..."
+                placeholder={loc('نظر شما درباره این تماس (اختیاری)...', 'Your opinion about this call (optional)...')}
                 className="w-full bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs text-white outline-none placeholder:text-slate-600"
               />
             </div>
 
             <div className="flex items-center gap-2 pt-2">
               <button
-                onClick={() => handleReportUserInCall('محتوای نامناسب')}
+                onClick={() => handleReportUserInCall(loc('محتوای نامناسب', 'Inappropriate content'))}
                 className="px-3 py-2 rounded-2xl bg-rose-600/20 text-rose-300 border border-rose-500/40 text-xs font-bold flex items-center gap-1"
               >
-                <Flag className="w-3.5 h-3.5" /> گزارش
+                <Flag className="w-3.5 h-3.5" /> {loc('گزارش', 'Report')}
               </button>
               <button
                 onClick={() => handleBlockUserInCall(postCallRatingData.user.username)}
                 className="px-3 py-2 rounded-2xl bg-slate-800 text-slate-300 text-xs font-bold flex items-center gap-1"
               >
-                <Ban className="w-3.5 h-3.5" /> مسدودسازی
+                <Ban className="w-3.5 h-3.5" /> {loc('مسدودسازی', 'blocking')}
               </button>
               <button
                 onClick={handleSubmitPostCallRating}
                 className="flex-1 py-2 rounded-2xl btn-neon-pink text-xs font-black shadow-lg"
               >
-                ثبت امتیاز
+                {loc('ثبت امتیاز', 'Register points')}
               </button>
             </div>
           </div>
@@ -6961,7 +6944,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     {activeStoryView.group.user.isVip && <Crown className="w-3.5 h-3.5 text-amber-400" />}
                   </h4>
                   <span className="text-[10px] text-slate-300 font-mono">
-                    {activeStoryView.group.items[activeStoryView.currentIndex]?.time || 'هم‌اکنون'}
+                    {activeStoryView.group.items[activeStoryView.currentIndex]?.time || loc('هم‌اکنون', 'right now')}
                   </span>
                 </div>
               </div>
@@ -6973,7 +6956,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold flex items-center gap-1 border border-white/20"
                   >
                     <Eye className="w-3 h-3 text-cyan-400" />
-                    <span>{activeStoryView.group.items[activeStoryView.currentIndex]?.views || 0} بازدید</span>
+                    <span>{activeStoryView.group.items[activeStoryView.currentIndex]?.views || 0} {loc('بازدید', 'visit')}</span>
                   </button>
                 )}
                 <button
@@ -6998,561 +6981,42 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             {/* Interactive Poll Sticker Overlay */}
             {activeStoryView.group.items[activeStoryView.currentIndex]?.hasPoll && (
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-950/85 backdrop-blur-md p-4 rounded-3xl border border-pink-500/50 w-64 text-center space-y-3 shadow-2xl z-20">
-                <span className="text-xs font-black text-pink-400">📊 نظرسنجی زنده استوری</span>
+                <span className="text-xs font-black text-pink-400">{loc('📊 نظرسنجی زنده استوری', '📊 Live story poll')}</span>
                 <p className="text-sm font-bold text-white">{activeStoryView.group.items[activeStoryView.currentIndex]?.pollQuestion}</p>
                 <div className="space-y-2">
                   {activeStoryView.group.items[activeStoryView.currentIndex]?.pollOptions?.map((opt, oIdx) => (
                     <button
                       key={oIdx}
-                      onClick={() => showToast(`رای شما به "${opt}" ثبت شد!`)}
-                      className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-pink-500/20 to-purple-500/20 hover:from-pink-500 hover:to-purple-600 border border-pink-500/40 text-xs font-bold text-white transition active:scale-95 shadow-md"
+                      onClick={() => showToast(window.loc(`رای شما به "${opt}" ثبت شد!`, `رای شما به "${opt}" ثبت شد!`))}
+                      className="w-full py-2 bg-slate-950/60 rounded-xl border border-white/20 text-white font-bold backdrop-blur-md hover:bg-pink-500/80 transition"
                     >
                       {opt}
                     </button>
                   ))}
-                </div>
-              </div>
-            )}
-
-            {/* Link Sticker Button Overlay */}
-            {activeStoryView.group.items[activeStoryView.currentIndex]?.link && (
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
-                <button
-                  onClick={() => handleStoryLinkClick(activeStoryView.group.items[activeStoryView.currentIndex].link)}
-                  className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black text-xs flex items-center gap-2 shadow-xl shadow-cyan-500/30 animate-bounce"
-                >
-                  <Zap className="w-4 h-4 fill-slate-950" />
-                  <span>{activeStoryView.group.items[activeStoryView.currentIndex].link.text}</span>
-                </button>
-              </div>
-            )}
-
-            {/* Tap Left / Right Navigation Touch Controls */}
-            <div 
-              onClick={handlePrevStoryItem}
-              className="absolute top-0 bottom-0 left-0 w-1/3 z-10 cursor-pointer" 
-              title="قبلی"
-            />
-            <div 
-              onClick={handleNextStoryItem}
-              className="absolute top-0 bottom-0 right-0 w-2/3 z-10 cursor-pointer" 
-              title="بعدی"
-            />
-          </div>
-
-          {/* Bottom Action / Reply Bar */}
-          <div className="w-full max-w-md flex items-center gap-2 relative z-20">
-            <div className="flex-1 flex items-center bg-slate-900/90 border border-slate-700/80 rounded-2xl px-3 py-1.5 shadow-xl">
-              <input
-                type="text"
-                value={storyReplyText}
-                onChange={e => setStoryReplyText(e.target.value)}
-                placeholder={`پاسخ به ${activeStoryView.group.user.name}...`}
-                className="w-full bg-transparent text-xs text-white outline-none placeholder:text-slate-400"
-              />
-              <button
-                onClick={handleSendStoryReply}
-                className="p-1.5 text-pink-400 hover:text-pink-300 transition"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
-
-            <button
-              onClick={handleLikeStory}
-              className="p-3 rounded-2xl bg-slate-900/90 border border-slate-700 hover:border-pink-500 text-rose-500 hover:scale-110 transition shadow-xl"
-            >
-              <Heart className="w-5 h-5 fill-rose-500" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== CREATE STORY MODAL ==================== */}
-      {isCreateStoryOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-          <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-pink-500/40 max-w-md w-full space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-black text-white flex items-center gap-2">
-                <Plus className="w-5 h-5 text-pink-400" />
-                ایجاد استوری جدید (24 Hours Story)
-              </h3>
-              <button onClick={() => setIsCreateStoryOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Media Type Tabs */}
-            <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
-              {[
-                { type: 'photo', label: 'عکس 📷' },
-                { type: 'video', label: 'ویدیو 📹' },
-                { type: 'text', label: 'متن ✍️' },
-                { type: 'audio', label: 'صدا 🎙️' }
-              ].map(m => (
-                <button
-                  key={m.type}
-                  onClick={() => setStoryMediaType(m.type)}
-                  className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition ${storyMediaType === m.type ? 'bg-pink-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Story Text / Caption Input */}
-            <div className="space-y-2">
-              <label className="text-xs text-slate-300 font-bold">کپشن یا متن استوری:</label>
-              <textarea
-                value={storyText}
-                onChange={e => setStoryText(e.target.value)}
-                placeholder="چی تو فکته؟ یک استوری جذاب بنویس..."
-                className="w-full bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs text-white outline-none h-24 resize-none"
-              />
-            </div>
-
-            {/* Privacy Selector */}
-            <div className="space-y-1.5">
-              <label className="text-xs text-slate-300 font-bold">سطح دسترسی و حریم خصوصی:</label>
-              <select
-                value={storyPrivacy}
-                onChange={e => setStoryPrivacy(e.target.value)}
-                className="w-full bg-slate-950 p-2.5 rounded-2xl border border-slate-800 text-xs text-white outline-none cursor-pointer"
-              >
-                <option value="everyone">🌐 همه کاربران (Public)</option>
-                <option value="followers">👥 فقط دنبال‌کنندگان (Followers)</option>
-                <option value="friends">❤️ فقط دوستان صمیمی (Close Friends)</option>
-              </select>
-            </div>
-
-            {/* Publish Button */}
-            <button
-              onClick={handlePublishStory}
-              className="w-full py-3 rounded-2xl btn-neon-pink font-black text-xs shadow-lg shadow-pink-500/20 active:scale-95 transition"
-            >
-              انتشار استوری (Publish Story)
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== STORY VIEWERS MODAL ==================== */}
-      {isStoryViewersOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-          <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-cyan-500/40 max-w-sm w-full space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-black text-white flex items-center gap-2">
-                <Eye className="w-5 h-5 text-cyan-400" />
-                بازدیدکنندگان استوری شما (120 Views)
-              </h3>
-              <button onClick={() => setIsStoryViewersOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 max-h-72 overflow-y-auto no-scrollbar">
-              {[
-                { name: 'Sara Maleki', time: '10m ago', liked: true, avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80' },
-                { name: 'Arash VIP', time: '25m ago', liked: false, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80' },
-                { name: 'Elnaz Karimi', time: '1h ago', liked: true, avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80' }
-              ].map((v, i) => (
-                <div key={i} className="flex items-center justify-between bg-slate-950 p-2.5 rounded-2xl border border-slate-800">
-                  <div className="flex items-center gap-2.5">
-                    <img src={v.avatar} alt={v.name} className="w-9 h-9 rounded-full object-cover" />
-                    <div>
-                      <h4 className="text-xs font-bold text-white">{v.name}</h4>
-                      <span className="text-[10px] text-slate-400 font-mono">{v.time}</span>
-                    </div>
-                  </div>
-                  {v.liked && <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== STORY ARCHIVE MODAL ==================== */}
-      {isStoryArchiveOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-          <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-purple-500/40 max-w-md w-full space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-black text-white flex items-center gap-2">
-                <History className="w-5 h-5 text-purple-400" />
-                آرشیو استوری‌های گذشته
-              </h3>
-              <button onClick={() => setIsStoryArchiveOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto no-scrollbar">
-              {storyArchive.map(arc => (
-                <div key={arc.id} className="relative rounded-2xl overflow-hidden h-36 border border-slate-800 group shadow-md">
-                  <img src={arc.url} alt="Archive Story" className="w-full h-full object-cover group-hover:scale-110 transition duration-300" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent flex flex-col justify-end p-2.5">
-                    <span className="text-xs font-bold text-white">{arc.date}</span>
-                    <span className="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
-                      <Eye className="w-3 h-3" /> {arc.views} views
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-
-      {/* ==================== RECORD CONSENT MODAL ==================== */}
-      {isRecordConsentModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-          <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-rose-500/50 max-w-sm w-full space-y-4 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-rose-600/20 text-rose-400 border border-rose-500/40 flex items-center justify-center mx-auto">
-              <Disc className="w-6 h-6 animate-spin" />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-white">اجازه ضبط مکالمه</h3>
-              <p className="text-xs text-slate-400 mt-1">
-                بر طبق قوانین حریم خصوصی، جهت ضبط مکالمه صوتی و تصویری تایید کاربر و سیستم‌عامل الزامی است.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setIsRecordConsentModalOpen(false)} className="flex-1 py-2 rounded-2xl bg-slate-800 text-slate-300 font-bold text-xs">
-                انصراف
-              </button>
-              <button onClick={handleConfirmRecordConsent} className="flex-1 py-2 rounded-2xl bg-rose-600 text-white font-bold text-xs shadow-lg">
-                تایید و شروع ضبط
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== SECURITY ENCRYPTED CERTIFICATE MODAL ==================== */}
-      {isEncryptedCertModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-          <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-emerald-500/50 max-w-sm w-full space-y-4 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto">
-              <Lock className="w-6 h-6 text-emerald-400" />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-white">ارتباط رمزشده 256 بیتی (E2E Encrypted)</h3>
-              <p className="text-xs text-slate-400 mt-1">
-                این تماس به‌صورت مستقیم (Peer-to-Peer) رمزشده است و هیچ شخص ثالثی امکان شنود یا ضبط آن را ندارد.
-              </p>
-            </div>
-            <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-[10px] font-mono text-emerald-400">
-              Fingerprint: 8F:9A:31:C4:02:BE:78:E1
-            </div>
-            <button onClick={() => setIsEncryptedCertModalOpen(false)} className="w-full py-2.5 rounded-2xl bg-slate-800 text-white font-bold text-xs">
-              بستن
-            </button>
-          </div>
-        </div>
-      )}
-
-
-      {/* MODAL 5: ACTIVE PRIVATE 1-ON-1 VIDEO CALL VIEW */}
-      {activePrivateCallHost && (
-        <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
-          <div className="relative flex-1 bg-slate-900">
-            <img src={activePrivateCallHost.avatar} alt="Call" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-slate-950/40" />
-
-            <div className="absolute top-6 left-6 flex items-center gap-3">
-              <img src={activePrivateCallHost.avatar} alt="Avatar" className="w-12 h-12 rounded-2xl object-cover border-2 border-pink-500" />
-              <div>
-                <h3 className="text-sm font-bold text-white">{activePrivateCallHost.name}</h3>
-                <p className="text-xs text-emerald-400 font-mono">
-                  Private Call • {Math.floor(privateCallSeconds / 60)}:{(privateCallSeconds % 60).toString().padStart(2, '0')}
-                </p>
-              </div>
-            </div>
-
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4">
-              <button onClick={() => setIsGiftCatalogOpen(true)} className="p-4 rounded-full bg-amber-500/20 border border-amber-500 text-amber-300">
-                <Gift className="w-6 h-6" />
-              </button>
-              <button onClick={handleEndPrivateCall} className="p-5 rounded-full bg-red-600 text-white shadow-2xl hover:bg-red-700">
-                <PhoneCall className="w-7 h-7 rotate-135" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 6: PREMIUM ENHANCED LIVE VIEWER ROOM OVERLAY */}
-      {viewingStream && (
-        <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col animate-fadeIn select-none">
-          <div className="relative flex-1 bg-slate-900 overflow-hidden">
-            
-            {/* Split Screen Video in PK Mode */}
-            {isPkBattleActive ? (
-              <div className="w-full h-full grid grid-cols-2 gap-0.5 relative">
-                <div className="relative w-full h-full">
-                  <img src={viewingStream.thumbnail} alt="Red Host" className="w-full h-full object-cover" />
-                  <div className="absolute top-2 left-2 bg-red-600/90 text-white px-2 py-0.5 rounded-full text-[9px] font-black">
-                    RED TEAM: {viewingStream.host}
-                  </div>
-                </div>
-                <div className="relative w-full h-full">
-                  <img src={pkOpponent.avatar} alt="Blue Host" className="w-full h-full object-cover" />
-                  <div className="absolute top-2 right-2 bg-blue-600/90 text-white px-2 py-0.5 rounded-full text-[9px] font-black">
-                    BLUE TEAM: {pkOpponent.name}
-                  </div>
-                </div>
-
-                {/* PK VS Center Badge */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 bg-gradient-to-r from-red-600 to-blue-600 text-white font-black text-sm px-3.5 py-1.5 rounded-2xl shadow-[0_0_20px_rgba(255,0,127,0.8)] border border-white/50 animate-bounce">
-                  VS
-                </div>
-              </div>
-            ) : viewingStream.isSelfStream && mediaStream ? (
-              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
-            ) : (
-              <img src={viewingStream.thumbnail} alt="Stream" className="w-full h-full object-cover" />
-            )}
-
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/80 pointer-events-none" />
-
-            {/* ANIMATED FLOATING GIFT OVERLAY ON VIDEO PREVIEW AREA */}
-            <div className="absolute inset-0 pointer-events-none z-35 overflow-hidden">
-              {inCallFloatingGifts.map(g => (
-                <div
-                  key={g.id}
-                  className="absolute animate-gift-float flex flex-col items-center pointer-events-none"
-                  style={{ top: `${g.y}%`, left: `${g.x}%` }}
-                >
-                  <div className="relative p-3 bg-slate-950/90 rounded-2xl border-2 border-amber-400/90 shadow-[0_0_35px_rgba(245,158,11,1)] flex items-center gap-2.5 backdrop-blur-md">
-                    <span className="text-4xl filter drop-shadow-[0_0_20px_rgba(255,215,0,1)] animate-bounce flex items-center justify-center">
-                      {g.gift?.emoji ? g.gift.emoji : (g.gift?.icon && typeof g.gift.icon !== 'string' ? <g.gift.icon className="w-8 h-8 text-amber-300" /> : '🎁')}
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-black text-amber-300">
-                        {g.gift?.name || 'Gift'}
-                      </span>
-                      <span className="text-[10px] font-black text-pink-300">
-                        +{g.gift?.coins || 100} Coins
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* 3D VIP Entrance Vehicle Banner */}
-            {showEntranceBanner && (
-              <div className="absolute top-20 left-4 right-4 z-30 bg-gradient-to-r from-amber-600/90 via-purple-600/90 to-pink-600/90 p-3 rounded-2xl border-2 border-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.8)] backdrop-blur-md flex items-center gap-3 animate-pulse">
-                <div className="w-9 h-9 rounded-xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center text-amber-200">
-                  <Crown className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs font-black text-amber-200">
-                    VIP Level {userVipLevel} @{currentUsername} entered with {entranceVehicle}!
-                  </p>
-                  <p className="text-[9px] text-white/90">Royal Crown VIP Member in Room</p>
-                </div>
-              </div>
-            )}
-
-            {/* PK BATTLE PROGRESS SCORE BAR */}
-            {isPkBattleActive && (
-              <div className="absolute top-20 left-4 right-4 z-20 bg-slate-950/90 p-2.5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
-                <div className="flex items-center justify-between text-[10px] font-bold text-white">
-                  <span className="text-red-400 font-mono">RED: {pkRedScore.toLocaleString()} pts</span>
-                  <span className="text-amber-300 font-mono flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-amber-400" />
-                    PK TIME: {Math.floor(pkTimeLeft / 60)}:{(pkTimeLeft % 60).toString().padStart(2, '0')}
-                  </span>
-                  <span className="text-blue-400 font-mono">BLUE: {pkBlueScore.toLocaleString()} pts</span>
-                </div>
-
-                <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex border border-slate-700">
-                  <div 
-                    className="bg-gradient-to-r from-red-600 to-pink-500 h-full transition-all duration-500" 
-                    style={{ width: `${(pkRedScore / ((pkRedScore + pkBlueScore) || 1)) * 100}%` }}
-                  />
-                  <div 
-                    className="bg-gradient-to-r from-cyan-500 to-blue-600 h-full transition-all duration-500" 
-                    style={{ width: `${(pkBlueScore / ((pkRedScore + pkBlueScore) || 1)) * 100}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Side Floating Stream Switcher Arrows */}
-            <div className="absolute top-1/2 left-3 -translate-y-1/2 z-30">
-              <button 
-                onClick={handlePrevStream}
-                className="p-3 rounded-full bg-slate-950/80 border border-slate-700/80 text-white hover:bg-pink-600 hover:border-pink-500 shadow-[0_0_15px_rgba(0,0,0,0.8)] backdrop-blur-md transition active:scale-90 flex items-center justify-center group"
-                title={loc('پخش زنده قبلی', 'Previous Live Stream')}
-              >
-                <ChevronRight className="w-5 h-5 text-pink-400 group-hover:text-white" />
-              </button>
-            </div>
-
-            <div className="absolute top-1/2 right-3 -translate-y-1/2 z-30">
-              <button 
-                onClick={handleNextStream}
-                className="p-3 rounded-full bg-slate-950/80 border border-slate-700/80 text-white hover:bg-pink-600 hover:border-pink-500 shadow-[0_0_15px_rgba(0,0,0,0.8)] backdrop-blur-md transition active:scale-90 flex items-center justify-center group"
-                title={loc('پخش زنده بعدی', 'Next Live Stream')}
-              >
-                <ChevronLeft className="w-5 h-5 text-pink-400 group-hover:text-white" />
-              </button>
-            </div>
-
-            {/* ================= TOP BAR CONTROLS ================= */}
-            <div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2 flex-wrap">
-              
-              {/* Streamer Profile Badge & Scores */}
-              <div className="flex items-center gap-2 bg-slate-950/85 p-1.5 pr-3 rounded-2xl border border-slate-800/80 backdrop-blur-md shadow-xl">
-                <img 
-                  src={viewingStream.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'} 
-                  alt={viewingStream.host}
-                  className="w-9 h-9 rounded-xl object-cover ring-2 ring-pink-500/50 cursor-pointer"
-                  onClick={() => setSelectedUserProfile(viewingStream)}
-                />
-
-                <div className="flex flex-col text-right dir-rtl">
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-black text-white">{viewingStream.host}</span>
-                    <VerifiedBadge className="w-3.5 h-3.5" />
-                    {viewingStream.isVip && <VipStatusBadge size="small" showText={false} />}
-                  </div>
-
-                  {/* 3 SCORE BADGES: Level, Trust, Rank */}
-                  <div className="flex items-center gap-1 text-[8px] font-bold text-slate-300">
-                    <span className="px-1.5 py-0.2 rounded-full bg-pink-500 text-white font-black">Lvl 18</span>
-                    <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/30 text-emerald-300 border border-emerald-500/40">9.8/10</span>
-                    <span className="px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/40">#3 Rank</span>
-                  </div>
-                </div>
-
-                {/* Follow Button */}
-                <button
-                  onClick={() => {
-                    const next = !isStreamerFollowed;
-                    setIsStreamerFollowed(next);
-                    showToast(next ? `با موفقیت ${viewingStream.host} دنبال شد 👤` : `آنفالو شد`);
-                  }}
-                  className={`px-2.5 py-1 rounded-xl text-[10px] font-black shadow transition ml-1 ${
+                  <button
+                    onClick={() => {
+                      const next = !isStreamerFollowed;
+                      setIsStreamerFollowed(next);
+                      showToast(next ? window.loc(`با موفقیت ${viewingStream.host} دنبال شد 👤`, `با موفقیت ${viewingStream.host} دنبال شد 👤`) : window.loc(`دنبال کردن لغو شد`, `دنبال کردن لغو شد`));
+                    }}
+                    className={`px-2.5 py-1 rounded-xl text-[10px] font-black shadow transition ml-1 ${
                     isStreamerFollowed 
                       ? 'bg-slate-800 text-slate-300 border border-slate-700' 
                       : 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
                   }`}
                 >
-                  {isStreamerFollowed ? 'دنبال شده' : '+ دنبال کردن'}
+                  {isStreamerFollowed ? loc('دنبال شده', 'Followed') : loc('+ دنبال کردن', '+ follow')}
                 </button>
-              </div>
-
-              {/* Status Indicators: Timer, Viewers, Quality & Action Tools */}
-              <div className="flex items-center gap-1.5">
-                
-                {/* Live Timer & Viewers */}
-                <div className="flex items-center gap-2 bg-slate-950/85 px-3 py-1.5 rounded-2xl border border-slate-800 text-[10px] font-mono text-slate-200 backdrop-blur-md">
-                  <span className="flex items-center gap-1 text-rose-400 font-bold">
-                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                    00:45:12
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1 text-cyan-300 font-bold">
-                    <Eye className="w-3 h-3 text-cyan-400" />
-                    {(viewingStream.viewers || 3820).toLocaleString()}
-                  </span>
-                  <span>•</span>
-                  <span className="text-emerald-400 font-bold">🟢 HD 60fps</span>
                 </div>
+              
 
-                {/* Info Panel Button */}
-                <button
-                  onClick={() => setIsLiveInfoPanelOpen(!isLiveInfoPanelOpen)}
-                  className={`p-2 rounded-2xl border transition ${isLiveInfoPanelOpen ? 'bg-pink-600 text-white border-pink-400' : 'bg-slate-950/85 text-slate-300 border-slate-800 hover:text-white'}`}
-                  title="اطلاعات استریم و قوانین"
-                >
-                  <FileText className="w-4 h-4" />
-                </button>
-
-                {/* Members Panel Button */}
-                <button
-                  onClick={() => setIsLiveMembersOpen(!isLiveMembersOpen)}
-                  className={`p-2 rounded-2xl border transition ${isLiveMembersOpen ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-950/85 text-slate-300 border-slate-800 hover:text-white'}`}
-                  title="لیست بینندگان و مهمانان"
-                >
-                  <Users className="w-4 h-4" />
-                </button>
-
-                {/* Guest Request Button */}
-                <button
-                  onClick={() => {
-                    if (guestRequestStatus === 'idle') {
-                      setGuestRequestStatus('pending');
-                      showToast('🎤 درخواست بالا آمدن به عنوان مهمان ارسال شد. منتظر تایید استریمر...');
-                    } else if (guestRequestStatus === 'pending') {
-                      setGuestRequestStatus('idle');
-                      showToast('درخواست مهمان لغو شد');
-                    } else {
-                      setGuestRequestStatus('idle');
-                      showToast('از حالت مهمان خارج شدید');
-                    }
-                  }}
-                  className={`px-2.5 py-1.5 rounded-2xl border text-[10px] font-black flex items-center gap-1 shadow-md transition ${
-                    guestRequestStatus === 'pending'
-                      ? 'bg-amber-500/30 text-amber-300 border-amber-500/50 animate-pulse'
-                      : guestRequestStatus === 'accepted'
-                      ? 'bg-emerald-500/30 text-emerald-300 border-emerald-500/50'
-                      : 'bg-purple-600/20 text-purple-300 border-purple-500/40 hover:bg-purple-600 hover:text-white'
-                  }`}
-                  title="درخواست مهمان"
-                >
-                  <Mic className="w-3.5 h-3.5" />
-                  <span>
-                    {guestRequestStatus === 'pending' ? 'در انتظار...' : guestRequestStatus === 'accepted' ? 'مهمان فعال ✅' : 'درخواست مهمان'}
-                  </span>
-                </button>
-
-                {/* Share Button */}
-                <button
-                  onClick={() => {
-                    navigator.clipboard?.writeText(window.location.href);
-                    showToast('🔗 لینک استریم با موفقیت کپی شد!');
-                  }}
-                  className="p-2 rounded-2xl bg-slate-950/85 border border-slate-800 text-cyan-300 hover:text-white"
-                  title="اشتراک‌گذاری"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </button>
-
-                {/* Report Button */}
-                <button
-                  onClick={() => {
-                    showToast('🚩 گزارش تخلف لایواستریم برای ادمین ارسال شد.');
-                  }}
-                  className="p-2 rounded-2xl bg-slate-950/85 border border-slate-800 text-rose-400 hover:bg-rose-950/80"
-                  title="گزارش استریم"
-                >
-                  <ShieldAlert className="w-4 h-4" />
-                </button>
-
-                {/* Exit Button */}
-                <button 
-                  onClick={handleLeaveStream} 
-                  className="p-2.5 rounded-2xl bg-slate-950/90 border border-slate-800 text-slate-300 hover:text-white hover:bg-rose-950/80 shadow-lg"
-                  title="خروج از استریم"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-            </div>
-
-            {/* ================= EXPANDABLE LIVE INFORMATION PANEL ================= */}
+              {/* ================= EXPANDABLE LIVE INFORMATION PANEL ================= */}
             {isLiveInfoPanelOpen && (
               <div className="absolute top-16 left-4 z-40 max-w-sm w-full bg-slate-950/95 border border-pink-500/40 rounded-3xl p-4 shadow-2xl backdrop-blur-xl animate-fadeIn space-y-3 dir-rtl text-right">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                   <h3 className="text-sm font-black text-white flex items-center gap-1.5">
                     <FileText className="w-4 h-4 text-pink-400" />
-                    <span>اطلاعات لایواستریم & قوانین</span>
+                    <span>{loc('اطلاعات لایواستریم & قوانین', 'Livestream info & rules')}</span>
                   </h3>
                   <button onClick={() => setIsLiveInfoPanelOpen(false)} className="text-slate-400 hover:text-white">
                     <X className="w-4 h-4" />
@@ -7561,46 +7025,46 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
                 <div className="space-y-2 text-xs text-slate-300 max-h-60 overflow-y-auto custom-scrollbar pr-1">
                   <div>
-                    <span className="text-[10px] text-pink-400 font-bold block">عنوان استریم:</span>
-                    <p className="font-bold text-white">{viewingStream.title || 'لایواستریم اختصاصی V.LIVE'}</p>
+                    <span className="text-[10px] text-pink-400 font-bold block">{loc('عنوان استریم:', 'Stream title:')}</span>
+                    <p className="font-bold text-white">{viewingStream.title || loc('لایواستریم اختصاصی V.LIVE', 'Exclusive V.LIVE live stream')}</p>
                   </div>
 
                   <div className="grid grid-cols-3 gap-1.5 text-[10px] text-center">
                     <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block">دسته‌بندی</span>
+                      <span className="text-slate-400 block">{loc('دسته‌بندی', 'categorization')}</span>
                       <span className="font-bold text-cyan-300">{viewingStream.category || 'General'}</span>
                     </div>
                     <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block">زبان</span>
-                      <span className="font-bold text-emerald-300">🇮🇷 فارسی</span>
+                      <span className="text-slate-400 block">{loc('زبان', 'language')}</span>
+                      <span className="font-bold text-emerald-300">{loc('🇮🇷 فارسی', '🇮🇷 Persian')}</span>
                     </div>
                     <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block">کشور</span>
-                      <span className="font-bold text-amber-300">ایران 🇮🇷</span>
+                      <span className="text-slate-400 block">{loc('کشور', 'the country')}</span>
+                      <span className="font-bold text-amber-300">{loc('ایران 🇮🇷', 'Iran 🇮🇷')}</span>
                     </div>
                   </div>
 
                   <div>
-                    <span className="text-[10px] text-pink-400 font-bold block">برچسب‌ها:</span>
+                    <span className="text-[10px] text-pink-400 font-bold block">{loc('برچسب‌ها:', 'Tags:')}</span>
                     <p className="text-[11px] font-mono text-cyan-300">{viewingStream.tags || '#vlive #stream #live'}</p>
                   </div>
 
                   <div>
-                    <span className="text-[10px] text-pink-400 font-bold block">توضیحات استریمر:</span>
+                    <span className="text-[10px] text-pink-400 font-bold block">{loc('توضیحات استریمر:', 'Streamer description:')}</span>
                     <p className="text-[11px] text-slate-300 leading-relaxed">
-                      {viewingStream.description || 'به پخش زنده خوش آمدید! برای حمایت می‌توانید هدیه ارسال کنید و در چت گفتگو نمایید.'}
+                      {viewingStream.description || loc('به پخش زنده خوش آمدید! برای حمایت می‌توانید هدیه ارسال کنید و در چت گفتگو نمایید.', 'Welcome to the live stream! To support, you can send a gift and talk in the chat.')}
                     </p>
                   </div>
 
                   <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1 text-[11px]">
                     <span className="font-black text-amber-400 flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>قوانین روم و چت زنده:</span>
+                      <span>{loc('قوانین روم و چت زنده:', 'Room rules and live chat:')}</span>
                     </span>
                     <ul className="list-disc list-inside text-slate-400 space-y-0.5 text-[10px]">
-                      <li>احترام متقابل به استریمر و سایر بینندگان الزامی است.</li>
-                      <li>ارسال لینک‌های مشکوک، تبلیغات و پیام‌های تکراری ممنوع است.</li>
-                      <li>هوش مصنوعی هوشمند تمام پیام‌ها را بررسی می‌کند.</li>
+                      <li>{loc('احترام متقابل به استریمر و سایر بینندگان الزامی است.', 'Mutual respect for the streamer and other viewers is required.')}</li>
+                      <li>{loc('ارسال لینک‌های مشکوک، تبلیغات و پیام‌های تکراری ممنوع است.', 'It is forbidden to send suspicious links, advertisements and duplicate messages.')}</li>
+                      <li>{loc('هوش مصنوعی هوشمند تمام پیام‌ها را بررسی می‌کند.', 'Intelligent artificial intelligence checks all messages.')}</li>
                     </ul>
                   </div>
                 </div>
@@ -7613,7 +7077,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                   <h3 className="text-sm font-black text-white flex items-center gap-1.5">
                     <Users className="w-4 h-4 text-purple-400" />
-                    <span>اعضای آنلاین روم ({(viewingStream.viewers || 3820).toLocaleString()})</span>
+                    <span>{loc('اعضای آنلاین روم (', 'Rome Online Members (')}{(viewingStream.viewers || 3820).toLocaleString()})</span>
                   </h3>
                   <button onClick={() => setIsLiveMembersOpen(false)} className="text-slate-400 hover:text-white">
                     <X className="w-4 h-4" />
@@ -7621,7 +7085,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 </div>
 
                 <div className="space-y-2 text-xs text-slate-300 max-h-60 overflow-y-auto custom-scrollbar">
-                  <span className="text-[10px] font-bold text-amber-400 block">👑 حامیان برتر (Top Supporters):</span>
+                  <span className="text-[10px] font-bold text-amber-400 block">{loc('👑 حامیان برتر (Top Supporters):', '👑 Top Supporters:')}</span>
                   <div className="space-y-1">
                     {[
                       { name: 'Arash_VIP', coins: '12,500 🪙', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80' },
@@ -7637,14 +7101,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     ))}
                   </div>
 
-                  <span className="text-[10px] font-bold text-cyan-400 block pt-1">🎙️ مهمانان فعال روم:</span>
+                  <span className="text-[10px] font-bold text-cyan-400 block pt-1">{loc('🎙️ مهمانان فعال روم:', '🎙️ active guests of Rome:')}</span>
                   {guestRequestStatus === 'accepted' ? (
                     <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-emerald-500/30">
-                      <span className="font-bold text-emerald-300 text-[11px]">شما (مهمان صوتی)</span>
-                      <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">متصل</span>
+                      <span className="font-bold text-emerald-300 text-[11px]">{loc('شما (مهمان صوتی)', 'you (audio guest)')}</span>
+                      <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">{loc('متصل', 'connected')}</span>
                     </div>
                   ) : (
-                    <p className="text-[10px] text-slate-500">هیچ مهمان فعالی روی استیج نیست.</p>
+                    <p className="text-[10px] text-slate-500">{loc('هیچ مهمان فعالی روی استیج نیست.', 'There are no active guests on stage.')}</p>
                   )}
                 </div>
               </div>
@@ -7658,7 +7122,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <div className="p-2 rounded-2xl bg-amber-500/15 border border-amber-500/30 backdrop-blur-md flex items-center justify-between text-xs text-amber-200 dir-rtl">
                   <div className="flex items-center gap-1.5 truncate">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
-                    <span className="font-black text-[10px] text-amber-400 shrink-0">سنجاق‌شده:</span>
+                    <span className="font-black text-[10px] text-amber-400 shrink-0">{loc('سنجاق‌شده:', 'Pinned:')}</span>
                     <span className="truncate text-[11px]">{streamPinnedMessages[0].text}</span>
                   </div>
                   <button onClick={() => setStreamPinnedMessages([])} className="text-slate-400 hover:text-white p-1">
@@ -7689,19 +7153,19 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         <button 
                           onClick={() => {
                             navigator.clipboard?.writeText(msg.text);
-                            showToast('متن پیام کپی شد');
+                            showToast(loc('متن پیام کپی شد', 'The text of the message was copied'));
                           }}
                           className="text-slate-400 hover:text-white"
-                          title="کپی"
+                          title={loc('کپی', 'copy')}
                         >
-                          کپی
+                          {loc('کپی', 'copy')}
                         </button>
                         <button 
                           onClick={() => {
-                            showToast(`ترجمه: ${msg.text}`);
+                            showToast(window.loc(`ترجمه: ${msg.text}`, `ترجمه: ${msg.text}`));
                           }}
                           className="text-cyan-400 hover:text-cyan-300 font-bold"
-                          title="ترجمه"
+                          title={loc('ترجمه', 'Translation')}
                         >
                           🌐
                         </button>
@@ -7718,34 +7182,34 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   className="px-3 py-1 rounded-xl bg-purple-950/80 border border-purple-500/40 text-purple-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-purple-900"
                 >
                   <ThumbsUp className="w-3 h-3 text-purple-300" />
-                  تشویق 👏
+                  {loc('تشویق 👏', 'Cheers 👏')}
                 </button>
                 <button 
                   onClick={() => playSoundEffect('cheer')}
                   className="px-3 py-1 rounded-xl bg-pink-950/80 border border-pink-500/40 text-pink-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-pink-900"
                 >
                   <Sparkles className="w-3 h-3 text-pink-300" />
-                  هورا 🎉
+                  {loc('هورا 🎉', 'Hooray 🎉')}
                 </button>
                 <button 
                   onClick={() => playSoundEffect('horn')}
                   className="px-3 py-1 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-cyan-900"
                 >
                   <Radio className="w-3 h-3 text-cyan-300" />
-                  بوق 🎺
+                  {loc('بوق 🎺', 'Horn 🎺')}
                 </button>
                 <button 
                   onClick={handleOpenLuckyBox}
                   className="px-3 py-1 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 text-slate-950 text-[10px] font-black shrink-0 flex items-center gap-1 shadow-md hover:brightness-110"
                 >
                   <Gift className="w-3 h-3 text-slate-950" />
-                  جعبه شانس (100c) 🎁
+                  {loc('جعبه شانس (100c) 🎁', 'Lucky box (100c) 🎁')}
                 </button>
                 <button 
                   onClick={() => setIsHideStreamChat(!isHideStreamChat)}
                   className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-[10px] font-bold shrink-0"
                 >
-                  {isHideStreamChat ? 'نمایش چت' : 'مخفی چت'}
+                  {isHideStreamChat ? loc('نمایش چت', 'Show chat') : loc('مخفی چت', 'hidden chat')}
                 </button>
               </div>
 
@@ -7769,7 +7233,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   value={streamChatInput}
                   onChange={e => setStreamChatInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSendStreamChat()}
-                  placeholder="ارسال پیام زنده در لایواستریم..."
+                  placeholder={loc('ارسال پیام زنده در لایواستریم...', 'Send a live message on Livestream...')}
                   className="flex-1 px-4 py-2.5 rounded-2xl bg-slate-950/90 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
                 />
                 
@@ -7783,7 +7247,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <button 
                   onClick={handleLikeStream}
                   className="p-2.5 rounded-2xl bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/40 active:scale-90 transition flex items-center gap-1"
-                  title="ارسال لایک زنده"
+                  title={loc('ارسال لایک زنده', 'Send live likes')}
                 >
                   <Heart className="w-5 h-5 fill-red-500 text-red-500 animate-pulse" />
                   <span className="text-[10px] font-black text-red-300">{streamLikes}</span>
@@ -7800,7 +7264,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         </div>
       )}
 
-      {/* ================= MODAL: EXIT LIVE RECOMMENDATIONS MODAL ================= */}
+      
+      
+
       {isExitLiveModalOpen && (
         <div className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn dir-rtl">
           <div className="card-3d w-full max-w-md bg-slate-900 rounded-3xl border border-pink-500/40 p-5 space-y-4 shadow-2xl text-right">
@@ -7811,8 +7277,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   <Video className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">خروج از پخش زنده</h3>
-                  <p className="text-[11px] text-slate-400">پیشنهاد استریم‌های مشابه و استریمرهای محبوب</p>
+                  <h3 className="text-base font-black text-white">{loc('خروج از پخش زنده', 'Exit live broadcast')}</h3>
+                  <p className="text-[11px] text-slate-400">{loc('پیشنهاد استریم‌های مشابه و استریمرهای محبوب', 'Suggest similar streams and popular streamers')}</p>
                 </div>
               </div>
               <button 
@@ -7828,7 +7294,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
             {/* Recently Viewed / Similar Lives List */}
             <div className="space-y-3">
-              <span className="text-xs font-black text-white block">🔥 لایواستریم‌های پیشنهادی مشابه:</span>
+              <span className="text-xs font-black text-white block">{loc('🔥 لایواستریم‌های پیشنهادی مشابه:', '🔥 Recommended similar livestreams:')}</span>
               <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
                 {(streamsList || []).slice(0, 4).map(st => (
                   <div
@@ -7854,7 +7320,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               }}
               className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
             >
-              بستن و بازگشت به لیست استریم‌ها
+              {loc('بستن و بازگشت به لیست استریم‌ها', 'Close and return to stream list')}
             </button>
 
           </div>
@@ -7966,18 +7432,18 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-rose-400 font-black text-xs">
                     <ShieldAlert className="w-4 h-4 text-rose-400" />
-                    <span>محیط اختصاصی بزرگسالان (VIP 18+ Adult Zone)</span>
+                    <span>{loc('محیط اختصاصی بزرگسالان (VIP 18+ Adult Zone)', 'VIP 18+ Adult Zone')}</span>
                   </div>
                   <span className="bg-rose-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
                     🔞 18+ ONLY
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-300 leading-relaxed dir-rtl">
-                  این لایواستریم فقط برای کاربران بالای ۱۸ سال و دارندگان اشتراک VIP نمایش داده می‌شود. لطفاً قوانین اخلاقی و قوانین بسترهای اجتماعی را رعایت کنید.
+                  {loc('این لایواستریم فقط برای کاربران بالای ۱۸ سال و دارندگان اشتراک VIP نمایش داده می‌شود. لطفاً قوانین اخلاقی و قوانین بسترهای اجتماعی را رعایت کنید.', 'This live stream is only shown to users over 18 years old and VIP subscription holders. Please follow the rules of ethics and rules of social platforms.')}
                 </p>
 
                 <div className="flex items-center justify-between pt-1 border-t border-rose-500/20">
-                  <span className="text-xs font-bold text-slate-300">قیمت ورود هر دقیقه (سکه):</span>
+                  <span className="text-xs font-bold text-slate-300">{loc('قیمت ورود هر دقیقه (سکه):', 'Entry price per minute (coins):')}</span>
                   <div className="flex items-center gap-2">
                     {[5, 10, 20, 50].map(rate => (
                       <button
@@ -8002,7 +7468,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     onChange={(e) => setHostAdultConsent(e.target.checked)}
                     className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500 bg-slate-900 border-slate-700"
                   />
-                  <span className="text-xs text-slate-300 font-semibold">تأیید می‌کنم که محتوای این لایو ویژه بزرگسالان است</span>
+                  <span className="text-xs text-slate-300 font-semibold">{loc('تأیید می‌کنم که محتوای این لایو ویژه بزرگسالان است', 'I confirm that the content of this live is intended for adults')}</span>
                 </label>
               </div>
             )}
@@ -8013,9 +7479,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <div className="flex items-center justify-between text-xs font-bold text-purple-300">
                   <span className="flex items-center gap-1.5">
                     <Lock className="w-4 h-4 text-purple-400" />
-                    <span>تنظیم قیمت لایواستریم اختصاصی / خصوصی:</span>
+                    <span>{loc('تنظیم قیمت لایواستریم اختصاصی / خصوصی:', 'Setting the price of exclusive / private livestream:')}</span>
                   </span>
-                  <span className="text-amber-400 font-black">{hostCoinRate} 🪙 / دقیقه</span>
+                  <span className="text-amber-400 font-black">{hostCoinRate} {loc('🪙 / دقیقه', '🪙 / minute')}</span>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   {[10, 25, 50, 100].map(rate => (
@@ -8028,7 +7494,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                           : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
                       }`}
                     >
-                      {rate} 🪙 / دقیقه
+                      {rate} {loc('🪙 / دقیقه', '🪙 / minute')}
                     </button>
                   ))}
                 </div>
@@ -8047,10 +7513,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   onChange={(e) => setHostLiveTitle(e.target.value)}
                   placeholder={
                     hostLiveType === 'adult'
-                      ? 'عنوان جذاب لایو بزرگسالان (مثلاً: دورهمی VIP امشب 🔞)...'
+                      ? loc('عنوان جذاب لایو بزرگسالان (مثلاً: دورهمی VIP امشب 🔞)...', 'Attractive title of adult live (for example: VIP session tonight 🔞)...')
                       : hostLiveType === 'private'
-                      ? 'عنوان لایواستریم اختصاصی و خصوصی...'
-                      : 'عنوان جذاب برای لایواستریم امشب...'
+                      ? loc('عنوان لایواستریم اختصاصی و خصوصی...', 'Exclusive and private live stream title...')
+                      : loc('عنوان جذاب برای لایواستریم امشب...', 'Interesting title for tonight\'s live stream...')
                   }
                   className="w-full p-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-pink-500 text-sm font-medium"
                 />
@@ -8090,7 +7556,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     }`}
                   >
                     <Camera className="w-3.5 h-3.5" />
-                    <span>{isCamEnabled ? 'دوربین روشن' : 'دوربین خاموش'}</span>
+                    <span>{isCamEnabled ? loc('دوربین روشن', 'Camera on') : loc('دوربین خاموش', 'Camera off')}</span>
                   </button>
 
                   <button
@@ -8100,7 +7566,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     }`}
                   >
                     {isMicEnabled ? <Mic className="w-3.5 h-3.5" /> : <MicOff className="w-3.5 h-3.5" />}
-                    <span>{isMicEnabled ? 'میکروفون فعال' : 'میکروفون قطع'}</span>
+                    <span>{isMicEnabled ? loc('میکروفون فعال', 'Active microphone') : loc('میکروفون قطع', 'Microphone cut off')}</span>
                   </button>
                 </div>
               </div>
@@ -8125,7 +7591,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 ) : (
                   <div className="flex flex-col items-center gap-2 text-slate-500">
                     <Video className="w-8 h-8 opacity-40" />
-                    <span className="text-xs">تصویر دوربین غیرفعال است</span>
+                    <span className="text-xs">{loc('تصویر دوربین غیرفعال است', 'Camera image is disabled')}</span>
                   </div>
                 )}
               </div>
@@ -8136,17 +7602,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <button 
                 onClick={() => {
                   if (hostLiveType === 'adult' && !hostAdultConsent) {
-                    showToast('⚠️ لطفاً قوانین و تاییدیه محتوای 18+ را علامت بزنید');
+                    showToast(loc('⚠️ لطفاً قوانین و تاییدیه محتوای 18+ را علامت بزنید', '⚠️ Please tick 18+ content rules and approval'));
                     return;
                   }
                   
                   const finalTitle = hostLiveTitle.trim() || (
                     hostLiveType === 'adult' 
-                      ? `🔞 لایو بزرگسالان @${currentUsername || userName}`
-                      : hostLiveType === 'private'
-                      ? `🔒 لایواستریم اختصاصی @${currentUsername || userName}`
-                      : `🎥 لایواستریم زنده @${currentUsername || userName}`
-                  );
+                      ? window.loc(`🔞 لایو بزرگسالان @${currentUsername || userName}`, `🔞 لایو بزرگسالان @${currentUsername || userName}`);
 
                   showToast(loc('در حال آماده‌سازی و شروع لایواستریم...', 'Starting Live Broadcast...'));
                   setTimeout(() => {
@@ -8181,10 +7643,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <Sparkles className="w-5 h-5 animate-spin" />
                 <span>
                   {hostLiveType === 'adult' 
-                    ? '🚀 شروع لایو بزرگسالان (VIP 18+)' 
+                    ? loc('🚀 شروع لایو بزرگسالان (VIP 18+)', '🚀 adult live (VIP 18+) start') 
                     : hostLiveType === 'private'
-                    ? '🔒 شروع لایواستریم اختصاصی'
-                    : '🚀 شروع و پخش زنده استریم'}
+                    ? loc('🔒 شروع لایواستریم اختصاصی', '🔒 Start of exclusive livestream')
+                    : loc('🚀 شروع و پخش زنده استریم', '🚀 Start and play live stream')}
                 </span>
               </button>
 
@@ -8908,7 +8370,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                           setMatchState('connected');
                           setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));
                           setMatchCallSeconds(30);
-                          showToast(`🎉 مچ موفق با ${randomPartner.name || randomPartner.username}!`);
+                          showToast(window.loc(`🎉 مچ موفق با ${randomPartner.name || randomPartner.username}!`, `🎉 مچ موفق با ${randomPartner.name || randomPartner.username}!`));
                         }, 2500);
                       }}
                       className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition"
@@ -9098,8 +8560,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">قوانین و شرایط کامل Match</h3>
-                  <p className="text-[11px] text-slate-400">راهنمای کامل سیستم مچ هوشمند V.LIVE</p>
+                  <h3 className="text-base font-black text-white">{loc('قوانین و شرایط کامل Match', 'Full Match Terms and Conditions')}</h3>
+                  <p className="text-[11px] text-slate-400">{loc('راهنمای کامل سیستم مچ هوشمند V.LIVE', 'A complete guide to the V.LIVE smart wrist system')}</p>
                 </div>
               </div>
               <button
@@ -9114,40 +8576,40 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                 <h4 className="font-black text-amber-400 flex items-center gap-1.5">
                   <span>🎁</span>
-                  <span>۱. سهمیه ۳ تماس رایگان روزانه</span>
+                  <span>{loc('۱. سهمیه ۳ تماس رایگان روزانه', '1. Quota of 3 free calls per day')}</span>
                 </h4>
                 <p className="text-[11px] text-slate-400">
-                  هر کاربر در روز دارای ۳ تماس رایگان است. در صورت عدم استفاده در طول روز، این سهمیه ذخیره نخواهد شد و پایان هر روز بازنشانی می‌شود.
+                  {loc('هر کاربر در روز دارای ۳ تماس رایگان است. در صورت عدم استفاده در طول روز، این سهمیه ذخیره نخواهد شد و پایان هر روز بازنشانی می‌شود.', 'Each user has 3 free calls per day. If not used during the day, this quota will not be saved and will be reset at the end of each day.')}
                 </p>
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                 <h4 className="font-black text-cyan-400 flex items-center gap-1.5">
                   <span>⏱️</span>
-                  <span>۲. زمان تماس رایگان (۳۰ ثانیه)</span>
+                  <span>{loc('۲. زمان تماس رایگان (۳۰ ثانیه)', '2. Free call time (30 seconds)')}</span>
                 </h4>
                 <p className="text-[11px] text-slate-400">
-                  مدت زمان هر تماس رایگان مچینگ حداکثر ۳۰ ثانیه می‌باشد. پس از ۳۰ ثانیه تماس به‌صورت خودکار خاتمه می‌یابد.
+                  {loc('مدت زمان هر تماس رایگان مچینگ حداکثر ۳۰ ثانیه می‌باشد. پس از ۳۰ ثانیه تماس به‌صورت خودکار خاتمه می‌یابد.', 'The duration of each free matching call is a maximum of 30 seconds. After 30 seconds, the call is automatically terminated.')}
                 </p>
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                 <h4 className="font-black text-pink-400 flex items-center gap-1.5">
                   <span>⭐</span>
-                  <span>۳. استثنای استریمرهای تایید شده</span>
+                  <span>{loc('۳. استثنای استریمرهای تایید شده', '3. Except for verified streamers')}</span>
                 </h4>
                 <p className="text-[11px] text-slate-400">
-                  کاربران تایید شده استریمر شامل محدودیت تماس رایگان استاندارد نبوده و تابع قوانین اختصاصی استریمرها می‌باشند.
+                  {loc('کاربران تایید شده استریمر شامل محدودیت تماس رایگان استاندارد نبوده و تابع قوانین اختصاصی استریمرها می‌باشند.', 'Streamer verified users are not subject to the standard free call limit and are subject to the streamer\'s own rules.')}
                 </p>
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                 <h4 className="font-black text-emerald-400 flex items-center gap-1.5">
                   <span>💎</span>
-                  <span>۴. قوانین تماس تصویری با استریمرها</span>
+                  <span>{loc('۴. قوانین تماس تصویری با استریمرها', '4. Video call rules with streamers')}</span>
                 </h4>
                 <p className="text-[11px] text-slate-400">
-                  در تماس با استریمر، ۲۰ ثانیه اول کاملاً رایگان است. بعد از ۲۰ ثانیه، سکه به‌صورت دقیقه‌ای از موجودی کاربر مقابل کسر می‌شود. در صورت کمبود موجودی، تماس خودکار قطع خواهد شد.
+                  {loc('در تماس با استریمر، ۲۰ ثانیه اول کاملاً رایگان است. بعد از ۲۰ ثانیه، سکه به‌صورت دقیقه‌ای از موجودی کاربر مقابل کسر می‌شود. در صورت کمبود موجودی، تماس خودکار قطع خواهد شد.', 'When contacting the streamer, the first 20 seconds are completely free. After 20 seconds, the coin will be deducted from the opposite user\'s balance. In case of lack of stock, the automatic call will be disconnected.')}
                 </p>
               </div>
             </div>
@@ -9156,7 +8618,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               onClick={() => setIsMatchRulesModalOpen(false)}
               className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-102 active:scale-95 transition"
             >
-              متوجه شدم و تایید می‌کنم
+              {loc('متوجه شدم و تایید می‌کنم', 'I understand and confirm')}
             </button>
           </div>
         </div>

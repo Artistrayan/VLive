@@ -27,13 +27,13 @@ const DEFAULT_ECONOMY_CONFIG = {
 
   // Gift Catalog (Coin Price -> Streamer Earns Diamonds)
   giftCatalog: [
-    { id: 'g_rose', name: 'گل رز 🌹', icon: '🌹', coins: 10, diamonds: 7, category: 'Basic', popular: true, animation: 'sparkle' },
-    { id: 'g_heart', name: 'قلب درخشان 💖', icon: '💖', coins: 50, diamonds: 38, category: 'Popular', popular: true, animation: 'heart' },
-    { id: 'g_fireworks', name: 'آتش‌بازی 🎆', icon: '🎆', coins: 150, diamonds: 115, category: 'Special', popular: false, animation: 'fireworks' },
-    { id: 'g_crown', name: 'تاج VIP 👑', icon: '👑', coins: 500, diamonds: 380, category: 'VIP', popular: true, animation: 'crown' },
-    { id: 'g_supercar', name: 'سوپر اسپرت 🏎️', icon: '🏎️', coins: 2500, diamonds: 1900, category: 'Super', popular: true, animation: 'car' },
-    { id: 'g_yacht', name: 'کشتی تفریحی 🛥️', icon: '🛥️', coins: 5000, diamonds: 3800, category: 'Luxury', popular: false, animation: 'yacht' },
-    { id: 'g_castle', name: 'قصر رویایی 🏰', icon: '🏰', coins: 10000, diamonds: 7600, category: 'Legendary', popular: false, animation: 'castle' }
+    { id: 'g_rose', name: window.loc('گل رز 🌹', 'Rose 🌹'), icon: '🌹', coins: 10, diamonds: 7, category: 'Basic', popular: true, animation: 'sparkle' },
+    { id: 'g_heart', name: window.loc('قلب درخشان 💖', 'Shining heart 💖'), icon: '💖', coins: 50, diamonds: 38, category: 'Popular', popular: true, animation: 'heart' },
+    { id: 'g_fireworks', name: window.loc('آتش‌بازی 🎆', 'Fireworks 🎆'), icon: '🎆', coins: 150, diamonds: 115, category: 'Special', popular: false, animation: 'fireworks' },
+    { id: 'g_crown', name: window.loc('تاج VIP 👑', 'VIP Crown 👑'), icon: '👑', coins: 500, diamonds: 380, category: 'VIP', popular: true, animation: 'crown' },
+    { id: 'g_supercar', name: window.loc('سوپر اسپرت 🏎️', 'Super sports 🏎️'), icon: '🏎️', coins: 2500, diamonds: 1900, category: 'Super', popular: true, animation: 'car' },
+    { id: 'g_yacht', name: window.loc('کشتی تفریحی 🛥️', 'Cruise ship 🛥️'), icon: '🛥️', coins: 5000, diamonds: 3800, category: 'Luxury', popular: false, animation: 'yacht' },
+    { id: 'g_castle', name: window.loc('قصر رویایی 🏰', 'Dream Palace 🏰'), icon: '🏰', coins: 10000, diamonds: 7600, category: 'Legendary', popular: false, animation: 'castle' }
   ],
 
   // VIP Membership Subscription Pricing (in Coins)
@@ -122,7 +122,7 @@ class EconomyService {
         coinAmount: 500,
         diamondAmount: 380,
         commission: 120,
-        item: 'تاج VIP 👑',
+        item: window.loc('تاج VIP 👑', 'VIP Crown 👑'),
         status: 'Completed',
         createdAt: new Date(Date.now() - 3600000).toISOString()
       },
@@ -132,7 +132,7 @@ class EconomyService {
         userId: 'U-102',
         username: 'Omid_Tehran',
         coinAmount: 200,
-        item: 'اشتراک VIP ماهانه',
+        item: window.loc('اشتراک VIP ماهانه', 'Monthly VIP subscription'),
         status: 'Completed',
         createdAt: new Date(Date.now() - 7200000).toISOString()
       }
@@ -277,8 +277,8 @@ class EconomyService {
           alerts.push({
             severity: 'HIGH',
             type: 'POSSIBLE_COIN_FARMING',
-            description: `حجم بالای ارسال هدیه بین کاربر ${tx.username} و استریمر ${tx.streamerName} شناسایی شد (${pairCounts[key]} بار در ۱ ساعت اخیر).`,
-            suggestedAction: 'بررسی اکانت‌ها برای جلوگیری از پولشویی'
+            description: window.loc(`حجم بالای ارسال هدیه بین کاربر ${tx.username} و استریمر ${tx.streamerName} شناسایی شد (${pairCounts[key]} بار در ۱ ساعت اخیر).`, `حجم بالای ارسال هدیه بین کاربر ${tx.username} و استریمر ${tx.streamerName} شناسایی شد (${pairCounts[key]} بار در ۱ ساعت اخیر).`)اعت اخیر).`, `حجم بالای ارسال هدیه بین کاربر ${tx.username} و استریمر ${tx.streamerName} شناسایی شد (${pairCounts[key]} بار در ۱ ساعت اخیر).`)اعت اخیر).`, `حجم بالای ارسال هدیه بین کاربر ${tx.username} و استریمر ${tx.streamerName} شناسایی شد (${pairCounts[key]} بار در ۱ ساعت اخیر).`),
+            suggestedAction: window.loc('بررسی اکانت‌ها برای جلوگیری از پولشویی', 'Checking accounts to prevent money laundering')
           });
         }
       }
@@ -290,8 +290,8 @@ class EconomyService {
         alerts.push({
           severity: 'MEDIUM',
           type: 'HIGH_VALUE_TRANSACTION',
-          description: `تراکنش با ارزش بالای ${tx.coinAmount.toLocaleString()} سکه توسط ${tx.username} ثبت شد.`,
-          suggestedAction: 'تایید اتوماتیک توسط سیستم هوش مصنوعی'
+          description: window.loc(`تراکنش با ارزش بالای ${tx.coinAmount.toLocaleString()} سکه توسط ${tx.username} ثبت شد.`, `تراکنش با ارزش بالای ${tx.coinAmount.toLocaleString()} سکه توسط ${tx.username} ثبت شد.`)e} ثبت شد.`, `تراکنش با ارزش بالای ${tx.coinAmount.toLocaleString()} سکه توسط ${tx.username} ثبت شد.`),
+          suggestedAction: window.loc('تایید اتوماتیک توسط سیستم هوش مصنوعی', 'Automatic confirmation by artificial intelligence system')
         });
       }
     });
@@ -300,8 +300,8 @@ class EconomyService {
       alerts.push({
         severity: 'LOW',
         type: 'HEALTHY_ECONOMY',
-        description: 'تمام تراکنش‌های اخیر چرخه سکه و الماس طبیعی و بدون ریسک مالی می‌باشند ✅',
-        suggestedAction: 'ادامه نظارت خودکار'
+        description: window.loc('تمام تراکنش‌های اخیر چرخه سکه و الماس طبیعی و بدون ریسک مالی می‌باشند ✅', 'All recent transactions of the coin and diamond cycle are natural and without financial risk'),
+        suggestedAction: window.loc('ادامه نظارت خودکار', 'Continue automatic monitoring')
       });
     }
 
@@ -313,24 +313,24 @@ class EconomyService {
     const config = this.config;
     return [
       {
-        title: '💡 پیشنهاد بهینه‌سازی بسته ۵۰۰۰ سکه',
-        metric: 'تراکنش‌های اخیر',
-        impact: '+۱۸٪ افزایش درآمد پلتفرم',
-        recommendation: `پیشنهاد می‌شود بونوس بسته ۵۰۰۰ سکه از ${config.coinPackages.find(p => p.coins === 5000)?.bonusPercent || 20}% به ۲۲٪ افزایش یابد تا نرخ تبدیل کاربران VIP به ۵۰۰۰ سکه‌ای بالاتر رود.`,
+        title: window.loc('💡 پیشنهاد بهینه‌سازی بسته ۵۰۰۰ سکه', '💡 Suggestion to optimize the package of 5000 coins'),
+        metric: window.loc('تراکنش‌های اخیر', 'Recent transactions'),
+        impact: window.loc('+۱۸٪ افزایش درآمد پلتفرم', '+18% increase in platform revenue'),
+        recommendation: window.loc(`پیشنهاد می‌شود بونوس بسته ۵۰۰۰ سکه از ${config.coinPackages.find(p => p.coins === 5000)?.bonusPercent || 20}% به ۲۲٪ افزایش یابد تا نرخ تبدیل کاربران VIP به ۵۰۰۰ سکه‌ای بالاتر رود.`, `پیشنهاد می‌شود بونوس بسته ۵۰۰۰ سکه از ${config.coinPackages.find(p => p.coins === 5000)?.bonusPercent || 20}% به ۲۲٪ افزایش یابد تا نرخ تبدیل کاربران VIP به ۵۰۰۰ سکه‌ای بالاتر رود.`),
         category: 'Coin Packages'
       },
       {
-        title: '📈 تحلیل محبوبیت هدیه تاج VIP',
-        metric: 'محبوبیت ۸۴٪',
-        impact: '+۲۵٪ رضایت استریمرها',
-        recommendation: 'هدیه تاج VIP بیشترین محبوبیت را در لایوهای پربیننده دارد. ایجاد یک هدیه جدید "فرشته درخشان 👼" با قیمت ۱۵۰۰ سکه بازدهی هدیه‌دهی را دوچندان می‌کند.',
+        title: window.loc('📈 تحلیل محبوبیت هدیه تاج VIP', '📈 Popularity analysis of Taj VIP gift'),
+        metric: window.loc('محبوبیت ۸۴٪', 'Popularity 84%'),
+        impact: window.loc('+۲۵٪ رضایت استریمرها', '+25% satisfaction of streamers'),
+        recommendation: window.loc('هدیه تاج VIP بیشترین محبوبیت را در لایوهای پربیننده دارد. ایجاد یک هدیه جدید "فرشته درخشان 👼" با قیمت ۱۵۰۰ سکه بازدهی هدیه‌دهی را دوچندان می‌کند.', 'Taj VIP gift is the most popular in the most watched live. Creating a new gift \"Shining Angel 👼\" at the price of 1500 coins doubles the yield of gifting.'),
         category: 'Gifts'
       },
       {
-        title: '👑 کمپین تخفیف اشتراک فصلی VIP',
-        metric: 'فروش VIP',
-        impact: '+۳۰٪ جذب VIP ۳ ماهه',
-        recommendation: `قیمت ۳ ماهه VIP هم‌اکنون ${config.vipPricing.threeMonths} سکه است. اعمال تخفیف ۱۰ درصدی برای مشترکین جدید در انتهای هفته پیشنهاد می‌شود.`,
+        title: window.loc('👑 کمپین تخفیف اشتراک فصلی VIP', '👑 Seasonal VIP subscription discount campaign'),
+        metric: window.loc('فروش VIP', 'VIP sales'),
+        impact: window.loc('+۳۰٪ جذب VIP ۳ ماهه', '+30% 3-month VIP recruitment'),
+        recommendation: window.loc(`قیمت ۳ ماهه VIP هم‌اکنون ${config.vipPricing.threeMonths} سکه است. اعمال تخفیف ۱۰ درصدی برای مشترکین جدید در انتهای هفته پیشنهاد می‌شود.`, `قیمت ۳ ماهه VIP هم‌اکنون ${config.vipPricing.threeMonths} سکه است. اعمال تخفیف ۱۰ درصدی برای مشترکین جدید در انتهای هفته پیشنهاد می‌شود.`),
         category: 'VIP Pricing'
       }
     ];

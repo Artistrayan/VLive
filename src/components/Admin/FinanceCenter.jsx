@@ -94,19 +94,19 @@ export default function FinanceCenter({
         ]
       });
       addAdminAuditLog('AI Finance Assistant: Executed full revenue & fraud analysis scan');
-      showToast('🤖 آنالیز هوش مصنوعی مالی با موفقیت به پایان رسید');
+      showToast(window.loc('🤖 آنالیز هوش مصنوعی مالی با موفقیت به پایان رسید', '🤖 Financial AI analysis completed successfully'));
     }, 1200);
   };
 
   // Adjust User Wallet
   const handleWalletAdjustment = (isCredit) => {
     if (!selectedUserForAdjustment || !adjustmentAmount) {
-      showToast('❌ لطفاً کاربر و مبلغ را مشخص کنید');
+      showToast(window.loc('❌ لطفاً کاربر و مبلغ را مشخص کنید', '❌ Please specify the user and the amount'));
       return;
     }
     const val = parseInt(adjustmentAmount, 10);
     if (isNaN(val) || val <= 0) {
-      showToast('❌ مبلغ واردشده نامعتبر است');
+      showToast(window.loc('❌ مبلغ واردشده نامعتبر است', '❌ The entered amount is invalid'));
       return;
     }
 
@@ -120,7 +120,7 @@ export default function FinanceCenter({
     }));
 
     addAdminAuditLog(`Wallet ${isCredit ? 'Credit' : 'Debit'}: ${isCredit ? '+' : '-'}${val} coins for ${selectedUserForAdjustment.username}. Reason: ${adjustmentReason || 'Admin Manual Action'}`);
-    showToast(`✅ کیف پول ${selectedUserForAdjustment.username} با موفقیت ${isCredit ? 'شارژ' : 'کسر'} شد`);
+    showToast(window.loc(`✅ کیف پول ${selectedUserForAdjustment.username} با موفقیت ${isCredit ? window.loc('شارژ', 'charging') : window.loc('کسر', 'deduction')} شد`, `✅ کیف پول ${selectedUserForAdjustment.username} با موفقیت ${isCredit ? window.loc('شارژ', 'charging') : window.loc('کسر', 'deduction')} شد`));
     setSelectedUserForAdjustment(null);
     setAdjustmentAmount('');
     setAdjustmentReason('');
@@ -137,13 +137,13 @@ export default function FinanceCenter({
           </div>
           <div>
             <h2 className="text-lg font-black text-white flex items-center gap-2">
-              <span>مرکز مدیریت مالی و حسابداری (Finance Center)</span>
+              <span>{window.loc('مرکز مدیریت مالی و حسابداری (Finance Center)', 'Financial Management and Accounting Center (Finance Center)')}</span>
               <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-mono px-2 py-0.5 rounded-full border border-emerald-500/30">
                 CENTRALIZED
               </span>
             </h2>
             <p className="text-xs text-slate-400">
-              مدیریت درآمد، کارمزد ۲۹٪، تسویه‌حساب‌ها، حسابداری دوبل، آنالیز هوش مصنوعی و پیشگیری از تخلف
+              {window.loc('مدیریت درآمد، کارمزد ۲۹٪، تسویه‌حساب‌ها، حسابداری دوبل، آنالیز هوش مصنوعی و پیشگیری از تخلف', 'Revenue management, 29% commission, settlements, double-entry accounting, artificial intelligence analysis and infringement prevention')}
             </p>
           </div>
         </div>
@@ -153,7 +153,7 @@ export default function FinanceCenter({
           <button
             onClick={() => {
               setIsPayoutFrozen(!isPayoutFrozen);
-              addAdminAuditLog(isPayoutFrozen ? 'توقیف کلیه واریزهای مالی لغو شد' : 'توقیف فوری کلیه واریزهای مالی فعال شد');
+              addAdminAuditLog(isPayoutFrozen ? window.loc('توقیف کلیه واریزهای مالی لغو شد', 'The seizure of all financial deposits was canceled') : window.loc('توقیف فوری کلیه واریزهای مالی فعال شد', 'The immediate seizure of all financial deposits was activated'));
             }}
             className={`px-4 py-2 rounded-2xl font-black text-xs flex items-center gap-2 border shadow-lg transition ${
               isPayoutFrozen 
@@ -162,7 +162,7 @@ export default function FinanceCenter({
             }`}
           >
             {isPayoutFrozen ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4 text-emerald-400" />}
-            <span>{isPayoutFrozen ? '⛔ توقیف کلیه واریزها (Payout Frozen)' : '⚡ توقیف فوری واریزها (Freeze Payouts)'}</span>
+            <span>{isPayoutFrozen ? window.loc('⛔ توقیف کلیه واریزها (Payout Frozen)', '⛔ Seizure of all deposits (Payout Frozen)') : window.loc('⚡ توقیف فوری واریزها (Freeze Payouts)', '⚡ Freeze Payouts')}</span>
           </button>
         </div>
       </div>
@@ -170,19 +170,19 @@ export default function FinanceCenter({
       {/* ================= SIDEBAR / TAB NAVIGATION BAR ================= */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar border-b border-slate-800">
         {[
-          { id: 'dashboard', label: '📊 داشبورد مالی', icon: BarChart3 },
-          { id: 'economy_pricing', label: '🪙 بانک مرکزی & قیمت‌گذاری', icon: Coins },
-          { id: 'revenue', label: '📈 درآمد و کارمزد', icon: TrendingUp },
-          { id: 'transactions', label: '💳 تراکنش‌ها', icon: Receipt },
-          { id: 'wallets', label: '👛 کیف پول‌ها', icon: Wallet },
-          { id: 'gifts', label: '🎁 درآمد هدایا', icon: Gift },
-          { id: 'subscriptions', label: '👑 اشتراک VIP', icon: Crown },
-          { id: 'withdrawals', label: '💸 درخواست‌های تسویه', icon: ArrowUpRight, badge: pendingWithdrawsCount },
-          { id: 'accounting', label: '🏛 حسابداری و دفاتر', icon: Building },
-          { id: 'reports', label: '📑 گزارش‌های مالی', icon: FileText },
-          { id: 'ai_finance', label: '🤖 هوش مصنوعی مالی', icon: Sparkles },
-          { id: 'audit_logs', label: '📜 لاگ‌های مالی', icon: ShieldCheck },
-          { id: 'settings', label: '⚙️ تنظیمات مالی', icon: Sliders }
+          { id: 'dashboard', label: window.loc('📊 داشبورد مالی', '📊 Financial dashboard'), icon: BarChart3 },
+          { id: 'economy_pricing', label: window.loc('🪙 بانک مرکزی & قیمت‌گذاری', '🪙 Central Bank & Pricing'), icon: Coins },
+          { id: 'revenue', label: window.loc('📈 درآمد و کارمزد', '📈 Income and fees'), icon: TrendingUp },
+          { id: 'transactions', label: window.loc('💳 تراکنش‌ها', '💳 Transactions'), icon: Receipt },
+          { id: 'wallets', label: window.loc('👛 کیف پول‌ها', 'Wallets'), icon: Wallet },
+          { id: 'gifts', label: window.loc('🎁 درآمد هدایا', '🎁 Income from gifts'), icon: Gift },
+          { id: 'subscriptions', label: window.loc('👑 اشتراک VIP', '👑 VIP subscription'), icon: Crown },
+          { id: 'withdrawals', label: window.loc('💸 درخواست‌های تسویه', '💸 Settlement requests'), icon: ArrowUpRight, badge: pendingWithdrawsCount },
+          { id: 'accounting', label: window.loc('🏛 حسابداری و دفاتر', '🏛 Accounting and offices'), icon: Building },
+          { id: 'reports', label: window.loc('📑 گزارش‌های مالی', '📑 Financial reports'), icon: FileText },
+          { id: 'ai_finance', label: window.loc('🤖 هوش مصنوعی مالی', '🤖 Financial artificial intelligence'), icon: Sparkles },
+          { id: 'audit_logs', label: window.loc('📜 لاگ‌های مالی', 'Financial logs'), icon: ShieldCheck },
+          { id: 'settings', label: window.loc('⚙️ تنظیمات مالی', '⚙️ Financial settings'), icon: Sliders }
         ].map(t => {
           const IconComponent = t.icon;
           const isActive = financeSubTab === t.id;
@@ -214,33 +214,33 @@ export default function FinanceCenter({
           {/* Revenue Overview Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-1 shadow-lg">
-              <span className="text-[10px] text-slate-400 font-bold uppercase">درآمد امروز</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase">{window.loc('درآمد امروز', 'Today\'s income')}</span>
               <p className="text-2xl font-black text-emerald-400 font-mono">$4,850.00 USDT</p>
               <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold">
                 <ArrowUpRight className="w-3 h-3" />
-                <span>+14.2% نسبت به روز گذشته</span>
+                <span>{window.loc('+14.2% نسبت به روز گذشته', '+14.2% compared to the previous day')}</span>
               </div>
             </div>
 
             <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-1 shadow-lg">
-              <span className="text-[10px] text-slate-400 font-bold uppercase">درآمد این ماه</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase">{window.loc('درآمد این ماه', 'This month\'s income')}</span>
               <p className="text-2xl font-black text-cyan-400 font-mono">$184,500.00 USDT</p>
               <div className="flex items-center gap-1 text-[10px] text-cyan-400 font-bold">
                 <ArrowUpRight className="w-3 h-3" />
-                <span>۹۸٪ از تارگت مالی ماهانه</span>
+                <span>{window.loc('۹۸٪ از تارگت مالی ماهانه', '98% of the monthly financial target')}</span>
               </div>
             </div>
 
             <div className="p-4 rounded-3xl bg-gradient-to-br from-amber-950/60 to-slate-900 border border-amber-500/40 space-y-1 shadow-lg">
-              <span className="text-[10px] text-amber-300 font-bold uppercase">سود خالص پلتفرم ({adminPlatformFee}٪)</span>
+              <span className="text-[10px] text-amber-300 font-bold uppercase">{window.loc('سود خالص پلتفرم (', 'platform net profit (')}{adminPlatformFee}{window.loc('٪)', '%)')}</span>
               <p className="text-2xl font-black text-amber-300 font-mono">${platformCommissionUsdt.toLocaleString()}.00 USDT</p>
-              <span className="text-[10px] text-amber-200 block">کسر لحظه‌ای از تمامی گیفت‌های لایو</span>
+              <span className="text-[10px] text-amber-200 block">{window.loc('کسر لحظه‌ای از تمامی گیفت‌های لایو', 'Instant deduction from all live gifts')}</span>
             </div>
 
             <div className="p-4 rounded-3xl bg-gradient-to-br from-rose-950/60 to-slate-900 border border-rose-500/40 space-y-1 shadow-lg">
-              <span className="text-[10px] text-rose-300 font-bold uppercase">درخواست‌های تسویه معلق</span>
+              <span className="text-[10px] text-rose-300 font-bold uppercase">{window.loc('درخواست‌های تسویه معلق', 'Pending settlement requests')}</span>
               <p className="text-2xl font-black text-rose-400 font-mono">${pendingWithdrawsAmount.toLocaleString()}.00 USDT</p>
-              <span className="text-[10px] text-slate-400 block">{pendingWithdrawsCount} درخواست در صف بررسی ادمین</span>
+              <span className="text-[10px] text-slate-400 block">{pendingWithdrawsCount} {window.loc('درخواست در صف بررسی ادمین', 'Application queued for admin review')}</span>
             </div>
           </div>
 
@@ -250,9 +250,9 @@ export default function FinanceCenter({
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="font-bold text-white text-sm flex items-center gap-2">
                   <BarChart3 className="w-4 h-4 text-emerald-400" />
-                  <span>نمودار رشد درآمد و سهم پلتفرم (Visual Revenue Breakdown)</span>
+                  <span>{window.loc('نمودار رشد درآمد و سهم پلتفرم (Visual Revenue Breakdown)', 'Chart of revenue growth and platform share (Visual Revenue Breakdown)')}</span>
                 </h3>
-                <span className="text-xs text-slate-400 font-mono">سال ۲۰۲۶</span>
+                <span className="text-xs text-slate-400 font-mono">{window.loc('سال ۲۰۲۶', 'Year 2026')}</span>
               </div>
 
               {/* Visual Simulated Bar Chart */}
@@ -279,11 +279,11 @@ export default function FinanceCenter({
               <div className="flex items-center justify-center gap-6 text-[11px] pt-2 border-t border-slate-800/80">
                 <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
                   <span className="w-3 h-3 rounded-full bg-emerald-500" />
-                  <span>کل درآمد پلتفرم</span>
+                  <span>{window.loc('کل درآمد پلتفرم', 'Total platform revenue')}</span>
                 </span>
                 <span className="flex items-center gap-1.5 text-amber-300 font-bold">
                   <span className="w-3 h-3 rounded-full bg-amber-400" />
-                  <span>کارمزد پلتفرم ({adminPlatformFee}٪)</span>
+                  <span>{window.loc('کارمزد پلتفرم (', 'platform fee (')}{adminPlatformFee}{window.loc('٪)', '%)')}</span>
                 </span>
               </div>
             </div>
@@ -292,27 +292,27 @@ export default function FinanceCenter({
             <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 flex flex-col justify-between">
               <div>
                 <h3 className="font-bold text-white text-sm border-b border-slate-800 pb-2 mb-3">
-                  توزیع اعتبارات و سلامت مالی
+                  {window.loc('توزیع اعتبارات و سلامت مالی', 'Credit distribution and financial health')}
                 </h3>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">مجموع دارایی کیف پول‌ها:</span>
+                    <span className="text-slate-400">{window.loc('مجموع دارایی کیف پول‌ها:', 'Total assets of wallets:')}</span>
                     <span className="font-mono font-bold text-white">$412,000 USDT</span>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">کاربران دارای VIP فعال:</span>
-                    <span className="font-mono font-bold text-amber-300">1,280 نفر</span>
+                    <span className="text-slate-400">{window.loc('کاربران دارای VIP فعال:', 'Users with active VIP:')}</span>
+                    <span className="font-mono font-bold text-amber-300">{window.loc('1,280 نفر', '1,280 people')}</span>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">استریمرهای دارای درآمد:</span>
-                    <span className="font-mono font-bold text-pink-400">340 استریمر</span>
+                    <span className="text-slate-400">{window.loc('استریمرهای دارای درآمد:', 'Streamers with income:')}</span>
+                    <span className="font-mono font-bold text-pink-400">{window.loc('340 استریمر', '340 streamers')}</span>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">کارمزد ترون TRC20:</span>
+                    <span className="text-slate-400">{window.loc('کارمزد ترون TRC20:', 'Tron TRC20 fee:')}</span>
                     <span className="font-mono font-bold text-cyan-300">${adminNetworkFee} USDT</span>
                   </div>
                 </div>
@@ -322,7 +322,7 @@ export default function FinanceCenter({
                 onClick={() => setFinanceSubTab('withdrawals')}
                 className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-xs shadow-lg hover:opacity-90 transition"
               >
-                مدیریت تسویه‌حساب‌ها ({pendingWithdrawsCount})
+                {window.loc('مدیریت تسویه‌حساب‌ها (', 'Management of settlements (')}{pendingWithdrawsCount})
               </button>
             </div>
           </div>
@@ -335,26 +335,26 @@ export default function FinanceCenter({
           <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
             <h3 className="font-bold text-white text-sm flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-emerald-400" />
-              <span>تفکیک دقیق منابع درآمدی پلتفرم (Revenue Stream Analysis)</span>
+              <span>{window.loc('تفکیک دقیق منابع درآمدی پلتفرم (Revenue Stream Analysis)', 'Detailed breakdown of the platform\'s revenue sources (Revenue Stream Analysis)')}</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-pink-400 font-bold uppercase">درآمد هدایای استریم</span>
+                <span className="text-[10px] text-pink-400 font-bold uppercase">{window.loc('درآمد هدایای استریم', 'Stream gifts income')}</span>
                 <p className="text-xl font-black text-white font-mono">$124,000 USDT</p>
-                <span className="text-[10px] text-slate-400 block">سهم پلتفرم: ${Math.round(124000 * 0.29).toLocaleString()} USDT</span>
+                <span className="text-[10px] text-slate-400 block">{window.loc('سهم پلتفرم: $', 'Platform contribution: $')}{Math.round(124000 * 0.29).toLocaleString()} USDT</span>
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-amber-400 font-bold uppercase">درآمد اشتراک‌های VIP</span>
+                <span className="text-[10px] text-amber-400 font-bold uppercase">{window.loc('درآمد اشتراک‌های VIP', 'Earnings from VIP subscriptions')}</span>
                 <p className="text-xl font-black text-white font-mono">$38,500 USDT</p>
-                <span className="text-[10px] text-slate-400 block">۱۰۰٪ سود متعلق به پلتفرم</span>
+                <span className="text-[10px] text-slate-400 block">{window.loc('۱۰۰٪ سود متعلق به پلتفرم', '100% profit belongs to the platform')}</span>
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-cyan-400 font-bold uppercase">درآمد تماس‌های خصوصی</span>
+                <span className="text-[10px] text-cyan-400 font-bold uppercase">{window.loc('درآمد تماس‌های خصوصی', 'Income from private calls')}</span>
                 <p className="text-xl font-black text-white font-mono">$22,000 USDT</p>
-                <span className="text-[10px] text-slate-400 block">سهم پلتفرم: ${Math.round(22000 * 0.29).toLocaleString()} USDT</span>
+                <span className="text-[10px] text-slate-400 block">{window.loc('سهم پلتفرم: $', 'Platform contribution: $')}{Math.round(22000 * 0.29).toLocaleString()} USDT</span>
               </div>
             </div>
           </div>
@@ -372,7 +372,7 @@ export default function FinanceCenter({
                 type="text"
                 value={txSearchQuery}
                 onChange={e => setTxSearchQuery(e.target.value)}
-                placeholder="جستجو بر اساس شناسه، کاربر یا نوع تراکنش..."
+                placeholder={window.loc('جستجو بر اساس شناسه، کاربر یا نوع تراکنش...', 'Search by ID, user or transaction type...')}
                 className="w-full pl-9 pr-4 py-2 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-emerald-500"
               />
             </div>
@@ -383,17 +383,17 @@ export default function FinanceCenter({
                 onChange={e => setTxFilterType(e.target.value)}
                 className="px-3 py-2 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none"
               >
-                <option value="ALL">همه انواع تراکنش</option>
-                <option value="WITHDRAW">برداشت / تسویه</option>
-                <option value="VIP">خرید VIP</option>
-                <option value="GIFT">هدیه لایو</option>
-                <option value="COIN_PURCHASE">خرید سکه</option>
+                <option value="ALL">{window.loc('همه انواع تراکنش', 'All types of transactions')}</option>
+                <option value="WITHDRAW">{window.loc('برداشت / تسویه', 'withdrawal / settlement')}</option>
+                <option value="VIP">{window.loc('خرید VIP', 'Buy VIP')}</option>
+                <option value="GIFT">{window.loc('هدیه لایو', 'Live gift')}</option>
+                <option value="COIN_PURCHASE">{window.loc('خرید سکه', 'Buy coins')}</option>
               </select>
 
               <button
                 onClick={() => {
-                  showToast('📊 خروجی کامل تراکنش‌ها به صورت اکسل دانلود شد');
-                  addAdminAuditLog('تراکنش‌های مالی در قالب اکسل دانلود شدند');
+                  showToast(window.loc('📊 خروجی کامل تراکنش‌ها به صورت اکسل دانلود شد', '📊 The complete output of transactions was downloaded in Excel'));
+                  addAdminAuditLog(window.loc('تراکنش‌های مالی در قالب اکسل دانلود شدند', 'Financial transactions were downloaded in Excel format'));
                 }}
                 className="px-3.5 py-2 rounded-2xl bg-slate-800 text-amber-300 font-bold text-xs border border-amber-500/30 hover:bg-slate-700 flex items-center gap-1.5 shrink-0"
               >
@@ -409,13 +409,13 @@ export default function FinanceCenter({
               <table className="w-full text-right border-collapse">
                 <thead>
                   <tr className="bg-slate-950 text-slate-400 border-b border-slate-800 text-[11px]">
-                    <th className="p-3.5">شناسه</th>
-                    <th className="p-3.5">کاربر / استریمر</th>
-                    <th className="p-3.5">نوع تراکنش</th>
-                    <th className="p-3.5">مبلغ</th>
-                    <th className="p-3.5">درگاه / شبکه</th>
-                    <th className="p-3.5">تاریخ</th>
-                    <th className="p-3.5">وضعیت</th>
+                    <th className="p-3.5">{window.loc('شناسه', 'ID')}</th>
+                    <th className="p-3.5">{window.loc('کاربر / استریمر', 'User / streamer')}</th>
+                    <th className="p-3.5">{window.loc('نوع تراکنش', 'Transaction type')}</th>
+                    <th className="p-3.5">{window.loc('مبلغ', 'amount')}</th>
+                    <th className="p-3.5">{window.loc('درگاه / شبکه', 'port / network')}</th>
+                    <th className="p-3.5">{window.loc('تاریخ', 'date')}</th>
+                    <th className="p-3.5">{window.loc('وضعیت', 'status')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 text-xs">
@@ -454,9 +454,9 @@ export default function FinanceCenter({
             <h3 className="font-bold text-white text-sm flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-emerald-400" />
-                <span>مدیریت و اصلاح دستی کیف پول کاربران (User Wallets Balance)</span>
+                <span>{window.loc('مدیریت و اصلاح دستی کیف پول کاربران (User Wallets Balance)', 'Management and manual correction of user wallets (User Wallets Balance)')}</span>
               </span>
-              <span className="text-xs text-slate-400">تعداد کاربران: {usersList.length}</span>
+              <span className="text-xs text-slate-400">{window.loc('تعداد کاربران:', 'Number of users:')} {usersList.length}</span>
             </h3>
 
             <div className="relative">
@@ -465,7 +465,7 @@ export default function FinanceCenter({
                 type="text"
                 value={walletSearch}
                 onChange={e => setWalletSearch(e.target.value)}
-                placeholder="جستجوی کاربر جهت شارژ یا کسر موجودی..."
+                placeholder={window.loc('جستجوی کاربر جهت شارژ یا کسر موجودی...', 'Searching for a user to charge or deduct balance...')}
                 className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-emerald-500"
               />
             </div>
@@ -494,7 +494,7 @@ export default function FinanceCenter({
                       onClick={() => setSelectedUserForAdjustment(u)}
                       className="mt-1 px-3 py-1 rounded-xl bg-slate-800 hover:bg-emerald-600 text-white font-bold text-[10px] transition"
                     >
-                      اصلاح موجودی
+                      {window.loc('اصلاح موجودی', 'Inventory modification')}
                     </button>
                   </div>
                 </div>
@@ -505,7 +505,7 @@ export default function FinanceCenter({
           {selectedUserForAdjustment && (
             <div className="p-4 rounded-3xl bg-slate-950 border border-emerald-500/40 space-y-3 animate-fadeIn">
               <h4 className="font-bold text-emerald-300 text-xs flex items-center justify-between border-b border-slate-800 pb-2">
-                <span>اصلاح دستی کیف پول: {selectedUserForAdjustment.name || selectedUserForAdjustment.username}</span>
+                <span>{window.loc('اصلاح دستی کیف پول:', 'Manual modification of the wallet:')} {selectedUserForAdjustment.name || selectedUserForAdjustment.username}</span>
                 <button onClick={() => setSelectedUserForAdjustment(null)} className="text-slate-400 hover:text-white">✕</button>
               </h4>
 
@@ -514,14 +514,14 @@ export default function FinanceCenter({
                   type="number"
                   value={adjustmentAmount}
                   onChange={e => setAdjustmentAmount(e.target.value)}
-                  placeholder="مبلغ سکه (مثلاً 500)"
+                  placeholder={window.loc('مبلغ سکه (مثلاً 500)', 'Amount of coins (eg 500)')}
                   className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-white text-xs outline-none"
                 />
                 <input
                   type="text"
                   value={adjustmentReason}
                   onChange={e => setAdjustmentReason(e.target.value)}
-                  placeholder="دلیل تغییر (مثلاً پاداش استریم یا مرجوعی)"
+                  placeholder={window.loc('دلیل تغییر (مثلاً پاداش استریم یا مرجوعی)', 'Reason for change (e.g. stream reward or refund)')}
                   className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-white text-xs outline-none"
                 />
               </div>
@@ -531,13 +531,13 @@ export default function FinanceCenter({
                   onClick={() => handleWalletAdjustment(true)}
                   className="flex-1 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs"
                 >
-                  + شارژ سکه (Credit)
+                  {window.loc('+ شارژ سکه (Credit)', '+ Coin charge (Credit)')}
                 </button>
                 <button
                   onClick={() => handleWalletAdjustment(false)}
                   className="flex-1 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
                 >
-                  - کسر سکه (Debit)
+                  {window.loc('- کسر سکه (Debit)', '- Debit')}
                 </button>
               </div>
             </div>
@@ -552,9 +552,9 @@ export default function FinanceCenter({
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-white text-sm flex items-center gap-2">
                 <ArrowUpRight className="w-4 h-4 text-emerald-400" />
-                <span>صف درخواست‌های تسویه‌حساب (Withdrawal Queue)</span>
+                <span>{window.loc('صف درخواست‌های تسویه‌حساب (Withdrawal Queue)', 'Withdrawal Queue')}</span>
               </h3>
-              <span className="text-xs text-slate-400 font-mono">تعداد: {adminWithdrawalsList.length}</span>
+              <span className="text-xs text-slate-400 font-mono">{window.loc('تعداد:', 'Number:')} {adminWithdrawalsList.length}</span>
             </div>
 
             {/* Withdrawals list */}
@@ -567,7 +567,7 @@ export default function FinanceCenter({
                       <span className="font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">{w.amount}</span>
                     </div>
                     <span className="text-[10px] text-slate-400 block font-mono mt-1">
-                      آدرس TRC20: {w.txHash || 'TKh8zXpQ7yM3vN1L9R2W4b6K8a0C'} • زمان: {w.time}
+                      {window.loc('آدرس TRC20:', 'Address of TRC20:')} {w.txHash || 'TKh8zXpQ7yM3vN1L9R2W4b6K8a0C'} {window.loc('• زمان:', '• Time:')} {w.time}
                     </span>
                   </div>
 
@@ -578,21 +578,21 @@ export default function FinanceCenter({
                           onClick={() => {
                             setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Completed' } : item));
                             addAdminAuditLog(`Approved withdrawal #${w.id} for ${w.user}`);
-                            showToast('✅ درخواست برداشت با موفقیت تأیید شد');
+                            showToast(window.loc('✅ درخواست برداشت با موفقیت تأیید شد', '✅ Withdrawal request has been successfully approved'));
                           }}
                           className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow"
                         >
-                          ✓ تأیید و واریز
+                          {window.loc('✓ تأیید و واریز', '✓ Verification and deposit')}
                         </button>
                         <button
                           onClick={() => {
                             setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Rejected' } : item));
                             addAdminAuditLog(`Rejected withdrawal #${w.id} for ${w.user}`);
-                            showToast('✕ درخواست برداشت رد شد');
+                            showToast(window.loc('✕ درخواست برداشت رد شد', '✕ Withdrawal request rejected'));
                           }}
                           className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow"
                         >
-                          ✕ رد درخواست
+                          {window.loc('✕ رد درخواست', '✕ Request rejection')}
                         </button>
                       </div>
                     ) : (
@@ -616,7 +616,7 @@ export default function FinanceCenter({
           <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
             <h3 className="font-bold text-white text-sm flex items-center gap-2">
               <Building className="w-4 h-4 text-emerald-400" />
-              <span>دفتر کل و سندهای حسابداری دوبل (General Ledger & Double-Entry System)</span>
+              <span>{window.loc('دفتر کل و سندهای حسابداری دوبل (General Ledger & Double-Entry System)', 'General Ledger & Double-Entry System')}</span>
             </h3>
 
             <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs">
@@ -641,19 +641,19 @@ export default function FinanceCenter({
               <table className="w-full text-right text-xs">
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-400 pb-2">
-                    <th className="p-2">شماره سند</th>
-                    <th className="p-2">حساب بدهکار (Debit)</th>
-                    <th className="p-2">حساب بستانکار (Credit)</th>
-                    <th className="p-2">مبلغ (USDT)</th>
-                    <th className="p-2">شرح سند</th>
-                    <th className="p-2">زمان</th>
+                    <th className="p-2">{window.loc('شماره سند', 'document number')}</th>
+                    <th className="p-2">{window.loc('حساب بدهکار (Debit)', 'debit account')}</th>
+                    <th className="p-2">{window.loc('حساب بستانکار (Credit)', 'credit account')}</th>
+                    <th className="p-2">{window.loc('مبلغ (USDT)', 'Amount (USDT)')}</th>
+                    <th className="p-2">{window.loc('شرح سند', 'Description of the document')}</th>
+                    <th className="p-2">{window.loc('زمان', 'time')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {[
-                    { id: 'JE-1001', dr: 'موجودی بانک ترون', cr: 'درآمد کمیسیون ۲۹٪', val: '$1,450.00', desc: 'کمیسیون لایو استریم', time: '10:15' },
-                    { id: 'JE-1002', dr: 'بدهی استریمرها', cr: 'موجودی کیف پول استریمر', val: '$3,550.00', desc: 'سهم ۷۱٪ استریمر', time: '09:40' },
-                    { id: 'JE-1003', dr: 'صندوق VIP', cr: 'درآمد اشتراک VIP', val: '$299.00', desc: 'خرید اشتراک VIP طلایی', time: '08:12' }
+                    { id: 'JE-1001', dr: window.loc('موجودی بانک ترون', 'Tron Bank balance'), cr: window.loc('درآمد کمیسیون ۲۹٪', '29% commission income'), val: '$1,450.00', desc: window.loc('کمیسیون لایو استریم', 'Live stream commission'), time: '10:15' },
+                    { id: 'JE-1002', dr: window.loc('بدهی استریمرها', 'Debt streamers'), cr: window.loc('موجودی کیف پول استریمر', 'Streamer wallet balance'), val: '$3,550.00', desc: window.loc('سهم ۷۱٪ استریمر', '71% streamer share'), time: '09:40' },
+                    { id: 'JE-1003', dr: window.loc('صندوق VIP', 'VIP box'), cr: window.loc('درآمد اشتراک VIP', 'VIP subscription income'), val: '$299.00', desc: window.loc('خرید اشتراک VIP طلایی', 'Buy golden VIP subscription'), time: '08:12' }
                   ].map((row, i) => (
                     <tr key={i} className="hover:bg-slate-850">
                       <td className="p-2 font-mono font-bold text-amber-300">{row.id}</td>
@@ -681,8 +681,8 @@ export default function FinanceCenter({
                   <Sparkles className="w-6 h-6 animate-spin" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-base">دستیار هوشمند مالی و کشف ریسک (AI Finance Guard)</h3>
-                  <p className="text-xs text-slate-400">شناسایی پولشویی، خریدهای مشکوک، الگوی کلاهبرداری گیفت و پیش‌بینی سود</p>
+                  <h3 className="font-bold text-white text-base">{window.loc('دستیار هوشمند مالی و کشف ریسک (AI Finance Guard)', 'Intelligent financial assistant and risk discovery (AI Finance Guard)')}</h3>
+                  <p className="text-xs text-slate-400">{window.loc('شناسایی پولشویی، خریدهای مشکوک، الگوی کلاهبرداری گیفت و پیش‌بینی سود', 'Identifying money laundering, suspicious purchases, gift fraud patterns and profit forecasting')}</p>
                 </div>
               </div>
 
@@ -692,7 +692,7 @@ export default function FinanceCenter({
                 className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-xs shadow-lg hover:opacity-90 transition disabled:opacity-50 flex items-center gap-2"
               >
                 <Cpu className={`w-4 h-4 ${isAiAnalyzing ? 'animate-spin' : ''}`} />
-                <span>{isAiAnalyzing ? 'در حال اسکن عمیق تراکنش‌ها...' : 'اجرای اسکن هوش مصنوعی'}</span>
+                <span>{isAiAnalyzing ? window.loc('در حال اسکن عمیق تراکنش‌ها...', 'Deep scanning transactions...') : window.loc('اجرای اسکن هوش مصنوعی', 'Running an artificial intelligence scan')}</span>
               </button>
             </div>
 
@@ -700,7 +700,7 @@ export default function FinanceCenter({
             <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
               <span>
-                <strong>قانون اصلی AI:</strong> هوش مصنوعی فقط پیشنهادات و گزارش ریسک ارایه می‌دهد و حق هیچ‌گونه تغییر مستقیم در موجودی یا برداشت‌ها را ندارد.
+                <strong>{window.loc('قانون اصلی AI:', 'The main rule of AI:')}</strong> {window.loc('هوش مصنوعی فقط پیشنهادات و گزارش ریسک ارایه می‌دهد و حق هیچ‌گونه تغییر مستقیم در موجودی یا برداشت‌ها را ندارد.', 'AI only provides suggestions and risk reports and does not have the right to make any direct changes in inventory or withdrawals.')}
               </span>
             </div>
 
@@ -709,21 +709,21 @@ export default function FinanceCenter({
               <div className="space-y-3 pt-2 animate-fadeIn">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800">
-                    <span className="text-[10px] text-slate-400 block font-bold">شاخص ریسک سیستم (Risk Score)</span>
+                    <span className="text-[10px] text-slate-400 block font-bold">{window.loc('شاخص ریسک سیستم (Risk Score)', 'System risk index (Risk Score)')}</span>
                     <span className="text-lg font-black text-emerald-400 font-mono">{aiFinanceReport.riskScore}</span>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800">
-                    <span className="text-[10px] text-slate-400 block font-bold">پیش‌بینی سود ماه آینده</span>
+                    <span className="text-[10px] text-slate-400 block font-bold">{window.loc('پیش‌بینی سود ماه آینده', 'Profit forecast for next month')}</span>
                     <span className="text-lg font-black text-cyan-300 font-mono">{aiFinanceReport.monthlyRevenuePrediction}</span>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800">
-                    <span className="text-[10px] text-slate-400 block font-bold">تخمین هزینه سرورها</span>
+                    <span className="text-[10px] text-slate-400 block font-bold">{window.loc('تخمین هزینه سرورها', 'Estimating the cost of servers')}</span>
                     <span className="text-lg font-black text-rose-300 font-mono">{aiFinanceReport.estimatedServerCosts}</span>
                   </div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
-                  <h4 className="font-bold text-white text-xs">توصیه‌های هوشمند مدیر:</h4>
+                  <h4 className="font-bold text-white text-xs">{window.loc('توصیه‌های هوشمند مدیر:', 'Manager\'s smart recommendations:')}</h4>
                   <ul className="space-y-1 text-slate-300 text-xs list-disc list-inside">
                     {aiFinanceReport.recommendations.map((rec, i) => (
                       <li key={i}>{rec}</li>
@@ -748,8 +748,8 @@ export default function FinanceCenter({
                   <Coins className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">بانک مرکزی و موتور قیمت‌گذاری عادلانه (Central Economy Engine)</h3>
-                  <p className="text-xs text-slate-300">مدیریت متمرکز بسته‌های سکه، الماس استریمرها، قیمت هدایا، اشتراک VIP و تعرفه تماس‌ها</p>
+                  <h3 className="text-base font-black text-white">{window.loc('بانک مرکزی و موتور قیمت‌گذاری عادلانه (Central Economy Engine)', 'Central Bank and Fair Pricing Engine (Central Economy Engine)')}</h3>
+                  <p className="text-xs text-slate-300">{window.loc('مدیریت متمرکز بسته‌های سکه، الماس استریمرها، قیمت هدایا، اشتراک VIP و تعرفه تماس‌ها', 'Centralized management of coin packs, streamers diamonds, gift prices, VIP membership and call tariffs')}</p>
                 </div>
               </div>
 
@@ -757,31 +757,31 @@ export default function FinanceCenter({
                 <button
                   onClick={() => {
                     const recs = economyService.generateAIEconomyInsights();
-                    showToast(`🤖 ${recs.length} پیشنهاد هوشمند قیمت‌گذاری تولید شد`);
+                    showToast(window.loc(`🤖 ${recs.length} پیشنهاد هوشمند قیمت‌گذاری تولید شد`, `🤖 ${recs.length} پیشنهاد هوشمند قیمت‌گذاری تولید شد`));
                   }}
                   className="px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg"
                 >
                   <Sparkles className="w-4 h-4 text-amber-300" />
-                  <span>تحلیل هوشمند اقتصاد</span>
+                  <span>{window.loc('تحلیل هوشمند اقتصاد', 'Smart economic analysis')}</span>
                 </button>
               </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs font-mono">
               <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
-                <span className="text-slate-400 block text-[10px]">ارز اصلی (سکه 🪙)</span>
-                <span className="font-bold text-amber-400">خرید با دلار / USDT</span>
+                <span className="text-slate-400 block text-[10px]">{window.loc('ارز اصلی (سکه 🪙)', 'Main currency (Coin 🪙)')}</span>
+                <span className="font-bold text-amber-400">{window.loc('خرید با دلار / USDT', 'Buy with dollars / USDT')}</span>
               </div>
               <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
-                <span className="text-slate-400 block text-[10px]">ارز استریمر (الماس 💎)</span>
-                <span className="font-bold text-cyan-300">درآمد هدایا & تسویه</span>
+                <span className="text-slate-400 block text-[10px]">{window.loc('ارز استریمر (الماس 💎)', 'Streamer currency (diamond 💎)')}</span>
+                <span className="font-bold text-cyan-300">{window.loc('درآمد هدایا & تسویه', 'Earn gifts & payments')}</span>
               </div>
               <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
-                <span className="text-slate-400 block text-[10px]">کمیسیون پلتفرم</span>
-                <span className="font-bold text-emerald-400">{economyService.getConfig().commissionRules.platformCommissionPercent}% درصد</span>
+                <span className="text-slate-400 block text-[10px]">{window.loc('کمیسیون پلتفرم', 'Platform commission')}</span>
+                <span className="font-bold text-emerald-400">{economyService.getConfig().commissionRules.platformCommissionPercent}{window.loc('% درصد', '% percent')}</span>
               </div>
               <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
-                <span className="text-slate-400 block text-[10px]">نرخ تبدیل الماس به دلار</span>
+                <span className="text-slate-400 block text-[10px]">{window.loc('نرخ تبدیل الماس به دلار', 'Diamond to dollar conversion rate')}</span>
                 <span className="font-bold text-purple-300">100 💎 = $1.00 USDT</span>
               </div>
             </div>
@@ -791,22 +791,22 @@ export default function FinanceCenter({
           <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
             <h4 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-2">
               <Coins className="w-4 h-4 text-amber-400" />
-              <span>تنظیم بسته‌های فروش سکه (Coin Purchase Packages)</span>
+              <span>{window.loc('تنظیم بسته‌های فروش سکه (Coin Purchase Packages)', 'Setting up Coin Purchase Packages')}</span>
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {economyService.getConfig().coinPackages.map((pack) => (
                 <div key={pack.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-amber-300 text-sm">{pack.coins.toLocaleString()} سکه 🪙</span>
+                    <span className="font-mono font-bold text-amber-300 text-sm">{pack.coins.toLocaleString()} {window.loc('سکه 🪙', 'Coin 🪙')}</span>
                     {pack.badge && <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">{pack.badge}</span>}
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-300">
-                    <span>قیمت (دلار):</span>
+                    <span>{window.loc('قیمت (دلار):', 'Price (dollars):')}</span>
                     <span className="font-mono font-bold text-emerald-400">${pack.priceUsd} USDT</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-300">
-                    <span>بونوس هدیه:</span>
+                    <span>{window.loc('بونوس هدیه:', 'Bonus gift:')}</span>
                     <span className="font-mono font-bold text-purple-300">{pack.bonusPercent}%+</span>
                   </div>
                 </div>
@@ -821,29 +821,29 @@ export default function FinanceCenter({
             <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
               <h4 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-2">
                 <PhoneCall className="w-4 h-4 text-cyan-400" />
-                <span>تعرفه تماس‌های صوتی و تصویری (Call Billing Rates)</span>
+                <span>{window.loc('تعرفه تماس‌های صوتی و تصویری (Call Billing Rates)', 'Call Billing Rates')}</span>
               </h4>
 
               <div className="space-y-2 text-xs">
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                  <span className="text-slate-300">تماس صوتی (دقیقه):</span>
-                  <span className="font-mono font-bold text-amber-300">{economyService.getConfig().callRates.audioCostPerMin} سکه</span>
+                  <span className="text-slate-300">{window.loc('تماس صوتی (دقیقه):', 'Voice call (minutes):')}</span>
+                  <span className="font-mono font-bold text-amber-300">{economyService.getConfig().callRates.audioCostPerMin} {window.loc('سکه', 'coin')}</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                  <span className="text-slate-300">تماس تصویری استاندارد (دقیقه):</span>
-                  <span className="font-mono font-bold text-amber-300">{economyService.getConfig().callRates.videoCostPerMin} سکه</span>
+                  <span className="text-slate-300">{window.loc('تماس تصویری استاندارد (دقیقه):', 'Standard video call (minutes):')}</span>
+                  <span className="font-mono font-bold text-amber-300">{economyService.getConfig().callRates.videoCostPerMin} {window.loc('سکه', 'coin')}</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                  <span className="text-slate-300">تماس تصویری بزرگسال 18+ (دقیقه):</span>
-                  <span className="font-mono font-bold text-rose-400">{economyService.getConfig().callRates.adultVideoCostPerMin} سکه</span>
+                  <span className="text-slate-300">{window.loc('تماس تصویری بزرگسال 18+ (دقیقه):', 'Adult video call 18+ (minutes):')}</span>
+                  <span className="font-mono font-bold text-rose-400">{economyService.getConfig().callRates.adultVideoCostPerMin} {window.loc('سکه', 'coin')}</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                  <span className="text-slate-300">ثانیه‌های اولیه رایگان (Free Grace):</span>
-                  <span className="font-mono font-bold text-emerald-400">{economyService.getConfig().callRates.freeFirstSeconds} ثانیه</span>
+                  <span className="text-slate-300">{window.loc('ثانیه‌های اولیه رایگان (Free Grace):', 'Free Grace initial seconds:')}</span>
+                  <span className="font-mono font-bold text-emerald-400">{economyService.getConfig().callRates.freeFirstSeconds} {window.loc('ثانیه', 'seconds')}</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                  <span className="text-slate-300">تخفیف ویژه کاربران VIP:</span>
-                  <span className="font-mono font-bold text-purple-300">{economyService.getConfig().callRates.vipDiscountPercent}% تخفیف</span>
+                  <span className="text-slate-300">{window.loc('تخفیف ویژه کاربران VIP:', 'Special discount for VIP users:')}</span>
+                  <span className="font-mono font-bold text-purple-300">{economyService.getConfig().callRates.vipDiscountPercent}{window.loc('% تخفیف', '% discount')}</span>
                 </div>
               </div>
             </div>
@@ -852,31 +852,31 @@ export default function FinanceCenter({
             <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
               <h4 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-2">
                 <Crown className="w-4 h-4 text-amber-400" />
-                <span>تعرفه اشتراک‌های VIP & Adult VIP</span>
+                <span>{window.loc('تعرفه اشتراک‌های VIP & Adult VIP', 'Tariff for VIP & Adult VIP subscriptions')}</span>
               </h4>
 
               <div className="space-y-2 text-xs">
-                <span className="font-bold text-amber-400 block">👑 اشتراک VIP عمومی:</span>
+                <span className="font-bold text-amber-400 block">{window.loc('👑 اشتراک VIP عمومی:', '👑 Public VIP subscription:')}</span>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">ماهانه</span>
-                    <span className="font-mono font-bold text-amber-300">{economyService.getConfig().vipPricing.monthly} سکه</span>
+                    <span className="text-slate-400 block text-[10px]">{window.loc('ماهانه', 'monthly')}</span>
+                    <span className="font-mono font-bold text-amber-300">{economyService.getConfig().vipPricing.monthly} {window.loc('سکه', 'coin')}</span>
                   </div>
                   <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">سالانه</span>
-                    <span className="font-mono font-bold text-amber-300">{economyService.getConfig().vipPricing.yearly} سکه</span>
+                    <span className="text-slate-400 block text-[10px]">{window.loc('سالانه', 'Annually')}</span>
+                    <span className="font-mono font-bold text-amber-300">{economyService.getConfig().vipPricing.yearly} {window.loc('سکه', 'coin')}</span>
                   </div>
                 </div>
 
-                <span className="font-bold text-pink-400 block pt-2">🔞 اشتراک Adult VIP (18+):</span>
+                <span className="font-bold text-pink-400 block pt-2">{window.loc('🔞 اشتراک Adult VIP (18+):', '🔞 Adult VIP subscription (18+):')}</span>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">ماهانه</span>
-                    <span className="font-mono font-bold text-pink-300">{economyService.getConfig().adultVipPricing.monthly} سکه</span>
+                    <span className="text-slate-400 block text-[10px]">{window.loc('ماهانه', 'monthly')}</span>
+                    <span className="font-mono font-bold text-pink-300">{economyService.getConfig().adultVipPricing.monthly} {window.loc('سکه', 'coin')}</span>
                   </div>
                   <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">سالانه</span>
-                    <span className="font-mono font-bold text-pink-300">{economyService.getConfig().adultVipPricing.yearly} سکه</span>
+                    <span className="text-slate-400 block text-[10px]">{window.loc('سالانه', 'Annually')}</span>
+                    <span className="font-mono font-bold text-pink-300">{economyService.getConfig().adultVipPricing.yearly} {window.loc('سکه', 'coin')}</span>
                   </div>
                 </div>
               </div>
@@ -888,7 +888,7 @@ export default function FinanceCenter({
           <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
             <h4 className="text-sm font-black text-white flex items-center gap-2 border-b border-slate-800 pb-2">
               <Shield className="w-4 h-4 text-emerald-400" />
-              <span>پایش هوشمند ضد تورم و ضد تقلب مالی (Anti-Fraud & Anti-Inflation)</span>
+              <span>{window.loc('پایش هوشمند ضد تورم و ضد تقلب مالی (Anti-Fraud & Anti-Inflation)', 'Anti-Fraud & Anti-Inflation intelligent monitoring')}</span>
             </h4>
 
             <div className="space-y-2">
@@ -915,12 +915,12 @@ export default function FinanceCenter({
           <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
             <h3 className="font-bold text-white text-sm border-b border-slate-800 pb-2 flex items-center gap-2">
               <Sliders className="w-4 h-4 text-emerald-400" />
-              <span>تنظیمات عمومی نرخ کمیسیون و حد نصاب تسویه‌حساب (Platform Financial Settings)</span>
+              <span>{window.loc('تنظیمات عمومی نرخ کمیسیون و حد نصاب تسویه‌حساب (Platform Financial Settings)', 'General settings of commission rate and settlement quorum (Platform Financial Settings)')}</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="text-xs text-slate-300 font-bold block mb-1">درصد کمیسیون پلتفرم (٪)</label>
+                <label className="text-xs text-slate-300 font-bold block mb-1">{window.loc('درصد کمیسیون پلتفرم (٪)', 'Platform commission percentage (%)')}</label>
                 <input
                   type="number"
                   value={adminPlatformFee}
@@ -934,7 +934,7 @@ export default function FinanceCenter({
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 font-bold block mb-1">حداقل سقف درخواست برداشت (USDT)</label>
+                <label className="text-xs text-slate-300 font-bold block mb-1">{window.loc('حداقل سقف درخواست برداشت (USDT)', 'Minimum Withdrawal Request Limit (USDT)')}</label>
                 <input
                   type="text"
                   value={adminMinWithdrawal}
@@ -944,7 +944,7 @@ export default function FinanceCenter({
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 font-bold block mb-1">کارمزد انتقال شبکه ترون ($)</label>
+                <label className="text-xs text-slate-300 font-bold block mb-1">{window.loc('کارمزد انتقال شبکه ترون ($)', 'Tron network transfer fee ($)')}</label>
                 <input
                   type="number"
                   value={adminNetworkFee}
@@ -957,12 +957,12 @@ export default function FinanceCenter({
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => {
-                  showToast('✅ تنظیمات جدید مالی با موفقیت ذخیره شد');
+                  showToast(window.loc('✅ تنظیمات جدید مالی با موفقیت ذخیره شد', 'New financial settings have been successfully saved'));
                   addAdminAuditLog('Finance Settings updated');
                 }}
                 className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-xs shadow-lg"
               >
-                ذخیره تغییرات مالی
+                {window.loc('ذخیره تغییرات مالی', 'Save financial changes')}
               </button>
             </div>
           </div>

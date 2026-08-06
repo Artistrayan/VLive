@@ -1,16 +1,16 @@
 // V.LIVE Streamer Level, Reputation & Creator Rank Scoring System Service
 
 export const STREAMER_LEVELS = [
-  { level: 1, name: 'New Streamer', minXp: 0, minHours: 0, minViewers: 0, minFollowers: 0, badgeColor: 'from-slate-600 to-slate-800', benefits: ['پروفایل عمومی', 'چت زنده پایه', 'دریافت هدیه'] },
-  { level: 2, name: 'Bronze Streamer', minXp: 1000, minHours: 10, minViewers: 15, minFollowers: 100, badgeColor: 'from-amber-700 to-yellow-800', benefits: ['نشان برنزی اختصاصی', '۵٪ اولویت پیشنهاد لایو', 'استیکرهای برنزی'] },
-  { level: 3, name: 'Silver Streamer', minXp: 3000, minHours: 25, minViewers: 35, minFollowers: 300, badgeColor: 'from-slate-400 to-slate-600', benefits: ['نشان نقره‌ای', 'فریم تصویر اختصاصی', 'افزایش سقف واریزی روزانه'] },
-  { level: 4, name: 'Gold Streamer', minXp: 7000, minHours: 50, minViewers: 80, minFollowers: 1000, badgeColor: 'from-amber-400 to-yellow-600', benefits: ['نشان طلایی برجسته', '۱۰٪ کمیسیون بیشتر', 'فیلترهای زیبایی VIP'] },
-  { level: 5, name: 'Platinum Streamer', minXp: 15000, minHours: 100, minViewers: 150, minFollowers: 2500, badgeColor: 'from-cyan-400 to-blue-600', benefits: ['نشان پلاتینوم', 'اولویت صفحه اول Discover', 'پشتیبانی اختصاصی VIP'] },
-  { level: 6, name: 'Diamond Streamer', minXp: 30000, minHours: 200, minViewers: 300, minFollowers: 5000, badgeColor: 'from-cyan-300 via-indigo-500 to-purple-600', benefits: ['نشان الماس درخشان', 'افکت ورود متحرک به لایو', 'هدایای اختصاصی سفارشی'] },
-  { level: 7, name: 'Elite Streamer', minXp: 50000, minHours: 350, minViewers: 500, minFollowers: 10000, badgeColor: 'from-purple-500 to-pink-600', benefits: ['نشان الیت کریتور', 'بنر اختصاصی بالای برنامه', 'تم‌های سفارشی استودیو'] },
-  { level: 8, name: 'Master Streamer', minXp: 80000, minHours: 500, minViewers: 800, minFollowers: 25000, badgeColor: 'from-rose-500 to-red-700', benefits: ['نشان مستر استریمر', 'قابلیت برگزاری رویدادهای ویژه', 'دعوت به همایش‌های کریتورها'] },
-  { level: 9, name: 'Legend Streamer', minXp: 120000, minHours: 800, minViewers: 1200, minFollowers: 50000, badgeColor: 'from-amber-300 via-rose-500 to-purple-700', benefits: ['نشان لجند افسانه‌ای', 'پوش‌نوتیفیکیشن عمومی به کاربران', 'کمیسیون کامل بدون تسویه دیرکرد'] },
-  { level: 10, name: 'V.Live Official Creator', minXp: 200000, minHours: 1200, minViewers: 2500, minFollowers: 100000, badgeColor: 'from-amber-400 via-emerald-400 to-cyan-400', benefits: ['نشان تولیدکننده رسمی V.Live', 'قرارداد رسمی ماهیانه', 'نشان طلایی Verified رسمی'] }
+  { level: 1, name: 'New Streamer', minXp: 0, minHours: 0, minViewers: 0, minFollowers: 0, badgeColor: 'from-slate-600 to-slate-800', benefits: [window.loc('پروفایل عمومی', 'General profile'), window.loc('چت زنده پایه', 'Basic live chat'), window.loc('دریافت هدیه', 'Receive a gift')] },
+  { level: 2, name: 'Bronze Streamer', minXp: 1000, minHours: 10, minViewers: 15, minFollowers: 100, badgeColor: 'from-amber-700 to-yellow-800', benefits: [window.loc('نشان برنزی اختصاصی', 'Dedicated bronze badge'), window.loc('۵٪ اولویت پیشنهاد لایو', '5% live offer priority'), window.loc('استیکرهای برنزی', 'Bronze stickers')] },
+  { level: 3, name: 'Silver Streamer', minXp: 3000, minHours: 25, minViewers: 35, minFollowers: 300, badgeColor: 'from-slate-400 to-slate-600', benefits: [window.loc('نشان نقره‌ای', 'Silver badge'), window.loc('فریم تصویر اختصاصی', 'Exclusive picture frame'), window.loc('افزایش سقف واریزی روزانه', 'Increasing the daily deposit limit')] },
+  { level: 4, name: 'Gold Streamer', minXp: 7000, minHours: 50, minViewers: 80, minFollowers: 1000, badgeColor: 'from-amber-400 to-yellow-600', benefits: [window.loc('نشان طلایی برجسته', 'Embossed gold badge'), window.loc('۱۰٪ کمیسیون بیشتر', '10% more commission'), window.loc('فیلترهای زیبایی VIP', 'VIP beauty filters')] },
+  { level: 5, name: 'Platinum Streamer', minXp: 15000, minHours: 100, minViewers: 150, minFollowers: 2500, badgeColor: 'from-cyan-400 to-blue-600', benefits: [window.loc('نشان پلاتینوم', 'Platinum badge'), window.loc('اولویت صفحه اول Discover', 'Discover first page priority'), window.loc('پشتیبانی اختصاصی VIP', 'Dedicated VIP support')] },
+  { level: 6, name: 'Diamond Streamer', minXp: 30000, minHours: 200, minViewers: 300, minFollowers: 5000, badgeColor: 'from-cyan-300 via-indigo-500 to-purple-600', benefits: [window.loc('نشان الماس درخشان', 'Brilliant diamond badge'), window.loc('افکت ورود متحرک به لایو', 'Animated entry effect to live'), window.loc('هدایای اختصاصی سفارشی', 'Customized exclusive gifts')] },
+  { level: 7, name: 'Elite Streamer', minXp: 50000, minHours: 350, minViewers: 500, minFollowers: 10000, badgeColor: 'from-purple-500 to-pink-600', benefits: [window.loc('نشان الیت کریتور', 'Elite Creator badge'), window.loc('بنر اختصاصی بالای برنامه', 'Exclusive banner above the program'), window.loc('تم‌های سفارشی استودیو', 'Custom Studio Themes')] },
+  { level: 8, name: 'Master Streamer', minXp: 80000, minHours: 500, minViewers: 800, minFollowers: 25000, badgeColor: 'from-rose-500 to-red-700', benefits: [window.loc('نشان مستر استریمر', 'Master Streamer badge'), window.loc('قابلیت برگزاری رویدادهای ویژه', 'Ability to hold special events'), window.loc('دعوت به همایش‌های کریتورها', 'Invitation to creators\' conferences')] },
+  { level: 9, name: 'Legend Streamer', minXp: 120000, minHours: 800, minViewers: 1200, minFollowers: 50000, badgeColor: 'from-amber-300 via-rose-500 to-purple-700', benefits: [window.loc('نشان لجند افسانه‌ای', 'Legendary legend emblem'), window.loc('پوش‌نوتیفیکیشن عمومی به کاربران', 'Public push notifications to users'), window.loc('کمیسیون کامل بدون تسویه دیرکرد', 'Full commission without late settlement')] },
+  { level: 10, name: 'V.Live Official Creator', minXp: 200000, minHours: 1200, minViewers: 2500, minFollowers: 100000, badgeColor: 'from-amber-400 via-emerald-400 to-cyan-400', benefits: [window.loc('نشان تولیدکننده رسمی V.Live', 'Official V.Live manufacturer badge'), window.loc('قرارداد رسمی ماهیانه', 'Official monthly contract'), window.loc('نشان طلایی Verified رسمی', 'Official Verified Gold Badge')] }
 ];
 
 export const AVAILABLE_BADGES = [
@@ -34,7 +34,7 @@ export function detectAntiCheatAnomalies(metrics) {
     alerts.push({
       type: 'FAKE_VIEWERS',
       severity: 'HIGH',
-      message: '🚨 رشد ناگهانی ۵۰۰٪ بینندگان لایو بدون منبع خارجی (احتمال فیک پروکسی)'
+      message: window.loc('🚨 رشد ناگهانی ۵۰۰٪ بینندگان لایو بدون منبع خارجی (احتمال فیک پروکسی)', '🚨 Sudden growth of 500% live viewers without external source (probability of fake proxy)')
     });
   }
 
@@ -42,7 +42,7 @@ export function detectAntiCheatAnomalies(metrics) {
     alerts.push({
       type: 'FAKE_GIFTS',
       severity: 'CRITICAL',
-      message: '⚠️ حجم بالای ۵۰ هزار سکه هدیه در کمتر از ۱ ساعت با اکانت‌های تازه ثبت‌نامی'
+      message: window.loc('⚠️ حجم بالای ۵۰ هزار سکه هدیه در کمتر از ۱ ساعت با اکانت‌های تازه ثبت‌نامی', '⚠️ More than 50,000 gift coins in less than 1 hour with newly registered accounts')
     });
   }
 
@@ -50,7 +50,7 @@ export function detectAntiCheatAnomalies(metrics) {
     alerts.push({
       type: 'REPEATED_REPORTS',
       severity: 'MEDIUM',
-      message: '🛑 گزارش‌های متعدد کاربران مبنی بر رفتار خلاف قوانین در لایو'
+      message: window.loc('🛑 گزارش‌های متعدد کاربران مبنی بر رفتار خلاف قوانین در لایو', '🛑 Numerous user reports of illegal behavior on Live')
     });
   }
 

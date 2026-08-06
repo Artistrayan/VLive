@@ -46,18 +46,18 @@ export default function VipAndRewardModals(props) {
               👑
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-black text-amber-300">🎆 LEVEL UP! ارتقای سطح!</h3>
-              <p className="text-sm font-bold text-white">شما به Level {userLevel} دست یافتید!</p>
+              <h3 className="text-lg font-black text-amber-300">{window.loc('🎆 LEVEL UP! ارتقای سطح!', '🎆 LEVEL UP! Upgrade!')}</h3>
+              <p className="text-sm font-bold text-white">{window.loc('شما به Level', 'You to Level')} {userLevel} {window.loc('دست یافتید!', 'You got it!')}</p>
               <p className="text-xs text-slate-300">{levelUpModalData?.rewardText}</p>
             </div>
             <div className="p-3 rounded-2xl bg-slate-950 border border-amber-500/30 text-xs font-bold text-amber-400">
-              🎁 پاداش ارتقا: +200 سکه واریز شد!
+              {window.loc('🎁 پاداش ارتقا: +200 سکه واریز شد!', '🎁 Upgrade bonus: +200 coins deposited!')}
             </div>
             <button
               onClick={() => setIsLevelUpModalOpen(false)}
               className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-lg active:scale-95 transition"
             >
-              دریافت پاداش و ادامه 🚀
+              {window.loc('دریافت پاداش و ادامه 🚀', 'Get rewards and continue 🚀')}
             </button>
           </div>
         </div>
@@ -70,23 +70,23 @@ export default function VipAndRewardModals(props) {
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-xs font-black text-white flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4 text-cyan-400" />
-                سند قوانین جامع سیستم دعوت (Referral Terms & Rules)
+                {window.loc('سند قوانین جامع سیستم دعوت (Referral Terms & Rules)', 'Referral Terms & Rules')}
               </h3>
               <button onClick={() => setIsReferralRulesModalOpen(false)} className="text-slate-400 hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="space-y-3 text-xs text-slate-300 leading-relaxed max-h-80 overflow-y-auto pr-1">
-              <p>۱. سیستم دعوت پلتفرم V.Live برای پاداش‌دهی به کاربران واقعی طراحی شده است.</p>
-              <p>۲. هر حساب تنها یک بار می‌تواند از کد معرف استفاده کند.</p>
-              <p>۳. پاداش دعوت پس از احراز حداقل ۱۰ دقیقه فعالیت کاربر جدید در اپلیکیشن آزاد خواهد شد.</p>
-              <p>۴. هرگونه سوءاستفاده، ساخت اکانت تکراری با ربات یا فیک، موجب مسدودی حساب و ضبط درآمد می‌شود.</p>
+              <p>{window.loc('۱. سیستم دعوت پلتفرم V.Live برای پاداش‌دهی به کاربران واقعی طراحی شده است.', '1. The invitation system of the V.Live platform is designed to reward real users.')}</p>
+              <p>{window.loc('۲. هر حساب تنها یک بار می‌تواند از کد معرف استفاده کند.', '2. Each account can use the identifier code only once.')}</p>
+              <p>{window.loc('۳. پاداش دعوت پس از احراز حداقل ۱۰ دقیقه فعالیت کاربر جدید در اپلیکیشن آزاد خواهد شد.', '3. The invitation reward will be released after at least 10 minutes of activity of the new user in the application.')}</p>
+              <p>{window.loc('۴. هرگونه سوءاستفاده، ساخت اکانت تکراری با ربات یا فیک، موجب مسدودی حساب و ضبط درآمد می‌شود.', '4. Any abuse, creation of a duplicate account with a robot or fake account will result in the account being blocked and income forfeited.')}</p>
             </div>
             <button
               onClick={() => setIsReferralRulesModalOpen(false)}
               className="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs"
             >
-              متوجه شدم و قبول دارم ✓
+              {window.loc('متوجه شدم و قبول دارم ✓', 'I understand and agree ✓')}
             </button>
           </div>
         </div>
@@ -106,7 +106,7 @@ export default function VipAndRewardModals(props) {
                   <h2 className="text-lg font-black bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 bg-clip-text text-transparent">
                     V.Live Premium VIP Club
                   </h2>
-                  <p className="text-xs text-slate-300 font-medium">سطوح عضویت ویژه، امکانات اختصاصی و پاداش‌ها</p>
+                  <p className="text-xs text-slate-300 font-medium">{window.loc('سطوح عضویت ویژه، امکانات اختصاصی و پاداش‌ها', 'Special membership levels, exclusive features and rewards')}</p>
                 </div>
               </div>
               <button
@@ -126,7 +126,7 @@ export default function VipAndRewardModals(props) {
                   className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'silver' ? 'bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 border-slate-300 shadow-[0_0_25px_rgba(255,255,255,0.2)]' : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'}`}
                 >
                   <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-slate-700 text-white font-black text-[10px] shadow-md">
-                    مبتدی 🥈
+                    {window.loc('مبتدی 🥈', 'Beginner 🥈')}
                   </span>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between pt-1">
@@ -136,10 +136,10 @@ export default function VipAndRewardModals(props) {
                       </span>
                     </div>
                     <h4 className="text-base font-black text-slate-200">Silver VIP</h4>
-                    <p className="text-[11px] text-slate-400 font-medium">قاب نقره‌ای چت + ۲X سرعت سکه‌ها</p>
+                    <p className="text-[11px] text-slate-400 font-medium">{window.loc('قاب نقره‌ای چت + ۲X سرعت سکه‌ها', 'Silver frame chat + 2X speed of coins')}</p>
                   </div>
                   <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'silver' ? 'bg-slate-200 text-slate-950 font-black shadow-md' : 'bg-slate-900 text-slate-400'}`}>
-                    {selectedVipPlan === 'silver' ? 'انتخاب شده ✓' : 'انتخاب Silver'}
+                    {selectedVipPlan === 'silver' ? window.loc('انتخاب شده ✓', 'Selected ✓') : window.loc('انتخاب Silver', 'Choose Silver')}
                   </div>
                 </div>
 
@@ -149,7 +149,7 @@ export default function VipAndRewardModals(props) {
                   className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'gold' ? 'bg-gradient-to-br from-amber-950/80 via-slate-900 to-yellow-950/80 border-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.3)]' : 'bg-slate-950/80 border-amber-900/60 hover:border-amber-600'}`}
                 >
                   <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-[10px] shadow-md">
-                    محبوب‌ترین 👑
+                    {window.loc('محبوب‌ترین 👑', 'The most popular 👑')}
                   </span>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between pt-1">
@@ -159,10 +159,10 @@ export default function VipAndRewardModals(props) {
                       </span>
                     </div>
                     <h4 className="text-base font-black text-amber-300">Gold VIP</h4>
-                    <p className="text-[11px] text-slate-300 font-medium">ورود طلایی ۳D + تماس HD + نشان VIP</p>
+                    <p className="text-[11px] text-slate-300 font-medium">{window.loc('ورود طلایی ۳D + تماس HD + نشان VIP', '3D Golden Login + HD Call + VIP Badge')}</p>
                   </div>
                   <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'gold' ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black shadow-md' : 'bg-slate-900 text-slate-400'}`}>
-                    {selectedVipPlan === 'gold' ? 'انتخاب شده ✓' : 'انتخاب Gold'}
+                    {selectedVipPlan === 'gold' ? window.loc('انتخاب شده ✓', 'Selected ✓') : window.loc('انتخاب Gold', 'Select Gold')}
                   </div>
                 </div>
 
@@ -172,7 +172,7 @@ export default function VipAndRewardModals(props) {
                   className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'diamond' ? 'bg-gradient-to-br from-cyan-950/80 via-slate-900 to-blue-950/80 border-cyan-400 shadow-[0_0_25px_rgba(6,182,212,0.3)]' : 'bg-slate-950/80 border-cyan-900/60 hover:border-cyan-600'}`}
                 >
                   <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-black text-[10px] shadow-md">
-                    فوق‌العاده 💎
+                    {window.loc('فوق‌العاده 💎', 'wonderful 💎')}
                   </span>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between pt-1">
@@ -182,10 +182,10 @@ export default function VipAndRewardModals(props) {
                       </span>
                     </div>
                     <h4 className="text-base font-black text-cyan-300">Diamond VIP</h4>
-                    <p className="text-[11px] text-slate-300 font-medium">۵X بوست پروفایل + لایو Pinned + نشان Diamond</p>
+                    <p className="text-[11px] text-slate-300 font-medium">{window.loc('۵X بوست پروفایل + لایو Pinned + نشان Diamond', '5X profile boost + Live Pinned + Diamond badge')}</p>
                   </div>
                   <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'diamond' ? 'bg-gradient-to-r from-cyan-500 to-blue-400 text-slate-950 font-black shadow-md' : 'bg-slate-900 text-slate-400'}`}>
-                    {selectedVipPlan === 'diamond' ? 'انتخاب شده ✓' : 'انتخاب Diamond'}
+                    {selectedVipPlan === 'diamond' ? window.loc('انتخاب شده ✓', 'Selected ✓') : window.loc('انتخاب Diamond', 'Choose Diamond')}
                   </div>
                 </div>
 
@@ -195,20 +195,20 @@ export default function VipAndRewardModals(props) {
                   className={`p-4 rounded-2xl border transition-all cursor-pointer card-3d flex flex-col justify-between space-y-3 relative ${selectedVipPlan === 'elite' ? 'bg-gradient-to-br from-purple-950/80 via-slate-900 to-indigo-950/80 border-purple-400 shadow-[0_0_25px_rgba(168,85,247,0.3)]' : 'bg-slate-950/80 border-purple-900/60 hover:border-purple-600'}`}
                 >
                   <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 text-white font-black text-[10px] shadow-md">
-                    خاص با دعوت 💠
+                    {window.loc('خاص با دعوت 💠', 'Special by invitation 💠')}
                   </span>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between pt-1">
                       <span className="text-lg">💠</span>
                       <span className="text-xs font-mono font-black text-purple-300 bg-purple-500/20 px-2.5 py-0.5 rounded-full border border-purple-400/40">
-                        ادمین / دعوت
+                        {window.loc('ادمین / دعوت', 'admin/invitation')}
                       </span>
                     </div>
                     <h4 className="text-base font-black text-purple-300">Elite VIP</h4>
-                    <p className="text-[11px] text-slate-300 font-medium">پشتیبانی ۲۴/۷ + قاب‌های کمیاب</p>
+                    <p className="text-[11px] text-slate-300 font-medium">{window.loc('پشتیبانی ۲۴/۷ + قاب‌های کمیاب', '24/7 support + rare frames')}</p>
                   </div>
                   <div className={`w-full py-2 rounded-xl text-xs font-bold text-center transition ${selectedVipPlan === 'elite' ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white font-black shadow-md' : 'bg-slate-900 text-slate-400'}`}>
-                    {selectedVipPlan === 'elite' ? 'انتخاب شده ✓' : 'درخواست Elite'}
+                    {selectedVipPlan === 'elite' ? window.loc('انتخاب شده ✓', 'Selected ✓') : window.loc('درخواست Elite', 'Elite application')}
                   </div>
                 </div>
               </div>
@@ -218,14 +218,14 @@ export default function VipAndRewardModals(props) {
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                   <h4 className="text-xs font-black text-amber-300 flex items-center gap-1.5">
                     <Clock className="w-4 h-4 text-amber-400" />
-                    مدت زمان اشتراک
+                    {window.loc('مدت زمان اشتراک', 'Subscription period')}
                   </h4>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     {[
-                      { duration: 1, label: '۱ ماهه', badge: 'عادی' },
-                      { duration: 3, label: '۳ ماهه', badge: '۱۵٪ تخفیف' },
-                      { duration: 6, label: '۶ ماهه', badge: '۲۵٪ تخفیف' },
-                      { duration: 12, label: '۱۲ ماهه', badge: '۴۰٪ تخفیف 🔥' }
+                      { duration: 1, label: window.loc('۱ ماهه', '1 month'), badge: window.loc('عادی', 'normal') },
+                      { duration: 3, label: window.loc('۳ ماهه', '3 months'), badge: window.loc('۱۵٪ تخفیف', '15% discount') },
+                      { duration: 6, label: window.loc('۶ ماهه', '6 months'), badge: window.loc('۲۵٪ تخفیف', '25% discount') },
+                      { duration: 12, label: window.loc('۱۲ ماهه', '12 months'), badge: window.loc('۴۰٪ تخفیف 🔥', '40% discount 🔥') }
                     ].map(item => (
                       <button
                         key={item.duration}
@@ -242,14 +242,14 @@ export default function VipAndRewardModals(props) {
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col justify-between space-y-3">
                   <h4 className="text-xs font-black text-amber-300 flex items-center gap-1.5">
                     <CreditCard className="w-4 h-4 text-amber-400" />
-                    روش پرداخت
+                    {window.loc('روش پرداخت', 'payment method')}
                   </h4>
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <button
                       onClick={() => setSelectedVipPayMethod('in_app')}
                       className={`p-2.5 rounded-xl border text-center transition ${selectedVipPayMethod === 'in_app' ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
                     >
-                      پرداخت درون‌برنامه‌ای
+                      {window.loc('پرداخت درون‌برنامه‌ای', 'In-app payment')}
                     </button>
                     <button
                       onClick={() => setSelectedVipPayMethod('usdt')}
@@ -261,7 +261,7 @@ export default function VipAndRewardModals(props) {
                       onClick={() => setSelectedVipPayMethod('coins')}
                       className={`p-2.5 rounded-xl border text-center transition ${selectedVipPayMethod === 'coins' ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
                     >
-                      سکه‌ها
+                      {window.loc('سکه‌ها', 'coins')}
                     </button>
                   </div>
                   <button
@@ -273,7 +273,7 @@ export default function VipAndRewardModals(props) {
                       const finalCoinsCost = Math.round(totalBaseCoins * (discountMultipliers[selectedVipDuration] || 1.0));
                       if (selectedVipPayMethod === 'coins') {
                         if (userCoins < finalCoinsCost) {
-                          showToast(`موجودی سکه کافی نیست! هزینه: ${finalCoinsCost} سکه`);
+                          showToast(window.loc(`موجودی سکه کافی نیست! هزینه: ${finalCoinsCost} سکه`, `موجودی سکه کافی نیست! هزینه: ${finalCoinsCost} سکه`));
                           return;
                         }
                         setUserCoins(prev => prev - finalCoinsCost);
@@ -283,11 +283,11 @@ export default function VipAndRewardModals(props) {
                       setIsVipMonthlyClaimed(false);
                       setIsVipModalOpen(false);
                       setIsVipCelebrationOpen(true);
-                      showToast(`👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت فعال شد!`);
+                      showToast(window.loc(`👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت فعال شد!`, `👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت فعال شد!`));
                     }}
                     className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition"
                   >
-                    تایید و فعال‌سازی اشتراک {selectedVipPlan.toUpperCase()} ({selectedVipDuration} ماهه)
+                    {window.loc('تایید و فعال‌سازی اشتراک', 'Subscription confirmation and activation')} {selectedVipPlan.toUpperCase()} ({selectedVipDuration} {window.loc('ماهه)', 'month)')}
                   </button>
                 </div>
               </div>
@@ -307,24 +307,24 @@ export default function VipAndRewardModals(props) {
             </div>
             <div className="space-y-2">
               <h2 className="text-xl font-black bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 bg-clip-text text-transparent">
-                تبریک! شما عضو VIP شُدید 👑
+                {window.loc('تبریک! شما عضو VIP شُدید 👑', 'Congratulations! You have become a VIP member')}
               </h2>
               <p className="text-xs text-slate-200 font-bold leading-relaxed">
-                اشتراک <span className="text-amber-300 font-black capitalize">{vipPlan} VIP</span> به مدت <span className="text-emerald-400 font-mono font-black">{vipExpireDays} روز</span> برای حساب شما فعال شد.
+                {window.loc('اشتراک', 'Subscription')} <span className="text-amber-300 font-black capitalize">{vipPlan} VIP</span> {window.loc('به مدت', 'for the duration')} <span className="text-emerald-400 font-mono font-black">{vipExpireDays} {window.loc('روز', 'day')}</span> {window.loc('برای حساب شما فعال شد.', 'Activated for your account.')}
               </p>
             </div>
             <div className="p-3.5 rounded-2xl bg-slate-950 border border-amber-500/30 text-xs text-slate-300 text-right space-y-1.5">
-              <p className="font-bold text-amber-300">امکانات فعال شده:</p>
-              <p className="flex items-center gap-1.5">✅ نشان 👑 روی نام شما در تمام چت‌ها و لایوها</p>
-              <p className="flex items-center gap-1.5">✅ بوست دیده شدن پروفایل در Discover</p>
-              <p className="flex items-center gap-1.5">✅ استریم و تماس با کیفیت HD 1080p</p>
-              <p className="flex items-center gap-1.5">✅ حذف کامل تمامی تبلیغات</p>
+              <p className="font-bold text-amber-300">{window.loc('امکانات فعال شده:', 'Enabled features:')}</p>
+              <p className="flex items-center gap-1.5">{window.loc('✅ نشان 👑 روی نام شما در تمام چت‌ها و لایوها', '✅ Sign 👑 on your name in all chats and live')}</p>
+              <p className="flex items-center gap-1.5">{window.loc('✅ بوست دیده شدن پروفایل در Discover', '✅ Boost profile visibility in Discover')}</p>
+              <p className="flex items-center gap-1.5">{window.loc('✅ استریم و تماس با کیفیت HD 1080p', '✅ Stream and call with HD 1080p quality')}</p>
+              <p className="flex items-center gap-1.5">{window.loc('✅ حذف کامل تمامی تبلیغات', '✅ Complete removal of all ads')}</p>
             </div>
             <button
               onClick={() => setIsVipCelebrationOpen(false)}
               className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition"
             >
-              ورود به دنیای VIP 🚀
+              {window.loc('ورود به دنیای VIP 🚀', 'Enter the VIP world 🚀')}
             </button>
           </div>
         </div>

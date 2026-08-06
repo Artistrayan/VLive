@@ -107,10 +107,10 @@ export default function ProfileTab(props) {
       }
       if (result) {
         setEditForm(prev => ({ ...prev, avatar: result }));
-        showToast('تصویر آواتار با موفقیت بارگذاری شد 🖼️');
+        showToast(window.loc('تصویر آواتار با موفقیت بارگذاری شد 🖼️', 'Avatar image uploaded successfully 🖼️'));
       }
     } catch (err) {
-      showToast('خطا در بارگذاری عکس ❌');
+      showToast(window.loc('خطا در بارگذاری عکس ❌', 'Error in uploading photo'));
     }
   };
 
@@ -130,10 +130,10 @@ export default function ProfileTab(props) {
       }
       if (result) {
         setEditForm(prev => ({ ...prev, cover: result }));
-        showToast('تصویر کاور با موفقیت بارگذاری شد 🎨');
+        showToast(window.loc('تصویر کاور با موفقیت بارگذاری شد 🎨', 'The cover image has been successfully uploaded 🎨'));
       }
     } catch (err) {
-      showToast('خطا در بارگذاری کاور ❌');
+      showToast(window.loc('خطا در بارگذاری کاور ❌', 'Error loading cover ❌'));
     }
   };
 
@@ -152,7 +152,7 @@ export default function ProfileTab(props) {
       username: currentUsername || 'rayan_vlive',
       avatar: userAvatar || PRESET_AVATARS[0],
       time: '2 hours ago',
-      content: '🎬 لایواستریم اختصاصی امشب ساعت ۲۲:۰۰ شروع میشه! منتظر همگی در بخش لایو هستیم 💖✨',
+      content: window.loc('🎬 لایواستریم اختصاصی امشب ساعت ۲۲:۰۰ شروع میشه! منتظر همگی در بخش لایو هستیم 💖✨', '🎬 Exclusive livestream starts tonight at 22:00! We are waiting for everyone in the live section 💖✨'),
       image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80',
       likes: 1420,
       comments: 98,
@@ -166,7 +166,7 @@ export default function ProfileTab(props) {
       username: currentUsername || 'rayan_vlive',
       avatar: userAvatar || PRESET_AVATARS[0],
       time: 'Yesterday',
-      content: 'مرسی از همه دوستانی که دیشب تو روم خصوصی همراهم بودن. هدیه‌های ارزشمندتون ثبت شد! 🎁🔥',
+      content: window.loc('مرسی از همه دوستانی که دیشب تو روم خصوصی همراهم بودن. هدیه‌های ارزشمندتون ثبت شد! 🎁🔥', 'Thank you to all my friends who were with me in the private room last night. Your valuable gifts have been registered! 🎁🔥'),
       image: null,
       likes: 850,
       comments: 42,
@@ -208,12 +208,12 @@ export default function ProfileTab(props) {
     safeStorage.setItem('vlive_profile_tg', editForm.telegram);
 
     setIsEditModalOpen(false);
-    showToast(loc('پروفایل شما با موفقیت به‌روزرسانی و ذخیره شد ✨', 'Profile updated & saved successfully ✨'));
+    showToast(window.loc('پروفایل شما با موفقیت به‌روزرسانی و ذخیره شد ✨', 'Profile updated & saved successfully ✨'));
   };
 
   const handleAddPost = () => {
     if (!newPostText.trim() && !newPostImage.trim()) {
-      showToast(loc('لطفاً متنی برای پست وارد کنید', 'Please enter text for post'));
+      showToast(window.loc('لطفاً متنی برای پست وارد کنید', 'Please enter text for post'));
       return;
     }
     const newPost = {
@@ -233,7 +233,7 @@ export default function ProfileTab(props) {
     setProfilePosts([newPost, ...profilePosts]);
     setNewPostText('');
     setNewPostImage('');
-    showToast(loc('پست جدید با موفقیت منتشر شد 🎉', 'New post published successfully 🎉'));
+    showToast(window.loc('پست جدید با موفقیت منتشر شد 🎉', 'New post published successfully 🎉'));
   };
 
   const isAdminUser = isUserRayan || isSuperAdmin || currentUsername?.toLowerCase() === 'rayan' || authUsername?.toLowerCase() === 'rayan';
@@ -282,7 +282,7 @@ export default function ProfileTab(props) {
                   title="Edit Profile"
                 >
                   <Edit3 className="w-3.5 h-3.5 text-pink-400" />
-                  <span>{loc('ویرایش', 'Edit')}</span>
+                  <span>{window.loc('ویرایش', 'Edit')}</span>
                 </button>
 
                 <button
@@ -311,7 +311,7 @@ export default function ProfileTab(props) {
                 className="absolute bottom-3 right-3 px-2.5 py-1 rounded-xl bg-black/60 hover:bg-black/80 text-white/90 text-[10px] font-bold backdrop-blur-md flex items-center gap-1 border border-white/10"
               >
                 <Camera className="w-3 h-3 text-pink-400" />
-                <span>{loc('تغییر کاور', 'Change Cover')}</span>
+                <span>{window.loc('تغییر کاور', 'Change Cover')}</span>
               </button>
             </div>
 
@@ -353,7 +353,7 @@ export default function ProfileTab(props) {
                       className="flex-1 sm:flex-initial px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-amber-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-[0_0_25px_rgba(236,72,153,0.5)] hover:scale-105 active:scale-95 transition border border-pink-400/40"
                     >
                       <Video className="w-4 h-4 fill-white text-white animate-pulse" />
-                      <span>{loc('لایو بزرگسال / استو‌دیو 🔞', 'Live Studio 🔞')}</span>
+                      <span>{window.loc('لایو بزرگسال / استو‌دیو 🔞', 'Live Studio 🔞')}</span>
                     </button>
                   )}
 
@@ -412,7 +412,7 @@ export default function ProfileTab(props) {
                 <div className="flex items-center justify-between text-xs font-bold">
                   <span className="text-slate-300 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{loc('تکمیل پروفایلکاربری', 'Profile Completion')}</span>
+                    <span>{window.loc('تکمیل پروفایلکاربری', 'Profile Completion')}</span>
                   </span>
                   <span className="text-amber-400">95%</span>
                 </div>
@@ -425,27 +425,27 @@ export default function ProfileTab(props) {
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-5 mt-5 border-t border-slate-800/80 text-center">
                 <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
                   <span className="block text-base sm:text-lg font-black text-white">12.8K</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{loc('دنبال‌کنندگان', 'Followers')}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('دنبال‌کنندگان', 'Followers')}</span>
                 </div>
                 <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
                   <span className="block text-base sm:text-lg font-black text-white">342</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{loc('دنبال‌شده‌ها', 'Following')}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('دنبال‌شده‌ها', 'Following')}</span>
                 </div>
                 <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
                   <span className="block text-base sm:text-lg font-black text-pink-400">28.4K</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{loc('لایک‌ها', 'Likes')}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('لایک‌ها', 'Likes')}</span>
                 </div>
                 <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
                   <span className="block text-base sm:text-lg font-black text-cyan-400">4.5K</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{loc('بازدیدها', 'Views')}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('بازدیدها', 'Views')}</span>
                 </div>
                 <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
                   <span className="block text-base sm:text-lg font-black text-purple-400">Lv.{userLevel}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{loc('سطح', 'Level')}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('سطح', 'Level')}</span>
                 </div>
                 <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
                   <span className="block text-base sm:text-lg font-black text-amber-400">{userCoins.toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{loc('سکه / ستاره', 'Stars')}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('سکه / ستاره', 'Stars')}</span>
                 </div>
               </div>
 
@@ -460,21 +460,21 @@ export default function ProfileTab(props) {
           <div className="flex items-center justify-between px-2">
             <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
               <Flame className="w-4 h-4 text-amber-400 animate-bounce" />
-              <span>{loc('استوری‌ها و هایلایت‌ها', 'Stories & Highlights')}</span>
+              <span>{window.loc('استوری‌ها و هایلایت‌ها', 'Stories & Highlights')}</span>
             </span>
-            <span className="text-[10px] text-pink-400 font-bold cursor-pointer">{loc('مشاهده همه', 'View All')}</span>
+            <span className="text-[10px] text-pink-400 font-bold cursor-pointer">{window.loc('مشاهده همه', 'View All')}</span>
           </div>
 
           <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
             {/* Add Story Button */}
             <button
-              onClick={() => showToast(loc('📷 بخش آپلود استوری آماده است', 'Story Creator is active!'))}
+              onClick={() => showToast(window.loc('📷 بخش آپلود استوری آماده است', 'Story Creator is active!'))}
               className="flex flex-col items-center gap-1.5 shrink-0 group"
             >
               <div className="w-16 h-16 rounded-full bg-slate-950 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 transition">
                 <Plus className="w-6 h-6" />
               </div>
-              <span className="text-[10px] font-bold text-slate-300">{loc('افزودن', 'Add')}</span>
+              <span className="text-[10px] font-bold text-slate-300">{window.loc('افزودن', 'Add')}</span>
             </button>
 
             {/* Story Circles */}
@@ -504,10 +504,10 @@ export default function ProfileTab(props) {
                 <ShieldAlert className="w-6 h-6 text-rose-400 animate-pulse" />
                 <div>
                   <h3 className="font-black text-white text-sm flex items-center gap-2">
-                    <span>{loc('پنل مدیریت و ناظر ارشد (Super Admin)', 'Super Admin Moderation Control')}</span>
+                    <span>{window.loc('پنل مدیریت و ناظر ارشد (Super Admin)', 'Super Admin Moderation Control')}</span>
                     <span className="bg-rose-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">RAYAN ONLY</span>
                   </h3>
-                  <p className="text-[11px] text-rose-300">مدیریت مستقیم کاربران، گزارش‌ها، احراز هویت و دسترسی‌های سیستم</p>
+                  <p className="text-[11px] text-rose-300">{window.loc('مدیریت مستقیم کاربران، گزارش‌ها، احراز هویت و دسترسی‌های سیستم', 'Direct management of users, reports, authentication and system access')}</p>
                 </div>
               </div>
 
@@ -516,26 +516,26 @@ export default function ProfileTab(props) {
                 className="px-4 py-2 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs shadow-lg flex items-center gap-1.5 transition active:scale-95"
               >
                 <Shield className="w-4 h-4" />
-                <span>{loc('ورود به داشبورد کامل', 'Open Full Admin')}</span>
+                <span>{window.loc('ورود به داشبورد کامل', 'Open Full Admin')}</span>
               </button>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
               <div className="p-3 rounded-2xl bg-slate-950/80 border border-rose-500/20 text-center">
                 <span className="block text-lg font-black text-white">{usersList.length || 248}</span>
-                <span className="text-[10px] text-slate-400">کل کاربران</span>
+                <span className="text-[10px] text-slate-400">{window.loc('کل کاربران', 'Total users')}</span>
               </div>
               <div className="p-3 rounded-2xl bg-slate-950/80 border border-rose-500/20 text-center">
                 <span className="block text-lg font-black text-amber-400">12</span>
-                <span className="text-[10px] text-slate-400">احراز هویت معلق</span>
+                <span className="text-[10px] text-slate-400">{window.loc('احراز هویت معلق', 'Authentication pending')}</span>
               </div>
               <div className="p-3 rounded-2xl bg-slate-950/80 border border-rose-500/20 text-center">
                 <span className="block text-lg font-black text-cyan-400">45</span>
-                <span className="text-[10px] text-slate-400">استریمر تایید شده</span>
+                <span className="text-[10px] text-slate-400">{window.loc('استریمر تایید شده', 'Verified streamer')}</span>
               </div>
               <div className="p-3 rounded-2xl bg-slate-950/80 border border-rose-500/20 text-center">
                 <span className="block text-lg font-black text-rose-400">0</span>
-                <span className="text-[10px] text-slate-400">گزارش تخلف جدید</span>
+                <span className="text-[10px] text-slate-400">{window.loc('گزارش تخلف جدید', 'Report a new violation')}</span>
               </div>
             </div>
 
@@ -545,18 +545,18 @@ export default function ProfileTab(props) {
                 className="flex-1 py-2.5 rounded-2xl bg-amber-950/50 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 transition"
               >
                 <Edit3 className="w-3.5 h-3.5" />
-                <span>{isEditMode ? 'خروج از ویرایش بصری UI' : 'ویرایشگر بصری UI'}</span>
+                <span>{isEditMode ? window.loc('خروج از ویرایش بصری UI', 'Exit visual UI editing') : window.loc('ویرایشگر بصری UI', 'Visual UI editor')}</span>
               </button>
 
               <button
                 onClick={() => {
-                  addAdminAuditLog('بازبینی سریع کاربران از پروفایل انجام شد');
-                  showToast('بررسی امنیتی کامل اجرا شد ✅');
+                  addAdminAuditLog(window.loc('بازبینی سریع کاربران از پروفایل انجام شد', 'Quick review of users\' profiles was done'));
+                  showToast(window.loc('بررسی امنیتی کامل اجرا شد ✅', 'A complete security check has been implemented'));
                 }}
                 className="flex-1 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition"
               >
                 <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                <span>ثبت لاگ نظارت سریع</span>
+                <span>{window.loc('ثبت لاگ نظارت سریع', 'Fast monitoring log recording')}</span>
               </button>
             </div>
           </div>
@@ -568,15 +568,15 @@ export default function ProfileTab(props) {
         <VisualSectionWrapper pageId="profile" sectionId="profile_tab_nav" defaultLabel="Profile Subtabs Bar">
           <div className="flex items-center gap-2 p-2 bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-slate-800 overflow-x-auto scrollbar-none">
             {[
-              { id: 'posts', label: loc('پست‌ها', 'Posts'), icon: MessageSquare },
-              { id: 'media', label: loc('رسانه', 'Media'), icon: Image },
-              { id: 'stories', label: loc('استوری‌ها', 'Stories'), icon: Flame },
-              { id: 'about', label: loc('درباره من', 'About'), icon: User },
-              { id: 'activity', label: loc('فعالیت', 'Activity'), icon: Activity },
-              { id: 'lives', label: loc('لایوها', 'Lives'), icon: Video },
-              { id: 'vip', label: loc('VIP و نشان‌ها', 'VIP & Badges'), icon: Crown },
-              { id: 'wallet', label: loc('کیف پول', 'Wallet'), icon: Wallet },
-              { id: 'settings', label: loc('تنظیمات', 'Settings'), icon: Settings },
+              { id: 'posts', label: window.loc('پست‌ها', 'Posts'), icon: MessageSquare },
+              { id: 'media', label: window.loc('رسانه', 'Media'), icon: Image },
+              { id: 'stories', label: window.loc('استوری‌ها', 'Stories'), icon: Flame },
+              { id: 'about', label: window.loc('درباره من', 'About'), icon: User },
+              { id: 'activity', label: window.loc('فعالیت', 'Activity'), icon: Activity },
+              { id: 'lives', label: window.loc('لایوها', 'Lives'), icon: Video },
+              { id: 'vip', label: window.loc('VIP و نشان‌ها', 'VIP & Badges'), icon: Crown },
+              { id: 'wallet', label: window.loc('کیف پول', 'Wallet'), icon: Wallet },
+              { id: 'settings', label: window.loc('تنظیمات', 'Settings'), icon: Settings },
             ].map(tab => {
               const Icon = tab.icon;
               const isActive = activeProfileTab === tab.id;
@@ -613,7 +613,7 @@ export default function ProfileTab(props) {
                   type="text"
                   value={newPostText}
                   onChange={(e) => setNewPostText(e.target.value)}
-                  placeholder={loc('امروز چه خبر؟ متن یا عکس انتشار بدید...', 'Share a post or moment with followers...')}
+                  placeholder={window.loc('امروز چه خبر؟ متن یا عکس انتشار بدید...', 'Share a post or moment with followers...')}
                   className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-pink-500"
                 />
               </div>
@@ -623,7 +623,7 @@ export default function ProfileTab(props) {
                   type="text"
                   value={newPostImage}
                   onChange={(e) => setNewPostImage(e.target.value)}
-                  placeholder="لینک تصویر (اختیاری)..."
+                  placeholder={window.loc('لینک تصویر (اختیاری)...', 'Image link (optional)...')}
                   className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-[11px] text-white w-1/2 outline-none"
                 />
 
@@ -632,7 +632,7 @@ export default function ProfileTab(props) {
                   className="px-5 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-xs shadow-md hover:scale-105 active:scale-95 transition flex items-center gap-1.5"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>{loc('انتشار پست', 'Publish')}</span>
+                  <span>{window.loc('انتشار پست', 'Publish')}</span>
                 </button>
               </div>
             </div>
@@ -680,11 +680,11 @@ export default function ProfileTab(props) {
 
                   <button className="flex items-center gap-1.5 font-bold hover:text-white transition">
                     <MessageSquare className="w-4 h-4" />
-                    <span>{post.comments} {loc('نظر', 'Comments')}</span>
+                    <span>{post.comments} {window.loc('نظر', 'Comments')}</span>
                   </button>
 
                   <button 
-                    onClick={() => showToast(loc('لینک پست کپی شد 🔗', 'Post link copied!'))}
+                    onClick={() => showToast(window.loc('لینک پست کپی شد 🔗', 'Post link copied!'))}
                     className="flex items-center gap-1.5 font-bold hover:text-white transition"
                   >
                     <Share2 className="w-4 h-4" />
@@ -700,13 +700,13 @@ export default function ProfileTab(props) {
         {activeProfileTab === 'media' && (
           <div className="space-y-4 animate-fadeIn">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white text-sm">{loc('آلبوم تصاویر و ویدیوهای من', 'Media & Video Highlights')}</h3>
+              <h3 className="font-bold text-white text-sm">{window.loc('آلبوم تصاویر و ویدیوهای من', 'Media & Video Highlights')}</h3>
               <button
-                onClick={() => showToast(loc('📷 آپلود تصویر جدید فعال شد', 'Media upload ready!'))}
+                onClick={() => showToast(window.loc('📷 آپلود تصویر جدید فعال شد', 'Media upload ready!'))}
                 className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold flex items-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>{loc('افزودن رسانه', 'Upload')}</span>
+                <span>{window.loc('افزودن رسانه', 'Upload')}</span>
               </button>
             </div>
 
@@ -731,7 +731,7 @@ export default function ProfileTab(props) {
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="font-bold text-white text-sm flex items-center gap-2">
                   <Flame className="w-4 h-4 text-amber-400" />
-                  <span>{loc('آرشیو و هایلایت‌های استوری', 'Story Highlights Archive')}</span>
+                  <span>{window.loc('آرشیو و هایلایت‌های استوری', 'Story Highlights Archive')}</span>
                 </h3>
                 <span className="text-xs text-slate-400 font-medium">4 Active Highlights</span>
               </div>
@@ -761,13 +761,13 @@ export default function ProfileTab(props) {
           <div className="space-y-4 animate-fadeIn">
             <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
               <h3 className="font-black text-white text-base pb-3 border-b border-slate-800 flex items-center justify-between">
-                <span>{loc('اطلاعات شخصی و بیوگرافی', 'Personal Details & Biography')}</span>
+                <span>{window.loc('اطلاعات شخصی و بیوگرافی', 'Personal Details & Biography')}</span>
                 <button
                   onClick={() => setIsEditModalOpen(true)}
                   className="text-xs font-bold text-pink-400 hover:text-pink-300 flex items-center gap-1"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
-                  <span>{loc('ویرایش', 'Edit')}</span>
+                  <span>{window.loc('ویرایش', 'Edit')}</span>
                 </button>
               </h3>
 
@@ -775,7 +775,7 @@ export default function ProfileTab(props) {
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                   <span className="text-slate-400 flex items-center gap-1.5 font-bold">
                     <User className="w-3.5 h-3.5 text-pink-400" />
-                    <span>{loc('سن و تاریخ تولد', 'Age & Birthday')}</span>
+                    <span>{window.loc('سن و تاریخ تولد', 'Age & Birthday')}</span>
                   </span>
                   <p className="text-white font-black text-sm">{userAge} years old</p>
                 </div>
@@ -783,7 +783,7 @@ export default function ProfileTab(props) {
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                   <span className="text-slate-400 flex items-center gap-1.5 font-bold">
                     <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>{loc('شهر و موقعیت', 'Location')}</span>
+                    <span>{window.loc('شهر و موقعیت', 'Location')}</span>
                   </span>
                   <p className="text-white font-black text-sm">{userCity}</p>
                 </div>
@@ -791,7 +791,7 @@ export default function ProfileTab(props) {
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                   <span className="text-slate-400 flex items-center gap-1.5 font-bold">
                     <Briefcase className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{loc('شغل و فعالیت', 'Occupation')}</span>
+                    <span>{window.loc('شغل و فعالیت', 'Occupation')}</span>
                   </span>
                   <p className="text-white font-black text-sm">{userOccupation}</p>
                 </div>
@@ -799,7 +799,7 @@ export default function ProfileTab(props) {
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                   <span className="text-slate-400 flex items-center gap-1.5 font-bold">
                     <GraduationCap className="w-3.5 h-3.5 text-purple-400" />
-                    <span>{loc('تحصیلات', 'Education')}</span>
+                    <span>{window.loc('تحصیلات', 'Education')}</span>
                   </span>
                   <p className="text-white font-black text-sm">{userEducation}</p>
                 </div>
@@ -807,7 +807,7 @@ export default function ProfileTab(props) {
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                   <span className="text-slate-400 flex items-center gap-1.5 font-bold">
                     <Heart className="w-3.5 h-3.5 text-rose-400" />
-                    <span>{loc('وضعیت تاهل', 'Relationship Status')}</span>
+                    <span>{window.loc('وضعیت تاهل', 'Relationship Status')}</span>
                   </span>
                   <p className="text-white font-black text-sm">{userRelationship}</p>
                 </div>
@@ -815,14 +815,14 @@ export default function ProfileTab(props) {
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                   <span className="text-slate-400 flex items-center gap-1.5 font-bold">
                     <Globe className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{loc('زبان‌ها', 'Languages')}</span>
+                    <span>{window.loc('زبان‌ها', 'Languages')}</span>
                   </span>
                   <p className="text-white font-black text-sm">{userLanguages}</p>
                 </div>
               </div>
 
               <div className="space-y-2 pt-2 border-t border-slate-800">
-                <span className="text-xs font-bold text-slate-300">{loc('علاقه‌مندی‌ها', 'Interests & Tags')}</span>
+                <span className="text-xs font-bold text-slate-300">{window.loc('علاقه‌مندی‌ها', 'Interests & Tags')}</span>
                 <div className="flex flex-wrap gap-2">
                   {userInterests.split(',').map((tag, i) => (
                     <span key={i} className="px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-bold">
@@ -841,14 +841,14 @@ export default function ProfileTab(props) {
             <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
               <h3 className="font-bold text-white text-sm flex items-center gap-2">
                 <Activity className="w-4 h-4 text-cyan-400" />
-                <span>{loc('تاریخچه فعالیت‌های اخیر', 'Recent Activity Log')}</span>
+                <span>{window.loc('تاریخچه فعالیت‌های اخیر', 'Recent Activity Log')}</span>
               </h3>
 
               <div className="space-y-3 text-xs">
                 {[
-                  { text: 'برگزاری لایواستریم ۴K اختصاصی به مدت ۱.۵ ساعت', time: 'امروز - ۱۰:۳۰', icon: Video, color: 'text-pink-400' },
-                  { text: 'دریافت هدیه VIP تاج طلایی از @Elnaz', time: 'دیروز - ۲۱:۱۵', icon: Gift, color: 'text-amber-400' },
-                  { text: 'رسیدن به سطح Lv.24 و دریافت بونوس ۵۰۰ سکه', time: '۲ روز پیش', icon: Award, color: 'text-purple-400' },
+                  { text: window.loc('برگزاری لایواستریم ۴K اختصاصی به مدت ۱.۵ ساعت', 'Holding an exclusive 4K live stream for 1.5 hours'), time: window.loc('امروز - ۱۰:۳۰', 'Today - 10:30'), icon: Video, color: 'text-pink-400' },
+                  { text: window.loc('دریافت هدیه VIP تاج طلایی از @Elnaz', 'Received Golden Crown VIP gift from @Elnaz'), time: window.loc('دیروز - ۲۱:۱۵', 'Yesterday - 21:15'), icon: Gift, color: 'text-amber-400' },
+                  { text: window.loc('رسیدن به سطح Lv.24 و دریافت بونوس ۵۰۰ سکه', 'Reach Lv.24 and get a bonus of 500 coins'), time: window.loc('۲ روز پیش', '2 days ago'), icon: Award, color: 'text-purple-400' },
                 ].map((act, i) => {
                   const Icon = act.icon;
                   return (
@@ -873,28 +873,28 @@ export default function ProfileTab(props) {
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="font-bold text-white text-sm flex items-center gap-2">
                   <Video className="w-4 h-4 text-pink-400" />
-                  <span>{loc('آمار و عملکرد لایواستریم‌ها', 'Live Broadcast Performance')}</span>
+                  <span>{window.loc('آمار و عملکرد لایواستریم‌ها', 'Live Broadcast Performance')}</span>
                 </h3>
 
                 <button
                   onClick={() => setIsHostLiveOpen && setIsHostLiveOpen(true)}
                   className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold"
                 >
-                  {loc('شروع لایو جدید', 'Go Live')}
+                  {window.loc('شروع لایو جدید', 'Go Live')}
                 </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 font-medium">مجموع ساعات لایو</span>
+                  <span className="text-slate-400 font-medium">{window.loc('مجموع ساعات لایو', 'Total live hours')}</span>
                   <span className="block text-xl font-black text-white">148.5 hrs</span>
                 </div>
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 font-medium">کل بینندگان</span>
+                  <span className="text-slate-400 font-medium">{window.loc('کل بینندگان', 'Total viewers')}</span>
                   <span className="block text-xl font-black text-cyan-400">94.2K</span>
                 </div>
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 font-medium">درآمد از تماس اختصاصی</span>
+                  <span className="text-slate-400 font-medium">{window.loc('درآمد از تماس اختصاصی', 'Earnings from exclusive calls')}</span>
                   <span className="block text-xl font-black text-amber-400">4,850 Stars</span>
                 </div>
               </div>
@@ -983,7 +983,7 @@ export default function ProfileTab(props) {
             {/* Privacy Controls */}
             <div className="space-y-3 text-xs">
               <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                <span>{loc('نمایش وضعیت آنلاین در پروفایل', 'Show Online Status')}</span>
+                <span>{window.loc('نمایش وضعیت آنلاین در پروفایل', 'Show Online Status')}</span>
                 <input
                   type="checkbox"
                   checked={showOnlineStatus}
@@ -996,7 +996,7 @@ export default function ProfileTab(props) {
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                <span>{loc('نمایش شهر و موقعیت جغرافیایی', 'Show Location on Profile')}</span>
+                <span>{window.loc('نمایش شهر و موقعیت جغرافیایی', 'Show Location on Profile')}</span>
                 <input
                   type="checkbox"
                   checked={showLocation}
@@ -1061,7 +1061,7 @@ export default function ProfileTab(props) {
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
                 <Edit3 className="w-5 h-5 text-pink-400" />
-                <span>ویرایش اطلاعات کامل پروفایل</span>
+                <span>{window.loc('ویرایش اطلاعات کامل پروفایل', 'Edit complete profile information')}</span>
               </h3>
               <button
                 onClick={() => setIsEditModalOpen(false)}
@@ -1073,7 +1073,7 @@ export default function ProfileTab(props) {
               
               {/* Display Name & Bio */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300">نام کامل / نام مستعار</label>
+                <label className="text-xs font-bold text-slate-300">{window.loc('نام کامل / نام مستعار', 'Full name / Nickname')}</label>
                 <input
                   type="text"
                   value={editForm.name}
@@ -1083,7 +1083,7 @@ export default function ProfileTab(props) {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300">بیوگرافی (Bio)</label>
+                <label className="text-xs font-bold text-slate-300">{window.loc('بیوگرافی (Bio)', 'Biography (Bio)')}</label>
                 <textarea
                   rows="3"
                   value={editForm.bio}
@@ -1096,18 +1096,18 @@ export default function ProfileTab(props) {
               <div className="space-y-3 bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
                 <h4 className="text-xs font-black text-pink-400 flex items-center gap-1.5 border-b border-slate-800 pb-2">
                   <Camera className="w-4 h-4 text-pink-400" />
-                  <span>تغییر و مدیریت تصویر پروفایل و کاور</span>
+                  <span>{window.loc('تغییر و مدیریت تصویر پروفایل و کاور', 'Changing and managing the profile and cover image')}</span>
                 </h4>
 
                 {/* Avatar Section */}
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-300 block">تصویر آواتار (Profile Picture)</label>
+                  <label className="text-xs font-bold text-slate-300 block">{window.loc('تصویر آواتار (Profile Picture)', 'Avatar picture (Profile Picture)')}</label>
                   <div className="flex items-center gap-3">
                     <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-pink-500 shadow-lg bg-slate-900 shrink-0">
                       {editForm.avatar ? (
                         <img src={editForm.avatar} alt="Avatar Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold text-[10px]">بدون عکس</div>
+                        <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold text-[10px]">{window.loc('بدون عکس', 'No photo')}</div>
                       )}
                     </div>
 
@@ -1115,7 +1115,7 @@ export default function ProfileTab(props) {
                       <div className="flex items-center gap-2">
                         <label className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition">
                           <Upload className="w-3.5 h-3.5" />
-                          <span>آپلود عکس جدید</span>
+                          <span>{window.loc('آپلود عکس جدید', 'Upload a new photo')}</span>
                           <input type="file" accept="image/*" onChange={handleAvatarFileUpload} className="hidden" />
                         </label>
 
@@ -1124,19 +1124,19 @@ export default function ProfileTab(props) {
                             type="button"
                             onClick={() => {
                               setEditForm(prev => ({ ...prev, avatar: '' }));
-                              showToast('تصویر آواتار حذف شد 🗑️');
+                              showToast(window.loc('تصویر آواتار حذف شد 🗑️', 'Avatar image removed 🗑️'));
                             }}
                             className="px-2.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-xs flex items-center gap-1 border border-rose-500/30 transition"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                            <span>حذف</span>
+                            <span>{window.loc('حذف', 'remove')}</span>
                           </button>
                         )}
                       </div>
 
                       <input
                         type="text"
-                        placeholder="یا آدرس لینک تصویر (URL)..."
+                        placeholder={window.loc('یا آدرس لینک تصویر (URL)...', 'or image link address (URL)...')}
                         value={editForm.avatar}
                         onChange={(e) => setEditForm({ ...editForm, avatar: e.target.value })}
                         className="w-full p-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-[11px] outline-none focus:border-pink-500"
@@ -1146,7 +1146,7 @@ export default function ProfileTab(props) {
 
                   {/* Preset Avatar Selection Grid */}
                   <div className="pt-2">
-                    <span className="text-[10px] text-slate-400 font-bold block mb-1.5">یا انتخاب از آواتارهای آماده:</span>
+                    <span className="text-[10px] text-slate-400 font-bold block mb-1.5">{window.loc('یا انتخاب از آواتارهای آماده:', 'Or choosing from ready-made avatars:')}</span>
                     <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                       {(PRESET_AVATARS.length > 0 ? PRESET_AVATARS : [
                         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
@@ -1160,7 +1160,7 @@ export default function ProfileTab(props) {
                           type="button"
                           onClick={() => {
                             setEditForm(prev => ({ ...prev, avatar: presetUrl }));
-                            showToast('آواتار انتخابی اعمال شد ✨');
+                            showToast(window.loc('آواتار انتخابی اعمال شد ✨', 'The selected avatar has been applied'));
                           }}
                           className={`w-10 h-10 rounded-full border-2 overflow-hidden shrink-0 transition ${
                             editForm.avatar === presetUrl ? 'border-pink-500 scale-110 shadow-[0_0_10px_rgba(236,72,153,0.5)]' : 'border-slate-800 hover:border-slate-600'
@@ -1175,20 +1175,20 @@ export default function ProfileTab(props) {
 
                 {/* Cover Photo Section */}
                 <div className="space-y-2 border-t border-slate-800 pt-3">
-                  <label className="text-xs font-bold text-slate-300 block">تصویر کاور پروفایل (Cover Photo)</label>
+                  <label className="text-xs font-bold text-slate-300 block">{window.loc('تصویر کاور پروفایل (Cover Photo)', 'Profile cover photo')}</label>
                   <div className="flex flex-col gap-2">
                     <div className="relative w-full h-20 rounded-xl overflow-hidden border border-slate-800 bg-slate-900 shadow-inner">
                       {editForm.cover ? (
                         <img src={editForm.cover} alt="Cover Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold text-xs">بدون تصویر کاور</div>
+                        <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold text-xs">{window.loc('بدون تصویر کاور', 'No cover image')}</div>
                       )}
                     </div>
 
                     <div className="flex items-center gap-2">
                       <label className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:bg-slate-800 text-cyan-300 font-black text-xs flex items-center gap-1.5 cursor-pointer transition">
                         <Upload className="w-3.5 h-3.5" />
-                        <span>آپلود کاور جدید</span>
+                        <span>{window.loc('آپلود کاور جدید', 'Upload new cover')}</span>
                         <input type="file" accept="image/*" onChange={handleCoverFileUpload} className="hidden" />
                       </label>
 
@@ -1197,18 +1197,18 @@ export default function ProfileTab(props) {
                           type="button"
                           onClick={() => {
                             setEditForm(prev => ({ ...prev, cover: '' }));
-                            showToast('تصویر کاور حذف شد 🗑️');
+                            showToast(window.loc('تصویر کاور حذف شد 🗑️', 'The cover image was removed 🗑️'));
                           }}
                           className="px-2.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-xs flex items-center gap-1 border border-rose-500/30 transition"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                          <span>حذف کاور</span>
+                          <span>{window.loc('حذف کاور', 'Remove the cover')}</span>
                         </button>
                       )}
 
                       <input
                         type="text"
-                        placeholder="لینک مستقیم کاور..."
+                        placeholder={window.loc('لینک مستقیم کاور...', 'Direct link to the cover...')}
                         value={editForm.cover}
                         onChange={(e) => setEditForm({ ...editForm, cover: e.target.value })}
                         className="flex-1 p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-white text-[11px] outline-none focus:border-cyan-500"
@@ -1221,7 +1221,7 @@ export default function ProfileTab(props) {
               {/* City & Age */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">شهر و کشور</label>
+                  <label className="text-xs font-bold text-slate-300">{window.loc('شهر و کشور', 'city ​​and country')}</label>
                   <input
                     type="text"
                     value={editForm.city}
@@ -1230,7 +1230,7 @@ export default function ProfileTab(props) {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">سن</label>
+                  <label className="text-xs font-bold text-slate-300">{window.loc('سن', 'age')}</label>
                   <input
                     type="text"
                     value={editForm.age}
@@ -1243,7 +1243,7 @@ export default function ProfileTab(props) {
               {/* Occupation & Education */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">شغل</label>
+                  <label className="text-xs font-bold text-slate-300">{window.loc('شغل', 'job')}</label>
                   <input
                     type="text"
                     value={editForm.occupation}
@@ -1252,7 +1252,7 @@ export default function ProfileTab(props) {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">تحصیلات</label>
+                  <label className="text-xs font-bold text-slate-300">{window.loc('تحصیلات', 'education')}</label>
                   <input
                     type="text"
                     value={editForm.education}
@@ -1265,20 +1265,20 @@ export default function ProfileTab(props) {
               {/* Relationship & Languages */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">وضعیت تاهل</label>
+                  <label className="text-xs font-bold text-slate-300">{window.loc('وضعیت تاهل', 'marital status')}</label>
                   <select
                     value={editForm.relationship}
                     onChange={(e) => setEditForm({ ...editForm, relationship: e.target.value })}
                     className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none"
                   >
-                    <option value="Single">مجرد (Single)</option>
-                    <option value="In a Relationship">در رابطه (In a Relationship)</option>
-                    <option value="Married">متاهل (Married)</option>
+                    <option value="Single">{window.loc('مجرد (Single)', 'Single')}</option>
+                    <option value="In a Relationship">{window.loc('در رابطه (In a Relationship)', 'In a Relationship')}</option>
+                    <option value="Married">{window.loc('متاهل (Married)', 'Married')}</option>
                   </select>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">زبان‌های گفتاری</label>
+                  <label className="text-xs font-bold text-slate-300">{window.loc('زبان‌های گفتاری', 'Spoken languages')}</label>
                   <input
                     type="text"
                     value={editForm.languages}
@@ -1290,7 +1290,7 @@ export default function ProfileTab(props) {
 
               {/* Interests */}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300">علاقه‌مندی‌ها (با کاما جدا کنید)</label>
+                <label className="text-xs font-bold text-slate-300">{window.loc('علاقه‌مندی‌ها (با کاما جدا کنید)', 'Favorites (separate with commas)')}</label>
                 <input
                   type="text"
                   value={editForm.interests}
@@ -1306,13 +1306,13 @@ export default function ProfileTab(props) {
                 onClick={handleSaveProfile}
                 className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-105 transition"
               >
-                ذخیره تغییرات پروفایل ✨
+                {window.loc('ذخیره تغییرات پروفایل ✨', 'Save profile changes ✨')}
               </button>
               <button
                 onClick={() => setIsEditModalOpen(false)}
                 className="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
               >
-                انصراف
+                {window.loc('انصراف', 'opt out')}
               </button>
             </div>
           </div>

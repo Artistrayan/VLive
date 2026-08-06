@@ -33,7 +33,7 @@ export default function LiveStudioModal({
   const [liveCategory, setLiveCategory] = useState('Gaming');
   const [liveDesc, setLiveDesc] = useState('');
   const [liveTags, setLiveTags] = useState('#game #vlive #stream');
-  const [liveLanguage, setLiveLanguage] = useState('فارسی (Persian)');
+  const [liveLanguage, setLiveLanguage] = useState(window.loc('فارسی (Persian)', 'Persian'));
   const [thumbnailUrl, setThumbnailUrl] = useState('https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80');
   const [entryCoinRate, setEntryCoinRate] = useState(10);
   const [adultConsent, setAdultConsent] = useState(false);
@@ -63,11 +63,11 @@ export default function LiveStudioModal({
   // Interactive Drawers / Panels
   const [isChatExpanded, setIsChatExpanded] = useState(true);
   const [chatInput, setChatInput] = useState('');
-  const [pinnedMessage, setPinnedMessage] = useState('👑 به لایواستریم خوش آمدید! قوانین را رعایت فرمایید.');
+  const [pinnedMessage, setPinnedMessage] = useState(window.loc('👑 به لایواستریم خوش آمدید! قوانین را رعایت فرمایید.', '👑 Welcome to Livestream! Follow the rules.'));
   const [chatMessages, setChatMessages] = useState([
-    { id: 1, user: 'Sahar_VIP', text: 'سلام استریمر عزیز! خسته نباشی ❤️', isVip: true, isPinned: false },
-    { id: 2, user: 'Ali_Gamer', text: 'عالی هستی! بازی بعدی چیه؟ 🎮', isVip: false, isPinned: false },
-    { id: 3, user: 'System', text: '🤖 حفاظت هوشمند AI فعال است.', isSystem: true }
+    { id: 1, user: 'Sahar_VIP', text: window.loc('سلام استریمر عزیز! خسته نباشی ❤️', 'Hello dear streamer! Don\'t be tired'), isVip: true, isPinned: false },
+    { id: 2, user: 'Ali_Gamer', text: window.loc('عالی هستی! بازی بعدی چیه؟ 🎮', 'You are great! What is the next game? 🎮'), isVip: false, isPinned: false },
+    { id: 3, user: 'System', text: window.loc('🤖 حفاظت هوشمند AI فعال است.', '🤖 Smart AI protection is enabled.'), isSystem: true }
   ]);
 
   // Chat Control Settings
@@ -99,7 +99,7 @@ export default function LiveStudioModal({
 
   // AI Monitor Status
   const [aiMonitorStatus, setAiMonitorStatus] = useState('ALL_CLEAR'); // 'ALL_CLEAR' | 'FLAGGED'
-  const [aiNoticeMsg, setAiNoticeMsg] = useState('چک چهره، دسته‌بندی و عدم اسپم تایید شد ✅');
+  const [aiNoticeMsg, setAiNoticeMsg] = useState(window.loc('چک چهره، دسته‌بندی و عدم اسپم تایید شد ✅', 'Face check, category and non-spam were confirmed'));
 
   // Confirmation Modals
   const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
@@ -126,7 +126,7 @@ export default function LiveStudioModal({
         setPkTimeLeft(t => {
           if (t <= 1) {
             setIsPkActive(false);
-            showToast('⚔️ مسابقه PK پایان یافت!');
+            showToast(window.loc('⚔️ مسابقه PK پایان یافت!', '⚔️ The PK match is over!'));
             return 0;
           }
           return t - 1;
@@ -152,11 +152,11 @@ export default function LiveStudioModal({
   // Start Live Broadcast flow
   const handleInitiateStart = () => {
     if (!liveTitle.trim()) {
-      showToast('⚠️ لطفاً عنوان لایواستریم را وارد نمایید');
+      showToast(window.loc('⚠️ لطفاً عنوان لایواستریم را وارد نمایید', '⚠️ Please enter the title of the live stream'));
       return;
     }
     if (liveType === 'adult' && !adultConsent) {
-      showToast('⚠️ لطفاً تاییدیه قوانین محتوای ۱۸+ را علامت بزنید');
+      showToast(window.loc('⚠️ لطفاً تاییدیه قوانین محتوای ۱۸+ را علامت بزنید', '⚠️ Please check the 18+ content rules approval'));
       return;
     }
 
@@ -197,14 +197,14 @@ export default function LiveStudioModal({
     if (setViewingStream) setViewingStream(newStreamObj);
 
     setStudioPhase('LIVE');
-    showToast(`🎥 پخش زنده استودیو ${liveType === 'adult' ? '۱۸+' : 'استاندارد'} شروع گردید!`);
+    showToast(window.loc(`🎥 پخش زنده استودیو ${liveType === 'adult' ? window.loc('۱۸+', '18+') : window.loc('استاندارد', 'Standard')} شروع گردید!`, `🎥 پخش زنده استودیو ${liveType === 'adult' ? window.loc('۱۸+', '18+') : window.loc('استاندارد', 'Standard')} شروع گردید!`));
 
     // AI Protection Check
     const aiCheck = await apiAdmin.analyzeLiveStreamAi(newStreamObj);
     if (aiCheck.flagged) {
       setAiMonitorStatus('FLAGGED');
       setAiNoticeMsg(aiCheck.reason);
-      addAdminAuditLog?.(`🤖 هشدار AI استودیو: لایو ${liveTitle} نیاز به بررسی ادمین دارد.`);
+      addAdminAuditLog?.(window.loc(`🤖 هشدار AI استودیو: لایو ${liveTitle} نیاز به بررسی ادمین دارد.`, `🤖 هشدار AI استودیو: لایو ${liveTitle} نیاز به بررسی ادمین دارد.`));
     }
   };
 
@@ -212,14 +212,14 @@ export default function LiveStudioModal({
   const handleEndLiveStream = () => {
     setIsEndConfirmOpen(false);
     setStudioPhase('SUMMARY');
-    showToast('⏹️ پخش زنده پایان یافت. خلاصه عملکرد تولید شد.');
+    showToast(window.loc('⏹️ پخش زنده پایان یافت. خلاصه عملکرد تولید شد.', '⏹️ The live broadcast has ended. A performance summary was generated.'));
   };
 
   // Chat message send
   const handleSendChat = () => {
     if (!chatInput.trim()) return;
     if (isCommentsDisabled) {
-      showToast('⚠️ کامنت‌های لایو توسط شما غیرفعال شده است.');
+      showToast(window.loc('⚠️ کامنت‌های لایو توسط شما غیرفعال شده است.', '⚠️ Live comments have been disabled by you.'));
       return;
     }
     const newMsg = {
@@ -249,12 +249,12 @@ export default function LiveStudioModal({
               </div>
               <div>
                 <h2 className="text-base font-black text-white flex items-center gap-2">
-                  <span>استودیو پخش زنده (V.Live Studio)</span>
+                  <span>{window.loc('استودیو پخش زنده (V.Live Studio)', 'V.Live Studio')}</span>
                   <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                    سطح ۱۲
+                    {window.loc('سطح ۱۲', 'Level 12')}
                   </span>
                 </h2>
-                <p className="text-[11px] text-slate-400">آماده‌سازی دوربین، صدا و تنظیمات قبل از شروع لایواستریم</p>
+                <p className="text-[11px] text-slate-400">{window.loc('آماده‌سازی دوربین، صدا و تنظیمات قبل از شروع لایواستریم', 'Preparing the camera, sound and settings before starting the live stream')}</p>
               </div>
             </div>
 
@@ -271,10 +271,10 @@ export default function LiveStudioModal({
             <div className="flex items-center justify-between text-slate-300 font-bold">
               <span className="flex items-center gap-1.5">
                 <Camera className="w-4 h-4 text-pink-400" />
-                <span>پیش‌نمایش زنده تصویر و میکروفون</span>
+                <span>{window.loc('پیش‌نمایش زنده تصویر و میکروفون', 'Live image and microphone preview')}</span>
               </span>
               <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full font-mono">
-                شبکه: {networkQuality} ({estimatedBitrate} kbps)
+                {window.loc('شبکه:', 'network:')} {networkQuality} ({estimatedBitrate} kbps)
               </span>
             </div>
 
@@ -297,7 +297,7 @@ export default function LiveStudioModal({
                   {beautyFilter !== 'off' && (
                     <div className="absolute top-3 right-3 bg-purple-950/80 border border-purple-500/40 text-purple-200 text-[10px] font-black px-2 py-0.5 rounded-full backdrop-blur-md flex items-center gap-1">
                       <Sparkles className="w-3 h-3 text-purple-400" />
-                      <span>فیلتر زیبایی: {beautyFilter}</span>
+                      <span>{window.loc('فیلتر زیبایی:', 'beauty filter:')} {beautyFilter}</span>
                     </div>
                   )}
 
@@ -315,7 +315,7 @@ export default function LiveStudioModal({
               ) : (
                 <div className="text-center space-y-2 text-slate-500">
                   <Camera className="w-10 h-10 mx-auto opacity-40" />
-                  <p className="text-xs font-semibold">دوربین غیرفعال است</p>
+                  <p className="text-xs font-semibold">{window.loc('دوربین غیرفعال است', 'The camera is disabled')}</p>
                 </div>
               )}
             </div>
@@ -329,7 +329,7 @@ export default function LiveStudioModal({
                 }`}
               >
                 <Camera className="w-3.5 h-3.5" />
-                <span>{isCamEnabled ? 'دوربین روشن' : 'دوربین خاموش'}</span>
+                <span>{isCamEnabled ? window.loc('دوربین روشن', 'Camera on') : window.loc('دوربین خاموش', 'Camera off')}</span>
               </button>
 
               <button
@@ -339,7 +339,7 @@ export default function LiveStudioModal({
                 }`}
               >
                 {isMicEnabled ? <Mic className="w-3.5 h-3.5" /> : <MicOff className="w-3.5 h-3.5" />}
-                <span>{isMicEnabled ? 'میکروفون فعال' : 'میکروفون قطع'}</span>
+                <span>{isMicEnabled ? window.loc('میکروفون فعال', 'Active microphone') : window.loc('میکروفون قطع', 'Microphone cut off')}</span>
               </button>
 
               <button
@@ -347,7 +347,7 @@ export default function LiveStudioModal({
                 className="py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-bold flex items-center justify-center gap-1 hover:text-white"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
-                <span>آینه {isMirrored ? 'فعال' : 'غیرفعال'}</span>
+                <span>{window.loc('آینه', 'mirror')} {isMirrored ? window.loc('فعال', 'active') : window.loc('غیرفعال', 'disabled')}</span>
               </button>
 
               <button
@@ -359,7 +359,7 @@ export default function LiveStudioModal({
                 className="py-2 rounded-xl bg-purple-950/60 border border-purple-500/30 text-purple-300 font-bold flex items-center justify-center gap-1 hover:bg-purple-900/60"
               >
                 <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                <span>زیبایی: {beautyFilter}</span>
+                <span>{window.loc('زیبایی:', 'Beauty:')} {beautyFilter}</span>
               </button>
             </div>
           </div>
@@ -368,7 +368,7 @@ export default function LiveStudioModal({
           <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3.5 shadow-xl">
             <h4 className="font-bold text-white text-xs flex items-center gap-2">
               <Radio className="w-4 h-4 text-pink-400" />
-              <span>مشخصات و دسته‌بندی استریم</span>
+              <span>{window.loc('مشخصات و دسته‌بندی استریم', 'Stream specifications and categories')}</span>
             </h4>
 
             {/* Type Selector (Standard vs Adult 18+) */}
@@ -386,7 +386,7 @@ export default function LiveStudioModal({
                 }`}
               >
                 <Video className="w-4 h-4 text-cyan-300" />
-                <span>📺 لایواستریم استاندارد</span>
+                <span>{window.loc('📺 لایواستریم استاندارد', '📺 Standard live stream')}</span>
               </button>
 
               <button
@@ -402,18 +402,18 @@ export default function LiveStudioModal({
                 }`}
               >
                 <ShieldAlert className="w-4 h-4 text-amber-400 animate-pulse" />
-                <span>🔥 لایواستریم بزرگسال (۱۸+)</span>
+                <span>{window.loc('🔥 لایواستریم بزرگسال (۱۸+)', '🔥 adult live stream (18+)')}</span>
               </button>
             </div>
 
             {/* Title Input */}
             <div>
-              <label className="block text-slate-300 font-bold mb-1">✏️ عنوان استریم:</label>
+              <label className="block text-slate-300 font-bold mb-1">{window.loc('✏️ عنوان استریم:', '✏️ stream title:')}</label>
               <input
                 type="text"
                 value={liveTitle}
                 onChange={(e) => setLiveTitle(e.target.value)}
-                placeholder="عنوان لایو خود را بنویسید (مثال: گپ و گفت شبانه 🎶)..."
+                placeholder={window.loc('عنوان لایو خود را بنویسید (مثال: گپ و گفت شبانه 🎶)...', 'Write the title of your live (example: Night chat 🎶)...')}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-semibold outline-none focus:border-pink-500"
               />
             </div>
@@ -421,7 +421,7 @@ export default function LiveStudioModal({
             {/* Category & Language Row */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-slate-300 font-bold mb-1">📂 دسته‌بندی:</label>
+                <label className="block text-slate-300 font-bold mb-1">{window.loc('📂 دسته‌بندی:', '📂 Category:')}</label>
                 <select
                   value={liveCategory}
                   onChange={(e) => setLiveCategory(e.target.value)}
@@ -429,33 +429,33 @@ export default function LiveStudioModal({
                 >
                   {liveType === 'standard' ? (
                     <>
-                      <option value="Gaming">گیمینگ 🎮</option>
-                      <option value="Music">موسیقی 🎵</option>
-                      <option value="Chat">چت آنلاین 💬</option>
-                      <option value="Dance">رقص & هنر 💃</option>
-                      <option value="IRL">زندگی روزمره 📹</option>
+                      <option value="Gaming">{window.loc('گیمینگ 🎮', 'Gaming 🎮')}</option>
+                      <option value="Music">{window.loc('موسیقی 🎵', 'Music 🎵')}</option>
+                      <option value="Chat">{window.loc('چت آنلاین 💬', 'Online chat 💬')}</option>
+                      <option value="Dance">{window.loc('رقص & هنر 💃', 'Dance & Art 💃')}</option>
+                      <option value="IRL">{window.loc('زندگی روزمره 📹', 'Daily life 📹')}</option>
                     </>
                   ) : (
                     <>
-                      <option value="VIP Chat">چت اختصاصی 🔞</option>
-                      <option value="Hot Dance">رقص داغ 🔥</option>
-                      <option value="Romance">گپ عاشقانه ❤️</option>
-                      <option value="Private Live">استریم خصوصی 💥</option>
+                      <option value="VIP Chat">{window.loc('چت اختصاصی 🔞', 'Private chat 🔞')}</option>
+                      <option value="Hot Dance">{window.loc('رقص داغ 🔥', 'Hot dance 🔥')}</option>
+                      <option value="Romance">{window.loc('گپ عاشقانه ❤️', 'Romantic chat ❤️')}</option>
+                      <option value="Private Live">{window.loc('استریم خصوصی 💥', 'Private stream 💥')}</option>
                     </>
                   )}
                 </select>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-bold mb-1">🌐 زبان پخش:</label>
+                <label className="block text-slate-300 font-bold mb-1">{window.loc('🌐 زبان پخش:', '🌐 Broadcast language:')}</label>
                 <select
                   value={liveLanguage}
                   onChange={(e) => setLiveLanguage(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-semibold outline-none focus:border-pink-500"
                 >
-                  <option value="فارسی (Persian)">فارسی (Persian)</option>
+                  <option value={window.loc('فارسی (Persian)', 'Persian')}>{window.loc('فارسی (Persian)', 'Persian')}</option>
                   <option value="English">English</option>
-                  <option value="العربية (Arabic)">العربية (Arabic)</option>
+                  <option value={window.loc('العربية (Arabic)', 'Arabic')}>{window.loc('العربية (Arabic)', 'Arabic')}</option>
                   <option value="Türkçe">Türkçe</option>
                 </select>
               </div>
@@ -466,7 +466,7 @@ export default function LiveStudioModal({
               <div className="p-3 rounded-2xl bg-rose-950/40 border border-rose-500/40 space-y-2">
                 <div className="flex items-center gap-2 text-rose-300 font-bold">
                   <ShieldAlert className="w-4 h-4 text-amber-400" />
-                  <span>قوانین استریم بزرگسالان (VIP 18+)</span>
+                  <span>{window.loc('قوانین استریم بزرگسالان (VIP 18+)', 'Adult Streaming Rules (VIP 18+)')}</span>
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -476,7 +476,7 @@ export default function LiveStudioModal({
                     className="w-4 h-4 accent-rose-500 rounded cursor-pointer"
                   />
                   <span className="text-[11px] text-slate-300 font-semibold">
-                    تایید می‌کنم محتوای این لایو مطابق شرایط سنی ۱۸+ بوده و مسئولیت آن را می‌پذیرم.
+                    {window.loc('تایید می‌کنم محتوای این لایو مطابق شرایط سنی ۱۸+ بوده و مسئولیت آن را می‌پذیرم.', 'I confirm that the content of this live is 18+ and I accept responsibility for it.')}
                   </span>
                 </label>
               </div>
@@ -489,7 +489,7 @@ export default function LiveStudioModal({
             className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 text-white font-black text-sm shadow-xl shadow-pink-500/30 hover:scale-102 active:scale-95 transition flex items-center justify-center gap-2"
           >
             <Play className="w-5 h-5 fill-white" />
-            <span>شروع لایواستریم استودیو (Start Live)</span>
+            <span>{window.loc('شروع لایواستریم استودیو (Start Live)', 'Start live stream studio (Start Live)')}</span>
           </button>
         </div>
       )}
@@ -506,8 +506,8 @@ export default function LiveStudioModal({
             </div>
           </div>
           <div className="text-center space-y-1">
-            <h3 className="text-xl font-black text-white">در حال پخش زنده ...</h3>
-            <p className="text-xs text-slate-400">دوربین و صدا در حال اتصال به سرورهای LiveKit</p>
+            <h3 className="text-xl font-black text-white">{window.loc('در حال پخش زنده ...', 'Streaming live...')}</h3>
+            <p className="text-xs text-slate-400">{window.loc('دوربین و صدا در حال اتصال به سرورهای LiveKit', 'Camera and audio connecting to LiveKit servers')}</p>
           </div>
         </div>
       )}
@@ -533,7 +533,7 @@ export default function LiveStudioModal({
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-500 space-y-2">
                 <Camera className="w-12 h-12 opacity-30" />
-                <span className="text-xs">تصویر دوربین متوقف شد</span>
+                <span className="text-xs">{window.loc('تصویر دوربین متوقف شد', 'The camera stopped')}</span>
               </div>
             )}
 
@@ -595,8 +595,8 @@ export default function LiveStudioModal({
             {isPkActive && (
               <div className="absolute top-14 left-3 right-3 z-20 bg-slate-950/90 p-2.5 rounded-2xl border border-slate-800 backdrop-blur-md space-y-1">
                 <div className="flex items-center justify-between text-[10px] font-bold text-white">
-                  <span className="text-rose-400 font-mono">شما: {pkRedScore} pts</span>
-                  <span className="text-amber-300 font-mono">زمان PK: {pkTimeLeft}s</span>
+                  <span className="text-rose-400 font-mono">{window.loc('شما:', 'you:')} {pkRedScore} pts</span>
+                  <span className="text-amber-300 font-mono">{window.loc('زمان PK:', 'PK Time:')} {pkTimeLeft}s</span>
                   <span className="text-cyan-400 font-mono">{pkOpponent.name}: {pkBlueScore} pts</span>
                 </div>
                 <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden flex">
@@ -638,7 +638,7 @@ export default function LiveStudioModal({
                           <button
                             onClick={() => {
                               setMutedUsers(prev => [...prev, msg.user]);
-                              showToast(`🔇 کاربر @${msg.user} بی‌صدا گردید.`);
+                              showToast(window.loc(`🔇 کاربر @${msg.user} بی‌صدا گردید.`, `🔇 کاربر @${msg.user} بی‌صدا گردید.`));
                             }}
                             className="p-1 rounded bg-slate-800 text-rose-300 text-[9px]"
                             title="Mute User"
@@ -659,7 +659,7 @@ export default function LiveStudioModal({
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                  placeholder={isCommentsDisabled ? 'کامنت‌ها غیرفعال است...' : 'ارسال پیام به بینندگان لایو ...'}
+                  placeholder={isCommentsDisabled ? window.loc('کامنت‌ها غیرفعال است...', 'Comments are disabled...') : window.loc('ارسال پیام به بینندگان لایو ...', 'Sending messages to live viewers...')}
                   disabled={isCommentsDisabled}
                   className="flex-1 px-3.5 py-2 rounded-2xl bg-slate-950/90 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
                 />
@@ -744,11 +744,11 @@ export default function LiveStudioModal({
               onClick={() => {
                 if (isPkActive) {
                   setIsPkActive(false);
-                  showToast('⚔️ مسابقه PK پایان یافت.');
+                  showToast(window.loc('⚔️ مسابقه PK پایان یافت.', '⚔️ The PK match is over.'));
                 } else {
                   setIsPkActive(true);
                   setPkTimeLeft(180);
-                  showToast('⚔️ مسابقه PK با @Elnaz_Live شروع گردید!');
+                  showToast(window.loc('⚔️ مسابقه PK با @Elnaz_Live شروع گردید!', '⚔️ The PK match has started with @Elnaz_Live!'));
                 }
               }}
               className={`p-2.5 rounded-2xl border transition shrink-0 ${
@@ -787,7 +787,7 @@ export default function LiveStudioModal({
               className="px-4 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs shadow-lg shadow-rose-600/30 flex items-center gap-1 shrink-0 active:scale-95 transition"
             >
               <Square className="w-3.5 h-3.5 fill-white" />
-              <span>پایان لایو</span>
+              <span>{window.loc('پایان لایو', 'end of live')}</span>
             </button>
 
           </div>
@@ -798,9 +798,9 @@ export default function LiveStudioModal({
               
               <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                 <span className="font-bold text-white text-xs">
-                  {activeTabDrawer === 'guests' && '👥 مدیریت مهمانان لایو (Guest Requests)'}
-                  {activeTabDrawer === 'stats' && '📊 آمار زنده و لحظه‌ای استریم (Live Analytics)'}
-                  {activeTabDrawer === 'settings' && '⚙️ تنظیمات و کنترل‌های چت استریم'}
+                  {activeTabDrawer === 'guests' && window.loc('👥 مدیریت مهمانان لایو (Guest Requests)', '👥 Management of live guests (Guest Requests)')}
+                  {activeTabDrawer === 'stats' && window.loc('📊 آمار زنده و لحظه‌ای استریم (Live Analytics)', '📊 live and real-time stream statistics (Live Analytics)')}
+                  {activeTabDrawer === 'settings' && window.loc('⚙️ تنظیمات و کنترل‌های چت استریم', '⚙️ Chat stream settings and controls')}
                 </span>
                 <button onClick={() => setActiveTabDrawer(null)} className="text-slate-400 hover:text-white">✕</button>
               </div>
@@ -808,9 +808,9 @@ export default function LiveStudioModal({
               {/* GUESTS DRAWER */}
               {activeTabDrawer === 'guests' && (
                 <div className="space-y-2">
-                  <p className="text-[10px] text-slate-400">حداکثر تعداد مهمان همزمان: {maxGuestsLimit} نفر</p>
+                  <p className="text-[10px] text-slate-400">{window.loc('حداکثر تعداد مهمان همزمان:', 'Maximum number of simultaneous guests:')} {maxGuestsLimit} {window.loc('نفر', 'person')}</p>
                   {guestRequests.length === 0 ? (
-                    <p className="text-slate-500 text-center py-3">درخواستی از سمت بینندگان وجود ندارد</p>
+                    <p className="text-slate-500 text-center py-3">{window.loc('درخواستی از سمت بینندگان وجود ندارد', 'There is no request from the viewers')}</p>
                   ) : (
                     guestRequests.map(req => (
                       <div key={req.id} className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
@@ -823,11 +823,11 @@ export default function LiveStudioModal({
                             onClick={() => {
                               setActiveGuests(prev => [...prev, req]);
                               setGuestRequests(prev => prev.filter(g => g.id !== req.id));
-                              showToast(`✅ درخواست @${req.name} تایید شد.`);
+                              showToast(window.loc(`✅ درخواست @${req.name} تایید شد.`, `✅ درخواست @${req.name} تایید شد.`));
                             }}
                             className="px-2.5 py-1 rounded-xl bg-emerald-500 text-slate-950 font-black text-[10px]"
                           >
-                            تایید
+                            {window.loc('تایید', 'confirmation')}
                           </button>
                           <button
                             onClick={() => {
@@ -835,7 +835,7 @@ export default function LiveStudioModal({
                             }}
                             className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-400 text-[10px]"
                           >
-                            رد
+                            {window.loc('رد', 'rejection')}
                           </button>
                         </div>
                       </div>
@@ -848,19 +848,19 @@ export default function LiveStudioModal({
               {activeTabDrawer === 'stats' && (
                 <div className="grid grid-cols-2 gap-2 text-center">
                   <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
-                    <span className="text-slate-400 text-[10px]">تعداد بینندگان غایی</span>
+                    <span className="text-slate-400 text-[10px]">{window.loc('تعداد بینندگان غایی', 'The number of final viewers')}</span>
                     <p className="text-base font-black text-cyan-400 font-mono">{viewerCount}</p>
                   </div>
                   <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
-                    <span className="text-slate-400 text-[10px]">مجموع لایک‌ها</span>
+                    <span className="text-slate-400 text-[10px]">{window.loc('مجموع لایک‌ها', 'Total likes')}</span>
                     <p className="text-base font-black text-rose-400 font-mono">{likeCount}</p>
                   </div>
                   <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
-                    <span className="text-slate-400 text-[10px]">درآمد سکه هدایا</span>
+                    <span className="text-slate-400 text-[10px]">{window.loc('درآمد سکه هدایا', 'Income coin gifts')}</span>
                     <p className="text-base font-black text-amber-400 font-mono">{giftCoinsEarned} 🪙</p>
                   </div>
                   <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
-                    <span className="text-slate-400 text-[10px]">فالوورهای جذب‌شده</span>
+                    <span className="text-slate-400 text-[10px]">{window.loc('فالوورهای جذب‌شده', 'Followers attracted')}</span>
                     <p className="text-base font-black text-emerald-400 font-mono">+{followersGained}</p>
                   </div>
                 </div>
@@ -870,7 +870,7 @@ export default function LiveStudioModal({
               {activeTabDrawer === 'settings' && (
                 <div className="space-y-2">
                   <label className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
-                    <span className="text-xs font-bold text-slate-200">فقط دنبال‌کنندگان مجاز به چت باشند</span>
+                    <span className="text-xs font-bold text-slate-200">{window.loc('فقط دنبال‌کنندگان مجاز به چت باشند', 'Only followers are allowed to chat')}</span>
                     <input
                       type="checkbox"
                       checked={isFollowersOnlyChat}
@@ -880,7 +880,7 @@ export default function LiveStudioModal({
                   </label>
 
                   <label className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
-                    <span className="text-xs font-bold text-slate-200">فقط کاربران VIP مجاز به چت باشند</span>
+                    <span className="text-xs font-bold text-slate-200">{window.loc('فقط کاربران VIP مجاز به چت باشند', 'Only VIP users are allowed to chat')}</span>
                     <input
                       type="checkbox"
                       checked={isVipOnlyChat}
@@ -890,7 +890,7 @@ export default function LiveStudioModal({
                   </label>
 
                   <label className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
-                    <span className="text-xs font-bold text-slate-200">بستن کامل کامنت‌های بینندگان</span>
+                    <span className="text-xs font-bold text-slate-200">{window.loc('بستن کامل کامنت‌های بینندگان', 'Complete closing of viewer comments')}</span>
                     <input
                       type="checkbox"
                       checked={isCommentsDisabled}
@@ -917,21 +917,21 @@ export default function LiveStudioModal({
               <AlertTriangle className="w-6 h-6 animate-bounce" />
             </div>
             <div className="space-y-1">
-              <h4 className="font-black text-white text-sm">پایان پخش زنده استودیو؟</h4>
-              <p className="text-xs text-slate-400">آیا مطمئن هستید که می‌خواهید لایواستریم را خاتمه دهید؟</p>
+              <h4 className="font-black text-white text-sm">{window.loc('پایان پخش زنده استودیو؟', 'The end of the studio live broadcast?')}</h4>
+              <p className="text-xs text-slate-400">{window.loc('آیا مطمئن هستید که می‌خواهید لایواستریم را خاتمه دهید؟', 'Are you sure you want to end the livestream?')}</p>
             </div>
             <div className="grid grid-cols-2 gap-2 pt-2">
               <button
                 onClick={handleEndLiveStream}
                 className="py-2.5 rounded-xl bg-rose-600 text-white font-black text-xs shadow-md"
               >
-                بله، پایان لایو
+                {window.loc('بله، پایان لایو', 'Yes, end of live')}
               </button>
               <button
                 onClick={() => setIsEndConfirmOpen(false)}
                 className="py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
               >
-                انصراف
+                {window.loc('انصراف', 'opt out')}
               </button>
             </div>
           </div>
@@ -949,26 +949,26 @@ export default function LiveStudioModal({
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-lg font-black text-white">گزارش عملکرد لایواستریم (Live Summary)</h3>
-              <p className="text-xs text-slate-400">استریم شما با موفقیت پایان یافت و آمار نهایی ثبت گردید.</p>
+              <h3 className="text-lg font-black text-white">{window.loc('گزارش عملکرد لایواستریم (Live Summary)', 'Live Stream performance report (Live Summary)')}</h3>
+              <p className="text-xs text-slate-400">{window.loc('استریم شما با موفقیت پایان یافت و آمار نهایی ثبت گردید.', 'Your stream has ended successfully and the final statistics have been recorded.')}</p>
             </div>
 
             {/* Performance Stats Cards */}
             <div className="grid grid-cols-2 gap-2 text-right">
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-0.5">
-                <span className="text-[10px] text-slate-400 font-bold">مدت زمان لایو:</span>
+                <span className="text-[10px] text-slate-400 font-bold">{window.loc('مدت زمان لایو:', 'Live duration:')}</span>
                 <p className="text-base font-black text-white font-mono">{formatTime(liveDurationSeconds)}</p>
               </div>
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-0.5">
-                <span className="text-[10px] text-slate-400 font-bold">اوج بینندگان (Peak):</span>
+                <span className="text-[10px] text-slate-400 font-bold">{window.loc('اوج بینندگان (Peak):', 'Peak viewers:')}</span>
                 <p className="text-base font-black text-cyan-400 font-mono">{viewerCount}</p>
               </div>
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-0.5">
-                <span className="text-[10px] text-slate-400 font-bold">درآمد سکه هدایا:</span>
+                <span className="text-[10px] text-slate-400 font-bold">{window.loc('درآمد سکه هدایا:', 'Gift coin income:')}</span>
                 <p className="text-base font-black text-amber-400 font-mono">{giftCoinsEarned} 🪙</p>
               </div>
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-0.5">
-                <span className="text-[10px] text-slate-400 font-bold">فالوورهای جدید:</span>
+                <span className="text-[10px] text-slate-400 font-bold">{window.loc('فالوورهای جدید:', 'New followers:')}</span>
                 <p className="text-base font-black text-emerald-400 font-mono">+{followersGained}</p>
               </div>
             </div>
@@ -976,14 +976,14 @@ export default function LiveStudioModal({
             {/* AI Compliance Check Notice */}
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-emerald-400 font-semibold flex items-center justify-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>تمامی تاییدات اخلاقی و هوش مصنوعی پاس گردید ✅</span>
+              <span>{window.loc('تمامی تاییدات اخلاقی و هوش مصنوعی پاس گردید ✅', 'All ethical and artificial intelligence approvals were passed')}</span>
             </div>
 
             <button
               onClick={onClose}
               className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 text-white font-black text-xs shadow-xl hover:scale-102 active:scale-95 transition"
             >
-              بازگشت به برنامه (Close Studio)
+              {window.loc('بازگشت به برنامه (Close Studio)', 'Return to the program (Close Studio)')}
             </button>
           </div>
         </div>

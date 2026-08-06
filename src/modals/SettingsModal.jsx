@@ -77,10 +77,10 @@ export default function SettingsModal(props) {
   const [appFontSize, setAppFontSize] = React.useState(props.appFontSize || 'medium');
   const [appAnimations, setAppAnimations] = React.useState(props.appAnimations !== undefined ? props.appAnimations : true);
   const APP_LANGUAGES = props.APP_LANGUAGES || [
-    { code: 'fa', name: 'فارسی' },
+    { code: 'fa', name: window.loc('فارسی', 'Farsi') },
     { code: 'en', name: 'English' },
-    { code: 'ar', name: 'العربية' },
-    { code: 'tr', name: 'Türkچه' },
+    { code: 'ar', name: window.loc('العربية', 'Arabic') },
+    { code: 'tr', name: window.loc('Türkچه', 'Türkçe') },
     { code: 'ru', name: 'Русский' }
   ];
   const handleSelectLanguage = props.handleSelectLanguage || ((code) => { if (props.setCurrentAppLang) props.setCurrentAppLang(code); });
@@ -253,12 +253,12 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-pink-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <User className="w-5 h-5 text-pink-400" />
-                    <h3 className="text-sm font-bold text-white">۱. Account Settings (حساب کاربری)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۱. Account Settings (حساب کاربری)', '1. Account Settings')}</h3>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div>
-                      <label className="text-slate-300 font-semibold mb-1 block">Full Name (نام و نام خانوادگی)</label>
+                      <label className="text-slate-300 font-semibold mb-1 block">{window.loc('Full Name (نام و نام خانوادگی)', 'Full Name')}</label>
                       <input
                         type="text"
                         value={userName}
@@ -268,7 +268,7 @@ export default function SettingsModal(props) {
                     </div>
 
                     <div>
-                      <label className="text-slate-300 font-semibold mb-1 block">Change Username (نام کاربری)</label>
+                      <label className="text-slate-300 font-semibold mb-1 block">{window.loc('Change Username (نام کاربری)', 'Change Username')}</label>
                       <div className="flex gap-1.5">
                         <input
                           type="text"
@@ -284,7 +284,7 @@ export default function SettingsModal(props) {
                             const isDup = usersList.some(u => u.username?.toLowerCase() === cleanNewUser.toLowerCase() && u.username?.toLowerCase() !== currentUsername.toLowerCase()) ||
                                           adminUsersList.some(u => u.username?.toLowerCase() === cleanNewUser.toLowerCase());
                             if (isDup) {
-                              showToast(loc('❌ این نام کاربری قبلاً ثبت شده است! هر نام کاربری فقط یکبار امکان ثبت دارد.', '❌ Username already registered! Every username must be unique.'));
+                              showToast(window.loc('❌ این نام کاربری قبلاً ثبت شده است! هر نام کاربری فقط یکبار امکان ثبت دارد.', '❌ Username already registered! Every username must be unique.'));
                               return;
                             }
                             setCurrentUsername(cleanNewUser);
@@ -300,7 +300,7 @@ export default function SettingsModal(props) {
                     </div>
 
                     <div className="sm:col-span-2 space-y-2 border-t border-slate-800/80 pt-2">
-                      <p className="font-bold text-white">Change Password (تغییر رمز عبور)</p>
+                      <p className="font-bold text-white">{window.loc('Change Password (تغییر رمز عبور)', 'Change Password')}</p>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div className="relative">
                           <input
@@ -361,14 +361,14 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-cyan-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <Shield className="w-5 h-5 text-cyan-400" />
-                    <h3 className="text-sm font-bold text-white">۲. Privacy Settings (حریم خصوصی)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۲. Privacy Settings (حریم خصوصی)', '2. Privacy Settings')}</h3>
                   </div>
 
                   <div className="space-y-3 text-xs">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                         <div>
-                          <p className="font-bold text-white">آخرین بازدید (Last Seen)</p>
+                          <p className="font-bold text-white">{window.loc('آخرین بازدید (Last Seen)', 'Last Seen')}</p>
                           <span className="text-[10px] text-slate-400">{privacyLastSeen}</span>
                         </div>
                         <select
@@ -384,7 +384,7 @@ export default function SettingsModal(props) {
 
                       <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                         <div>
-                          <p className="font-bold text-white">وضعیت آنلاین (Online Status)</p>
+                          <p className="font-bold text-white">{window.loc('وضعیت آنلاین (Online Status)', 'Online Status')}</p>
                           <span className="text-[10px] text-slate-400">Show green status badge</span>
                         </div>
                         <input
@@ -397,7 +397,7 @@ export default function SettingsModal(props) {
 
                       <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                         <div>
-                          <p className="font-bold text-white">چه کسانی پیام بدهند (Who can message)</p>
+                          <p className="font-bold text-white">{window.loc('چه کسانی پیام بدهند (Who can message)', 'Who can message?')}</p>
                           <span className="text-[10px] text-slate-400">{privacyWhoMessage}</span>
                         </div>
                         <select
@@ -413,7 +413,7 @@ export default function SettingsModal(props) {
 
                       <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                         <div>
-                          <p className="font-bold text-white">چه کسانی تماس بگیرند (Who can call)</p>
+                          <p className="font-bold text-white">{window.loc('چه کسانی تماس بگیرند (Who can call)', 'Who can call?')}</p>
                           <span className="text-[10px] text-slate-400">{privacyWhoCall}</span>
                         </div>
                         <select
@@ -429,7 +429,7 @@ export default function SettingsModal(props) {
 
                       <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                         <div>
-                          <p className="font-bold text-white">نمایش شهر (Show City)</p>
+                          <p className="font-bold text-white">{window.loc('نمایش شهر (Show City)', 'Show City')}</p>
                           <span className="text-[10px] text-slate-400">Display city in profile</span>
                         </div>
                         <input
@@ -442,7 +442,7 @@ export default function SettingsModal(props) {
 
                       <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                         <div>
-                          <p className="font-bold text-white">نمایش سن (Show Age)</p>
+                          <p className="font-bold text-white">{window.loc('نمایش سن (Show Age)', 'Show Age')}</p>
                           <span className="text-[10px] text-slate-400">Display age in bio badge</span>
                         </div>
                         <input
@@ -462,13 +462,13 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-purple-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <Lock className="w-5 h-5 text-purple-400" />
-                    <h3 className="text-sm font-bold text-white">۳. Security Settings (امنیت)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۳. Security Settings (امنیت)', '3. Security Settings')}</h3>
                   </div>
 
                   <div className="space-y-3 text-xs">
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">احراز هویت دو مرحله‌ای (2FA)</p>
+                        <p className="font-bold text-white">{window.loc('احراز هویت دو مرحله‌ای (2FA)', 'Two-factor authentication (2FA)')}</p>
                         <span className="text-[10px] text-purple-300">Telegram Bot & Google OTP verification</span>
                       </div>
                       <input
@@ -484,7 +484,7 @@ export default function SettingsModal(props) {
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
                       <div className="flex items-center justify-between">
-                        <p className="font-bold text-white">دستگاه‌های فعال (Active Devices)</p>
+                        <p className="font-bold text-white">{window.loc('دستگاه‌های فعال (Active Devices)', 'Active Devices')}</p>
                         <span className="text-[10px] text-cyan-400 font-mono">2 Session Active</span>
                       </div>
                       <div className="text-[11px] text-slate-400 space-y-1 font-mono">
@@ -501,7 +501,7 @@ export default function SettingsModal(props) {
                         onClick={() => showToast('Logged out of all other active sessions!')}
                         className="w-full py-2 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-300 font-bold text-[11px]"
                       >
-                        خروج از همه دستگاه‌ها (Log Out All Other Devices)
+                        {window.loc('خروج از همه دستگاه‌ها (Log Out All Other Devices)', 'Log Out All Other Devices')}
                       </button>
                     </div>
                   </div>
@@ -513,19 +513,19 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-amber-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <Bell className="w-5 h-5 text-amber-400" />
-                    <h3 className="text-sm font-bold text-white">۴. Notification Controls (تنظیمات اعلان‌ها)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۴. Notification Controls (تنظیمات اعلان‌ها)', '4. Notification Controls')}</h3>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     {[
-                      { key: 'messages', label: '💬 Messages (پیام‌ها)', desc: 'Direct chat notifications' },
-                      { key: 'calls', label: '📞 Calls (تماس‌ها)', desc: 'Incoming voice & video calls' },
-                      { key: 'live', label: '🎥 Live Broadcasts (لایو)', desc: 'Streamer live alerts' },
-                      { key: 'follow', label: '❤️ Follows (دنبال‌کنندگان)', desc: 'New follower alerts' },
-                      { key: 'gifts', label: '🎁 Gifts (هدایا)', desc: 'Virtual gift alerts' },
-                      { key: 'earnings', label: '💰 Earnings (درآمدها)', desc: 'Payouts & coin alerts' },
-                      { key: 'promotions', label: '📢 Promotions (پیشنهادات)', desc: 'Offers & campaign news' },
-                      { key: 'system', label: '🛠 System (سیستمی)', desc: 'Critical security alerts' }
+                      { key: 'messages', label: window.loc('💬 Messages (پیام‌ها)', '💬 Messages'), desc: 'Direct chat notifications' },
+                      { key: 'calls', label: window.loc('📞 Calls (تماس‌ها)', '📞 Calls'), desc: 'Incoming voice & video calls' },
+                      { key: 'live', label: window.loc('🎥 Live Broadcasts (لایو)', '🎥 Live Broadcasts'), desc: 'Streamer live alerts' },
+                      { key: 'follow', label: window.loc('❤️ Follows (دنبال‌کنندگان)', '❤️ Follows'), desc: 'New follower alerts' },
+                      { key: 'gifts', label: window.loc('🎁 Gifts (هدایا)', '🎁 Gifts'), desc: 'Virtual gift alerts' },
+                      { key: 'earnings', label: window.loc('💰 Earnings (درآمدها)', '💰 Earnings'), desc: 'Payouts & coin alerts' },
+                      { key: 'promotions', label: window.loc('📢 Promotions (پیشنهادات)', '📢 Promotions'), desc: 'Offers & campaign news' },
+                      { key: 'system', label: window.loc('🛠 System (سیستمی)', '🛠 System'), desc: 'Critical security alerts' }
                     ].map(item => (
                       <div key={item.key} className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                         <div>
@@ -552,13 +552,13 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-rose-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <Sliders className="w-5 h-5 text-rose-400" />
-                    <h3 className="text-sm font-bold text-white">۵. Appearance Settings (ظاهر برنامه)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۵. Appearance Settings (ظاهر برنامه)', '5. Appearance Settings')}</h3>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">Theme Mode (پوسته)</p>
+                        <p className="font-bold text-white">{window.loc('Theme Mode (پوسته)', 'Theme Mode (shell)')}</p>
                         <span className="text-[10px] text-slate-400">Cyber Dark / Light</span>
                       </div>
                       <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
@@ -579,7 +579,7 @@ export default function SettingsModal(props) {
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">Accent Color (رنگ اصلی)</p>
+                        <p className="font-bold text-white">{window.loc('Accent Color (رنگ اصلی)', 'Accent Color (main color)')}</p>
                         <span className="text-[10px] text-slate-400">{appAccentColor.toUpperCase()}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -598,7 +598,7 @@ export default function SettingsModal(props) {
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">اندازه فونت (Font Size)</p>
+                        <p className="font-bold text-white">{window.loc('اندازه فونت (Font Size)', 'Font Size')}</p>
                         <span className="text-[10px] text-slate-400">{appFontSize}</span>
                       </div>
                       <select
@@ -614,7 +614,7 @@ export default function SettingsModal(props) {
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">انیمیشن‌ها (Animations)</p>
+                        <p className="font-bold text-white">{window.loc('انیمیشن‌ها (Animations)', 'Animations')}</p>
                         <span className="text-[10px] text-slate-400">UI motion effects</span>
                       </div>
                       <input
@@ -633,7 +633,7 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-emerald-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <Globe className="w-5 h-5 text-emerald-400" />
-                    <h3 className="text-sm font-bold text-white">۶. App Language (زبان برنامه)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۶. App Language (زبان برنامه)', '6. App Language')}</h3>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
@@ -656,13 +656,13 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-pink-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <Video className="w-5 h-5 text-pink-400" />
-                    <h3 className="text-sm font-bold text-white">۷. Live Broadcast & Call Settings (تنظیمات لایو)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۷. Live Broadcast & Call Settings (تنظیمات لایو)', '7. Live Broadcast & Call Settings')}</h3>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">کیفیت پیش‌فرض لایو (Live Quality)</p>
+                        <p className="font-bold text-white">{window.loc('کیفیت پیش‌فرض لایو (Live Quality)', 'Default live quality (Live Quality)')}</p>
                         <span className="text-[10px] text-pink-400 font-mono">{liveDefaultQuality}</span>
                       </div>
                       <select
@@ -678,7 +678,7 @@ export default function SettingsModal(props) {
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">کیفیت تماس تصویری (Call Quality)</p>
+                        <p className="font-bold text-white">{window.loc('کیفیت تماس تصویری (Call Quality)', 'Call Quality')}</p>
                         <span className="text-[10px] text-cyan-400 font-mono">{videoCallQuality}</span>
                       </div>
                       <select
@@ -693,7 +693,7 @@ export default function SettingsModal(props) {
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">Beauty Filter (فیلتر زیبایی)</p>
+                        <p className="font-bold text-white">{window.loc('Beauty Filter (فیلتر زیبایی)', 'Beauty Filter')}</p>
                         <span className="text-[10px] text-slate-400">AI face smoothing</span>
                       </div>
                       <input
@@ -706,7 +706,7 @@ export default function SettingsModal(props) {
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">ذخیره خودکار لایو (Auto-save Live)</p>
+                        <p className="font-bold text-white">{window.loc('ذخیره خودکار لایو (Auto-save Live)', 'Auto-save Live')}</p>
                         <span className="text-[10px] text-slate-400">Save stream replay archives</span>
                       </div>
                       <input
@@ -719,7 +719,7 @@ export default function SettingsModal(props) {
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between sm:col-span-2">
                       <div>
-                        <p className="font-bold text-white">نمایش کامنت‌ها (Show Live Comments)</p>
+                        <p className="font-bold text-white">{window.loc('نمایش کامنت‌ها (Show Live Comments)', 'Show Live Comments')}</p>
                         <span className="text-[10px] text-slate-400">Display floating live chat overlays</span>
                       </div>
                       <input
@@ -738,13 +738,13 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-cyan-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <MessageSquare className="w-5 h-5 text-cyan-400" />
-                    <h3 className="text-sm font-bold text-white">۸. Chat & Media Settings (تنظیمات چت)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۸. Chat & Media Settings (تنظیمات چت)', '8. Chat & Media Settings')}</h3>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">دانلود خودکار عکس (Auto Photo Download)</p>
+                        <p className="font-bold text-white">{window.loc('دانلود خودکار عکس (Auto Photo Download)', 'Auto Photo Download')}</p>
                         <span className="text-[10px] text-slate-400">Save data on incoming photos</span>
                       </div>
                       <input
@@ -757,7 +757,7 @@ export default function SettingsModal(props) {
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">دانلود خودکار ویدئو (Auto Video Download)</p>
+                        <p className="font-bold text-white">{window.loc('دانلود خودکار ویدئو (Auto Video Download)', 'Auto Video Download')}</p>
                         <span className="text-[10px] text-slate-400">Auto download videos</span>
                       </div>
                       <input
@@ -770,7 +770,7 @@ export default function SettingsModal(props) {
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">کیفیت ارسال عکس (Photo Send Quality)</p>
+                        <p className="font-bold text-white">{window.loc('کیفیت ارسال عکس (Photo Send Quality)', 'Photo Send Quality')}</p>
                         <span className="text-[10px] text-cyan-300">{photoSendQuality}</span>
                       </div>
                       <select
@@ -785,7 +785,7 @@ export default function SettingsModal(props) {
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">کیفیت ارسال ویدئو (Video Send Quality)</p>
+                        <p className="font-bold text-white">{window.loc('کیفیت ارسال ویدئو (Video Send Quality)', 'Video Send Quality')}</p>
                         <span className="text-[10px] text-cyan-300">{videoSendQuality}</span>
                       </div>
                       <select
@@ -806,7 +806,7 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-amber-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <Wallet className="w-5 h-5 text-amber-400" />
-                    <h3 className="text-sm font-bold text-white">۹. Wallet & Cashouts (کیف پول و مالی)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۹. Wallet & Cashouts (کیف پول و مالی)', '9. Wallet & Cashouts')}</h3>
                   </div>
 
                   <div className="space-y-3 text-xs">
@@ -827,7 +827,7 @@ export default function SettingsModal(props) {
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
-                      <label className="text-slate-300 font-semibold block">آدرس USDT (Tether TRC20 Address)</label>
+                      <label className="text-slate-300 font-semibold block">{window.loc('آدرس USDT (Tether TRC20 Address)', 'USDT Address (Tether TRC20 Address)')}</label>
                       <div className="flex gap-2">
                         <input
                           type="text"
@@ -855,12 +855,12 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-purple-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <Disc className="w-5 h-5 text-purple-400" />
-                    <h3 className="text-sm font-bold text-white">۱۰. Storage & Cache (حافظه و ذخیره‌سازی)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۱۰. Storage & Cache (حافظه و ذخیره‌سازی)', '10. Storage & Cache')}</h3>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
                     <div>
-                      <p className="font-bold text-white">حجم کش (Cache Memory Size)</p>
+                      <p className="font-bold text-white">{window.loc('حجم کش (Cache Memory Size)', 'Cache Memory Size')}</p>
                       <span className="text-[10px] text-purple-300 font-mono">{cacheSizeMb.toFixed(1)} MB Cached Data</span>
                     </div>
                     <button
@@ -870,7 +870,7 @@ export default function SettingsModal(props) {
                       }}
                       className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
                     >
-                      Clear Cache (پاک کردن کش)
+                      {window.loc('Clear Cache (پاک کردن کش)', 'Clear Cache')}
                     </button>
                   </div>
                 </div>
@@ -881,13 +881,13 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-yellow-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <Zap className="w-5 h-5 text-yellow-400" />
-                    <h3 className="text-sm font-bold text-white">۱۱. Data Usage & Network (مصرف اینترنت)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۱۱. Data Usage & Network (مصرف اینترنت)', '11. Data Usage & Network')}</h3>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">صرفه‌جویی اینترنت (Data Saver)</p>
+                        <p className="font-bold text-white">{window.loc('صرفه‌جویی اینترنت (Data Saver)', 'Internet saving (Data Saver)')}</p>
                         <span className="text-[10px] text-slate-400">Reduce video bandwidth</span>
                       </div>
                       <input
@@ -900,7 +900,7 @@ export default function SettingsModal(props) {
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">کیفیت با اینترنت موبایل (Mobile Data)</p>
+                        <p className="font-bold text-white">{window.loc('کیفیت با اینترنت موبایل (Mobile Data)', 'Quality with Mobile Internet (Mobile Data)')}</p>
                         <span className="text-[10px] text-yellow-400 font-mono">{mobileVideoQuality}</span>
                       </div>
                       <select
@@ -921,7 +921,7 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-rose-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <Ban className="w-5 h-5 text-rose-400" />
-                    <h3 className="text-sm font-bold text-white">۱۲. Blocked Users (کاربران مسدودشده)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۱۲. Blocked Users (کاربران مسدودشده)', '12. Blocked Users')}</h3>
                   </div>
 
                   <div className="space-y-2 text-xs">
@@ -955,7 +955,7 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-cyan-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <Key className="w-5 h-5 text-cyan-400" />
-                    <h3 className="text-sm font-bold text-white">۱۳. App System Permissions (دسترسی‌ها)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۱۳. App System Permissions (دسترسی‌ها)', '13. App System Permissions')}</h3>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
@@ -988,7 +988,7 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-blue-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <Info className="w-5 h-5 text-blue-400" />
-                    <h3 className="text-sm font-bold text-white">۱۴. Help & Support (راهنما و پشتیبانی)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۱۴. Help & Support (راهنما و پشتیبانی)', '14. Help & Support')}</h3>
                   </div>
 
                   <div className="space-y-3 text-xs">
@@ -1001,7 +1001,7 @@ export default function SettingsModal(props) {
                     </button>
 
                     <div className="space-y-1.5">
-                      <label className="text-slate-300 font-semibold block">Report a Problem / Submit Feedback (ارسال گزارش یا پیشنهاد)</label>
+                      <label className="text-slate-300 font-semibold block">{window.loc('Report a Problem / Submit Feedback (ارسال گزارش یا پیشنهاد)', 'Report a Problem / Submit Feedback')}</label>
                       <textarea
                         rows={2}
                         value={feedbackText}
@@ -1047,7 +1047,7 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-emerald-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <Share2 className="w-5 h-5 text-emerald-400" />
-                    <h3 className="text-sm font-bold text-white">۱۶. Invite Friends (دعوت دوستان)</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۱۶. Invite Friends (دعوت دوستان)', '16. Invite Friends')}</h3>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2 text-xs">
@@ -1079,7 +1079,7 @@ export default function SettingsModal(props) {
                 <div className="flex items-center justify-between border-b border-rose-500/30 pb-2.5">
                   <div className="flex items-center gap-2 text-rose-400 font-bold text-sm">
                     <LogOut className="w-5 h-5" />
-                    <span>۱7 & ۱8. Logout & Danger Zone (خروج و حذف حساب)</span>
+                    <span>{window.loc('۱7 & ۱8. Logout & Danger Zone (خروج و حذف حساب)', '17 & 18. Logout & Danger Zone')}</span>
                   </div>
                 </div>
 
@@ -1096,7 +1096,7 @@ export default function SettingsModal(props) {
                     className="py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-black flex items-center justify-center gap-2 shadow-lg"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>Log Out of Account (خروج از حساب)</span>
+                    <span>{window.loc('Log Out of Account (خروج از حساب)', 'Log Out of Account')}</span>
                   </button>
 
                   {/* DELETE ACCOUNT BUTTON */}
@@ -1105,7 +1105,7 @@ export default function SettingsModal(props) {
                     className="py-3 rounded-2xl bg-slate-950 hover:bg-rose-950/80 border border-rose-500/50 text-rose-300 font-black flex items-center justify-center gap-2 transition"
                   >
                     <Trash2 className="w-4 h-4" />
-                    <span>Delete Account Permanently (حذف حساب)</span>
+                    <span>{window.loc('Delete Account Permanently (حذف حساب)', 'Delete Account Permanently')}</span>
                   </button>
                 </div>
 
@@ -1166,7 +1166,7 @@ export default function SettingsModal(props) {
                 className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-black text-xs shadow-2xl hover:brightness-110 transition flex items-center justify-center gap-2"
               >
                 <Check className="w-4 h-4" />
-                <span>Save All Settings & Close (ذخیره و بستن)</span>
+                <span>{window.loc('Save All Settings & Close (ذخیره و بستن)', 'Save All Settings & Close')}</span>
               </button>
             </div>
 

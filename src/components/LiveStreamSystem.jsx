@@ -103,7 +103,7 @@ export default function LiveStreamSystem({
   const handleUpgradeToAdultVip = () => {
     setVipPlan('VIP Adult');
     localStorage.setItem('vlive_vip_plan', 'VIP Adult');
-    showToast('🎉 اشتراک Adult VIP شما با موفقیت فعال گردید!');
+    showToast(window.loc('🎉 اشتراک Adult VIP شما با موفقیت فعال گردید!', '🎉 Your Adult VIP subscription has been successfully activated!'));
     setIsAdultVipModalOpen(false);
     apiLive.saveAdultAccess({
       age_verified: isAge18Verified,
@@ -114,21 +114,21 @@ export default function LiveStreamSystem({
 
   // Standard Categories list
   const standardCategories = [
-    { id: 'all', label: 'همه' },
-    { id: 'Gaming', label: 'گیمینگ 🎮' },
-    { id: 'Music', label: 'موسیقی 🎵' },
-    { id: 'Chat', label: 'چت آنلاین 💬' },
-    { id: 'Dance', label: 'رقص & هنر 💃' },
-    { id: 'Trending', label: 'محبوب‌ترین‌ها 🔥' }
+    { id: 'all', label: window.loc('همه', 'everyone') },
+    { id: 'Gaming', label: window.loc('گیمینگ 🎮', 'Gaming 🎮') },
+    { id: 'Music', label: window.loc('موسیقی 🎵', 'Music 🎵') },
+    { id: 'Chat', label: window.loc('چت آنلاین 💬', 'Online chat 💬') },
+    { id: 'Dance', label: window.loc('رقص & هنر 💃', 'Dance & Art 💃') },
+    { id: 'Trending', label: window.loc('محبوب‌ترین‌ها 🔥', 'The most popular 🔥') }
   ];
 
   // Adult 18+ Categories list
   const adultCategories = [
-    { id: 'all', label: 'همه ۱۸+' },
-    { id: 'VIP Chat', label: 'چت اختصاصی 🔞' },
-    { id: 'Hot Dance', label: 'رقص داغ 🔥' },
-    { id: 'Romance', label: 'گپ عاشقانه ❤️' },
-    { id: 'Private Live', label: 'استریم خصوصی 💥' }
+    { id: 'all', label: window.loc('همه ۱۸+', 'All 18+') },
+    { id: 'VIP Chat', label: window.loc('چت اختصاصی 🔞', 'Private chat 🔞') },
+    { id: 'Hot Dance', label: window.loc('رقص داغ 🔥', 'Hot dance 🔥') },
+    { id: 'Romance', label: window.loc('گپ عاشقانه ❤️', 'Romantic chat ❤️') },
+    { id: 'Private Live', label: window.loc('استریم خصوصی 💥', 'Private stream 💥') }
   ];
 
   // Filter streams according to active tab, categories, and search query
@@ -159,7 +159,7 @@ export default function LiveStreamSystem({
   // Handle approved streamer starting a live stream
   const handleStartLiveStream = async () => {
     if (!newLiveTitle.trim()) {
-      showToast('⚠️ لطفاً عنوان لایواستریم را وارد کنید');
+      showToast(window.loc('⚠️ لطفاً عنوان لایواستریم را وارد کنید', '⚠️ Please enter the title of the live stream'));
       return;
     }
 
@@ -194,7 +194,7 @@ export default function LiveStreamSystem({
     setStreamsList(prev => [newStreamObj, ...prev]);
     setViewingStream(newStreamObj);
     setIsStartLiveModalOpen(false);
-    showToast(`🎥 پخش زنده ${newLiveType === 'adult' ? '۱۸+' : 'استاندارد'} شما با موفقیت شروع شد!`);
+    showToast(window.loc(`🎥 پخش زنده ${newLiveType === 'adult' ? window.loc('۱۸+', '18+') : window.loc('استاندارد', 'Standard')} شما با موفقیت شروع شد!`, `🎥 پخش زنده ${newLiveType === 'adult' ? window.loc('۱۸+', '18+') : window.loc('استاندارد', 'Standard')} شما با موفقیت شروع شد!`));
 
     // AI Check Run Simulation on Stream Initiation
     const aiCheck = await apiAdmin.analyzeLiveStreamAi(newStreamObj);
@@ -213,7 +213,7 @@ export default function LiveStreamSystem({
       if (setAdminReportsList) {
         setAdminReportsList(prev => [reportPayload, ...prev]);
       }
-      addAdminAuditLog?.(`🤖 هشدار AI: گزارش مشکوک در لایواستریم ${streamPayload.title} ثبت و به ادمین ارسال گردید.`);
+      addAdminAuditLog?.(window.loc(`🤖 هشدار AI: گزارش مشکوک در لایواستریم ${streamPayload.title} ثبت و به ادمین ارسال گردید.`, `🤖 هشدار AI: گزارش مشکوک در لایواستریم ${streamPayload.title} ثبت و به ادمین ارسال گردید.`));
     }
   };
 
@@ -231,9 +231,9 @@ export default function LiveStreamSystem({
             <div>
               <h2 className="text-base font-black text-white flex items-center gap-1.5">
                 <span>V.LIVE</span>
-                <span className="text-[10px] bg-pink-500/20 text-pink-400 px-2 py-0.5 rounded-full border border-pink-500/30">زنده</span>
+                <span className="text-[10px] bg-pink-500/20 text-pink-400 px-2 py-0.5 rounded-full border border-pink-500/30">{window.loc('زنده', 'alive')}</span>
               </h2>
-              <p className="text-[11px] text-slate-400 font-semibold">پخش زنده استریمرهای تایید شده</p>
+              <p className="text-[11px] text-slate-400 font-semibold">{window.loc('پخش زنده استریمرهای تایید شده', 'Live streaming from verified streamers')}</p>
             </div>
           </div>
 
@@ -249,7 +249,7 @@ export default function LiveStreamSystem({
               className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 hover:opacity-95 text-white font-black text-xs shadow-lg shadow-pink-500/30 flex items-center gap-1.5 hover:scale-102 active:scale-95 transition"
             >
               <Video className="w-4 h-4 animate-pulse" />
-              <span>ورود به Live Studio 🎥</span>
+              <span>{window.loc('ورود به Live Studio 🎥', 'Login to Live Studio 🎥')}</span>
             </button>
           )}
         </div>
@@ -268,7 +268,7 @@ export default function LiveStreamSystem({
             }`}
           >
             <Video className="w-4 h-4 text-cyan-300" />
-            <span>📺 پخش زنده استاندارد</span>
+            <span>{window.loc('📺 پخش زنده استاندارد', '📺 Standard live broadcast')}</span>
           </button>
 
           <button
@@ -283,7 +283,7 @@ export default function LiveStreamSystem({
             }`}
           >
             <ShieldAlert className="w-4 h-4 text-amber-400 animate-pulse" />
-            <span>🔥 پخش زنده ۱۸+ (Adult)</span>
+            <span>{window.loc('🔥 پخش زنده ۱۸+ (Adult)', '🔥 Live streaming 18+ (Adult)')}</span>
           </button>
         </div>
 
@@ -293,7 +293,7 @@ export default function LiveStreamSystem({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={liveTypeTab === 'adult' ? 'جستجو در لایوهای ۱۸+ ...' : 'جستجوی نام استریمر یا عنوان لایو ...'}
+            placeholder={liveTypeTab === 'adult' ? window.loc('جستجو در لایوهای ۱۸+ ...', 'Search in 18+ live...') : window.loc('جستجوی نام استریمر یا عنوان لایو ...', 'Search streamer name or live title...')}
             className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold text-white outline-none focus:border-pink-500 placeholder-slate-500 transition"
           />
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -330,10 +330,10 @@ export default function LiveStreamSystem({
           <div className="space-y-2">
             <h3 className="text-lg font-black text-white flex items-center justify-center gap-2">
               <ShieldAlert className="w-5 h-5 text-amber-400" />
-              <span>محدودیت دسترسی به بخش لایوهای ۱۸+</span>
+              <span>{window.loc('محدودیت دسترسی به بخش لایوهای ۱۸+', 'Restricted access to the 18+ live section')}</span>
             </h3>
             <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
-              طبق قوانین پلتفرم V.LIVE، مشاهده محتوای بزرگسال نیازمند تایید سن ۱۸+، پذیرش شرایط محتوا و داشتن اشتراک فعال Adult VIP می‌باشد.
+              {window.loc('طبق قوانین پلتفرم V.LIVE، مشاهده محتوای بزرگسال نیازمند تایید سن ۱۸+، پذیرش شرایط محتوا و داشتن اشتراک فعال Adult VIP می‌باشد.', 'According to the rules of the V.LIVE platform, viewing adult content requires confirming the age of 18+, accepting the content terms and having an active Adult VIP subscription.')}
             </p>
           </div>
 
@@ -344,7 +344,7 @@ export default function LiveStreamSystem({
             <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl hover:bg-slate-900/60 transition">
               <div className="flex items-center gap-2">
                 <ShieldCheck className={`w-4 h-4 ${isAge18Verified ? 'text-emerald-400' : 'text-slate-500'}`} />
-                <span className="text-xs font-bold text-slate-200">تایید سن بالای ۱۸ سال دارم</span>
+                <span className="text-xs font-bold text-slate-200">{window.loc('تایید سن بالای ۱۸ سال دارم', 'I am over 18 years old')}</span>
               </div>
               <input
                 type="checkbox"
@@ -358,7 +358,7 @@ export default function LiveStreamSystem({
             <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl hover:bg-slate-900/60 transition">
               <div className="flex items-center gap-2">
                 <FileText className={`w-4 h-4 ${acceptedAdultRules ? 'text-emerald-400' : 'text-slate-500'}`} />
-                <span className="text-xs font-bold text-slate-200">پذیرش قوانین و حریم خصوصی ۱۸+</span>
+                <span className="text-xs font-bold text-slate-200">{window.loc('پذیرش قوانین و حریم خصوصی ۱۸+', 'Acceptance of 18+ privacy rules')}</span>
               </div>
               <input
                 type="checkbox"
@@ -372,10 +372,10 @@ export default function LiveStreamSystem({
             <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800">
               <div className="flex items-center gap-2">
                 <Crown className={`w-4 h-4 ${isAdultVipActive ? 'text-amber-400' : 'text-slate-500'}`} />
-                <span className="text-xs font-bold text-slate-200">وضعیت اشتراک Adult VIP</span>
+                <span className="text-xs font-bold text-slate-200">{window.loc('وضعیت اشتراک Adult VIP', 'Adult VIP subscription status')}</span>
               </div>
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${isAdultVipActive ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}`}>
-                {isAdultVipActive ? 'فعال ✅' : 'غیرفعال ❌'}
+                {isAdultVipActive ? window.loc('فعال ✅', 'active') : window.loc('غیرفعال ❌', 'Disabled ❌')}
               </span>
             </div>
 
@@ -385,7 +385,7 @@ export default function LiveStreamSystem({
           <button
             onClick={() => {
               if (!isAge18Verified || !acceptedAdultRules) {
-                showToast('⚠️ لطفاً ابتدا سن بالای ۱۸ سال و قوانین را تایید کنید');
+                showToast(window.loc('⚠️ لطفاً ابتدا سن بالای ۱۸ سال و قوانین را تایید کنید', '⚠️ Please confirm the age above 18 years and the rules first'));
                 return;
               }
               if (!isAdultVipActive) {
@@ -395,7 +395,7 @@ export default function LiveStreamSystem({
             className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-rose-600 via-purple-600 to-amber-500 text-white font-black text-xs shadow-lg shadow-rose-500/30 hover:scale-102 active:scale-95 transition flex items-center justify-center gap-2"
           >
             <Crown className="w-4 h-4 text-amber-300" />
-            <span>{isAdultVipActive ? 'بازکردن محتوای ۱۸+' : 'ارتقا به اشتراک Adult VIP'}</span>
+            <span>{isAdultVipActive ? window.loc('بازکردن محتوای ۱۸+', 'Unlocking 18+ content') : window.loc('ارتقا به اشتراک Adult VIP', 'Upgrade to Adult VIP subscription')}</span>
           </button>
         </div>
       )}
@@ -406,9 +406,9 @@ export default function LiveStreamSystem({
           {filteredStreams.length === 0 ? (
             <div className="p-12 text-center rounded-3xl bg-slate-900/90 border border-slate-800 space-y-3 dir-rtl">
               <Video className="w-12 h-12 text-slate-600 mx-auto animate-pulse" />
-              <h4 className="text-sm font-black text-white">هیچ لایواستریمی در این بخش یافت نشد</h4>
+              <h4 className="text-sm font-black text-white">{window.loc('هیچ لایواستریمی در این بخش یافت نشد', 'No live streams were found in this section')}</h4>
               <p className="text-xs text-slate-400">
-                در حال حاضر لایواستریم مستقیمی در دسته‌بندی {selectedSubCategory} قرار ندارد.
+                {window.loc('در حال حاضر لایواستریم مستقیمی در دسته‌بندی', 'Currently livestreaming directly in the category')} {selectedSubCategory} {window.loc('قرار ندارد.', 'not supposed to')}
               </p>
 
             </div>
@@ -464,7 +464,7 @@ export default function LiveStreamSystem({
                         </span>
                         
                         <h4 className="text-xs font-black text-white truncate drop-shadow">
-                          {stream.title || 'پخش زنده اختصاسی'}
+                          {stream.title || window.loc('پخش زنده اختصاسی', 'Special live broadcast')}
                         </h4>
 
                         <div className="flex items-center gap-1.5 pt-0.5">
@@ -499,8 +499,8 @@ export default function LiveStreamSystem({
                   <Video className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">تنظیمات شروع پخش زنده</h3>
-                  <p className="text-[11px] text-slate-400">تنظیم عنوان، رده‌بندی و نوع پخش استریم</p>
+                  <h3 className="text-base font-black text-white">{window.loc('تنظیمات شروع پخش زنده', 'Live broadcast start settings')}</h3>
+                  <p className="text-[11px] text-slate-400">{window.loc('تنظیم عنوان، رده‌بندی و نوع پخش استریم', 'Setting the title, classification and type of streaming')}</p>
                 </div>
               </div>
               <button
@@ -517,7 +517,7 @@ export default function LiveStreamSystem({
               {/* SELECT LIVE TYPE (Standard vs Adult 18+) */}
               <div>
                 <label className="block text-slate-300 font-bold mb-1">
-                  🎯 انتخاب نوع لایواستریم:
+                  {window.loc('🎯 انتخاب نوع لایواستریم:', '🎯 Choosing the type of live stream:')}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -533,7 +533,7 @@ export default function LiveStreamSystem({
                     }`}
                   >
                     <Video className="w-4 h-4 text-pink-400" />
-                    <span>استاندارد (عمومی)</span>
+                    <span>{window.loc('استاندارد (عمومی)', 'standard (general)')}</span>
                   </button>
 
                   <button
@@ -549,7 +549,7 @@ export default function LiveStreamSystem({
                     }`}
                   >
                     <ShieldAlert className="w-4 h-4 text-amber-400" />
-                    <span>بزرگسال (۱۸+)</span>
+                    <span>{window.loc('بزرگسال (۱۸+)', 'adult (18+)')}</span>
                   </button>
                 </div>
               </div>
@@ -557,13 +557,13 @@ export default function LiveStreamSystem({
               {/* LIVE TITLE */}
               <div>
                 <label className="block text-slate-300 font-bold mb-1">
-                  ✏️ عنوان لایواستریم:
+                  {window.loc('✏️ عنوان لایواستریم:', '✏️ Live stream title:')}
                 </label>
                 <input
                   type="text"
                   value={newLiveTitle}
                   onChange={(e) => setNewLiveTitle(e.target.value)}
-                  placeholder="مثال: پخش زنده گپ و گفت شبانه 🎵"
+                  placeholder={window.loc('مثال: پخش زنده گپ و گفت شبانه 🎵', 'Example: live broadcast of night chat 🎵')}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-semibold outline-none focus:border-pink-500"
                 />
               </div>
@@ -571,7 +571,7 @@ export default function LiveStreamSystem({
               {/* CATEGORY SELECTOR */}
               <div>
                 <label className="block text-slate-300 font-bold mb-1">
-                  📂 دسته‌بندی موضوعی:
+                  {window.loc('📂 دسته‌بندی موضوعی:', '📂 Subject category:')}
                 </label>
                 <select
                   value={newLiveCategory}
@@ -580,18 +580,18 @@ export default function LiveStreamSystem({
                 >
                   {newLiveType === 'standard' ? (
                     <>
-                      <option value="Gaming">گیمینگ 🎮</option>
-                      <option value="Music">موسیقی 🎵</option>
-                      <option value="Chat">چت آنلاین 💬</option>
-                      <option value="Dance">رقص & هنر 💃</option>
-                      <option value="IRL">زندگی روزمره 📹</option>
+                      <option value="Gaming">{window.loc('گیمینگ 🎮', 'Gaming 🎮')}</option>
+                      <option value="Music">{window.loc('موسیقی 🎵', 'Music 🎵')}</option>
+                      <option value="Chat">{window.loc('چت آنلاین 💬', 'Online chat 💬')}</option>
+                      <option value="Dance">{window.loc('رقص & هنر 💃', 'Dance & Art 💃')}</option>
+                      <option value="IRL">{window.loc('زندگی روزمره 📹', 'Daily life 📹')}</option>
                     </>
                   ) : (
                     <>
-                      <option value="VIP Chat">چت اختصاصی 🔞</option>
-                      <option value="Hot Dance">رقص داغ 🔥</option>
-                      <option value="Romance">گپ عاشقانه ❤️</option>
-                      <option value="Private Live">استریم خصوصی 💥</option>
+                      <option value="VIP Chat">{window.loc('چت اختصاصی 🔞', 'Private chat 🔞')}</option>
+                      <option value="Hot Dance">{window.loc('رقص داغ 🔥', 'Hot dance 🔥')}</option>
+                      <option value="Romance">{window.loc('گپ عاشقانه ❤️', 'Romantic chat ❤️')}</option>
+                      <option value="Private Live">{window.loc('استریم خصوصی 💥', 'Private stream 💥')}</option>
                     </>
                   )}
                 </select>
@@ -600,13 +600,13 @@ export default function LiveStreamSystem({
               {/* DESCRIPTION */}
               <div>
                 <label className="block text-slate-300 font-bold mb-1">
-                  📝 توضیحات مختصر (بیو لایو):
+                  {window.loc('📝 توضیحات مختصر (بیو لایو):', '📝 Brief description (Bio Live):')}
                 </label>
                 <textarea
                   rows={2}
                   value={newLiveDesc}
                   onChange={(e) => setNewLiveDesc(e.target.value)}
-                  placeholder="توضیحاتی برای بینندگان خود بنویسید ..."
+                  placeholder={window.loc('توضیحاتی برای بینندگان خود بنویسید ...', 'Write a description for your viewers...')}
                   className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-semibold outline-none focus:border-pink-500 resize-none"
                 />
               </div>
@@ -614,7 +614,7 @@ export default function LiveStreamSystem({
               {/* THUMBNAIL URL */}
               <div>
                 <label className="block text-slate-300 font-bold mb-1">
-                  🖼️ آدرس کاور استریم (Thumbnail):
+                  {window.loc('🖼️ آدرس کاور استریم (Thumbnail):', '🖼️ Address of cover stream (Thumbnail):')}
                 </label>
                 <input
                   type="text"
@@ -627,7 +627,7 @@ export default function LiveStreamSystem({
               {/* TAGS */}
               <div>
                 <label className="block text-slate-300 font-bold mb-1">
-                  🏷️ برچسب‌ها (Tags):
+                  {window.loc('🏷️ برچسب‌ها (Tags):', 'Tags:')}
                 </label>
                 <input
                   type="text"
@@ -646,7 +646,7 @@ export default function LiveStreamSystem({
               className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white font-black text-xs shadow-lg hover:scale-102 active:scale-95 transition flex items-center justify-center gap-2"
             >
               <Radio className="w-4 h-4 animate-pulse" />
-              <span>شروع رسمی پخش زنده</span>
+              <span>{window.loc('شروع رسمی پخش زنده', 'The official start of the live stream')}</span>
             </button>
 
           </div>
@@ -664,8 +664,8 @@ export default function LiveStreamSystem({
                   <Crown className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">ارتقا به اشتراک Adult VIP</h3>
-                  <p className="text-[11px] text-slate-400">دسترسی نامحدود به لایوها و دسته‌بندی‌های ۱۸+</p>
+                  <h3 className="text-base font-black text-white">{window.loc('ارتقا به اشتراک Adult VIP', 'Upgrade to Adult VIP subscription')}</h3>
+                  <p className="text-[11px] text-slate-400">{window.loc('دسترسی نامحدود به لایوها و دسته‌بندی‌های ۱۸+', 'Unlimited access to 18+ live streams and categories')}</p>
                 </div>
               </div>
               <button
@@ -680,13 +680,13 @@ export default function LiveStreamSystem({
               <div className="p-3.5 rounded-2xl bg-slate-950 border border-amber-500/30 space-y-2">
                 <h4 className="font-black text-amber-400 flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4" />
-                  <span>مزایای اختصاصی Adult VIP:</span>
+                  <span>{window.loc('مزایای اختصاصی Adult VIP:', 'Exclusive benefits of Adult VIP:')}</span>
                 </h4>
                 <ul className="space-y-1.5 text-[11px] text-slate-400 list-disc list-inside">
-                  <li>دسترسی کامل و بدون محدودیت به تمام لایواستریم‌های ۱۸+</li>
-                  <li>امکان جستجو و فیلتر اختصاصی در دسته ۱۸+</li>
-                  <li>نشان ویژه Adult VIP طلایی روی پروفایل کاربری</li>
-                  <li>امکان تماس تصویری مستقیم با استریمرهای ۱۸+</li>
+                  <li>{window.loc('دسترسی کامل و بدون محدودیت به تمام لایواستریم‌های ۱۸+', 'Complete and unrestricted access to all 18+ livestreams')}</li>
+                  <li>{window.loc('امکان جستجو و فیلتر اختصاصی در دسته ۱۸+', 'Ability to search and filter exclusively in the 18+ category')}</li>
+                  <li>{window.loc('نشان ویژه Adult VIP طلایی روی پروفایل کاربری', 'Golden Adult VIP badge on user profile')}</li>
+                  <li>{window.loc('امکان تماس تصویری مستقیم با استریمرهای ۱۸+', 'Possibility of direct video call with 18+ streamers')}</li>
                 </ul>
               </div>
             </div>
@@ -696,7 +696,7 @@ export default function LiveStreamSystem({
               className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-600 text-white font-black text-xs shadow-lg shadow-amber-500/30 hover:scale-102 active:scale-95 transition flex items-center justify-center gap-2"
             >
               <Crown className="w-4 h-4 text-slate-950" />
-              <span>تایید و فعال‌سازی فوری اشتراک Adult VIP</span>
+              <span>{window.loc('تایید و فعال‌سازی فوری اشتراک Adult VIP', 'Confirmation and instant activation of Adult VIP subscription')}</span>
             </button>
 
           </div>

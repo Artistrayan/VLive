@@ -52,15 +52,15 @@ export default function NotificationsModal(props) {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-base sm:text-lg font-black bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300 bg-clip-text text-transparent truncate">
-                      اعلان‌ها (Notifications)
+                      {window.loc('اعلان‌ها (Notifications)', 'Notifications')}
                     </h2>
                     {notificationsList.filter(n => n.unread).length > 0 && (
                       <span className="px-2.5 py-0.5 rounded-full bg-pink-600 text-white font-black text-xs shadow-md animate-bounce shrink-0">
-                        {notificationsList.filter(n => n.unread).length} جدید
+                        {notificationsList.filter(n => n.unread).length} {window.loc('جدید', 'new')}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-300 font-medium truncate">هشدارها، هدایا، پیام‌ها و لایو استریم‌ها</p>
+                  <p className="text-xs text-slate-300 font-medium truncate">{window.loc('هشدارها، هدایا، پیام‌ها و لایو استریم‌ها', 'Alerts, giveaways, messages and live streams')}</p>
                 </div>
               </div>
 
@@ -75,7 +75,7 @@ export default function NotificationsModal(props) {
                   title="Open Messages"
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
-                  <span>پیام‌ها</span>
+                  <span>{window.loc('پیام‌ها', 'Messages')}</span>
                 </button>
                 <button
                   onClick={() => setIsNotifSettingsOpen(true)}
@@ -120,7 +120,7 @@ export default function NotificationsModal(props) {
                 <button
                   onClick={() => {
                     setNotificationsList(prev => prev.map(n => ({ ...n, unread: false })));
-                    showToast('همه اعلان‌ها خوانده شدند!');
+                    showToast(window.loc('همه اعلان‌ها خوانده شدند!', 'All notices have been read!'));
                   }}
                   className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center gap-1 transition"
                   title="Mark All as Read"
@@ -131,7 +131,7 @@ export default function NotificationsModal(props) {
                 <button
                   onClick={() => {
                     setNotificationsList([]);
-                    showToast('تاریخچه اعلان‌ها پاکسازی شد');
+                    showToast(window.loc('تاریخچه اعلان‌ها پاکسازی شد', 'Notification history cleared'));
                   }}
                   className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:bg-rose-950/40 hover:border-rose-500/40 text-slate-400 hover:text-rose-300 text-xs font-bold flex items-center gap-1 transition"
                   title="Clear All Notifications"
@@ -156,7 +156,7 @@ export default function NotificationsModal(props) {
                 return (
                   <div key={group} className="space-y-2">
                     <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 px-1">
-                      {group === 'Today' ? 'امروز' : group === 'Yesterday' ? 'دیروز' : 'گذشته'}
+                      {group === 'Today' ? window.loc('امروز', 'today') : group === 'Yesterday' ? window.loc('دیروز', 'yesterday') : window.loc('گذشته', 'the past')}
                     </span>
                     <div className="space-y-2">
                       {groupItems.map(item => {
@@ -210,15 +210,15 @@ export default function NotificationsModal(props) {
                                         e.stopPropagation();
                                         setActiveChatCall({
                                           type: item.title.includes('Video') ? 'video' : 'voice',
-                                          user: { name: item.sender || 'سارا', avatar: item.avatar }
+                                          user: { name: item.sender || window.loc('سارا', 'Sarah'), avatar: item.avatar }
                                         });
                                         setIsNotificationsOpen(false);
-                                        showToast(`تماس با @${item.sender || 'کاربر'}...`);
+                                        showToast(window.loc(`تماس با @${item.sender || window.loc('کاربر', 'user')}...`, `تماس با @${item.sender || window.loc('کاربر', 'user')}...`));
                                       }}
                                       className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5"
                                     >
                                       <PhoneCall className="w-3.5 h-3.5" />
-                                      <span>تماس مجدد</span>
+                                      <span>{window.loc('تماس مجدد', 'call back')}</span>
                                     </button>
                                   </div>
                                 )}
@@ -229,12 +229,12 @@ export default function NotificationsModal(props) {
                                         e.stopPropagation();
                                         setIsNotificationsOpen(false);
                                         setIsSettingsModalOpen(true);
-                                        showToast('فرآیند تمدید اشتراک VIP باز شد!');
+                                        showToast(window.loc('فرآیند تمدید اشتراک VIP باز شد!', 'VIP subscription renewal process is open!'));
                                       }}
                                       className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5"
                                     >
                                       <Crown className="w-3.5 h-3.5 text-slate-950" />
-                                      <span>تمدید اشتراک VIP</span>
+                                      <span>{window.loc('تمدید اشتراک VIP', 'Renewal of VIP subscription')}</span>
                                     </button>
                                   </div>
                                 )}
@@ -242,7 +242,7 @@ export default function NotificationsModal(props) {
                                   <div className="pt-1.5 flex items-center gap-2">
                                     <span className="text-xs text-emerald-300 font-bold bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-500/40 flex items-center gap-1.5">
                                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                                      پاداش دریافت شد (+۲۰۰ سکه)
+                                      {window.loc('پاداش دریافت شد (+۲۰۰ سکه)', 'Reward received (+200 coins)')}
                                     </span>
                                   </div>
                                 )}
@@ -260,7 +260,7 @@ export default function NotificationsModal(props) {
               {notificationsList.filter(n => notificationFilterTab === 'all' || n.type === notificationFilterTab).length === 0 && (
                 <div className="py-12 text-center space-y-3 bg-slate-950/80 rounded-3xl border border-slate-800">
                   <Bell className="w-10 h-10 text-slate-600 mx-auto animate-bounce" />
-                  <p className="text-xs text-slate-300 font-bold">هیچ اعلانی در این دسته‌بندی یافت نشد</p>
+                  <p className="text-xs text-slate-300 font-bold">{window.loc('هیچ اعلانی در این دسته‌بندی یافت نشد', 'No announcements were found in this category')}</p>
                 </div>
               )}
             </div>
@@ -278,8 +278,8 @@ export default function NotificationsModal(props) {
                   <Settings className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">تنظیمات دریافت اعلان‌ها</h3>
-                  <p className="text-xs text-slate-300 font-medium">سفارشی‌سازی هشدارهای پوش و درون‌برنامه‌ای</p>
+                  <h3 className="text-base font-black text-white">{window.loc('تنظیمات دریافت اعلان‌ها', 'Settings for receiving notifications')}</h3>
+                  <p className="text-xs text-slate-300 font-medium">{window.loc('سفارشی‌سازی هشدارهای پوش و درون‌برنامه‌ای', 'Customize push and in-app alerts')}</p>
                 </div>
               </div>
               <button 
@@ -293,15 +293,15 @@ export default function NotificationsModal(props) {
             {/* Toggle Switches for Categories */}
             <div className="space-y-2.5 text-xs">
               {[
-                { key: 'messages', label: '💬 Messages (پیام‌ها)', desc: 'Direct chat messages & group mentions' },
-                { key: 'likes', label: '❤️ Likes (لایک‌ها)', desc: 'Likes on your stage photos & moments' },
-                { key: 'follows', label: '👥 Follows (فالوها)', desc: 'New followers & profile visits' },
-                { key: 'lives', label: '🎥 Live Broadcasts (لایوها)', desc: 'When your favorite streamers go live' },
-                { key: 'gifts', label: '🎁 Gifts (هدایا)', desc: 'When someone sends you gifts' },
-                { key: 'calls', label: '📞 Calls (تماس‌ها)', desc: 'Private voice & video call requests' },
-                { key: 'earnings', label: '💰 Earnings (درآمد)', desc: 'Coin deposits & USDT cashout status' },
-                { key: 'competitions', label: '🏆 Competitions (مسابقات)', desc: 'Rankings, PK Battles & leaderboard updates' },
-                { key: 'system', label: '📢 System Announcements (اطلاعیه‌ها)', desc: 'App updates, maintenance & security alerts' }
+                { key: 'messages', label: window.loc('💬 Messages (پیام‌ها)', '💬 Messages'), desc: 'Direct chat messages & group mentions' },
+                { key: 'likes', label: window.loc('❤️ Likes (لایک‌ها)', '❤️ Likes'), desc: 'Likes on your stage photos & moments' },
+                { key: 'follows', label: window.loc('👥 Follows (فالوها)', '👥 Follows'), desc: 'New followers & profile visits' },
+                { key: 'lives', label: window.loc('🎥 Live Broadcasts (لایوها)', '🎥 Live Broadcasts'), desc: 'When your favorite streamers go live' },
+                { key: 'gifts', label: window.loc('🎁 Gifts (هدایا)', '🎁 Gifts'), desc: 'When someone sends you gifts' },
+                { key: 'calls', label: window.loc('📞 Calls (تماس‌ها)', '📞 Calls'), desc: 'Private voice & video call requests' },
+                { key: 'earnings', label: window.loc('💰 Earnings (درآمد)', '💰 Earnings'), desc: 'Coin deposits & USDT cashout status' },
+                { key: 'competitions', label: window.loc('🏆 Competitions (مسابقات)', '🏆 Competitions'), desc: 'Rankings, PK Battles & leaderboard updates' },
+                { key: 'system', label: window.loc('📢 System Announcements (اطلاعیه‌ها)', '📢 System Announcements'), desc: 'App updates, maintenance & security alerts' }
               ].map(toggle => (
                 <div key={toggle.key} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3 hover:border-slate-700 transition">
                   <div className="space-y-0.5 min-w-0">
@@ -321,11 +321,11 @@ export default function NotificationsModal(props) {
             <button
               onClick={() => {
                 setIsNotifSettingsOpen(false);
-                showToast('تنظیمات اعلان‌ها با موفقیت ذخیره شد!');
+                showToast(window.loc('تنظیمات اعلان‌ها با موفقیت ذخیره شد!', 'Notification settings saved successfully!'));
               }}
               className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition"
             >
-              ذخیره تنظیمات اعلان‌ها
+              {window.loc('ذخیره تنظیمات اعلان‌ها', 'Save notification settings')}
             </button>
           </div>
         </div>
