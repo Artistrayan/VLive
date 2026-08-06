@@ -2722,6 +2722,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   // PRE-STREAM WARNING & STREAM WATCHING STATE
   const [preStreamWarningStream, setPreStreamWarningStream] = useState(null);
   const [viewingStream, setViewingStream] = useState(null);
+  const [isMiniPlayer, setIsMiniPlayer] = useState(false);
   
   // LIVE VIEWER ROOM ENHANCED STATES
   const [isLiveInfoPanelOpen, setIsLiveInfoPanelOpen] = useState(false);
