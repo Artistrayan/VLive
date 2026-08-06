@@ -100,12 +100,14 @@ export default function App() {
 
   // AUTHENTICATION & ONBOARDING SYSTEM STATES (10-STEP SYSTEM)
   const [hasRegistered, setHasRegistered] = useState(() => {
-    return safeStorage.getItem('vlive_has_registered') !== 'false';
+    return safeStorage.getItem('vlive_has_registered') === 'true';
   });
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return safeStorage.getItem('vlive_user_logged_in') !== 'false';
+    return safeStorage.getItem('vlive_has_registered') === 'true' && safeStorage.getItem('vlive_user_logged_in') !== 'false';
   });
-  const [showEntrySplash, setShowEntrySplash] = useState(false);
+  const [showEntrySplash, setShowEntrySplash] = useState(() => {
+    return safeStorage.getItem('vlive_has_registered') === 'true';
+  });
   const [authStep, setAuthStep] = useState('welcome');
   const [selectedUser, setSelectedUser] = useState(null);
   const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
