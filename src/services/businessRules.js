@@ -3,10 +3,19 @@
  * Defines and enforces the 20 official platform rules across the UI & APIs.
  */
 
+const safeLoc = (fa, en) => {
+  if (typeof window !== 'undefined' && typeof window.loc === 'function') {
+    return window.loc(fa, en);
+  }
+  return fa;
+};
+
 export const PLATFORM_RULES = {
   // 1. AGE RULE
   MIN_REQUIRED_AGE: 18,
-  AGE_ERROR_MESSAGE: window.loc('vLive+ فقط برای افراد بالای ۱۸ سال (18+) مجاز است.', 'vLive+ is only allowed for people over the age of 18 (18+).'),
+  get AGE_ERROR_MESSAGE() {
+    return safeLoc('vLive+ فقط برای افراد بالای ۱۸ سال (18+) مجاز است.', 'vLive+ is only allowed for people over the age of 18 (18+).');
+  },
 
   // 2. STREAMER ROLES & STATUSES
   ROLES: {
@@ -31,7 +40,9 @@ export const PLATFORM_RULES = {
   // 4 & 5. CALL & WALLET RULES
   STREAMER_CALL_FREE_SECONDS: 20,
   MIN_CALL_WALLET_BALANCE: 20, // Coins
-  INSUFFICIENT_BALANCE_MSG: window.loc('اعتبار کافی نیست! تماس پایان یافت.', 'Not enough credit! The call ended.'),
+  get INSUFFICIENT_BALANCE_MSG() {
+    return safeLoc('اعتبار کافی نیست! تماس پایان یافت.', 'Not enough credit! The call ended.');
+  },
 
   // 14. WITHDRAWAL & COMMISSION RULES
   MIN_WITHDRAWAL_USDT: 50,
@@ -100,14 +111,18 @@ export function validateWithdrawalAmount(amountUsdt, userRole, username, telegra
 
 // 20. OFFICIAL TERMS & CONDITIONS TEXT (18+, Respectful Conduct, Gift & Payout rules)
 export const PLATFORM_TERMS = {
-  title: window.loc('قوانین و مقررات استفاده از vLive+ Enterprise', 'vLive+ Enterprise Terms and Conditions'),
+  get title() {
+    return safeLoc('قوانین و مقررات استفاده از vLive+ Enterprise', 'vLive+ Enterprise Terms and Conditions');
+  },
   version: "v1.0 2026",
-  sections: [
-    window.loc('۱. حداقل سن قانونی: استفاده از vLive+ فقط برای افراد دارای سن ۱۸ سال تمام یا بالاتر مجاز است.', '1. Minimum Legal Age: Use of vLive+ is only permitted for persons 18 years of age or older.'),
-    window.loc('۲. قوانین سلوک و اخلاق: هرگونه بدرفتاری، توهین، مزاحمت یا انتشار محتوای مغایر با قوانین اکیداً ممنوع بوده و منجر به مسدودی دائم (Ban) خواهد شد.', '2. Rules of Conduct and Ethics: Any misbehavior, insult, disturbance or publication of content contrary to the rules is strictly prohibited and will lead to a permanent ban.'),
-    window.loc('۳. احراز هویت استریمرها: تمام درخواست‌های میزبانی لایو (Streamer) نیازمند آپلود مدارک شناسایی و سلفی و تأیید نهایی توسط ادمین ارشد می‌باشند.', '3. Authentication of streamers: All requests for live hosting (Streamer) require uploading identification and selfie documents and final approval by the senior admin.'),
-    window.loc('۴. هدیه و تراکنش‌ها: سکه‌ها و الماس‌ها غیرقابل استرداد بوده و کارمزد پلتفرم بر اساس مقررات کسر خواهد شد.', '4. Gift and Transactions: Coins and Diamonds are non-refundable and platform fee will be deducted as per regulations.'),
-    window.loc('۵. حداقل مقدار برداشت: حداقل مبلغ قابل برداشت معادل ۲۰ دلار (20 USDT) می‌باشد.', '5. Minimum withdrawal amount: The minimum amount that can be withdrawn is 20 dollars (20 USDT).'),
-    window.loc('۶. حریم خصوصی و امنیت: پلتفرم vLive+ مجهز به سیستم ضد اسکرین‌شات و ضبط تصویر ۲۴/۷ برای حفظ حریم شخصی کاربران است.', '6. Privacy and Security: The vLive+ platform is equipped with a 24/7 anti-screenshot and image recording system to protect users\' privacy.')
-  ]
+  get sections() {
+    return [
+      safeLoc('۱. حداقل سن قانونی: استفاده از vLive+ فقط برای افراد دارای سن ۱۸ سال تمام یا بالاتر مجاز است.', '1. Minimum Legal Age: Use of vLive+ is only permitted for persons 18 years of age or older.'),
+      safeLoc('۲. قوانین سلوک و اخلاق: هرگونه بدرفتاری، توهین، مزاحمت یا انتشار محتوای مغایر با قوانین اکیداً ممنوع بوده و منجر به مسدودی دائم (Ban) خواهد شد.', '2. Rules of Conduct and Ethics: Any misbehavior, insult, disturbance or publication of content contrary to the rules is strictly prohibited and will lead to a permanent ban.'),
+      safeLoc('۳. احراز هویت استریمرها: تمام درخواست‌های میزبانی لایو (Streamer) نیازمند آپلود مدارک شناسایی و سلفی و تأیید نهایی توسط ادمین ارشد می‌باشند.', '3. Authentication of streamers: All requests for live hosting (Streamer) require uploading identification and selfie documents and final approval by the senior admin.'),
+      safeLoc('۴. هدیه و تراکنش‌ها: سکه‌ها و الماس‌ها غیرقابل استرداد بوده و کارمزد پلتفرم بر اساس مقررات کسر خواهد شد.', '4. Gift and Transactions: Coins and Diamonds are non-refundable and platform fee will be deducted as per regulations.'),
+      safeLoc('۵. حداقل مقدار برداشت: حداقل مبلغ قابل برداشت معادل ۲۰ دلار (20 USDT) می‌باشد.', '5. Minimum withdrawal amount: The minimum amount that can be withdrawn is 20 dollars (20 USDT).'),
+      safeLoc('۶. حریم خصوصی و امنیت: پلتفرم vLive+ مجهز به سیستم ضد اسکرین‌شات و ضبط تصویر ۲۴/۷ برای حفظ حریم شخصی کاربران است.', '6. Privacy and Security: The vLive+ platform is equipped with a 24/7 anti-screenshot and image recording system to protect users\' privacy.')
+    ];
+  }
 };

@@ -5,12 +5,19 @@ import {
   ChevronLeft, Palette, Sparkles, RotateCcw, ShieldCheck, Copy
 } from 'lucide-react';
 
+const safeLoc = (fa, en) => {
+  if (typeof window !== 'undefined' && typeof window.loc === 'function') {
+    return window.loc(fa, en);
+  }
+  return fa;
+};
+
 const BG_PRESETS = [
-  { name: window.loc('شفاف (Transparent)', 'Transparent'), value: 'transparent' },
-  { name: window.loc('شیشه‌ای تیره (Glass Slate)', 'Dark glass (Glass Slate)'), value: 'rgba(15, 23, 42, 0.85)' },
-  { name: window.loc('گرادیان طلایی (Gold Gradient)', 'Gold Gradient'), value: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.9))' },
-  { name: window.loc('گرادیان صورتی (Pink Gradient)', 'Pink Gradient'), value: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(15, 23, 42, 0.9))' },
-  { name: window.loc('گرادیان سایبر (Cyber Cyan)', 'Cyber ​​gradient (Cyber ​​Cyan)'), value: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(15, 23, 42, 0.9))' }
+  { get name() { return safeLoc('شفاف (Transparent)', 'Transparent'); }, value: 'transparent' },
+  { get name() { return safeLoc('شیشه‌ای تیره (Glass Slate)', 'Dark glass (Glass Slate)'); }, value: 'rgba(15, 23, 42, 0.85)' },
+  { get name() { return safeLoc('گرادیان طلایی (Gold Gradient)', 'Gold Gradient'); }, value: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.9))' },
+  { get name() { return safeLoc('گرادیان صورتی (Pink Gradient)', 'Pink Gradient'); }, value: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(15, 23, 42, 0.9))' },
+  { get name() { return safeLoc('گرادیان سایبر (Cyber Cyan)', 'Cyber ​​gradient (Cyber ​​Cyan)'); }, value: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(15, 23, 42, 0.9))' }
 ];
 
 export default function InspectorPanel() {

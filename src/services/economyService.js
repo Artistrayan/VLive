@@ -13,6 +13,13 @@ const STORAGE_KEYS = {
   AI_RECOMMENDATIONS: 'vlive_economy_ai_recs_v2'
 };
 
+const safeLoc = (fa, en) => {
+  if (typeof window !== 'undefined' && typeof window.loc === 'function') {
+    return window.loc(fa, en);
+  }
+  return fa;
+};
+
 // DEFAULT CONFIGURABLE ECONOMY SETTINGS (NO HARDCODED VALUES)
 const DEFAULT_ECONOMY_CONFIG = {
   // Coin Purchase Packages (Users buy Coins with Real Money / USDT)
@@ -27,13 +34,13 @@ const DEFAULT_ECONOMY_CONFIG = {
 
   // Gift Catalog (Coin Price -> Streamer Earns Diamonds)
   giftCatalog: [
-    { id: 'g_rose', name: window.loc('گل رز 🌹', 'Rose 🌹'), icon: '🌹', coins: 10, diamonds: 7, category: 'Basic', popular: true, animation: 'sparkle' },
-    { id: 'g_heart', name: window.loc('قلب درخشان 💖', 'Shining heart 💖'), icon: '💖', coins: 50, diamonds: 38, category: 'Popular', popular: true, animation: 'heart' },
-    { id: 'g_fireworks', name: window.loc('آتش‌بازی 🎆', 'Fireworks 🎆'), icon: '🎆', coins: 150, diamonds: 115, category: 'Special', popular: false, animation: 'fireworks' },
-    { id: 'g_crown', name: window.loc('تاج VIP 👑', 'VIP Crown 👑'), icon: '👑', coins: 500, diamonds: 380, category: 'VIP', popular: true, animation: 'crown' },
-    { id: 'g_supercar', name: window.loc('سوپر اسپرت 🏎️', 'Super sports 🏎️'), icon: '🏎️', coins: 2500, diamonds: 1900, category: 'Super', popular: true, animation: 'car' },
-    { id: 'g_yacht', name: window.loc('کشتی تفریحی 🛥️', 'Cruise ship 🛥️'), icon: '🛥️', coins: 5000, diamonds: 3800, category: 'Luxury', popular: false, animation: 'yacht' },
-    { id: 'g_castle', name: window.loc('قصر رویایی 🏰', 'Dream Palace 🏰'), icon: '🏰', coins: 10000, diamonds: 7600, category: 'Legendary', popular: false, animation: 'castle' }
+    { id: 'g_rose', get name() { return safeLoc('گل رز 🌹', 'Rose 🌹'); }, icon: '🌹', coins: 10, diamonds: 7, category: 'Basic', popular: true, animation: 'sparkle' },
+    { id: 'g_heart', get name() { return safeLoc('قلب درخشان 💖', 'Shining heart 💖'); }, icon: '💖', coins: 50, diamonds: 38, category: 'Popular', popular: true, animation: 'heart' },
+    { id: 'g_fireworks', get name() { return safeLoc('آتش‌بازی 🎆', 'Fireworks 🎆'); }, icon: '🎆', coins: 150, diamonds: 115, category: 'Special', popular: false, animation: 'fireworks' },
+    { id: 'g_crown', get name() { return safeLoc('تاج VIP 👑', 'VIP Crown 👑'); }, icon: '👑', coins: 500, diamonds: 380, category: 'VIP', popular: true, animation: 'crown' },
+    { id: 'g_supercar', get name() { return safeLoc('سوپر اسپرت 🏎️', 'Super sports 🏎️'); }, icon: '🏎️', coins: 2500, diamonds: 1900, category: 'Super', popular: true, animation: 'car' },
+    { id: 'g_yacht', get name() { return safeLoc('کشتی تفریحی 🛥️', 'Cruise ship 🛥️'); }, icon: '🛥️', coins: 5000, diamonds: 3800, category: 'Luxury', popular: false, animation: 'yacht' },
+    { id: 'g_castle', get name() { return safeLoc('قصر رویایی 🏰', 'Dream Palace 🏰'); }, icon: '🏰', coins: 10000, diamonds: 7600, category: 'Legendary', popular: false, animation: 'castle' }
   ],
 
   // VIP Membership Subscription Pricing (in Coins)
@@ -122,7 +129,7 @@ class EconomyService {
         coinAmount: 500,
         diamondAmount: 380,
         commission: 120,
-        item: window.loc('تاج VIP 👑', 'VIP Crown 👑'),
+        item: safeLoc('تاج VIP 👑', 'VIP Crown 👑'),
         status: 'Completed',
         createdAt: new Date(Date.now() - 3600000).toISOString()
       },
@@ -132,7 +139,7 @@ class EconomyService {
         userId: 'U-102',
         username: 'Omid_Tehran',
         coinAmount: 200,
-        item: window.loc('اشتراک VIP ماهانه', 'Monthly VIP subscription'),
+        item: safeLoc('اشتراک VIP ماهانه', 'Monthly VIP subscription'),
         status: 'Completed',
         createdAt: new Date(Date.now() - 7200000).toISOString()
       }
