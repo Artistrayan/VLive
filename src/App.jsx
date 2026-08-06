@@ -100,14 +100,12 @@ export default function App() {
 
   // AUTHENTICATION & ONBOARDING SYSTEM STATES (10-STEP SYSTEM)
   const [hasRegistered, setHasRegistered] = useState(() => {
-    return safeStorage.getItem('vlive_has_registered') === 'true';
+    return safeStorage.getItem('vlive_has_registered') !== 'false';
   });
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return safeStorage.getItem('vlive_has_registered') === 'true' && safeStorage.getItem('vlive_user_logged_in') !== 'false';
+    return safeStorage.getItem('vlive_user_logged_in') !== 'false';
   });
-  const [showEntrySplash, setShowEntrySplash] = useState(() => {
-    return safeStorage.getItem('vlive_has_registered') === 'true';
-  });
+  const [showEntrySplash, setShowEntrySplash] = useState(false);
   const [authStep, setAuthStep] = useState('welcome');
   const [selectedUser, setSelectedUser] = useState(null);
   const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
@@ -6612,10 +6610,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         preCallConfirmHost={preCallConfirmHost}
         isRtl={isRtl}
         loc={loc}
-        userBalance={userCoins}
+        userCoins={userCoins}
         setPreCallConfirmHost={setPreCallConfirmHost}
-        setIsBuyCoinsModalOpen={setIsBuyCoinsModalOpen}
-        handleConfirmAndStartCall={(host) => handleStartCallDirect(host.user, host.type, host.mode, true, host.tariffRate || host.rate)}
+        handleStartCallDirect={handleStartCallDirect}
       />
 
       {/* ==================== POST-CALL RATING & FEEDBACK MODAL ==================== */}

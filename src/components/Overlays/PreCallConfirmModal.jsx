@@ -1,14 +1,13 @@
 import React from 'react';
-import { Coins, Phone, Video } from 'lucide-react';
+import { Coins } from 'lucide-react';
 
 export default function PreCallConfirmModal({
   preCallConfirmHost,
   isRtl,
   loc,
-  userBalance,
+  userCoins,
   setPreCallConfirmHost,
-  setIsBuyCoinsModalOpen,
-  handleConfirmAndStartCall
+  handleStartCallDirect
 }) {
   if (!preCallConfirmHost) return null;
 
@@ -18,48 +17,38 @@ export default function PreCallConfirmModal({
         <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-500 to-yellow-400 p-0.5 mx-auto shadow-lg">
           <img src={preCallConfirmHost.user?.avatar} alt={preCallConfirmHost.user?.name} className="w-full h-full object-cover rounded-[22px]" />
         </div>
+
         <div>
-          <h3 className="text-base font-black text-white">{loc('تایید تعرفه و شروع تماس با', 'Confirm tariff and start calling with')} {preCallConfirmHost.user?.name}</h3>
-          <p className="text-xs text-amber-300 font-mono mt-1 flex items-center justify-center gap-1">
-            <Coins className="w-3.5 h-3.5" />
-            {preCallConfirmHost.rate} {loc('سکه در دقیقه', 'coins per minute')}
-          </p>
+          <h3 className="text-base font-black text-white">{loc('تایید تماس خصوصی پولی با', 'Confirm paid private contact with')} {preCallConfirmHost.user?.name}</h3>
+          <p className="text-xs text-slate-400 mt-1">{loc('این استریمر برای پاسخگویی به تماس، هزینه تعیین کرده است.', 'This streamer has set a fee to answer the call.')}</p>
         </div>
-        <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs space-y-1.5 text-right">
-          <div className="flex justify-between text-slate-400">
-            <span>{loc('نوع تماس:', 'Call type:')}</span>
-            <span className="text-white font-bold flex items-center gap-1">
-              {preCallConfirmHost.callType === 'video' ? <Video className="w-3 h-3 text-pink-400" /> : <Phone className="w-3 h-3 text-cyan-400" />}
-              {preCallConfirmHost.callType === 'video' ? loc('ویدیویی HD', 'HD video') : loc('صوتی کریستالی', 'Crystal audio')}
+
+        <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-right">
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-slate-400">{loc('نرخ تماس:', 'call rate:')}</span>
+            <span className="font-bold text-amber-400 flex items-center gap-1">
+              <Coins className="w-3.5 h-3.5 text-amber-400" /> {preCallConfirmHost.tariffRate} {loc('سکه در هر دقیقه', 'Coins per minute')}
             </span>
           </div>
-          <div className="flex justify-between text-slate-400">
-            <span>{loc('موجودی فعلی شما:', 'Your current balance:')}</span>
-            <span className="text-amber-400 font-bold font-mono">{userBalance} {loc('سکه', 'coin')}</span>
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-slate-400">{loc('موجودی کیف پول شما:', 'Your wallet balance:')}</span>
+            <span className="font-bold text-emerald-400">{(userCoins || 0).toLocaleString()} {loc('سکه', 'coin')}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2 pt-2">
+
+        <div className="flex items-center gap-3 pt-2">
           <button
             onClick={() => setPreCallConfirmHost(null)}
-            className="flex-1 py-2.5 rounded-2xl bg-slate-800 text-slate-300 text-xs font-bold"
+            className="flex-1 py-2.5 rounded-2xl bg-slate-800 text-slate-300 font-bold text-xs"
           >
-            {loc('انصراف', 'Cancellation')}
+            {loc('انصراف', 'opt out')}
           </button>
-          {userBalance < preCallConfirmHost.rate ? (
-            <button
-              onClick={() => { setPreCallConfirmHost(null); setIsBuyCoinsModalOpen(true); }}
-              className="flex-1 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs shadow-lg"
-            >
-              {loc('شارژ کیف پول', 'Charge wallet')}
-            </button>
-          ) : (
-            <button
-              onClick={() => handleConfirmAndStartCall(preCallConfirmHost)}
-              className="flex-1 py-2.5 rounded-2xl btn-neon-pink text-xs font-black shadow-lg"
-            >
-              {loc('تایید و برقراری تماس', 'Confirm and connect the call')}
-            </button>
-          )}
+          <button
+            onClick={() => handleStartCallDirect(preCallConfirmHost.user, preCallConfirmHost.type, preCallConfirmHost.mode, true, preCallConfirmHost.tariffRate)}
+            className="flex-1 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-lg"
+          >
+            {loc('تایید و اتصال تماس', 'Confirm and connect the call')}
+          </button>
         </div>
       </div>
     </div>
