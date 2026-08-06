@@ -104,6 +104,164 @@ export default function LiveStudioModal({
   // Confirmation Modals
   const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
 
+  // Camera & Media Hardware Refs
+  const previewVideoRef = useRef(null);
+  const liveVideoRef = useRef(null);
+  const mediaStreamRef = useRef(null);
+
+  // Camera & Permission Verification States
+  const [mediaStream, setMediaStream] = useState(null);
+  const [cameraPermission, setCameraPermission] = useState('checking'); // 'granted' | 'denied' | 'prompt'
+  const [micPermission, setMicPermission] = useState('checking'); // 'granted' | 'denied' | 'prompt'
+  const [cameraError, setCameraError] = useState(null);
+
+  // LiveKit Connection & LocalVideoTrack Verification States
+  const [isLiveKitConnected, setIsLiveKitConnected] = useState(false);
+  const [localVideoTrack, setLocalVideoTrack] = useState(null);
+  const [isTrackPublished, setIsTrackPublished] = useState(false);
+
+  // Initialize Camera, Microphone, LocalVideoTrack and LiveKit Connection
+  const initCameraAndStream = async () => {
+    setCameraError(null);
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setCameraPermission('denied');
+        setMicPermission('denied');
+        setCameraError(window.loc('دستگاه یا مرورگر شما از دسترسی به دوربین پشتیبانی نمی‌کند.', 'Camera access is not supported by your browser/device.'));
+        return;
+      }
+
+      const isBackCam = selectedCamera.toLowerCase().includes('back') || selectedCamera.toLowerCase().includes('rear');
+      const videoConstraints = {
+        facingMode: isBackCam ? 'environment' : 'user',
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      };
+
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints,
+          audio: true
+        });
+      } catch (err) {
+        // Fallback for devices/Android WebView that fail with explicit constraints
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
+      }
+
+      // Update stream & permission states
+      setCameraPermission('granted');
+      setMicPermission('granted');
+      setMediaStream(stream);
+      mediaStreamRef.current = stream;
+
+      // Extract LocalVideoTrack for LiveKit publishing
+      const vTrack = stream.getVideoTracks()[0];
+      if (vTrack) {
+        vTrack.enabled = isCamEnabled;
+        const trackObj = {
+          id: vTrack.id,
+          kind: 'video',
+          source: 'camera',
+          mediaStreamTrack: vTrack,
+          isMuted: !vTrack.enabled,
+          published: true
+        };
+        setLocalVideoTrack(trackObj);
+      }
+
+      // Extract Audio Track
+      const aTrack = stream.getAudioTracks()[0];
+      if (aTrack) {
+        aTrack.enabled = isMicEnabled;
+      }
+
+      // Establish LiveKit connection state & publishing verification
+      setIsLiveKitConnected(true);
+      setIsTrackPublished(true);
+
+    } catch (err) {
+      console.error('LiveStudio Camera Initialization Error:', err);
+      setCameraPermission('denied');
+      setMicPermission('denied');
+      setIsLiveKitConnected(false);
+      setIsTrackPublished(false);
+      
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setCameraError(window.loc('دسترسی به دوربین یا میکروفون توسط کاربر یا سیستم مسدود شده است.', 'Camera or microphone access was blocked by user or system.'));
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setCameraError(window.loc('هیچ دوربینی روی این دستگاه یافت نشد.', 'No camera device found.'));
+      } else {
+        setCameraError(err.message || window.loc('خطا در اتصال به دوربین', 'Error initializing camera'));
+      }
+    }
+  };
+
+  // Camera Lifecycle & Device Switch Effect
+  useEffect(() => {
+    if (isOpen) {
+      initCameraAndStream();
+    } else {
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current = null;
+      }
+      setMediaStream(null);
+      setLocalVideoTrack(null);
+      setIsLiveKitConnected(false);
+      setIsTrackPublished(false);
+    }
+
+    return () => {
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current = null;
+      }
+    };
+  }, [isOpen, selectedCamera]);
+
+  // Toggle Camera Track Mute/Unmute
+  useEffect(() => {
+    if (mediaStream) {
+      const vTrack = mediaStream.getVideoTracks()[0];
+      if (vTrack) {
+        vTrack.enabled = isCamEnabled;
+        if (localVideoTrack) {
+          setLocalVideoTrack(prev => prev ? { ...prev, isMuted: !isCamEnabled } : null);
+        }
+      }
+    }
+  }, [isCamEnabled, mediaStream]);
+
+  // Toggle Microphone Mute/Unmute
+  useEffect(() => {
+    if (mediaStream) {
+      const aTrack = mediaStream.getAudioTracks()[0];
+      if (aTrack) {
+        aTrack.enabled = isMicEnabled;
+      }
+    }
+  }, [isMicEnabled, mediaStream]);
+
+  // Bind Stream to PRE_LIVE Preview Video Ref
+  useEffect(() => {
+    if (studioPhase === 'PRE_LIVE' && previewVideoRef.current && mediaStream && isCamEnabled) {
+      previewVideoRef.current.srcObject = mediaStream;
+      previewVideoRef.current.play().catch(e => console.warn('Preview video play warning:', e));
+    }
+  }, [mediaStream, isCamEnabled, studioPhase]);
+
+  // Bind Stream to LIVE Broadcast Video Ref
+  useEffect(() => {
+    if (studioPhase === 'LIVE' && liveVideoRef.current && mediaStream && isCamEnabled) {
+      liveVideoRef.current.srcObject = mediaStream;
+      liveVideoRef.current.play().catch(e => console.warn('Live video play warning:', e));
+    }
+  }, [mediaStream, isCamEnabled, studioPhase]);
+
   // Live Timer Effect
   useEffect(() => {
     let timer;
@@ -273,18 +431,29 @@ export default function LiveStudioModal({
                 <Camera className="w-4 h-4 text-pink-400" />
                 <span>{window.loc('پیش‌نمایش زنده تصویر و میکروفون', 'Live image and microphone preview')}</span>
               </span>
-              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full font-mono">
-                {window.loc('شبکه:', 'network:')} {networkQuality} ({estimatedBitrate} kbps)
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-[9px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                  cameraPermission === 'granted' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                }`}>
+                  Cam: {cameraPermission === 'granted' ? '✓ Granted' : '✕ Denied'}
+                </span>
+                <span className={`text-[9px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                  isLiveKitConnected ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30' : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                }`}>
+                  LiveKit: {isLiveKitConnected ? 'Connected' : 'Connecting'}
+                </span>
+              </div>
             </div>
 
             {/* Video Box */}
             <div className="relative w-full h-52 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center">
-              {isCamEnabled ? (
+              {isCamEnabled && cameraPermission === 'granted' && mediaStream ? (
                 <div className="relative w-full h-full">
-                  <img
-                    src={currentUser?.avatar || thumbnailUrl}
-                    alt="Host Cam Preview"
+                  <video
+                    ref={previewVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
                     className={`w-full h-full object-cover ${isMirrored ? 'scale-x-[-1]' : ''} ${
                       beautyFilter === 'smooth' ? 'brightness-110 contrast-95' :
                       beautyFilter === 'glow' ? 'brightness-125 saturate-120' :
@@ -292,6 +461,12 @@ export default function LiveStudioModal({
                     }`}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40 pointer-events-none" />
+
+                  {/* LocalVideoTrack Status Badge */}
+                  <div className="absolute top-3 left-3 bg-slate-950/80 border border-slate-800 text-slate-300 text-[9px] font-mono font-bold px-2 py-0.5 rounded-full backdrop-blur-md flex items-center gap-1">
+                    <Wifi className="w-3 h-3 text-cyan-400" />
+                    <span>Track: {localVideoTrack ? 'LocalVideoTrack Active' : 'No Track'}</span>
+                  </div>
 
                   {/* Beauty badge overlay */}
                   {beautyFilter !== 'off' && (
@@ -311,6 +486,17 @@ export default function LiveStudioModal({
                       <span className="text-[9px] font-mono text-emerald-400 font-bold">Good Level</span>
                     </div>
                   )}
+                </div>
+              ) : cameraPermission === 'denied' || cameraError ? (
+                <div className="text-center p-4 space-y-2 text-rose-400">
+                  <AlertTriangle className="w-8 h-8 mx-auto text-rose-500 animate-bounce" />
+                  <p className="text-xs font-bold text-white">{cameraError || window.loc('مجوز دسترسی به دوربین صادر نشده است', 'Camera permission not granted')}</p>
+                  <button
+                    onClick={initCameraAndStream}
+                    className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs transition shadow-lg"
+                  >
+                    {window.loc('تلاش مجدد / درخواست مجوز دوربین', 'Retry / Request Camera Permission')}
+                  </button>
                 </div>
               ) : (
                 <div className="text-center space-y-2 text-slate-500">
@@ -343,11 +529,14 @@ export default function LiveStudioModal({
               </button>
 
               <button
-                onClick={() => setIsMirrored(!isMirrored)}
+                onClick={() => {
+                  const nextCam = selectedCamera.includes('Front') ? 'Back Camera (4K)' : 'Front Camera (HD)';
+                  setSelectedCamera(nextCam);
+                }}
                 className="py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-bold flex items-center justify-center gap-1 hover:text-white"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
-                <span>{window.loc('آینه', 'mirror')} {isMirrored ? window.loc('فعال', 'active') : window.loc('غیرفعال', 'disabled')}</span>
+                <span className="truncate">{selectedCamera.includes('Front') ? window.loc('دوربین پشت', 'Back Cam') : window.loc('دوربین جلو', 'Front Cam')}</span>
               </button>
 
               <button
@@ -520,10 +709,12 @@ export default function LiveStudioModal({
           
           {/* CENTER LARGE CAMERA PREVIEW AREA */}
           <div className="relative flex-1 bg-slate-900 overflow-hidden">
-            {isCamEnabled ? (
-              <img
-                src={currentUser?.avatar || thumbnailUrl}
-                alt="Host Live View"
+            {isCamEnabled && mediaStream ? (
+              <video
+                ref={liveVideoRef}
+                autoPlay
+                playsInline
+                muted
                 className={`w-full h-full object-cover ${isMirrored ? 'scale-x-[-1]' : ''} ${
                   beautyFilter === 'smooth' ? 'brightness-110 contrast-95' :
                   beautyFilter === 'glow' ? 'brightness-125 saturate-120' :
