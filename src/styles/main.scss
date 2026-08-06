@@ -2,13 +2,6 @@
 @use './functions' as *;
 @use './mixins' as *;
 @use './animations' as *;
-@use './pages/Home';
-@use './pages/Profile';
-@use './pages/Match';
-@use './pages/Messages';
-@use './pages/Wallet';
-@use './pages/Admin';
-@use './pages/Settings';
 
 @import "tailwindcss";
 

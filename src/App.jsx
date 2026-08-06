@@ -12,6 +12,8 @@ import VipAndRewardModals from './modals/VipAndRewardModals';
 import SecurityModal from './modals/SecurityModal';
 import NotificationsModal from './modals/NotificationsModal';
 import UserProfileViewModal from './modals/UserProfileViewModal';
+import ActiveCallOverlay from './components/Overlays/ActiveCallOverlay';
+import PreCallConfirmModal from './components/Overlays/PreCallConfirmModal';
 import { VisualUiEditorProvider } from './context/VisualUiEditorContext';
 import VisualUiEditorToolbar from './components/VisualUiEditor/VisualUiEditorToolbar';
 import InspectorPanel from './components/VisualUiEditor/InspectorPanel';
@@ -20,6 +22,7 @@ import DevicePreviewFrame from './components/VisualUiEditor/DevicePreviewFrame';
 import DynamicThemeStyleInjector from './components/VisualUiEditor/DynamicThemeStyleInjector';
 import VisualSectionWrapper from './components/VisualUiEditor/VisualSectionWrapper';
 import { APP_LANGUAGES, I18N_DICTIONARY } from './constants/i18n';
+import { PRESET_AVATARS, GIFTS_CATALOG } from './constants/appConstants';
 import { CoinsIcon, VerifiedBadge, VipStatusBadge, StreamerScoresBadges } from './components/CommonBadges';
 import { safeStorage } from './utils/safeStorage';
 import React, { useState, useEffect, useRef } from 'react';
@@ -46,40 +49,6 @@ import { LifeBuoy, ShoppingBag, Video, Shield, ShieldCheck, Star, Wallet, User, 
   LockKeyhole, SendHorizontal, MessageCircle, Info, PhoneIncoming, PhoneOutgoing,
   PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert, Shuffle, BarChart3, Palette, LogIn
 } from 'lucide-react';
-
-// PRESET HIGH-RES AVATARS FOR PROFILE EDITING
-const PRESET_AVATARS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-  'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
-  'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
-  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80'
-];
-
-// CATALOG OF 20+ DISTINCT GIFTS WITH SVG ICONS & COIN PRICES
-const GIFTS_CATALOG = [
-  { id: 'rose', name: 'Red Rose', coins: 10, category: 'Basic', icon: Flower, emoji: '🌹', color: 'text-rose-500', bg: 'bg-rose-500/10' },
-  { id: 'heart', name: 'Red Heart', coins: 50, category: 'Basic', icon: Heart, emoji: '❤️', color: 'text-red-500', bg: 'bg-red-500/10' },
-  { id: 'kiss', name: 'Magic Sparkles', coins: 100, category: 'Basic', icon: Sparkles, emoji: '✨', color: 'text-pink-400', bg: 'bg-pink-500/10' },
-  { id: 'teddy', name: 'Warm Smile', coins: 250, category: 'Popular', icon: Smile, emoji: '😊', color: 'text-amber-400', bg: 'bg-amber-500/10' },
-  { id: 'diamond', name: 'Shining Gem', coins: 500, category: 'Luxury', icon: Gem, emoji: '💎', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
-  { id: 'ring', name: 'Gold Ring', coins: 1000, category: 'Luxury', icon: CircleDot, emoji: '💍', color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
-  { id: 'champagne', name: 'Celebration Wine', coins: 1500, category: 'Party', icon: Wine, emoji: '🍷', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-  { id: 'crown', name: 'Royal Crown', coins: 2500, category: 'Royal', icon: Crown, emoji: '👑', color: 'text-amber-300', bg: 'bg-amber-500/20' },
-  { id: 'sports_car', name: 'Sports Car', coins: 5000, category: 'VIP', icon: Car, emoji: '🏎️', color: 'text-blue-400', bg: 'bg-blue-500/10' },
-  { id: 'supercar', name: 'VIP Supercar', coins: 8000, category: 'VIP', icon: Zap, emoji: '⚡', color: 'text-purple-400', bg: 'bg-purple-500/10' },
-  { id: 'gold_bar', name: 'Gold Vault', coins: 10000, category: 'Asset', icon: Box, emoji: '📦', color: 'text-yellow-300', bg: 'bg-yellow-500/20' },
-  { id: 'jet', name: 'Private Jet', coins: 15000, category: 'VIP', icon: Send, emoji: '🚀', color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
-  { id: 'yacht', name: 'Luxury Yacht', coins: 20000, category: 'Super VIP', icon: Anchor, emoji: '🛥️', color: 'text-teal-400', bg: 'bg-teal-500/10' },
-  { id: 'castle', name: 'Golden Fortress', coins: 25000, category: 'Super VIP', icon: Shield, emoji: '🏰', color: 'text-yellow-500', bg: 'bg-yellow-600/10' },
-  { id: 'rocket', name: 'Space Rocket', coins: 30000, category: 'Super VIP', icon: Rocket, emoji: '🚀', color: 'text-red-400', bg: 'bg-red-500/10' },
-  { id: 'fireworks', name: 'VIP Fireworks', coins: 35000, category: 'Party', icon: Sparkles, emoji: '🎆', color: 'text-pink-300', bg: 'bg-pink-400/20' },
-  { id: 'phoenix', name: 'Fire Phoenix', coins: 40000, category: 'Mythic', icon: Flame, emoji: '🔥', color: 'text-orange-500', bg: 'bg-orange-500/20' },
-  { id: 'dragon', name: 'Golden Dragon', coins: 50000, category: 'Mythic', icon: Flame, emoji: '🐉', color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
-  { id: 'galaxy', name: 'Cosmic Galaxy', coins: 75000, category: 'Legendary', icon: Globe, emoji: '🌌', color: 'text-cyan-300', bg: 'bg-cyan-400/20' },
-  { id: 'vip_star', name: 'Platinum Star', coins: 100000, category: 'Legendary', icon: Star, emoji: '⭐', color: 'text-amber-200', bg: 'bg-amber-300/20' }
-];
 
 // Default Real Users seed stored in local storage
 const DEFAULT_REAL_USERS = [];
@@ -6620,239 +6589,34 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       
       {/* ==================== ACTIVE CALL OVERLAY & PIP FLOATING CARD ==================== */}
-      {activeCall && (
-        <div className={activeCall.isPiP ? "fixed bottom-20 right-4 z-50 w-80 h-52 rounded-3xl bg-slate-950 border-2 border-pink-500 shadow-[0_0_40px_rgba(236,72,153,0.6)] overflow-hidden animate-fadeIn flex flex-col dir-rtl" : "fixed inset-0 z-50 bg-slate-950 flex flex-col dir-rtl"}>
-          
-          {/* TOP HEADER STATUS BAR */}
-          <div className="absolute top-0 left-0 right-0 z-30 p-3 bg-gradient-to-b from-slate-950/90 to-transparent flex items-center justify-between gap-2 backdrop-blur-sm">
-            <div className="flex items-center gap-2.5">
-              <div className="relative">
-                <img src={activeCall.user.avatar} alt={activeCall.user.name} className="w-10 h-10 rounded-2xl object-cover ring-2 ring-pink-500/60 shadow-lg" />
-                {activeCall.isRecording && (
-                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-rose-600 animate-ping ring-2 ring-slate-950" />
-                )}
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <h3 className="text-xs sm:text-sm font-black text-white">{activeCall.user.name}</h3>
-                  {activeCall.user.isVip && <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />}
-                  {activeCall.isRecording && <span className="px-1.5 py-0.2 rounded bg-rose-600 text-white text-[9px] font-mono animate-pulse">REC</span>}
-                </div>
-                <div className="flex items-center gap-2 text-[10px] text-emerald-400 font-mono">
-                  <span>{activeCall.type === 'video' ? loc('📹 ویدیو HD', '📹 HD video') : loc('📞 صوتی کریستالی', '📞 Crystal audio')}</span>
-                  <span>•</span>
-                  <span>{Math.floor(activeCall.seconds / 60).toString().padStart(2, '0')}:{(activeCall.seconds % 60).toString().padStart(2, '0')}</span>
-                  {activeCall.isPaid && (
-                    <span className="text-amber-300 flex items-center gap-0.5">
-                      <Coins className="w-2.5 h-2.5" /> {activeCall.consumedCoins} {loc('سکه', 'coin')}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Security & PiP Controls */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsEncryptedCertModalOpen(true)}
-                className="px-2.5 py-1 rounded-xl bg-slate-900/80 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold flex items-center gap-1"
-                title={loc('مشاهده گواهی امنیت 256 بیتی', 'View 256-bit security certificate')}
-              >
-                <Lock className="w-3 h-3 text-emerald-400" />
-                <span className="hidden sm:inline">E2E Encrypted</span>
-              </button>
-
-              <button
-                onClick={handleTogglePiPCall}
-                className="p-2 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-200 hover:text-white transition"
-                title={activeCall.isPiP ? loc('تمام‌صفحه', 'full page') : loc('پنجره کوچک (PiP)', 'small window (PiP)')}
-              >
-                {activeCall.isPiP ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          {/* MAIN VIDEO & PARTICIPANTS CONTAINER */}
-          <div className="relative flex-1 bg-slate-900 overflow-hidden flex items-center justify-center">
-            {/* Real Camera Feed or High-Tech Simulated Visualizer */}
-            {activeCall.isCameraOn ? (
-              <video
-                ref={callVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className={`w-full h-full object-cover ${activeCall.facingMode === 'user' ? 'scale-x-[-1]' : ''} ${activeCall.beautyFilter ? 'brightness-105 saturate-110' : ''} ${activeCall.isBgBlurred ? 'blur-md' : ''}`}
-              />
-            ) : (
-              <div className="w-full h-full bg-slate-950 flex flex-col items-center justify-center p-6 space-y-4">
-                <div className="relative">
-                  <div className="w-28 h-28 rounded-full ring-4 ring-pink-500/50 overflow-hidden shadow-[0_0_60px_rgba(236,72,153,0.5)] animate-pulse">
-                    <img src={activeCall.user.avatar} alt={activeCall.user.name} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-36 h-36 rounded-full border-2 border-pink-500/30 animate-ping pointer-events-none" />
-                  </div>
-                </div>
-                <div className="text-center">
-                  <h4 className="text-lg font-black text-white">{activeCall.user.name}</h4>
-                  <p className="text-xs text-cyan-400 font-mono mt-1">HD Voice Connection • 256-Bit Encrypted</p>
-                </div>
-              </div>
-            )}
-
-            {/* FLOATING GIFT ANIMATION OVERLAY */}
-            <div className="absolute inset-0 pointer-events-none z-20">
-              {inCallFloatingGifts.map(g => (
-                <div
-                  key={g.id}
-                  className="absolute text-4xl animate-bounce transition-all duration-1000 flex flex-col items-center"
-                  style={{ top: `${g.y}%`, left: `${g.x}%` }}
-                >
-                  <span className="drop-shadow-[0_0_20px_rgba(245,158,11,0.9)]">🎁</span>
-                  <span className="text-[10px] font-black bg-slate-900/90 text-amber-300 px-2 py-0.5 rounded-full border border-amber-400 shadow-xl">
-                    {g.gift.name}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* LIVE AI SPEECH TRANSLATION SUBTITLE BAR */}
-            {activeCall.translatedSubtitles && (
-              <div className="absolute bottom-24 left-4 right-4 z-20 bg-slate-950/85 backdrop-blur-md p-3 rounded-2xl border border-cyan-500/40 text-center shadow-2xl">
-                <div className="flex items-center justify-center gap-1.5 text-[10px] font-black text-cyan-400 mb-0.5">
-                  <Globe className="w-3 h-3" />
-                  <span>{loc('ترجمه همزمان هوشمند (AI Translation)', 'Intelligent Simultaneous Translation (AI Translation)')}</span>
-                </div>
-                <p className="text-xs font-bold text-white leading-relaxed">{activeCall.translatedSubtitles}</p>
-              </div>
-            )}
-          </div>
-
-          {/* BOTTOM CONTROLS BAR */}
-          <div className="z-30 p-4 bg-slate-950/95 border-t border-slate-800/80 backdrop-blur-xl flex flex-col gap-3">
-            {/* Control Buttons Row */}
-            <div className="flex items-center justify-around gap-2 flex-wrap">
-              {/* Mute Button */}
-              <button
-                onClick={handleToggleMuteCall}
-                className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isMuted ? 'bg-rose-600 text-white border-rose-500' : 'bg-slate-900 text-slate-200 border-slate-700 hover:border-pink-500/50'}`}
-                title="Mute/Unmute"
-              >
-                {activeCall.isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-              </button>
-
-              {/* Speaker Button */}
-              <button
-                onClick={handleToggleSpeakerCall}
-                className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isSpeakerOn ? 'bg-cyan-600 text-white border-cyan-500' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
-                title="Speaker"
-              >
-                {activeCall.isSpeakerOn ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-              </button>
-
-              {/* Camera Switch */}
-              <button
-                onClick={handleToggleCameraCall}
-                className={`p-3.5 rounded-2xl border transition shadow-lg ${!activeCall.isCameraOn ? 'bg-rose-600 text-white border-rose-500' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
-                title="Turn Camera On/Off"
-              >
-                {!activeCall.isCameraOn ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
-              </button>
-
-              {/* Switch Facing Camera */}
-              {activeCall.type === 'video' && (
-                <button
-                  onClick={handleSwitchCameraFacing}
-                  className="p-3.5 rounded-2xl bg-slate-900 text-slate-200 border border-slate-700 hover:border-pink-500/50 transition shadow-lg"
-                  title={loc('تغییر دوربین جلو / عقب', 'Change front / rear camera')}
-                >
-                  <SwitchCamera className="w-5 h-5" />
-                </button>
-              )}
-
-              {/* Beauty Filter */}
-              <button
-                onClick={handleToggleBeautyFilter}
-                className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.beautyFilter ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
-                title={loc('فیلتر زیبایی', 'beauty filter')}
-              >
-                <Sparkles className="w-5 h-5 text-amber-300" />
-              </button>
-
-              {/* In-Call Gift Shop Button */}
-              <button
-                onClick={() => setIsSendGiftInChatOpen(true)}
-                className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/50 text-amber-300 hover:text-white transition shadow-lg"
-                title={loc('ارسال هدیه وسط تماس', 'Send a gift in the middle of a call')}
-              >
-                <Gift className="w-5 h-5" />
-              </button>
-
-              {/* Record Call Button */}
-              <button
-                onClick={handleToggleRecordCall}
-                className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isRecording ? 'bg-rose-600 text-white border-rose-500 animate-pulse' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
-                title={loc('ضبط مکالمه', 'Record the conversation')}
-              >
-                <Disc className="w-5 h-5 text-rose-400" />
-              </button>
-
-              {/* End Call Button */}
-              <button
-                onClick={handleEndActiveCall}
-                className="p-4 rounded-3xl bg-rose-600 text-white shadow-[0_0_30px_rgba(225,29,72,0.8)] hover:bg-rose-700 active:scale-95 transition"
-                title={loc('پایان تماس', 'end call')}
-              >
-                <PhoneCall className="w-6 h-6 rotate-[135deg]" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ActiveCallOverlay
+        activeCall={activeCall}
+        isRtl={isRtl}
+        loc={loc}
+        setIsEncryptedCertModalOpen={setIsEncryptedCertModalOpen}
+        handleTogglePiPCall={handleTogglePiPCall}
+        callVideoRef={callVideoRef}
+        inCallFloatingGifts={inCallFloatingGifts}
+        handleToggleMuteCall={handleToggleMuteCall}
+        handleToggleSpeakerCall={handleToggleSpeakerCall}
+        handleToggleCameraCall={handleToggleCameraCall}
+        handleSwitchCameraFacing={handleSwitchCameraFacing}
+        handleToggleBeautyFilter={handleToggleBeautyFilter}
+        setIsSendGiftInChatOpen={setIsSendGiftInChatOpen}
+        handleToggleRecordCall={handleToggleRecordCall}
+        handleEndActiveCall={handleEndActiveCall}
+      />
 
       {/* ==================== PRE-CALL PAID TARIFF CONFIRMATION MODAL ==================== */}
-      {preCallConfirmHost && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-          <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-amber-500/50 max-w-sm w-full space-y-4 shadow-[0_0_50px_rgba(245,158,11,0.25)] text-center">
-            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-500 to-yellow-400 p-0.5 mx-auto shadow-lg">
-              <img src={preCallConfirmHost.user.avatar} alt={preCallConfirmHost.user.name} className="w-full h-full object-cover rounded-[22px]" />
-            </div>
-
-            <div>
-              <h3 className="text-base font-black text-white">{loc('تایید تماس خصوصی پولی با', 'Confirm paid private contact with')} {preCallConfirmHost.user.name}</h3>
-              <p className="text-xs text-slate-400 mt-1">{loc('این استریمر برای پاسخگویی به تماس، هزینه تعیین کرده است.', 'This streamer has set a fee to answer the call.')}</p>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-right">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-400">{loc('نرخ تماس:', 'call rate:')}</span>
-                <span className="font-bold text-amber-400 flex items-center gap-1">
-                  <Coins className="w-3.5 h-3.5 text-amber-400" /> {preCallConfirmHost.tariffRate} {loc('سکه در هر دقیقه', 'Coins per minute')}
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-400">{loc('موجودی کیف پول شما:', 'Your wallet balance:')}</span>
-                <span className="font-bold text-emerald-400">{userCoins.toLocaleString()} {loc('سکه', 'coin')}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                onClick={() => setPreCallConfirmHost(null)}
-                className="flex-1 py-2.5 rounded-2xl bg-slate-800 text-slate-300 font-bold text-xs"
-              >
-                {loc('انصراف', 'opt out')}
-              </button>
-              <button
-                onClick={() => handleStartCallDirect(preCallConfirmHost.user, preCallConfirmHost.type, preCallConfirmHost.mode, true, preCallConfirmHost.tariffRate)}
-                className="flex-1 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-lg"
-              >
-                {loc('تایید و اتصال تماس', 'Confirm and connect the call')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <PreCallConfirmModal
+        preCallConfirmHost={preCallConfirmHost}
+        isRtl={isRtl}
+        loc={loc}
+        userBalance={userCoins}
+        setPreCallConfirmHost={setPreCallConfirmHost}
+        setIsBuyCoinsModalOpen={setIsBuyCoinsModalOpen}
+        handleConfirmAndStartCall={(host) => handleStartCallDirect(host.user, host.type, host.mode, true, host.tariffRate || host.rate)}
+      />
 
       {/* ==================== POST-CALL RATING & FEEDBACK MODAL ==================== */}
       {postCallRatingData && (
