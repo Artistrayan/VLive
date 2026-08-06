@@ -62,6 +62,26 @@ const INITIAL_VERIFICATIONS = [];
 // Initial Direct Messages Conversations
 const INITIAL_CONVERSATIONS = [];
 
+// Module-level localization helper to ensure loc is available before component state initialization
+const getSavedLang = () => {
+  if (typeof window !== 'undefined') {
+    return safeStorage.getItem('vlive_app_lang') || 'en';
+  }
+  return 'en';
+};
+
+const loc = (faStr, enStr) => {
+  const lang = getSavedLang();
+  if (lang === 'fa' || lang === 'ar') {
+    return faStr || enStr || '';
+  }
+  return enStr || faStr || '';
+};
+
+if (typeof window !== 'undefined') {
+  window.loc = loc;
+}
+
 export default function App() {
   // Current User State
   const [userName, setUserName] = useState(() => {
@@ -1820,13 +1840,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   const t = (key, fallback = '') => {
     return I18N_DICTIONARY[langCode]?.[key] || I18N_DICTIONARY['en']?.[key] || I18N_DICTIONARY['fa']?.[key] || fallback || key;
-  };
-
-  const loc = (faStr, enStr) => {
-    if (langCode === 'fa' || langCode === 'ar') {
-      return faStr || enStr || '';
-    }
-    return enStr || faStr || '';
   };
 
   const handleSelectLanguage = (lang) => {
