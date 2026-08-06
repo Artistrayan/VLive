@@ -430,7 +430,7 @@ export default function ContentAndEngagementModals(props) {
                           newOpts[index] = e.target.value;
                           setPollOptionInputs(newOpts);
                         }}
-                        placeholder={window.loc(window.loc(`گزینه ${index + 1}${index < 2 ? window.loc(' (اجباری)', '(mandatory)') : window.loc(' (اختیاری)', '(optional)')}`, `گزینه ${index + 1}${index < 2 ? window.loc(' (اجباری)', '(mandatory)') : window.loc(' (اختیاری)', '(optional)')}`), `Option ${index + 1}${index < 2 ? ' (Required)' : ' (Optional)'}`)}
+                        placeholder={window.loc(`گزینه ${index + 1}${index < 2 ? window.loc(' (اجباری)', '(mandatory)') : window.loc(' (اختیاری)', '(optional)')}`, `گزینه ${index + 1}${index < 2 ? window.loc(' (اجباری)', '(mandatory)') : window.loc(' (اختیاری)', '(optional)')}`)}
                         className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-purple-500"
                       />
                       {index >= 2 && (

@@ -6993,21 +6993,39 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       {opt}
                     </button>
                   ))}
-                  <button
-                    onClick={() => {
-                      const next = !isStreamerFollowed;
-                      setIsStreamerFollowed(next);
-                      showToast(next ? window.loc(`با موفقیت ${viewingStream.host} دنبال شد 👤`, `با موفقیت ${viewingStream.host} دنبال شد 👤`) : window.loc(`دنبال کردن لغو شد`, `دنبال کردن لغو شد`));
-                    }}
-                    className={`px-2.5 py-1 rounded-xl text-[10px] font-black shadow transition ml-1 ${
-                    isStreamerFollowed 
-                      ? 'bg-slate-800 text-slate-300 border border-slate-700' 
-                      : 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
-                  }`}
-                >
-                  {isStreamerFollowed ? loc('دنبال شده', 'Followed') : loc('+ دنبال کردن', '+ follow')}
-                </button>
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ==================== FULLSCREEN LIVE STREAM VIEWER ==================== */}
+      {viewingStream && !isMiniPlayer && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col justify-between overflow-hidden animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+          {/* Header */}
+          <div className="absolute top-0 inset-x-0 p-4 bg-gradient-to-b from-black/80 to-transparent z-30 flex items-center justify-between">
+            <div className="flex items-center gap-2 bg-black/40 rounded-full pr-1 pl-3 py-1 border border-white/10 backdrop-blur-md">
+              <span className="text-white font-bold text-xs">{viewingStream.host || loc('استریمر', 'Streamer')}</span>
+              <button
+                onClick={() => {
+                  const next = !isStreamerFollowed;
+                  setIsStreamerFollowed(next);
+                  showToast(next ? window.loc(`با موفقیت ${viewingStream.host} دنبال شد 👤`, `با موفقیت ${viewingStream.host} دنبال شد 👤`) : window.loc(`دنبال کردن لغو شد`, `دنبال کردن لغو شد`));
+                }}
+                className={`px-2.5 py-1 rounded-xl text-[10px] font-black shadow transition ml-1 ${
+                isStreamerFollowed 
+                   ? 'bg-slate-800 text-slate-300 border border-slate-700' 
+                   : 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
+              }`}
+              >
+                {isStreamerFollowed ? loc('دنبال شده', 'Followed') : loc('+ دنبال کردن', '+ follow')}
+              </button>
+            </div>
+            <button onClick={() => setViewingStream(null)} className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-white/20">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
               
 
               {/* ================= EXPANDABLE LIVE INFORMATION PANEL ================= */}
@@ -7261,7 +7279,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </div>
 
           </div>
-        </div>
       )}
 
       
@@ -7608,7 +7625,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   
                   const finalTitle = hostLiveTitle.trim() || (
                     hostLiveType === 'adult' 
-                      ? window.loc(`🔞 لایو بزرگسالان @${currentUsername || userName}`, `🔞 لایو بزرگسالان @${currentUsername || userName}`);
+                      ? window.loc(`🔞 لایو بزرگسالان @${currentUsername || userName}`, `🔞 لایو بزرگسالان @${currentUsername || userName}`)
+                      : window.loc(`لایواستریم @${currentUsername || userName}`, `Livestream @${currentUsername || userName}`)
+                  );
 
                   showToast(loc('در حال آماده‌سازی و شروع لایواستریم...', 'Starting Live Broadcast...'));
                   setTimeout(() => {

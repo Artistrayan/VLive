@@ -1,12 +1,10 @@
 const fs = require('fs');
-const code = fs.readFileSync('src/App.jsx', 'utf8');
+let code = fs.readFileSync('src/App.jsx', 'utf8');
 
-const startIndex = code.indexOf("{activeTab === 'match' && (");
-const endIndex = code.indexOf("{/* 3. SUB-TAB 3: RECENT ACTIVITY LIKES */}");
-
-if (startIndex !== -1 && endIndex !== -1) {
-  const matchSection = code.substring(startIndex, endIndex);
-  console.log("Match Section Length:", matchSection.length);
+const startIndex = code.indexOf('{activeStream && !isMiniPlayer && (');
+if (startIndex !== -1) {
+  let context = code.substring(startIndex - 50, startIndex + 150);
+  console.log(context);
 } else {
-  console.log("Not found", startIndex, endIndex);
+  console.log("not found");
 }

@@ -86,7 +86,7 @@ export default function StreamerManagementCenter({
     const nextFrozen = !streamer.incomeFrozen;
     setUsersList(prev => prev.map(u => u.id === streamer.id ? { ...u, incomeFrozen: nextFrozen } : u));
     addAdminAuditLog(`Admin Action: ${nextFrozen ? 'Frozen' : 'Unfrozen'} streamer income for @${streamer.username}`);
-    showToast(nextFrozen ? window.loc(`🧊 درآمد و تسویه‌حساب @${streamer.username} مسدود شد`, `🧊 درآمد و تسویه‌حساب @${streamer.username} مسدود شد`));
+    showToast(nextFrozen ? window.loc(`🧊 درآمد و تسویه‌حساب @${streamer.username} مسدود شد`, `🧊 Income and settlement of @${streamer.username} frozen`) : window.loc(`رفع مسدودی درآمد @${streamer.username}`, `Income of @${streamer.username} unfrozen`));
   };
 
   // Handle manual score/level updates by admin

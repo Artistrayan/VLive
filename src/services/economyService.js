@@ -277,7 +277,7 @@ class EconomyService {
           alerts.push({
             severity: 'HIGH',
             type: 'POSSIBLE_COIN_FARMING',
-            description: window.loc(`حجم بالای ارسال هدیه بین کاربر ${tx.username} و استریمر ${tx.streamerName} شناسایی شد (${pairCounts[key]} بار در ۱ ساعت اخیر).`, `حجم بالای ارسال هدیه بین کاربر ${tx.username} و استریمر ${tx.streamerName} شناسایی شد (${pairCounts[key]} بار در ۱ ساعت اخیر).`)اعت اخیر).`, `حجم بالای ارسال هدیه بین کاربر ${tx.username} و استریمر ${tx.streamerName} شناسایی شد (${pairCounts[key]} بار در ۱ ساعت اخیر).`)اعت اخیر).`, `حجم بالای ارسال هدیه بین کاربر ${tx.username} و استریمر ${tx.streamerName} شناسایی شد (${pairCounts[key]} بار در ۱ ساعت اخیر).`),
+            description: window.loc(`حجم بالای ارسال هدیه بین کاربر ${tx.username} و استریمر ${tx.streamerName} شناسایی شد (${pairCounts[key]} بار در ۱ ساعت اخیر).`, `High volume of gift sending between user ${tx.username} and streamer ${tx.streamerName} detected (${pairCounts[key]} times in last 1 hour).`),
             suggestedAction: window.loc('بررسی اکانت‌ها برای جلوگیری از پولشویی', 'Checking accounts to prevent money laundering')
           });
         }
@@ -290,7 +290,7 @@ class EconomyService {
         alerts.push({
           severity: 'MEDIUM',
           type: 'HIGH_VALUE_TRANSACTION',
-          description: window.loc(`تراکنش با ارزش بالای ${tx.coinAmount.toLocaleString()} سکه توسط ${tx.username} ثبت شد.`, `تراکنش با ارزش بالای ${tx.coinAmount.toLocaleString()} سکه توسط ${tx.username} ثبت شد.`)e} ثبت شد.`, `تراکنش با ارزش بالای ${tx.coinAmount.toLocaleString()} سکه توسط ${tx.username} ثبت شد.`),
+          description: window.loc(`تراکنش با ارزش بالای ${tx.coinAmount?.toLocaleString()} سکه توسط ${tx.username} ثبت شد.`, `High value transaction of ${tx.coinAmount?.toLocaleString()} coins registered by ${tx.username}.`),
           suggestedAction: window.loc('تایید اتوماتیک توسط سیستم هوش مصنوعی', 'Automatic confirmation by artificial intelligence system')
         });
       }

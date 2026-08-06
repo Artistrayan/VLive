@@ -40,7 +40,7 @@ export default function AnalyticsCenter({
     setTimeout(() => {
       setIsExporting(false);
       const filename = `VLive_Analytics_Report_${activeSubTab}_${timeframe.replace(' ', '_')}.${format.toLowerCase()}`;
-      showToast(window.loc(window.loc(`✅ گزارش تحلیلی با فرمت ${format.toUpperCase()} خروجی گرفته شد: ${filename}`, `✅ گزارش تحلیلی با فرمت ${format.toUpperCase()} خروجی گرفته شد: ${filename}`));
+      showToast(window.loc(`✅ گزارش تحلیلی با فرمت ${format.toUpperCase()} خروجی گرفته شد: ${filename}`, `✅ Exported analytics report in ${format.toUpperCase()} format: ${filename}`));
       addAdminAuditLog(`Exported Analytics Report (${activeSubTab}) in ${format.toUpperCase()} format.`);
     }, 1000);
   };
@@ -53,10 +53,10 @@ export default function AnalyticsCenter({
         <div>
           <h2 className="text-base font-black text-white flex items-center gap-2">
             <BarChart2 className="w-5 h-5 text-amber-400" />
-            <span> {window.loc(window.loc('مرکز تحلیل آمار و آنالیتیکس پلتفرم (Analytics Center)', 'Platform Analytics and Statistics Analysis Center (Analytics Center)'), 'Platform Analytics and Statistics Analysis Center (Analytics Center)')}</span>
+            <span> {window.loc('مرکز تحلیل آمار و آنالیتیکس پلتفرم (Analytics Center)', 'Platform Analytics and Statistics Analysis Center (Analytics Center)')}</span>
           </h2>
           <p className="text-[11px] text-slate-400">
-            {window.loc(window.loc('پایش دقیق شاخص‌های کلیدی (KPI)، درآمد، لایواستریم، سیستم، چت و تحلیل هوشمند داده‌ها', 'Accurate monitoring of key indicators (KPI), revenue, livestream, system, chat and intelligent data analysis'), 'Accurate monitoring of key indicators (KPI), revenue, livestream, system, chat and intelligent data analysis')}
+            {window.loc('پایش دقیق شاخص‌های کلیدی (KPI)، درآمد، لایواستریم، سیستم، چت و تحلیل هوشمند داده‌ها', 'Accurate monitoring of key indicators (KPI), revenue, livestream, system, chat and intelligent data analysis')}
           </p>
         </div>
 
@@ -113,14 +113,14 @@ export default function AnalyticsCenter({
       {/* ================= SUB-TAB NAVIGATION ================= */}
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto no-scrollbar">
         {[
-          { id: 'overview', label: window.loc(window.loc('🌐 نگاه کلی (Overview)', '🌐 Overview'), '🌐 Overview'), icon: Users },
-          { id: 'streamer', label: window.loc(window.loc('🎥 استریمرها (Streamers)', '🎥 Streamers'), '🎥 Streamers'), icon: Video },
-          { id: 'live', label: window.loc(window.loc('📡 لایو استریم (Live)', '📡 Live stream'), '📡 Live stream'), icon: Activity },
-          { id: 'match', label: window.loc(window.loc('💘 متچینگ (Matches)', '💘 Matching'), '💘 Matching'), icon: Heart },
-          { id: 'chat', label: window.loc(window.loc('💬 چت و تماس (Chat & Call)', '💬 Chat & Call'), '💬 Chat & Call'), icon: MessageSquare },
-          { id: 'vip', label: window.loc(window.loc('👑 اشتراک VIP', '👑 VIP subscription'), '👑 VIP subscription'), icon: Crown },
-          { id: 'finance', label: window.loc(window.loc('💰 تراکنش‌ها و مالی', '💰 Transactions and finance'), '💰 Transactions and finance'), icon: DollarSign },
-          { id: 'system', label: window.loc(window.loc('⚡ سیستم و سرور (System)', '⚡ System and server (System)'), '⚡ System and server (System)'), icon: Server },
+          { id: 'overview', label: window.loc('🌐 نگاه کلی (Overview)', '🌐 Overview'), icon: Users },
+          { id: 'streamer', label: window.loc('🎥 استریمرها (Streamers)', '🎥 Streamers'), icon: Video },
+          { id: 'live', label: window.loc('📡 لایو استریم (Live)', '📡 Live stream'), icon: Activity },
+          { id: 'match', label: window.loc('💘 متچینگ (Matches)', '💘 Matching'), icon: Heart },
+          { id: 'chat', label: window.loc('💬 چت و تماس (Chat & Call)', '💬 Chat & Call'), icon: MessageSquare },
+          { id: 'vip', label: window.loc('👑 اشتراک VIP', '👑 VIP subscription'), icon: Crown },
+          { id: 'finance', label: window.loc('💰 تراکنش‌ها و مالی', '💰 Transactions and finance'), icon: DollarSign },
+          { id: 'system', label: window.loc('⚡ سیستم و سرور (System)', '⚡ System and server (System)'), icon: Server },
         ].map(tab => {
           const IconComp = tab.icon;
           return (
@@ -145,9 +145,9 @@ export default function AnalyticsCenter({
         <div className="flex items-center justify-between">
           <h4 className="font-bold text-purple-300 text-xs flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-purple-400 animate-spin" />
-            <span>{window.loc(window.loc('تحلیل و پیش‌بینی هوشمند (AI Analytics Insights)', 'AI Analytics Insights'), 'AI Analytics Insights')}</span>
+            <span>{window.loc('تحلیل و پیش‌بینی هوشمند (AI Analytics Insights)', 'AI Analytics Insights')}</span>
           </h4>
-          <span className="text-[10px] text-purple-400 font-mono">{window.loc(window.loc('تکیه بر داده‌های', 'Rely on the data'), 'Rely on the data')} {timeframe}</span>
+          <span className="text-[10px] text-purple-400 font-mono">{window.loc('تکیه بر داده‌های', 'Rely on the data')} {timeframe}</span>
         </div>
         
         <p className="text-slate-300 text-[11px] leading-relaxed">
@@ -164,11 +164,11 @@ export default function AnalyticsCenter({
         <div className="flex items-center gap-3 pt-1 text-[10px] font-mono text-emerald-400">
           <span className="flex items-center gap-1">
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>{window.loc(window.loc('پیش‌بینی رشد درآمد ماه بعد: +۱۸.۵٪', 'Next month\'s revenue growth forecast: +18.5%'), 'Next month\'s revenue growth forecast: +18.5%')}</span>
+            <span>{window.loc('پیش‌بینی رشد درآمد ماه بعد: +۱۸.۵٪', 'Next month\'s revenue growth forecast: +18.5%')}</span>
           </span>
           <span className="flex items-center gap-1 text-cyan-400">
             <Cpu className="w-3.5 h-3.5" />
-            <span>{window.loc(window.loc('پیش‌بینی پایداری سرور: ۹۹.۹٪', 'Predicted server stability: 99.9%'), 'Predicted server stability: 99.9%')}</span>
+            <span>{window.loc('پیش‌بینی پایداری سرور: ۹۹.۹٪', 'Predicted server stability: 99.9%')}</span>
           </span>
         </div>
       </div>
@@ -179,14 +179,14 @@ export default function AnalyticsCenter({
           {/* KPI Cards Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {[
-              { label: window.loc(window.loc('کل کاربران ثبت‌نامی', 'Total registered users'), 'Total registered users'), val: totalUsers.toLocaleString(), change: window.loc(window.loc('+۱۴.۲٪', '+14.2%'), '+14.2%'), icon: Users, color: 'text-amber-400' },
-              { label: window.loc(window.loc('کاربران فعال (Active)', 'Active users'), 'Active users'), val: activeUsers.toLocaleString(), change: window.loc(window.loc('+۸.۶٪', '+8.6%'), '+8.6%'), icon: Activity, color: 'text-emerald-400' },
-              { label: window.loc(window.loc('کاربران آنلاین در لحظه', 'Online users in the moment'), 'Online users in the moment'), val: onlineUsers.toLocaleString(), change: 'Live', icon: Zap, color: 'text-cyan-400' },
-              { label: window.loc(window.loc('کاربران فعال روزانه (DAU)', 'Daily Active Users (DAU)'), 'Daily Active Users (DAU)'), val: dau.toLocaleString(), change: window.loc(window.loc('+۵.۱٪', '+5.1%'), '+5.1%'), icon: Calendar, color: 'text-indigo-400' },
-              { label: window.loc(window.loc('کاربران فعال ماهانه (MAU)', 'Monthly Active Users (MAU)'), 'Monthly Active Users (MAU)'), val: mau.toLocaleString(), change: window.loc(window.loc('+۱۸.۴٪', '+18.4%'), '+18.4%'), icon: BarChart2, color: 'text-purple-400' },
-              { label: window.loc(window.loc('نرخ ماندگاری (Retention)', 'retention rate'), 'retention rate'), val: `${retentionRate}%`, change: window.loc(window.loc('+۴.۲٪', '+4.2%'), '+4.2%'), icon: RefreshCw, color: 'text-emerald-400' },
-              { label: window.loc(window.loc('ثبت‌نام‌های جدید امروز', 'New registrations today'), 'New registrations today'), val: newRegistrationsToday.toString(), change: window.loc(window.loc('+۱۲ امروز', '+12 today'), '+12 today'), icon: ArrowUpRight, color: 'text-amber-400' },
-              { label: window.loc(window.loc('حساب‌های حذف شده', 'Deleted accounts'), 'Deleted accounts'), val: deletedAccounts.toString(), change: window.loc(window.loc('-۱ کم‌تر', '-1 less'), '-1 less'), icon: AlertTriangle, color: 'text-rose-400' },
+              { label: window.loc('کل کاربران ثبت‌نامی', 'Total registered users'), val: totalUsers.toLocaleString(), change: window.loc('+۱۴.۲٪', '+14.2%'), icon: Users, color: 'text-amber-400' },
+              { label: window.loc('کاربران فعال (Active)', 'Active users'), val: activeUsers.toLocaleString(), change: window.loc('+۸.۶٪', '+8.6%'), icon: Activity, color: 'text-emerald-400' },
+              { label: window.loc('کاربران آنلاین در لحظه', 'Online users in the moment'), val: onlineUsers.toLocaleString(), change: 'Live', icon: Zap, color: 'text-cyan-400' },
+              { label: window.loc('کاربران فعال روزانه (DAU)', 'Daily Active Users (DAU)'), val: dau.toLocaleString(), change: window.loc('+۵.۱٪', '+5.1%'), icon: Calendar, color: 'text-indigo-400' },
+              { label: window.loc('کاربران فعال ماهانه (MAU)', 'Monthly Active Users (MAU)'), val: mau.toLocaleString(), change: window.loc('+۱۸.۴٪', '+18.4%'), icon: BarChart2, color: 'text-purple-400' },
+              { label: window.loc('نرخ ماندگاری (Retention)', 'retention rate'), val: `${retentionRate}%`, change: window.loc('+۴.۲٪', '+4.2%'), icon: RefreshCw, color: 'text-emerald-400' },
+              { label: window.loc('ثبت‌نام‌های جدید امروز', 'New registrations today'), val: newRegistrationsToday.toString(), change: window.loc('+۱۲ امروز', '+12 today'), icon: ArrowUpRight, color: 'text-amber-400' },
+              { label: window.loc('حساب‌های حذف شده', 'Deleted accounts'), val: deletedAccounts.toString(), change: window.loc('-۱ کم‌تر', '-1 less'), icon: AlertTriangle, color: 'text-rose-400' },
             ].map((kpi, idx) => {
               const IconComp = kpi.icon;
               return (
@@ -211,9 +211,9 @@ export default function AnalyticsCenter({
             <div className="flex items-center justify-between">
               <h4 className="font-bold text-white text-xs flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-emerald-400" />
-                <span>{window.loc(window.loc('نمودار روند رشد کاربران و DAU در ۳۰ روز گذشته', 'The graph of the growth trend of users and DAU in the last 30 days'), 'The graph of the growth trend of users and DAU in the last 30 days')}</span>
+                <span>{window.loc('نمودار روند رشد کاربران و DAU در ۳۰ روز گذشته', 'The graph of the growth trend of users and DAU in the last 30 days')}</span>
               </h4>
-              <span className="text-[10px] text-slate-400 font-mono">{window.loc(window.loc('تعداد کل:', 'Total number:'), 'Total number:')} {totalUsers}</span>
+              <span className="text-[10px] text-slate-400 font-mono">{window.loc('تعداد کل:', 'Total number:')} {totalUsers}</span>
             </div>
 
             {/* Custom SVG Line Chart */}
@@ -238,9 +238,9 @@ export default function AnalyticsCenter({
               </svg>
             </div>
             <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
-              <span>{window.loc(window.loc('۱ ماه پیش', '1 month ago'), '1 month ago')}</span>
-              <span>{window.loc(window.loc('۱۵ روز پیش', '15 days ago'), '15 days ago')}</span>
-              <span>{window.loc(window.loc('امروز', 'today'), 'today')}</span>
+              <span>{window.loc('۱ ماه پیش', '1 month ago')}</span>
+              <span>{window.loc('۱۵ روز پیش', '15 days ago')}</span>
+              <span>{window.loc('امروز', 'today')}</span>
             </div>
           </div>
         </div>
@@ -251,19 +251,19 @@ export default function AnalyticsCenter({
         <div className="space-y-4 animate-fadeIn">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('استریمرهای تایید شده', 'Verified streamers'), 'Verified streamers')}</span>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('استریمرهای تایید شده', 'Verified streamers')}</span>
               <p className="text-xl font-black text-amber-400 font-mono">{approvedStreamers}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('استریمرهای فعال', 'Active streamers'), 'Active streamers')}</span>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('استریمرهای فعال', 'Active streamers')}</span>
               <p className="text-xl font-black text-emerald-400 font-mono">{activeStreamers}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('میانگین زمان تماشا', 'Average viewing time'), 'Average viewing time')}</span>
-              <p className="text-xl font-black text-cyan-400 font-mono">{window.loc(window.loc('۴۵ دقیقه/کاربر', '45 minutes/user'), '45 minutes/user')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('میانگین زمان تماشا', 'Average viewing time')}</span>
+              <p className="text-xl font-black text-cyan-400 font-mono">{window.loc('۴۵ دقیقه/کاربر', '45 minutes/user')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('مجموع درآمد استریمرها', 'The total income of streamers'), 'The total income of streamers')}</span>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('مجموع درآمد استریمرها', 'The total income of streamers')}</span>
               <p className="text-xl font-black text-purple-400 font-mono">$105,222 USDT</p>
             </div>
           </div>
@@ -272,13 +272,13 @@ export default function AnalyticsCenter({
           <div className="p-5 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
             <h4 className="font-bold text-white text-xs flex items-center gap-2">
               <Crown className="w-4 h-4 text-amber-400" />
-              <span>{window.loc(window.loc('برترین استریمرهای پلتفرم (Top Performing Streamers)', 'The top streamers of the platform (Top Performing Streamers)'), 'The top streamers of the platform (Top Performing Streamers)')}</span>
+              <span>{window.loc('برترین استریمرهای پلتفرم (Top Performing Streamers)', 'The top streamers of the platform (Top Performing Streamers)')}</span>
             </h4>
             <div className="space-y-2">
               {[
-                { name: window.loc(window.loc('سحر میلر (@sahar_m)', 'Sahar Miller (@sahar_m)'), 'Sahar Miller (@sahar_m)'), hours: window.loc(window.loc('۱۲۴ ساعت لایو', '124 hours live'), '124 hours live'), income: '$12,450 USDT', rank: window.loc(window.loc('🥇 ۱', '🥇 1'), '🥇 1') },
-                { name: window.loc(window.loc('نگار هدی (@nigar_host)', 'Nigar Hoda (@nigar_host)'), 'Nigar Hoda (@nigar_host)'), hours: window.loc(window.loc('۹۸ ساعت لایو', '98 hours live'), '98 hours live'), income: '$8,900 USDT', rank: window.loc(window.loc('🥈 ۲', '🥈 2'), '🥈 2') },
-                { name: window.loc(window.loc('الناز راد (@elnaz_live)', 'Elnaz Rad (@elnaz_live)'), 'Elnaz Rad (@elnaz_live)'), hours: window.loc(window.loc('۸۴ ساعت لایو', '84 hours live'), '84 hours live'), income: '$6,300 USDT', rank: window.loc(window.loc('🥉 ۳', '🥉 3'), '🥉 3') },
+                { name: window.loc('سحر میلر (@sahar_m)', 'Sahar Miller (@sahar_m)'), hours: window.loc('۱۲۴ ساعت لایو', '124 hours live'), income: '$12,450 USDT', rank: window.loc('🥇 ۱', '🥇 1') },
+                { name: window.loc('نگار هدی (@nigar_host)', 'Nigar Hoda (@nigar_host)'), hours: window.loc('۹۸ ساعت لایو', '98 hours live'), income: '$8,900 USDT', rank: window.loc('🥈 ۲', '🥈 2') },
+                { name: window.loc('الناز راد (@elnaz_live)', 'Elnaz Rad (@elnaz_live)'), hours: window.loc('۸۴ ساعت لایو', '84 hours live'), income: '$6,300 USDT', rank: window.loc('🥉 ۳', '🥉 3') },
               ].map((st, i) => (
                 <div key={i} className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -301,20 +301,20 @@ export default function AnalyticsCenter({
         <div className="space-y-4 animate-fadeIn">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('لایوهای آنلاین لحظه‌ای', 'Instant live online'), 'Instant live online')}</span>
-              <p className="text-xl font-black text-emerald-400 font-mono">{window.loc(window.loc('۱۴ لایو', '14 live'), '14 live')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('لایوهای آنلاین لحظه‌ای', 'Instant live online')}</span>
+              <p className="text-xl font-black text-emerald-400 font-mono">{window.loc('۱۴ لایو', '14 live')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('کل لایوهای برگزارشده', 'All live events held'), 'All live events held')}</span>
-              <p className="text-xl font-black text-cyan-400 font-mono">{window.loc(window.loc('۱,۴۲۰ لایو', '1,420 live'), '1,420 live')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('کل لایوهای برگزارشده', 'All live events held')}</span>
+              <p className="text-xl font-black text-cyan-400 font-mono">{window.loc('۱, ۴۲۰ لایو', '1,420 live')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('بیشترین بیننده همزمان', 'Most concurrent viewers'), 'Most concurrent viewers')}</span>
-              <p className="text-xl font-black text-amber-400 font-mono">{window.loc(window.loc('۴,۲۵۰ نفر', '4,250 people'), '4,250 people')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('بیشترین بیننده همزمان', 'Most concurrent viewers')}</span>
+              <p className="text-xl font-black text-amber-400 font-mono">{window.loc('۴, ۲۵۰ نفر', '4,250 people')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('نسبت لایو Standard / VIP', 'Standard / VIP live ratio'), 'Standard / VIP live ratio')}</span>
-              <p className="text-xl font-black text-purple-400 font-mono">{window.loc(window.loc('۷۰٪ / ۳۰٪', '70% / 30%'), '70% / 30%')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('نسبت لایو Standard / VIP', 'Standard / VIP live ratio')}</span>
+              <p className="text-xl font-black text-purple-400 font-mono">{window.loc('۷۰٪ / ۳۰٪', '70% / 30%')}</p>
             </div>
           </div>
         </div>
@@ -325,20 +325,20 @@ export default function AnalyticsCenter({
         <div className="space-y-4 animate-fadeIn">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('تعداد لایک‌ها', 'Number of likes'), 'Number of likes')}</span>
-              <p className="text-xl font-black text-rose-400 font-mono">{window.loc(window.loc('۴۸,۲۰۰', '48,200'), '48,200')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('تعداد لایک‌ها', 'Number of likes')}</span>
+              <p className="text-xl font-black text-rose-400 font-mono">{window.loc('۴۸, ۲۰۰', '48,200')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('تعداد سوپر لایک‌ها', 'Number of super likes'), 'Number of super likes')}</span>
-              <p className="text-xl font-black text-amber-400 font-mono">{window.loc(window.loc('۳,۲۴۰', '3,240'), '3,240')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('تعداد سوپر لایک‌ها', 'Number of super likes')}</span>
+              <p className="text-xl font-black text-amber-400 font-mono">{window.loc('۳, ۲۴۰', '3,240')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('متچ‌های موفق', 'Successful matches'), 'Successful matches')}</span>
-              <p className="text-xl font-black text-emerald-400 font-mono">{window.loc(window.loc('۱۲,۱۵۰', '12,150'), '12,150')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('متچ‌های موفق', 'Successful matches')}</span>
+              <p className="text-xl font-black text-emerald-400 font-mono">{window.loc('۱۲, ۱۵۰', '12,150')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('نرخ موفقیت متچینگ', 'Matching success rate'), 'Matching success rate')}</span>
-              <p className="text-xl font-black text-cyan-400 font-mono">{window.loc(window.loc('۵۴.۲٪', '54.2%'), '54.2%')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('نرخ موفقیت متچینگ', 'Matching success rate')}</span>
+              <p className="text-xl font-black text-cyan-400 font-mono">{window.loc('۵۴.۲٪', '54.2%')}</p>
             </div>
           </div>
         </div>
@@ -349,20 +349,20 @@ export default function AnalyticsCenter({
         <div className="space-y-4 animate-fadeIn">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('پیام‌های متنی', 'Text messages'), 'Text messages')}</span>
-              <p className="text-xl font-black text-indigo-400 font-mono">{window.loc(window.loc('۱۴۲,۵۰۰', '142,500'), '142,500')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('پیام‌های متنی', 'Text messages')}</span>
+              <p className="text-xl font-black text-indigo-400 font-mono">{window.loc('۱۴۲, ۵۰۰', '142,500')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('پیام‌های صوتی', 'Voice messages'), 'Voice messages')}</span>
-              <p className="text-xl font-black text-cyan-400 font-mono">{window.loc(window.loc('۱۸,۴۰۰', '18,400'), '18,400')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('پیام‌های صوتی', 'Voice messages')}</span>
+              <p className="text-xl font-black text-cyan-400 font-mono">{window.loc('۱۸, ۴۰۰', '18,400')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('تماس‌های تصویری', 'Video calls'), 'Video calls')}</span>
-              <p className="text-xl font-black text-emerald-400 font-mono">{window.loc(window.loc('۴,۱۲۰ تماس', '4,120 calls'), '4,120 calls')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('تماس‌های تصویری', 'Video calls')}</span>
+              <p className="text-xl font-black text-emerald-400 font-mono">{window.loc('۴, ۱۲۰ تماس', '4,120 calls')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('میانگین مدت تماس', 'Average call duration'), 'Average call duration')}</span>
-              <p className="text-xl font-black text-amber-400 font-mono">{window.loc(window.loc('۱۲.۵ دقیقه', '12.5 minutes'), '12.5 minutes')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('میانگین مدت تماس', 'Average call duration')}</span>
+              <p className="text-xl font-black text-amber-400 font-mono">{window.loc('۱۲.۵ دقیقه', '12.5 minutes')}</p>
             </div>
           </div>
         </div>
@@ -373,19 +373,19 @@ export default function AnalyticsCenter({
         <div className="space-y-4 animate-fadeIn">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('کل اشتراک‌های VIP', 'All VIP subscriptions'), 'All VIP subscriptions')}</span>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('کل اشتراک‌های VIP', 'All VIP subscriptions')}</span>
               <p className="text-xl font-black text-amber-400 font-mono">{vipUsersCount}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('خرید اشتراک Adult VIP', 'Buy Adult VIP subscription'), 'Buy Adult VIP subscription')}</span>
-              <p className="text-xl font-black text-rose-400 font-mono">{window.loc(window.loc('۴۸ اشتراک', '48 subscriptions'), '48 subscriptions')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('خرید اشتراک Adult VIP', 'Buy Adult VIP subscription')}</span>
+              <p className="text-xl font-black text-rose-400 font-mono">{window.loc('۴۸ اشتراک', '48 subscriptions')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('نرخ تمدید خودکار', 'Automatic renewal rate'), 'Automatic renewal rate')}</span>
-              <p className="text-xl font-black text-emerald-400 font-mono">{window.loc(window.loc('۷۸.۵٪', '78.5%'), '78.5%')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('نرخ تمدید خودکار', 'Automatic renewal rate')}</span>
+              <p className="text-xl font-black text-emerald-400 font-mono">{window.loc('۷۸.۵٪', '78.5%')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('درآمد از VIP', 'Income from VIP'), 'Income from VIP')}</span>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('درآمد از VIP', 'Income from VIP')}</span>
               <p className="text-xl font-black text-cyan-400 font-mono">$18,400 USDT</p>
             </div>
           </div>
@@ -397,20 +397,20 @@ export default function AnalyticsCenter({
         <div className="space-y-4 animate-fadeIn">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('درآمد کل گردش پلتفرم', 'The total turnover of the platform'), 'The total turnover of the platform')}</span>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('درآمد کل گردش پلتفرم', 'The total turnover of the platform')}</span>
               <p className="text-xl font-black text-emerald-400 font-mono">$148,200 USDT</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('سود خالص پلتفرم (۲۹٪)', 'Platform net profit (29%)'), 'Platform net profit (29%)')}</span>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('سود خالص پلتفرم (۲۹٪)', 'Platform net profit (29%)')}</span>
               <p className="text-xl font-black text-amber-400 font-mono">$42,978 USDT</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('تسویه‌حساب‌های پرداختی', 'Payment settlements'), 'Payment settlements')}</span>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('تسویه‌حساب‌های پرداختی', 'Payment settlements')}</span>
               <p className="text-xl font-black text-cyan-400 font-mono">$105,222 USDT</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('تراکنش‌های موفق', 'Successful transactions'), 'Successful transactions')}</span>
-              <p className="text-xl font-black text-purple-400 font-mono">{window.loc(window.loc('۹۹.۸٪', '99.8%'), '99.8%')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('تراکنش‌های موفق', 'Successful transactions')}</span>
+              <p className="text-xl font-black text-purple-400 font-mono">{window.loc('۹۹.۸٪', '99.8%')}</p>
             </div>
           </div>
         </div>
@@ -421,20 +421,20 @@ export default function AnalyticsCenter({
         <div className="space-y-4 animate-fadeIn">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('زمان پاسخگویی API', 'API response time'), 'API response time')}</span>
-              <p className="text-xl font-black text-emerald-400 font-mono">{window.loc(window.loc('۱۸ ms', '18 ms'), '18 ms')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('زمان پاسخگویی API', 'API response time')}</span>
+              <p className="text-xl font-black text-emerald-400 font-mono">{window.loc('۱۸ ms', '18 ms')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('مصرف حافظه Supabase DB', 'Supabase DB memory consumption'), 'Supabase DB memory consumption')}</span>
-              <p className="text-xl font-black text-cyan-400 font-mono">{window.loc(window.loc('۳۴٪', '34%'), '34%')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('مصرف حافظه Supabase DB', 'Supabase DB memory consumption')}</span>
+              <p className="text-xl font-black text-cyan-400 font-mono">{window.loc('۳۴٪', '34%')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('پایداری سرور LiveKit', 'LiveKit server stability'), 'LiveKit server stability')}</span>
-              <p className="text-xl font-black text-amber-400 font-mono">{window.loc(window.loc('۹۹.۹۸٪', '99.98%'), '99.98%')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('پایداری سرور LiveKit', 'LiveKit server stability')}</span>
+              <p className="text-xl font-black text-amber-400 font-mono">{window.loc('۹۹.۹۸٪', '99.98%')}</p>
             </div>
             <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 text-[10px] font-bold">{window.loc(window.loc('ترافیک مصرفی پهنای باند', 'Bandwidth consumption traffic'), 'Bandwidth consumption traffic')}</span>
-              <p className="text-xl font-black text-purple-400 font-mono">{window.loc(window.loc('۱.۴ TB', '1.4 TB'), '1.4 TB')}</p>
+              <span className="text-slate-400 text-[10px] font-bold">{window.loc('ترافیک مصرفی پهنای باند', 'Bandwidth consumption traffic')}</span>
+              <p className="text-xl font-black text-purple-400 font-mono">{window.loc('۱.۴ TB', '1.4 TB')}</p>
             </div>
           </div>
         </div>

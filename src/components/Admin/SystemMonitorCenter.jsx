@@ -3,7 +3,7 @@ import {
   Activity, Cpu, HardDrive, Wifi, Server, Database, ShieldAlert, Sparkles, 
   Terminal, RefreshCw, CheckCircle2, XCircle, AlertTriangle, Play, Zap,
   BarChart2, ShieldCheck, Lock, Layers, Globe, Radio, MessageSquare, Bot,
-  Clock, ArrowUpRight, FileText, Check, AlertCircle, Memory
+  Clock, ArrowUpRight, FileText, Check, AlertCircle
 } from 'lucide-react';
 
 export default function SystemMonitorCenter({

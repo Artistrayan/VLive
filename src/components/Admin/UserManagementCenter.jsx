@@ -51,7 +51,7 @@ export default function UserManagementCenter({
       setSelectedUserDetail(prev => ({ ...prev, isBanned: nextBanned }));
     }
     addAdminAuditLog(`Admin Action: ${nextBanned ? 'Banned' : 'Unbanned'} user @${user.username || user.name}`);
-    showToast(nextBanned ? window.loc(`🚫 کاربر @${user.username} مسدود شد`, `🚫 کاربر @${user.username} مسدود شد`));
+    showToast(nextBanned ? window.loc(`🚫 کاربر @${user.username} مسدود شد`, `🚫 User @${user.username} banned`) : window.loc(`انسداد کاربر @${user.username} لغو شد`, `User @${user.username} unbanned`));
   };
 
   const handleToggleMute = (user) => {
@@ -61,7 +61,7 @@ export default function UserManagementCenter({
       setSelectedUserDetail(prev => ({ ...prev, isMuted: nextMuted }));
     }
     addAdminAuditLog(`Admin Action: ${nextMuted ? 'Muted' : 'Unmuted'} user @${user.username}`);
-    showToast(nextMuted ? window.loc(`🔇 کاربر @${user.username} بی صدا شد`, `🔇 کاربر @${user.username} بی صدا شد`));
+    showToast(nextMuted ? window.loc(`🔇 کاربر @${user.username} بی صدا شد`, `🔇 User @${user.username} muted`) : window.loc(`صدای کاربر @${user.username} فعال شد`, `User @${user.username} unmuted`));
   };
 
   const handleToggleVerify = (user) => {
@@ -71,7 +71,7 @@ export default function UserManagementCenter({
       setSelectedUserDetail(prev => ({ ...prev, isVerified: nextVerified, verified: nextVerified }));
     }
     addAdminAuditLog(`Admin Action: ${nextVerified ? 'Granted' : 'Removed'} verification for @${user.username}`);
-    showToast(nextVerified ? window.loc(`✅ نشان تایید آبی به @${user.username} اعطا شد`, `✅ نشان تایید آبی به @${user.username} اعطا شد`));
+    showToast(nextVerified ? window.loc(`✅ نشان تایید آبی به @${user.username} اعطا شد`, `✅ Verification granted to @${user.username}`) : window.loc(`نشان تایید @${user.username} لغو شد`, `Verification removed from @${user.username}`));
   };
 
   const handleToggleStreamer = (user) => {
@@ -81,7 +81,7 @@ export default function UserManagementCenter({
       setSelectedUserDetail(prev => ({ ...prev, isStreamer: nextStreamer, isHost: nextStreamer }));
     }
     addAdminAuditLog(`Admin Action: ${nextStreamer ? 'Promoted to Streamer' : 'Demoted Streamer'} @${user.username}`);
-    showToast(nextStreamer ? window.loc(`🎥 مقام استریمر به @${user.username} داده شد`, `🎥 مقام استریمر به @${user.username} داده شد`));
+    showToast(nextStreamer ? window.loc(`🎥 مقام استریمر به @${user.username} داده شد`, `🎥 Streamer status granted to @${user.username}`) : window.loc(`مقام استریمر @${user.username} لغو شد`, `Streamer status removed from @${user.username}`));
   };
 
   const handleResetPassword = (user) => {

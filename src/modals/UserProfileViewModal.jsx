@@ -72,14 +72,14 @@ export default function UserProfileViewModal({
     setIsFollowing(nextState);
     setFollowersCount(prev => nextState ? prev + 1 : prev - 1);
     onFollowToggle(user, nextState);
-    showToast(nextState ? window.loc(`با موفقیت ${userName} را دنبال کردید 👤`, `با موفقیت ${userName} را دنبال کردید 👤`));
+    showToast(nextState ? window.loc(`با موفقیت ${userName} را دنبال کردید 👤`, `با موفقیت ${userName} را دنبال کردید 👤`) : window.loc(`دنبال کردن لغو شد`, `دنبال کردن لغو شد`));
   };
 
   const toggleLike = () => {
     const nextState = !isLiked;
     setIsLiked(nextState);
     setLikesCount(prev => nextState ? prev + 1 : prev - 1);
-    showToast(nextState ? window.loc(`💖 لایک برای ${userName} ارسال شد`, `💖 لایک برای ${userName} ارسال شد`));
+    showToast(nextState ? window.loc(`💖 لایک برای ${userName} ارسال شد`, `💖 لایک برای ${userName} ارسال شد`) : window.loc(`لایک برداشته شد`, `لایک برداشته شد`));
   };
 
   const triggerSuperLike = () => {
@@ -98,21 +98,21 @@ export default function UserProfileViewModal({
     const nextState = !isBanned;
     setIsBanned(nextState);
     onAdminAction('ban', { userId: user.id, username, isBanned: nextState });
-    showToast(nextState ? window.loc(`🚫 کاربر ${userName} مسدود شد`, `🚫 کاربر ${userName} مسدود شد`));
+    showToast(nextState ? window.loc(`🚫 کاربر ${userName} مسدود شد`, `🚫 کاربر ${userName} مسدود شد`) : window.loc('عملیات لغو شد', 'Action cancelled'));
   };
 
   const handleAdminVerifyToggle = () => {
     const nextState = !isVerified;
     setIsVerified(nextState);
     onAdminAction('verify', { userId: user.id, username, isVerified: nextState });
-    showToast(nextState ? window.loc(`✅ نشان تایید برای ${userName} فعال شد`, `✅ نشان تایید برای ${userName} فعال شد`));
+    showToast(nextState ? window.loc(`✅ نشان تایید برای ${userName} فعال شد`, `✅ نشان تایید برای ${userName} فعال شد`) : window.loc('عملیات لغو شد', 'Action cancelled'));
   };
 
   const handleAdminStreamerToggle = () => {
     const nextState = !isStreamer;
     setIsStreamer(nextState);
     onAdminAction('streamer', { userId: user.id, username, isStreamer: nextState });
-    showToast(nextState ? window.loc(`🎥 مقام استریمر به ${userName} اعطا شد`, `🎥 مقام استریمر به ${userName} اعطا شد`));
+    showToast(nextState ? window.loc(`🎥 مقام استریمر به ${userName} اعطا شد`, `🎥 مقام استریمر به ${userName} اعطا شد`) : window.loc('عملیات لغو شد', 'Action cancelled'));
   };
 
   return (

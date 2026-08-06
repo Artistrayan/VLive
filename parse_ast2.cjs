@@ -1,0 +1,16 @@
+const babel = require('@babel/parser');
+const fs = require('fs');
+let code = fs.readFileSync('src/App.jsx', 'utf8');
+const start = code.indexOf('{activeStoryView && (');
+const end = code.indexOf('{isExitLiveModalOpen && (');
+let block = code.substring(start, end);
+
+block = block.replace(/<\/div>\n\s*\)\}/, ')}');
+block = `export default function Test() { return ( <>\n${block}\n</> ); }`;
+
+try {
+  babel.parse(block, { sourceType: "module", plugins: ["jsx"] });
+  console.log("Success!");
+} catch(e) {
+  console.log("Error:", e.message);
+}
