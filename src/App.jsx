@@ -12,6 +12,7 @@ import VipAndRewardModals from './modals/VipAndRewardModals';
 import SecurityModal from './modals/SecurityModal';
 import NotificationsModal from './modals/NotificationsModal';
 import UserProfileViewModal from './modals/UserProfileViewModal';
+import HelpCenterModal from './modals/HelpCenterModal';
 import ActiveCallOverlay from './components/Overlays/ActiveCallOverlay';
 import PreCallConfirmModal from './components/Overlays/PreCallConfirmModal';
 import { VisualUiEditorProvider } from './context/VisualUiEditorContext';
@@ -25,6 +26,7 @@ import { APP_LANGUAGES, I18N_DICTIONARY } from './constants/i18n';
 import { PRESET_AVATARS, GIFTS_CATALOG } from './constants/appConstants';
 import { CoinsIcon, VerifiedBadge, VipStatusBadge, StreamerScoresBadges } from './components/CommonBadges';
 import { safeStorage } from './utils/safeStorage';
+import { economyService } from './services/economyService';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   apiAuth, setStoredToken, setStoredSession, getStoredToken,
@@ -133,6 +135,7 @@ export default function App() {
   const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
   const [isSmartMatchModalOpen, setIsSmartMatchModalOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [helpCenterInitialTab, setHelpCenterInitialTab] = useState('faq'); // 'faq' | 'deposit' | 'withdrawal' | 'support'
   const [isBecomeStreamerModalOpen, setIsBecomeStreamerModalOpen] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
 
@@ -6115,6 +6118,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           setIsLoggedIn={setIsLoggedIn}
           setAuthStep={setAuthStep}
           setIsHostLiveOpen={setIsHostLiveOpen}
+          followedUsers={followedUsers}
           usersList={usersList}
           setUsersList={setUsersList}
           addAdminAuditLog={addAdminAuditLog}
@@ -8592,123 +8596,34 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         </div>
       )}
 
-      {/* MODAL: 24/7 SUPPORT CENTER & TICKETS */}
+      {/* MODAL: FULL HELP CENTER, FAQ & FINANCIAL CENTER */}
       {isSupportModalOpen && (
-        <div className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn dir-rtl">
-          <div className="card-3d w-full max-w-md bg-slate-900 rounded-3xl border border-cyan-500/50 p-6 space-y-5 shadow-[0_0_50px_rgba(6,182,212,0.3)] text-right relative overflow-hidden">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-purple-600 p-0.5 flex items-center justify-center shadow-lg">
-                  <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-                    <Headphones className="w-5 h-5 text-cyan-400 animate-pulse" />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-black text-sm text-white">
-                    {loc('🎧 مرکز پشتیبانی و خدمات ۲۴/۷ V.LIVE', '🎧 V.LIVE 24/7 Support Center')}
-                  </h3>
-                  <p className="text-[10px] text-slate-400">
-                    {loc('پاسخگویی فوری، پشتیبانی تلگرام و ثبت تیکت', 'Instant answers, Telegram support & ticket submission')}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsSupportModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Support Options */}
-            <div className="space-y-3 text-xs">
-              {/* Telegram Support Channel & Direct Admin */}
-              <a
-                href="https://t.me/VLive_Support"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => {
-                  showToast(loc('💬 منتقل شدید به تلگرام پشتیبانی: @VLive_Support', '💬 Redirecting to Telegram support: @VLive_Support'));
-                }}
-                className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-900/40 to-cyan-900/40 border border-cyan-500/30 flex items-center justify-between gap-3 hover:border-cyan-400 transition group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-400 group-hover:scale-110 transition">
-                    <MessageCircle className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-white group-hover:text-cyan-300 transition">{loc('پشتیبانی مستقیم تلگرام (۲۴/۷ Live)', 'Direct Telegram Support (24/7 Live)')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('ارتباط مستقیم با کارشناسان پشتیبانی و آیدی رسمی @VLive_Support', 'Direct chat with support team via @VLive_Support')}</p>
-                  </div>
-                </div>
-                <span className="text-xs text-cyan-400 font-bold dir-ltr shrink-0">@VLive_Support</span>
-              </a>
-
-              {/* Submit Instant Ticket */}
-              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
-                <div className="flex items-center gap-2">
-                  <HelpCircle className="w-4 h-4 text-purple-400" />
-                  <h4 className="font-bold text-white">{loc('ثبت تیکت اولویت‌دار درون برنامه‌ای', 'Submit In-App Priority Ticket')}</h4>
-                </div>
-                <input
-                  type="text"
-                  placeholder={loc('موضوع پیام یا سؤال شما...', 'Message subject...')}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
-                  id="support_subject_input"
-                />
-                <textarea
-                  rows="2"
-                  placeholder={loc('جزئیات درخواست یا مشکل خود را بنویسید...', 'Write details of your request or issue...')}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition resize-none"
-                  id="support_msg_input"
-                />
-                <button
-                  onClick={() => {
-                    const subj = document.getElementById('support_subject_input')?.value;
-                    const msg = document.getElementById('support_msg_input')?.value;
-                    if (!subj && !msg) {
-                      showToast(loc('لطفاً متن یا موضوع پیام پشتیبانی را وارد کنید', 'Please enter a message or subject'));
-                      return;
-                    }
-                    showToast(loc('✅ تیکت پشتیبانی شما ثبت شد. کارشناسان به زودی پاسخ خواهند داد.', '✅ Support ticket submitted. Support team will reply shortly.'));
-                    if (document.getElementById('support_subject_input')) document.getElementById('support_subject_input').value = '';
-                    if (document.getElementById('support_msg_input')) document.getElementById('support_msg_input').value = '';
-                    setIsSupportModalOpen(false);
-                  }}
-                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 text-white font-bold text-xs hover:scale-101 active:scale-95 transition flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/20"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{loc('ارسال تیکت به پشتیبانی', 'Send Ticket to Support')}</span>
-                </button>
-              </div>
-
-              {/* Quick FAQ info */}
-              <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1.5 text-[11px] text-slate-400">
-                <p className="font-bold text-slate-300 flex items-center gap-1">
-                  <span>💡</span>
-                  <span>{loc('پاسخ به سوالات متداول:', 'Frequently Asked Questions:')}</span>
-                </p>
-                <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-                  <button 
-                    onClick={() => showToast(loc('💳 شارژ سکه آنی از طریق درگاه، کریپتو و کارت‌به‌کارت انجام می‌شود.', '💳 Coin top-up is instant via gateway, crypto and card.'))}
-                    className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-right text-slate-300 transition"
-                  >
-                    • {loc('روش‌های شارژ حساب', 'Deposit methods')}
-                  </button>
-                  <button 
-                    onClick={() => showToast(loc('💰 تسویه حساب درآمد استریمرها روزانه به USDT انجام می‌شود.', '💰 Streamers payouts are processed daily in USDT.'))}
-                    className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-right text-slate-300 transition"
-                  >
-                    • {loc('تسویه درآمد استریمر', 'Streamer payouts')}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
+        <HelpCenterModal
+          isOpen={isSupportModalOpen}
+          onClose={() => setIsSupportModalOpen(false)}
+          initialTab={helpCenterInitialTab || 'faq'}
+          userCoins={userCoins}
+          userDiamonds={userDiamonds}
+          userName={userName}
+          currentUsername={currentUsername}
+          userGender={userGender}
+          isVerified={isVerified}
+          showToast={showToast}
+          onOpenBuyCoins={() => {
+            setIsSupportModalOpen(false);
+            setIsBuyCoinsModalOpen(true);
+          }}
+          onOpenKyc={() => {
+            setIsSupportModalOpen(false);
+            setIsKycModalOpen(true);
+          }}
+          adminNetworkFee={adminNetworkFee}
+          adminMinWithdrawal={adminMinWithdrawal}
+          transactionsList={transactionsList}
+          setTransactionsList={setTransactionsList}
+          setFinancialTransactionsList={setFinancialTransactionsList}
+          setAdminWithdrawalsList={setAdminWithdrawalsList}
+        />
       )}
 
       {/* FIRST TIME SYSTEM PERMISSIONS & TERMS MODAL */}

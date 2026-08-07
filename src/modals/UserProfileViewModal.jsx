@@ -32,8 +32,8 @@ export default function UserProfileViewModal({
   const [isFollowing, setIsFollowing] = useState(user.isFollowing || user.followed || false);
   const [isLiked, setIsLiked] = useState(user.isLiked || false);
   const [isSuperLiked, setIsSuperLiked] = useState(user.isSuperLiked || false);
-  const [likesCount, setLikesCount] = useState(user.likes || user.likesCount || 1420);
-  const [followersCount, setFollowersCount] = useState(user.followers || user.followersCount || 3820);
+  const [likesCount, setLikesCount] = useState(user.likes || user.likesCount || 0);
+  const [followersCount, setFollowersCount] = useState(user.followers || user.followersCount || 0);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'media' | 'lives' | 'about'
   
   // Report Modal State

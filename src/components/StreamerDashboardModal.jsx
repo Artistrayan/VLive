@@ -25,15 +25,15 @@ export default function StreamerDashboardModal({
   
   // Streamer Data States
   const [streamerData, setStreamerData] = useState({
-    followers: 14850,
-    totalViews: 245200,
-    rating: 4.9,
+    followers: 0,
+    totalViews: 0,
+    rating: 5.0,
     status: 'APPROVED',
-    liveHours: 184.5,
-    giftsCount: 3420,
-    availableUsdt: 425.80,
-    pendingUsdt: 64.00,
-    totalEarnedCoins: 124500,
+    liveHours: 0,
+    giftsCount: 0,
+    availableUsdt: 0.00,
+    pendingUsdt: 0.00,
+    totalEarnedCoins: 0,
     tariffPerMin: 25,
     streamQuality: '1080p',
     subscribersOnlyChat: false,

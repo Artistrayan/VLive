@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { economyService } from '../../services/economyService';
+import AdminFaqManager from './AdminFaqManager';
 import { 
   DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, Wallet, Gift,
   Crown, RefreshCw, Filter, Search, Download, FileText, CheckCircle2,
   XCircle, AlertTriangle, ShieldCheck, ShieldAlert, Cpu, Sparkles, Sliders,
   PieChart, BarChart3, Database, Lock, Unlock, Eye, Calendar, UserCheck,
-  Building, Layers, Receipt, Zap, AlertCircle, Clock, ChevronRight, Coins, PhoneCall, Shield
+  Building, Layers, Receipt, Zap, AlertCircle, Clock, ChevronRight, Coins, PhoneCall, Shield, HelpCircle
 } from 'lucide-react';
 
 export default function FinanceCenter({
@@ -179,6 +180,7 @@ export default function FinanceCenter({
           { id: 'reports', label: window.loc('📑 گزارش‌های مالی', '📑 Financial reports'), icon: FileText },
           { id: 'ai_finance', label: window.loc('🤖 هوش مصنوعی مالی', '🤖 Financial artificial intelligence'), icon: Sparkles },
           { id: 'audit_logs', label: window.loc('📜 لاگ‌های مالی', 'Financial logs'), icon: ShieldCheck },
+          { id: 'faq_admin', label: window.loc('🎧 مرکز راهنما & FAQ', '🎧 Help Center & FAQ'), icon: HelpCircle },
           { id: 'settings', label: window.loc('⚙️ تنظیمات مالی', '⚙️ Financial settings'), icon: Sliders }
         ].map(t => {
           const IconComponent = t.icon;
@@ -962,6 +964,13 @@ export default function FinanceCenter({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ================= TAB 14: FAQ & HELP CENTER MANAGER ================= */}
+      {financeSubTab === 'faq_admin' && (
+        <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 animate-fadeIn">
+          <AdminFaqManager showToast={showToast} />
         </div>
       )}
 

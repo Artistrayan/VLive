@@ -832,32 +832,32 @@ export default function WalletTab(props) {
                         <span className="text-[11px] text-slate-400 flex items-center gap-1 font-bold">
                           <Users className="w-3.5 h-3.5 text-purple-400" /> 👥 Followers
                         </span>
-                        <p className="text-lg font-black text-white font-mono">10,450</p>
-                        <span className="text-[10px] text-emerald-400 font-bold">{window.loc('+48 امروز', '+48 today')}</span>
+                        <p className="text-lg font-black text-white font-mono">{Number(safeStorage.getItem('vlive_user_followers') || 0)}</p>
+                        <span className="text-[10px] text-slate-400 font-bold">{window.loc('آمار واقعی 📊', 'Real stats 📊')}</span>
                       </div>
 
                       <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
                         <span className="text-[11px] text-slate-400 flex items-center gap-1 font-bold">
                           <Heart className="w-3.5 h-3.5 text-rose-400" /> ❤️ Likes
                         </span>
-                        <p className="text-lg font-black text-rose-400 font-mono">45,200</p>
-                        <span className="text-[10px] text-rose-300 font-bold">{window.loc('+1.2k این هفته', '+1.2k this week')}</span>
+                        <p className="text-lg font-black text-rose-400 font-mono">{Number(safeStorage.getItem('vlive_user_extra_likes') || 0)}</p>
+                        <span className="text-[10px] text-slate-400 font-bold">{window.loc('آمار واقعی 📊', 'Real stats 📊')}</span>
                       </div>
 
                       <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
                         <span className="text-[11px] text-slate-400 flex items-center gap-1 font-bold">
                           <Radio className="w-3.5 h-3.5 text-cyan-400" /> {window.loc('🎥 Live برگزار شده', '🎥 Live held')}
                         </span>
-                        <p className="text-lg font-black text-cyan-300 font-mono">{window.loc('128 لایو', '128 Live')}</p>
-                        <span className="text-[10px] text-cyan-400 font-bold">{window.loc('مجموع ۱80 ساعت', 'A total of 180 hours')}</span>
+                        <p className="text-lg font-black text-cyan-300 font-mono">{window.loc('0 لایو', '0 Live')}</p>
+                        <span className="text-[10px] text-slate-400 font-bold">{window.loc('مجموع ۰ ساعت', '0 hours')}</span>
                       </div>
 
                       <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
                         <span className="text-[11px] text-slate-400 flex items-center gap-1 font-bold">
                           <Eye className="w-3.5 h-3.5 text-blue-400" /> {window.loc('👀 مجموع بازدید', '👀 Total views')}
                         </span>
-                        <p className="text-lg font-black text-white font-mono">154,000</p>
-                        <span className="text-[10px] text-emerald-400 font-bold">{window.loc('رشد عالی 🚀', 'Great growth 🚀')}</span>
+                        <p className="text-lg font-black text-white font-mono">{Number(safeStorage.getItem('vlive_user_views') || 0)}</p>
+                        <span className="text-[10px] text-slate-400 font-bold">{window.loc('آمار واقعی 📊', 'Real stats 📊')}</span>
                       </div>
 
                       <div className="card-3d p-4 rounded-2xl bg-slate-900 border border-amber-500/30 space-y-1">
@@ -1170,7 +1170,7 @@ export default function WalletTab(props) {
                         {window.loc('۶. مدیریت دنبال‌کنندگان (Followers Management)', '6. Followers Management')}
                       </h3>
                       <span className="text-xs text-purple-300 font-bold bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/30">
-                        {window.loc('مجموع: ۱۰,۴۵۰ فالوور', 'Total: 10,450 followers')}
+                        {window.loc('مجموع: ' + Number(safeStorage.getItem('vlive_user_followers') || 0) + ' فالوور', 'Total: ' + Number(safeStorage.getItem('vlive_user_followers') || 0) + ' followers')}
                       </span>
                     </div>
 
@@ -1375,7 +1375,7 @@ export default function WalletTab(props) {
                       <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 flex flex-col justify-between">
                         <div>
                           <span className="text-xs font-black text-cyan-400 block">🔔 Push Broadcast</span>
-                          <p className="text-[10px] text-slate-300 mt-1">{window.loc('ارسال نوتیفیکیشن فوری شروع لایو به تمام ۱۰,۴۵۰ فالوور', 'Send instant live start notification to all 10,450 followers')}</p>
+                          <p className="text-[10px] text-slate-300 mt-1">{window.loc('ارسال نوتیفیکیشن فوری شروع لایو به تمام ' + Number(safeStorage.getItem('vlive_user_followers') || 0) + ' فالوور', 'Send instant live start notification to all ' + Number(safeStorage.getItem('vlive_user_followers') || 0) + ' followers')}</p>
                         </div>
                         <button onClick={() => showToast(window.loc('نوتیفیکیشن همگانی ارسال گردید ($15)', 'Public notification sent ($15)'))} className="w-full py-2 rounded-xl bg-cyan-500 text-slate-950 text-xs font-black">
                           {window.loc('ارسال نوتیفیکیشن همگانی ($15)', 'Send public notification ($15)')}
@@ -1482,10 +1482,10 @@ export default function WalletTab(props) {
                       <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                         <div className="flex justify-between text-xs font-bold">
                           <span className="text-white">{window.loc('هدف جذب فالوور (Follower Goal):', 'The goal of attracting followers (Follower Goal):')}</span>
-                          <span className="text-purple-300 font-mono">10,450 / 15,000 (70%)</span>
+                          <span className="text-purple-300 font-mono">{Number(safeStorage.getItem('vlive_user_followers') || 0)} / 15,000 ({Math.min(100, Math.round((Number(safeStorage.getItem('vlive_user_followers') || 0) / 15000) * 100))}%)</span>
                         </div>
                         <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
-                          <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full w-[70%]" />
+                          <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.round((Number(safeStorage.getItem('vlive_user_followers') || 0) / 15000) * 100))}%` }} />
                         </div>
                       </div>
                     </div>

@@ -143,7 +143,27 @@ export default function ProfileTab(props) {
   const [showOnlineStatus, setShowOnlineStatus] = useState(() => safeStorage.getItem('vlive_priv_online') !== 'false');
   const [showLocation, setShowLocation] = useState(() => safeStorage.getItem('vlive_priv_loc') !== 'false');
 
-  // --- LOCAL POSTS STATE ---
+  // --- REAL PROFILE STATISTICS & PERSISTENCE ---
+  const [userFollowersCount, setUserFollowersCount] = useState(() => {
+    return Number(safeStorage.getItem('vlive_user_followers') || 0);
+  });
+  const [userViewsCount, setUserViewsCount] = useState(() => {
+    return Number(safeStorage.getItem('vlive_user_views') || 0);
+  });
+
+  // Calculate real Following count based on followedUsers prop or storage
+  const userFollowingCount = Array.isArray(props.followedUsers)
+    ? props.followedUsers.length
+    : Number(safeStorage.getItem('vlive_user_following') || 0);
+
+  // Increments real views count on profile visit
+  useEffect(() => {
+    const newViews = userViewsCount + 1;
+    setUserViewsCount(newViews);
+    safeStorage.setItem('vlive_user_views', String(newViews));
+  }, []);
+
+  // --- LOCAL POSTS STATE WITH REAL LIKES & COMMENTS (STARTING FROM ZERO) ---
   const [profilePosts, setProfilePosts] = useState([
     {
       id: 1,
@@ -154,9 +174,9 @@ export default function ProfileTab(props) {
       time: '2 hours ago',
       content: window.loc('🎬 لایواستریم اختصاصی امشب ساعت ۲۲:۰۰ شروع میشه! منتظر همگی در بخش لایو هستیم 💖✨', '🎬 Exclusive livestream starts tonight at 22:00! We are waiting for everyone in the live section 💖✨'),
       image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80',
-      likes: 1420,
-      comments: 98,
-      shares: 45,
+      likes: 0,
+      comments: 0,
+      shares: 0,
       liked: false
     },
     {
@@ -168,12 +188,22 @@ export default function ProfileTab(props) {
       time: 'Yesterday',
       content: window.loc('مرسی از همه دوستانی که دیشب تو روم خصوصی همراهم بودن. هدیه‌های ارزشمندتون ثبت شد! 🎁🔥', 'Thank you to all my friends who were with me in the private room last night. Your valuable gifts have been registered! 🎁🔥'),
       image: null,
-      likes: 850,
-      comments: 42,
-      shares: 12,
-      liked: true
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      liked: false
     }
   ]);
+
+  // Real total likes calculation across posts + persistent likes
+  const userTotalLikes = profilePosts.reduce((sum, post) => sum + (post.likes || 0), 0) + Number(safeStorage.getItem('vlive_user_extra_likes') || 0);
+
+  // Dynamic Profile Completion % based on filled details
+  const profileCompletionPercent = (() => {
+    const fields = [userName, userBio, userAvatar, coverPhoto, userCity, userAge, userOccupation, userInterests];
+    const filled = fields.filter(f => f && String(f).trim().length > 0).length;
+    return Math.round((filled / fields.length) * 100);
+  })();
   const [newPostText, setNewPostText] = useState('');
   const [newPostImage, setNewPostImage] = useState('');
 
@@ -412,31 +442,31 @@ export default function ProfileTab(props) {
                 <div className="flex items-center justify-between text-xs font-bold">
                   <span className="text-slate-300 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{window.loc('تکمیل پروفایلکاربری', 'Profile Completion')}</span>
+                    <span>{window.loc('تکمیل پروفایل کاربری', 'Profile Completion')}</span>
                   </span>
-                  <span className="text-amber-400">95%</span>
+                  <span className="text-amber-400">{profileCompletionPercent}%</span>
                 </div>
                 <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-emerald-400 w-[95%] rounded-full shadow-[0_0_10px_rgba(236,72,153,0.8)]" />
+                  <div className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-emerald-400 rounded-full shadow-[0_0_10px_rgba(236,72,153,0.8)] transition-all duration-500" style={{ width: `${profileCompletionPercent}%` }} />
                 </div>
               </div>
 
               {/* Statistics Grid */}
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-5 mt-5 border-t border-slate-800/80 text-center">
                 <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                  <span className="block text-base sm:text-lg font-black text-white">12.8K</span>
+                  <span className="block text-base sm:text-lg font-black text-white">{userFollowersCount.toLocaleString()}</span>
                   <span className="text-[10px] text-slate-400 font-medium">{window.loc('دنبال‌کنندگان', 'Followers')}</span>
                 </div>
                 <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                  <span className="block text-base sm:text-lg font-black text-white">342</span>
+                  <span className="block text-base sm:text-lg font-black text-white">{userFollowingCount.toLocaleString()}</span>
                   <span className="text-[10px] text-slate-400 font-medium">{window.loc('دنبال‌شده‌ها', 'Following')}</span>
                 </div>
                 <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                  <span className="block text-base sm:text-lg font-black text-pink-400">28.4K</span>
+                  <span className="block text-base sm:text-lg font-black text-pink-400">{userTotalLikes.toLocaleString()}</span>
                   <span className="text-[10px] text-slate-400 font-medium">{window.loc('لایک‌ها', 'Likes')}</span>
                 </div>
                 <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                  <span className="block text-base sm:text-lg font-black text-cyan-400">4.5K</span>
+                  <span className="block text-base sm:text-lg font-black text-cyan-400">{userViewsCount.toLocaleString()}</span>
                   <span className="text-[10px] text-slate-400 font-medium">{window.loc('بازدیدها', 'Views')}</span>
                 </div>
                 <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
@@ -716,7 +746,7 @@ export default function ProfileTab(props) {
                   <img src={img} alt="Moment" className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent opacity-0 group-hover:opacity-100 transition p-3 flex flex-col justify-end">
                     <span className="text-white text-xs font-bold">Highlight #{idx + 1}</span>
-                    <span className="text-slate-300 text-[10px]">4.2K Views</span>
+                    <span className="text-slate-300 text-[10px]">0 Views</span>
                   </div>
                 </div>
               ))}
@@ -896,15 +926,15 @@ export default function ProfileTab(props) {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                   <span className="text-slate-400 font-medium">{window.loc('مجموع ساعات لایو', 'Total live hours')}</span>
-                  <span className="block text-xl font-black text-white">148.5 hrs</span>
+                  <span className="block text-xl font-black text-white">0 hrs</span>
                 </div>
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                   <span className="text-slate-400 font-medium">{window.loc('کل بینندگان', 'Total viewers')}</span>
-                  <span className="block text-xl font-black text-cyan-400">94.2K</span>
+                  <span className="block text-xl font-black text-cyan-400">0</span>
                 </div>
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                   <span className="text-slate-400 font-medium">{window.loc('درآمد از تماس اختصاصی', 'Earnings from exclusive calls')}</span>
-                  <span className="block text-xl font-black text-amber-400">4,850 Stars</span>
+                  <span className="block text-xl font-black text-amber-400">0 Stars</span>
                 </div>
               </div>
             </div>

@@ -8,6 +8,7 @@ import StreamerManagementCenter from '../components/Admin/StreamerManagementCent
 import SystemMonitorCenter from '../components/Admin/SystemMonitorCenter';
 import AiAdminCopilot from '../components/Admin/AiAdminCopilot';
 import AnalyticsCenter from '../components/Admin/AnalyticsCenter';
+import AdminFaqManager from '../components/Admin/AdminFaqManager';
 import { 
   ShieldCheck, Globe, Eye, EyeOff, ShieldAlert, Users, Video, DollarSign,
   BarChart2, FileText, Settings, Search, Plus, Trash2, Edit3, CheckCircle2,
@@ -1326,6 +1327,12 @@ export default function AdminDashboardModal(props) {
                           </div>
                         </div>
                       ))}
+                  </div>
+
+                  {/* ADMIN HELP CENTER & FAQ CONTENT CONTROL */}
+                  <div className="pt-4 border-t border-slate-800 space-y-2">
+                    <h4 className="font-black text-white text-xs">{window.loc('مدیریت پایگاه دانش، FAQ و روش‌های شارژ حساب:', 'FAQ & Payment Methods Control:')}</h4>
+                    <AdminFaqManager showToast={showToast} />
                   </div>
                 </div>
               )}
