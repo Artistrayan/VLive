@@ -1814,43 +1814,60 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // 6. Language & Real-time Translation System
   const [currentAppLang, setCurrentAppLang] = useState(() => {
-    return safeStorage.getItem('vlive_app_lang') || 'en';
+    return safeStorage.getItem('vlive_app_lang') || 'fa';
   });
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
 
   const getLangCode = (langName) => {
+    if (!langName) return 'fa';
+    if (typeof langName === 'object') return langName.code || 'fa';
     if (langName === 'en' || langName === 'English') return 'en';
-    if (langName === 'fa' || langName === loc('فارسی', 'Farsi') || langName === 'Farsi' || langName === 'Persian') return 'fa';
-    if (langName === 'ar' || langName === loc('العربية', 'Arabic') || langName === 'Arabic') return 'ar';
+    if (langName === 'fa' || langName === 'فارسی' || langName === 'Farsi' || langName === 'Persian') return 'fa';
+    if (langName === 'ar' || langName === 'العربية' || langName === 'Arabic') return 'ar';
     if (langName === 'tr' || langName === 'Türkçe' || langName === 'Turkish') return 'tr';
     if (langName === 'ru' || langName === 'Русский' || langName === 'Russian') return 'ru';
-    return langName || 'en';
+    return langName || 'fa';
   };
 
-  const currentLangObj = APP_LANGUAGES.find(l => l.code === currentAppLang || l.name === currentAppLang) || APP_LANGUAGES[0];
+  const currentLangObj = APP_LANGUAGES.find(l => l.code === currentAppLang || l.name === currentAppLang) || APP_LANGUAGES[1] || APP_LANGUAGES[0];
   const langCode = currentLangObj.code;
   const isRtl = currentLangObj.dir === 'rtl';
 
   useEffect(() => {
+    safeStorage.setItem('vlive_app_lang', langCode);
     if (typeof document !== 'undefined') {
       document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
       document.documentElement.lang = langCode;
     }
+    window.loc = (faStr, enStr) => {
+      if (langCode === 'fa' || langCode === 'ar') {
+        return faStr || enStr || '';
+      }
+      return enStr || faStr || '';
+    };
   }, [langCode, isRtl]);
 
   const t = (key, fallback = '') => {
-    return I18N_DICTIONARY[langCode]?.[key] || I18N_DICTIONARY['en']?.[key] || I18N_DICTIONARY['fa']?.[key] || fallback || key;
+    return I18N_DICTIONARY[langCode]?.[key] || I18N_DICTIONARY['fa']?.[key] || I18N_DICTIONARY['en']?.[key] || fallback || key;
   };
 
   const handleSelectLanguage = (lang) => {
-    setCurrentAppLang(lang.code);
-    safeStorage.setItem('vlive_app_lang', lang.code);
+    const code = typeof lang === 'string' ? lang : (lang?.code || 'fa');
+    setCurrentAppLang(code);
+    safeStorage.setItem('vlive_app_lang', code);
     setIsLanguageModalOpen(false);
+    const selectedObj = APP_LANGUAGES.find(l => l.code === code) || { dir: 'rtl', name: code, flag: '🌐' };
     if (typeof document !== 'undefined') {
-      document.documentElement.dir = lang.dir === 'rtl' ? 'rtl' : 'ltr';
-      document.documentElement.lang = lang.code;
+      document.documentElement.dir = selectedObj.dir === 'rtl' ? 'rtl' : 'ltr';
+      document.documentElement.lang = code;
     }
-    showToast(`${t('changeLangSuccess', 'App language changed to')} ${lang.flag} ${lang.name}`);
+    window.loc = (faStr, enStr) => {
+      if (code === 'fa' || code === 'ar') {
+        return faStr || enStr || '';
+      }
+      return enStr || faStr || '';
+    };
+    showToast(`${t('changeLangSuccess', 'زبان برنامه تغییر یافت به')} ${selectedObj.flag || ''} ${selectedObj.name || code}`);
   };
 
   // 13. System Permissions Prompt State & Persistence
@@ -4287,26 +4304,27 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <div className="flex items-center justify-between px-2">
                 
                 {/* Language Switcher Pill */}
-                <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl shadow-lg">
+                <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl shadow-lg">
                   <button
-                    onClick={() => {
-                      setCurrentAppLang('en');
-                      showToast('Language changed to English 🇺🇸');
-                    }}
+                    onClick={() => handleSelectLanguage('fa')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${currentAppLang === 'fa' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/30' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    <span>🇮🇷</span>
+                    <span>{loc('فارسی', 'Farsi')}</span>
+                  </button>
+                  <button
+                    onClick={() => handleSelectLanguage('en')}
                     className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${currentAppLang === 'en' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/30' : 'text-slate-400 hover:text-white'}`}
                   >
                     <span>🇺🇸</span>
                     <span>English</span>
                   </button>
                   <button
-                    onClick={() => {
-                      setCurrentAppLang('fa');
-                      showToast(loc('زبان به فارسی تغییر یافت 🇮🇷', 'The language was changed to Persian 🇮🇷'));
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${currentAppLang === 'fa' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/30' : 'text-slate-400 hover:text-white'}`}
+                    onClick={() => setIsLanguageModalOpen(true)}
+                    className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800/80 hover:bg-purple-600/40 text-cyan-300 hover:text-white transition flex items-center gap-1 border border-slate-700/60"
+                    title={loc('همه زبان‌ها', 'All Languages')}
                   >
-                    <span>🇮🇷</span>
-                    <span>{loc('فارسی', 'Farsi')}</span>
+                    <Languages className="w-3.5 h-3.5 text-cyan-400" />
                   </button>
                 </div>
 
@@ -6104,6 +6122,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           compressImageFile={compressImageFile}
           setIsVipModalOpen={setIsVipModalOpen}
           setIsSecurityModalOpen={setIsSecurityModalOpen}
+          setIsLanguageModalOpen={setIsLanguageModalOpen}
+          handleSelectLanguage={handleSelectLanguage}
+          currentAppLang={currentAppLang}
           setIsQrCodeModalOpen={setIsQrCodeModalOpen}
           setWalletSubTab={setWalletSubTab}
           setIsLoggedIn={setIsLoggedIn}
@@ -6197,6 +6218,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       <SettingsModal
         isSettingsModalOpen={isSettingsModalOpen}
         setIsSettingsModalOpen={setIsSettingsModalOpen}
+        currentAppLang={currentAppLang}
+        setCurrentAppLang={setCurrentAppLang}
+        handleSelectLanguage={handleSelectLanguage}
+        APP_LANGUAGES={APP_LANGUAGES}
+        setIsLanguageModalOpen={setIsLanguageModalOpen}
         userAvatar={userAvatar}
         setUserAvatar={setUserAvatar}
         userName={userName}
@@ -7891,6 +7917,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         handleSendSuggestion={handleSendSuggestion}
         isLanguageModalOpen={isLanguageModalOpen}
         setIsLanguageModalOpen={setIsLanguageModalOpen}
+        currentAppLang={currentAppLang}
+        setCurrentAppLang={setCurrentAppLang}
+        handleSelectLanguage={handleSelectLanguage}
         APP_LANGUAGES={APP_LANGUAGES}
         showToast={showToast}
         loc={loc}

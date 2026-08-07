@@ -83,7 +83,14 @@ export default function SettingsModal(props) {
     { code: 'tr', name: window.loc('Türkچه', 'Türkçe') },
     { code: 'ru', name: 'Русский' }
   ];
-  const handleSelectLanguage = props.handleSelectLanguage || ((code) => { if (props.setCurrentAppLang) props.setCurrentAppLang(code); });
+  const handleSelectLanguage = props.handleSelectLanguage || ((lang) => {
+    const code = typeof lang === 'string' ? lang : (lang?.code || 'fa');
+    if (props.setCurrentAppLang) props.setCurrentAppLang(code);
+    safeStorage.setItem('vlive_app_lang', code);
+    if (typeof window !== 'undefined' && props.showToast) {
+      props.showToast(`Language changed to ${code}`);
+    }
+  });
   const currentAppLang = props.currentAppLang || 'fa';
   const [liveDefaultQuality, setLiveDefaultQuality] = React.useState(props.liveDefaultQuality || '720p');
   const [videoCallQuality, setVideoCallQuality] = React.useState(props.videoCallQuality || '720p');

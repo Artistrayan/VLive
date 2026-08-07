@@ -23,7 +23,7 @@ export default function ProfileTab(props) {
     isUserRayan, userLevel = 24, vipPlan,
     PRESET_AVATARS = [], compressImageFile,
     setIsEditProfileModalOpen = (() => {}), setIsVipModalOpen = (() => {}),
-    setIsSecurityModalOpen = (() => {}), setIsQrCodeModalOpen = (() => {}),
+    setIsSecurityModalOpen = (() => {}), setIsLanguageModalOpen = (() => {}), handleSelectLanguage = (() => {}), setIsQrCodeModalOpen = (() => {}),
     setWalletSubTab = (() => {}), setIsLoggedIn = (() => {}), setAuthStep = (() => {}),
     showToast = (() => {}), loc = ((a, b) => b || a),
     isVerified = true,
@@ -812,10 +812,19 @@ export default function ProfileTab(props) {
                   <p className="text-white font-black text-sm">{userRelationship}</p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 flex items-center gap-1.5 font-bold">
-                    <Globe className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{window.loc('زبان‌ها', 'Languages')}</span>
+                <div 
+                  onClick={() => setIsLanguageModalOpen(true)}
+                  className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1 cursor-pointer hover:border-emerald-500/50 transition group"
+                  title={window.loc('تغییر زبان برنامه', 'Change App Language')}
+                >
+                  <span className="text-slate-400 flex items-center justify-between font-bold">
+                    <span className="flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-emerald-400 group-hover:rotate-12 transition-transform" />
+                      <span>{window.loc('زبان‌ها', 'Languages')}</span>
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      {window.loc('تغییر 🌐', 'CHANGE 🌐')}
+                    </span>
                   </span>
                   <p className="text-white font-black text-sm">{userLanguages}</p>
                 </div>

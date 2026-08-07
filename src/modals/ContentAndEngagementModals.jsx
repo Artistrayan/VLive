@@ -13,7 +13,10 @@ export default function ContentAndEngagementModals(props) {
     handleSendSuggestion,
     isLanguageModalOpen,
     setIsLanguageModalOpen,
-    APP_LANGUAGES,
+    currentAppLang,
+    setCurrentAppLang,
+    handleSelectLanguage,
+    APP_LANGUAGES = [],
     showToast,
     loc,
     isRtl,
@@ -113,34 +116,40 @@ export default function ContentAndEngagementModals(props) {
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
                 <Globe className="w-4 h-4 text-cyan-400" />
-                Select Language
+                {window.loc('انتخاب زبان برنامه', 'Select Language')}
               </h2>
               <button onClick={() => setIsLanguageModalOpen(false)} className="text-slate-400 hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-              {APP_LANGUAGES.map(lang => (
-                <button
-                  key={lang.code}
-                  onClick={() => {
-                    setCurrentLang(lang.code);
-                    setIsLanguageModalOpen(false);
-                    showToast(`Language changed to ${lang.name}`);
-                  }}
-                  className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition ${
-                    currentLang === lang.code
-                      ? 'bg-purple-600/20 border-purple-500 text-white font-bold'
-                      : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
-                  }`}
-                >
-                  <span className="flex items-center gap-2 text-xs">
-                    <span className="text-base">{lang.flag}</span>
-                    <span>{lang.name}</span>
-                  </span>
-                  {currentLang === lang.code && <Check className="w-4 h-4 text-purple-400" />}
-                </button>
-              ))}
+              {APP_LANGUAGES.map(lang => {
+                const isActive = currentAppLang === lang.code || currentAppLang === lang.name;
+                return (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      if (handleSelectLanguage) {
+                        handleSelectLanguage(lang);
+                      } else if (setCurrentAppLang) {
+                        setCurrentAppLang(lang.code);
+                      }
+                      setIsLanguageModalOpen(false);
+                    }}
+                    className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition ${
+                      isActive
+                        ? 'bg-purple-600/20 border-purple-500 text-white font-bold shadow-md shadow-purple-500/20'
+                        : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2 text-xs font-bold">
+                      <span className="text-base">{lang.flag}</span>
+                      <span>{lang.name}</span>
+                    </span>
+                    {isActive && <Check className="w-4 h-4 text-purple-400" />}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

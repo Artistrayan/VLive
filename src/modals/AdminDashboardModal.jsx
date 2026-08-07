@@ -634,18 +634,6 @@ export default function AdminDashboardModal(props) {
                     <div className="p-8 text-center rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                       <Video className="w-8 h-8 text-slate-600 mx-auto" />
                       <p className="font-bold text-slate-400">{window.loc('هیچ لایو در حال پخشی وجود ندارد', 'There is no live streaming')}</p>
-                      <button
-                        onClick={() => {
-                          setAdminLivesList([
-                            { id: 1042, title: window.loc('لایو موسیقی شبانه 🎸', 'Live night music 🎸'), streamer: 'Sara Miller', viewers: 3420, category: 'Music', live_type: 'standard', duration: '45m' },
-                            { id: 1043, title: window.loc('چت زنده ۱۸+ VIP 🔞', 'Live chat 18+ VIP 🔞'), streamer: 'Ali Streamer', viewers: 890, category: 'VIP Chat', live_type: 'adult', duration: '18m' }
-                          ]);
-                          showToast(window.loc('لیست لایوهای نمونه بازنشانی شد', 'The sample live list was reset'));
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-slate-800 text-pink-300 font-bold text-[10px]"
-                      >
-                        {window.loc('بازنشانی لایوهای نمونه', 'Reset sample live')}
-                      </button>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -1117,40 +1105,12 @@ export default function AdminDashboardModal(props) {
                       <h3 className="font-bold text-white text-sm">{window.loc('۱۱. نظارت و مدیریت محتوا (Content Moderation)', '11. Monitoring and managing content (Content Moderation)')}</h3>
                       <p className="text-[10px] text-slate-400">{window.loc('بررسی تصاویر پروفایل، لایو و محتوای ارسال شده توسط کاربران', 'Checking profile pictures, live and content sent by users')}</p>
                     </div>
-                    <button
-                      onClick={() => {
-                        const newModItem = {
-                          id: Date.now(),
-                          user: '@new_streamer',
-                          type: 'Banner Photo',
-                          mediaUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
-                          status: 'Pending Review'
-                        };
-                        setAdminModerationQueue(prev => [newModItem, ...prev]);
-                        showToast(window.loc('نمونه محتوای جدید برای بررسی اضافه شد', 'Sample media added for moderation'));
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center gap-1"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> {window.loc('افزودن نمونه محتوا', 'Add sample content')}
-                    </button>
                   </div>
 
                   {adminModerationQueue.length === 0 ? (
                     <div className="p-8 text-center rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                       <ShieldCheck className="w-8 h-8 text-emerald-400 mx-auto" />
                       <p className="font-bold text-slate-300">{window.loc('تمام محتواها بررسی شدند! هیچ محتوای معلقی وجود ندارد.', 'All contents have been checked! There is no pending content.')}</p>
-                      <button
-                        onClick={() => {
-                          setAdminModerationQueue([
-                            { id: 1, user: '@sahar_m', type: 'Profile Photo', mediaUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', status: 'Pending Review' },
-                            { id: 2, user: '@ali_streamer', type: 'Live Thumbnail', mediaUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', status: 'Pending Review' }
-                          ]);
-                          showToast(window.loc('صف نظارت بر محتوا بازنشانی گردید', 'The content monitoring queue has been reset'));
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-slate-800 text-pink-300 font-bold text-[10px]"
-                      >
-                        {window.loc('بازنشانی صف محتوا', 'Reset the content queue')}
-                      </button>
                     </div>
                   ) : (
                     <div className="space-y-2">
