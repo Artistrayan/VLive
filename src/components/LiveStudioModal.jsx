@@ -214,7 +214,92 @@ export default function LiveStudioModal({
         mediaStreamRef.current = null;
       }
     };
-  }, [isOpen, selectedCamera]);
+  }, [isOpen]);
+
+  // Switch between front and back camera seamlessly without re-requesting mic/full permissions
+  const toggleCameraFacing = async () => {
+    const isCurrentlyFront = !selectedCamera.toLowerCase().includes('back') && !selectedCamera.toLowerCase().includes('rear');
+    const nextCamLabel = isCurrentlyFront ? 'Back Camera (4K)' : 'Front Camera (HD)';
+    const nextFacingMode = isCurrentlyFront ? 'environment' : 'user';
+
+    setSelectedCamera(nextCamLabel);
+
+    if (!mediaStreamRef.current) {
+      initCameraAndStream();
+      return;
+    }
+
+    try {
+      // Keep existing live audio track so browser does not ask for microphone permission again
+      const existingAudioTrack = mediaStreamRef.current.getAudioTracks()[0];
+      const isAudioActive = existingAudioTrack && existingAudioTrack.readyState === 'live';
+
+      // Stop ONLY old video tracks
+      const oldVideoTracks = mediaStreamRef.current.getVideoTracks();
+      oldVideoTracks.forEach(t => t.stop());
+
+      let newVideoStream;
+      try {
+        newVideoStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: nextFacingMode },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+      } catch (e1) {
+        newVideoStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: nextFacingMode }
+        });
+      }
+
+      const newVideoTrack = newVideoStream.getVideoTracks()[0];
+      if (newVideoTrack) {
+        newVideoTrack.enabled = isCamEnabled;
+      }
+
+      const newStream = new MediaStream();
+      if (newVideoTrack) newStream.addTrack(newVideoTrack);
+      if (isAudioActive) {
+        newStream.addTrack(existingAudioTrack);
+      } else if (newVideoStream.getAudioTracks()[0]) {
+        newStream.addTrack(newVideoStream.getAudioTracks()[0]);
+      }
+
+      mediaStreamRef.current = newStream;
+      setMediaStream(newStream);
+
+      if (newVideoTrack) {
+        setLocalVideoTrack({
+          id: newVideoTrack.id,
+          kind: 'video',
+          source: 'camera',
+          mediaStreamTrack: newVideoTrack,
+          isMuted: !isCamEnabled,
+          published: true
+        });
+      }
+
+      showToast(window.loc(
+        isCurrentlyFront ? '🔄 دوربین پشت فعال شد' : '🔄 دوربین جلو فعال شد',
+        isCurrentlyFront ? '🔄 Back camera activated' : '🔄 Front camera activated'
+      ));
+
+    } catch (err) {
+      console.error('Camera flip error:', err);
+      showToast(window.loc('خطا در تغییر دوربین', 'Error switching camera'));
+    }
+  };
+
+  // Helper to attach mediaStream to video element reliably
+  const attachStreamToVideo = (el) => {
+    if (el && mediaStream && isCamEnabled) {
+      if (el.srcObject !== mediaStream) {
+        el.srcObject = mediaStream;
+      }
+      el.play().catch(e => console.warn('Video element play warning:', e));
+    }
+  };
 
   // Toggle Camera Track Mute/Unmute
   useEffect(() => {
@@ -242,16 +327,14 @@ export default function LiveStudioModal({
   // Bind Stream to PRE_LIVE Preview Video Ref
   useEffect(() => {
     if (studioPhase === 'PRE_LIVE' && previewVideoRef.current && mediaStream && isCamEnabled) {
-      previewVideoRef.current.srcObject = mediaStream;
-      previewVideoRef.current.play().catch(e => console.warn('Preview video play warning:', e));
+      attachStreamToVideo(previewVideoRef.current);
     }
   }, [mediaStream, isCamEnabled, studioPhase]);
 
   // Bind Stream to LIVE Broadcast Video Ref
   useEffect(() => {
     if (studioPhase === 'LIVE' && liveVideoRef.current && mediaStream && isCamEnabled) {
-      liveVideoRef.current.srcObject = mediaStream;
-      liveVideoRef.current.play().catch(e => console.warn('Live video play warning:', e));
+      attachStreamToVideo(liveVideoRef.current);
     }
   }, [mediaStream, isCamEnabled, studioPhase]);
 
@@ -443,7 +526,10 @@ export default function LiveStudioModal({
               {isCamEnabled && cameraPermission === 'granted' && mediaStream ? (
                 <div className="relative w-full h-full">
                   <video
-                    ref={previewVideoRef}
+                    ref={(el) => {
+                      previewVideoRef.current = el;
+                      attachStreamToVideo(el);
+                    }}
                     autoPlay
                     playsInline
                     muted
@@ -522,14 +608,12 @@ export default function LiveStudioModal({
               </button>
 
               <button
-                onClick={() => {
-                  const nextCam = selectedCamera.includes('Front') ? 'Back Camera (4K)' : 'Front Camera (HD)';
-                  setSelectedCamera(nextCam);
-                }}
-                className="py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-bold flex items-center justify-center gap-1 hover:text-white"
+                onClick={toggleCameraFacing}
+                className="py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-bold flex items-center justify-center gap-1 hover:text-white transition active:scale-95"
+                title={window.loc('تغییر بین دوربین جلو و پشت', 'Switch front and back camera')}
               >
                 <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="truncate">{selectedCamera.includes('Front') ? window.loc('دوربین پشت', 'Back Cam') : window.loc('دوربین جلو', 'Front Cam')}</span>
+                <span className="truncate">{selectedCamera.toLowerCase().includes('front') ? window.loc('دوربین پشت 🔄', 'Back Cam 🔄') : window.loc('دوربین جلو 🔄', 'Front Cam 🔄')}</span>
               </button>
 
               <button
@@ -704,7 +788,10 @@ export default function LiveStudioModal({
           <div className="relative flex-1 bg-slate-900 overflow-hidden">
             {isCamEnabled && mediaStream ? (
               <video
-                ref={liveVideoRef}
+                ref={(el) => {
+                  liveVideoRef.current = el;
+                  attachStreamToVideo(el);
+                }}
                 autoPlay
                 playsInline
                 muted
@@ -885,13 +972,13 @@ export default function LiveStudioModal({
               {isMicEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
             </button>
 
-            {/* Switch Camera */}
+            {/* Switch Camera Facing */}
             <button
-              onClick={() => setIsMirrored(!isMirrored)}
-              className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white shrink-0"
-              title="Switch Mirror"
+              onClick={toggleCameraFacing}
+              className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-cyan-400 hover:border-cyan-500/50 transition shrink-0 active:scale-95"
+              title={window.loc('تغییر دوربین جلو / پشت', 'Switch Front / Rear Camera')}
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-4 h-4 text-cyan-400" />
             </button>
 
             {/* Beauty Filter */}
