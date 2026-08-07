@@ -22,65 +22,93 @@ const safeLoc = (fa, en) => {
 
 // DEFAULT CONFIGURABLE ECONOMY SETTINGS (NO HARDCODED VALUES)
 const DEFAULT_ECONOMY_CONFIG = {
-  // Coin Purchase Packages (Users buy Coins with Real Money / USDT)
+  // 1. Coin Purchase Packages (Users buy Coins with Real Money / USDT)
   coinPackages: [
-    { id: 'cp_100', coins: 100, priceUsd: 1.99, badge: null, bonusPercent: 0 },
-    { id: 'cp_500', coins: 500, priceUsd: 8.99, badge: 'Popular 🔥', bonusPercent: 5 },
-    { id: 'cp_1000', coins: 1000, priceUsd: 16.99, badge: 'Best Value 💎', bonusPercent: 10 },
-    { id: 'cp_2500', coins: 2500, priceUsd: 39.99, badge: 'VIP Choice 👑', bonusPercent: 15 },
-    { id: 'cp_5000', coins: 5000, priceUsd: 74.99, badge: 'Super Saver 🚀', bonusPercent: 20 },
-    { id: 'cp_10000', coins: 10000, priceUsd: 139.99, badge: 'Whale Master 🐋', bonusPercent: 25 }
+    { id: 'cp_100', coins: 100, priceUsd: 0.99, badge: null, bonusPercent: 0 },
+    { id: 'cp_550', coins: 550, priceUsd: 4.99, badge: 'Popular 🔥', bonusPercent: 10 },
+    { id: 'cp_1200', coins: 1200, priceUsd: 9.99, badge: 'Best Value 💎', bonusPercent: 20 },
+    { id: 'cp_2600', coins: 2600, priceUsd: 19.99, badge: 'Pro Choice 👑', bonusPercent: 30 },
+    { id: 'cp_7000', coins: 7000, priceUsd: 49.99, badge: 'Super Saver 🚀', bonusPercent: 40 },
+    { id: 'cp_15000', coins: 15000, priceUsd: 99.99, badge: 'Whale Master 🐋', bonusPercent: 50 }
   ],
 
-  // Gift Catalog (Coin Price -> Streamer Earns Diamonds)
+  // 2. Gift Catalog (Coin Price -> Streamer Earns 70% Diamonds)
   giftCatalog: [
-    { id: 'g_rose', get name() { return safeLoc('گل رز 🌹', 'Rose 🌹'); }, icon: '🌹', coins: 10, diamonds: 7, category: 'Basic', popular: true, animation: 'sparkle' },
-    { id: 'g_heart', get name() { return safeLoc('قلب درخشان 💖', 'Shining heart 💖'); }, icon: '💖', coins: 50, diamonds: 38, category: 'Popular', popular: true, animation: 'heart' },
-    { id: 'g_fireworks', get name() { return safeLoc('آتش‌بازی 🎆', 'Fireworks 🎆'); }, icon: '🎆', coins: 150, diamonds: 115, category: 'Special', popular: false, animation: 'fireworks' },
-    { id: 'g_crown', get name() { return safeLoc('تاج VIP 👑', 'VIP Crown 👑'); }, icon: '👑', coins: 500, diamonds: 380, category: 'VIP', popular: true, animation: 'crown' },
-    { id: 'g_supercar', get name() { return safeLoc('سوپر اسپرت 🏎️', 'Super sports 🏎️'); }, icon: '🏎️', coins: 2500, diamonds: 1900, category: 'Super', popular: true, animation: 'car' },
-    { id: 'g_yacht', get name() { return safeLoc('کشتی تفریحی 🛥️', 'Cruise ship 🛥️'); }, icon: '🛥️', coins: 5000, diamonds: 3800, category: 'Luxury', popular: false, animation: 'yacht' },
-    { id: 'g_castle', get name() { return safeLoc('قصر رویایی 🏰', 'Dream Palace 🏰'); }, icon: '🏰', coins: 10000, diamonds: 7600, category: 'Legendary', popular: false, animation: 'castle' }
+    // Basic Gifts
+    { id: 'g_heart', get name() { return safeLoc('قلب ❤️', 'Heart ❤️'); }, icon: '❤️', coins: 10, diamonds: 7, category: 'Basic', active: true, maxDaily: 0 },
+    { id: 'g_like', get name() { return safeLoc('لایک 👍', 'Like 👍'); }, icon: '👍', coins: 20, diamonds: 14, category: 'Basic', active: true, maxDaily: 0 },
+    { id: 'g_rose', get name() { return safeLoc('گل رز 🌹', 'Rose 🌹'); }, icon: '🌹', coins: 50, diamonds: 35, category: 'Basic', active: true, maxDaily: 0 },
+    { id: 'g_coffee', get name() { return safeLoc('قهوه ☕', 'Coffee ☕'); }, icon: '☕', coins: 100, diamonds: 70, category: 'Basic', active: true, maxDaily: 0 },
+    { id: 'g_chocolate', get name() { return safeLoc('شکلات 🍫', 'Chocolate 🍫'); }, icon: '🍫', coins: 250, diamonds: 175, category: 'Basic', active: true, maxDaily: 0 },
+    
+    // Premium Gifts
+    { id: 'g_bouquet', get name() { return safeLoc('دسته گل 💐', 'Flower Bouquet 💐'); }, icon: '💐', coins: 500, diamonds: 350, category: 'Premium', active: true, maxDaily: 0 },
+    { id: 'g_crown', get name() { return safeLoc('تاج سلطنتی 👑', 'Crown 👑'); }, icon: '👑', coins: 1000, diamonds: 700, category: 'Premium', active: true, maxDaily: 0 },
+    { id: 'g_diamond', get name() { return safeLoc('الماس درخشان 💎', 'Diamond Gift 💎'); }, icon: '💎', coins: 2500, diamonds: 1750, category: 'Premium', active: true, maxDaily: 0 },
+    { id: 'g_luxury', get name() { return safeLoc('هدیه لاکچری 🎁', 'Luxury Gift 🎁'); }, icon: '🎁', coins: 5000, diamonds: 3500, category: 'Premium', active: true, maxDaily: 0 },
+
+    // Ultra Gifts
+    { id: 'g_car', get name() { return safeLoc('ماشین اسپرت 🏎️', 'Premium Car 🏎️'); }, icon: '🏎️', coins: 10000, diamonds: 7000, category: 'Ultra', active: true, maxDaily: 0 },
+    { id: 'g_super', get name() { return safeLoc('سوپر هدیه 🚀', 'Super Gift 🚀'); }, icon: '🚀', coins: 25000, diamonds: 17500, category: 'Ultra', active: true, maxDaily: 0 }
   ],
 
-  // VIP Membership Subscription Pricing (in Coins)
+  // 3. VIP Membership Subscription Pricing (in Coins)
   vipPricing: {
-    monthly: 200,
-    threeMonths: 500,
-    sixMonths: 900,
-    yearly: 1600
+    monthly: 499,
+    threeMonths: 1299,
+    sixMonths: 2299,
+    yearly: 3999
   },
 
-  // Adult VIP (18+) Subscription Pricing (in Coins)
+  // 4. Adult VIP (18+) Subscription Pricing (in Coins, completely separate from normal VIP)
   adultVipPricing: {
-    monthly: 350,
-    threeMonths: 850,
-    yearly: 2800
+    monthly: 799,
+    threeMonths: 2099,
+    sixMonths: 3799,
+    yearly: 6499
   },
 
-  // Audio / Video Call Rates (in Coins)
+  // 5. Audio / Video Call Rates (in Coins)
   callRates: {
     audioCostPerMin: 15,
-    videoCostPerMin: 25,
-    adultVideoCostPerMin: 40,
-    freeFirstSeconds: 20,
-    vipDiscountPercent: 20
+    videoCostPerMin: 30,
+    freeFirstSeconds: 20, // First 20s free for video calls
+    minBillingMinutes: 1,
+    incrementSeconds: 30
   },
 
-  // Promotion & Boost Rates (in Coins)
+  // 6. Boost Rates (in Coins)
   boostRates: {
-    profileBoostCost: 100,
-    liveBoostCost: 300,
-    storyPromoteCost: 50
+    profileBoost1h: 100,
+    profileBoost6h: 450,
+    profileBoost24h: 1200,
+    liveBoost30m: 150,
+    liveBoost1h: 250,
+    liveBoost3h: 600
   },
 
-  // Platform Commission & Streamer Diamond Financial Rules
+  // 7. Platform Commission & Streamer Diamond Financial Rules
   commissionRules: {
-    platformCommissionPercent: 24, // 24% platform fee, 76% streamer share
-    diamondToUsdRate: 0.01,         // 100 Diamonds = $1.00 USDT
-    minWithdrawalUsdt: 50,
+    platformCommissionPercent: 30, // 30% platform gross margin
+    coinToDiamondPercent: 70,       // 100 Coins spent on gift = 70 Diamonds earned by streamer
+    diamondToUsdRate: 0.005,        // 100 Diamonds = $0.50 (1 Diamond = $0.005)
+    minWithdrawalDiamonds: 10000,   // Minimum 10,000 Diamonds ($50)
     maxWithdrawalUsdt: 10000
-  }
+  },
+
+  // 8. Daily Reward Consecutive Schedule (Coins)
+  dailyRewardSchedule: [
+    { day: 1, coins: 10, icon: '🪙' },
+    { day: 2, coins: 15, icon: '🎁' },
+    { day: 3, coins: 20, icon: '⚡' },
+    { day: 4, coins: 25, icon: '🔥' },
+    { day: 5, coins: 35, icon: '🌟' },
+    { day: 6, coins: 50, icon: '👑' },
+    { day: 7, coins: 100, icon: '💎', bonusTitle: 'Weekly Champion Box 🏆' }
+  ],
+
+  // 9. Referral Settings
+  referralRewardCoins: 100
 };
 
 class EconomyService {
@@ -198,8 +226,8 @@ class EconomyService {
 
   // Calculate Streamer Diamonds & Commission from Coins
   calculateGiftEarnings(coinsAmount) {
-    const commissionPercent = this.config.commissionRules.platformCommissionPercent || 24;
-    const streamerSharePercent = 100 - commissionPercent;
+    const commissionPercent = this.config.commissionRules?.platformCommissionPercent || 30;
+    const streamerSharePercent = this.config.commissionRules?.coinToDiamondPercent || 70;
     const diamondsEarned = Math.floor((coinsAmount * streamerSharePercent) / 100);
     const platformCommissionCoins = coinsAmount - diamondsEarned;
 
@@ -208,6 +236,91 @@ class EconomyService {
       diamondsEarned,
       platformCommissionCoins,
       commissionPercent
+    };
+  }
+
+  // Calculate Call Cost with 20s Free Period and 30s Increments
+  calculateCallCost(callType, durationSeconds, isVip = false) {
+    const rates = this.config.callRates || DEFAULT_ECONOMY_CONFIG.callRates;
+    const freeSeconds = (callType === 'video' || callType === 'adult_video') ? (rates.freeFirstSeconds || 20) : 0;
+
+    let billableSeconds = Math.max(0, durationSeconds - freeSeconds);
+    if (billableSeconds === 0) {
+      return { costCoins: 0, billableSeconds: 0, isFreeGrace: true };
+    }
+
+    let ratePerMin = rates.videoCostPerMin || 30;
+    if (callType === 'audio' || callType === 'voice') ratePerMin = rates.audioCostPerMin || 15;
+
+    let totalCost = 0;
+    if (billableSeconds <= 60) {
+      totalCost = ratePerMin;
+    } else {
+      const remainingSecs = billableSeconds - 60;
+      const extra30sChunks = Math.ceil(remainingSecs / 30);
+      totalCost = ratePerMin + extra30sChunks * (ratePerMin / 2);
+    }
+
+    return {
+      costCoins: Math.round(totalCost),
+      billableSeconds,
+      isFreeGrace: false,
+      ratePerMin
+    };
+  }
+
+  // Daily Reward 7-Day Consecutive Streak Evaluator
+  getDailyRewardStatus(lastClaimTs, currentStreak) {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+
+    let lastClaimDateStr = null;
+    if (lastClaimTs && Number(lastClaimTs) > 0) {
+      lastClaimDateStr = new Date(Number(lastClaimTs)).toISOString().split('T')[0];
+    }
+
+    const yesterday = new Date(now.getTime() - 86400000);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    const schedule = this.config.dailyRewardSchedule || DEFAULT_ECONOMY_CONFIG.dailyRewardSchedule;
+
+    if (lastClaimDateStr === todayStr) {
+      const tomorrowUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+      const msUntilNext = Math.max(0, tomorrowUtc.getTime() - now.getTime());
+
+      return {
+        canClaim: false,
+        alreadyClaimedToday: true,
+        streak: currentStreak || 1,
+        nextDay: (currentStreak % 7) + 1,
+        msUntilNext,
+        rewardToday: schedule[Math.max(0, (currentStreak || 1) - 1)] || schedule[0],
+        schedule
+      };
+    }
+
+    let nextStreak = 1;
+    let missedDay = false;
+
+    if (!lastClaimDateStr) {
+      nextStreak = 1;
+    } else if (lastClaimDateStr === yesterdayStr) {
+      nextStreak = (currentStreak >= 7) ? 1 : (currentStreak + 1);
+    } else {
+      // Missed at least one calendar day -> STRICT RESET TO DAY 1
+      nextStreak = 1;
+      missedDay = true;
+    }
+
+    const availableReward = schedule[nextStreak - 1] || schedule[0];
+
+    return {
+      canClaim: true,
+      alreadyClaimedToday: false,
+      missedDay,
+      streak: nextStreak,
+      rewardToday: availableReward,
+      schedule
     };
   }
 

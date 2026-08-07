@@ -47,7 +47,7 @@ import { LifeBuoy, ShoppingBag, Video, Shield, ShieldCheck, Star, Wallet, User, 
   Home, BarChart2, Tv, Megaphone, Target, Paperclip, Pin, Reply, MoreVertical,
   VolumeX, Trash2, Archive, FileText, CheckCheck, Laugh, Forward, SmilePlus,
   LockKeyhole, SendHorizontal, MessageCircle, Info, PhoneIncoming, PhoneOutgoing,
-  PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert, Shuffle, BarChart3, Palette, LogIn
+  PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert, Shuffle, BarChart3, Palette, LogIn, HelpCircle
 } from 'lucide-react';
 
 // Default Real Users seed stored in local storage
@@ -1618,10 +1618,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
-    return [
-      { id: 'T-101', user: 'Sahar Miller', subject: loc('Coin Purchase Not Credited (عدم واریز سکه)', 'Coin Purchase Not Credited'), category: 'Wallet', status: 'Open', message: 'I bought 5000 coins via TRC20 but balance did not update automatically.' },
-      { id: 'T-102', user: 'Ali Reza', subject: loc('Stream Key Connection Drop (قطع ارتباط لایو)', 'Stream Key Connection Drop'), category: 'Live', status: 'Open', message: 'Live stream disconnected twice during last broadcast.' }
-    ];
+    return [];
   });
   const [adminTicketFilter, setAdminTicketFilter] = useState('All');
 
@@ -1635,9 +1632,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       } catch (e) {}
     }
     return [
-      { id: 'adm_super', name: 'Rayan (Super Admin)', telegramId: '8973478139', username: 'Rayan_Super_Admin', password: 'Rayan_0935', role: 'Super Admin', permissions: { users: true, live: true, reports: true, wallet: true, security: true, ads: true, support: true, logs: true }, addedAt: '2026-01-01' },
-      { id: 'adm_2', name: 'Sarah Mod', telegramId: '987654321', username: 'Mod_Sarah', password: 'Sarah_Pass123', role: 'Live Moderator', permissions: { users: false, live: true, reports: true, wallet: false, security: false, ads: false, support: true, logs: false }, addedAt: '2026-03-22' },
-      { id: 'adm_3', name: 'Finance Agent Ali', telegramId: '543216789', username: 'Finance_Ali', password: 'Ali_Pass456', role: 'Financial Inspector', permissions: { users: false, live: false, reports: false, wallet: true, security: false, ads: false, support: false, logs: true }, addedAt: '2026-05-18' }
+      { id: 'adm_super', name: 'Rayan (Super Admin)', telegramId: '8973478139', username: 'Rayan_Super_Admin', password: 'Rayan_0935', role: 'Super Admin', permissions: { users: true, live: true, reports: true, wallet: true, security: true, ads: true, support: true, logs: true }, addedAt: '2026-01-01' }
     ];
   });
 
@@ -2205,89 +2200,55 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     }));
   };
 
-  // Handler for Claiming Today's Daily Check-In & Streak Reward
+  // Handler for Claiming Today's Daily Check-In & Streak Reward (7-Day Unified Economy System)
   const handleClaimDailyCheckIn = () => {
-    const nowTs = Date.now();
-    const elapsedMs = nowTs - lastRewardClaimTimestamp;
-
-    // 24-Hour Cooldown Validation
-    if (elapsedMs < 24 * 60 * 60 * 1000 && lastRewardClaimTimestamp > 0) {
-      const remainingMs = 24 * 3600 * 1000 - elapsedMs;
-      const hours = Math.floor(remainingMs / (1000 * 60 * 60));
-      const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
-      showToast(`⚠️ Daily reward already claimed today! Next reward available in ${hours}h ${mins}m.`);
+    const status = economyService.getDailyRewardStatus(lastRewardClaimTimestamp, dailyStreak);
+    if (!status.canClaim) {
+      showToast(loc('⚠️ پاداش امروز قبلاً دریافت شده است!', '⚠️ Daily reward already claimed today!'));
       return;
     }
 
-    // Calculate next streak day (1 to 30)
-    let nextStreak = dailyStreak;
-    if (elapsedMs > 48 * 60 * 60 * 1000) {
-      nextStreak = 1; // Reset streak if missed over 48 hours
-    } else if (lastRewardClaimTimestamp > 0) {
-      nextStreak = (dailyStreak % 30) + 1;
-    }
+    const nowTs = Date.now();
+    const nextStreak = status.streak;
+    const rewardItem = status.rewardToday;
+    const coins = rewardItem.coins;
 
-    // Determine Rewards based on streak day
-    let coins = 50 + (nextStreak * 20);
-    let diamonds = 10 + Math.floor(nextStreak * 2);
-    let bonusTitle = null;
-    let isChestBonus = false;
-
-    if (nextStreak === 7) {
-      coins = 1000;
-      diamonds = 100;
-      bonusTitle = '3-Day VIP Access Trial 🌟';
-      isChestBonus = true;
-    } else if (nextStreak === 14) {
-      coins = 1500;
-      diamonds = 150;
-      bonusTitle = '5-Day VIP Access 🌟';
-      isChestBonus = true;
-    } else if (nextStreak === 21) {
-      coins = 2000;
-      diamonds = 200;
-      bonusTitle = 'Gold Crown Profile Frame 👑';
-      isChestBonus = true;
-    } else if (nextStreak === 30) {
-      coins = 5000;
-      diamonds = 500;
-      bonusTitle = '30-Day VIP Access 👑';
-      isChestBonus = true;
-    } else if (nextStreak % 3 === 0) {
-      bonusTitle = 'Gift Coupon 🎁';
-    }
-
-    // Apply Rewards
+    // Apply Coins
     setUserCoins(c => c + coins);
-    setUserDiamonds(d => d + diamonds);
     setDailyStreak(nextStreak);
     setLastRewardClaimTimestamp(nowTs);
-    setClaimedCheckInDays(prev => [...prev, nextStreak]);
 
     safeStorage.setItem('vlive_daily_streak', String(nextStreak));
     safeStorage.setItem('vlive_last_reward_claim_ts', String(nowTs));
 
-    // Prepare unlocked reward display
-    const rewardPayload = {
+    // Record immutable financial transaction
+    const tx = economyService.recordTransaction({
+      type: 'DAILY_REWARD',
+      userId: currentUsername || 'user_rayan',
+      username: userName || 'Rayan',
+      coinAmount: coins,
+      item: loc(`پاداش ورود روز ${nextStreak}`, `Day ${nextStreak} Daily Check-In Reward`),
+      status: 'Completed'
+    });
+
+    setFinancialTransactionsList(prev => [tx, ...prev]);
+
+    // Prepare unlocked reward display banner in modal
+    setUnlockedRewardData({
       day: nextStreak,
-      title: isChestBonus ? `Day ${nextStreak} Mega Chest 🏆` : `Day ${nextStreak} Reward 🎁`,
+      title: loc(`پاداش روز ${nextStreak} 🎁`, `Day ${nextStreak} Reward 🎁`),
       coins,
-      diamonds,
-      bonusTitle,
-      icon: isChestBonus ? '🏆' : (nextStreak % 2 === 0 ? '💎' : '🪙')
-    };
+      diamonds: 0,
+      icon: rewardItem.icon || '🪙'
+    });
 
-    setUnlockedRewardData(rewardPayload);
-    setIsRewardOpeningModalOpen(true);
-
-    // Save in history
+    // Save in reward history
     setDailyRewardHistory(prev => [{
       id: `RWD-${Date.now()}`,
       day: nextStreak,
-      rewardTitle: rewardPayload.title,
+      rewardTitle: `Day ${nextStreak} Reward 🎁`,
       coins,
-      diamonds,
-      bonus: bonusTitle,
+      diamonds: 0,
       date: 'Just now'
     }, ...prev]);
 
@@ -2296,14 +2257,16 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       id: Date.now(),
       type: 'system',
       group: 'today',
-      title: '🎁 Daily Reward Claimed!',
-      body: `You received +${coins} Coins and +${diamonds} Diamonds for Day ${nextStreak} streak!${bonusTitle ? ` Bonus: ${bonusTitle}` : ''}`,
+      title: loc('🎁 پاداش روزانه دریافت شد!', '🎁 Daily Reward Claimed!'),
+      body: loc(`شما +${coins} سکه برای زنجیره روز ${nextStreak} دریافت کردید!`, `You received +${coins} Coins for Day ${nextStreak} streak!`),
       time: 'Just now',
       unread: true
     }, ...prev]);
 
-    showToast(`🎉 Claimed Day ${nextStreak} Reward (+${coins} Coins & +${diamonds} Diamonds)!`);
+    showToast(loc(`🎉 پاداش روز ${nextStreak} (+${coins} سکه 🪙) واریز شد!`, `🎉 Day ${nextStreak} Reward (+${coins} Coins 🪙) claimed!`));
   };
+
+  const handleClaimDailyRewardAction = handleClaimDailyCheckIn;
 
   // Handler for Claiming Bonus Mission
   const handleClaimBonusMission = () => {
@@ -6415,60 +6378,137 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         </div>
       )}
 
-      {/* DAILY REWARD MYSTERY CHEST ANIMATED UNLOCK OVERLAY MODAL */}
-      {isRewardOpeningModalOpen && unlockedRewardData && (
-        <div className="fixed inset-0 z-[110] bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-          <div className="w-full max-w-sm card-3d p-6 border-2 border-amber-400/80 bg-gradient-to-b from-slate-900 via-amber-950/40 to-slate-950 rounded-3xl text-center space-y-5 shadow-[0_0_80px_rgba(245,158,11,0.4)] relative overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-400/20 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="relative z-10 space-y-3">
-              <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-amber-500 via-yellow-300 to-amber-600 p-0.5 shadow-xl flex items-center justify-center animate-bounce">
-                <div className="w-full h-full bg-slate-950 rounded-[22px] flex items-center justify-center text-4xl">
-                  {unlockedRewardData.icon}
+      {/* 7-DAY CONSECUTIVE DAILY REWARD MODAL */}
+      {isRewardOpeningModalOpen && (() => {
+        const rewardStatus = economyService.getDailyRewardStatus(lastRewardClaimTimestamp, dailyStreak);
+        const schedule = rewardStatus.schedule;
+
+        return (
+          <div className="fixed inset-0 z-[110] bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-5 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+            <div className="w-full max-w-lg card-3d p-5 sm:p-6 border-2 border-amber-500/60 bg-slate-900 rounded-3xl space-y-4 shadow-[0_0_60px_rgba(245,158,11,0.3)] relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-amber-500/30 pb-3 relative z-10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-600 p-0.5 shadow-md flex items-center justify-center text-xl">
+                    🎁
+                  </div>
+                  <div>
+                    <h2 className="text-base font-black bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 bg-clip-text text-transparent">
+                      {loc('پاداش ورود روزانه متوالی ۷ روزه', '7-Day Consecutive Daily Reward')}
+                    </h2>
+                    <p className="text-[11px] text-slate-300 font-medium">
+                      {loc('مجموع پاداش هفتگی: ۲۵۵ سکه 🪙', 'Total weekly reward: 255 Coins 🪙')}
+                    </p>
+                  </div>
                 </div>
+                <button
+                  onClick={() => setIsRewardOpeningModalOpen(false)}
+                  className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              <div>
-                <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 text-[10px] font-black uppercase tracking-wider">
-                  Day {unlockedRewardData.day} Reward Unlocked 🎉
-                </span>
-                <h3 className="text-xl font-black text-white mt-1.5 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 bg-clip-text text-transparent">
-                  {unlockedRewardData.title}
-                </h3>
+              {/* Missed Day Reset Warning */}
+              {rewardStatus.missedDay && (
+                <div className="p-3 rounded-2xl bg-amber-950/60 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center gap-2">
+                  <span className="text-base">⚠️</span>
+                  <span>{loc('به دلیل عدم ورود در روز گذشته، زنجیره به روز اول بازنشانی شد.', 'Streak reset to Day 1 because yesterday was missed.')}</span>
+                </div>
+              )}
+
+              {/* Unlocked Reward Celebration Banner */}
+              {unlockedRewardData && (
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border border-amber-400/50 text-center space-y-1 animate-bounce">
+                  <span className="text-xs font-black text-amber-300">{unlockedRewardData.title}</span>
+                  <p className="text-xs text-white font-mono font-bold">
+                    +{unlockedRewardData.coins} Coins 🪙 {unlockedRewardData.diamonds ? `+${unlockedRewardData.diamonds} Diamonds 💎` : ''}
+                  </p>
+                </div>
+              )}
+
+              {/* 7 Days Schedule Cards Grid */}
+              <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 py-1">
+                {schedule.map((item) => {
+                  const dayNum = item.day;
+                  let isClaimed = false;
+                  let isCurrentAvailable = false;
+                  let isLocked = false;
+
+                  if (rewardStatus.alreadyClaimedToday) {
+                    if (dayNum <= rewardStatus.streak) {
+                      isClaimed = true;
+                    } else {
+                      isLocked = true;
+                    }
+                  } else {
+                    if (dayNum < rewardStatus.streak) {
+                      isClaimed = true;
+                    } else if (dayNum === rewardStatus.streak) {
+                      isCurrentAvailable = true;
+                    } else {
+                      isLocked = true;
+                    }
+                  }
+
+                  return (
+                    <div
+                      key={dayNum}
+                      className={`p-2.5 rounded-2xl border text-center flex flex-col justify-between items-center transition-all ${
+                        isCurrentAvailable
+                          ? 'bg-gradient-to-b from-amber-500/30 via-slate-900 to-amber-950/50 border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.4)] scale-105'
+                          : isClaimed
+                          ? 'bg-slate-950/80 border-emerald-500/40 text-slate-400'
+                          : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-70'
+                      }`}
+                    >
+                      <span className="text-[10px] font-black text-slate-300 block">
+                        {loc(`روز ${dayNum}`, `Day ${dayNum}`)}
+                      </span>
+                      <span className="text-xl my-1 block">{item.icon}</span>
+                      <span className="text-[11px] font-mono font-black text-amber-300 block">
+                        +{item.coins}
+                      </span>
+                      <span className="text-[9px] font-bold mt-1">
+                        {isClaimed && <span className="text-emerald-400">✓ {loc('دریافت شد', 'Claimed')}</span>}
+                        {isCurrentAvailable && <span className="text-amber-300 animate-pulse">✨ {loc('آماده', 'Ready')}</span>}
+                        {isLocked && <span className="text-slate-500">🔒</span>}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* Reward breakdown */}
-              <div className="p-4 rounded-2xl bg-slate-950/90 border border-amber-500/30 space-y-2 text-xs">
-                <div className="flex items-center justify-between font-mono font-bold text-amber-300">
-                  <span>{loc('Coins Received (سکه):', 'Coins Received:')}</span>
-                  <span className="text-sm text-amber-400">+{unlockedRewardData.coins.toLocaleString()} 🪙</span>
-                </div>
-                <div className="flex items-center justify-between font-mono font-bold text-cyan-300 border-t border-slate-800 pt-1.5">
-                  <span>{loc('Diamonds Received (الماس):', 'Diamonds Received:')}</span>
-                  <span className="text-sm text-cyan-400">+{unlockedRewardData.diamonds.toLocaleString()} 💎</span>
-                </div>
-                {unlockedRewardData.bonusTitle && (
-                  <div className="flex items-center justify-between font-bold text-purple-300 border-t border-slate-800 pt-1.5">
-                    <span>{loc('Bonus Perk (بونوس):', 'Bonus Perk:')}</span>
-                    <span className="text-xs text-purple-400">{unlockedRewardData.bonusTitle}</span>
+              {/* Main Action Button */}
+              <div className="pt-2">
+                {rewardStatus.canClaim ? (
+                  <button
+                    onClick={() => {
+                      handleClaimDailyRewardAction();
+                    }}
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>{loc(`دریافت پاداش امروز (+${rewardStatus.rewardToday.coins} سکه 🪙)`, `Claim Today's Reward (+${rewardStatus.rewardToday.coins} Coins 🪙)`)}</span>
+                  </button>
+                ) : (
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+                    <span className="text-xs font-bold text-emerald-400 flex items-center justify-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4" />
+                      {loc('پاداش امروز دریافت شد!', 'Today\'s reward claimed!')}
+                    </span>
+                    <p className="text-[11px] text-slate-400 font-mono">
+                      {loc('پاداش بعدی فردا ساعت ۰۰:۰۰ UTC فعال می‌شود', 'Next reward unlocks tomorrow at 00:00 UTC')}
+                    </p>
                   </div>
                 )}
               </div>
-
-              <button
-                onClick={() => {
-                  setIsRewardOpeningModalOpen(false);
-                  showToast('🎉 Daily rewards added to your wallet balance!');
-                }}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                {loc('Claim & Continue (دریافت و ادامه)', 'Claim & Continue')}
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* MODAL 3: WITHDRAWAL / PAYOUT MODAL */}
       {isWithdrawModalOpen && (

@@ -361,6 +361,7 @@ export default function AdminDashboardModal(props) {
                 {[
                   { id: 'dashboard', label: window.loc('📊 داشبورد', '📊 Dashboard') },
                   { id: 'finance', label: window.loc('💵 مرکز امور مالی', '💵 Finance Center') },
+                  { id: 'economy', label: window.loc('🏦 اقتصاد و قیمت‌گذاری', '🏦 Economy & Pricing') },
                   { id: 'users', label: window.loc('👥 کاربران', '👥 Users') },
                   { id: 'live', label: window.loc('🎥 لایوها', '🎥 Live Streams') },
                   { id: 'reports', label: window.loc('💬 گزارش‌ها', '💬 Reports') },
@@ -408,21 +409,31 @@ export default function AdminDashboardModal(props) {
               {adminActiveTab === 'dashboard' && (
                 <div className="space-y-4">
                   {/* URGENT ALERT BANNER */}
-                  <div className="p-3.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-2 text-rose-200">
-                      <AlertTriangle className="w-5 h-5 text-rose-400 animate-bounce" />
+                  {adminReportsList.filter(r => r.status === 'Pending' || r.status === 'pending').length > 0 ? (
+                    <div className="p-3.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-2 text-rose-200">
+                        <AlertTriangle className="w-5 h-5 text-rose-400 animate-bounce" />
+                        <div>
+                          <p className="font-bold">{window.loc('🚨 هشدار فوریت: گزارش‌های تخلف جدید ثبت شده است!', '🚨 Urgent warning: new violation reports submitted!')}</p>
+                          <span className="text-[10px] text-slate-300">{adminReportsList.filter(r => r.status === 'Pending' || r.status === 'pending').length} {window.loc('گزارش بررسی‌نشده نیاز به اقدام فوری دارد.', 'unreviewed reports require immediate action.')}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setAdminActiveTab('reports')}
+                        className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] whitespace-nowrap"
+                      >
+                        {window.loc('بررسی گزارش‌ها', 'Review reports')}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-emerald-500/30 flex items-center gap-2 text-xs text-emerald-300">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                       <div>
-                        <p className="font-bold">{window.loc('🚨 هشدار فوریت: افزایش غیرعادی گزارش‌های تخلف!', '🚨 Urgent warning: unusual increase in violation reports!')}</p>
-                        <span className="text-[10px] text-slate-300">{window.loc('لایو استریم شماره ۱۰۴۲ در ۵ دقیقه گذشته ۱۴ گزارش دریافت کرده است. بررسی فوری لازم است.', 'Live stream number 1042 has received 14 reports in the last 5 minutes. Immediate investigation is required.')}</span>
+                        <p className="font-bold">{window.loc('🟢 وضعیت سیستم و لایوها عادی است', '🟢 System and live status normal')}</p>
+                        <span className="text-[10px] text-slate-400">{window.loc('هیچ گزارش معوقه یا تخلف بررسی‌نشده‌ای وجود ندارد.', 'There are no pending reports or unreviewed violations.')}</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setAdminActiveTab('live')}
-                      className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] whitespace-nowrap"
-                    >
-                      {window.loc('بررسی لایو استریم', 'Live stream review')}
-                    </button>
-                  </div>
+                  )}
 
                   {/* 7 REAL-TIME STAT CARDS */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
@@ -430,15 +441,15 @@ export default function AdminDashboardModal(props) {
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
                         <Users className="w-3.5 h-3.5 text-cyan-400" /> {window.loc('کل کاربران', 'Total users')}
                       </span>
-                      <p className="text-base font-black text-white">{adminUsersList.length + 12836}</p>
-                      <span className="text-[9px] text-emerald-400">{window.loc('+۱۴٪ این هفته', '+14% this week')}</span>
+                      <p className="text-base font-black text-white">{(adminUsersList || []).length}</p>
+                      <span className="text-[9px] text-slate-400">{window.loc('ثبت‌شده در دیتابیس', 'Registered in database')}</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
                         <Activity className="w-3.5 h-3.5 text-emerald-400" /> {window.loc('کاربران آنلاین', 'Online users')}
                       </span>
-                      <p className="text-base font-black text-emerald-400">{window.loc('۱,۴۹۲ نفر', '1,492 people')}</p>
+                      <p className="text-base font-black text-emerald-400">{(adminUsersList || []).filter(u => u.status === 'Online' || u.isOnline || u.online).length} {window.loc('نفر', 'people')}</p>
                       <span className="text-[9px] text-slate-400">{window.loc('هم‌اکنون فعال', 'Active now')}</span>
                     </div>
 
@@ -446,7 +457,7 @@ export default function AdminDashboardModal(props) {
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
                         <Video className="w-3.5 h-3.5 text-pink-400" /> {window.loc('لایوهای فعال', 'active live')}
                       </span>
-                      <p className="text-base font-black text-pink-400">{adminLivesList.length} {window.loc('لایو', 'live')}</p>
+                      <p className="text-base font-black text-pink-400">{(adminLivesList || []).length} {window.loc('لایو', 'live')}</p>
                       <span className="text-[9px] text-slate-400">{window.loc('در حال پخش زنده', 'Streaming live')}</span>
                     </div>
 
@@ -454,23 +465,23 @@ export default function AdminDashboardModal(props) {
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
                         <DollarSign className="w-3.5 h-3.5 text-amber-400" /> {window.loc('درآمد امروز', 'Today\'s income')}
                       </span>
-                      <p className="text-base font-black text-amber-400">$4,820 USDT</p>
-                      <span className="text-[9px] text-emerald-400">{window.loc('۹۶۴,۰۰۰ سکه فروخته شد', '964,000 coins were sold')}</span>
+                      <p className="text-base font-black text-amber-400">${((props.financialTransactionsList || []).filter(t => (t.type === 'DEPOSIT' || t.type === 'COIN_PURCHASE' || t.type === 'VIP') && (t.status === 'Completed' || t.status === 'SUCCESS')).reduce((acc, curr) => acc + (Number(curr.amountUsdt || curr.amount) || 0), 0)).toLocaleString()} USDT</p>
+                      <span className="text-[9px] text-emerald-400">{((props.financialTransactionsList || []).filter(t => t.type === 'COIN_PURCHASE').reduce((acc, curr) => acc + (Number(curr.coins) || 0), 0)).toLocaleString()} {window.loc('سکه فروخته شد', 'coins sold')}</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
                         <MessageSquare className="w-3.5 h-3.5 text-purple-400" /> {window.loc('کل پیام‌ها', 'All messages')}
                       </span>
-                      <p className="text-base font-black text-white">{window.loc('۸۴,۲۰۰', '84,200')}</p>
-                      <span className="text-[9px] text-slate-400">{window.loc('پیام‌های امروز', 'Today\'s messages')}</span>
+                      <p className="text-base font-black text-white">{(props.financialTransactionsList || []).filter(t => t.type === 'CHAT_MESSAGE').length}</p>
+                      <span className="text-[9px] text-slate-400">{window.loc('پیام‌های ثبت‌شده', 'Registered messages')}</span>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
                         <PhoneCall className="w-3.5 h-3.5 text-cyan-400" /> {window.loc('کل تماس‌ها', 'Total calls')}
                       </span>
-                      <p className="text-base font-black text-cyan-300">{window.loc('۱,۲۳۰ تماس', '1,230 calls')}</p>
+                      <p className="text-base font-black text-cyan-300">{(props.financialTransactionsList || []).filter(t => t.type === 'CALL').length} {window.loc('تماس', 'calls')}</p>
                       <span className="text-[9px] text-slate-400">{window.loc('صوتی و تصویری', 'Audio and video')}</span>
                     </div>
 
@@ -478,7 +489,7 @@ export default function AdminDashboardModal(props) {
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
                         <AlertCircle className="w-3.5 h-3.5 text-rose-400" /> {window.loc('گزارش‌های جدید', 'New reports')}
                       </span>
-                      <p className="text-base font-black text-rose-400">{adminReportsList.filter(r => r.status === 'Pending').length} {window.loc('گزارش بررسی‌نشده', 'Report not reviewed')}</p>
+                      <p className="text-base font-black text-rose-400">{(adminReportsList || []).filter(r => r.status === 'Pending' || r.status === 'pending').length} {window.loc('گزارش بررسی‌نشده', 'Report not reviewed')}</p>
                       <span className="text-[9px] text-rose-300">{window.loc('اقدام سریع لازم است', 'Quick action is required')}</span>
                     </div>
                   </div>
@@ -764,8 +775,8 @@ export default function AdminDashboardModal(props) {
                 </div>
               )}
 
-              {/* CENTRALIZED FINANCE CENTER */}
-              {(adminActiveTab === 'finance' || adminActiveTab === 'wallet') && (
+              {/* CENTRALIZED FINANCE & ECONOMY CENTER */}
+              {(adminActiveTab === 'finance' || adminActiveTab === 'wallet' || adminActiveTab === 'economy') && (
                 <FinanceCenter
                   usersList={usersList}
                   setUsersList={setUsersList}

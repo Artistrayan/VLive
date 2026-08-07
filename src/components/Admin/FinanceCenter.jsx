@@ -53,14 +53,20 @@ export default function FinanceCenter({
   // Accounting Ledger Filters
   const [selectedLedgerType, setSelectedLedgerType] = useState('general');
 
-  // --- MOCK FINANCIAL STATS (REUSED FROM APP ENGINE & SUPABASE) ---
-  const totalRevenueUsdt = 184500;
-  const platformCommissionUsdt = Math.round(totalRevenueUsdt * (adminPlatformFee / 100));
+  // --- REAL FINANCIAL STATS (CALCULATED FROM TRANSACTIONS & USERS) ---
+  const totalRevenueUsdt = financialTransactionsList
+    .filter(tx => tx.status === 'Completed' || tx.status === 'SUCCESS' || tx.status === 'Approved')
+    .reduce((sum, tx) => sum + (Number(tx.amountUsdt || tx.amount) || 0), 0);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayRevenueUsdt = financialTransactionsList
+    .filter(tx => (tx.status === 'Completed' || tx.status === 'SUCCESS' || tx.status === 'Approved') && (tx.date?.includes(todayStr) || tx.createdAt?.includes(todayStr)))
+    .reduce((sum, tx) => sum + (Number(tx.amountUsdt || tx.amount) || 0), 0);
+  const platformCommissionUsdt = Math.round(totalRevenueUsdt * (Number(adminPlatformFee) || 0) / 100);
   const streamerPayoutsUsdt = totalRevenueUsdt - platformCommissionUsdt;
   const pendingWithdrawsCount = adminWithdrawalsList.filter(w => w.status === 'Pending' || w.status === 'Pending Review').length;
   const pendingWithdrawsAmount = adminWithdrawalsList
     .filter(w => w.status === 'Pending' || w.status === 'Pending Review')
-    .reduce((sum, w) => sum + (parseFloat(String(w.amount).replace(/[^0-9.]/g, '')) || 0), 0);
+    .reduce((sum, w) => sum + (Number(w.amountUsdt || w.amount) || 0), 0);
 
   const currentTransactions = financialTransactionsList;
 
@@ -206,16 +212,15 @@ export default function FinanceCenter({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-1 shadow-lg">
               <span className="text-[10px] text-slate-400 font-bold uppercase">{window.loc('درآمد امروز', 'Today\'s income')}</span>
-              <p className="text-2xl font-black text-emerald-400 font-mono">$4,850.00 USDT</p>
+              <p className="text-2xl font-black text-emerald-400 font-mono">${todayRevenueUsdt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDT</p>
               <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold">
-                <ArrowUpRight className="w-3 h-3" />
-                <span>{window.loc('+14.2% نسبت به روز گذشته', '+14.2% compared to the previous day')}</span>
+                <span>{window.loc('مجموع کل تراکنش‌های امروز', 'Total transactions today')}</span>
               </div>
             </div>
 
             <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-1 shadow-lg">
               <span className="text-[10px] text-slate-400 font-bold uppercase">{window.loc('درآمد این ماه', 'This month\'s income')}</span>
-              <p className="text-2xl font-black text-cyan-400 font-mono">$184,500.00 USDT</p>
+              <p className="text-2xl font-black text-cyan-400 font-mono">${totalRevenueUsdt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDT</p>
               <div className="flex items-center gap-1 text-[10px] text-cyan-400 font-bold">
                 <ArrowUpRight className="w-3 h-3" />
                 <span>{window.loc('۹۸٪ از تارگت مالی ماهانه', '98% of the monthly financial target')}</span>

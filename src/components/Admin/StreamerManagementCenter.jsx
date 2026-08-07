@@ -28,10 +28,7 @@ export default function StreamerManagementCenter({
   const [editReason, setEditReason] = useState(window.loc('تعدیل دستی توسط ادمین ارشد', 'Manual adjustment by senior admin'));
 
   // Level History Logs State
-  const [levelHistoryLogs, setLevelHistoryLogs] = useState([
-    { id: 'LOG-101', username: 'Rayan_Streamer', oldLevel: 'Level 2 Bronze', newLevel: 'Level 3 Silver', xp: 3200, reason: window.loc('تکمیل ۵۰ ساعت لایواستریم فعال', 'Completion of 50 hours of active live streaming'), date: '2026-08-04 14:20', admin: 'AI Studio System' },
-    { id: 'LOG-102', username: 'Elnaz_Live', oldLevel: 'Level 1 New', newLevel: 'Level 2 Bronze', xp: 1100, reason: window.loc('احراز هویت و اولین استریم موفق', 'Authentication and first successful stream'), date: '2026-08-05 09:10', admin: 'Admin_Super' }
-  ]);
+  const [levelHistoryLogs, setLevelHistoryLogs] = useState([]);
 
   // Admin Config State for Levels
   const [levelConfigs, setLevelConfigs] = useState(STREAMER_LEVELS);
@@ -39,33 +36,8 @@ export default function StreamerManagementCenter({
   // Extract streamers & pending applicants
   const streamersList = usersList.filter(u => u.isStreamer || u.isHost || u.is_streamer);
   
-  // Simulated Pending KYC Applications
-  const [kycApplications, setKycApplications] = useState([
-    {
-      id: 'KYC-801',
-      username: 'Elnaz_Live',
-      name: window.loc('الناز محمدی', 'Elnaz Mohammadi'),
-      age: 22,
-      city: 'Shiraz',
-      submittedAt: '2026-08-05 10:30',
-      idCardPhoto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
-      selfiePhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-      status: 'Pending Review',
-      aiConfidence: '98% Pass'
-    },
-    {
-      id: 'KYC-802',
-      username: 'Nigar_Host',
-      name: window.loc('نگار احمدی', 'Negar Ahmadi'),
-      age: 24,
-      city: 'Tehran',
-      submittedAt: '2026-08-05 09:15',
-      idCardPhoto: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
-      selfiePhoto: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
-      status: 'Pending Review',
-      aiConfidence: '94% Pass'
-    }
-  ]);
+  // Real Pending KYC Applications
+  const [kycApplications, setKycApplications] = useState([]);
 
   const handleApproveKyc = (app) => {
     setKycApplications(prev => prev.filter(a => a.id !== app.id));

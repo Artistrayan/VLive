@@ -20,19 +20,19 @@ export default function AnalyticsCenter({
   const [isExporting, setIsExporting] = useState(false);
 
   // Dynamic real data computations
-  const totalUsers = usersList.length || 1840;
-  const onlineUsers = usersList.filter(u => u.online).length || 142;
-  const activeUsers = Math.round(totalUsers * 0.72);
-  const dau = Math.round(totalUsers * 0.45);
-  const mau = Math.round(totalUsers * 0.88);
-  const retentionRate = 68.4;
-  const growthRate = 24.8;
-  const newRegistrationsToday = 124;
-  const deletedAccounts = 3;
+  const totalUsers = usersList.length;
+  const onlineUsers = usersList.filter(u => u.online || u.isOnline || u.status === 'Online').length;
+  const activeUsers = usersList.filter(u => u.status !== 'Banned' && u.status !== 'banned').length;
+  const dau = onlineUsers;
+  const mau = totalUsers;
+  const retentionRate = totalUsers > 0 ? Math.round((activeUsers / totalUsers) * 100) : 0;
+  const growthRate = 0;
+  const newRegistrationsToday = usersList.filter(u => u.registeredAt === new Date().toISOString().split('T')[0]).length;
+  const deletedAccounts = 0;
 
-  const approvedStreamers = usersList.filter(u => u.isStreamer || u.role === 'Streamer').length || 48;
-  const activeStreamers = Math.round(approvedStreamers * 0.65);
-  const vipUsersCount = usersList.filter(u => u.isVip || u.is_vip || u.vip).length || 112;
+  const approvedStreamers = usersList.filter(u => u.isStreamer || u.role === 'Streamer' || u.isHost).length;
+  const activeStreamers = usersList.filter(u => (u.isStreamer || u.role === 'Streamer' || u.isHost) && (u.online || u.isOnline)).length;
+  const vipUsersCount = usersList.filter(u => u.isVip || u.is_vip || u.vip || u.role === 'VIP').length;
 
   // Handle Export File
   const handleExport = (format) => {
