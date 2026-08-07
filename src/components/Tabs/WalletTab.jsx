@@ -447,24 +447,18 @@ export default function WalletTab(props) {
                 {/* PAYMENT METHOD SELECTOR */}
                 <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
                   <label className="text-xs text-slate-200 font-bold block">{window.loc('انتخاب روش پرداخت:', 'Choose a payment method:')}</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <button
-                      onClick={() => setSelectedCoinPackPayment('In-App')}
-                      className={`p-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 transition ${selectedCoinPackPayment === 'In-App' ? 'bg-amber-500 text-slate-950 border-amber-300 font-black' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
-                    >
-                      {window.loc('📱 پرداخت درون‌برنامه‌ای (Google/Apple)', '📱 In-app payment (Google/Apple)')}
-                    </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <button
                       onClick={() => setSelectedCoinPackPayment('USDT TRC20')}
-                      className={`p-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 transition ${selectedCoinPackPayment === 'USDT TRC20' ? 'bg-amber-500 text-slate-950 border-amber-300 font-black' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                      className={`p-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 transition ${selectedCoinPackPayment === 'USDT TRC20' || selectedCoinPackPayment !== 'USDT BEP20' ? 'bg-amber-500 text-slate-950 border-amber-300 font-black' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
                     >
-                      {window.loc('🪙 USDT TRC20 (۵٪ سکه بونوس)', '🪙 USDT TRC20 (5% bonus coins)')}
+                      {window.loc('🪙 USDT TRC20', '🪙 USDT TRC20')}
                     </button>
                     <button
-                      onClick={() => setSelectedCoinPackPayment('Card')}
-                      className={`p-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 transition ${selectedCoinPackPayment === 'Card' ? 'bg-amber-500 text-slate-950 border-amber-300 font-black' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
+                      onClick={() => setSelectedCoinPackPayment('USDT BEP20')}
+                      className={`p-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 transition ${selectedCoinPackPayment === 'USDT BEP20' ? 'bg-amber-500 text-slate-950 border-amber-300 font-black' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
                     >
-                      {window.loc('💳 کارت به کارت / درگاه مستقیم', '💳 card to card / direct portal')}
+                      {window.loc('🪙 USDT BEP20', '🪙 USDT BEP20')}
                     </button>
                   </div>
                 </div>
@@ -595,7 +589,6 @@ export default function WalletTab(props) {
                         className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-emerald-400"
                       >
                         <option value="USDT TRC20">{window.loc('USDT TRC20 (تتر شبکه‌ ترون)', 'USDT TRC20 (Tether Tron Network)')}</option>
-                        <option value="Wise / Wire">Bank Transfer / Wise</option>
                         <option value="Crypto Wallet">Crypto Web3 Wallet</option>
                       </select>
                     </div>
@@ -1537,12 +1530,12 @@ export default function WalletTab(props) {
                             className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none"
                           >
                             <option value="USDT TRC20">USDT TRC20 Crypto Wallet</option>
-                            <option value="Bank Transfer">{window.loc('کارت بانکی شتاب IRAN', 'Shatab IRAN bank card')}</option>
+                            <option value="USDT BEP20">USDT BEP20 Crypto Wallet</option>
                           </select>
                         </div>
 
                         <div>
-                          <label className="text-xs text-slate-300 font-bold block mb-1">{window.loc('آدرس ولت یا شماره شبای مقصد:', 'Volt address or destination number:')}</label>
+                          <label className="text-xs text-slate-300 font-bold block mb-1">{window.loc('آدرس ولت مقصد:', 'Wallet address:')}</label>
                           <input
                             type="text"
                             value={withdrawAddressInput}

@@ -24,8 +24,8 @@ export default function HelpCenterModal({
   adminMinWithdrawal = 50,
   transactionsList = [],
   setTransactionsList = () => {},
-  setFinancialTransactionsList = () => {},
-  setAdminWithdrawalsList = () => {}
+  adminTicketsList = [],
+  setAdminTicketsList = () => {}
 }) {
   const [activeTab, setActiveTab] = useState(initialTab); // 'faq' | 'deposit' | 'withdrawal' | 'support'
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -88,7 +88,7 @@ export default function HelpCenterModal({
     }
 
     if (!withdrawAddressInput || withdrawAddressInput.trim().length < 8) {
-      showToast(loc('⚠️ لطفاً آدرس کیف پول تتر یا شماره شبا معتبر وارد کنید.', '⚠️ Please enter a valid wallet address or Sheba number.'));
+      showToast(loc('⚠️ لطفاً آدرس کیف پول تتر معتبر وارد کنید.', '⚠️ Please enter a valid wallet address.'));
       return;
     }
 
@@ -491,7 +491,6 @@ export default function HelpCenterModal({
                       >
                         <option value="usdt_trc20">{loc('تتر Tether USDT (شبکه ترون TRC20)', 'Tether USDT (TRC20)')}</option>
                         <option value="usdt_bep20">{loc('تتر Tether USDT (شبکه بایننس BEP20)', 'Tether USDT (BEP20)')}</option>
-                        <option value="sheba">{loc('حساب پایا / شماره شبا بانکی', 'Iran Bank Sheba Card')}</option>
                       </select>
                     </div>
 
@@ -512,16 +511,13 @@ export default function HelpCenterModal({
 
                   <div>
                     <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                      {withdrawMethod === 'sheba' 
-                        ? loc('شماره شبا یا کارت بانکی (IR...):', 'Bank Sheba Number (IR...):')
-                        : loc('آدرس کیف پول تتر (Wallet Address):', 'USDT Wallet Address:')
-                      }
+                      {loc('آدرس کیف پول تتر (Wallet Address):', 'USDT Wallet Address:')}
                     </label>
                     <input
                       type="text"
                       value={withdrawAddressInput}
                       onChange={(e) => setWithdrawAddressInput(e.target.value)}
-                      placeholder={withdrawMethod === 'sheba' ? 'IR120000000000000000000000' : 'TKh8zXpQ7yM3vN1L9R2W4b6K8a0C...'}
+                      placeholder={'TKh8zXpQ7yM3vN1L9R2W4b6K8a0C...'}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono outline-none focus:border-emerald-500"
                     />
                   </div>
@@ -692,6 +688,22 @@ export default function HelpCenterModal({
                         showToast(loc('لطفاً موضوع و شرح درخواست خود را وارد کنید.', 'Please fill subject and description.'));
                         return;
                       }
+                      
+                      const newTicket = {
+                        id: Math.floor(Math.random() * 9000) + 1000,
+                        user: currentUsername || userName || 'user',
+                        subject: ticketSubject.trim(),
+                        message: ticketMessage.trim(),
+                        status: 'Open',
+                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                      };
+
+                      setAdminTicketsList(prev => {
+                        const updated = [newTicket, ...prev];
+                        safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
+                        return updated;
+                      });
+                      
                       showToast(loc('✅ تیکت پشتیبانی با موفقیت ثبت گردید. پاسخ در بخش پیام‌ها ارسال می‌شود.', '✅ Ticket submitted successfully. Reply will be sent to messages.'));
                       setTicketSubject('');
                       setTicketMessage('');
@@ -703,6 +715,39 @@ export default function HelpCenterModal({
                   </button>
                 </div>
               </div>
+
+              {/* User Tickets List */}
+              {adminTicketsList.filter(t => t.user === currentUsername || t.user === userName).length > 0 && (
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                  <h4 className="font-black text-sm text-white flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4 text-cyan-400" />
+                    {loc('پیام‌های پشتیبانی من', 'My Support Tickets')}
+                  </h4>
+                  <div className="space-y-2">
+                    {adminTicketsList
+                      .filter(t => t.user === currentUsername || t.user === userName)
+                      .map(t => (
+                        <div key={t.id} className="p-3 rounded-xl bg-slate-900 border border-slate-800/80 space-y-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-white text-[11px]">{t.subject}</span>
+                            <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${t.status === 'Open' ? 'bg-amber-500/20 text-amber-300' : 'bg-cyan-500/20 text-cyan-300'}`}>
+                              {t.status}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-400">{t.message}</p>
+                          {t.reply && (
+                            <div className="p-2 rounded-lg bg-purple-950/40 border border-purple-500/30 text-purple-200 mt-2">
+                              <span className="font-bold block mb-1 text-[9px]">{loc('پاسخ پشتیبانی:', 'Support Reply:')}</span>
+                              <p className="text-[10px]">{t.reply}</p>
+                            </div>
+                          )}
+                          <span className="text-[9px] text-slate-500 block mt-1">{t.time}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
 

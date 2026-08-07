@@ -13,6 +13,7 @@ import SecurityModal from './modals/SecurityModal';
 import NotificationsModal from './modals/NotificationsModal';
 import UserProfileViewModal from './modals/UserProfileViewModal';
 import HelpCenterModal from './modals/HelpCenterModal';
+import StreamerApplicationModal from './modals/StreamerApplicationModal';
 import ActiveCallOverlay from './components/Overlays/ActiveCallOverlay';
 import PreCallConfirmModal from './components/Overlays/PreCallConfirmModal';
 import { VisualUiEditorProvider } from './context/VisualUiEditorContext';
@@ -1625,6 +1626,14 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   });
   const [adminTicketFilter, setAdminTicketFilter] = useState('All');
 
+  const [kycApplications, setKycApplications] = useState(() => {
+    const saved = safeStorage.getItem('vlive_kyc_applications');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [];
+  });
+
   // Admin Roles & Permissions State
   const [adminRolesList, setAdminRolesList] = useState(() => {
     const saved = safeStorage.getItem('vlive_admin_roles_list');
@@ -2631,8 +2640,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   const [withdrawalsHistoryList, setWithdrawalsHistoryList] = useState([
     { id: 'W-801', amount: '$100.00 USDT', method: 'USDT TRC20', address: 'TBMvBi...1NSnB', date: '2026-07-26 18:20', status: 'Pending', reason: '', txHash: '' },
-    { id: 'W-800', amount: '$250.00 USDT', method: 'USDT TRC20', address: 'TBMvBi...1NSnB', date: '2026-07-20 14:10', status: 'Completed', reason: '', txHash: 'f4b23c9...a1b2' },
-    { id: 'W-799', amount: '$50.00 USDT', method: 'Bank Transfer', address: 'IR4829...901', date: '2026-07-15 10:00', status: 'Rejected', reason: loc('عدم تطابق نام حساب با کارت ملی', 'The account name does not match with the national card'), txHash: '' }
+    { id: 'W-800', amount: '$250.00 USDT', method: 'USDT TRC20', address: 'TBMvBi...1NSnB', date: '2026-07-20 14:10', status: 'Completed', reason: '', txHash: 'f4b23c9...a1b2' }
   ]);
 
   const [convertDiamondsInput, setConvertDiamondsInput] = useState('5000');
@@ -3780,6 +3788,23 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     };
 
     setVerificationsList(prev => [newVerif, ...prev]);
+    
+    // Also add to Admin Streamer Management Center KYC Applications
+    const newKycApp = {
+      id: newVerif.id,
+      username: currentUsername || 'user',
+      status: 'Pending',
+      date: new Date().toLocaleDateString(),
+      videoDemoUrl: 'https://cdn.v.live/demos/sample.mp4',
+      docUrl: 'https://cdn.v.live/docs/id_sample.jpg'
+    };
+    
+    setKycApplications(prev => {
+      const updated = [newKycApp, ...prev];
+      safeStorage.setItem('vlive_kyc_applications', JSON.stringify(updated));
+      return updated;
+    });
+
     setIsKycModalOpen(false);
     showToast('Verification request submitted for admin review');
   };
@@ -7912,6 +7937,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         setAdminNotifCategory={setAdminNotifCategory}
         adminModerationQueue={adminModerationQueue}
         setAdminModerationQueue={setAdminModerationQueue}
+        kycApplications={kycApplications}
+        setKycApplications={setKycApplications}
         adminTicketsList={adminTicketsList}
         setAdminTicketsList={setAdminTicketsList}
         adminTicketFilter={adminTicketFilter}
@@ -8515,79 +8542,17 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       )}
 
       {/* MODAL: BECOME A STREAMER & STAR BADGE */}
-      {isBecomeStreamerModalOpen && (
-        <div className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn dir-rtl">
-          <div className="card-3d w-full max-w-md bg-slate-900 rounded-3xl border border-pink-500/50 p-6 space-y-5 shadow-[0_0_50px_rgba(236,72,153,0.3)] text-right relative overflow-hidden">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-600 to-amber-400 p-0.5 flex items-center justify-center shadow-lg">
-                  <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-                    <Star className="w-5 h-5 text-amber-400 animate-pulse fill-amber-400" />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-black text-sm text-white">
-                    {loc('⭐ درخواست نشان استریمر و ستاره ویژه V.LIVE', '⭐ Streamer Badge & V.LIVE Star Request')}
-                  </h3>
-                  <p className="text-[10px] text-slate-400">
-                    {loc('کسب درآمد دلاری و محبوبیت بین ۱۰,۰۰۰+ بیننده فعال', 'Earn USD income & popularity among 10,000+ active viewers')}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsBecomeStreamerModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Benefits List */}
-            <div className="space-y-2.5 text-xs text-slate-300">
-              <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center gap-3">
-                <span className="text-xl">💰</span>
-                <div>
-                  <h4 className="font-bold text-white">{loc('سهم ۸۰٪ از کل هدیه‌ها و سکه‌ها', '80% share of all gifts & coins')}</h4>
-                  <p className="text-[10px] text-slate-400">{loc('واریز آنی به کیف پول و قابلیت برداشت مستقیم به USDT / کریپتو', 'Instant payout to wallet with direct USDT / Crypto withdrawal')}</p>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center gap-3">
-                <span className="text-xl">🏅</span>
-                <div>
-                  <h4 className="font-bold text-amber-300">{loc('نشان ستاره طلایی (Verified Star)', 'Golden Star Badge (Verified Star)')}</h4>
-                  <p className="text-[10px] text-slate-400">{loc('نمایش تیک ستاره روی پروفایل و اولویت در بالای لیست خانه و رادار', 'Star badge on profile and priority top ranking on Home & Radar')}</p>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center gap-3">
-                <span className="text-xl">📹</span>
-                <div>
-                  <h4 className="font-bold text-cyan-300">{loc('دسترسی به استودیو 4K و چت VIP', 'Access to 4K Studio & VIP Chat')}</h4>
-                  <p className="text-[10px] text-slate-400">{loc('امکان برگزاری لایواستریم اختصاصی، روم‌های صوتی و فیلترهای زیبایی', 'Exclusive LiveKit broadcasts, audio rooms and beauty filters')}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="space-y-2 pt-1">
-              <button
-                onClick={() => {
-                  setIsBecomeStreamerModalOpen(false);
-                  showToast(loc('✅ درخواست نشان ستاره استریمر شما با موفقیت ثبت شد و در حال تایید است', '✅ Your streamer star badge application submitted and pending approval'));
-                }}
-                className="w-full py-3 rounded-2xl bg-slate-950 border border-amber-500/40 text-amber-300 font-bold text-xs hover:bg-slate-800 transition flex items-center justify-center gap-1.5"
-              >
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                <span>{loc('⭐ ثبت درخواست احراز هویت و دریافت ستاره', '⭐ Submit KYC & Claim Star Badge')}</span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
+      <StreamerApplicationModal
+        isOpen={isBecomeStreamerModalOpen}
+        onClose={() => setIsBecomeStreamerModalOpen(false)}
+        loc={loc}
+        showToast={showToast}
+        kycApplications={kycApplications}
+        setKycApplications={setKycApplications}
+        currentUsername={currentUsername}
+        isVerified={isVerified}
+        userName={userName}
+      />
 
       {/* MODAL: FULL HELP CENTER, FAQ & FINANCIAL CENTER */}
       {isSupportModalOpen && (
@@ -8614,6 +8579,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           adminMinWithdrawal={adminMinWithdrawal}
           transactionsList={transactionsList}
           setTransactionsList={setTransactionsList}
+          adminTicketsList={adminTicketsList}
+          setAdminTicketsList={setAdminTicketsList}
         />
       )}
 

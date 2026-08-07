@@ -1346,6 +1346,8 @@ export default function AdminDashboardModal(props) {
                   setAdminWithdrawalsList={setAdminWithdrawalsList}
                   addAdminAuditLog={addAdminAuditLog}
                   showToast={showToast}
+                  kycApplications={props.kycApplications}
+                  setKycApplications={props.setKycApplications}
                   loc={loc}
                 />
               )}

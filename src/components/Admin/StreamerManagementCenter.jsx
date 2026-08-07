@@ -14,6 +14,8 @@ export default function StreamerManagementCenter({
   setAdminWithdrawalsList = (() => {}),
   addAdminAuditLog = (() => {}),
   showToast = (() => {}),
+  kycApplications = [],
+  setKycApplications = (() => {}),
   loc = ((a, b) => b || a)
 }) {
   const [streamerSubTab, setStreamerSubTab] = useState('streamers'); // 'streamers' | 'scores' | 'kyc' | 'history' | 'ai_risk' | 'settings' | 'logs'
@@ -36,21 +38,27 @@ export default function StreamerManagementCenter({
   // Extract streamers & pending applicants
   const streamersList = usersList.filter(u => u.isStreamer || u.isHost || u.is_streamer);
   
-  // Real Pending KYC Applications
-  const [kycApplications, setKycApplications] = useState([]);
-
   const handleApproveKyc = (app) => {
-    setKycApplications(prev => prev.filter(a => a.id !== app.id));
+    setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Approved' } : a));
     setUsersList(prev => prev.map(u => u.username === app.username ? { ...u, isStreamer: true, isHost: true, isVerified: true, xp: 1000, reputationScore: 10, creatorRank: 5 } : u));
     addAdminAuditLog(`Approved Streamer KYC Application #${app.id} for @${app.username}`);
-    showToast(window.loc(`✅ درخواست استریمی @${app.username} با موفقیت تایید شد`, `✅ درخواست استریمی @${app.username} با موفقیت تایید شد`));
+    showToast(window.loc(`✅ درخواست استریمی @${app.username} با موفقیت تایید شد`, `✅ Streamer app @${app.username} approved`));
     setSelectedApplication(null);
   };
 
   const handleRejectKyc = (app) => {
-    setKycApplications(prev => prev.filter(a => a.id !== app.id));
+    const reason = prompt(window.loc('دلیل رد درخواست (برای کاربر نمایش داده می‌شود):', 'Reason for rejection:')) || 'Rejected by admin';
+    setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Rejected', rejectionReason: reason } : a));
     addAdminAuditLog(`Rejected Streamer KYC Application #${app.id} for @${app.username}`);
-    showToast(window.loc(`✕ درخواست استریمی @${app.username} رد شد`, `✕ درخواست استریمی @${app.username} رد شد`));
+    showToast(window.loc(`✕ درخواست استریمی @${app.username} رد شد`, `✕ Streamer app @${app.username} rejected`));
+    setSelectedApplication(null);
+  };
+
+  const handleCorrectionKyc = (app) => {
+    const msg = prompt(window.loc('پیام اصلاحیه برای کاربر:', 'Correction message:')) || 'Please update your documents';
+    setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Correction', correctionMessage: msg } : a));
+    addAdminAuditLog(`Requested Correction for KYC Application #${app.id} for @${app.username}`);
+    showToast(window.loc(`درخواست اصلاحیه برای @${app.username} ارسال شد`, `Correction request sent to @${app.username}`));
     setSelectedApplication(null);
   };
 
@@ -351,48 +359,60 @@ export default function StreamerManagementCenter({
       {/* ================= TAB 3: KYC APPLICATIONS ================= */}
       {streamerSubTab === 'kyc' && (
         <div className="space-y-4 animate-fadeIn">
-          {kycApplications.length === 0 ? (
+          {kycApplications.filter(a => a.status === 'Pending').length === 0 ? (
             <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 text-center text-slate-400">
               <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
               <span>{window.loc('کلیه درخواست‌های احراز هویت استریمرها بررسی شده‌اند.', 'All streamers authentication requests have been checked.')}</span>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {kycApplications.map(app => (
+              {kycApplications.filter(a => a.status === 'Pending').map(app => (
                 <div key={app.id} className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 shadow-xl">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                     <div>
-                      <h4 className="font-bold text-white text-xs">{app.name} (@{app.username})</h4>
-                      <span className="text-[10px] text-slate-400 font-mono">{window.loc('شهر:', 'City:')} {app.city} {window.loc('• سن:', '• Age:')} {app.age}</span>
+                      <h4 className="font-bold text-white text-xs">{app.name || app.username} (@{app.username})</h4>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {window.loc('دسته‌بندی:', 'Category:')} {app.streamCategory || 'N/A'} {window.loc('• موضوع:', '• Topic:')} {app.streamTopic || 'N/A'}
+                      </span>
                     </div>
                     <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold border border-emerald-500/30">
-                      {app.aiConfidence}
+                      {app.aiConfidence || 'AI: 95%'}
                     </span>
                   </div>
 
+                  <p className="text-[10px] text-slate-300">
+                    <span className="font-bold text-slate-400">{window.loc('توضیحات:', 'Description:')}</span> {app.description || '-'}
+                  </p>
+
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <span className="text-[9px] text-slate-400 font-bold">{window.loc('عکس کارت ملی / پاسپورت:', 'National card/passport photo:')}</span>
-                      <img src={app.idCardPhoto} alt="ID Card" className="w-full h-28 object-cover rounded-2xl border border-slate-800" />
+                      <span className="text-[9px] text-slate-400 font-bold">{window.loc('تست دوربین/مدارک:', 'Camera/Docs Test:')}</span>
+                      <img src={app.idCardPhoto || app.docUrl} alt="ID Card" className="w-full h-28 object-cover rounded-2xl border border-slate-800" />
                     </div>
                     <div className="space-y-1">
-                      <span className="text-[9px] text-slate-400 font-bold">{window.loc('سلفی تایید چهره:', 'Face verification selfie:')}</span>
-                      <img src={app.selfiePhoto} alt="Selfie" className="w-full h-28 object-cover rounded-2xl border border-slate-800" />
+                      <span className="text-[9px] text-slate-400 font-bold">{window.loc('دمو/سلفی:', 'Demo/Selfie:')}</span>
+                      <video src={app.videoDemoUrl} poster={app.selfiePhoto} className="w-full h-28 object-cover rounded-2xl border border-slate-800" controls />
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex flex-wrap gap-2 pt-1">
                     <button
                       onClick={() => handleApproveKyc(app)}
-                      className="flex-1 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow"
+                      className="flex-1 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow"
                     >
-                      {window.loc('✓ تایید نهایی و اعطای استریمر', '✓ Final approval and granting of the streamer')}
+                      {window.loc('✓ تایید نهایی', '✓ Approve')}
+                    </button>
+                    <button
+                      onClick={() => handleCorrectionKyc(app)}
+                      className="flex-1 py-2 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs shadow"
+                    >
+                      {window.loc('! درخواست اصلاح', '! Request Correction')}
                     </button>
                     <button
                       onClick={() => handleRejectKyc(app)}
-                      className="flex-1 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow"
+                      className="flex-1 py-2 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow"
                     >
-                      {window.loc('✕ رد درخواست مدارک', '✕ Rejection of document request')}
+                      {window.loc('✕ رد درخواست', '✕ Reject')}
                     </button>
                   </div>
                 </div>

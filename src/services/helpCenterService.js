@@ -27,33 +27,6 @@ export const FAQ_CATEGORIES = [
 
 const DEFAULT_DEPOSIT_METHODS = [
   {
-    id: 'gateway',
-    nameFa: 'درگاه پرداخت آنلاین شتاب',
-    nameEn: 'Online Bank Gateway (Shatab)',
-    type: 'GATEWAY',
-    icon: '💳',
-    badge: 'آنی و شتابی',
-    minAmount: '۵۰,۰۰۰ تومان (۱۰۰ سکه)',
-    maxAmount: '۵۰,۰۰۰,۰۰۰ تومان',
-    fee: '۰٪ (بدون کارمزد)',
-    processingTime: 'آنی (Instant)',
-    active: true,
-    descriptionFa: 'پرداخت مستقیم از طریق تمامی کارت‌های عضو شتاب با رمز دوم پویا.',
-    descriptionEn: 'Direct payment via all Shatab bank cards with OTP.',
-    instructionsFa: [
-      'مبلغ یا پکیج سکه مورد نظر خود را انتخاب کنید.',
-      'به درگاه امن پرداخت منتقل می‌شوید.',
-      'اطلاعات کارت بانکی و رمز پویا را وارد کنید.',
-      'بلافاصله پس از پرداخت موفق، سکه‌ها به کیف پول شما اضافه می‌شوند.'
-    ],
-    instructionsEn: [
-      'Select your desired coin package.',
-      'You will be redirected to the secure bank gateway.',
-      'Enter your bank card details and OTP.',
-      'Coins will be added to your balance instantly upon approval.'
-    ]
-  },
-  {
     id: 'crypto_usdt',
     nameFa: 'ارز دیجیتال تتر (USDT - TRC20 / BEP20)',
     nameEn: 'Crypto Tether (USDT TRC20/BEP20)',
@@ -78,33 +51,6 @@ const DEFAULT_DEPOSIT_METHODS = [
       'Copy the official V.LIVE deposit wallet address.',
       'Transfer USDT and paste the TX Hash.',
       'Coins credit automatically after 2 network confirmations.'
-    ]
-  },
-  {
-    id: 'card_to_card',
-    nameFa: 'کارت به کارت دستی (پشتیبانی تلگرام)',
-    nameEn: 'Card-to-Card Transfer',
-    type: 'CARD',
-    icon: '🏧',
-    badge: 'پشتیبانی ۲۴ ساعته',
-    minAmount: '۱۰۰,۰۰۰ تومان',
-    maxAmount: '۱۰۰,۰۰۰,۰۰۰ تومان',
-    fee: '۰٪',
-    processingTime: '۵ الی ۱۵ دقیقه (بررسی اپراتور)',
-    active: true,
-    descriptionFa: 'انتقال کارت به کارت بانکی و ارسال فیش واریزی به اپراتور پشتیبانی آنلاین.',
-    descriptionEn: 'Card transfer with receipt verification via 24/7 Telegram support.',
-    instructionsFa: [
-      'شماره کارت فعال پشتیبانی را دریافت کنید.',
-      'مبلغ را منتقل کرده و تصویر فیش را نگه دارید.',
-      'فیش را به پشتیبانی تلگرام @VLive_Support ارسال کنید.',
-      'اپراتور پس از استعلام، حساب شما را شارژ می‌کند.'
-    ],
-    instructionsEn: [
-      'Get active support card number.',
-      'Make transfer and save receipt image.',
-      'Send receipt to Telegram @VLive_Support.',
-      'Operator verifies deposit and credits your wallet.'
     ]
   }
 ];
@@ -270,8 +216,8 @@ const DEFAULT_FAQS = [
     categoryId: 'deposit',
     questionFa: 'چگونه حساب خود را شارژ کنم و چه روش‌هایی وجود دارد؟',
     questionEn: 'How do I charge my account and what payment methods exist?',
-    answerFa: 'شما می‌توانید از ۳ روش شارژ کنید: ۱) درگاه آنلاین شتابی ۲) ارز دیجیتال تتر (USDT TRC20/BEP20) ۳) کارت به کارت دستی پشتیبانی. سکه‌ها معمولاً بلافاصله شارژ می‌شوند.',
-    answerEn: 'You can deposit via 1) Online Shatab Gateway 2) Crypto USDT 3) Card-to-Card support. Credit is instant.',
+    answerFa: 'شما می‌توانید از طریق ارز دیجیتال تتر (USDT TRC20/BEP20) حساب خود را شارژ کنید. سکه‌ها معمولاً بلافاصله شارژ می‌شوند.',
+    answerEn: 'You can deposit via Crypto USDT (TRC20/BEP20). Credit is instant.',
     popular: true,
     active: true
   },
