@@ -1875,19 +1875,41 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     return safeStorage.getItem('vlive_permissions_prompted') !== 'true';
   });
 
-  const handleSavePermissionsPrompt = (acceptedAll = true) => {
+  const handleSavePermissionsPrompt = async (acceptedAll = true) => {
+    if (acceptedAll) {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          stream.getTracks().forEach(track => track.stop());
+        }
+      } catch (e) {
+        console.warn('Initial camera/mic permission request handled:', e);
+      }
+
+      try {
+        if ('Notification' in window && Notification.permission !== 'granted') {
+          await Notification.requestPermission();
+        }
+      } catch (e) {
+        console.warn('Initial notification permission request handled:', e);
+      }
+    }
+
     const updated = {
       camera: acceptedAll,
       microphone: acceptedAll,
       notifications: acceptedAll,
       gallery: acceptedAll,
-      location: acceptedAll
+      location: acceptedAll,
+      rules: acceptedAll
     };
     setSystemPerms(updated);
     safeStorage.setItem('vlive_system_perms', JSON.stringify(updated));
     safeStorage.setItem('vlive_permissions_prompted', 'true');
+    safeStorage.setItem('vlive_terms_accepted', 'true');
+    setTermsAgreed(true);
     setIsPermissionsPromptOpen(false);
-    showToast(acceptedAll ? t('permsAccepted', 'Permissions access granted') : t('permsDenied', 'Permissions settings saved'));
+    showToast(acceptedAll ? loc('✅ تمام دسترسی‌ها و قوانین V.LIVE با موفقیت تأیید شدند', '✅ All V.LIVE permissions & terms accepted successfully') : loc('تنظیمات دسترسی ذخیره شد', 'Permissions settings saved'));
   };
 
   // 7. Live Settings
@@ -6146,6 +6168,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             ? "relative -top-4 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition-all duration-300 group"
             : "flex flex-col items-center gap-1 p-2 rounded-2xl text-slate-400 hover:text-slate-200 transition-all duration-300"
           }
+          title={loc('خانه', 'Home')}
         >
           {activeTab === 'home' ? (
             <Home className="w-6 h-6 font-black group-hover:scale-110 transition duration-300" />
@@ -6157,9 +6180,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         {/* 2. VIP (👑) */}
         <button 
           onClick={() => setIsVipModalOpen(true)}
-          className="flex flex-col items-center gap-1 p-2 rounded-2xl text-amber-500/70 hover:text-amber-400 transition-all duration-300"
+          className="flex flex-col items-center gap-1 p-2 rounded-2xl text-amber-500/80 hover:text-amber-400 active:scale-95 transition-all duration-300 group"
+          title={loc('اشتراک VIP', 'VIP Subscription')}
         >
-          <Crown className="w-5 h-5" />
+          <Crown className="w-5 h-5 text-amber-400 group-hover:scale-110 transition duration-300" />
         </button>
 
         {/* 3. Match (Center Fire) */}
@@ -6169,6 +6193,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             ? "relative -top-4 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition-all duration-300 group"
             : "relative -top-5 w-14 h-14 rounded-full bg-gradient-to-tr from-pink-600 to-purple-600 p-0.5 shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:shadow-[0_0_30px_rgba(236,72,153,0.6)] transition-all group"
           }
+          title={loc('رادار رولت و رقص', 'Radar Match')}
         >
            {activeTab === 'match' ? (
               <Flame className="w-7 h-7 text-white font-black group-hover:scale-110 transition duration-300" />
@@ -6179,20 +6204,25 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
            )}
         </button>
 
-        {/* 4. Support (Headphones) */}
+        {/* 4. Support (Headphones 🎧) - ACTIVATED */}
         <button 
-          onClick={() => setIsSupportModalOpen(true)}
-          className="flex flex-col items-center gap-1 p-2 rounded-2xl text-slate-400 hover:text-slate-200 transition-all duration-300"
+          onClick={() => {
+            setIsSupportModalOpen(true);
+            showToast(loc('🎧 مرکز پشتیبانی ۲۴/۷ فعال شد', '🎧 24/7 Support Center activated'));
+          }}
+          className="flex flex-col items-center gap-1 p-2 rounded-2xl text-cyan-400 hover:text-cyan-300 active:scale-95 transition-all duration-300 group"
+          title={loc('پشتیبانی ۲۴/۷', '24/7 Support')}
         >
-          <Headphones className="w-5 h-5" />
+          <Headphones className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition duration-300" />
         </button>
 
-        {/* 5. Request Streamer (Camera / Badge) */}
+        {/* 5. Request Streamer & Star Badge (Star ⭐) */}
         <button 
           onClick={() => setIsBecomeStreamerModalOpen(true)}
-          className="flex flex-col items-center gap-1 p-2 rounded-2xl text-pink-500/70 hover:text-pink-400 transition-all duration-300"
+          className="flex flex-col items-center gap-1 p-2 rounded-2xl text-amber-400 hover:text-amber-300 active:scale-95 transition-all duration-300 group"
+          title={loc('نشان ستاره و درخواست استریمر', 'Star Badge & Streamer Request')}
         >
-          <Star className="w-5 h-5" />
+          <Star className="w-5 h-5 text-amber-400 fill-amber-400/40 group-hover:fill-amber-400 transition duration-300" />
         </button>
 
       </nav>
@@ -8431,6 +8461,337 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             >
               {loc('متوجه شدم و تایید می‌کنم', 'I understand and confirm')}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: BECOME A STREAMER & STAR BADGE */}
+      {isBecomeStreamerModalOpen && (
+        <div className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn dir-rtl">
+          <div className="card-3d w-full max-w-md bg-slate-900 rounded-3xl border border-pink-500/50 p-6 space-y-5 shadow-[0_0_50px_rgba(236,72,153,0.3)] text-right relative overflow-hidden">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-600 to-amber-400 p-0.5 flex items-center justify-center shadow-lg">
+                  <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                    <Star className="w-5 h-5 text-amber-400 animate-pulse fill-amber-400" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-white">
+                    {loc('⭐ درخواست نشان استریمر و ستاره ویژه V.LIVE', '⭐ Streamer Badge & V.LIVE Star Request')}
+                  </h3>
+                  <p className="text-[10px] text-slate-400">
+                    {loc('کسب درآمد دلاری و محبوبیت بین ۱۰,۰۰۰+ بیننده فعال', 'Earn USD income & popularity among 10,000+ active viewers')}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsBecomeStreamerModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Benefits List */}
+            <div className="space-y-2.5 text-xs text-slate-300">
+              <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center gap-3">
+                <span className="text-xl">💰</span>
+                <div>
+                  <h4 className="font-bold text-white">{loc('سهم ۸۰٪ از کل هدیه‌ها و سکه‌ها', '80% share of all gifts & coins')}</h4>
+                  <p className="text-[10px] text-slate-400">{loc('واریز آنی به کیف پول و قابلیت برداشت مستقیم به USDT / کریپتو', 'Instant payout to wallet with direct USDT / Crypto withdrawal')}</p>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center gap-3">
+                <span className="text-xl">🏅</span>
+                <div>
+                  <h4 className="font-bold text-amber-300">{loc('نشان ستاره طلایی (Verified Star)', 'Golden Star Badge (Verified Star)')}</h4>
+                  <p className="text-[10px] text-slate-400">{loc('نمایش تیک ستاره روی پروفایل و اولویت در بالای لیست خانه و رادار', 'Star badge on profile and priority top ranking on Home & Radar')}</p>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center gap-3">
+                <span className="text-xl">📹</span>
+                <div>
+                  <h4 className="font-bold text-cyan-300">{loc('دسترسی به استودیو 4K و چت VIP', 'Access to 4K Studio & VIP Chat')}</h4>
+                  <p className="text-[10px] text-slate-400">{loc('امکان برگزاری لایواستریم اختصاصی، روم‌های صوتی و فیلترهای زیبایی', 'Exclusive LiveKit broadcasts, audio rooms and beauty filters')}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="space-y-2 pt-1">
+              <button
+                onClick={() => {
+                  setIsBecomeStreamerModalOpen(false);
+                  setIsLiveStudioOpen(true);
+                  showToast(loc('🚀 استودیو استریمر V.Live آماده اجراست', '🚀 V.Live Streamer Studio is ready'));
+                }}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white font-black text-xs shadow-lg shadow-pink-500/25 hover:scale-102 active:scale-95 transition flex items-center justify-center gap-2"
+              >
+                <Video className="w-4 h-4" />
+                <span>{loc('🚀 ورود فوری به استودیو و شروع لایو استریم', '🚀 Instant entry to studio & start live stream')}</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsBecomeStreamerModalOpen(false);
+                  showToast(loc('✅ درخواست نشان ستاره استریمر شما با موفقیت ثبت شد و در حال تایید است', '✅ Your streamer star badge application submitted and pending approval'));
+                }}
+                className="w-full py-3 rounded-2xl bg-slate-950 border border-amber-500/40 text-amber-300 font-bold text-xs hover:bg-slate-800 transition flex items-center justify-center gap-1.5"
+              >
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                <span>{loc('⭐ ثبت درخواست احراز هویت و دریافت ستاره', '⭐ Submit KYC & Claim Star Badge')}</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: 24/7 SUPPORT CENTER & TICKETS */}
+      {isSupportModalOpen && (
+        <div className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn dir-rtl">
+          <div className="card-3d w-full max-w-md bg-slate-900 rounded-3xl border border-cyan-500/50 p-6 space-y-5 shadow-[0_0_50px_rgba(6,182,212,0.3)] text-right relative overflow-hidden">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-purple-600 p-0.5 flex items-center justify-center shadow-lg">
+                  <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                    <Headphones className="w-5 h-5 text-cyan-400 animate-pulse" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-white">
+                    {loc('🎧 مرکز پشتیبانی و خدمات ۲۴/۷ V.LIVE', '🎧 V.LIVE 24/7 Support Center')}
+                  </h3>
+                  <p className="text-[10px] text-slate-400">
+                    {loc('پاسخگویی فوری، پشتیبانی تلگرام و ثبت تیکت', 'Instant answers, Telegram support & ticket submission')}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsSupportModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Support Options */}
+            <div className="space-y-3 text-xs">
+              {/* Telegram Support Channel & Direct Admin */}
+              <a
+                href="https://t.me/VLive_Support"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  showToast(loc('💬 منتقل شدید به تلگرام پشتیبانی: @VLive_Support', '💬 Redirecting to Telegram support: @VLive_Support'));
+                }}
+                className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-900/40 to-cyan-900/40 border border-cyan-500/30 flex items-center justify-between gap-3 hover:border-cyan-400 transition group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-400 group-hover:scale-110 transition">
+                    <MessageCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white group-hover:text-cyan-300 transition">{loc('پشتیبانی مستقیم تلگرام (۲۴/۷ Live)', 'Direct Telegram Support (24/7 Live)')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('ارتباط مستقیم با کارشناسان پشتیبانی و آیدی رسمی @VLive_Support', 'Direct chat with support team via @VLive_Support')}</p>
+                  </div>
+                </div>
+                <span className="text-xs text-cyan-400 font-bold dir-ltr shrink-0">@VLive_Support</span>
+              </a>
+
+              {/* Submit Instant Ticket */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4 text-purple-400" />
+                  <h4 className="font-bold text-white">{loc('ثبت تیکت اولویت‌دار درون برنامه‌ای', 'Submit In-App Priority Ticket')}</h4>
+                </div>
+                <input
+                  type="text"
+                  placeholder={loc('موضوع پیام یا سؤال شما...', 'Message subject...')}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
+                  id="support_subject_input"
+                />
+                <textarea
+                  rows="2"
+                  placeholder={loc('جزئیات درخواست یا مشکل خود را بنویسید...', 'Write details of your request or issue...')}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition resize-none"
+                  id="support_msg_input"
+                />
+                <button
+                  onClick={() => {
+                    const subj = document.getElementById('support_subject_input')?.value;
+                    const msg = document.getElementById('support_msg_input')?.value;
+                    if (!subj && !msg) {
+                      showToast(loc('لطفاً متن یا موضوع پیام پشتیبانی را وارد کنید', 'Please enter a message or subject'));
+                      return;
+                    }
+                    showToast(loc('✅ تیکت پشتیبانی شما ثبت شد. کارشناسان به زودی پاسخ خواهند داد.', '✅ Support ticket submitted. Support team will reply shortly.'));
+                    if (document.getElementById('support_subject_input')) document.getElementById('support_subject_input').value = '';
+                    if (document.getElementById('support_msg_input')) document.getElementById('support_msg_input').value = '';
+                    setIsSupportModalOpen(false);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 text-white font-bold text-xs hover:scale-101 active:scale-95 transition flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/20"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{loc('ارسال تیکت به پشتیبانی', 'Send Ticket to Support')}</span>
+                </button>
+              </div>
+
+              {/* Quick FAQ info */}
+              <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1.5 text-[11px] text-slate-400">
+                <p className="font-bold text-slate-300 flex items-center gap-1">
+                  <span>💡</span>
+                  <span>{loc('پاسخ به سوالات متداول:', 'Frequently Asked Questions:')}</span>
+                </p>
+                <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+                  <button 
+                    onClick={() => showToast(loc('💳 شارژ سکه آنی از طریق درگاه، کریپتو و کارت‌به‌کارت انجام می‌شود.', '💳 Coin top-up is instant via gateway, crypto and card.'))}
+                    className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-right text-slate-300 transition"
+                  >
+                    • {loc('روش‌های شارژ حساب', 'Deposit methods')}
+                  </button>
+                  <button 
+                    onClick={() => showToast(loc('💰 تسویه حساب درآمد استریمرها روزانه به USDT انجام می‌شود.', '💰 Streamers payouts are processed daily in USDT.'))}
+                    className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-right text-slate-300 transition"
+                  >
+                    • {loc('تسویه درآمد استریمر', 'Streamer payouts')}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* FIRST TIME SYSTEM PERMISSIONS & TERMS MODAL */}
+      {isPermissionsPromptOpen && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-2xl flex items-center justify-center p-4 animate-fadeIn dir-rtl overflow-y-auto">
+          <div className="card-3d w-full max-w-lg bg-slate-900 rounded-3xl border border-cyan-500/50 p-6 space-y-5 shadow-[0_0_60px_rgba(6,182,212,0.3)] text-right relative overflow-hidden my-auto">
+            
+            {/* Header */}
+            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-purple-600 to-pink-500 p-0.5 flex items-center justify-center shadow-lg shrink-0">
+                <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                  <ShieldCheck className="w-6 h-6 text-cyan-400 animate-pulse" />
+                </div>
+              </div>
+              <div>
+                <h3 className="font-black text-base text-white">
+                  {loc('🔑 درخواست دسترسی‌های سیستم و قبول قوانین V.LIVE', '🔑 System Permissions & Terms of Service')}
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {loc('برای تجربه کامل، لایواستریم HD/4K، چت صوتی و دریافت اعلان‌ها، لطفاً دسترسی‌ها را در همین ورود اولیه فعال کنید.', 'For the complete experience, 4K streaming, voice chat & notifications, please enable permissions on first launch.')}
+                </p>
+              </div>
+            </div>
+
+            {/* Permissions List */}
+            <div className="space-y-2.5 text-xs text-slate-300 max-h-[50vh] overflow-y-auto custom-scrollbar pl-1">
+              {/* 1. Camera */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800/80 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
+                    <Camera className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white">{loc('📹 دسترسی به دوربین (Camera Access)', '📹 Camera Access')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('برای برگزاری لایواستریم 4K، تماس تصویری مستقیم و استوری', 'For 4K live broadcasts, direct video calls & stories')}</p>
+                  </div>
+                </div>
+                <div className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
+                  {loc('الزامی', 'Required')}
+                </div>
+              </div>
+
+              {/* 2. Microphone */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800/80 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-pink-500/10 text-pink-400 border border-pink-500/20 shrink-0">
+                    <Mic className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white">{loc('🎙️ دسترسی به میکروفون (Microphone Access)', '🎙️ Microphone Access')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('برای گفتگوهای صوتی شفاف، روم‌های گفتگو و صدای پخش زنده', 'For clear voice chats, audio rooms & broadcast sound')}</p>
+                  </div>
+                </div>
+                <div className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
+                  {loc('الزامی', 'Required')}
+                </div>
+              </div>
+
+              {/* 3. Notifications */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800/80 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 shrink-0">
+                    <Bell className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white">{loc('🔔 فعال‌سازی اعلان‌ها (Push Notifications)', '🔔 Push Notifications')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('اطلاع‌رسانی فوری آغاز لایو استریمرهای محبوب، پیام‌ها و هدیه‌ها', 'Instant alerts when favorite streamers go live, messages & gifts')}</p>
+                  </div>
+                </div>
+                <div className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
+                  {loc('توصیه‌شده', 'Recommended')}
+                </div>
+              </div>
+
+              {/* 4. Storage & Media */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800/80 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
+                    <Image className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white">{loc('🖼️ دسترسی به گالری و رسانه (Media & Storage)', '🖼️ Media & Storage')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('برای آپلود تصویر پروفایل، ارسال عکس در چت و ذخیره فایل‌ها', 'For uploading avatar, sending photos in chat & saving media')}</p>
+                  </div>
+                </div>
+                <div className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
+                  {loc('اختیاری', 'Optional')}
+                </div>
+              </div>
+
+              {/* 5. Terms & Regulations */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-amber-500/30 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-amber-300">{loc('📜 قبول قوانین و شرایط استفاده (Terms & Rules)', '📜 Terms & Platform Rules')}</h4>
+                    <p className="text-[10px] text-slate-400">{loc('احترام متقابل در چت، عدم انتشار اسپم و رعایت قوانین محتوای استریم', 'Mutual respect in chat, anti-spam & stream content policies')}</p>
+                  </div>
+                </div>
+                <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0" />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-2 pt-2">
+              <button
+                onClick={() => handleSavePermissionsPrompt(true)}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-purple-600 to-pink-500 text-white font-black text-sm shadow-xl shadow-cyan-500/20 hover:scale-102 active:scale-95 transition flex items-center justify-center gap-2"
+              >
+                <Check className="w-5 h-5 font-black text-cyan-200" />
+                <span>{loc('🚀 تایید قوانین و اعطای کامل دسترسی‌ها', '🚀 Accept Rules & Grant All Permissions')}</span>
+              </button>
+
+              <button
+                onClick={() => handleSavePermissionsPrompt(false)}
+                className="w-full py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-white font-bold text-xs transition"
+              >
+                {loc('ذخیره و ورود با دسترسی پایه', 'Save & Enter with Basic Access')}
+              </button>
+            </div>
+
           </div>
         </div>
       )}
