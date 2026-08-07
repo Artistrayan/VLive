@@ -916,7 +916,13 @@ export default function ProfileTab(props) {
                 </h3>
 
                 <button
-                  onClick={() => setIsHostLiveOpen && setIsHostLiveOpen(true)}
+                  onClick={() => {
+                    if (!isVerified) {
+                      showToast(window.loc('ابتدا باید درخواست استریمر شدن بدهید و توسط مدیریت تایید شوید ⚠️', 'You must first apply to become a streamer and be approved by admin ⚠️'));
+                      return;
+                    }
+                    if (setIsHostLiveOpen) setIsHostLiveOpen(true);
+                  }}
                   className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold"
                 >
                   {window.loc('شروع لایو جدید', 'Go Live')}

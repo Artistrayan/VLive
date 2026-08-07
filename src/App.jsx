@@ -2435,6 +2435,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         showToast(loc('کد دعوت اختصاصی کپی شد 📲', 'The exclusive invitation code was copied 📲'));
         break;
       case 'start_live':
+        if (!isVerified) {
+          showToast(loc('ابتدا باید درخواست استریمر شدن بدهید و توسط مدیریت تایید شوید ⚠️', 'You must first apply to become a streamer and be approved by admin ⚠️'));
+          return;
+        }
         setIsGoLiveOpen(true);
         showToast(loc('استودیو شروع لایو استریم 🔴', 'The studio starts the live stream 🔴'));
         break;
@@ -6082,6 +6086,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           setIsVipModalOpen={setIsVipModalOpen}
           setIsReferralRulesModalOpen={setIsReferralRulesModalOpen}
           showToast={showToast}
+          isVerified={isVerified}
           loc={loc}
           isRtl={isRtl}
         />
@@ -8566,20 +8571,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </div>
             </div>
 
-            {/* Quick Actions */}
+            {/* Actions */}
             <div className="space-y-2 pt-1">
-              <button
-                onClick={() => {
-                  setIsBecomeStreamerModalOpen(false);
-                  setIsLiveStudioOpen(true);
-                  showToast(loc('🚀 استودیو استریمر V.Live آماده اجراست', '🚀 V.Live Streamer Studio is ready'));
-                }}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white font-black text-xs shadow-lg shadow-pink-500/25 hover:scale-102 active:scale-95 transition flex items-center justify-center gap-2"
-              >
-                <Video className="w-4 h-4" />
-                <span>{loc('🚀 ورود فوری به استودیو و شروع لایو استریم', '🚀 Instant entry to studio & start live stream')}</span>
-              </button>
-
               <button
                 onClick={() => {
                   setIsBecomeStreamerModalOpen(false);
@@ -8621,8 +8614,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           adminMinWithdrawal={adminMinWithdrawal}
           transactionsList={transactionsList}
           setTransactionsList={setTransactionsList}
-          setFinancialTransactionsList={setFinancialTransactionsList}
-          setAdminWithdrawalsList={setAdminWithdrawalsList}
         />
       )}
 

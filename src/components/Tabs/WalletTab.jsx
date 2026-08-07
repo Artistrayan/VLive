@@ -738,7 +738,13 @@ export default function WalletTab(props) {
                     {/* Quick Action Top Launcher */}
                     <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
                       <button
-                        onClick={() => setIsGoLiveOpen(true)}
+                        onClick={() => {
+                          if (!props.isVerified) {
+                            showToast(window.loc('ابتدا باید درخواست استریمر شدن بدهید و توسط مدیریت تایید شوید ⚠️', 'You must first apply to become a streamer and be approved by admin ⚠️'));
+                            return;
+                          }
+                          setIsGoLiveOpen(true);
+                        }}
                         className="btn-neon-pink px-4 py-2 rounded-2xl text-xs font-black shadow-lg flex items-center gap-1.5 animate-pulse"
                       >
                         <Radio className="w-4 h-4" />
@@ -904,7 +910,13 @@ export default function WalletTab(props) {
                         {window.loc('۲. مدیریت و استودیوی لایو (Live Center)', '2. Management and live studio (Live Center)')}
                       </h3>
                       <button
-                        onClick={() => setIsGoLiveOpen(true)}
+                        onClick={() => {
+                          if (!props.isVerified) {
+                            showToast(window.loc('ابتدا باید درخواست استریمر شدن بدهید و توسط مدیریت تایید شوید ⚠️', 'You must first apply to become a streamer and be approved by admin ⚠️'));
+                            return;
+                          }
+                          setIsGoLiveOpen(true);
+                        }}
                         className="btn-neon-pink px-4 py-2 rounded-2xl text-xs font-black shadow-lg flex items-center gap-1.5"
                       >
                         <Play className="w-4 h-4 fill-white" />
