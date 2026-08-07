@@ -210,7 +210,67 @@ export const apiHome = {
 };
 
 export const apiDiscover = {};
-export const apiMessages = {};
+export const apiMessages = {
+  async getMessages(userId = null) {
+    try {
+      let query = supabase.from('messages').select('*').order('created_at', { ascending: true });
+      if (userId) {
+        query = query.or(`sender_id.eq.${userId},recipient_id.eq.${userId}`);
+      }
+      const { data, error } = await query;
+      if (error) {
+        console.warn('Supabase messages query warning:', error.message);
+        return [];
+      }
+      return data || [];
+    } catch (e) {
+      console.warn('getMessages error:', e);
+      return [];
+    }
+  },
+
+  async sendMessage(msgPayload) {
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .insert([{
+          sender_id: msgPayload.sender_id || msgPayload.sender,
+          recipient_id: msgPayload.recipient_id || msgPayload.recipient,
+          conversation_id: msgPayload.conversation_id || msgPayload.conversationId,
+          content: msgPayload.content || msgPayload.text,
+          media_url: msgPayload.media_url || msgPayload.mediaUrl || null,
+          created_at: new Date().toISOString()
+        }])
+        .select();
+
+      if (error) {
+        console.warn('sendMessage Supabase error:', error.message);
+        return { success: false, error: error.message };
+      }
+      return { success: true, data: data?.[0] };
+    } catch (e) {
+      console.warn('sendMessage exception:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
+  subscribeToMessages(callback) {
+    try {
+      const channel = supabase
+        .channel('public:messages')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+          if (payload && payload.new) {
+            callback(payload.new);
+          }
+        })
+        .subscribe();
+      return channel;
+    } catch (e) {
+      console.warn('subscribeToMessages failed:', e);
+      return null;
+    }
+  }
+};
 export const apiLive = {
   async getLiveStreams(liveType = 'standard') {
     try {

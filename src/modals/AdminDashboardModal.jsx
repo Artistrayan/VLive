@@ -536,33 +536,15 @@ export default function AdminDashboardModal(props) {
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-pink-400 font-mono font-bold">{adminLivesList.length} {window.loc('لایو در حال پخش', 'Live is playing')}</span>
                       <button
-                        onClick={() => {
-                          const demoLive = {
-                            id: Date.now(),
-                            title: window.loc('لایو تست موسیقی زنده 🎵', 'Live music live test 🎵'),
-                            streamer: 'Rayan Streamer',
-                            viewers: 1450,
-                            category: 'Music',
-                            live_type: 'standard',
-                            duration: '12m'
-                          };
-                          setAdminLivesList(prev => [demoLive, ...prev]);
-                          setStreamsList(prev => [{
-                            id: `live_${demoLive.id}`,
-                            title: demoLive.title,
-                            host: demoLive.streamer,
-                            thumbnail: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
-                            viewers: demoLive.viewers,
-                            category: demoLive.category,
-                            live_type: 'standard',
-                            isVip18: false,
-                            entryFee: 0
-                          }, ...prev]);
-                          addAdminAuditLog(window.loc('لایو جدید استاندارد آزمایشی ساخته شد', 'A new live test standard was created'));
+                        onClick={async () => {
+                          const realStreams = await apiLive.getLiveStreams();
+                          setAdminLivesList(realStreams);
+                          setStreamsList(realStreams);
+                          showToast(window.loc('لیست پخش زنده بروزرسانی شد', 'Live stream list updated from Supabase'));
                         }}
                         className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-[10px] flex items-center gap-1 shadow"
                       >
-                        <Plus className="w-3.5 h-3.5" /> {window.loc('ساخت لایو آزمایشی', 'Experimental live production')}
+                        <RefreshCw className="w-3.5 h-3.5" /> {window.loc('بروزرسانی از دیتابیس', 'Sync with Database')}
                       </button>
                     </div>
                   </div>
@@ -2157,7 +2139,12 @@ export default function AdminDashboardModal(props) {
                     </div>
 
                     <div className="space-y-3">
-                      {aiReportedChatsList.map(chat => (
+                      {aiReportedChatsList.length === 0 ? (
+                        <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 text-center text-slate-400 text-xs font-medium">
+                          {window.loc('هیچ چت گزارش‌شده‌ای در دیتابیس ثبت نشده است.', 'No reported chats found in database.')}
+                        </div>
+                      ) : (
+                        aiReportedChatsList.map(chat => (
                         <div key={chat.id} className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
                             <div>
@@ -2212,7 +2199,8 @@ export default function AdminDashboardModal(props) {
                             </div>
                           )}
                         </div>
-                      ))}
+                      ))
+                      )}
                     </div>
                   </div>
 

@@ -62,16 +62,7 @@ export default function FinanceCenter({
     .filter(w => w.status === 'Pending' || w.status === 'Pending Review')
     .reduce((sum, w) => sum + (parseFloat(String(w.amount).replace(/[^0-9.]/g, '')) || 0), 0);
 
-  // Default transactions fallback
-  const mockTransactions = [
-    { id: 'TX-9021', user: 'Sahar_Host', type: 'WITHDRAW', amount: '$450.00 USDT', status: 'Completed', date: '2026-08-05 10:20', gate: 'TRC20 Wallet' },
-    { id: 'TX-9022', user: 'Rayan_Super', type: 'VIP', amount: '$29.99 USDT', status: 'Completed', date: '2026-08-05 09:45', gate: 'Crypto / USDT' },
-    { id: 'TX-9023', user: 'Elham_Vip', type: 'GIFT', amount: '12,000 Coins ($120.00)', status: 'Completed', date: '2026-08-05 08:30', gate: 'Live Stream Gift' },
-    { id: 'TX-9024', user: 'Arman_Teh', type: 'COIN_PURCHASE', amount: '$50.00 USDT', status: 'Completed', date: '2026-08-05 07:15', gate: 'USDT TRC20 Deposit' },
-    { id: 'TX-9025', user: 'Nazanin_Live', type: 'WITHDRAW', amount: '$1,200.00 USDT', status: 'Pending', date: '2026-08-05 06:00', gate: 'TRC20 Wallet' }
-  ];
-
-  const currentTransactions = financialTransactionsList.length > 0 ? financialTransactionsList : mockTransactions;
+  const currentTransactions = financialTransactionsList;
 
   // AI Financial Scan Logic
   const runAiFinanceAnalysis = () => {

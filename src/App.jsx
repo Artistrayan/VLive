@@ -2020,11 +2020,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
 
 
-  const [hotGiftsList, setHotGiftsList] = useState([
-    { id: 1, sender: 'Arash_VIP', gift: 'Supercar 🏎️', coins: 5000, recipient: 'Sara Maleki' },
-    { id: 2, sender: 'Omid', gift: 'Royal Crown 👑', coins: 2500, recipient: 'Elnaz Karimi' },
-    { id: 3, sender: 'Soren', gift: 'Gold Vault 📦', coins: 10000, recipient: 'Sara Maleki' }
-  ]);
+  const [hotGiftsList, setHotGiftsList] = useState([]);
 
   // PROFILE REDESIGN STATES
   const [profileGalleryTab, setProfileGalleryTab] = useState('photos'); // 'photos' | 'videos'
@@ -2741,10 +2737,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   // REAL-TIME WEBSOCKET & BROADCAST CHANNEL LIVE STREAM NETWORK ENGINE
   const [streamLikes, setStreamLikes] = useState(1240);
   const [floatingHearts, setFloatingHearts] = useState([]);
-  const [streamChatMessages, setStreamChatMessages] = useState([
-    { id: 'm1', user: 'Arash_VIP', text: loc('کیفیت استریم عالیه! 🔥', 'The quality of the stream is great! 🔥'), isVip: true, level: 12 },
-    { id: 'm2', user: 'Omid_Tehran', text: loc('سلام به همه دوستان', 'Hello to all friends'), isVip: false, level: 5 }
-  ]);
+  const [streamChatMessages, setStreamChatMessages] = useState([]);
   const [streamChatInput, setStreamChatInput] = useState('');
 
   // Helper to publish live stream network events (Real-time BroadcastChannel & LocalStorage Sync)
@@ -3282,22 +3275,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [isRecordingLive, setIsRecordingLive] = useState(false);
 
   // REAL-TIME LIVE STREAM POLL SYSTEM STATE
-  const [activeLivePoll, setActiveLivePoll] = useState({
-      id: 'poll_demo_1',
-      streamId: 'default',
-      hostUsername: 'Sahar_Miller',
-      question: loc('برای لایو فردا شب چه سبکی اجرا بشه؟ 🎵', 'What style should be performed for tomorrow night\'s live? 🎵'),
-      options: [
-        { id: 1, text: '🎵 DJ & Electronic Remix', votes: 142 },
-        { id: 2, text: '🎸 Acoustic Guitar Solo', votes: 89 },
-        { id: 3, text: '🎹 Piano Chill Vibes', votes: 64 },
-        { id: 4, text: '🎤 Singer Request Live Q&A', votes: 210 }
-      ],
-      totalVotes: 505,
-      userVotedOptionId: null,
-      isActive: true,
-      createdAt: Date.now()
-    });
+  const [activeLivePoll, setActiveLivePoll] = useState(null);
 
   const [isCreatePollModalOpen, setIsCreatePollModalOpen] = useState(false);
   const [pollQuestionInput, setPollQuestionInput] = useState('');
@@ -3517,6 +3495,16 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     const msgText = directInputText.trim();
     const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
+    const activeConv = conversations.find(c => c.id === activeConversationId);
+    if (activeConv) {
+      apiMessages.sendMessage({
+        sender: currentUsername || 'me',
+        recipient: activeConv.user?.username || 'user',
+        conversationId: activeConversationId,
+        text: msgText
+      });
+    }
+
     setConversations(prev => prev.map(conv => {
       if (conv.id === activeConversationId) {
         const newMsg = {
@@ -3562,12 +3550,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         role: targetUser.role,
         online: targetUser.online
       },
-      lastMessage: 'Direct conversation started',
+      lastMessage: '',
       lastTime: 'Just now',
       unreadCount: 0,
-      messages: [
-        { id: 1, sender: 'them', text: `Hello! I am ${targetUser.name}. Glad to connect!`, translation: `Hello! I am ${targetUser.name}. Glad to connect!`, translated: false, time: 'Just now' }
-      ]
+      messages: []
     };
 
     setConversations(prev => [newConv, ...prev]);

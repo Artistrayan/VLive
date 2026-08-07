@@ -208,8 +208,8 @@ export default function ChatTab(props) {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar">
-                  {conversations
-                    .filter(conv => {
+                  {(() => {
+                    const filteredConvs = conversations.filter(conv => {
                       if (msgFilterTab === 'private' && (conv.isGroup || conv.archived)) return false;
                       if (msgFilterTab === 'groups' && !conv.isGroup) return false;
                       if (msgFilterTab === 'calls' && conv.type !== 'call') return false;
@@ -231,8 +231,23 @@ export default function ChatTab(props) {
                       }
 
                       return true;
-                    })
-                    .map(conv => {
+                    });
+
+                    if (filteredConvs.length === 0) {
+                      return (
+                        <div className="py-12 text-center space-y-2 text-slate-500 px-4">
+                          <MessageSquare className="w-8 h-8 mx-auto text-slate-600 animate-pulse" />
+                          <p className="text-xs font-bold text-slate-400">
+                            {window.loc('هیچ گفتگویی یافت نشد', 'No conversation found')}
+                          </p>
+                          <p className="text-[10px] text-slate-500">
+                            {window.loc('برای شروع گفتگو دکمه چت جدید را بزنید', 'Click New Chat to start a conversation')}
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return filteredConvs.map(conv => {
                       const isSelected = activeConversationId === conv.id;
                       return (
                         <button
@@ -267,7 +282,7 @@ export default function ChatTab(props) {
 
                             <div className="flex items-center justify-between text-[11px]">
                               <p className="text-slate-400 truncate flex-1 pr-2">
-                                {conv.lastMessage}
+                                {conv.lastMessage || window.loc('گفتگو ایجاد شد', 'Conversation created')}
                               </p>
 
                               {conv.unreadCount > 0 ? (
@@ -281,7 +296,8 @@ export default function ChatTab(props) {
                           </div>
                         </button>
                       );
-                    })}
+                    });
+                  })()}
                 </div>
               </div>
 
@@ -1023,12 +1039,10 @@ export default function ChatTab(props) {
                           role: 'Group Admin',
                           online: true
                         },
-                        lastMessage: 'Group created',
+                        lastMessage: '',
                         lastTime: 'Just now',
                         unreadCount: 0,
-                        messages: [
-                          { id: 1, sender: 'them', senderName: 'System', text: "Group \"" + newGroupName + "\" created successfully.", time: 'Just now', status: 'read', type: 'text' }
-                        ]
+                        messages: []
                       };
 
                       setConversations(prev => [newGroup, ...prev]);

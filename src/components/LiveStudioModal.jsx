@@ -63,12 +63,8 @@ export default function LiveStudioModal({
   // Interactive Drawers / Panels
   const [isChatExpanded, setIsChatExpanded] = useState(true);
   const [chatInput, setChatInput] = useState('');
-  const [pinnedMessage, setPinnedMessage] = useState(window.loc('👑 به لایواستریم خوش آمدید! قوانین را رعایت فرمایید.', '👑 Welcome to Livestream! Follow the rules.'));
-  const [chatMessages, setChatMessages] = useState([
-    { id: 1, user: 'Sahar_VIP', text: window.loc('سلام استریمر عزیز! خسته نباشی ❤️', 'Hello dear streamer! Don\'t be tired'), isVip: true, isPinned: false },
-    { id: 2, user: 'Ali_Gamer', text: window.loc('عالی هستی! بازی بعدی چیه؟ 🎮', 'You are great! What is the next game? 🎮'), isVip: false, isPinned: false },
-    { id: 3, user: 'System', text: window.loc('🤖 حفاظت هوشمند AI فعال است.', '🤖 Smart AI protection is enabled.'), isSystem: true }
-  ]);
+  const [pinnedMessage, setPinnedMessage] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
 
   // Chat Control Settings
   const [isSlowMode, setIsSlowMode] = useState(false);
@@ -78,10 +74,7 @@ export default function LiveStudioModal({
 
   // Guest & PK System States
   const [activeTabDrawer, setActiveTabDrawer] = useState(null); // 'guests' | 'pk' | 'stats' | 'mods' | 'settings'
-  const [guestRequests, setGuestRequests] = useState([
-    { id: 'g1', name: 'Negar_Host', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80', status: 'PENDING' },
-    { id: 'g2', name: 'Reza_Pro', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80', status: 'PENDING' }
-  ]);
+  const [guestRequests, setGuestRequests] = useState([]);
   const [activeGuests, setActiveGuests] = useState([]);
   const maxGuestsLimit = 4;
 
