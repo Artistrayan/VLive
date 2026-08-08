@@ -2,6 +2,7 @@ import { useVisualUiEditor } from '../../context/VisualUiEditorContext';
 import React, { useState, useEffect } from 'react';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { safeStorage } from '../../utils/safeStorage';
+import { getUserId } from '../../services/api';
 import { 
   Camera, Edit3, Settings, ShieldAlert, Sparkles, QrCode, Lock, Crown,
   CheckCircle, Plus, DollarSign, LogOut, ChevronRight, MapPin, Wallet, Flame, Video, Gift, PhoneCall, Image,
@@ -9,6 +10,8 @@ import {
   MessageSquare, Shield, Activity, Radio, Check, X, Smartphone, Copy, ExternalLink, Zap, Star, ShieldCheck,
   Filter, Play, AlertCircle, Trash2, Upload
 } from 'lucide-react';
+import { interestService } from "../../services/interestService";
+import InterestsModal from "./InterestsModal";
 import { CoinsIcon, VerifiedBadge, VipStatusBadge } from '../CommonBadges';
 
 export default function ProfileTab(props) {
@@ -18,7 +21,7 @@ export default function ProfileTab(props) {
     userName, setUserName,
     userBio, setUserBio,
     userCoins = 0, userDiamonds = 0, userCashBalance = 0,
-    activeProfileTab = 'posts', setActiveProfileTab = (() => {}),
+    activeProfileTab = 'photos', setActiveProfileTab = (() => {}),
     currentUsername, authUsername,
     isUserRayan, userLevel = 24, vipPlan,
     PRESET_AVATARS = [], compressImageFile,
@@ -73,6 +76,13 @@ export default function ProfileTab(props) {
   });
 
   // --- EDIT PROFILE MODAL STATE ---
+  const [isInterestsModalOpen, setIsInterestsModalOpen] = useState(false);
+  const [fullInterestsList, setFullInterestsList] = useState([]);
+
+  useEffect(() => {
+    interestService.getGlobalInterests().then(res => setFullInterestsList(res));
+  }, []);
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     name: userName || authFullName || 'Rayan Maleki',
@@ -290,32 +300,6 @@ export default function ProfileTab(props) {
               {/* Top Quick Action Buttons */}
               <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
                 <button
-                  onClick={() => {
-                    setEditForm({
-                      name: userName || authFullName || 'Rayan Maleki',
-                      bio: userBio || authBio || '',
-                      city: userCity,
-                      age: userAge,
-                      occupation: userOccupation,
-                      education: userEducation,
-                      relationship: userRelationship,
-                      interests: userInterests,
-                      languages: userLanguages,
-                      instagram: instagramLink,
-                      telegram: telegramLink,
-                      avatar: userAvatar || authAvatar || PRESET_AVATARS[0],
-                      cover: coverPhoto
-                    });
-                    setIsEditModalOpen(true);
-                  }}
-                  className="px-3 py-1.5 rounded-2xl bg-slate-950/70 hover:bg-slate-900 text-white backdrop-blur-md transition border border-white/20 text-xs font-bold flex items-center gap-1.5 shadow-lg"
-                  title="Edit Profile"
-                >
-                  <Edit3 className="w-3.5 h-3.5 text-pink-400" />
-                  <span>{window.loc('ویرایش', 'Edit')}</span>
-                </button>
-
-                <button
                   onClick={() => setIsQrCodeModalOpen(true)}
                   className="p-2 rounded-2xl bg-slate-950/70 hover:bg-slate-900 text-white backdrop-blur-md transition border border-white/20"
                   title="Share QR Code"
@@ -332,17 +316,6 @@ export default function ProfileTab(props) {
                 </button>
               </div>
 
-              {/* Cover Photo Change Indicator */}
-              <button
-                onClick={() => {
-                  setEditForm(prev => ({ ...prev, cover: coverPhoto }));
-                  setIsEditModalOpen(true);
-                }}
-                className="absolute bottom-3 right-3 px-2.5 py-1 rounded-xl bg-black/60 hover:bg-black/80 text-white/90 text-[10px] font-bold backdrop-blur-md flex items-center gap-1 border border-white/10"
-              >
-                <Camera className="w-3 h-3 text-pink-400" />
-                <span>{window.loc('تغییر کاور', 'Change Cover')}</span>
-              </button>
             </div>
 
             {/* Profile Info & Avatar */}
@@ -375,18 +348,6 @@ export default function ProfileTab(props) {
                   </button>
                 </div>
 
-                {/* Primary Action Buttons */}
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-center flex-wrap">
-                  {(isVerified || isAdminUser) && (
-                    <button
-                      onClick={() => props.setIsHostLiveOpen && props.setIsHostLiveOpen(true)}
-                      className="flex-1 sm:flex-initial px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-amber-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-[0_0_25px_rgba(236,72,153,0.5)] hover:scale-105 active:scale-95 transition border border-pink-400/40"
-                    >
-                      <Video className="w-4 h-4 fill-white text-white animate-pulse" />
-                      <span>{window.loc('لایو بزرگسال / استو‌دیو 🔞', 'Live Studio 🔞')}</span>
-                    </button>
-                  )}
-                </div>
               </div>
 
               {/* User Identity Details */}
@@ -419,21 +380,33 @@ export default function ProfileTab(props) {
                 <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed pt-1">
                   {userBio || authBio || 'Official V.Live Streamer | Private video calls & interactive 4K streams'}
                 </p>
+                  <div className="flex flex-wrap gap-1.5 pt-2">
+                    {(() => {
+                      try {
+                        const parsed = JSON.parse(userInterests);
+                        if (Array.isArray(parsed)) {
+                          return parsed.map(id => {
+                            const item = fullInterestsList.find(i => i.id === id);
+                            if (!item) return null;
+                            return (
+                              <span key={id} className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-medium text-slate-300">
+                                <span>{item.icon}</span>
+                                <span>{item.name}</span>
+                              </span>
+                            );
+                          });
+                        }
+                      } catch(e) {}
+                      return userInterests.split(",").map((tag, i) => (
+                        <span key={i} className="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-medium text-slate-300">
+                          #{tag.trim()}
+                        </span>
+                      ));
+                    })()}
+                  </div>
+
               </div>
 
-              {/* Profile Completion Bar */}
-              <div className="mt-3 p-2 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                <div className="flex items-center justify-between text-[10px] font-bold">
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-amber-400" />
-                    <span>{window.loc('تکمیل پروفایل', 'Profile Completion')}</span>
-                  </span>
-                  <span className="text-amber-400">{profileCompletionPercent}%</span>
-                </div>
-                <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-emerald-400 rounded-full" style={{ width: `${profileCompletionPercent}%` }} />
-                </div>
-              </div>
 
               {/* Statistics Grid */}
               <div className="flex justify-around pt-3 mt-3 border-t border-slate-800/80 text-center">
@@ -503,6 +476,30 @@ export default function ProfileTab(props) {
             ))}
           </div>
         </div>
+
+        {/* ========================================== */}
+        {/* SUB-NAVIGATION CONTENT TABS                */}
+        {/* ========================================== */}
+        <VisualSectionWrapper pageId="profile" sectionId="profile_tab_nav" defaultLabel="Profile Content Tabs">
+          <div className="flex bg-slate-900 border border-slate-800 rounded-2xl p-1 mb-4 overflow-x-auto scrollbar-none">
+            {[
+              { id: 'photos', label: window.loc('عکس‌ها', 'Photos') },
+              { id: 'videos', label: window.loc('فیلم‌ها', 'Videos') }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveProfileTab(tab.id)}
+                className={`flex-1 min-w-[80px] py-2 rounded-xl text-xs font-bold transition-all ${
+                  activeProfileTab === tab.id
+                    ? 'bg-slate-800 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </VisualSectionWrapper>
 
         {/* ========================================== */}
         {/* DEDICATED ADMIN CARD FOR ADMIN USERS       */}
@@ -631,31 +628,6 @@ export default function ProfileTab(props) {
         </VisualSectionWrapper>
 
         {/* ========================================== */}
-        {/* SUB-NAVIGATION CONTENT TABS                */}
-        {/* ========================================== */}
-        <VisualSectionWrapper pageId="profile" sectionId="profile_tab_nav" defaultLabel="Profile Content Tabs">
-          <div className="flex bg-slate-900 border border-slate-800 rounded-2xl p-1 mb-4 overflow-x-auto scrollbar-none">
-            {[
-              { id: 'posts', label: window.loc('پست‌ها', 'Posts') },
-              { id: 'stories', label: window.loc('استوری‌ها', 'Stories') },
-              { id: 'media', label: window.loc('گالری', 'Gallery') }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveProfileTab(tab.id)}
-                className={`flex-1 min-w-[80px] py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeProfileTab === tab.id
-                    ? 'bg-slate-800 text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-300'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </VisualSectionWrapper>
-
-        {/* ========================================== */}
         {/* 2. SUB-TAB CONTENT PANELS                  */}
         {/* ========================================== */}
 
@@ -750,66 +722,6 @@ export default function ProfileTab(props) {
                 </div>
               </div>
             ))}
-          </div>
-        )}
-
-        {/* TAB 2: MEDIA GALLERY */}
-        {activeProfileTab === 'media' && (
-          <div className="space-y-4 animate-fadeIn">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white text-sm">{window.loc('آلبوم تصاویر و ویدیوهای من', 'Media & Video Highlights')}</h3>
-              <button
-                onClick={() => showToast(window.loc('📷 آپلود تصویر جدید فعال شد', 'Media upload ready!'))}
-                className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold flex items-center gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>{window.loc('افزودن رسانه', 'Upload')}</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {PRESET_AVATARS.map((img, idx) => (
-                <div key={idx} className="relative group rounded-2xl overflow-hidden aspect-square border border-slate-800 bg-slate-900 cursor-pointer">
-                  <img src={img} alt="Moment" className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent opacity-0 group-hover:opacity-100 transition p-3 flex flex-col justify-end">
-                    <span className="text-white text-xs font-bold">Highlight #{idx + 1}</span>
-                    <span className="text-slate-300 text-[10px]">0 Views</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: STORIES */}
-        {activeProfileTab === 'stories' && (
-          <div className="space-y-4 animate-fadeIn">
-            <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="font-bold text-white text-sm flex items-center gap-2">
-                  <Flame className="w-4 h-4 text-amber-400" />
-                  <span>{window.loc('آرشیو و هایلایت‌های استوری', 'Story Highlights Archive')}</span>
-                </h3>
-                <span className="text-xs text-slate-400 font-medium">4 Active Highlights</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { name: 'Daily Stream 🎥', count: '14 stories', cover: PRESET_AVATARS[0] },
-                  { name: 'VIP Moments 💎', count: '8 stories', cover: PRESET_AVATARS[1] },
-                  { name: 'Travel & Fun ✈️', count: '22 stories', cover: PRESET_AVATARS[2] },
-                  { name: 'Q&A Sessions 💬', count: '5 stories', cover: PRESET_AVATARS[3] },
-                ].map((item, i) => (
-                  <div key={i} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3 hover:border-pink-500/40 transition cursor-pointer">
-                    <img src={item.cover} alt={item.name} className="w-12 h-12 rounded-xl object-cover border border-purple-500/30" />
-                    <div>
-                      <h4 className="font-bold text-white text-xs">{item.name}</h4>
-                      <span className="text-[10px] text-slate-400">{item.count}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         )}
 
@@ -1355,13 +1267,17 @@ export default function ProfileTab(props) {
 
               {/* Interests */}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300">{window.loc('علاقه‌مندی‌ها (با کاما جدا کنید)', 'Favorites (separate with commas)')}</label>
-                <input
-                  type="text"
-                  value={editForm.interests}
-                  onChange={(e) => setEditForm({ ...editForm, interests: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none"
-                />
+                <label className="text-xs font-bold text-slate-300">{window.loc('علاقه‌مندی‌ها', 'Interests')}</label>
+                <button
+                  type="button"
+                  onClick={() => setIsInterestsModalOpen(true)}
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs hover:border-pink-500 transition"
+                >
+                  <span className="text-slate-400">
+                    {window.loc('انتخاب علاقه‌مندی‌ها...', 'Select interests...')}
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-slate-500" />
+                </button>
               </div>
 
             </div>
@@ -1383,6 +1299,25 @@ export default function ProfileTab(props) {
           </div>
         </div>
       )}
+      <InterestsModal
+        isOpen={isInterestsModalOpen}
+        onClose={(selectedIds) => {
+          setIsInterestsModalOpen(false);
+          if (selectedIds && Array.isArray(selectedIds)) {
+            const stored = JSON.stringify(selectedIds);
+            setUserInterests(stored);
+            safeStorage.setItem("vlive_profile_interests", stored);
+          } else {
+            const stored = localStorage.getItem("vlive_profile_interests_mock");
+            if (stored) {
+              setUserInterests(stored);
+              safeStorage.setItem("vlive_profile_interests", stored);
+            }
+          }
+        }}
+        userId={getUserId()}
+        showToast={typeof showToast !== 'undefined' ? showToast : undefined}
+      />
     </>
   );
 }
