@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Search, Check, Save } from 'lucide-react';
-import { interestService } from '../../services/interestService';
+import { interestService } from '../../services/interestService.js';
 
 export default function InterestsModal({ isOpen, onClose, userId, showToast }) {
   const [globalInterests, setGlobalInterests] = useState([]);

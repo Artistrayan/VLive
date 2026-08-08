@@ -10,8 +10,8 @@ import {
   MessageSquare, Shield, Activity, Radio, Check, X, Smartphone, Copy, ExternalLink, Zap, Star, ShieldCheck,
   Filter, Play, AlertCircle, Trash2, Upload
 } from 'lucide-react';
-import { interestService } from "../../services/interestService";
-import InterestsModal from "./InterestsModal";
+import { interestService } from "../../services/interestService.js";
+import InterestsModal from "./InterestsModal.jsx";
 import { CoinsIcon, VerifiedBadge, VipStatusBadge } from '../CommonBadges';
 
 export default function ProfileTab(props) {
