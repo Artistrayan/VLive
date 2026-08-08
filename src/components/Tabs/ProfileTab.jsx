@@ -612,7 +612,7 @@ export default function ProfileTab(props) {
                   { id: 'f2', username: 'Alireza_Stream', name: 'Alireza Rezaei', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', isOnline: true, isVIP: false, level: 18 },
                   { id: 'f3', username: 'Elena_Live', name: 'Elena Rostami', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', isOnline: false, isVIP: true, level: 45 },
                   { id: 'f4', username: 'Kian_Host', name: 'Kian VVIP', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150', isOnline: true, isVIP: true, level: 50 },
-                  { id: 'f5', username: 'Nika_Stars', name: 'Nika Sharifi', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', isOnline: false, isVIP: False, level: 12 }
+                  { id: 'f5', username: 'Nika_Stars', name: 'Nika Sharifi', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', isOnline: false, isVIP: false, level: 12 }
                 ]).map(u => (
                   <div key={u.id || u.username} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 transition flex items-center justify-between gap-3 shadow-sm">
                     <div className="flex items-center gap-3">
