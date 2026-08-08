@@ -374,6 +374,47 @@ export default function ProfileTab(props) {
         </VisualSectionWrapper>
 
         {/* ========================================== */}
+        {/* STORIES HORIZONTAL BAR                    */}
+        {/* ========================================== */}
+        <div className="p-3 bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-800 space-y-2">
+          <div className="flex items-center justify-between px-2">
+            <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <Flame className="w-4 h-4 text-amber-400 animate-bounce" />
+              <span>{window.loc('استوری‌ها و هایلایت‌ها', 'Stories & Highlights')}</span>
+            </span>
+            <span className="text-[10px] text-pink-400 font-bold cursor-pointer">{window.loc('مشاهده همه', 'View All')}</span>
+          </div>
+
+          <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
+            {/* Add Story Button */}
+            <button
+              onClick={() => showToast(window.loc('📷 بخش آپلود استوری آماده است', 'Story Creator is active!'))}
+              className="flex flex-col items-center gap-1.5 shrink-0 group"
+            >
+              <div className="w-16 h-16 rounded-full bg-slate-950 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 transition">
+                <Plus className="w-6 h-6" />
+              </div>
+              <span className="text-[10px] font-bold text-slate-300">{window.loc('افزودن', 'Add')}</span>
+            </button>
+
+            {/* Story Circles */}
+            {[
+              { title: 'Daily Vlog', img: PRESET_AVATARS[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80' },
+              { title: 'Stream Moments', img: PRESET_AVATARS[1] || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80' },
+              { title: 'VIP Exclusive', img: PRESET_AVATARS[2] || 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80' },
+              { title: 'Travel ✈️', img: PRESET_AVATARS[3] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80' },
+            ].map((story, i) => (
+              <div key={i} className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group">
+                <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-md">
+                  <img src={story.img} alt={story.title} className="w-full h-full object-cover rounded-full bg-slate-950" />
+                </div>
+                <span className="text-[10px] font-bold text-slate-300 max-w-[64px] truncate">{story.title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ========================================== */}
         {/* SEPARATE STATS CARD UNDERNEATH PROFILE     */}
         {/* ========================================== */}
         <VisualSectionWrapper pageId="profile" sectionId="profile_stats_card" defaultLabel="Profile Statistics Bar">
@@ -422,47 +463,6 @@ export default function ProfileTab(props) {
             </button>
           </div>
         </VisualSectionWrapper>
-
-        {/* ========================================== */}
-        {/* STORIES HORIZONTAL BAR                    */}
-        {/* ========================================== */}
-        <div className="p-3 bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-800 space-y-2">
-          <div className="flex items-center justify-between px-2">
-            <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-              <Flame className="w-4 h-4 text-amber-400 animate-bounce" />
-              <span>{window.loc('استوری‌ها و هایلایت‌ها', 'Stories & Highlights')}</span>
-            </span>
-            <span className="text-[10px] text-pink-400 font-bold cursor-pointer">{window.loc('مشاهده همه', 'View All')}</span>
-          </div>
-
-          <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
-            {/* Add Story Button */}
-            <button
-              onClick={() => showToast(window.loc('📷 بخش آپلود استوری آماده است', 'Story Creator is active!'))}
-              className="flex flex-col items-center gap-1.5 shrink-0 group"
-            >
-              <div className="w-16 h-16 rounded-full bg-slate-950 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 transition">
-                <Plus className="w-6 h-6" />
-              </div>
-              <span className="text-[10px] font-bold text-slate-300">{window.loc('افزودن', 'Add')}</span>
-            </button>
-
-            {/* Story Circles */}
-            {[
-              { title: 'Daily Vlog', img: PRESET_AVATARS[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80' },
-              { title: 'Stream Moments', img: PRESET_AVATARS[1] || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80' },
-              { title: 'VIP Exclusive', img: PRESET_AVATARS[2] || 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80' },
-              { title: 'Travel ✈️', img: PRESET_AVATARS[3] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80' },
-            ].map((story, i) => (
-              <div key={i} className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group">
-                <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-md">
-                  <img src={story.img} alt={story.title} className="w-full h-full object-cover rounded-full bg-slate-950" />
-                </div>
-                <span className="text-[10px] font-bold text-slate-300 max-w-[64px] truncate">{story.title}</span>
-              </div>
-            ))}
-          </div>
-        </div>
 
         {/* ========================================== */}
         {/* SUB-NAVIGATION CONTENT TABS                */}
