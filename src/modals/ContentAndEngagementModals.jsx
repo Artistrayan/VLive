@@ -1,3 +1,4 @@
+import { APP_LANGUAGES as DEFAULT_APP_LANGUAGES } from '../constants/i18n';
 import React from 'react';
 import { X, Check, Globe, Image, Camera, Plus, BarChart2, Send, Trash2, Upload } from 'lucide-react';
 
@@ -123,7 +124,7 @@ export default function ContentAndEngagementModals(props) {
               </button>
             </div>
             <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-              {APP_LANGUAGES.map(lang => {
+              {(APP_LANGUAGES && APP_LANGUAGES.length > 0 ? APP_LANGUAGES : DEFAULT_APP_LANGUAGES).map(lang => {
                 const isActive = currentAppLang === lang.code || currentAppLang === lang.name;
                 return (
                   <button

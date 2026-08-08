@@ -37,6 +37,7 @@ export default function ProfileTab(props) {
     authAvatar = '', authFullName = '', authCity = 'Tehran', userRank = 'VIP Streamer',
     authBio = '', dailyStreak = 5,
     usersList = [], setUsersList = (() => {}),
+    adminReportsList = [],
     addAdminAuditLog = (() => {})
   } = props;
 
@@ -554,7 +555,7 @@ export default function ProfileTab(props) {
                 className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-cyan-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
               >
                 <span className="block text-sm sm:text-base font-black text-white group-hover:text-cyan-300 transition">
-                  {usersList.length || 248}
+                  {(usersList || []).length}
                 </span>
                 <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
                   <Users className="w-2.5 h-2.5 text-cyan-400 inline" />
@@ -572,7 +573,7 @@ export default function ProfileTab(props) {
                 className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-amber-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
               >
                 <span className="block text-sm sm:text-base font-black text-amber-400 group-hover:scale-110 transition">
-                  {usersList.filter(u => u.isPendingAuth || u.status === 'pending').length || 12}
+                  {(usersList || []).filter(u => u.isPendingAuth || u.status === 'pending' || u.kycStatus === 'pending').length}
                 </span>
                 <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
                   <ShieldAlert className="w-2.5 h-2.5 text-amber-400 inline" />
@@ -590,7 +591,7 @@ export default function ProfileTab(props) {
                 className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-cyan-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
               >
                 <span className="block text-sm sm:text-base font-black text-cyan-400 group-hover:scale-110 transition">
-                  {usersList.filter(u => u.isStreamer || u.isBroadcaster).length || 45}
+                  {(usersList || []).filter(u => u.isStreamer || u.isBroadcaster || u.role === 'streamer').length}
                 </span>
                 <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
                   <Radio className="w-2.5 h-2.5 text-cyan-400 inline" />
@@ -608,7 +609,7 @@ export default function ProfileTab(props) {
                 className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-rose-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
               >
                 <span className="block text-sm sm:text-base font-black text-rose-400 group-hover:scale-110 transition">
-                  18
+                  {(adminReportsList || []).length}
                 </span>
                 <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
                   <Shield className="w-2.5 h-2.5 text-rose-400 inline" />

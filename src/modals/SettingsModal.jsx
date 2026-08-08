@@ -1,3 +1,4 @@
+import { APP_LANGUAGES as DEFAULT_APP_LANGUAGES } from '../constants/i18n';
 import React from 'react';
 import { safeStorage } from '../utils/safeStorage';
 import { 
@@ -76,13 +77,7 @@ export default function SettingsModal(props) {
   const [appAccentColor, setAppAccentColor] = React.useState(props.appAccentColor || 'pink');
   const [appFontSize, setAppFontSize] = React.useState(props.appFontSize || 'medium');
   const [appAnimations, setAppAnimations] = React.useState(props.appAnimations !== undefined ? props.appAnimations : true);
-  const APP_LANGUAGES = props.APP_LANGUAGES || [
-    { code: 'fa', name: window.loc('فارسی', 'Farsi') },
-    { code: 'en', name: 'English' },
-    { code: 'ar', name: window.loc('العربية', 'Arabic') },
-    { code: 'tr', name: window.loc('Türkچه', 'Türkçe') },
-    { code: 'ru', name: 'Русский' }
-  ];
+  const APP_LANGUAGES = (props.APP_LANGUAGES && props.APP_LANGUAGES.length > 0) ? props.APP_LANGUAGES : DEFAULT_APP_LANGUAGES;
   const handleSelectLanguage = props.handleSelectLanguage || ((lang) => {
     const code = typeof lang === 'string' ? lang : (lang?.code || 'fa');
     if (props.setCurrentAppLang) props.setCurrentAppLang(code);
@@ -91,7 +86,7 @@ export default function SettingsModal(props) {
       props.showToast(`Language changed to ${code}`);
     }
   });
-  const currentAppLang = props.currentAppLang || 'fa';
+  const currentAppLang = props.currentAppLang || 'en';
   const [liveDefaultQuality, setLiveDefaultQuality] = React.useState(props.liveDefaultQuality || '720p');
   const [videoCallQuality, setVideoCallQuality] = React.useState(props.videoCallQuality || '720p');
   const [beautyFilterEnabled, setBeautyFilterEnabled] = React.useState(props.beautyFilterEnabled !== undefined ? props.beautyFilterEnabled : true);

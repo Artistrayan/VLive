@@ -1821,7 +1821,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // 6. Language & Real-time Translation System
   const [currentAppLang, setCurrentAppLang] = useState(() => {
-    return safeStorage.getItem('vlive_app_lang') || 'fa';
+    return safeStorage.getItem('vlive_app_lang') || 'en';
   });
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
 
@@ -1836,7 +1836,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     return langName || 'fa';
   };
 
-  const currentLangObj = APP_LANGUAGES.find(l => l.code === currentAppLang || l.name === currentAppLang) || APP_LANGUAGES[1] || APP_LANGUAGES[0];
+  const currentLangObj = APP_LANGUAGES.find(l => l.code === currentAppLang || l.name === currentAppLang) || APP_LANGUAGES[0];
   const langCode = currentLangObj.code;
   const isRtl = currentLangObj.dir === 'rtl';
 
@@ -1859,11 +1859,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   };
 
   const handleSelectLanguage = (lang) => {
-    const code = typeof lang === 'string' ? lang : (lang?.code || 'fa');
+    const code = getLangCode(lang);
     setCurrentAppLang(code);
     safeStorage.setItem('vlive_app_lang', code);
     setIsLanguageModalOpen(false);
-    const selectedObj = APP_LANGUAGES.find(l => l.code === code) || { dir: 'rtl', name: code, flag: '🌐' };
+    const selectedObj = APP_LANGUAGES.find(l => l.code === code || l.name === code) || { dir: (code === 'fa' || code === 'ar' ? 'rtl' : 'ltr'), name: code, flag: '🌐' };
     if (typeof document !== 'undefined') {
       document.documentElement.dir = selectedObj.dir === 'rtl' ? 'rtl' : 'ltr';
       document.documentElement.lang = code;
@@ -1874,7 +1874,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       }
       return enStr || faStr || '';
     };
-    showToast(`${t('changeLangSuccess', 'زبان برنامه تغییر یافت به')} ${selectedObj.flag || ''} ${selectedObj.name || code}`);
+    showToast(`${t('changeLangSuccess', 'App language changed to')} ${selectedObj.flag || ''} ${selectedObj.name || code}`);
   };
 
   // 13. System Permissions Prompt State & Persistence
@@ -6151,6 +6151,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           setIsHostLiveOpen={setIsHostLiveOpen}
           followedUsers={followedUsers}
           usersList={usersList}
+          adminReportsList={adminReportsList}
           setUsersList={setUsersList}
           addAdminAuditLog={addAdminAuditLog}
           showToast={showToast}
