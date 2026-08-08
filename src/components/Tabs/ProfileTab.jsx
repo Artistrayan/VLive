@@ -14,6 +14,24 @@ import { interestService } from "../../services/interestService.js";
 import InterestsModal from "./InterestsModal.jsx";
 import { CoinsIcon, VerifiedBadge, VipStatusBadge } from '../CommonBadges';
 
+
+// Helper to localize numbers according to current active language
+const formatNum = (num) => {
+  if (num === null || num === undefined || num === '') return '0';
+  const val = Number(num);
+  if (isNaN(val)) return String(num);
+
+  const lang = typeof window !== 'undefined' && window.vlive_app_lang 
+    ? window.vlive_app_lang 
+    : (typeof localStorage !== 'undefined' ? localStorage.getItem('vlive_app_lang') : 'fa') || 'fa';
+
+  if (lang === 'fa' || lang === 'ar') {
+    const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    return val.toLocaleString('en-US').replace(/[0-9]/g, (d) => persianDigits[parseInt(d, 10)]);
+  }
+  return val.toLocaleString('en-US');
+};
+
 export default function ProfileTab(props) {
   const {
     activeTab,
@@ -738,7 +756,181 @@ export default function ProfileTab(props) {
           </div>
         )}
 
-        {/* TAB 1: POSTS FEED */}
+        
+        {/* ========================================== */}
+        {/* SUB-TAB CONTENT PANELS                  */}
+        {/* ========================================== */}
+{/* TAB: FOLLOWERS LIST */}
+        {activeProfileTab === 'followers' && (
+          <div className="space-y-4 animate-fadeIn">
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-white text-sm">{window.loc('دنبال‌کنندگان شما', 'Your Followers')}</h3>
+                    <span className="text-[10px] text-slate-400 font-mono">{formatNum(userFollowersCount)} {window.loc('فالوور واقعی', 'Real Followers')}</span>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-indigo-400 bg-indigo-950/80 px-2.5 py-1 rounded-full border border-indigo-500/30">
+                  👥 {formatNum(userFollowersCount)}
+                </span>
+              </div>
+
+              {/* Followers List Grid */}
+              <div className="space-y-2.5">
+                {(usersList.length > 0 ? usersList.slice(0, 8) : [
+                  { id: 'f1', username: 'Sara_VLive', name: 'Sara Ahmadi', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', isOnline: true, isVIP: true, level: 32 },
+                  { id: 'f2', username: 'Alireza_Stream', name: 'Alireza Rezaei', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', isOnline: true, isVIP: false, level: 18 },
+                  { id: 'f3', username: 'Elena_Live', name: 'Elena Rostami', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', isOnline: false, isVIP: true, level: 45 },
+                  { id: 'f4', username: 'Kian_Host', name: 'Kian VVIP', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150', isOnline: true, isVIP: true, level: 50 },
+                  { id: 'f5', username: 'Nika_Stars', name: 'Nika Sharifi', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', isOnline: false, isVIP: False, level: 12 }
+                ]).map(u => (
+                  <div key={u.id || u.username} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 transition flex items-center justify-between gap-3 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <img src={u.avatar || u.userAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                        {u.isOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-950 animate-pulse" />}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                          <span>{u.name || u.username}</span>
+                          {u.isVIP && <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-black border border-amber-500/40">VIP</span>}
+                        </h4>
+                        <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level || 15)}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => showToast(`${window.loc('درخواست دنبال‌کردن متقابل ارسال شد به', 'Follow request sent to')} @${u.username}`)}
+                      className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] shadow transition active:scale-95 flex items-center gap-1"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>{window.loc('فالو متقابل', 'Follow Back')}</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: FOLLOWING LIST */}
+        {activeProfileTab === 'following' && (
+          <div className="space-y-4 animate-fadeIn">
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                    <UserCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-white text-sm">{window.loc('افراد دنبال‌شده توسط شما', 'Users You Follow')}</h3>
+                    <span className="text-[10px] text-slate-400 font-mono">{formatNum(userFollowingCount)} {window.loc('استریمر و کاربر', 'Streamers & Users')}</span>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-blue-400 bg-blue-950/80 px-2.5 py-1 rounded-full border border-blue-500/30">
+                  🤝 {formatNum(userFollowingCount)}
+                </span>
+              </div>
+
+              {/* Following List Grid */}
+              <div className="space-y-2.5">
+                {[
+                  { id: 'fg1', username: 'Rayan_Super_Admin', name: 'Rayan Admin', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', isLive: true, role: 'Super Admin', level: 99 },
+                  { id: 'fg2', username: 'Mina_Music', name: 'Mina Music Host', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', isLive: true, role: 'Top Streamer', level: 42 },
+                  { id: 'fg3', username: 'Darius_Game', name: 'Darius Gamer', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', isLive: false, role: 'PRO Gamer', level: 28 },
+                  { id: 'fg4', username: 'Zeinab_Art', name: 'Zeinab Digital Art', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', isLive: false, role: 'Creator', level: 35 }
+                ].map(u => (
+                  <div key={u.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between gap-3 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <img src={u.avatar} alt={u.name} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                        {u.isLive && <span className="absolute -top-1 -right-1 text-[8px] font-black bg-rose-600 text-white px-1 rounded-full border border-slate-950 animate-pulse">LIVE</span>}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                          <span>{u.name}</span>
+                          <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.2 rounded font-black border border-blue-500/40">{u.role}</span>
+                        </h4>
+                        <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {u.isLive && (
+                        <button
+                          onClick={() => showToast(`${window.loc('ورود به لایک/استریم زنده', 'Joining live stream of')} @${u.username}`)}
+                          className="px-2.5 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-[10px] border border-rose-500/40 transition flex items-center gap-1"
+                        >
+                          <Video className="w-3 h-3" />
+                          <span>{window.loc('تلاش لایو', 'Watch')}</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => showToast(`${window.loc('لغو دنبال‌کردن', 'Unfollowed')} @${u.username}`)}
+                        className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-[10px] border border-slate-800 transition"
+                      >
+                        {window.loc('دنبال‌شده', 'Following')}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: LIKES FEED */}
+        {activeProfileTab === 'likes' && (
+          <div className="space-y-4 animate-fadeIn">
+            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-pink-500/20 text-pink-400 border border-pink-500/30">
+                    <Heart className="w-5 h-5 fill-pink-500/30" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-white text-sm">{window.loc('پست‌ها و فعالیت‌های پسندیده‌شده', 'Liked Content & Heart History')}</h3>
+                    <span className="text-[10px] text-slate-400 font-mono">{formatNum(userTotalLikes)} {window.loc('لایک ثبت‌شده', 'Total Likes')}</span>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-pink-400 bg-pink-950/80 px-2.5 py-1 rounded-full border border-pink-500/30">
+                  ❤️ {formatNum(userTotalLikes)}
+                </span>
+              </div>
+
+              {/* Liked Posts Grid */}
+              <div className="space-y-3">
+                {profilePosts.map(post => (
+                  <div key={`liked-${post.id}`} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5 hover:border-pink-500/30 transition">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <img src={post.avatar} alt={post.author} className="w-8 h-8 rounded-full object-cover border border-slate-700" />
+                        <div>
+                          <h4 className="font-bold text-white text-xs">{post.author}</h4>
+                          <span className="text-[9.5px] text-slate-400">@{post.username} • {post.time}</span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-black text-pink-400 flex items-center gap-1 bg-pink-950/60 px-2 py-0.5 rounded-full border border-pink-500/30">
+                        <Heart className="w-3 h-3 fill-pink-400" />
+                        {formatNum(post.likes)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed dir-rtl">{post.content}</p>
+                    {post.image && (
+                      <div className="rounded-xl overflow-hidden aspect-video border border-slate-800 max-h-40">
+                        <img src={post.image} alt="Attachment" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+{/* TAB 1: POSTS FEED */}
         { (activeProfileTab === 'photos' || activeProfileTab === 'videos') && (
           <div className="space-y-4 animate-fadeIn">
             {/* Posts List */}
@@ -1124,7 +1316,184 @@ export default function ProfileTab(props) {
       {/* ========================================== */}
       {/* 3. EDIT PROFILE MODAL                      */}
       {/* ========================================== */}
-      {isEditModalOpen && (
+      
+
+{/* DEDICATED ADMIN CARD FOR ADMIN USERS       */}
+        {/* ========================================== */}
+        {isAdminUser && (
+          <div className="p-3 rounded-2xl bg-gradient-to-r from-rose-950/90 via-slate-900 to-slate-900 border border-rose-500/50 shadow-xl space-y-2 animate-fadeIn">
+            {/* Top Action Row: Entry Button Only */}
+            <div className="flex items-center justify-between gap-2 pb-1 border-b border-rose-500/30">
+              <button
+                onClick={() => setIsAdminPanelOpen && setIsAdminPanelOpen(true)}
+                className="w-full py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs shadow-md flex items-center justify-center gap-1.5 transition active:scale-95"
+              >
+                <Shield className="w-4 h-4" />
+                <span>{window.loc('ورود به پنل مدیریت', 'Enter Admin Panel')}</span>
+              </button>
+            </div>
+
+            {/* 4 Compact Interactive Clickable Stats Cards */}
+            <div className="grid grid-cols-4 gap-1.5 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  if (setAdminActiveTab) setAdminActiveTab('users');
+                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
+                  showToast(window.loc('مدیریت و آمار کامل کاربران 👥', 'Full User Management & Stats 👥'));
+                }}
+                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-cyan-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
+              >
+                <span className="block text-sm sm:text-base font-black text-white group-hover:text-cyan-300 transition">
+                  {formatNum((usersList || []).length)}
+                </span>
+                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
+                  <Users className="w-2.5 h-2.5 text-cyan-400 inline" />
+                  {window.loc('کل کاربران', 'Total Users')}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (setAdminActiveTab) setAdminActiveTab('verification');
+                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
+                  showToast(window.loc('بررسی مدارک و درخواست‌های احراز هویت 📑', 'Identity Verification & Pending Documents 📑'));
+                }}
+                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-amber-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
+              >
+                <span className="block text-sm sm:text-base font-black text-amber-400 group-hover:scale-110 transition">
+                  {formatNum((usersList || []).filter(u => u.isPendingAuth || u.status === 'pending' || u.kycStatus === 'pending').length)}
+                </span>
+                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
+                  <ShieldAlert className="w-2.5 h-2.5 text-amber-400 inline" />
+                  {window.loc('احراز معلق', 'Pending Auth')}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (setAdminActiveTab) setAdminActiveTab('verification');
+                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
+                  showToast(window.loc('مدیریت و آمار مجری‌ها و استریمرها 🎙️', 'Streamers & Broadcaster Management 🎙️'));
+                }}
+                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-cyan-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
+              >
+                <span className="block text-sm sm:text-base font-black text-cyan-400 group-hover:scale-110 transition">
+                  {formatNum((usersList || []).filter(u => u.isStreamer || u.isBroadcaster || u.role === 'streamer').length)}
+                </span>
+                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
+                  <Radio className="w-2.5 h-2.5 text-cyan-400 inline" />
+                  {window.loc('استریمرها', 'Streamers')}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (setAdminActiveTab) setAdminActiveTab('reports');
+                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
+                  showToast(window.loc('مرکز بررسی گزارش‌های تخلف 🚨', 'Violation Reports Center 🚨'));
+                }}
+                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-rose-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
+              >
+                <span className="block text-sm sm:text-base font-black text-rose-400 group-hover:scale-110 transition">
+                  {formatNum((adminReportsList || []).length)}
+                </span>
+                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
+                  <Shield className="w-2.5 h-2.5 text-rose-400 inline" />
+                  {window.loc('گزارش‌ها', 'Reports')}
+                </span>
+              </button>
+            </div>
+
+            {/* Visual Editor / Audit Log Quick Actions */}
+            <div className="flex gap-1.5 pt-1">
+              <button
+                onClick={() => setIsEditMode && setIsEditMode(!isEditMode)}
+                className="flex-1 py-2 rounded-xl bg-amber-950/50 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300 font-bold text-[11px] flex items-center justify-center gap-1 transition"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>{isEditMode ? window.loc('خروج از ویرایش بصری', 'Exit Visual Edit') : window.loc('ویرایش بصری UI', 'Visual UI Editor')}</span>
+              </button>
+              <button
+                onClick={() => {
+                  addAdminAuditLog(window.loc('بازبینی سریع کاربران از پروفایل انجام شد', 'Quick review of user profiles was done'));
+                  showToast(window.loc('بررسی امنیتی کامل اجرا شد ✅', 'A complete security check has been implemented'));
+                }}
+                className="flex-1 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-[11px] flex items-center justify-center gap-1 transition"
+              >
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{window.loc('ثبت لاگ نظارت', 'Record Audit Log')}</span>
+              </button>
+            </div>
+          </div>
+        )}
+        {/* ========================================== */}
+                
+
+{/* ACTION GRID                                */}
+        {/* ========================================== */}
+        <VisualSectionWrapper pageId="profile" sectionId="profile_actions_grid" defaultLabel="Profile Actions Grid">
+          <div className="grid grid-cols-4 sm:grid-cols-4 gap-2 mb-1.5">
+            <button onClick={() => setIsEditModalOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Edit3 className="w-5 h-5 text-slate-300" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('ویرایش', 'Edit')}</span>
+            </button>
+            <button onClick={() => { setActiveProfileTab('wallet'); setWalletSubTab && setWalletSubTab('buy'); }} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Wallet className="w-5 h-5 text-amber-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('کیف پول', 'Wallet')}</span>
+            </button>
+            <button onClick={() => setActiveProfileTab('vip')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Crown className="w-5 h-5 text-purple-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('وی‌آی‌پی', 'VIP')}</span>
+            </button>
+            <button onClick={() => setActiveProfileTab('about')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <User className="w-5 h-5 text-cyan-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('درباره', 'About')}</span>
+            </button>
+            
+            <button onClick={() => setActiveProfileTab('activity')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Activity className="w-5 h-5 text-emerald-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('فعالیت', 'Activity')}</span>
+            </button>
+            <button onClick={() => setActiveProfileTab('lives')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Video className="w-5 h-5 text-pink-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('لایوها', 'Lives')}</span>
+            </button>
+            <button onClick={() => setActiveProfileTab('likes')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Heart className="w-5 h-5 text-rose-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('علاقه‌مندی', 'Favorites')}</span>
+            </button>
+            <button onClick={() => setActiveProfileTab('followers')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Users className="w-5 h-5 text-indigo-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('فالوورها', 'Followers')}</span>
+            </button>
+            
+            <button onClick={() => setActiveProfileTab('following')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Users className="w-5 h-5 text-blue-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('فالووینگ', 'Following')}</span>
+            </button>
+            <button onClick={() => setActiveProfileTab('settings')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Settings className="w-5 h-5 text-slate-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('تنظیمات', 'Settings')}</span>
+            </button>
+            <button onClick={() => setIsSecurityModalOpen && setIsSecurityModalOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Shield className="w-5 h-5 text-emerald-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('حریم‌خصوصی', 'Privacy')}</span>
+            </button>
+            <button onClick={() => props.setIsSupportModalOpen && props.setIsSupportModalOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <MessageSquare className="w-5 h-5 text-blue-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('پشتیبانی', 'Support')}</span>
+            </button>
+          </div>
+        </VisualSectionWrapper>
+
+        {/* ========================================== */}
+        {/* MODALS                                    */}
+        {/* ========================================== */}
+{isEditModalOpen && (
         <div className="fixed inset-0 z-[70] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn overflow-y-auto" dir="rtl">
           <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl my-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -1391,7 +1760,8 @@ export default function ProfileTab(props) {
           </div>
         </div>
       )}
-      <InterestsModal
+      
+<InterestsModal
         isOpen={isInterestsModalOpen}
         onClose={(selectedIds) => {
           setIsInterestsModalOpen(false);
@@ -1412,7 +1782,8 @@ export default function ProfileTab(props) {
       />
     
       {/* CREATE POST MODAL */}
-      {isCreatePostModalOpen && (
+      
+{isCreatePostModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4 relative">
             {/* Header */}
@@ -1554,179 +1925,10 @@ export default function ProfileTab(props) {
           </div>
         </div>
       )}
-</>
-  );
+
+
+        
+  </>
+);
 }
 
-        {/* DEDICATED ADMIN CARD FOR ADMIN USERS       */}
-        {/* ========================================== */}
-        {isAdminUser && (
-          <div className="p-3 rounded-2xl bg-gradient-to-r from-rose-950/90 via-slate-900 to-slate-900 border border-rose-500/50 shadow-xl space-y-2 animate-fadeIn">
-            {/* Top Action Row: Entry Button Only */}
-            <div className="flex items-center justify-between gap-2 pb-1 border-b border-rose-500/30">
-              <button
-                onClick={() => setIsAdminPanelOpen && setIsAdminPanelOpen(true)}
-                className="w-full py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs shadow-md flex items-center justify-center gap-1.5 transition active:scale-95"
-              >
-                <Shield className="w-4 h-4" />
-                <span>{window.loc('ورود به پنل مدیریت', 'Enter Admin Panel')}</span>
-              </button>
-            </div>
-
-            {/* 4 Compact Interactive Clickable Stats Cards */}
-            <div className="grid grid-cols-4 gap-1.5 text-xs">
-              <button
-                type="button"
-                onClick={() => {
-                  if (setAdminActiveTab) setAdminActiveTab('users');
-                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
-                  showToast(window.loc('مدیریت و آمار کامل کاربران 👥', 'Full User Management & Stats 👥'));
-                }}
-                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-cyan-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
-              >
-                <span className="block text-sm sm:text-base font-black text-white group-hover:text-cyan-300 transition">
-                  {formatNum((usersList || []).length)}
-                </span>
-                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
-                  <Users className="w-2.5 h-2.5 text-cyan-400 inline" />
-                  {window.loc('کل کاربران', 'Total Users')}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (setAdminActiveTab) setAdminActiveTab('verification');
-                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
-                  showToast(window.loc('بررسی مدارک و درخواست‌های احراز هویت 📑', 'Identity Verification & Pending Documents 📑'));
-                }}
-                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-amber-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
-              >
-                <span className="block text-sm sm:text-base font-black text-amber-400 group-hover:scale-110 transition">
-                  {formatNum((usersList || []).filter(u => u.isPendingAuth || u.status === 'pending' || u.kycStatus === 'pending').length)}
-                </span>
-                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
-                  <ShieldAlert className="w-2.5 h-2.5 text-amber-400 inline" />
-                  {window.loc('احراز معلق', 'Pending Auth')}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (setAdminActiveTab) setAdminActiveTab('verification');
-                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
-                  showToast(window.loc('مدیریت و آمار مجری‌ها و استریمرها 🎙️', 'Streamers & Broadcaster Management 🎙️'));
-                }}
-                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-cyan-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
-              >
-                <span className="block text-sm sm:text-base font-black text-cyan-400 group-hover:scale-110 transition">
-                  {formatNum((usersList || []).filter(u => u.isStreamer || u.isBroadcaster || u.role === 'streamer').length)}
-                </span>
-                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
-                  <Radio className="w-2.5 h-2.5 text-cyan-400 inline" />
-                  {window.loc('استریمرها', 'Streamers')}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (setAdminActiveTab) setAdminActiveTab('reports');
-                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
-                  showToast(window.loc('مرکز بررسی گزارش‌های تخلف 🚨', 'Violation Reports Center 🚨'));
-                }}
-                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-rose-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
-              >
-                <span className="block text-sm sm:text-base font-black text-rose-400 group-hover:scale-110 transition">
-                  {formatNum((adminReportsList || []).length)}
-                </span>
-                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
-                  <Shield className="w-2.5 h-2.5 text-rose-400 inline" />
-                  {window.loc('گزارش‌ها', 'Reports')}
-                </span>
-              </button>
-            </div>
-
-            {/* Visual Editor / Audit Log Quick Actions */}
-            <div className="flex gap-1.5 pt-1">
-              <button
-                onClick={() => setIsEditMode && setIsEditMode(!isEditMode)}
-                className="flex-1 py-2 rounded-xl bg-amber-950/50 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300 font-bold text-[11px] flex items-center justify-center gap-1 transition"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>{isEditMode ? window.loc('خروج از ویرایش بصری', 'Exit Visual Edit') : window.loc('ویرایش بصری UI', 'Visual UI Editor')}</span>
-              </button>
-              <button
-                onClick={() => {
-                  addAdminAuditLog(window.loc('بازبینی سریع کاربران از پروفایل انجام شد', 'Quick review of user profiles was done'));
-                  showToast(window.loc('بررسی امنیتی کامل اجرا شد ✅', 'A complete security check has been implemented'));
-                }}
-                className="flex-1 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-[11px] flex items-center justify-center gap-1 transition"
-              >
-                <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{window.loc('ثبت لاگ نظارت', 'Record Audit Log')}</span>
-              </button>
-            </div>
-          </div>
-        )}
-        {/* ========================================== */}
-                {/* ACTION GRID                                */}
-        {/* ========================================== */}
-        <VisualSectionWrapper pageId="profile" sectionId="profile_actions_grid" defaultLabel="Profile Actions Grid">
-          <div className="grid grid-cols-4 sm:grid-cols-4 gap-2 mb-1.5">
-            <button onClick={() => setIsEditModalOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Edit3 className="w-5 h-5 text-slate-300" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('ویرایش', 'Edit')}</span>
-            </button>
-            <button onClick={() => { setActiveProfileTab('wallet'); setWalletSubTab && setWalletSubTab('buy'); }} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Wallet className="w-5 h-5 text-amber-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('کیف پول', 'Wallet')}</span>
-            </button>
-            <button onClick={() => setActiveProfileTab('vip')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Crown className="w-5 h-5 text-purple-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('وی‌آی‌پی', 'VIP')}</span>
-            </button>
-            <button onClick={() => setActiveProfileTab('about')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <User className="w-5 h-5 text-cyan-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('درباره', 'About')}</span>
-            </button>
-            
-            <button onClick={() => setActiveProfileTab('activity')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Activity className="w-5 h-5 text-emerald-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('فعالیت', 'Activity')}</span>
-            </button>
-            <button onClick={() => setActiveProfileTab('lives')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Video className="w-5 h-5 text-pink-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('لایوها', 'Lives')}</span>
-            </button>
-            <button onClick={() => setActiveProfileTab('likes')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Heart className="w-5 h-5 text-rose-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('علاقه‌مندی', 'Favorites')}</span>
-            </button>
-            <button onClick={() => setActiveProfileTab('followers')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Users className="w-5 h-5 text-indigo-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('فالوورها', 'Followers')}</span>
-            </button>
-            
-            <button onClick={() => setActiveProfileTab('following')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Users className="w-5 h-5 text-blue-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('فالووینگ', 'Following')}</span>
-            </button>
-            <button onClick={() => setActiveProfileTab('settings')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Settings className="w-5 h-5 text-slate-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('تنظیمات', 'Settings')}</span>
-            </button>
-            <button onClick={() => setIsSecurityModalOpen && setIsSecurityModalOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Shield className="w-5 h-5 text-emerald-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('حریم‌خصوصی', 'Privacy')}</span>
-            </button>
-            <button onClick={() => props.setIsSupportModalOpen && props.setIsSupportModalOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <MessageSquare className="w-5 h-5 text-blue-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('پشتیبانی', 'Support')}</span>
-            </button>
-          </div>
-        </VisualSectionWrapper>
-
-        {/* ========================================== */}
-        
