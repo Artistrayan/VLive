@@ -1,6 +1,7 @@
 import { APP_LANGUAGES as DEFAULT_APP_LANGUAGES } from '../constants/i18n';
 import React from 'react';
 import { safeStorage } from '../utils/safeStorage';
+import { isUsernameAlreadyTaken, registerUsernameLocally } from '../utils/usernameUtils';
 import { 
   Settings, X, Search, User, ShieldCheck, Bell, Lock, Globe, Palette,
   Volume2, Video, Database, Award, HelpCircle, FileText, Info, Camera,
@@ -283,16 +284,16 @@ export default function SettingsModal(props) {
                           onClick={() => {
                             const cleanNewUser = editUsernameInput.trim();
                             if (!cleanNewUser) return;
-                            const isDup = usersList.some(u => u.username?.toLowerCase() === cleanNewUser.toLowerCase() && u.username?.toLowerCase() !== currentUsername.toLowerCase()) ||
-                                          adminUsersList.some(u => u.username?.toLowerCase() === cleanNewUser.toLowerCase());
+                            const isDup = isUsernameAlreadyTaken(cleanNewUser, currentUsername, [...usersList, ...adminUsersList]);
                             if (isDup) {
-                              showToast(window.loc('❌ این نام کاربری قبلاً ثبت شده است! هر نام کاربری فقط یکبار امکان ثبت دارد.', '❌ Username already registered! Every username must be unique.'));
+                              showToast(window.loc('❌ این نام کاربری قبلاً ثبت شده است! هر نام کاربری منحصر‌به‌فرد بوده و فقط یکبار قابل ثبت است.', '❌ Username already registered! Every username must be unique.'));
                               return;
                             }
                             setCurrentUsername(cleanNewUser);
+                            registerUsernameLocally(cleanNewUser);
                             safeStorage.setItem('vlive_current_username', cleanNewUser);
                             setEditUsernameInput('');
-                            showToast('Username updated successfully!');
+                            showToast(window.loc('نام کاربری با موفقیت به‌روزرسانی شد ✨', 'Username updated successfully!'));
                           }}
                           className="px-3 py-2 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold"
                         >

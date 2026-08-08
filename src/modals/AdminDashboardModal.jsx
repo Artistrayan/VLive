@@ -2,6 +2,7 @@ import React from 'react';
 import VisualSectionWrapper from '../components/VisualUiEditor/VisualSectionWrapper';
 import { useVisualUiEditor } from '../context/VisualUiEditorContext';
 import { safeStorage } from '../utils/safeStorage';
+import { isUserAnAdmin } from '../utils/usernameUtils';
 import FinanceCenter from '../components/Admin/FinanceCenter';
 import UserManagementCenter from '../components/Admin/UserManagementCenter';
 import StreamerManagementCenter from '../components/Admin/StreamerManagementCenter';
@@ -145,6 +146,16 @@ export default function AdminDashboardModal(props) {
   const { setIsEditMode, setIsInspectorOpen } = useVisualUiEditor();
 
   if (!isAdminPinModalOpen && !isAdminPanelOpen) return null;
+
+  // STRICT ACCESS CONTROL: Only authorized admins can view or interact with the admin panel
+  const currentCleanUsername = (props.currentUsername || props.authUsername || safeStorage.getItem('vlive_current_username') || '').trim().toLowerCase();
+  const isAuthorizedAdmin = isUserRayan || 
+    isUserAnAdmin(currentCleanUsername, isUserRayan, adminWhitelist, adminRolesList) ||
+    activeAdminSession;
+
+  if (!isAuthorizedAdmin) {
+    return null;
+  }
 
   return (
     <>

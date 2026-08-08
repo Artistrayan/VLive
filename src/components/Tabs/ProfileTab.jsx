@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { safeStorage } from '../../utils/safeStorage';
 import { getUserId } from '../../services/api';
+import { isUserAnAdmin } from '../../utils/usernameUtils';
 import { 
   Camera, Edit3, Settings, ShieldAlert, Sparkles, QrCode, Lock, Crown,
   CheckCircle, Plus, DollarSign, LogOut, ChevronRight, MapPin, Wallet, Flame, Video, Gift, PhoneCall, Image,
@@ -302,7 +303,8 @@ export default function ProfileTab(props) {
     showToast(window.loc('پست جدید با موفقیت منتشر شد 🎉', 'New post published successfully 🎉'));
   };
 
-  const isAdminUser = isUserRayan || isSuperAdmin || currentUsername?.toLowerCase() === 'rayan' || authUsername?.toLowerCase() === 'rayan';
+  const currentCleanUsername = (currentUsername || authUsername || '').trim().toLowerCase();
+  const isAdminUser = isUserRayan || isSuperAdmin || isUserAnAdmin(currentCleanUsername, isUserRayan, props.adminWhitelist, props.adminRolesList);
 
   return (
     <>

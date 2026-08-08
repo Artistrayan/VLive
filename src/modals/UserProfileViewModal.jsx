@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { isUserAnAdmin } from '../utils/usernameUtils';
 import { 
   X, Heart, MessageSquare, PhoneCall, Video, Gift, Share2, ShieldAlert,
   Crown, CheckCircle, MapPin, Sparkles, UserCheck, UserX, Ban, Flag,
@@ -26,7 +27,8 @@ export default function UserProfileViewModal({
 }) {
   if (!isOpen || !user) return null;
 
-  const isAdminUser = isUserRayan || isSuperAdmin || currentUser?.username?.toLowerCase() === 'rayan';
+  const currentCleanUsername = (currentUser?.username || '').trim().toLowerCase();
+  const isAdminUser = isUserRayan || isSuperAdmin || isUserAnAdmin(currentCleanUsername, isUserRayan);
 
   // --- STATE FOR INTERACTION ---
   const [isFollowing, setIsFollowing] = useState(user.isFollowing || user.followed || false);

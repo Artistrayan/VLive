@@ -27,6 +27,7 @@ import { APP_LANGUAGES, I18N_DICTIONARY } from './constants/i18n';
 import { PRESET_AVATARS, GIFTS_CATALOG } from './constants/appConstants';
 import { CoinsIcon, VerifiedBadge, VipStatusBadge, StreamerScoresBadges } from './components/CommonBadges';
 import { safeStorage } from './utils/safeStorage';
+import { isUsernameAlreadyTaken, registerUsernameLocally, isUserAnAdmin } from './utils/usernameUtils';
 import { economyService } from './services/economyService';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -4570,10 +4571,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         {/* STEP 3: REGISTER / CREATE ACCOUNT (ساخت حساب) */}
         {authStep === 'register' && (() => {
           const cleanUserCheck = authUsername.trim();
-          const isDuplicateUser = cleanUserCheck.length > 0 && (
-            usersList.some(u => u.username?.toLowerCase() === cleanUserCheck.toLowerCase()) ||
-            adminUsersList.some(u => u.username?.toLowerCase() === cleanUserCheck.toLowerCase())
-          );
+          const isDuplicateUser = cleanUserCheck.length > 0 && isUsernameAlreadyTaken(cleanUserCheck, '', [...usersList, ...adminUsersList]);
 
           return (
             <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-pink-500/40 bg-slate-900/95 backdrop-blur-xl rounded-3xl space-y-5 shadow-2xl animate-fadeIn">
@@ -5302,6 +5300,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               onClick={() => {
                 const cleanName = authFullName || 'Rayan';
                 const cleanHandle = authUsername || 'rayan_vip';
+                registerUsernameLocally(cleanHandle);
                 setUserName(cleanName);
                 setCurrentUsername(cleanHandle);
                 setUserAvatar(authAvatar);
@@ -6180,6 +6179,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           followedUsers={followedUsers}
           usersList={usersList}
           adminReportsList={adminReportsList}
+          adminWhitelist={adminWhitelist}
+          adminRolesList={adminRolesList}
           setUsersList={setUsersList}
           addAdminAuditLog={addAdminAuditLog}
           showToast={showToast}
@@ -7895,6 +7896,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* MODAL: ADMIN SECURITY & DASHBOARD */}
             <AdminDashboardModal
+        currentUsername={currentUsername}
+        authUsername={authUsername}
         isAdminPinModalOpen={isAdminPinModalOpen}
         setIsAdminPinModalOpen={setIsAdminPinModalOpen}
         isAdminPanelOpen={isAdminPanelOpen}

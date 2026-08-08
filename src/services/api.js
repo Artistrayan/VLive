@@ -6,6 +6,26 @@ export const getStoredToken = () => localStorage.getItem('vlive_token');
 export const getUserId = () => localStorage.getItem('vlive_user_id');
 
 export const apiAuth = {
+  async isUsernameTakenInDb(username) {
+    if (!username) return false;
+    const clean = username.trim().toLowerCase();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .ilike('username', clean)
+        .limit(1);
+      if (error) {
+        console.warn('isUsernameTakenInDb error', error);
+        return false;
+      }
+      return data && data.length > 0;
+    } catch (err) {
+      console.warn('isUsernameTakenInDb exception', err);
+      return false;
+    }
+  },
+
   async saveUserToBackend(user) {
     const { data: authData } = await supabase.auth.getUser();
     if (!authData?.user) return null;
@@ -20,7 +40,14 @@ export const apiAuth = {
     if (error) console.error('saveUserToBackend error', error);
     return data;
   },
-      async registerWithCredentials(username, name, email, password, gender, avatar) {
+
+  async registerWithCredentials(username, name, email, password, gender, avatar) {
+    // Check if username is already taken in DB
+    const takenInDb = await this.isUsernameTakenInDb(username);
+    if (takenInDb) {
+      return { success: false, error: '❌ این نام کاربری قبلاً ثبت شده است! لطفا نام دیگری انتخاب کنید.' };
+    }
+
     let { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
