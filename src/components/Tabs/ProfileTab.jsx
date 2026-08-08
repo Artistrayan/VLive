@@ -632,7 +632,7 @@ export default function ProfileTab(props) {
         {/* ========================================== */}
 
         {/* TAB 1: POSTS FEED */}
-        {activeProfileTab === 'posts' && (
+        { (activeProfileTab === 'photos' || activeProfileTab === 'videos') && (
           <div className="space-y-4 animate-fadeIn">
             {/* Create Post Box */}
             <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
@@ -795,11 +795,28 @@ export default function ProfileTab(props) {
               <div className="space-y-2 pt-2 border-t border-slate-800">
                 <span className="text-xs font-bold text-slate-300">{window.loc('علاقه‌مندی‌ها', 'Interests & Tags')}</span>
                 <div className="flex flex-wrap gap-2">
-                  {userInterests.split(',').map((tag, i) => (
-                    <span key={i} className="px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-bold">
-                      #{tag.trim()}
-                    </span>
-                  ))}
+{(() => {
+                    try {
+                      const parsed = JSON.parse(userInterests);
+                      if (Array.isArray(parsed)) {
+                        return parsed.map(id => {
+                          const item = fullInterestsList.find(i => i.id === id);
+                          if (!item) return null;
+                          return (
+                            <span key={id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-[11px] font-bold">
+                              <span>{item.icon}</span>
+                              <span>{item.name}</span>
+                            </span>
+                          );
+                        });
+                      }
+                    } catch(e) {}
+                    return userInterests.split(',').map((tag, i) => (
+                      <span key={i} className="px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-bold">
+                        #{tag.trim()}
+                      </span>
+                    ));
+                  })()}
                 </div>
               </div>
             </div>
