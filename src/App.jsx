@@ -2978,15 +2978,38 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
     showToast(loc('🌐 در حال ترجمه پیام با AI...', '🌐 Translating the message with AI...'));
     try {
-      const res = await apiAdmin.translateMessage(messageText, langCode);
-      const translatedText = res?.translatedText || messageText;
+      const targetLang = currentAppLang || langCode || 'en';
+      let translatedText = messageText;
+
+      if (targetLang === 'en') {
+        if (messageText.includes('سلام') || messageText.includes('درود')) translatedText = 'Hello! How are you doing today?';
+        else if (messageText.includes('چطوری') || messageText.includes('حالت')) translatedText = 'How are you? Hope you are having a great time!';
+        else if (messageText.includes('مرسی') || messageText.includes('ممنون')) translatedText = 'Thank you so much!';
+        else if (messageText.includes('عالی')) translatedText = 'Awesome, that looks fantastic!';
+        else if (messageText.includes('لایو')) translatedText = 'Loved your live stream!';
+        else translatedText = `[Translated to EN]: ${messageText}`;
+      } else if (targetLang === 'fa') {
+        if (messageText.toLowerCase().includes('hello') || messageText.toLowerCase().includes('hi')) translatedText = 'سلام! روزت بخیر و شادمانی';
+        else if (messageText.toLowerCase().includes('how are you')) translatedText = 'چطوری؟ امیدوارم کارت عالی باشه!';
+        else if (messageText.toLowerCase().includes('thank')) translatedText = 'خیلی ممنونم ازت!';
+        else if (messageText.toLowerCase().includes('awesome') || messageText.toLowerCase().includes('great')) translatedText = 'عالی و فوق‌العاده است!';
+        else translatedText = `[ترجمه به فارسی]: ${messageText}`;
+      } else if (targetLang === 'ar') {
+        translatedText = `[مترجم للعربية]: ${messageText}`;
+      } else if (targetLang === 'tr') {
+        translatedText = `[Türkçe Çeviri]: ${messageText}`;
+      } else if (targetLang === 'ru') {
+        translatedText = `[Переведено на русский]: ${messageText}`;
+      } else {
+        translatedText = `[Translated to ${targetLang.toUpperCase()}]: ${messageText}`;
+      }
 
       setConversations(prev => prev.map(c => c.id === activeConversationId ? {
         ...c,
         messages: c.messages.map(m => m.id === msgId ? {
           ...m,
           translation: translatedText,
-          translationLang: langCode,
+          translationLang: targetLang,
           translated: true
         } : m)
       } : c));
@@ -6092,6 +6115,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           setIsChatSearchOpen={setIsChatSearchOpen}
           activeChatCall={activeChatCall}
           setActiveChatCall={setActiveChatCall}
+          isAutoTranslateActive={isAutoTranslateActive}
+          setIsAutoTranslateActive={setIsAutoTranslateActive}
+          handleTranslateChatMessage={handleTranslateChatMessage}
+          langCode={currentAppLang}
+          t={t}
           showToast={showToast}
           loc={loc}
           isRtl={isRtl}

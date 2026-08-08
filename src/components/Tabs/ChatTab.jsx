@@ -11,6 +11,8 @@ import {
 export default function ChatTab(props) {
   const {
     activeTab,
+    isAutoTranslateActive: propAutoTranslate,
+    setIsAutoTranslateActive: propSetAutoTranslate,
     userAvatar, userName, totalUnreadMessages,
     msgSearchQuery, setMsgSearchQuery,
     msgSearchField, setMsgSearchField,
@@ -40,6 +42,9 @@ export default function ChatTab(props) {
 
   const setIsDepositModalOpen = props.setIsDepositModalOpen || (() => showToast('Deposit modal opened'));
   
+  const [localIsAutoTranslateActive, setLocalIsAutoTranslateActive] = React.useState(true);
+  const isAutoTranslateActive = propAutoTranslate !== undefined ? propAutoTranslate : localIsAutoTranslateActive;
+  const setIsAutoTranslateActive = propSetAutoTranslate || setLocalIsAutoTranslateActive;
   const [showChatOptionsMenu, setShowChatOptionsMenu] = React.useState(false);
   const [isChatLocked, setIsChatLocked] = React.useState(false);
   const [isRecordingAudio, setIsRecordingAudio] = React.useState(false);
@@ -371,6 +376,23 @@ export default function ChatTab(props) {
                               <Gift className="w-4 h-4" />
                             </button>
 
+                            <button
+                              onClick={() => {
+                                setIsAutoTranslateActive(!isAutoTranslateActive);
+                                showToast(!isAutoTranslateActive 
+                                  ? window.loc('ترجمه خودکار پیام‌ها فعال شد 🌐', 'Auto-translation for incoming messages enabled 🌐') 
+                                  : window.loc('ترجمه خودکار پیام‌ها غیرفعال شد 🌐', 'Auto-translation for incoming messages disabled 🌐'));
+                              }}
+                              className={`p-2 rounded-xl font-bold transition shadow-md flex items-center gap-1 border ${
+                                isAutoTranslateActive 
+                                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 hover:bg-cyan-500 hover:text-slate-950' 
+                                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                              }`}
+                              title={window.loc('ترجمه خودکار پیام‌های دریافتی', 'Auto-translate incoming messages')}
+                            >
+                              <Globe className={`w-4 h-4 ${isAutoTranslateActive ? 'text-cyan-400 animate-pulse' : ''}`} />
+                            </button>
+
                             <div className="relative">
                               <button
                                 onClick={() => setShowChatOptionsMenu(!showChatOptionsMenu)}
@@ -510,11 +532,30 @@ export default function ChatTab(props) {
                                              msg.text
                                            )}
                                          </p>
-                                         {msg.translated && msg.translation && (
-                                           <span className="inline-flex items-center gap-1 text-[9px] text-cyan-300 font-mono bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-500/30 w-fit mt-1">
-                                             <Globe className="w-2.5 h-2.5 text-cyan-400" />
-                                             🌐 {t('translated', window.loc('ترجمه‌شده', 'Translated'))} ({msg.translationLang || langCode})
-                                           </span>
+
+                                         {/* INCOMING MESSAGE TRANSLATION TOGGLE */}
+                                         {!isMe && (
+                                           <div className="pt-1 flex items-center gap-2">
+                                             <button
+                                               type="button"
+                                               onClick={() => handleTranslateChatMessage(msg.id, msg.text)}
+                                               className="flex items-center gap-1 text-[9.5px] font-bold text-cyan-300 hover:text-white bg-cyan-950/80 hover:bg-cyan-900/90 px-2.5 py-1 rounded-full border border-cyan-500/40 transition active:scale-95 w-fit shadow-sm"
+                                               title={msg.translated ? window.loc('نمایش متن اصلی', 'Show original text') : window.loc('ترجمه به زبان شما', 'Translate to your language')}
+                                             >
+                                               <Globe className="w-3 h-3 text-cyan-400 shrink-0" />
+                                               <span>
+                                                 {msg.translated 
+                                                   ? window.loc('↩️ متن اصلی', '↩️ Show Original') 
+                                                   : window.loc('🌐 ترجمه پیام', '🌐 Translate Message')}
+                                               </span>
+                                             </button>
+
+                                             {msg.translated && msg.translation && (
+                                               <span className="inline-flex items-center gap-1 text-[9px] text-cyan-300 font-mono bg-slate-950/80 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                                                 🌐 {t('translated', window.loc('ترجمه‌شده', 'Translated'))} ({msg.translationLang || langCode})
+                                               </span>
+                                             )}
+                                           </div>
                                          )}
                                        </>
                                      )}
