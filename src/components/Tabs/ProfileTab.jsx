@@ -325,8 +325,8 @@ export default function ProfileTab(props) {
               <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between -mt-16 sm:-mt-20 gap-4 mb-4">
                 
                 {/* Large Avatar */}
-                <div className="relative group">
-                  <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full p-1 bg-gradient-to-tr from-pink-500 via-purple-500 to-amber-400 shadow-[0_0_40px_rgba(236,72,153,0.5)]">
+                                <div className="relative group">
+                  <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full p-1 bg-gradient-to-tr from-pink-500 via-purple-500 to-amber-400 shadow-[0_0_40px_rgba(236,72,153,0.5)]">
                     <img
                       src={userAvatar || authAvatar || PRESET_AVATARS[0]}
                       alt={userName}
@@ -336,13 +336,19 @@ export default function ProfileTab(props) {
                   
                   {/* Online Badge */}
                   {showOnlineStatus && (
-                    <span className="absolute bottom-2 right-2 w-6 h-6 bg-emerald-500 border-4 border-slate-950 rounded-full shadow-lg" title="Online Status" />
+                    <span className="absolute top-2 right-2 w-5 h-5 bg-emerald-500 border-2 border-slate-950 rounded-full shadow-lg" title="Online Status" />
                   )}
+
+                  {/* Level Badge - Bottom Right inside Avatar */}
+                  <div className="absolute bottom-1 right-1 z-10 bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white font-black text-xs px-2.5 py-0.5 rounded-full border-2 border-slate-950 shadow-xl flex items-center gap-0.5">
+                    <span className="text-[10px] text-purple-200 uppercase font-bold">Lv</span>
+                    <span>{userLevel}</span>
+                  </div>
 
                   {/* Change Avatar Overlay */}
                   <button
                     onClick={() => setIsEditModalOpen(true)}
-                    className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition duration-300 text-white font-bold text-xs gap-1"
+                    className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition duration-300 text-white font-bold text-xs gap-1 z-20"
                   >
                     <Camera className="w-5 h-5 text-pink-400" />
                   </button>
@@ -366,27 +372,49 @@ export default function ProfileTab(props) {
               </div>
 
               {/* Statistics Grid */}
-              <div className="flex justify-around pt-3 mt-3 border-t border-slate-800/80 text-center">
-                <div>
-                  <span className="block text-sm font-black text-white">{userFollowersCount.toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('فالوور', 'Followers')}</span>
-                </div>
-                <div>
-                  <span className="block text-sm font-black text-white">{userFollowingCount.toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('فالووینگ', 'Following')}</span>
-                </div>
-                <div>
-                  <span className="block text-sm font-black text-pink-400">{userTotalLikes.toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('لایک', 'Likes')}</span>
-                </div>
-                <div>
-                  <span className="block text-sm font-black text-cyan-400">{userViewsCount.toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('بازدید', 'Views')}</span>
-                </div>
-                <div>
-                  <span className="block text-sm font-black text-purple-400">Lv.{userLevel}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('سطح', 'Level')}</span>
-                </div>
+              <div className="flex justify-around items-center pt-3 mt-3 border-t border-slate-800/80 text-center">
+                {/* Followers */}
+                <button
+                  onClick={() => showToast(window.loc('بخش فالوورها به زودی فعال می‌شود 👥', 'Followers coming soon 👥'))}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 transition group"
+                  title={window.loc('فالوورها', 'Followers')}
+                >
+                  <Users className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition shrink-0" />
+                  <span className="text-xs sm:text-sm font-black text-white">{userFollowersCount.toLocaleString()}</span>
+                </button>
+
+                {/* Following */}
+                <button
+                  onClick={() => showToast(window.loc('بخش فالووینگ به زودی فعال می‌شود 🤝', 'Following coming soon 🤝'))}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 transition group"
+                  title={window.loc('فالووینگ', 'Following')}
+                >
+                  <UserCheck className="w-4 h-4 text-blue-400 group-hover:scale-110 transition shrink-0" />
+                  <span className="text-xs sm:text-sm font-black text-white">{userFollowingCount.toLocaleString()}</span>
+                </button>
+
+                {/* Likes */}
+                <button
+                  onClick={() => showToast(window.loc('مجموع لایک‌های دریافت‌شده ❤️', 'Total received likes ❤️'))}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 transition group"
+                  title={window.loc('لایک‌ها', 'Likes')}
+                >
+                  <Heart className="w-4 h-4 text-pink-400 fill-pink-500/20 group-hover:scale-110 transition shrink-0" />
+                  <span className="text-xs sm:text-sm font-black text-pink-400">{userTotalLikes.toLocaleString()}</span>
+                </button>
+
+                {/* Views */}
+                <button
+                  onClick={() => {
+                    setActiveProfileTab('activity');
+                    showToast(window.loc('تاریخچه بازدیدها و فعالیت‌های اخیر 👁️', 'Views & activity history 👁️'));
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 transition group"
+                  title={window.loc('بازدیدها', 'Views')}
+                >
+                  <Eye className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition shrink-0" />
+                  <span className="text-xs sm:text-sm font-black text-cyan-400">{userViewsCount.toLocaleString()}</span>
+                </button>
               </div>
 
             </div>
