@@ -319,7 +319,7 @@ export default function ProfileTab(props) {
             </div>
 
             {/* Profile Info & Avatar */}
-            <div className="px-4 sm:px-6 pb-6 relative">
+            <div className="px-4 sm:px-6 pb-4 relative">
               
               {/* Avatar & Action Row */}
               <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between -mt-16 sm:-mt-20 gap-4 mb-4">
@@ -362,51 +362,8 @@ export default function ProfileTab(props) {
 
                 <div className="flex items-center justify-center sm:justify-start gap-2.5 text-xs text-slate-400 flex-wrap">
                   <span className="font-mono text-cyan-400 font-semibold">@{currentUsername || authUsername || 'rayan_vlive'}</span>
-                  <span>•</span>
-                  <span className="text-slate-300 font-medium">{userAge} yrs</span>
-                  <span>•</span>
-                  {showLocation && (
-                    <span className="flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-0.5 rounded-full text-slate-300">
-                      <MapPin className="w-3 h-3 text-pink-400" />
-                      {userCity}
-                    </span>
-                  )}
-                  <span>•</span>
-                  <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2.5 py-0.5 rounded-full font-semibold">
-                    {userRank}
-                  </span>
                 </div>
-
-                <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed pt-1">
-                  {userBio || authBio || 'Official V.Live Streamer | Private video calls & interactive 4K streams'}
-                </p>
-                  <div className="flex flex-wrap gap-1.5 pt-2">
-                    {(() => {
-                      try {
-                        const parsed = JSON.parse(userInterests);
-                        if (Array.isArray(parsed)) {
-                          return parsed.map(id => {
-                            const item = fullInterestsList.find(i => i.id === id);
-                            if (!item) return null;
-                            return (
-                              <span key={id} className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-medium text-slate-300">
-                                <span>{item.icon}</span>
-                                <span>{item.name}</span>
-                              </span>
-                            );
-                          });
-                        }
-                      } catch(e) {}
-                      return userInterests.split(",").map((tag, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-medium text-slate-300">
-                          #{tag.trim()}
-                        </span>
-                      ));
-                    })()}
-                  </div>
-
               </div>
-
 
               {/* Statistics Grid */}
               <div className="flex justify-around pt-3 mt-3 border-t border-slate-800/80 text-center">
