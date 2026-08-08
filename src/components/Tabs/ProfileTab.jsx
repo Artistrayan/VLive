@@ -8,7 +8,7 @@ import {
   CheckCircle, Plus, DollarSign, LogOut, ChevronRight, MapPin, Wallet, Flame, Video, Gift, PhoneCall, Image,
   User, Users, Eye, ThumbsUp, Heart, Share2, Award, Calendar, Globe, Briefcase, GraduationCap,
   MessageSquare, Shield, Activity, Radio, Check, X, Smartphone, Copy, ExternalLink, Zap, Star, ShieldCheck,
-  Filter, Play, AlertCircle, Trash2, Upload
+  Filter, Play, AlertCircle, Trash2, Upload, UserCheck
 } from 'lucide-react';
 import { interestService } from "../../services/interestService.js";
 import InterestsModal from "./InterestsModal.jsx";
