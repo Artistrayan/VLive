@@ -287,7 +287,7 @@ export default function ProfileTab(props) {
         {/* ========================================== */}
         <VisualSectionWrapper pageId="profile" sectionId="profile_header_card" defaultLabel="User Avatar, Name & Bio Card">
           <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border border-slate-800 shadow-2xl">
-            {/* Cover Banner (Reduced height for lower card profile height) */}
+            {/* Cover Banner */}
             <div className="h-28 sm:h-36 relative overflow-hidden bg-slate-900">
               <img 
                 src={coverPhoto} 
@@ -317,7 +317,7 @@ export default function ProfileTab(props) {
             </div>
 
             {/* Profile Info & Avatar */}
-            <div className="px-4 sm:px-6 pb-3.5 relative">
+            <div className="px-4 sm:px-6 pb-4 relative space-y-4">
               <div className="flex items-start justify-between gap-4">
                 {/* Avatar on Top-Left + Username under photo */}
                 <div className="flex flex-col items-center -mt-12 sm:-mt-16 shrink-0">
@@ -369,50 +369,48 @@ export default function ProfileTab(props) {
                   </div>
                 </div>
               </div>
+
+              {/* STORIES SECTION INSIDE PROFILE CARD UNDER AVATAR */}
+              <div className="pt-3 border-t border-slate-800/80 space-y-2">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <Flame className="w-4 h-4 text-amber-400 animate-bounce" />
+                    <span>{window.loc('استوری‌ها و هایلایت‌ها', 'Stories & Highlights')}</span>
+                  </span>
+                  <span className="text-[10px] text-pink-400 font-bold cursor-pointer">{window.loc('مشاهده همه', 'View All')}</span>
+                </div>
+                
+                <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
+                  {/* Add Story Button */}
+                  <button
+                    onClick={() => showToast(window.loc('📷 بخش آپلود استوری آماده است', 'Story Creator is active!'))}
+                    className="flex flex-col items-center gap-1 shrink-0 group"
+                  >
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-950 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 transition">
+                      <Plus className="w-5 h-5" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-300">{window.loc('افزودن', 'Add')}</span>
+                  </button>
+
+                  {/* Story Circles */}
+                  {[
+                    { title: 'Daily Vlog', img: PRESET_AVATARS[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80' },
+                    { title: 'Stream Moments', img: PRESET_AVATARS[1] || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80' },
+                    { title: 'VIP Exclusive', img: PRESET_AVATARS[2] || 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80' },
+                    { title: 'Travel ✈️', img: PRESET_AVATARS[3] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80' },
+                  ].map((story, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-md">
+                        <img src={story.img} alt={story.title} className="w-full h-full object-cover rounded-full bg-slate-950" />
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-300 max-w-[60px] truncate">{story.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </VisualSectionWrapper>
-
-        {/* ========================================== */}
-        {/* STORIES HORIZONTAL BAR                    */}
-        {/* ========================================== */}
-        <div className="p-3 bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-800 space-y-2">
-          <div className="flex items-center justify-between px-2">
-            <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-              <Flame className="w-4 h-4 text-amber-400 animate-bounce" />
-              <span>{window.loc('استوری‌ها و هایلایت‌ها', 'Stories & Highlights')}</span>
-            </span>
-            <span className="text-[10px] text-pink-400 font-bold cursor-pointer">{window.loc('مشاهده همه', 'View All')}</span>
-          </div>
-
-          <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
-            {/* Add Story Button */}
-            <button
-              onClick={() => showToast(window.loc('📷 بخش آپلود استوری آماده است', 'Story Creator is active!'))}
-              className="flex flex-col items-center gap-1.5 shrink-0 group"
-            >
-              <div className="w-16 h-16 rounded-full bg-slate-950 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 transition">
-                <Plus className="w-6 h-6" />
-              </div>
-              <span className="text-[10px] font-bold text-slate-300">{window.loc('افزودن', 'Add')}</span>
-            </button>
-
-            {/* Story Circles */}
-            {[
-              { title: 'Daily Vlog', img: PRESET_AVATARS[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80' },
-              { title: 'Stream Moments', img: PRESET_AVATARS[1] || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80' },
-              { title: 'VIP Exclusive', img: PRESET_AVATARS[2] || 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80' },
-              { title: 'Travel ✈️', img: PRESET_AVATARS[3] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80' },
-            ].map((story, i) => (
-              <div key={i} className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group">
-                <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-md">
-                  <img src={story.img} alt={story.title} className="w-full h-full object-cover rounded-full bg-slate-950" />
-                </div>
-                <span className="text-[10px] font-bold text-slate-300 max-w-[64px] truncate">{story.title}</span>
-              </div>
-            ))}
-          </div>
-        </div>
 
         {/* ========================================== */}
         {/* SEPARATE STATS CARD UNDERNEATH PROFILE     */}
@@ -422,30 +420,30 @@ export default function ProfileTab(props) {
             {/* Followers */}
             <button
               onClick={() => showToast(window.loc('بخش فالوورها به زودی فعال می‌شود 👥', 'Followers coming soon 👥'))}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800/80 transition group"
+              className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800/80 transition group flex-1 max-w-[85px]"
               title={window.loc('فالوورها', 'Followers')}
             >
-              <Users className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition shrink-0" />
+              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-400 group-hover:scale-110 transition shrink-0" />
               <span className="text-xs sm:text-sm font-black text-white">{userFollowersCount.toLocaleString()}</span>
             </button>
 
             {/* Following */}
             <button
               onClick={() => showToast(window.loc('بخش فالووینگ به زودی فعال می‌شود 🤝', 'Following coming soon 🤝'))}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800/80 transition group"
+              className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800/80 transition group flex-1 max-w-[85px]"
               title={window.loc('فالووینگ', 'Following')}
             >
-              <UserCheck className="w-4 h-4 text-blue-400 group-hover:scale-110 transition shrink-0" />
+              <UserCheck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400 group-hover:scale-110 transition shrink-0" />
               <span className="text-xs sm:text-sm font-black text-white">{userFollowingCount.toLocaleString()}</span>
             </button>
 
             {/* Likes */}
             <button
               onClick={() => showToast(window.loc('مجموع لایک‌های دریافت‌شده ❤️', 'Total received likes ❤️'))}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800/80 transition group"
+              className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800/80 transition group flex-1 max-w-[85px]"
               title={window.loc('لایک‌ها', 'Likes')}
             >
-              <Heart className="w-4 h-4 text-pink-400 fill-pink-500/20 group-hover:scale-110 transition shrink-0" />
+              <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-pink-400 fill-pink-500/20 group-hover:scale-110 transition shrink-0" />
               <span className="text-xs sm:text-sm font-black text-pink-400">{userTotalLikes.toLocaleString()}</span>
             </button>
 
@@ -455,10 +453,10 @@ export default function ProfileTab(props) {
                 setActiveProfileTab('activity');
                 showToast(window.loc('تاریخچه بازدیدها و فعالیت‌های اخیر 👁️', 'Views & activity history 👁️'));
               }}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800/80 transition group"
+              className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800/80 transition group flex-1 max-w-[85px]"
               title={window.loc('بازدیدها', 'Views')}
             >
-              <Eye className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition shrink-0" />
+              <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400 group-hover:scale-110 transition shrink-0" />
               <span className="text-xs sm:text-sm font-black text-cyan-400">{userViewsCount.toLocaleString()}</span>
             </button>
           </div>
