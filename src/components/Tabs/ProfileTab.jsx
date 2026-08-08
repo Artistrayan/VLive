@@ -31,6 +31,7 @@ export default function ProfileTab(props) {
     showToast = (() => {}), loc = ((a, b) => b || a),
     isVerified = true,
     setIsAdminPanelOpen,
+    setAdminActiveTab,
     setIsStreamerCenterOpen,
     setIsHostLiveOpen = (() => {}),
     authAvatar = '', authFullName = '', authCity = 'Tehran', userRank = 'VIP Streamer',
@@ -255,9 +256,10 @@ export default function ProfileTab(props) {
 
   const handleAddPost = () => {
     if (!newPostText.trim() && !newPostImage.trim()) {
-      showToast(window.loc('لطفاً متنی برای پست وارد کنید', 'Please enter text for post'));
+      showToast(window.loc('لطفاً متنی بنویسید یا تصویری/ویدیویی از گالری انتخاب نمایید', 'Please write text or select a photo/video from gallery'));
       return;
     }
+    const isVid = newPostType === 'video' || (newPostImage && (newPostImage.startsWith('data:video') || newPostImage.includes('.mp4')));
     const newPost = {
       id: Date.now(),
       isPinned: false,
@@ -266,7 +268,9 @@ export default function ProfileTab(props) {
       avatar: userAvatar || PRESET_AVATARS[0],
       time: 'Just now',
       content: newPostText,
-      image: newPostImage.trim() || null,
+      image: isVid ? null : (newPostImage.trim() || null),
+      video: isVid ? (newPostImage.trim() || null) : null,
+      mediaType: isVid ? 'video' : 'photo',
       likes: 0,
       comments: 0,
       shares: 0,
@@ -275,6 +279,7 @@ export default function ProfileTab(props) {
     setProfilePosts([newPost, ...profilePosts]);
     setNewPostText('');
     setNewPostImage('');
+    setNewPostType('photo');
     showToast(window.loc('پست جدید با موفقیت منتشر شد 🎉', 'New post published successfully 🎉'));
   };
 
@@ -537,24 +542,79 @@ export default function ProfileTab(props) {
               </button>
             </div>
 
-            {/* 4 Compact Stats Cards in 1 Single Row */}
+            {/* 4 Compact Interactive Clickable Stats Cards */}
             <div className="grid grid-cols-4 gap-1.5 text-xs">
-              <div className="p-2 rounded-xl bg-slate-950/80 border border-rose-500/20 text-center flex flex-col justify-center items-center min-w-0">
-                <span className="block text-sm sm:text-base font-black text-white">{usersList.length || 248}</span>
-                <span className="text-[9px] text-slate-400 truncate w-full">{window.loc('کل کاربران', 'Total Users')}</span>
-              </div>
-              <div className="p-2 rounded-xl bg-slate-950/80 border border-rose-500/20 text-center flex flex-col justify-center items-center min-w-0">
-                <span className="block text-sm sm:text-base font-black text-amber-400">12</span>
-                <span className="text-[9px] text-slate-400 truncate w-full">{window.loc('احراز معلق', 'Pending Auth')}</span>
-              </div>
-              <div className="p-2 rounded-xl bg-slate-950/80 border border-rose-500/20 text-center flex flex-col justify-center items-center min-w-0">
-                <span className="block text-sm sm:text-base font-black text-cyan-400">45</span>
-                <span className="text-[9px] text-slate-400 truncate w-full">{window.loc('استریمرها', 'Streamers')}</span>
-              </div>
-              <div className="p-2 rounded-xl bg-slate-950/80 border border-rose-500/20 text-center flex flex-col justify-center items-center min-w-0">
-                <span className="block text-sm sm:text-base font-black text-rose-400">0</span>
-                <span className="text-[9px] text-slate-400 truncate w-full">{window.loc('گزارش‌ها', 'Reports')}</span>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (setAdminActiveTab) setAdminActiveTab('users');
+                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
+                  showToast(window.loc('مدیریت و آمار کامل کاربران 👥', 'Full User Management & Stats 👥'));
+                }}
+                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-cyan-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
+              >
+                <span className="block text-sm sm:text-base font-black text-white group-hover:text-cyan-300 transition">
+                  {usersList.length || 248}
+                </span>
+                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
+                  <Users className="w-2.5 h-2.5 text-cyan-400 inline" />
+                  {window.loc('کل کاربران', 'Total Users')}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (setAdminActiveTab) setAdminActiveTab('verification');
+                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
+                  showToast(window.loc('بررسی مدارک و درخواست‌های احراز هویت 📑', 'Identity Verification & Pending Documents 📑'));
+                }}
+                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-amber-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
+              >
+                <span className="block text-sm sm:text-base font-black text-amber-400 group-hover:scale-110 transition">
+                  {usersList.filter(u => u.isPendingAuth || u.status === 'pending').length || 12}
+                </span>
+                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
+                  <ShieldAlert className="w-2.5 h-2.5 text-amber-400 inline" />
+                  {window.loc('احراز معلق', 'Pending Auth')}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (setAdminActiveTab) setAdminActiveTab('verification');
+                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
+                  showToast(window.loc('مدیریت و آمار مجری‌ها و استریمرها 🎙️', 'Streamers & Broadcaster Management 🎙️'));
+                }}
+                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-cyan-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
+              >
+                <span className="block text-sm sm:text-base font-black text-cyan-400 group-hover:scale-110 transition">
+                  {usersList.filter(u => u.isStreamer || u.isBroadcaster).length || 45}
+                </span>
+                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
+                  <Radio className="w-2.5 h-2.5 text-cyan-400 inline" />
+                  {window.loc('استریمرها', 'Streamers')}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (setAdminActiveTab) setAdminActiveTab('reports');
+                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
+                  showToast(window.loc('مرکز بررسی گزارش‌های تخلف 🚨', 'Violation Reports Center 🚨'));
+                }}
+                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-rose-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
+              >
+                <span className="block text-sm sm:text-base font-black text-rose-400 group-hover:scale-110 transition">
+                  18
+                </span>
+                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
+                  <Shield className="w-2.5 h-2.5 text-rose-400 inline" />
+                  {window.loc('گزارش‌ها', 'Reports')}
+                </span>
+              </button>
             </div>
 
             {/* Visual Editor / Audit Log Quick Actions */}
@@ -1362,20 +1422,77 @@ export default function ProfileTab(props) {
               className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-pink-500 resize-none dir-rtl"
             />
 
-            {/* Image / Media Link */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-300 block">
-                {newPostType === 'video' 
-                  ? window.loc('لینک ویدیو یا تصویر (اختیاری)', 'Video/Cover link (optional)')
-                  : window.loc('لینک تصویر پست (اختیاری)', 'Image link (optional)')}
+            {/* Direct Gallery Upload (Photos & Videos) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-300">
+                <span>{window.loc('انتخاب عکس یا ویدیو از گالری گوشی:', 'Select Photo or Video from Phone Gallery:')}</span>
+                {newPostImage && (
+                  <span className="text-[10px] text-pink-400 font-normal">
+                    {newPostType === 'video' ? '📹 ' + window.loc('ویدیو انتخاب شد', 'Video selected') : '🖼️ ' + window.loc('عکس انتخاب شد', 'Photo selected')}
+                  </span>
+                )}
+              </div>
+
+              <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-pink-500/40 hover:border-pink-500 bg-slate-950/80 hover:bg-slate-950 rounded-2xl cursor-pointer transition group text-center">
+                <div className="w-10 h-10 rounded-2xl bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-pink-400 group-hover:scale-110 transition mb-1.5">
+                  <Upload className="w-5 h-5" />
+                </div>
+                <p className="text-xs font-bold text-slate-200">
+                  {window.loc('انتخاب فایل از گالری گوشی 📱', 'Select File from Gallery 📱')}
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  {window.loc('پشتیبانی کامل از تصاویر و ویدیوها (JPG, PNG, MP4, MOV)', 'Full support for photos & videos (JPG, PNG, MP4, MOV)')}
+                </p>
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const isVid = file.type.startsWith('video');
+                    setNewPostType(isVid ? 'video' : 'photo');
+
+                    try {
+                      if (!isVid && typeof compressImageFile === 'function') {
+                        const compressed = await compressImageFile(file, 1080, 1080, 0.85);
+                        setNewPostImage(compressed);
+                      } else {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setNewPostImage(reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                      showToast(window.loc(isVid ? 'ویدیو با موفقیت بارگذاری شد 📹' : 'تصویر با موفقیت بارگذاری شد 📸', isVid ? 'Video uploaded successfully 📹' : 'Photo uploaded successfully 📸'));
+                    } catch (err) {
+                      showToast(window.loc('خطا در انتخاب فایل از گالری', 'Error selecting file from gallery'));
+                    }
+                  }}
+                />
               </label>
-              <input
-                type="text"
-                value={newPostImage}
-                onChange={(e) => setNewPostImage(e.target.value)}
-                placeholder="https://example.com/media.jpg"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 outline-none focus:border-pink-500"
-              />
+
+              {/* Preview Selected Media */}
+              {newPostImage && (
+                <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-pink-500/40 max-h-52 flex items-center justify-center shadow-inner">
+                  {newPostType === 'video' || newPostImage.startsWith('data:video') ? (
+                    <video src={newPostImage} controls className="w-full max-h-52 object-cover rounded-2xl" />
+                  ) : (
+                    <img src={newPostImage} alt="Gallery preview" className="w-full max-h-52 object-cover rounded-2xl" />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewPostImage('');
+                      setNewPostType('photo');
+                    }}
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-900/90 text-rose-400 hover:text-white border border-rose-500/50 shadow-md transition"
+                    title={window.loc('حذف رسانه', 'Remove media')}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Actions */}

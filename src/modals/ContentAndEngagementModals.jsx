@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Check, Globe, Image, Camera, Plus, BarChart2, Send, Trash2 } from 'lucide-react';
+import { X, Check, Globe, Image, Camera, Plus, BarChart2, Send, Trash2, Upload } from 'lucide-react';
 
 export default function ContentAndEngagementModals(props) {
   const {
@@ -170,38 +170,46 @@ export default function ContentAndEngagementModals(props) {
             </div>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-                  {window.loc('انتخاب تصویر:', 'Select Photo:')}
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  {window.loc('انتخاب مستقیم از گالری گوشی (عکس و ویدیو):', 'Select directly from Phone Gallery (Photo & Video):')}
                 </label>
-                <div className="flex items-center gap-2">
+                <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-pink-500/40 hover:border-pink-500 bg-slate-950/80 hover:bg-slate-950 rounded-2xl cursor-pointer transition group text-center">
+                  <div className="w-10 h-10 rounded-2xl bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-pink-400 group-hover:scale-110 transition mb-1">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-200">
+                    {window.loc('بارگذاری از گالری گوشی 📱', 'Upload from Phone Gallery 📱')}
+                  </span>
+                  <span className="text-[10px] text-slate-400 mt-0.5">
+                    {window.loc('پشتیبانی از عکس و ویدیو (JPG, PNG, MP4)', 'Supports photo & video (JPG, PNG, MP4)')}
+                  </span>
                   <input
-                    type="text"
-                    value={newPostImage}
-                    onChange={e => setNewPostImage(e.target.value)}
-                    placeholder={window.loc('URL تصویر یا انتخاب از لیست پایین...', 'Image URL or select from the list below...')}
-                    className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
-                  />
-                  <label className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer text-xs font-bold shrink-0 flex items-center gap-1">
-                    <Camera className="w-4 h-4 text-pink-400" />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          try {
-                            const compressed = await compressImageFile(file);
+                    type="file"
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const isVid = file.type.startsWith('video');
+                        try {
+                          if (!isVid && typeof compressImageFile === 'function') {
+                            const compressed = await compressImageFile(file, 1080, 1080, 0.85);
                             setNewPostImage(compressed);
-                            showToast(window.loc('تصویر با موفقیت فشرده شد! 📸', 'Image compressed successfully! 📸'));
-                          } catch (err) {
-                            showToast(window.loc('خطا در بارگذاری تصویر', 'Error loading image'));
+                          } else {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setNewPostImage(reader.result);
+                            };
+                            reader.readAsDataURL(file);
                           }
+                          showToast && showToast(window.loc(isVid ? 'ویدیو با موفقیت انتخاب شد 📹' : 'تصویر با موفقیت انتخاب شد 📸', isVid ? 'Video selected successfully 📹' : 'Photo selected successfully 📸'));
+                        } catch (err) {
+                          showToast && showToast(window.loc('خطا در بارگذاری فایل از گالری', 'Error loading file from gallery'));
                         }
-                      }}
-                    />
-                  </label>
-                </div>
+                      }
+                    }}
+                  />
+                </label>
               </div>
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
                 {PRESET_AVATARS.map((avatar, idx) => (
@@ -215,8 +223,20 @@ export default function ContentAndEngagementModals(props) {
                 ))}
               </div>
               {newPostImage && (
-                <div className="relative rounded-2xl overflow-hidden aspect-video border border-slate-800 bg-slate-950">
-                  <img src={newPostImage} alt="Preview" className="w-full h-full object-cover" />
+                <div className="relative rounded-2xl overflow-hidden aspect-video border border-pink-500/40 bg-slate-950 flex items-center justify-center">
+                  {newPostImage.startsWith('data:video') || newPostImage.includes('.mp4') ? (
+                    <video src={newPostImage} controls className="w-full h-full object-cover" />
+                  ) : (
+                    <img src={newPostImage} alt="Preview" className="w-full h-full object-cover" />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setNewPostImage('')}
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-900/90 text-rose-400 hover:text-white border border-rose-500/50 shadow-md transition"
+                    title={window.loc('حذف', 'Remove')}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               )}
               <div>

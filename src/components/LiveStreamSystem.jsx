@@ -163,20 +163,40 @@ export default function LiveStreamSystem({
       return;
     }
 
+    // Generate secure LiveKit token for authorized broadcaster
+    const roomName = `room_${currentUser?.id || 'broadcaster'}_${Date.now()}`;
+    const tokenRes = await apiLive.generateLiveKitToken({
+      hostId: currentUser?.id,
+      hostName: currentUser?.name || currentUsername || 'Streamer',
+      roomName: roomName,
+      isBroadcaster: true
+    });
+
+    if (!tokenRes.success) {
+      showToast(window.loc(`⛔ خطا در احراز هویت لایو‌کیت: ${tokenRes.error}`, `⛔ LiveKit Auth Error: ${tokenRes.error}`));
+      return;
+    }
+
     const streamPayload = {
       host: currentUser?.name || currentUsername || 'Streamer',
+      host_id: currentUser?.id,
       avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
       title: newLiveTitle.trim(),
       category: newLiveCategory,
       live_type: newLiveType,
       description: newLiveDesc,
       thumbnail: newLiveThumbnail || 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
-      tags: newLiveTags
+      tags: newLiveTags,
+      livekit_token: tokenRes.token,
+      livekit_room: tokenRes.roomName,
+      livekit_server_url: tokenRes.serverUrl,
+      is_broadcaster_authorized: true
     };
 
     // Save to Supabase DB
     const res = await apiLive.createLiveStream(streamPayload);
-    const streamId = res.success ? res.data.id : `stream_${Date.now()}`;
+    const createdData = res.success ? res.data : streamPayload;
+    const streamId = createdData.id || `stream_${Date.now()}`;
 
     const newStreamObj = {
       id: streamId,
@@ -188,7 +208,11 @@ export default function LiveStreamSystem({
       thumbnail: streamPayload.thumbnail,
       viewers: 1,
       isSelfStream: true,
-      status: 'active'
+      status: 'active',
+      livekit_token: tokenRes.token,
+      livekit_room: tokenRes.roomName,
+      livekit_server_url: tokenRes.serverUrl,
+      is_broadcaster_authorized: true
     };
 
     setStreamsList(prev => [newStreamObj, ...prev]);

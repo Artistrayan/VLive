@@ -6118,6 +6118,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         {/* TAB 4: PROFILE TAB */}
         <ProfileTab
           setIsAdminPanelOpen={setIsAdminPanelOpen}
+          setAdminActiveTab={setAdminActiveTab}
           setIsStreamerCenterOpen={setIsStreamerCenterOpen}
           activeTab={activeTab}
           userAvatar={userAvatar}

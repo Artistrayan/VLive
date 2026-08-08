@@ -108,10 +108,14 @@ export default function LiveStudioModal({
   const [micPermission, setMicPermission] = useState('checking'); // 'granted' | 'denied' | 'prompt'
   const [cameraError, setCameraError] = useState(null);
 
-  // LiveKit Connection & LocalVideoTrack Verification States
+  // LiveKit Connection & Secure Broadcaster Token States
   const [isLiveKitConnected, setIsLiveKitConnected] = useState(false);
   const [localVideoTrack, setLocalVideoTrack] = useState(null);
   const [isTrackPublished, setIsTrackPublished] = useState(false);
+  const [livekitToken, setLivekitToken] = useState(null);
+  const [livekitRoom, setLivekitRoom] = useState(null);
+  const [livekitServerUrl, setLivekitServerUrl] = useState('wss://livekit.vlive.app');
+  const [broadcasterAuthorized, setBroadcasterAuthorized] = useState(false);
 
   // Initialize Camera, Microphone, LocalVideoTrack and LiveKit Connection
   const initCameraAndStream = async () => {
@@ -172,9 +176,22 @@ export default function LiveStudioModal({
         aTrack.enabled = isMicEnabled;
       }
 
-      // Establish LiveKit connection state & publishing verification
+      // Establish LiveKit connection state & broadcaster authorization verification
       setIsLiveKitConnected(true);
       setIsTrackPublished(true);
+
+      // Pre-generate LiveKit broadcaster auth token
+      const tokenRes = await apiLive.generateLiveKitToken({
+        hostId: currentUser?.id,
+        hostName: currentUser?.name || currentUsername || 'Verified Broadcaster',
+        isBroadcaster: true
+      });
+      if (tokenRes.success) {
+        setLivekitToken(tokenRes.token);
+        setLivekitRoom(tokenRes.roomName);
+        setLivekitServerUrl(tokenRes.serverUrl);
+        setBroadcasterAuthorized(true);
+      }
 
     } catch (err) {
       console.error('LiveStudio Camera Initialization Error:', err);
@@ -412,9 +429,30 @@ export default function LiveStudioModal({
 
   // Execute Live Start after Countdown
   const executeLiveStart = async () => {
+    // Generate secure token for LiveKit streaming server for authorized broadcaster
+    const roomName = `room_${currentUser?.id || 'broadcaster'}_${Date.now()}`;
+    const tokenRes = await apiLive.generateLiveKitToken({
+      hostId: currentUser?.id,
+      hostName: currentUser?.name || currentUsername || 'Verified Broadcaster',
+      roomName: roomName,
+      isBroadcaster: true
+    });
+
+    if (!tokenRes.success) {
+      showToast(window.loc(`⛔ خطا در احراز هویت لایو‌کیت: ${tokenRes.error}`, `⛔ LiveKit Auth Error: ${tokenRes.error}`));
+      setStudioPhase('PRE_LIVE');
+      return;
+    }
+
+    setLivekitToken(tokenRes.token);
+    setLivekitRoom(tokenRes.roomName);
+    setLivekitServerUrl(tokenRes.serverUrl);
+    setBroadcasterAuthorized(true);
+
     const newStreamObj = {
       id: `stream_${Date.now()}`,
       host: currentUser?.name || currentUsername || 'Verified Streamer',
+      host_id: currentUser?.id,
       avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
       title: liveTitle.trim(),
       category: liveCategory,
@@ -423,15 +461,21 @@ export default function LiveStudioModal({
       thumbnail: thumbnailUrl,
       viewers: 1,
       isSelfStream: true,
-      status: 'active'
+      status: 'active',
+      livekit_token: tokenRes.token,
+      livekit_room: tokenRes.roomName,
+      livekit_server_url: tokenRes.serverUrl,
+      is_broadcaster_authorized: true
     };
 
-    await apiLive.createLiveStream(newStreamObj);
-    if (setStreamsList) setStreamsList(prev => [newStreamObj, ...prev]);
-    if (setViewingStream) setViewingStream(newStreamObj);
+    const res = await apiLive.createLiveStream(newStreamObj);
+    const createdStream = res.success ? res.data : newStreamObj;
+
+    if (setStreamsList) setStreamsList(prev => [createdStream, ...prev]);
+    if (setViewingStream) setViewingStream(createdStream);
 
     setStudioPhase('LIVE');
-    showToast(window.loc(`🎥 پخش زنده استودیو ${liveType === 'adult' ? window.loc('۱۸+', '18+') : window.loc('استاندارد', 'Standard')} شروع گردید!`, `🎥 پخش زنده استودیو ${liveType === 'adult' ? window.loc('۱۸+', '18+') : window.loc('استاندارد', 'Standard')} شروع گردید!`));
+    showToast(window.loc(`🎥 پخش زنده با توکن امنیتی LiveKit شروع شد!`, `🎥 Live broadcast started with secure LiveKit token!`));
 
     // AI Protection Check
     const aiCheck = await apiAdmin.analyzeLiveStreamAi(newStreamObj);
@@ -514,9 +558,13 @@ export default function LiveStudioModal({
                   Cam: {cameraPermission === 'granted' ? '✓ Granted' : '✕ Denied'}
                 </span>
                 <span className={`text-[9px] px-2 py-0.5 rounded-full font-mono font-bold ${
-                  isLiveKitConnected ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30' : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                  isLiveKitConnected && broadcasterAuthorized
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                    : isLiveKitConnected
+                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
                 }`}>
-                  LiveKit: {isLiveKitConnected ? 'Connected' : 'Connecting'}
+                  LiveKit: {isLiveKitConnected ? (broadcasterAuthorized ? '✓ Token Verified' : 'Connected') : 'Connecting'}
                 </span>
               </div>
             </div>

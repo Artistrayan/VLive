@@ -438,63 +438,89 @@ export default function AdminDashboardModal(props) {
 
                   {/* 7 REAL-TIME STAT CARDS */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setAdminActiveTab('users')}
+                      className="p-3 rounded-2xl bg-slate-950/80 hover:bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-right space-y-1 transition active:scale-95 group cursor-pointer shadow-sm"
+                    >
+                      <span className="text-[10px] text-slate-400 group-hover:text-cyan-300 flex items-center gap-1 transition">
                         <Users className="w-3.5 h-3.5 text-cyan-400" /> {window.loc('کل کاربران', 'Total users')}
                       </span>
-                      <p className="text-base font-black text-white">{(adminUsersList || []).length}</p>
-                      <span className="text-[9px] text-slate-400">{window.loc('ثبت‌شده در دیتابیس', 'Registered in database')}</span>
-                    </div>
+                      <p className="text-base font-black text-white group-hover:text-cyan-300 transition">{(adminUsersList || []).length}</p>
+                      <span className="text-[9px] text-slate-400 truncate block">{window.loc('مشاهده کامل لیست کاربران 👈', 'View full users list 👈')}</span>
+                    </button>
 
-                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setAdminActiveTab('users')}
+                      className="p-3 rounded-2xl bg-slate-950/80 hover:bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-right space-y-1 transition active:scale-95 group cursor-pointer shadow-sm"
+                    >
+                      <span className="text-[10px] text-slate-400 group-hover:text-emerald-300 flex items-center gap-1 transition">
                         <Activity className="w-3.5 h-3.5 text-emerald-400" /> {window.loc('کاربران آنلاین', 'Online users')}
                       </span>
                       <p className="text-base font-black text-emerald-400">{(adminUsersList || []).filter(u => u.status === 'Online' || u.isOnline || u.online).length} {window.loc('نفر', 'people')}</p>
-                      <span className="text-[9px] text-slate-400">{window.loc('هم‌اکنون فعال', 'Active now')}</span>
-                    </div>
+                      <span className="text-[9px] text-slate-400 truncate block">{window.loc('هم‌اکنون فعال - جزئیات 👈', 'Active now - details 👈')}</span>
+                    </button>
 
-                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setAdminActiveTab('live')}
+                      className="p-3 rounded-2xl bg-slate-950/80 hover:bg-slate-900 border border-slate-800 hover:border-pink-500/50 text-right space-y-1 transition active:scale-95 group cursor-pointer shadow-sm"
+                    >
+                      <span className="text-[10px] text-slate-400 group-hover:text-pink-300 flex items-center gap-1 transition">
                         <Video className="w-3.5 h-3.5 text-pink-400" /> {window.loc('لایوهای فعال', 'active live')}
                       </span>
-                      <p className="text-base font-black text-pink-400">{(adminLivesList || []).length} {window.loc('لایو', 'live')}</p>
-                      <span className="text-[9px] text-slate-400">{window.loc('در حال پخش زنده', 'Streaming live')}</span>
-                    </div>
+                      <p className="text-base font-black text-pink-400">{(adminLivesList || []).length} {window.loc('لایو', 'live')}</p>                      <span className="text-[9px] text-slate-400 truncate block">{window.loc('پایش زنده اتاق‌ها 👈', 'Live rooms monitor 👈')}</span>
+                    </button>
 
-                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <DollarSign className="w-3.5 h-3.5 text-amber-400" /> {window.loc('درآمد امروز', 'Today\'s income')}
+                    <button
+                      type="button"
+                      onClick={() => setAdminActiveTab('finance')}
+                      className="p-3 rounded-2xl bg-slate-950/80 hover:bg-slate-900 border border-slate-800 hover:border-amber-500/50 text-right space-y-1 transition active:scale-95 group cursor-pointer shadow-sm"
+                    >
+                      <span className="text-[10px] text-slate-400 group-hover:text-amber-300 flex items-center gap-1 transition">
+                        <DollarSign className="w-3.5 h-3.5 text-amber-400" /> {window.loc('درآمد امروز', "Today's income")}
                       </span>
                       <p className="text-base font-black text-amber-400">${((props.financialTransactionsList || []).filter(t => (t.type === 'DEPOSIT' || t.type === 'COIN_PURCHASE' || t.type === 'VIP') && (t.status === 'Completed' || t.status === 'SUCCESS')).reduce((acc, curr) => acc + (Number(curr.amountUsdt || curr.amount) || 0), 0)).toLocaleString()} USDT</p>
-                      <span className="text-[9px] text-emerald-400">{((props.financialTransactionsList || []).filter(t => t.type === 'COIN_PURCHASE').reduce((acc, curr) => acc + (Number(curr.coins) || 0), 0)).toLocaleString()} {window.loc('سکه فروخته شد', 'coins sold')}</span>
-                    </div>
+                      <span className="text-[9px] text-emerald-400 truncate block">{((props.financialTransactionsList || []).filter(t => t.type === 'COIN_PURCHASE').reduce((acc, curr) => acc + (Number(curr.coins) || 0), 0)).toLocaleString()} {window.loc('سکه • آمار مالی 👈', 'coins • financial stats 👈')}</span>
+                    </button>
 
-                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setAdminActiveTab('support')}
+                      className="p-3 rounded-2xl bg-slate-950/80 hover:bg-slate-900 border border-slate-800 hover:border-purple-500/50 text-right space-y-1 transition active:scale-95 group cursor-pointer shadow-sm"
+                    >
+                      <span className="text-[10px] text-slate-400 group-hover:text-purple-300 flex items-center gap-1 transition">
                         <MessageSquare className="w-3.5 h-3.5 text-purple-400" /> {window.loc('کل پیام‌ها', 'All messages')}
                       </span>
                       <p className="text-base font-black text-white">{(props.financialTransactionsList || []).filter(t => t.type === 'CHAT_MESSAGE').length}</p>
-                      <span className="text-[9px] text-slate-400">{window.loc('پیام‌های ثبت‌شده', 'Registered messages')}</span>
-                    </div>
+                      <span className="text-[9px] text-slate-400 truncate block">{window.loc('مرکز تیکت‌ها و چت 👈', 'Tickets & chat center 👈')}</span>
+                    </button>
 
-                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setAdminActiveTab('live')}
+                      className="p-3 rounded-2xl bg-slate-950/80 hover:bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-right space-y-1 transition active:scale-95 group cursor-pointer shadow-sm"
+                    >
+                      <span className="text-[10px] text-slate-400 group-hover:text-cyan-300 flex items-center gap-1 transition">
                         <PhoneCall className="w-3.5 h-3.5 text-cyan-400" /> {window.loc('کل تماس‌ها', 'Total calls')}
                       </span>
                       <p className="text-base font-black text-cyan-300">{(props.financialTransactionsList || []).filter(t => t.type === 'CALL').length} {window.loc('تماس', 'calls')}</p>
-                      <span className="text-[9px] text-slate-400">{window.loc('صوتی و تصویری', 'Audio and video')}</span>
-                    </div>
+                      <span className="text-[9px] text-slate-400 truncate block">{window.loc('صوتی و تصویری 👈', 'Audio & video 👈')}</span>
+                    </button>
 
-                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1 sm:col-span-2">
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setAdminActiveTab('reports')}
+                      className="p-3 rounded-2xl bg-slate-950/80 hover:bg-slate-900 border border-slate-800 hover:border-rose-500/50 text-right space-y-1 transition active:scale-95 group cursor-pointer shadow-sm sm:col-span-2"
+                    >
+                      <span className="text-[10px] text-slate-400 group-hover:text-rose-300 flex items-center gap-1 transition">
                         <AlertCircle className="w-3.5 h-3.5 text-rose-400" /> {window.loc('گزارش‌های جدید', 'New reports')}
                       </span>
                       <p className="text-base font-black text-rose-400">{(adminReportsList || []).filter(r => r.status === 'Pending' || r.status === 'pending').length} {window.loc('گزارش بررسی‌نشده', 'Report not reviewed')}</p>
-                      <span className="text-[9px] text-rose-300">{window.loc('اقدام سریع لازم است', 'Quick action is required')}</span>
-                    </div>
+                      <span className="text-[9px] text-rose-300 truncate block">{window.loc('اقدام سریع / ورود به مرکز تخلفات 👈', 'Quick action / Violations center 👈')}</span>
+                    </button>
                   </div>
-
                   {/* QUICK ACTIONS */}
                   <div className="p-4 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-2">
                     <h3 className="text-xs font-bold text-white">{window.loc('اقدامات سریع سیستم', 'Quick system actions')}</h3>
