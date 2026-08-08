@@ -379,29 +379,13 @@ export default function ProfileTab(props) {
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-center flex-wrap">
                   {(isVerified || isAdminUser) && (
                     <button
-                      onClick={() => setIsHostLiveOpen && setIsHostLiveOpen(true)}
+                      onClick={() => props.setIsHostLiveOpen && props.setIsHostLiveOpen(true)}
                       className="flex-1 sm:flex-initial px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-amber-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-[0_0_25px_rgba(236,72,153,0.5)] hover:scale-105 active:scale-95 transition border border-pink-400/40"
                     >
                       <Video className="w-4 h-4 fill-white text-white animate-pulse" />
                       <span>{window.loc('لایو بزرگسال / استو‌دیو 🔞', 'Live Studio 🔞')}</span>
                     </button>
                   )}
-
-                  <button
-                    onClick={() => setIsVipModalOpen(true)}
-                    className="flex-1 sm:flex-initial px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:scale-105 transition"
-                  >
-                    <Crown className="w-4 h-4 fill-slate-950" />
-                    <span>VIP Club</span>
-                  </button>
-
-                  <button
-                    onClick={() => setWalletSubTab('buy')}
-                    className="flex-1 sm:flex-initial px-4 py-2.5 rounded-2xl bg-slate-900 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-amber-500/10 transition"
-                  >
-                    <CoinsIcon className="w-4 h-4 text-amber-400 animate-pulse" />
-                    <span>{userCoins.toLocaleString()} Stars</span>
-                  </button>
                 </div>
               </div>
 
@@ -438,44 +422,40 @@ export default function ProfileTab(props) {
               </div>
 
               {/* Profile Completion Bar */}
-              <div className="mt-4 p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-slate-300 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{window.loc('تکمیل پروفایل کاربری', 'Profile Completion')}</span>
+              <div className="mt-3 p-2 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                <div className="flex items-center justify-between text-[10px] font-bold">
+                  <span className="text-slate-400 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-amber-400" />
+                    <span>{window.loc('تکمیل پروفایل', 'Profile Completion')}</span>
                   </span>
                   <span className="text-amber-400">{profileCompletionPercent}%</span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-emerald-400 rounded-full shadow-[0_0_10px_rgba(236,72,153,0.8)] transition-all duration-500" style={{ width: `${profileCompletionPercent}%` }} />
+                <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-emerald-400 rounded-full" style={{ width: `${profileCompletionPercent}%` }} />
                 </div>
               </div>
 
               {/* Statistics Grid */}
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-5 mt-5 border-t border-slate-800/80 text-center">
-                <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                  <span className="block text-base sm:text-lg font-black text-white">{userFollowersCount.toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('دنبال‌کنندگان', 'Followers')}</span>
+              <div className="flex justify-around pt-3 mt-3 border-t border-slate-800/80 text-center">
+                <div>
+                  <span className="block text-sm font-black text-white">{userFollowersCount.toLocaleString()}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('فالوور', 'Followers')}</span>
                 </div>
-                <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                  <span className="block text-base sm:text-lg font-black text-white">{userFollowingCount.toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('دنبال‌شده‌ها', 'Following')}</span>
+                <div>
+                  <span className="block text-sm font-black text-white">{userFollowingCount.toLocaleString()}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('فالووینگ', 'Following')}</span>
                 </div>
-                <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                  <span className="block text-base sm:text-lg font-black text-pink-400">{userTotalLikes.toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('لایک‌ها', 'Likes')}</span>
+                <div>
+                  <span className="block text-sm font-black text-pink-400">{userTotalLikes.toLocaleString()}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('لایک', 'Likes')}</span>
                 </div>
-                <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                  <span className="block text-base sm:text-lg font-black text-cyan-400">{userViewsCount.toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('بازدیدها', 'Views')}</span>
+                <div>
+                  <span className="block text-sm font-black text-cyan-400">{userViewsCount.toLocaleString()}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('بازدید', 'Views')}</span>
                 </div>
-                <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                  <span className="block text-base sm:text-lg font-black text-purple-400">Lv.{userLevel}</span>
+                <div>
+                  <span className="block text-sm font-black text-purple-400">Lv.{userLevel}</span>
                   <span className="text-[10px] text-slate-400 font-medium">{window.loc('سطح', 'Level')}</span>
-                </div>
-                <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                  <span className="block text-base sm:text-lg font-black text-amber-400">{userCoins.toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{window.loc('سکه / ستاره', 'Stars')}</span>
                 </div>
               </div>
 
@@ -593,38 +573,85 @@ export default function ProfileTab(props) {
         )}
 
         {/* ========================================== */}
-        {/* SUB-NAVIGATION TABS BAR                    */}
+        {/* ACTION GRID                                */}
         {/* ========================================== */}
-        <VisualSectionWrapper pageId="profile" sectionId="profile_tab_nav" defaultLabel="Profile Subtabs Bar">
-          <div className="flex items-center gap-2 p-2 bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-slate-800 overflow-x-auto scrollbar-none">
+        <VisualSectionWrapper pageId="profile" sectionId="profile_actions_grid" defaultLabel="Profile Actions Grid">
+          <div className="grid grid-cols-4 sm:grid-cols-4 gap-2 mb-4">
+            <button onClick={() => setIsEditModalOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Edit3 className="w-5 h-5 text-slate-300" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('ویرایش', 'Edit')}</span>
+            </button>
+            <button onClick={() => { setActiveProfileTab('wallet'); setWalletSubTab && setWalletSubTab('buy'); }} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Wallet className="w-5 h-5 text-amber-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('کیف پول', 'Wallet')}</span>
+            </button>
+            <button onClick={() => setActiveProfileTab('vip')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Crown className="w-5 h-5 text-purple-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('وی‌آی‌پی', 'VIP')}</span>
+            </button>
+            <button onClick={() => setActiveProfileTab('about')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <User className="w-5 h-5 text-cyan-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('درباره', 'About')}</span>
+            </button>
+            
+            <button onClick={() => setActiveProfileTab('activity')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Activity className="w-5 h-5 text-emerald-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('فعالیت', 'Activity')}</span>
+            </button>
+            <button onClick={() => setActiveProfileTab('lives')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Video className="w-5 h-5 text-pink-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('لایوها', 'Lives')}</span>
+            </button>
+            <button onClick={() => showToast(window.loc('بخش علاقه‌مندی‌ها به زودی فعال می‌شود', 'Favorites coming soon'))} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Heart className="w-5 h-5 text-rose-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('علاقه‌مندی', 'Favorites')}</span>
+            </button>
+            <button onClick={() => showToast(window.loc('بخش فالوورها به زودی فعال می‌شود', 'Followers coming soon'))} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Users className="w-5 h-5 text-indigo-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('فالوورها', 'Followers')}</span>
+            </button>
+            
+            <button onClick={() => showToast(window.loc('بخش فالووینگ به زودی فعال می‌شود', 'Following coming soon'))} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Users className="w-5 h-5 text-blue-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('فالووینگ', 'Following')}</span>
+            </button>
+            <button onClick={() => setActiveProfileTab('settings')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Settings className="w-5 h-5 text-slate-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('تنظیمات', 'Settings')}</span>
+            </button>
+            <button onClick={() => setIsSecurityModalOpen && setIsSecurityModalOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <Shield className="w-5 h-5 text-emerald-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('حریم‌خصوصی', 'Privacy')}</span>
+            </button>
+            <button onClick={() => props.setIsSupportModalOpen && props.setIsSupportModalOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+              <MessageSquare className="w-5 h-5 text-blue-400" />
+              <span className="text-[10px] text-slate-400 font-bold">{window.loc('پشتیبانی', 'Support')}</span>
+            </button>
+          </div>
+        </VisualSectionWrapper>
+
+        {/* ========================================== */}
+        {/* SUB-NAVIGATION CONTENT TABS                */}
+        {/* ========================================== */}
+        <VisualSectionWrapper pageId="profile" sectionId="profile_tab_nav" defaultLabel="Profile Content Tabs">
+          <div className="flex bg-slate-900 border border-slate-800 rounded-2xl p-1 mb-4 overflow-x-auto scrollbar-none">
             {[
-              { id: 'posts', label: window.loc('پست‌ها', 'Posts'), icon: MessageSquare },
-              { id: 'media', label: window.loc('رسانه', 'Media'), icon: Image },
-              { id: 'stories', label: window.loc('استوری‌ها', 'Stories'), icon: Flame },
-              { id: 'about', label: window.loc('درباره من', 'About'), icon: User },
-              { id: 'activity', label: window.loc('فعالیت', 'Activity'), icon: Activity },
-              { id: 'lives', label: window.loc('لایوها', 'Lives'), icon: Video },
-              { id: 'vip', label: window.loc('VIP و نشان‌ها', 'VIP & Badges'), icon: Crown },
-              { id: 'wallet', label: window.loc('کیف پول', 'Wallet'), icon: Wallet },
-              { id: 'settings', label: window.loc('تنظیمات', 'Settings'), icon: Settings },
-            ].map(tab => {
-              const Icon = tab.icon;
-              const isActive = activeProfileTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveProfileTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap transition-all ${
-                    isActive
-                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md font-black'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
+              { id: 'posts', label: window.loc('پست‌ها', 'Posts') },
+              { id: 'stories', label: window.loc('استوری‌ها', 'Stories') },
+              { id: 'media', label: window.loc('گالری', 'Gallery') }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveProfileTab(tab.id)}
+                className={`flex-1 min-w-[80px] py-2 rounded-xl text-xs font-bold transition-all ${
+                  activeProfileTab === tab.id
+                    ? 'bg-slate-800 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </VisualSectionWrapper>
 
@@ -792,13 +819,6 @@ export default function ProfileTab(props) {
             <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
               <h3 className="font-black text-white text-base pb-3 border-b border-slate-800 flex items-center justify-between">
                 <span>{window.loc('اطلاعات شخصی و بیوگرافی', 'Personal Details & Biography')}</span>
-                <button
-                  onClick={() => setIsEditModalOpen(true)}
-                  className="text-xs font-bold text-pink-400 hover:text-pink-300 flex items-center gap-1"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>{window.loc('ویرایش', 'Edit')}</span>
-                </button>
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -1056,12 +1076,12 @@ export default function ProfileTab(props) {
 
             <div className="space-y-3 pt-2">
               <button
-                onClick={() => setIsSecurityModalOpen(true)}
+                onClick={() => props.setIsSupportModalOpen && props.setIsSupportModalOpen(true)}
                 className="w-full p-4 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 transition"
               >
                 <div className="flex items-center gap-3">
-                  <Lock className="w-4 h-4 text-pink-400" />
-                  <span>Security & Password</span>
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>{window.loc('قوانین و حریم خصوصی', 'Rules & Privacy')}</span>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-500" />
               </button>

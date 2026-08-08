@@ -6154,6 +6154,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           addAdminAuditLog={addAdminAuditLog}
           showToast={showToast}
           loc={loc}
+          setIsSupportModalOpen={setIsSupportModalOpen}
         />
         </main>
       <nav className="fixed bottom-0 w-full max-w-[800px] z-40 bg-slate-900/95 backdrop-blur-2xl border-t border-slate-800/80 p-2 sm:px-6 flex justify-between items-center shadow-[0_-5px_30px_rgba(0,0,0,0.5)]">
