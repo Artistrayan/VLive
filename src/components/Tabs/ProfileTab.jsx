@@ -215,6 +215,8 @@ export default function ProfileTab(props) {
     return Math.round((filled / fields.length) * 100);
   })();
   const [newPostText, setNewPostText] = useState('');
+  const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
+  const [newPostType, setNewPostType] = useState('photo');
   const [newPostImage, setNewPostImage] = useState('');
 
   // Save changes to safeStorage
@@ -466,27 +468,61 @@ export default function ProfileTab(props) {
         {/* SUB-NAVIGATION CONTENT TABS                */}
         {/* ========================================== */}
         <VisualSectionWrapper pageId="profile" sectionId="profile_tab_nav" defaultLabel="Profile Content Tabs">
-          <div className="flex bg-slate-900 border border-slate-800 rounded-2xl p-1 mb-4 overflow-x-auto scrollbar-none">
-            {[
-              { id: 'photos', label: window.loc('عکس‌ها', 'Photos') },
-              { id: 'videos', label: window.loc('فیلم‌ها', 'Videos') }
-            ].map(tab => (
+          <div className="flex bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 mb-4 items-center justify-around gap-2">
+            {/* Photos Icon Tab & Add (+) Button */}
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+              activeProfileTab === 'photos' 
+                ? 'bg-slate-800 text-pink-400 border border-slate-700/80 shadow-md' 
+                : 'text-slate-500 hover:text-slate-300'
+            }`}>
               <button
-                key={tab.id}
-                onClick={() => setActiveProfileTab(tab.id)}
-                className={`flex-1 min-w-[80px] py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeProfileTab === tab.id
-                    ? 'bg-slate-800 text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-300'
-                }`}
+                onClick={() => setActiveProfileTab('photos')}
+                className="flex items-center gap-1 transition active:scale-95"
+                title={window.loc('عکس‌ها', 'Photos')}
               >
-                {tab.label}
+                <Image className="w-5 h-5" />
               </button>
-            ))}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNewPostType('photo');
+                  setIsCreatePostModalOpen(true);
+                }}
+                className="p-1 rounded-lg bg-pink-500/20 hover:bg-pink-500/40 text-pink-400 border border-pink-500/30 transition active:scale-95 flex items-center justify-center"
+                title={window.loc('گذاشتن پست عکس جدید', 'Create Photo Post')}
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Videos Icon Tab & Add (+) Button */}
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+              activeProfileTab === 'videos' 
+                ? 'bg-slate-800 text-cyan-400 border border-slate-700/80 shadow-md' 
+                : 'text-slate-500 hover:text-slate-300'
+            }`}>
+              <button
+                onClick={() => setActiveProfileTab('videos')}
+                className="flex items-center gap-1 transition active:scale-95"
+                title={window.loc('فیلم‌ها', 'Videos')}
+              >
+                <Video className="w-5 h-5" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNewPostType('video');
+                  setIsCreatePostModalOpen(true);
+                }}
+                className="p-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 border border-cyan-500/30 transition active:scale-95 flex items-center justify-center"
+                title={window.loc('گذاشتن پست ویدیو جدید', 'Create Video Post')}
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </VisualSectionWrapper>
 
-        {/* ========================================== */}
         {/* DEDICATED ADMIN CARD FOR ADMIN USERS       */}
         {/* ========================================== */}
         {isAdminUser && (
@@ -619,38 +655,6 @@ export default function ProfileTab(props) {
         {/* TAB 1: POSTS FEED */}
         { (activeProfileTab === 'photos' || activeProfileTab === 'videos') && (
           <div className="space-y-4 animate-fadeIn">
-            {/* Create Post Box */}
-            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
-              <div className="flex items-center gap-3">
-                <img src={userAvatar || PRESET_AVATARS[0]} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-pink-500/40" />
-                <input
-                  type="text"
-                  value={newPostText}
-                  onChange={(e) => setNewPostText(e.target.value)}
-                  placeholder={window.loc('امروز چه خبر؟ متن یا عکس انتشار بدید...', 'Share a post or moment with followers...')}
-                  className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-pink-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
-                <input
-                  type="text"
-                  value={newPostImage}
-                  onChange={(e) => setNewPostImage(e.target.value)}
-                  placeholder={window.loc('لینک تصویر (اختیاری)...', 'Image link (optional)...')}
-                  className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-[11px] text-white w-1/2 outline-none"
-                />
-
-                <button
-                  onClick={handleAddPost}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-xs shadow-md hover:scale-105 active:scale-95 transition flex items-center gap-1.5"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>{window.loc('انتشار پست', 'Publish')}</span>
-                </button>
-              </div>
-            </div>
-
             {/* Posts List */}
             {profilePosts.map(post => (
               <div key={post.id} className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3.5">
@@ -1320,6 +1324,93 @@ export default function ProfileTab(props) {
         userId={getUserId()}
         showToast={typeof showToast !== 'undefined' ? showToast : undefined}
       />
-    </>
+    
+      {/* CREATE POST MODAL */}
+      {isCreatePostModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4 relative">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                {newPostType === 'video' ? (
+                  <Video className="w-5 h-5 text-cyan-400" />
+                ) : (
+                  <Image className="w-5 h-5 text-pink-400" />
+                )}
+                <h3 className="font-black text-white text-sm">
+                  {newPostType === 'video' 
+                    ? window.loc('ارسال ویدیوی جدید', 'New Video Post')
+                    : window.loc('ارسال عکس یا پست جدید', 'New Photo Post')}
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsCreatePostModalOpen(false)}
+                className="p-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-white transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* User Info Row */}
+            <div className="flex items-center gap-3">
+              <img
+                src={userAvatar || authAvatar || PRESET_AVATARS[0]}
+                alt={userName}
+                className="w-10 h-10 rounded-full object-cover border border-pink-500/40"
+              />
+              <div>
+                <h4 className="font-bold text-white text-xs">{userName || authFullName || 'Rayan Maleki'}</h4>
+                <span className="text-[10px] text-slate-400">@{currentUsername || authUsername || 'rayan_vlive'}</span>
+              </div>
+            </div>
+
+            {/* Textarea */}
+            <textarea
+              value={newPostText}
+              onChange={(e) => setNewPostText(e.target.value)}
+              placeholder={window.loc('امروز چه خبر؟ متن خود را بنویسید...', 'Share a moment or thoughts...')}
+              rows={3}
+              className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-pink-500 resize-none dir-rtl"
+            />
+
+            {/* Image / Media Link */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-300 block">
+                {newPostType === 'video' 
+                  ? window.loc('لینک ویدیو یا تصویر (اختیاری)', 'Video/Cover link (optional)')
+                  : window.loc('لینک تصویر پست (اختیاری)', 'Image link (optional)')}
+              </label>
+              <input
+                type="text"
+                value={newPostImage}
+                onChange={(e) => setNewPostImage(e.target.value)}
+                placeholder="https://example.com/media.jpg"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 outline-none focus:border-pink-500"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+              <button
+                onClick={() => setIsCreatePostModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 transition"
+              >
+                {window.loc('انصراف', 'Cancel')}
+              </button>
+              <button
+                onClick={() => {
+                  handleAddPost();
+                  setIsCreatePostModalOpen(false);
+                }}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white font-bold text-xs shadow-lg hover:scale-105 active:scale-95 transition flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{window.loc('انتشار پست', 'Publish')}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+</>
   );
 }
