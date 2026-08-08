@@ -282,7 +282,7 @@ export default function ProfileTab(props) {
 
   return (
     <>
-      <div className="space-y-6 pb-28 animate-fadeIn dir-ltr">
+      <div className="space-y-1.5 pb-28 animate-fadeIn dir-ltr">
         
         {/* ========================================== */}
         {/* 1. HERO COVER & PROFILE CARD               */}
@@ -468,9 +468,9 @@ export default function ProfileTab(props) {
         {/* SUB-NAVIGATION CONTENT TABS                */}
         {/* ========================================== */}
         <VisualSectionWrapper pageId="profile" sectionId="profile_tab_nav" defaultLabel="Profile Content Tabs">
-          <div className="flex bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 mb-4 items-center justify-around gap-2">
+          <div className="flex bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 mb-1.5 items-center justify-around gap-2">
             {/* Photos Icon Tab & Add (+) Button */}
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+            <div className={`flex items-center gap-2.5 px-5 py-2 rounded-xl transition-all ${
               activeProfileTab === 'photos' 
                 ? 'bg-slate-800 text-pink-400 border border-slate-700/80 shadow-md' 
                 : 'text-slate-500 hover:text-slate-300'
@@ -480,7 +480,7 @@ export default function ProfileTab(props) {
                 className="flex items-center gap-1 transition active:scale-95"
                 title={window.loc('عکس‌ها', 'Photos')}
               >
-                <Image className="w-5 h-5" />
+                <Image className="w-7 h-7" />
               </button>
               <button
                 onClick={(e) => {
@@ -488,15 +488,15 @@ export default function ProfileTab(props) {
                   setNewPostType('photo');
                   setIsCreatePostModalOpen(true);
                 }}
-                className="p-1 rounded-lg bg-pink-500/20 hover:bg-pink-500/40 text-pink-400 border border-pink-500/30 transition active:scale-95 flex items-center justify-center"
+                className="p-0.5 rounded-md bg-pink-500/20 hover:bg-pink-500/40 text-pink-400 border border-pink-500/30 transition active:scale-95 flex items-center justify-center shrink-0"
                 title={window.loc('گذاشتن پست عکس جدید', 'Create Photo Post')}
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-2.5 h-2.5" />
               </button>
             </div>
 
             {/* Videos Icon Tab & Add (+) Button */}
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+            <div className={`flex items-center gap-2.5 px-5 py-2 rounded-xl transition-all ${
               activeProfileTab === 'videos' 
                 ? 'bg-slate-800 text-cyan-400 border border-slate-700/80 shadow-md' 
                 : 'text-slate-500 hover:text-slate-300'
@@ -506,7 +506,7 @@ export default function ProfileTab(props) {
                 className="flex items-center gap-1 transition active:scale-95"
                 title={window.loc('فیلم‌ها', 'Videos')}
               >
-                <Video className="w-5 h-5" />
+                <Video className="w-7 h-7" />
               </button>
               <button
                 onClick={(e) => {
@@ -514,15 +514,14 @@ export default function ProfileTab(props) {
                   setNewPostType('video');
                   setIsCreatePostModalOpen(true);
                 }}
-                className="p-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 border border-cyan-500/30 transition active:scale-95 flex items-center justify-center"
+                className="p-0.5 rounded-md bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 border border-cyan-500/30 transition active:scale-95 flex items-center justify-center shrink-0"
                 title={window.loc('گذاشتن پست ویدیو جدید', 'Create Video Post')}
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-2.5 h-2.5" />
               </button>
             </div>
           </div>
         </VisualSectionWrapper>
-
         {/* DEDICATED ADMIN CARD FOR ADMIN USERS       */}
         {/* ========================================== */}
         {isAdminUser && (
@@ -594,7 +593,7 @@ export default function ProfileTab(props) {
         {/* ACTION GRID                                */}
         {/* ========================================== */}
         <VisualSectionWrapper pageId="profile" sectionId="profile_actions_grid" defaultLabel="Profile Actions Grid">
-          <div className="grid grid-cols-4 sm:grid-cols-4 gap-2 mb-4">
+          <div className="grid grid-cols-4 sm:grid-cols-4 gap-2 mb-1.5">
             <button onClick={() => setIsEditModalOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
               <Edit3 className="w-5 h-5 text-slate-300" />
               <span className="text-[10px] text-slate-400 font-bold">{window.loc('ویرایش', 'Edit')}</span>
