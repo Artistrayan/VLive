@@ -1370,7 +1370,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // Check if current user is Rayan (Super Admin @Rayan_Vlive)
   const SUPER_ADMIN_TELEGRAM_HANDLE = 'Rayan_Vlive';
-  const SUPER_ADMIN_TELEGRAM_ID = '8973478139';
+  const SUPER_ADMIN_TELEGRAM_ID = '8933698119';
 
   const [currentTelegramId, setCurrentTelegramId] = useState(() => {
     return safeStorage.getItem('vlive_user_telegram_id') || '';
@@ -1385,7 +1385,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     ''
   ).replace('@', '').trim().toLowerCase();
 
-  const isUserRayan = currentCleanTgHandle === 'rayan_vlive' || (currentTelegramId !== '' && String(currentTelegramId).trim() === SUPER_ADMIN_TELEGRAM_ID);
+  const isUserRayan = currentTelegramId !== '' && String(currentTelegramId).trim() === SUPER_ADMIN_TELEGRAM_ID;
   const [currentUserRole, setCurrentUserRole] = useState(isUserRayan ? 'super_admin' : 'user');
 
   // Admin Credentials Authentication state
@@ -1393,7 +1393,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [enteredAdminPassword, setEnteredAdminPassword] = useState('');
   const [activeAdminSession, setActiveAdminSession] = useState(null);
 
-  const isUserSuperAdmin = isUserRayan;
+  const isUserSuperAdmin = isUserRayan && (currentUserRole === 'super_admin' || currentUserRole === 'admin');
 
   // Transactions State for Admin & Payouts
   const [transactionsList, setTransactionsList] = useState(INITIAL_TRANSACTIONS);
@@ -1564,7 +1564,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     }
   };
 
-  const isUserAuthorizedAdmin = isUserSuperAdmin || currentCleanTgHandle === 'rayan_vlive';
+  const isUserAuthorizedAdmin = isUserSuperAdmin && String(currentTelegramId).trim() === SUPER_ADMIN_TELEGRAM_ID;
 
   // REDESIGNED ADMIN DASHBOARD STATES
   const [adminGlobalSearch, setAdminGlobalSearch] = useState('');
@@ -1664,7 +1664,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       } catch (e) {}
     }
     return [
-      { id: 'adm_super', name: 'Rayan (@Rayan_Vlive)', telegramId: '8973478139', username: 'Rayan_Vlive', password: 'Rayan_0935', role: 'Super Admin', permissions: { users: true, live: true, reports: true, wallet: true, security: true, ads: true, support: true, logs: true }, addedAt: '2026-01-01' }
+      { id: 'adm_super', name: 'Rayan (@Rayan_Vlive)', telegramId: '8933698119', username: 'Rayan_Vlive', password: 'Rayan_0935', role: 'Super Admin', permissions: { users: true, live: true, reports: true, wallet: true, security: true, ads: true, support: true, logs: true }, addedAt: '2026-01-01' }
     ];
   });
 

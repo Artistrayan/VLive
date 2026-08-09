@@ -104,32 +104,20 @@ export function registerUsernameLocally(username) {
 
 /**
  * Validates if a user has Admin privileges.
+ * Admin access is granted ONLY when verified Telegram User ID is 8933698119.
+ * Username or display name alone NEVER grants admin privileges.
  *
  * @param {string} username - User's username
- * @param {boolean} [isUserRayan=false] - Explicit Rayan admin flag
+ * @param {boolean} [isUserRayan=false] - Explicit Rayan admin flag from verified Telegram ID
  * @param {Array} [adminWhitelist=[]] - Array of whitelisted admin handles
  * @param {Array} [adminRolesList=[]] - Array of admin objects
+ * @param {string|number} [telegramId=''] - User's verified Telegram ID
  * @returns {boolean} true if admin, false if standard user
  */
-export function isUserAnAdmin(username = '', isUserRayan = false, adminWhitelist = [], adminRolesList = []) {
-  if (isUserRayan) return true;
-  const clean = (username || '').replace('@', '').trim().toLowerCase();
-  if (!clean) return false;
-
-  // Dedicated Super Admin Telegram Handle: @Rayan_Vlive
-  if (clean === 'rayan_vlive') return true;
-
-  if (Array.isArray(adminWhitelist)) {
-    if (adminWhitelist.some(w => typeof w === 'string' && w.replace('@', '').trim().toLowerCase() === clean && clean === 'rayan_vlive')) {
-      return true;
-    }
+export function isUserAnAdmin(username = '', isUserRayan = false, adminWhitelist = [], adminRolesList = [], telegramId = '') {
+  const cleanTg = String(telegramId || '').trim();
+  if (cleanTg === '8933698119' && isUserRayan) {
+    return true;
   }
-
-  if (Array.isArray(adminRolesList)) {
-    if (adminRolesList.some(a => (a?.username || '').replace('@', '').trim().toLowerCase() === clean && clean === 'rayan_vlive')) {
-      return true;
-    }
-  }
-
   return false;
 }

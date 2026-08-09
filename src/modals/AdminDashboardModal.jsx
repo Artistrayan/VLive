@@ -147,11 +147,9 @@ export default function AdminDashboardModal(props) {
 
   if (!isAdminPinModalOpen && !isAdminPanelOpen) return null;
 
-  // STRICT ACCESS CONTROL: Only authorized admin (@Rayan_Vlive) can view or interact with the admin panel
-  const currentCleanUsername = (props.currentUsername || props.authUsername || safeStorage.getItem('vlive_current_username') || safeStorage.getItem('vlive_user_telegram_handle') || '').replace('@', '').trim().toLowerCase();
-  const isAuthorizedAdmin = isUserRayan || 
-    currentCleanUsername === 'rayan_vlive' ||
-    (activeAdminSession && (activeAdminSession.username?.replace('@', '').toLowerCase() === 'rayan_vlive' || activeAdminSession.role === 'Super Admin'));
+  // STRICT ACCESS CONTROL: Only authorized admin with Telegram User ID 8933698119 can view or interact with the admin panel
+  const cleanTgId = String(props.currentTelegramId || safeStorage.getItem('vlive_user_telegram_id') || '').trim();
+  const isAuthorizedAdmin = cleanTgId === '8933698119' && (isUserRayan || (activeAdminSession && String(activeAdminSession.telegramId).trim() === '8933698119'));
 
   if (!isAuthorizedAdmin) {
     return null;
@@ -183,7 +181,7 @@ export default function AdminDashboardModal(props) {
                 <span className="text-slate-300 font-medium">{window.loc('ای‌دی عددی تلگرام شناسایی‌شده:', 'Identified Telegram numeric ID:')}</span>
               </div>
               <span className="font-mono font-bold text-cyan-300 bg-cyan-950 px-2.5 py-1 rounded-xl border border-cyan-500/30">
-                {currentTelegramId || '8973478139'}
+                {currentTelegramId || '8933698119'}
               </span>
             </div>
 
@@ -240,16 +238,16 @@ export default function AdminDashboardModal(props) {
 
                     // Check matching admin in adminRolesList
                     const matchedAdmin = adminRolesList.find(a => 
-                      (String(a.telegramId).trim() === cleanTg || cleanTg === '8973478139') &&
+                      (String(a.telegramId).trim() === cleanTg || cleanTg === '8933698119') &&
                       (a.username === cleanUser || (cleanUser === 'Rayan_Super_Admin' && cleanPass === 'Rayan_0935')) &&
                       (a.password === cleanPass || cleanPass === 'Rayan_0935')
                     );
 
                     // Super Admin fallback credential match
-                    const isSuperAdminMatch = (cleanTg === '8973478139' || isUserRayan) && cleanUser === 'Rayan_Super_Admin' && cleanPass === 'Rayan_0935';
+                    const isSuperAdminMatch = (cleanTg === '8933698119' || isUserRayan) && cleanUser === 'Rayan_Super_Admin' && cleanPass === 'Rayan_0935';
 
                     if (matchedAdmin || isSuperAdminMatch) {
-                      setActiveAdminSession(matchedAdmin || { name: 'Rayan Super Admin', role: 'Super Admin', telegramId: '8973478139' });
+                      setActiveAdminSession(matchedAdmin || { name: 'Rayan Super Admin', role: 'Super Admin', telegramId: '8933698119' });
                       setIsAdminPinModalOpen(false);
                       setIsAdminPanelOpen(true);
                       setEnteredAdminUsername('');
@@ -1498,7 +1496,7 @@ export default function AdminDashboardModal(props) {
                               type="text"
                               value={newAdminTelegramId}
                               onChange={e => setNewAdminTelegramId(e.target.value)}
-                              placeholder={window.loc('مثال: 8973478139', 'Example: 8973478139')}
+                              placeholder={window.loc('مثال: 8933698119', 'Example: 8933698119')}
                               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-cyan-300 font-mono text-xs outline-none focus:border-cyan-500"
                             />
                             <p className="text-[10px] text-slate-500 mt-1">

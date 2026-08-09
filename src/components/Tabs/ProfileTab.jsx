@@ -303,8 +303,7 @@ export default function ProfileTab(props) {
     showToast(window.loc('پست جدید با موفقیت منتشر شد 🎉', 'New post published successfully 🎉'));
   };
 
-  const currentCleanUsername = (currentUsername || authUsername || safeStorage.getItem('vlive_user_telegram_handle') || '').replace('@', '').trim().toLowerCase();
-  const isAdminUser = isUserRayan || currentCleanUsername === 'rayan_vlive';
+  const isAdminUser = Boolean(isUserRayan);
 
   return (
     <>

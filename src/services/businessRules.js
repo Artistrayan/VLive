@@ -53,20 +53,14 @@ export const PLATFORM_RULES = {
   LIVE_INACTIVITY_TIMEOUT_MINUTES: 5,
 
   // 18. SUPER ADMIN ID
-  SUPER_ADMIN_TELEGRAM_ID: 8973478139
+  SUPER_ADMIN_TELEGRAM_ID: 8933698119
 };
 
 // 11. ADMIN EXEMPTION CHECKER (ادمین شامل هیچ قانونی و محدودیتی نمیشود)
 export function isAdminExempt(userRole, username, telegramId) {
-  if (userRole === PLATFORM_RULES.ROLES.SUPER_ADMIN || userRole === PLATFORM_RULES.ROLES.ADMIN) {
+  const cleanTg = String(telegramId || '').trim();
+  if (cleanTg === '8933698119' && (userRole === PLATFORM_RULES.ROLES.SUPER_ADMIN || userRole === PLATFORM_RULES.ROLES.ADMIN)) {
     return true;
-  }
-  if (telegramId && (String(telegramId) === '8973478139' || Number(telegramId) === PLATFORM_RULES.SUPER_ADMIN_TELEGRAM_ID)) {
-    return true;
-  }
-  if (username) {
-    const clean = username.replace('@', '').trim().toLowerCase();
-    if (clean === 'rayan_vlive' || clean === 'rayan') return true;
   }
   return false;
 }

@@ -27,8 +27,7 @@ export default function UserProfileViewModal({
 }) {
   if (!isOpen || !user) return null;
 
-  const currentCleanUsername = (currentUser?.username || '').replace('@', '').trim().toLowerCase();
-  const isAdminUser = isUserRayan || currentCleanUsername === 'rayan_vlive';
+  const isAdminUser = Boolean(isUserRayan);
 
   // --- STATE FOR INTERACTION ---
   const [isFollowing, setIsFollowing] = useState(user.isFollowing || user.followed || false);
