@@ -210,6 +210,38 @@ export const apiAuth = {
   }
 };
 
+export const apiVerification = {
+  async submitGenderVerificationReport({ userId, username, fullName, selfieUrl, gender, aiScore, aiResult, aiReportDetails }) {
+    try {
+      const uid = userId || getUserId();
+      const { data, error } = await supabase.from('verifications').insert([{
+        user_id: uid,
+        username,
+        full_name: fullName,
+        selfie_url: selfieUrl,
+        gender,
+        ai_score: aiScore,
+        ai_result: aiResult,
+        ai_report_details: aiReportDetails,
+        status: aiResult === 'APPROVED' ? 'approved' : 'pending',
+        created_at: new Date().toISOString()
+      }]).select();
+
+      if (uid && aiResult === 'APPROVED') {
+        await supabase.from('profiles').update({
+          gender: 'female',
+          is_verified: true,
+          status: 'approved'
+        }).eq('id', uid);
+      }
+      return { success: !error, data: data ? data[0] : null, error: error?.message };
+    } catch (err) {
+      console.error('submitGenderVerificationReport error:', err);
+      return { success: false, error: err.message };
+    }
+  }
+};
+
 export const apiProfile = {
   async getProfile() {
     const uid = getUserId();

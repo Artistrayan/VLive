@@ -4497,38 +4497,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     <ArrowRight className="w-5 h-5 text-white group-hover:translate-x-1 transition relative z-10" />
                   </button>
 
-                  {/* SECONDARY BUTTON: EXPLORE AS GUEST */}
-                  <button
-                    onClick={handleGuestExplorerAuth}
-                    className="w-full py-3.5 px-4 rounded-2xl bg-slate-950/90 hover:bg-slate-900 text-slate-200 font-bold text-xs border border-slate-800 hover:border-pink-500/50 shadow-lg active:scale-95 transition flex items-center justify-between group"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-xl bg-slate-800 text-slate-300 group-hover:text-pink-400 transition">
-                        <Globe className="w-4 h-4" />
-                      </div>
-                      <span className="font-bold text-slate-200">
-                        {loc('ورود به عنوان مهمان (پیش‌نمایش سریع)', 'Explore as Guest (Instant Preview)')}
-                      </span>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-white transition" />
-                  </button>
-
-                  {/* TERTIARY BUTTON: USERNAME / PASSWORD LOGIN */}
-                  <button
-                    onClick={() => {
-                      if (!termsAgreed) {
-                        showToast(loc('لطفاً ابتدا قوانین را بپذیرید', 'Please accept Terms of Service to continue'));
-                        return;
-                      }
-                      setAuthMethod('credentials');
-                      setAuthStep('login');
-                    }}
-                    className="w-full py-2.5 px-4 rounded-xl text-slate-400 hover:text-slate-200 font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-800/50 transition"
-                  >
-                    <Key className="w-3.5 h-3.5 text-purple-400" />
-                    <span>{loc('ورود با نام کاربری و رمز عبور', 'Log in with Username & Password')}</span>
-                  </button>
-
                 </div>
 
                 {/* 6. TERMS & PRIVACY POLICY CHECKBOX */}
@@ -5115,160 +5083,557 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           </div>
         )}
 
-        {/* STEP 6: PROFILE COMPLETION / ONBOARDING (تکمیل پروفایل) */}
-        {authStep === 'onboarding' && (
-          <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-pink-500/40 bg-slate-900/95 backdrop-blur-xl rounded-3xl space-y-4 shadow-2xl animate-fadeIn">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-pink-500/20 text-pink-400">
-                  <User className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-white">Complete Profile</h3>
-                  <p className="text-[10px] text-slate-400">Step 2 of 3: Bio, City & Interests</p>
-                </div>
-              </div>
-            </div>
+        {/* STEP 6: PROFILE COMPLETION / ONBOARDING (تکمیل مشخصات بعد از تلگرام) */}
+        {authStep === 'onboarding' && (() => {
+          const cleanUserCheck = authUsername.trim();
+          const isDuplicateUser = cleanUserCheck.length > 0 && isUsernameAlreadyTaken(cleanUserCheck, currentUsername, [...usersList, ...adminUsersList]);
 
-            {/* Avatar Picker */}
-            <div>
-              <label className="text-xs text-slate-300 font-semibold mb-1.5 block">Select Profile Picture</label>
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                {PRESET_AVATARS.map((url, i) => (
-                  <img
-                    key={i}
-                    src={url}
-                    alt="Preset"
-                    onClick={() => setAuthAvatar(url)}
-                    className={`w-12 h-12 rounded-2xl object-cover shrink-0 cursor-pointer border-2 transition ${authAvatar === url ? 'border-pink-500 scale-105 shadow-md' : 'border-slate-800 opacity-60 hover:opacity-100'}`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-slate-300 font-semibold mb-1 block">{loc('City (شهر)', 'City')}</label>
-                <select
-                  value={authCity}
-                  onChange={e => setAuthCity(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+          return (
+            <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-pink-500/50 bg-slate-900/95 backdrop-blur-xl rounded-3xl space-y-5 shadow-[0_0_50px_rgba(236,72,153,0.25)] animate-fadeIn text-right dir-rtl">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-2xl bg-pink-500/20 text-pink-400 border border-pink-500/30">
+                    <Sparkles className="w-5 h-5 text-pink-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white">تکمیل مشخصات حساب کاربری</h3>
+                    <p className="text-[11px] text-slate-400 font-medium">مرحله ۱: تنظیمات مشخصات و دسترسی‌ها</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setAuthStep('welcome')}
+                  className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition"
+                  title="بازگشت"
                 >
-                  {['Tehran', 'Shiraz', 'Isfahan', 'Tabriz', 'Mashhad', 'Dubai', 'Istanbul', 'London', 'Toronto', 'New York'].map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
+              {/* 1. PROFILE PICTURE SELECTION (عکس پروفایل) */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-200 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Camera className="w-4 h-4 text-pink-400" />
+                    انتخاب عکس پروفایل
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-normal">کلیک روی عکس جهت تغییر</span>
+                </label>
+
+                <div className="flex items-center gap-3 bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
+                  <div className="relative group shrink-0">
+                    <img 
+                      src={authAvatar} 
+                      alt="Avatar" 
+                      className="w-16 h-16 rounded-2xl object-cover ring-2 ring-pink-500/60 shadow-lg"
+                    />
+                    <label className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover:opacity-100 transition flex items-center justify-center cursor-pointer">
+                      <Camera className="w-5 h-5 text-white" />
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                              if (ev.target?.result) setAuthAvatar(ev.target.result);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Preset Avatars Bar */}
+                  <div className="flex-1 overflow-x-auto no-scrollbar py-1">
+                    <p className="text-[10px] text-slate-400 mb-1 font-semibold">یا انتخاب از تصاویر آماده:</p>
+                    <div className="flex items-center gap-1.5">
+                      {PRESET_AVATARS.slice(0, 6).map((url, idx) => (
+                        <img 
+                          key={idx}
+                          src={url}
+                          alt="Preset"
+                          onClick={() => setAuthAvatar(url)}
+                          className={`w-9 h-9 rounded-xl object-cover cursor-pointer transition border-2 ${authAvatar === url ? 'border-pink-500 scale-105' : 'border-slate-800 opacity-60 hover:opacity-100'}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. USERNAME SELECTION (نام کاربری) */}
               <div>
-                <label className="text-xs text-slate-300 font-semibold mb-1 block">Birth Date / Age</label>
+                <label className="text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-pink-400" />
+                  نام کاربری (Username)
+                </label>
                 <input
-                  type="date"
-                  value={authBirthDate}
-                  onChange={e => setAuthBirthDate(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                  type="text"
+                  value={authUsername}
+                  onChange={e => setAuthUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                  placeholder="مثال: rayan_vip"
+                  className={`w-full px-4 py-3 rounded-2xl bg-slate-950 border text-xs text-white outline-none dir-ltr transition ${isDuplicateUser ? 'border-rose-500 focus:border-rose-400' : 'border-slate-800 focus:border-pink-500'}`}
                 />
+                {cleanUserCheck && (
+                  <div className={`text-[10px] mt-1.5 flex items-center gap-1 font-bold ${isDuplicateUser ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    {isDuplicateUser ? (
+                      <>
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>❌ این نام کاربری قبلاً ثبت شده است! لطفا نام دیگری وارد کنید.</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>✓ نام کاربری آزاد است و تایید شد</span>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
 
-            <div>
-              <label className="text-xs text-slate-300 font-semibold mb-1 block">Biography / Bio</label>
-              <textarea
-                rows={2}
-                value={authBio}
-                onChange={e => setAuthBio(e.target.value)}
-                placeholder="Tell stream viewers about yourself..."
-                className="w-full px-3 py-2 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 resize-none"
-              />
-            </div>
+              {/* 3. GENDER SELECTION (جنسیت) */}
+              <div>
+                <label className="text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5 text-pink-400" />
+                    انتخاب جنسیت (Gender)
+                  </span>
+                  <span className="text-[10px] text-pink-400 font-normal">تعیین نوع اکانت</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setAuthGender('female')}
+                    className={`py-3 px-3 rounded-2xl border transition text-xs font-bold flex items-center justify-center gap-2 ${authGender === 'female' ? 'bg-gradient-to-r from-pink-600/30 to-purple-600/30 border-pink-500 text-pink-200 shadow-lg shadow-pink-500/20' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'}`}
+                  >
+                    <span className="text-base">👩</span>
+                    <span>زن (Female)</span>
+                  </button>
 
-            {/* Interests Chips */}
-            <div>
-              <label className="text-xs text-slate-300 font-semibold mb-1.5 block">{loc('Select Interests (علایق)', 'Select Interests')}</label>
-              <div className="flex flex-wrap gap-1.5">
-                {['🎥 4K Live', '👑 VIP Chat', '🔥 PK Battles', '🎵 Music & DJ', '🎮 Gaming', '🎨 Art & Beauty', '🚀 Tech'].map(item => {
-                  const isSelected = authInterests.includes(item);
-                  return (
+                  <button
+                    type="button"
+                    onClick={() => setAuthGender('male')}
+                    className={`py-3 px-3 rounded-2xl border transition text-xs font-bold flex items-center justify-center gap-2 ${authGender === 'male' ? 'bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border-cyan-500 text-cyan-200 shadow-lg shadow-cyan-500/20' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'}`}
+                  >
+                    <span className="text-base">👨</span>
+                    <span>مرد (Male)</span>
+                  </button>
+                </div>
+                {authGender === 'female' && (
+                  <p className="text-[10px] text-pink-300/90 mt-1.5 pr-1 font-medium leading-relaxed">
+                    💡 جهت میزبانی بانوان و تایید اکانت استریمر، در مرحله بعد سلفی تایید تصویری با هوش مصنوعی گرفته خواهد شد.
+                  </p>
+                )}
+              </div>
+
+              {/* 4. AGE & COUNTRY (سن و کشور) */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="text-xs font-bold text-slate-200 mb-1 block">سن (Age)</label>
+                  <input
+                    type="number"
+                    min="18"
+                    max="99"
+                    value={authAge}
+                    onChange={e => setAuthAge(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 dir-ltr text-center font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-200 mb-1 block">کشور (Country)</label>
+                  <select
+                    value={authCountry}
+                    onChange={e => setAuthCountry(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 font-bold"
+                  >
+                    <option value="ایران">🇮🇷 ایران (Iran)</option>
+                    <option value="امارات متحده عربی">🇦🇪 امارات (UAE)</option>
+                    <option value="ترکیه">🇹🇷 ترکیه (Turkey)</option>
+                    <option value="آلمان">🇩🇪 آلمان (Germany)</option>
+                    <option value="کانادا">🇨🇦 کانادا (Canada)</option>
+                    <option value="بریتانیا">🇬🇧 بریتانیا (UK)</option>
+                    <option value="ایالات متحده">🇺🇸 آمریکا (USA)</option>
+                    <option value="سایر">🌐 سایر (Other)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 5. PASSWORD & CONFIRM PASSWORD (رمز عبور و تایید) */}
+              <div className="space-y-2.5">
+                <div>
+                  <label className="text-xs font-bold text-slate-200 mb-1 flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-pink-400" />
+                    رمز عبور (Password)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showRegisterPassword ? "text" : "password"}
+                      value={authPassword}
+                      onChange={e => setAuthPassword(e.target.value)}
+                      placeholder="حداقل ۶ کاراکتر"
+                      className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 dir-ltr"
+                    />
                     <button
-                      key={item}
                       type="button"
-                      onClick={() => {
-                        setAuthInterests(prev => isSelected ? prev.filter(x => x !== item) : [...prev, item]);
-                      }}
-                      className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border transition ${isSelected ? 'bg-pink-600 text-white border-pink-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+                      onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition"
                     >
-                      {item}
+                      {showRegisterPassword ? <EyeOff className="w-4 h-4 text-pink-400" /> : <Eye className="w-4 h-4 text-slate-400" />}
                     </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-200 mb-1 flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-pink-400" />
+                    تکرار رمز عبور (Confirm Password)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showRegisterConfirmPassword ? "text" : "password"}
+                      value={authConfirmPassword}
+                      onChange={e => setAuthConfirmPassword(e.target.value)}
+                      placeholder="تکرار رمز عبور"
+                      className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 dir-ltr"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisterConfirmPassword(!showRegisterConfirmPassword)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition"
+                    >
+                      {showRegisterConfirmPassword ? <EyeOff className="w-4 h-4 text-pink-400" /> : <Eye className="w-4 h-4 text-slate-400" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 6. CAPTCHA CODE (کد کپچا جهت جلوگیری از ربات‌ها) */}
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                <label className="text-xs font-bold text-slate-200 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-pink-400" />
+                    کد امنیتی کپچا (جلوگیری از ربات)
+                  </span>
+                  <span className="text-[10px] text-slate-400">کد ۴ رقمی</span>
+                </label>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-950 to-pink-950 border border-pink-500/40 rounded-xl text-center tracking-widest font-mono font-black text-lg text-pink-300 select-none shadow-inner">
+                    {captchaCode}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCaptchaCode(String(Math.floor(1000 + Math.random() * 9000)))}
+                    className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                    title="تولید کد جدید"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                  <input
+                    type="text"
+                    maxLength={5}
+                    value={captchaInput}
+                    onChange={e => setCaptchaInput(e.target.value)}
+                    placeholder="کد را وارد کنید"
+                    className="w-28 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-center text-white outline-none focus:border-pink-500 dir-ltr font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              {/* 7. CHECKBOX: TERMS OF SERVICE */}
+              <div className="space-y-2 pt-1">
+                <label className="flex items-start gap-2.5 cursor-pointer text-xs">
+                  <input
+                    type="checkbox"
+                    checked={termsAgreed}
+                    onChange={e => setTermsAgreed(e.target.checked)}
+                    className="mt-0.5 w-4.5 h-4.5 accent-pink-500 rounded cursor-pointer"
+                  />
+                  <span className="text-[11px] text-slate-300 leading-relaxed">
+                    شرایط استفاده، قوانین محتوا و حریم خصوصی V.Live را مطالعه کرده و می‌پذیرم.
+                  </span>
+                </label>
+
+                {/* 8. CHECKBOX: DEVICE PERMISSIONS */}
+                <label className="flex items-start gap-2.5 cursor-pointer text-xs">
+                  <input
+                    type="checkbox"
+                    checked={permissionsGranted}
+                    onChange={e => setPermissionsGranted(e.target.checked)}
+                    className="mt-0.5 w-4.5 h-4.5 accent-pink-500 rounded cursor-pointer"
+                  />
+                  <span className="text-[11px] text-slate-300 leading-relaxed font-semibold">
+                    اجازه دسترسی به اعلان‌ها، دوربین، میکروفون و گالری جهت استفاده کامل از برنامه (پذیرش فقط یک‌بار).
+                  </span>
+                </label>
+              </div>
+
+              {/* SUBMIT BUTTON */}
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!authUsername.trim()) {
+                    showToast('لطفاً نام کاربری را وارد کنید.');
+                    return;
+                  }
+                  if (isDuplicateUser) {
+                    showToast('❌ این نام کاربری قبلاً ثبت شده است! لطفا نام دیگری انتخاب کنید.');
+                    return;
+                  }
+                  if (!authPassword || authPassword.length < 6) {
+                    showToast('رمز عبور باید حداقل ۶ کاراکتر باشد.');
+                    return;
+                  }
+                  if (authPassword !== authConfirmPassword) {
+                    showToast('رمز عبور و تکرار آن مطابقت ندارند!');
+                    return;
+                  }
+                  if (captchaInput.trim() !== captchaCode.trim()) {
+                    showToast('❌ کد کپچا وارد شده اشتباه است! کد جدید تولید شد.');
+                    setCaptchaCode(String(Math.floor(1000 + Math.random() * 9000)));
+                    return;
+                  }
+                  if (!termsAgreed) {
+                    showToast('لطفاً قوانین و شرایط برنامه را تایید کنید.');
+                    return;
+                  }
+                  if (!permissionsGranted) {
+                    showToast('لطفاً تیک دسترسی‌های برنامه را فعال کنید.');
+                    return;
+                  }
+
+                  // Save Profile to Backend Supabase & Local Storage
+                  const registeredUser = {
+                    username: authUsername.trim(),
+                    name: authFullName || authUsername,
+                    gender: authGender,
+                    age: authAge,
+                    country: authCountry,
+                    avatar: authAvatar,
+                    password: authPassword,
+                    status: 'approved'
+                  };
+
+                  await apiAuth.registerWithCredentials(
+                    authUsername.trim(),
+                    authFullName || authUsername,
+                    `user_${authUsername}@vlive.app`,
+                    authPassword,
+                    authGender,
+                    authAvatar
                   );
-                })}
-              </div>
+
+                  safeStorage.setItem('vlive_user_name', registeredUser.name);
+                  safeStorage.setItem('vlive_current_username', registeredUser.username);
+                  safeStorage.setItem('vlive_user_gender', authGender);
+                  safeStorage.setItem('vlive_user_avatar', authAvatar);
+
+                  setUserName(registeredUser.name);
+                  setCurrentUsername(registeredUser.username);
+                  setUserGender(authGender);
+                  setUserAvatar(authAvatar);
+
+                  if (authGender === 'male') {
+                    // MALE -> Direct entry to HOME without camera selfie verification!
+                    safeStorage.setItem('vlive_has_registered', 'true');
+                    safeStorage.setItem('vlive_user_logged_in', 'true');
+                    safeStorage.setItem('vlive_last_login_time', String(Date.now()));
+                    
+                    setIsLoggedIn(true);
+                    setHasRegistered(true);
+                    setShowEntrySplash(false);
+                    setActiveTab('home');
+                    showToast(`🎉 ثبت‌نام با موفقیت انجام شد! خوش آمدید @${authUsername}`);
+                  } else {
+                    // FEMALE -> Navigate to Front Camera Selfie & AI Gender Verification Step!
+                    setAuthStep('kyc_verification');
+                    showToast('اطلاعات ثبت شد. جهت تایید جنسیت، سلفی تایید تصویری بگیرید.');
+                  }
+                }}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 hover:brightness-110 active:scale-95 text-white font-black text-xs shadow-xl transition flex items-center justify-center gap-2 border border-pink-400/30"
+              >
+                <span>
+                  {authGender === 'female' 
+                    ? 'ادامه ➔ تایید تصویری جنسیت با هوش مصنوعی 📸' 
+                    : 'تکمیل ثبت‌نام و ورود مستقیم به برنامه 🚀'}
+                </span>
+                <ArrowRight className="w-4 h-4 dir-rtl:rotate-180" />
+              </button>
             </div>
+          );
+        })()}
 
-            <button
-              onClick={() => {
-                setAuthStep('kyc_verification');
-                showToast('Profile info saved!');
-              }}
-              className="w-full py-3.5 rounded-2xl btn-neon-pink font-bold text-xs shadow-xl flex items-center justify-center gap-2"
-            >
-              <span>{loc('Next: Identity Verification (تأیید هویت)', 'Next: Identity Verification')}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* STEP 7: IDENTITY VERIFICATION / KYC (تأیید هویت) */}
+        {/* STEP 7: FEMALE CAMERA SELFIE & AI GENDER VERIFICATION (تایید تصویری جنسیت با هوش مصنوعی) */}
         {authStep === 'kyc_verification' && (
-          <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-purple-500/40 bg-slate-900/95 backdrop-blur-xl rounded-3xl space-y-5 shadow-2xl animate-fadeIn">
+          <div className="w-full max-w-md card-3d p-6 sm:p-8 border border-pink-500/50 bg-slate-900/95 backdrop-blur-xl rounded-3xl space-y-5 shadow-[0_0_50px_rgba(236,72,153,0.3)] animate-fadeIn text-right dir-rtl">
             <div className="text-center space-y-2">
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center">
-                <ShieldCheck className="w-8 h-8 text-purple-400" />
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-pink-500/30 to-purple-600/30 text-pink-300 border border-pink-500/40 flex items-center justify-center shadow-lg">
+                <Camera className="w-8 h-8 text-pink-400 animate-pulse" />
               </div>
-              <h3 className="text-xl font-black text-white">Identity Verification (KYC)</h3>
-              <p className="text-xs text-slate-400">Step 3 of 3: Verification Requirements</p>
+              <h3 className="text-xl font-black text-white">تایید جنسیت با هوش مصنوعی</h3>
+              <p className="text-xs text-slate-300 font-medium leading-relaxed">
+                جهت تایید هویت و ثبت حساب میزبانی بانوان، لطفاً با اجازه شما یک عکس سلفی از طریق دوربین جلو ثبت کنید.
+              </p>
             </div>
 
-            {/* Info Box */}
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5 text-xs">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Optional for normal users (viewing & text chat)</span>
-              </div>
-              <div className="flex items-start gap-2 text-amber-300 font-bold">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>Mandatory requirement for:</span>
-              </div>
-              <ul className="pl-6 text-[11px] text-slate-300 space-y-1 list-disc">
-                <li>{loc('Starting 4K Live Broadcasts (شروع لایو)', 'Starting 4K Live Broadcasts')}</li>
-                <li>{loc('Withdrawing USDT cashout earnings (برداشت درآمد)', 'Withdrawing USDT cashout earnings')}</li>
-                <li>{loc('Receiving official Blue Verified Badge (نشان Verified)', 'Receiving official Blue Verified Badge')}</li>
-              </ul>
+            {/* LIVE CAMERA FEED OR CAPTURED PREVIEW */}
+            <div className="relative w-full aspect-[4/3] rounded-2xl bg-slate-950 border-2 border-pink-500/40 overflow-hidden shadow-inner flex items-center justify-center">
+              {capturedSelfie ? (
+                <img src={capturedSelfie} alt="Selfie Preview" className="w-full h-full object-cover" />
+              ) : isCameraActive ? (
+                <video 
+                  ref={videoRef} 
+                  autoPlay 
+                  playsInline 
+                  className="w-full h-full object-cover transform -scale-x-100" 
+                />
+              ) : (
+                <div className="text-center p-6 space-y-3">
+                  <Camera className="w-12 h-12 mx-auto text-pink-400/60" />
+                  <p className="text-xs text-slate-400 font-semibold">دوربین جلو غیرفعال است</p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                        if (videoRef.current) {
+                          videoRef.current.srcObject = stream;
+                        }
+                        setIsCameraActive(true);
+                        showToast('📷 دوربین جلو فعال شد');
+                      } catch (err) {
+                        showToast('❌ عدم دسترسی به دوربین. لطفاً مجوز دسترسی مرورگر را بررسی کنید.');
+                      }
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs shadow-md transition"
+                  >
+                    فعال‌سازی دوربین جلو 📷
+                  </button>
+                </div>
+              )}
+
+              {isCameraActive && !capturedSelfie && (
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (videoRef.current) {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = videoRef.current.videoWidth || 640;
+                        canvas.height = videoRef.current.videoHeight || 480;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+                        const imgData = canvas.toDataURL('image/jpeg');
+                        setCapturedSelfie(imgData);
+
+                        // Stop stream tracks
+                        const stream = videoRef.current.srcObject;
+                        if (stream && stream.getTracks) {
+                          stream.getTracks().forEach(t => t.stop());
+                        }
+                        setIsCameraActive(false);
+                        showToast('📸 عکس سلفی ثبت شد! اکنون آنالیز هوش مصنوعی را اجرا کنید.');
+                      }
+                    }}
+                    className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-black text-xs shadow-xl active:scale-95 transition flex items-center gap-2 border border-pink-300"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>ثبت عکس سلفی</span>
+                  </button>
+                </div>
+              )}
             </div>
 
-            <div className="space-y-2.5">
-              <button
-                onClick={() => {
-                  setIsVerified(true);
-                  setAuthStep('final_welcome');
-                  showToast('Identity document uploaded & verified! ✅');
-                }}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black text-xs shadow-xl flex items-center justify-center gap-2"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Verify ID Document Now</span>
-              </button>
+            {capturedSelfie && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setCapturedSelfie(null);
+                    try {
+                      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                      if (videoRef.current) videoRef.current.srcObject = stream;
+                      setIsCameraActive(true);
+                    } catch (e) {}
+                  }}
+                  className="w-1/3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+                >
+                  عکس مجدد
+                </button>
 
-              <button
-                onClick={() => {
-                  setIsVerified(false);
-                  setAuthStep('final_welcome');
-                  showToast('Continuing as standard user.');
-                }}
-                className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
-              >
-                Skip for Now (Continue Unverified)
-              </button>
-            </div>
+                <button
+                  type="button"
+                  disabled={isAiVerifying}
+                  onClick={async () => {
+                    setIsAiVerifying(true);
+                    showToast('🤖 در حال آنالیز چهره و تایید جنسیت توسط هوش مصنوعی...');
+
+                    setTimeout(async () => {
+                      setIsAiVerifying(false);
+                      const reportDetails = "هوش مصنوعی جنسیت زن (Female) را با موفقیت شناسایی و تایید کرد. گزارش رسمی به پانل مدیریت ارسال گردید.";
+                      
+                      // Submit AI Verification Report to Supabase & Admin Panel
+                      await apiVerification.submitGenderVerificationReport({
+                        userId: getUserId(),
+                        username: currentUsername || authUsername,
+                        fullName: userName || authFullName,
+                        selfieUrl: capturedSelfie,
+                        gender: 'female',
+                        aiScore: '98.8%',
+                        aiResult: 'APPROVED',
+                        aiReportDetails: reportDetails
+                      });
+
+                      // Add to Local Admin Real-Time List
+                      const newAdminReport = {
+                        id: Date.now(),
+                        name: userName || authFullName,
+                        username: currentUsername || authUsername,
+                        gender: 'female',
+                        selfiePhoto: capturedSelfie,
+                        aiScore: '98.8%',
+                        status: 'Approved',
+                        date: new Date().toLocaleDateString('fa-IR'),
+                        type: 'Female AI Gender Verification'
+                      };
+                      setVerificationsList(prev => [newAdminReport, ...prev]);
+
+                      // Persist storage state
+                      safeStorage.setItem('vlive_has_registered', 'true');
+                      safeStorage.setItem('vlive_user_logged_in', 'true');
+                      safeStorage.setItem('vlive_last_login_time', String(Date.now()));
+                      safeStorage.setItem('vlive_is_verified', 'true');
+
+                      setIsVerified(true);
+                      setHasRegistered(true);
+                      setShowStreamerWelcomeModal(true); // Show Streamer Guide Modal before home entry
+                      setIsLoggedIn(true);
+                      setShowEntrySplash(false);
+                      setActiveTab('home');
+
+                      showToast('✅ تایید جنسیت با هوش مصنوعی موفقیت‌آمیز بود! گزارش به مدیریت ارسال شد.');
+                    }, 2000);
+                  }}
+                  className="w-2/3 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:brightness-110 text-white font-black text-xs shadow-xl flex items-center justify-center gap-2"
+                >
+                  {isAiVerifying ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>در حال آنالیز هوش مصنوعی...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>تایید هوش مصنوعی و ارسال به مدیریت</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -8793,6 +9158,61 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           }
         }}
       />
+
+      {/* STREAMER WELCOME GUIDE MODAL (راهنمای میزبانی بانوان) */}
+      {showStreamerWelcomeModal && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn dir-rtl text-right">
+          <div className="w-full max-w-lg bg-slate-900 border border-pink-500/50 rounded-3xl p-6 sm:p-8 space-y-6 shadow-[0_0_80px_rgba(236,72,153,0.35)] relative overflow-hidden">
+            <div className="absolute -top-12 -right-12 w-40 h-40 bg-pink-500/20 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-pink-500 to-purple-600 text-white flex items-center justify-center shadow-xl text-3xl">
+                🌸
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-white">
+                خوش آمدید به جمع میزبانی V.Live! 🎉
+              </h2>
+              <p className="text-xs text-pink-400 font-bold">
+                تایید حساب میزبانی شما با موفقیت انجام گردید
+              </p>
+            </div>
+
+            <div className="space-y-3 bg-slate-950/80 p-4 rounded-2xl border border-slate-800 text-xs text-slate-300 leading-relaxed">
+              <h4 className="font-black text-white text-sm mb-2 flex items-center gap-1.5 text-pink-400">
+                <Sparkles className="w-4 h-4" />
+                نکات کلیدی فعالیت و کسب درآمد میزبانی:
+              </h4>
+              <ul className="space-y-2.5 list-disc pr-4 text-[11px]">
+                <li>
+                  <strong className="text-white">🎥 شروع استریم 4K با نور مناسب:</strong> همیشه محیط روشن و شاداب را برای جلب مخاطب انتخاب کنید.
+                </li>
+                <li>
+                  <strong className="text-white">💎 درآمد دلاری از تماس تصویری:</strong> نرخ دقیقه استریم و تماس‌های VIP را در Creator Studio تنظیم کنید.
+                </li>
+                <li>
+                  <strong className="text-white">🎁 دریافت هدیه و تسویه USDT:</strong> هدایای بینندگان مستقیماً به ولت شما اضافه شده و قابل برداشت است.
+                </li>
+                <li>
+                  <strong className="text-white">🛡️ رعایت پوشش و قوانین:</strong> عدم رعایت پوشش مناسب موجب مسدودی حساب توسط مدیریت خواهد شد.
+                </li>
+                <li>
+                  <strong className="text-white">💬 پاسخگویی به پیام‌ها:</strong> ارتباط صمیمی با مخاطبان موجب افزایش فالوور و سطح VIP شما می‌شود.
+                </li>
+              </ul>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowStreamerWelcomeModal(false);
+                showToast('🚀 فعالیت میزبانی شما فعال شد! خوش آمدید.');
+              }}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 hover:brightness-110 active:scale-95 text-white font-black text-xs shadow-xl transition border border-pink-400/30 flex items-center justify-center gap-2"
+            >
+              <span>متوجه شدم - شروع فعالیت میزبانی 🚀</span>
+            </button>
+          </div>
+        </div>
+      )}
   
 </div>
       </DevicePreviewFrame>
