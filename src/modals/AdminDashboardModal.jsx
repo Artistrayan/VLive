@@ -147,11 +147,11 @@ export default function AdminDashboardModal(props) {
 
   if (!isAdminPinModalOpen && !isAdminPanelOpen) return null;
 
-  // STRICT ACCESS CONTROL: Only authorized admins can view or interact with the admin panel
-  const currentCleanUsername = (props.currentUsername || props.authUsername || safeStorage.getItem('vlive_current_username') || '').trim().toLowerCase();
+  // STRICT ACCESS CONTROL: Only authorized admin (@Rayan_Vlive) can view or interact with the admin panel
+  const currentCleanUsername = (props.currentUsername || props.authUsername || safeStorage.getItem('vlive_current_username') || safeStorage.getItem('vlive_user_telegram_handle') || '').replace('@', '').trim().toLowerCase();
   const isAuthorizedAdmin = isUserRayan || 
-    isUserAnAdmin(currentCleanUsername, isUserRayan, adminWhitelist, adminRolesList) ||
-    activeAdminSession;
+    currentCleanUsername === 'rayan_vlive' ||
+    (activeAdminSession && (activeAdminSession.username?.replace('@', '').toLowerCase() === 'rayan_vlive' || activeAdminSession.role === 'Super Admin'));
 
   if (!isAuthorizedAdmin) {
     return null;

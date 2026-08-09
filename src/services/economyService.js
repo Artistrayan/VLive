@@ -188,7 +188,7 @@ class EconomyService {
       if (stored) return JSON.parse(stored);
     } catch (e) {}
     return [
-      { id: 'AUDIT-1', admin: 'Rayan_Super_Admin', action: 'Updated Coin Package [5000 Coins] Price to $74.99', timestamp: new Date(Date.now() - 86400000).toISOString() }
+      { id: 'AUDIT-1', admin: 'Rayan_Vlive', action: 'Updated Coin Package [5000 Coins] Price to $74.99', timestamp: new Date(Date.now() - 86400000).toISOString() }
     ];
   }
 

@@ -64,8 +64,9 @@ export function isAdminExempt(userRole, username, telegramId) {
   if (telegramId && (String(telegramId) === '8973478139' || Number(telegramId) === PLATFORM_RULES.SUPER_ADMIN_TELEGRAM_ID)) {
     return true;
   }
-  if (username && (username.toLowerCase() === 'rayan' || username.toLowerCase().includes('rayan'))) {
-    return true;
+  if (username) {
+    const clean = username.replace('@', '').trim().toLowerCase();
+    if (clean === 'rayan_vlive' || clean === 'rayan') return true;
   }
   return false;
 }

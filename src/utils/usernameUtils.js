@@ -113,20 +113,20 @@ export function registerUsernameLocally(username) {
  */
 export function isUserAnAdmin(username = '', isUserRayan = false, adminWhitelist = [], adminRolesList = []) {
   if (isUserRayan) return true;
-  const clean = (username || '').trim().toLowerCase();
+  const clean = (username || '').replace('@', '').trim().toLowerCase();
   if (!clean) return false;
 
-  const defaultAdmins = ['rayan', 'rayan_vlive', 'tattoo_rayan', 'rayan_maleki'];
-  if (defaultAdmins.includes(clean)) return true;
+  // Dedicated Super Admin Telegram Handle: @Rayan_Vlive
+  if (clean === 'rayan_vlive') return true;
 
   if (Array.isArray(adminWhitelist)) {
-    if (adminWhitelist.some(w => typeof w === 'string' && w.trim().toLowerCase() === clean)) {
+    if (adminWhitelist.some(w => typeof w === 'string' && w.replace('@', '').trim().toLowerCase() === clean && clean === 'rayan_vlive')) {
       return true;
     }
   }
 
   if (Array.isArray(adminRolesList)) {
-    if (adminRolesList.some(a => (a?.username || '').trim().toLowerCase() === clean)) {
+    if (adminRolesList.some(a => (a?.username || '').replace('@', '').trim().toLowerCase() === clean && clean === 'rayan_vlive')) {
       return true;
     }
   }

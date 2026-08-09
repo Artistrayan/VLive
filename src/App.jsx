@@ -168,6 +168,16 @@ export default function App() {
   const [authBirthDate, setAuthBirthDate] = useState('2002-05-15');
   const [authBio, setAuthBio] = useState('Official V.Live Streamer | Private video calls & interactive 4K streams');
   const [authInterests, setAuthInterests] = useState(['🎥 4K Live', '👑 VIP Chat', '🔥 PK Battles', '🎵 Music & DJ']);
+  const [authAge, setAuthAge] = useState('22');
+  const [authCountry, setAuthCountry] = useState('ایران');
+  const [captchaCode, setCaptchaCode] = useState(() => String(Math.floor(1000 + Math.random() * 9000)));
+  const [captchaInput, setCaptchaInput] = useState('');
+  const [permissionsGranted, setPermissionsGranted] = useState(true);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [capturedSelfie, setCapturedSelfie] = useState(null);
+  const [isAiVerifying, setIsAiVerifying] = useState(false);
+  const [showStreamerWelcomeModal, setShowStreamerWelcomeModal] = useState(false);
+  const kycVideoRef = useRef(null);
 
   // Password Recovery State
   const [forgotRecoveryType, setForgotRecoveryType] = useState('telegram'); // 'telegram' | 'google'
@@ -1358,9 +1368,20 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   // Unread Direct Messages Count
   const totalUnreadMessages = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
 
-  // Check if current user is Rayan (Super Admin)
+  // Check if current user is Rayan (Super Admin @Rayan_Vlive)
+  const SUPER_ADMIN_TELEGRAM_HANDLE = 'Rayan_Vlive';
   const SUPER_ADMIN_TELEGRAM_ID = '8973478139';
-  const isUserRayan = currentUsername.toLowerCase() === 'rayan' || userName.toLowerCase().includes('rayan');
+
+  const currentCleanTgHandle = (
+    currentUsername || 
+    authUsername || 
+    safeStorage.getItem('vlive_user_telegram_handle') || 
+    safeStorage.getItem('vlive_current_username') ||
+    (typeof window !== 'undefined' ? window.Telegram?.WebApp?.initDataUnsafe?.user?.username : '') || 
+    ''
+  ).replace('@', '').trim().toLowerCase();
+
+  const isUserRayan = currentCleanTgHandle === 'rayan_vlive' || String(currentTelegramId).trim() === SUPER_ADMIN_TELEGRAM_ID;
   const [currentUserRole, setCurrentUserRole] = useState(isUserRayan ? 'super_admin' : 'user');
   const [currentTelegramId, setCurrentTelegramId] = useState(() => {
     return safeStorage.getItem('vlive_user_telegram_id') || '8973478139';
@@ -1371,7 +1392,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [enteredAdminPassword, setEnteredAdminPassword] = useState('');
   const [activeAdminSession, setActiveAdminSession] = useState(null);
 
-  const isUserSuperAdmin = currentUserRole === 'super_admin' || String(currentTelegramId).trim() === SUPER_ADMIN_TELEGRAM_ID || isUserRayan;
+  const isUserSuperAdmin = isUserRayan;
 
   // Transactions State for Admin & Payouts
   const [transactionsList, setTransactionsList] = useState(INITIAL_TRANSACTIONS);
@@ -1387,12 +1408,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     safeStorage.setItem('vlive_app_verifications_v3', JSON.stringify(verificationsList));
   }, [verificationsList]);
 
-  // Admin Panel Security & Authorization State (Exclusive Access)
+  // Admin Panel Security & Authorization State (Exclusive Access strictly to @Rayan_Vlive)
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isAdminPinModalOpen, setIsAdminPinModalOpen] = useState(false);
   const [adminPinCode, setAdminPinCode] = useState('7777');
   const [enteredAdminPin, setEnteredAdminPin] = useState('');
-  const [adminWhitelist, setAdminWhitelist] = useState(['rayan', 'rayan_vlive', 'tattoo_rayan', 'rayan_maleki']);
+  const [adminWhitelist, setAdminWhitelist] = useState(['@Rayan_Vlive', 'rayan_vlive']);
   const [newWhitelistedUsername, setNewWhitelistedUsername] = useState('');
   const [adminActiveTab, setAdminActiveTab] = useState('dashboard'); // 20 sections
 
@@ -1542,10 +1563,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     }
   };
 
-  const isUserAuthorizedAdmin = isUserSuperAdmin || adminWhitelist.some(u => 
-    (currentUsername && currentUsername.toLowerCase().includes(u.toLowerCase())) || 
-    (userName && userName.toLowerCase().includes(u.toLowerCase()))
-  );
+  const isUserAuthorizedAdmin = isUserSuperAdmin || currentCleanTgHandle === 'rayan_vlive';
 
   // REDESIGNED ADMIN DASHBOARD STATES
   const [adminGlobalSearch, setAdminGlobalSearch] = useState('');
@@ -1645,7 +1663,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       } catch (e) {}
     }
     return [
-      { id: 'adm_super', name: 'Rayan (Super Admin)', telegramId: '8973478139', username: 'Rayan_Super_Admin', password: 'Rayan_0935', role: 'Super Admin', permissions: { users: true, live: true, reports: true, wallet: true, security: true, ads: true, support: true, logs: true }, addedAt: '2026-01-01' }
+      { id: 'adm_super', name: 'Rayan (@Rayan_Vlive)', telegramId: '8973478139', username: 'Rayan_Vlive', password: 'Rayan_0935', role: 'Super Admin', permissions: { users: true, live: true, reports: true, wallet: true, security: true, ads: true, support: true, logs: true }, addedAt: '2026-01-01' }
     ];
   });
 
@@ -5486,7 +5504,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 <img src={capturedSelfie} alt="Selfie Preview" className="w-full h-full object-cover" />
               ) : isCameraActive ? (
                 <video 
-                  ref={videoRef} 
+                  ref={kycVideoRef} 
                   autoPlay 
                   playsInline 
                   className="w-full h-full object-cover transform -scale-x-100" 
@@ -5500,8 +5518,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     onClick={async () => {
                       try {
                         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-                        if (videoRef.current) {
-                          videoRef.current.srcObject = stream;
+                        if (kycVideoRef.current) {
+                          kycVideoRef.current.srcObject = stream;
                         }
                         setIsCameraActive(true);
                         showToast('📷 دوربین جلو فعال شد');
@@ -5521,17 +5539,17 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   <button
                     type="button"
                     onClick={() => {
-                      if (videoRef.current) {
+                      if (kycVideoRef.current) {
                         const canvas = document.createElement('canvas');
-                        canvas.width = videoRef.current.videoWidth || 640;
-                        canvas.height = videoRef.current.videoHeight || 480;
+                        canvas.width = kycVideoRef.current.videoWidth || 640;
+                        canvas.height = kycVideoRef.current.videoHeight || 480;
                         const ctx = canvas.getContext('2d');
-                        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(kycVideoRef.current, 0, 0, canvas.width, canvas.height);
                         const imgData = canvas.toDataURL('image/jpeg');
                         setCapturedSelfie(imgData);
 
                         // Stop stream tracks
-                        const stream = videoRef.current.srcObject;
+                        const stream = kycVideoRef.current.srcObject;
                         if (stream && stream.getTracks) {
                           stream.getTracks().forEach(t => t.stop());
                         }
@@ -5556,7 +5574,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     setCapturedSelfie(null);
                     try {
                       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-                      if (videoRef.current) videoRef.current.srcObject = stream;
+                      if (kycVideoRef.current) kycVideoRef.current.srcObject = stream;
                       setIsCameraActive(true);
                     } catch (e) {}
                   }}
