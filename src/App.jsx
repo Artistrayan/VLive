@@ -157,10 +157,10 @@ export default function App() {
   const [showEditPasswordNew, setShowEditPasswordNew] = useState(false);
   const [showChangeOldPassword, setShowChangeOldPassword] = useState(false);
   const [showChangeNewPassword, setShowChangeNewPassword] = useState(false);
-  const [authFullName, setAuthFullName] = useState('Rayan Maleki');
+  const [authFullName, setAuthFullName] = useState('');
   const [authGender, setAuthGender] = useState('female');
-  const [authTelegramId, setAuthTelegramId] = useState('108492039');
-  const [authEmail, setAuthEmail] = useState('tattoo.rayan2015@gmail.com');
+  const [authTelegramId, setAuthTelegramId] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
   const [authAvatar, setAuthAvatar] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80');
 
   // Profile Onboarding State
@@ -232,7 +232,7 @@ export default function App() {
   const [telegramConnected, setTelegramConnected] = useState(true);
   const [googleConnected, setGoogleConnected] = useState(true);
   const [connectedTelegramUser, setConnectedTelegramUser] = useState('');
-  const [connectedGoogleUser, setConnectedGoogleUser] = useState('tattoo.rayan2015@gmail.com');
+  const [connectedGoogleUser, setConnectedGoogleUser] = useState('');
   const [changeOldPassword, setChangeOldPassword] = useState('');
   const [changeNewPassword, setChangeNewPassword] = useState('');
   const [changeUsernameInput, setChangeUsernameInput] = useState('');
@@ -527,7 +527,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
   // User Profile Posts & Stories Management State
   const [privacyShowGifts, setPrivacyShowGifts] = useState(true);
   const [userRole, setUserRole] = useState(() => {
-    return safeStorage.getItem('vlive_user_role') || 'admin';
+    return safeStorage.getItem('vlive_user_role') || 'user';
   });
   const [posts, setPosts] = useState([]);
 
@@ -1373,7 +1373,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const SUPER_ADMIN_TELEGRAM_ID = '8973478139';
 
   const [currentTelegramId, setCurrentTelegramId] = useState(() => {
-    return safeStorage.getItem('vlive_user_telegram_id') || '8973478139';
+    return safeStorage.getItem('vlive_user_telegram_id') || '';
   });
 
   const currentCleanTgHandle = (
@@ -1385,7 +1385,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     ''
   ).replace('@', '').trim().toLowerCase();
 
-  const isUserRayan = currentCleanTgHandle === 'rayan_vlive' || String(currentTelegramId).trim() === SUPER_ADMIN_TELEGRAM_ID;
+  const isUserRayan = currentCleanTgHandle === 'rayan_vlive' || (currentTelegramId !== '' && String(currentTelegramId).trim() === SUPER_ADMIN_TELEGRAM_ID);
   const [currentUserRole, setCurrentUserRole] = useState(isUserRayan ? 'super_admin' : 'user');
 
   // Admin Credentials Authentication state
