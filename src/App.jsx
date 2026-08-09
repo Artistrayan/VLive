@@ -1372,6 +1372,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const SUPER_ADMIN_TELEGRAM_HANDLE = 'Rayan_Vlive';
   const SUPER_ADMIN_TELEGRAM_ID = '8973478139';
 
+  const [currentTelegramId, setCurrentTelegramId] = useState(() => {
+    return safeStorage.getItem('vlive_user_telegram_id') || '8973478139';
+  });
+
   const currentCleanTgHandle = (
     currentUsername || 
     authUsername || 
@@ -1383,9 +1387,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   const isUserRayan = currentCleanTgHandle === 'rayan_vlive' || String(currentTelegramId).trim() === SUPER_ADMIN_TELEGRAM_ID;
   const [currentUserRole, setCurrentUserRole] = useState(isUserRayan ? 'super_admin' : 'user');
-  const [currentTelegramId, setCurrentTelegramId] = useState(() => {
-    return safeStorage.getItem('vlive_user_telegram_id') || '8973478139';
-  });
 
   // Admin Credentials Authentication state
   const [enteredAdminUsername, setEnteredAdminUsername] = useState('');
