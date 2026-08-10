@@ -181,7 +181,7 @@ export default function AdminDashboardModal(props) {
                 <span className="text-slate-300 font-medium">{window.loc('ای‌دی عددی تلگرام شناسایی‌شده:', 'Identified Telegram numeric ID:')}</span>
               </div>
               <span className="font-mono font-bold text-cyan-300 bg-cyan-950 px-2.5 py-1 rounded-xl border border-cyan-500/30">
-                {currentTelegramId || '8933698119'}
+                {currentTelegramId || 'Not Detected'}
               </span>
             </div>
 

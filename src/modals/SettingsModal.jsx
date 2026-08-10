@@ -215,12 +215,12 @@ export default function SettingsModal(props) {
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 block">Connected Telegram Account</span>
                       <p className="font-bold text-cyan-300 font-mono">
-                        {currentTelegramId ? `@${currentUsername || authUsername || 'user'} (ID: ${currentTelegramId})` : (isUserRayan ? '@Rayan_Vlive (ID: 8933698119)' : 'Not Connected')}
+                        {currentTelegramId ? `@${currentUsername || authUsername || 'user'} (ID: ${currentTelegramId})` : 'Not Connected'}
                       </p>
                     </div>
 
                     {(() => {
-                      const isKycApproved = Boolean(isVerified || isUserRayan || (verificationsList && Array.isArray(verificationsList) && verificationsList.some(v => v.user === (currentUsername || userName) && v.status === 'Approved')));
+                      const isKycApproved = Boolean(isVerified || (verificationsList && Array.isArray(verificationsList) && verificationsList.some(v => v.user === (currentUsername || userName) && v.status === 'Approved')));
                       return (
                         <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                           <div>
@@ -238,13 +238,13 @@ export default function SettingsModal(props) {
                     })()}
 
                     {(() => {
-                      const isStreamerUser = Boolean(isVerified || isUserRayan || (verificationsList && Array.isArray(verificationsList) && verificationsList.some(v => v.user === (currentUsername || userName) && v.status === 'Approved')));
+                      const isStreamerUser = Boolean(isVerified || (verificationsList && Array.isArray(verificationsList) && verificationsList.some(v => v.user === (currentUsername || userName) && v.status === 'Approved')));
                       return (
                         <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                           <div>
                             <span className="text-[10px] text-slate-400 block">Streamer Creator Dashboard</span>
                             <p className="font-bold text-purple-300">
-                              {isStreamerUser ? 'Rate: 500 coins/min' : 'Standard User'}
+                              {isStreamerUser ? 'Active Creator Account' : 'Standard User'}
                             </p>
                           </div>
                           <button 

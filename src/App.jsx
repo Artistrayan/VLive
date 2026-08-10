@@ -113,7 +113,7 @@ export default function App() {
   const [userBio, setUserBio] = useState(() => {
     return safeStorage.getItem('vlive_user_bio') || loc('استریمر رسمی V.Live+ | پخش زنده باکیفیت و چت تعاملی', 'V.Live+ official streamer | High quality live streaming and interactive chat');
   });
-  const [isVerified, setIsVerified] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
 
   // Registered Users Storage
   const [usersList, setUsersList] = useState([]);
@@ -3620,7 +3620,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // START PRIVATE 1-ON-1 VIDEO CALL WITH A HOST
   const handleStartPrivateCall = (host) => {
-    if (userCoins < 500 && !isUserRayan) {
+    if (userCoins < 500) {
       showToast('Insufficient coin balance for private video call (500 coins/min). Please top up USDT.');
       setIsDepositModalOpen(true);
       return;
@@ -3984,13 +3984,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     const today = new Date().toISOString().slice(0, 10);
 
     // Security Check 1: Payout Freeze Status
-    if (isPayoutFrozen && !isUserRayan) {
+    if (isPayoutFrozen) {
       showToast('⛔ Creator payouts are currently frozen for system maintenance. Please contact support.');
       return;
     }
 
     // Security Check 2: Creator Gender Check (Female Only)
-    if (userGender !== 'female' && !isUserRayan) {
+    if (userGender !== 'female') {
       showToast('⛔ Creator earnings withdrawal is strictly reserved for approved female creators.');
       setIsKycModalOpen(true);
       return;
@@ -3998,7 +3998,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
     // Security Check 3: Identity Verification Check (Approved KYC required)
     const isApprovedKyc = isVerified || verificationsList.some(v => v.user === userName && v.status === 'Approved');
-    if (!isApprovedKyc && !isUserRayan) {
+    if (!isApprovedKyc) {
       showToast('⛔ Identity Verification required! Please complete document & selfie verification first.');
       setIsKycModalOpen(true);
       return;
@@ -4006,7 +4006,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
     // Security Check 4: 24-Hour Cooldown Limit
     const elapsedMs = nowTs - lastWithdrawalTimestamp;
-    if (elapsedMs < 24 * 60 * 60 * 1000 && !isUserRayan) {
+    if (elapsedMs < 24 * 60 * 60 * 1000) {
       const remainingMs = 24 * 3600 * 1000 - elapsedMs;
       const hours = Math.floor(remainingMs / (1000 * 60 * 60));
       const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -4107,7 +4107,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // Open Pre-Stream Warning
   const handleTryEnterStream = (stream) => {
-    if (stream.isVip18 && userCoins < stream.entryFee && !isUserRayan) {
+    if (stream.isVip18 && userCoins < stream.entryFee) {
       showToast(`Joining this VIP +18 stream requires ${stream.entryFee} entry coins.`);
       return;
     }
@@ -5845,7 +5845,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </div>
 
             {/* CHECK CREATOR ELIGIBILITY FIRST */}
-            {(userGender !== 'female' || (!isVerified && !verificationsList.some(v => v.user === userName && v.status === 'Approved'))) && !isUserRayan ? (
+            {(userGender !== 'female' || (!isVerified && !verificationsList.some(v => v.user === userName && v.status === 'Approved'))) ? (
               <div className="p-4 rounded-2xl bg-amber-950/60 border border-amber-500/50 space-y-3 text-center">
                 <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-400 border border-amber-400/30">
                   <ShieldCheck className="w-6 h-6" />

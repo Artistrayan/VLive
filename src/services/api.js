@@ -107,7 +107,13 @@ export const apiAuth = {
     const tgId = tgUser?.id || Date.now();
     const email = `tg_${tgId}@vlive.app`;
     const password = `tg_secure_password_${tgId}!`;
-    const username = tgUser?.username || `user_${tgId}`;
+    let username = tgUser?.username || `user_${tgId}`;
+    
+    // Auto-resolve username collisions by appending tgId
+    const takenInDb = await this.isUsernameTakenInDb(username);
+    if (takenInDb) {
+      username = `${username}_${tgId}`;
+    }
     const name = tgUser?.first_name || 'Telegram User';
     const avatar = tgUser?.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';
 
