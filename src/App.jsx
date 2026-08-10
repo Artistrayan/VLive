@@ -3938,6 +3938,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     setIsLoggedIn(false);
     setAuthStep('welcome');
     safeStorage.setItem('vlive_user_logged_in', 'false');
+    safeStorage.removeItem('vlive_user_telegram_id');
+    safeStorage.removeItem('vlive_current_username');
+    safeStorage.removeItem('vlive_user_name');
+    safeStorage.removeItem('vlive_user_avatar');
+    setCurrentTelegramId('');
+    setCurrentUsername('');
+    setUserName('');
+    setUserAvatar('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
+    setIsVerified(false);
     showToast(loc('با موفقیت از حساب کاربری خارج شدید', 'Logged out successfully'));
   };
 

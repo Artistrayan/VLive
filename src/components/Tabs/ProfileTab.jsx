@@ -90,10 +90,10 @@ export default function ProfileTab(props) {
     return safeStorage.getItem('vlive_profile_languages') || 'Persian, English, Turkish';
   });
   const [instagramLink, setInstagramLink] = useState(() => {
-    return safeStorage.getItem('vlive_profile_ig') || '@rayan_vlive';
+    return safeStorage.getItem('vlive_profile_ig') || '';
   });
   const [telegramLink, setTelegramLink] = useState(() => {
-    return safeStorage.getItem('vlive_profile_tg') || '@rayan_official';
+    return safeStorage.getItem('vlive_profile_tg') || '';
   });
 
   // --- EDIT PROFILE MODAL STATE ---
@@ -106,8 +106,8 @@ export default function ProfileTab(props) {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({
-    name: userName || authFullName || 'Rayan Maleki',
-    bio: userBio || authBio || 'Official V.Live Streamer | Private video calls & interactive 4K streams',
+    name: userName || authFullName || 'User',
+    bio: userBio || authBio || '',
     city: userCity,
     age: userAge,
     occupation: userOccupation,
@@ -382,7 +382,7 @@ export default function ProfileTab(props) {
 
                   {/* Username under profile photo */}
                   <span className="font-mono text-cyan-400 font-bold text-xs sm:text-sm mt-1.5 text-center">
-                    @{currentUsername || authUsername || 'rayan_vlive'}
+                    @{currentUsername || authUsername || 'user'}
                   </span>
                 </div>
 
@@ -390,7 +390,7 @@ export default function ProfileTab(props) {
                 <div className="pt-3 sm:pt-4 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 className="text-lg sm:text-2xl font-black text-white tracking-tight">
-                      {userName || authFullName || 'Rayan Maleki'}
+                      {userName || authFullName || 'User'}
                     </h1>
                     <VipStatusBadge size="normal" showText={true} />
                   </div>
@@ -1647,8 +1647,8 @@ export default function ProfileTab(props) {
                 className="w-10 h-10 rounded-full object-cover border border-pink-500/40"
               />
               <div>
-                <h4 className="font-bold text-white text-xs">{userName || authFullName || 'Rayan Maleki'}</h4>
-                <span className="text-[10px] text-slate-400">@{currentUsername || authUsername || 'rayan_vlive'}</span>
+                <h4 className="font-bold text-white text-xs">{userName || authFullName || 'User'}</h4>
+                <span className="text-[10px] text-slate-400">@{currentUsername || authUsername || 'user'}</span>
               </div>
             </div>
 

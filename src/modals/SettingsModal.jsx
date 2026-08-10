@@ -214,37 +214,52 @@ export default function SettingsModal(props) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
                       <span className="text-[10px] text-slate-400 block">Connected Telegram Account</span>
-                      <p className="font-bold text-cyan-300 font-mono">@rayan_vlive (ID: 108492039)</p>
+                      <p className="font-bold text-cyan-300 font-mono">
+                        {currentTelegramId ? `@${currentUsername || authUsername || 'user'} (ID: ${currentTelegramId})` : (isUserRayan ? '@Rayan_Vlive (ID: 8933698119)' : 'Not Connected')}
+                      </p>
                     </div>
 
+                    {(() => {
+                      const isKycApproved = Boolean(isVerified || isUserRayan || (verificationsList && Array.isArray(verificationsList) && verificationsList.some(v => v.user === (currentUsername || userName) && v.status === 'Approved')));
+                      return (
+                        <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block">Verification Status</span>
+                            <p className={`font-bold flex items-center gap-1 ${isKycApproved ? 'text-emerald-400' : 'text-amber-400'}`}>
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              {isKycApproved ? 'Identity KYC Verified' : 'Unverified'}
+                            </p>
+                          </div>
+                          <span className={`text-[9px] px-2 py-0.5 rounded-full border ${isKycApproved ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'}`}>
+                            {isKycApproved ? 'Active' : 'Pending'}
+                          </span>
+                        </div>
+                      );
+                    })()}
 
-                    <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] text-slate-400 block">Verification Status</span>
-                        <p className="font-bold text-emerald-400 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          Identity KYC Verified
-                        </p>
-                      </div>
-                      <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">Active</span>
-                    </div>
-
-                    <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] text-slate-400 block">Streamer Creator Dashboard</span>
-                        <p className="font-bold text-purple-300">Rate: 500 coins/min</p>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setIsSettingsModalOpen(false);
-                          setActiveTab('profile');
-                          showToast('Navigated to Creator Dashboard');
-                        }}
-                        className="px-2.5 py-1 rounded-xl bg-purple-600 text-white font-bold text-[10px]"
-                      >
-                        Open Dashboard
-                      </button>
-                    </div>
+                    {(() => {
+                      const isStreamerUser = Boolean(isVerified || isUserRayan || (verificationsList && Array.isArray(verificationsList) && verificationsList.some(v => v.user === (currentUsername || userName) && v.status === 'Approved')));
+                      return (
+                        <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block">Streamer Creator Dashboard</span>
+                            <p className="font-bold text-purple-300">
+                              {isStreamerUser ? 'Rate: 500 coins/min' : 'Standard User'}
+                            </p>
+                          </div>
+                          <button 
+                            onClick={() => {
+                              setIsSettingsModalOpen(false);
+                              if (props.setActiveTab) props.setActiveTab('profile');
+                              showToast(isStreamerUser ? 'Navigated to Creator Dashboard' : 'Open Profile');
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-purple-600 text-white font-bold text-[10px]"
+                          >
+                            {isStreamerUser ? 'Open Dashboard' : 'View Profile'}
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
