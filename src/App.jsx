@@ -474,6 +474,16 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
         setEditAvatarUrl(profile.avatar || profile.avatar_url || '');
         setEditBio(profile.bio || '');
         setEditGender(profile.gender || 'Not Specified');
+        
+        // Security Identity Sync
+        setCurrentUserRole(profile.role || 'user');
+        setUserRole(profile.role || 'user');
+        if (profile.telegram_id) {
+          setCurrentTelegramId(String(profile.telegram_id));
+        } else {
+          setCurrentTelegramId('');
+        }
+        setIsVerified(profile.is_verified || false);
       }
     }).catch(err => console.warn('Profile load err:', err));
 
@@ -1381,15 +1391,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     ''
   ).replace('@', '').trim().toLowerCase();
 
-  const isUserRayan = currentTelegramId !== '' && String(currentTelegramId).trim() === SUPER_ADMIN_TELEGRAM_ID;
-  const [currentUserRole, setCurrentUserRole] = useState(isUserRayan ? 'super_admin' : 'user');
+  const [currentUserRole, setCurrentUserRole] = useState('user');
+  const isUserRayan = currentUserRole === 'admin' || currentUserRole === 'super_admin';
 
   // Admin Credentials Authentication state
   const [enteredAdminUsername, setEnteredAdminUsername] = useState('');
   const [enteredAdminPassword, setEnteredAdminPassword] = useState('');
   const [activeAdminSession, setActiveAdminSession] = useState(null);
 
-  const isUserSuperAdmin = isUserRayan && (currentUserRole === 'super_admin' || currentUserRole === 'admin');
+  const isUserSuperAdmin = isUserRayan;
 
   // Transactions State for Admin & Payouts
   const [transactionsList, setTransactionsList] = useState(INITIAL_TRANSACTIONS);
@@ -1560,7 +1570,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     }
   };
 
-  const isUserAuthorizedAdmin = isUserSuperAdmin && String(currentTelegramId).trim() === SUPER_ADMIN_TELEGRAM_ID;
+  const isUserAuthorizedAdmin = isUserSuperAdmin;
 
   // REDESIGNED ADMIN DASHBOARD STATES
   const [adminGlobalSearch, setAdminGlobalSearch] = useState('');
@@ -3620,8 +3630,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // START PRIVATE 1-ON-1 VIDEO CALL WITH A HOST
   const handleStartPrivateCall = (host) => {
-    if (userCoins < 500) {
-      showToast('Insufficient coin balance for private video call (500 coins/min). Please top up USDT.');
+    const rate = host.streamer_rate || 500;
+    if (userCoins < rate) {
+      showToast(`Insufficient coin balance for private video call (${rate} coins/min). Please top up USDT.`);
       setIsDepositModalOpen(true);
       return;
     }
@@ -3934,7 +3945,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   };
 
   // Handle User Logout
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (apiAuth && typeof apiAuth.logout === 'function') {
+      await apiAuth.logout();
+    }
     setIsLoggedIn(false);
     setAuthStep('welcome');
     safeStorage.setItem('vlive_user_logged_in', 'false');
@@ -3947,6 +3961,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     setUserName('');
     setUserAvatar('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
     setIsVerified(false);
+    setCurrentUserRole('user');
+    setUserRole('user');
+    localStorage.removeItem('vlive_user_id');
+    localStorage.removeItem('supabase.auth.token'); // if supabase stores token here
     showToast(loc('با موفقیت از حساب کاربری خارج شدید', 'Logged out successfully'));
   };
 

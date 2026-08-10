@@ -90,6 +90,13 @@ export const apiAuth = {
     localStorage.setItem('vlive_user_id', userId);
     return { success: true, user: profileData };
   },
+  
+  async logout() {
+    await supabase.auth.signOut();
+    localStorage.removeItem('vlive_user_id');
+    return { success: true };
+  },
+
   async loginWithTelegram(initData) {
     let tgUser = null;
     try {
@@ -103,19 +110,38 @@ export const apiAuth = {
     } catch (e) {
       console.warn('Could not parse initData', e);
     }
+    
+    if (!tgUser || !tgUser.id) {
+      return { success: false, error: 'Telegram identity is currently NOT connected to the application.' };
+    }
 
-    const tgId = tgUser?.id || Date.now();
+    const tgId = tgUser.id;
     const email = `tg_${tgId}@vlive.app`;
     const password = `tg_secure_password_${tgId}!`;
-    let username = tgUser?.username || `user_${tgId}`;
+    const username = tgUser.username || `user_${tgId}`;
     
-    // Auto-resolve username collisions by appending tgId
+    // Check if user is already registered in auth by signing in first
+    const { data: existingUser } = await supabase.auth.signInWithPassword({
+        email,
+        password
+    });
+    
+    if (existingUser?.user) {
+        const userId = existingUser.user.id;
+        // Update telegram info
+        await supabase.from('profiles').update({ telegram_id: tgId, telegram_username: tgUser.username }).eq('id', userId);
+        const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userId).single();
+        localStorage.setItem('vlive_user_id', userId);
+        return { success: true, user: profileData };
+    }
+
     const takenInDb = await this.isUsernameTakenInDb(username);
     if (takenInDb) {
-      username = `${username}_${tgId}`;
+      return { success: false, error: 'USERNAME_ALREADY_TAKEN' };
     }
-    const name = tgUser?.first_name || 'Telegram User';
-    const avatar = tgUser?.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';
+    
+    const name = tgUser.first_name || 'Telegram User';
+    const avatar = tgUser.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';
 
     console.log("loginWithTelegram: signing up user", email);
 
@@ -140,22 +166,7 @@ export const apiAuth = {
       authError = err;
     }
 
-    if (authError && authError.message && authError.message.toLowerCase().includes('already registered')) {
-        console.log("User already registered, trying signInWithPassword");
-        try {
-            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-                email,
-                password
-            });
-            authData = signInData;
-            authError = signInError;
-        } catch(err) {
-            console.error("signIn exception caught:", err);
-            authError = err;
-        }
-    }
-
-    if (authError || !authData?.user) {
+    if (authError) {
       console.error('Auth error detailed:', authError);
       let errMsg = authError?.message || 'Failed to authenticate user.';
       if (errMsg.includes('disabled')) {
