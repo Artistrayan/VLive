@@ -62,8 +62,8 @@ const DEFAULT_FAQS = [
     categoryId: 'account',
     questionFa: 'چگونه حساب کاربری خود را در V.LIVE ایجاد یا بازیابی کنم؟',
     questionEn: 'How do I create or recover my V.LIVE account?',
-    answerFa: 'شما می‌توانید با استفاده از شماره موبایل، آدرس ایمیل یا ورود سریع گوگل حساب خود را بسازید. برای بازیابی رمز عبور، در صفحه ورود گزینه «فراموشی رمز عبور» را بزنید تا کد تایید برای شما ارسال شود.',
-    answerEn: 'You can register using mobile number, email, or Google sign-in. To recover password, use "Forgot Password" on login screen to receive verification code.',
+    answerFa: 'شما می‌توانید با استفاده از شماره موبایلحساب خود را بسازید. برای بازیابی رمز عبور، در صفحه ورود گزینه «فراموشی رمز عبور» را بزنید تا کد تایید برای شما ارسال شود.',
+    answerEn: 'You can register using mobile number. To recover password, use "Forgot Password" on login screen to receive verification code.',
     popular: true,
     active: true
   },
@@ -84,8 +84,8 @@ const DEFAULT_FAQS = [
     categoryId: 'auth',
     questionFa: 'کد تایید پیامکی/ایمیلی دریافت نکرده‌ام، چه کنم؟',
     questionEn: 'I did not receive OTP code, what should I do?',
-    answerFa: 'لطفاً پوشه Spam ایمیل خود را بررسی کنید یا مطمئن شوید پیامک‌های تبلیغاتی سیم‌کارت شما مسدود نباشد. همچنین می‌توانید از ورود جایگزین تلگرام یا گوگل استفاده کنید.',
-    answerEn: 'Check Spam email folder and verify your carrier allows SMS. Alternatively, use Google or Telegram login.',
+    answerFa: 'لطفاً پوشه Spam ایمیل خود را بررسی کنید یا مطمئن شوید پیامک‌های تبلیغاتی سیم‌کارت شما مسدود نباشد. همچنین می‌توانید از ورود جایگزین تلگرام استفاده کنید.',
+    answerEn: 'Check Spam email folder and verify your carrier allows SMS. Alternatively, use Telegram login.',
     popular: false,
     active: true
   },

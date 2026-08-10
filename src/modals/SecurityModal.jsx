@@ -13,9 +13,6 @@ export default function SecurityModal(props) {
     telegramConnected = false,
     setTelegramConnected = (() => {}),
     connectedTelegramUser = '@rayan',
-    googleConnected = true,
-    setGoogleConnected = (() => {}),
-    connectedGoogleUser = 'rayan@vlive.com',
     activeDevices = [],
     setActiveDevices = (() => {}),
     setIsLoggedIn = (() => {}),
@@ -120,57 +117,6 @@ export default function SecurityModal(props) {
               </div>
             </div>
 
-            <div className="border-t border-slate-800 pt-3 space-y-2">
-              <p className="font-bold text-white">Change Password</p>
-              <div className="relative">
-                <input
-                  type={showChangeOldPassword ? "text" : "password"}
-                  value={changeOldPassword}
-                  onChange={e => setChangeOldPassword(e.target.value)}
-                  placeholder="Current Password"
-                  className="w-full px-3 py-2 pr-10 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowChangeOldPassword(!showChangeOldPassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition"
-                  title={showChangeOldPassword ? "Hide" : "Show"}
-                >
-                  {showChangeOldPassword ? <EyeOff className="w-4 h-4 text-pink-400" /> : <Eye className="w-4 h-4 text-slate-400" />}
-                </button>
-              </div>
-              <div className="relative">
-                <input
-                  type={showChangeNewPassword ? "text" : "password"}
-                  value={changeNewPassword}
-                  onChange={e => setChangeNewPassword(e.target.value)}
-                  placeholder="New Password"
-                  className="w-full px-3 py-2 pr-10 rounded-xl bg-slate-950 border border-slate-800 text-white outline-none focus:border-pink-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowChangeNewPassword(!showChangeNewPassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition"
-                  title={showChangeNewPassword ? "Hide" : "Show"}
-                >
-                  {showChangeNewPassword ? <EyeOff className="w-4 h-4 text-pink-400" /> : <Eye className="w-4 h-4 text-slate-400" />}
-                </button>
-              </div>
-              <button
-                onClick={() => {
-                  if (!changeOldPassword || !changeNewPassword) {
-                    showToast('Please enter old and new passwords');
-                    return;
-                  }
-                  setChangeOldPassword('');
-                  setChangeNewPassword('');
-                  showToast('Password successfully updated!');
-                }}
-                className="w-full py-2.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold shadow-md"
-              >
-                Save New Password
-              </button>
-            </div>
           </div>
         )}
 
@@ -197,25 +143,6 @@ export default function SecurityModal(props) {
               </button>
             </div>
 
-            {/* Google Connection */}
-            <div className="p-3 rounded-2xl bg-slate-950 border border-rose-500/30 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Globe className="w-5 h-5 text-rose-400" />
-                <div>
-                  <p className="font-bold text-white">Google Account</p>
-                  <span className="text-[10px] text-rose-300 font-mono">{googleConnected ? connectedGoogleUser : 'Not Connected'}</span>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setGoogleConnected(!googleConnected);
-                  showToast(googleConnected ? 'Google account disconnected' : 'Google account linked!');
-                }}
-                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition ${googleConnected ? 'bg-rose-950/60 border-rose-500/40 text-rose-300' : 'bg-rose-600 text-white'}`}
-              >
-                {googleConnected ? 'Disconnect' : 'Connect Google'}
-              </button>
-            </div>
           </div>
         )}
 

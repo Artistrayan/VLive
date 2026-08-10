@@ -14,7 +14,7 @@ export default function TermsModal({ isTermsModalOpen, setIsTermsModalOpen }) {
           </button>
         </div>
         <div className="space-y-3 text-slate-300 leading-relaxed">
-          <p>1. <strong>User Identity:</strong> V.Live requires authentication via Telegram, Google, or Username to ensure platform security.</p>
+          <p>1. <strong>User Identity:</strong> V.Live requires authentication via Telegram to ensure platform security.</p>
           <p>2. <strong>Live Streaming Guidelines:</strong> Users streaming 4K broadcasts must complete KYC identity verification.</p>
           <p>3. <strong>USDT Cashout & Earnings:</strong> Financial transactions require verified account status.</p>
         </div>

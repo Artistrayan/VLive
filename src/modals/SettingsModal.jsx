@@ -1,6 +1,7 @@
 import { APP_LANGUAGES as DEFAULT_APP_LANGUAGES } from '../constants/i18n';
 import React from 'react';
 import { safeStorage } from '../utils/safeStorage';
+import { apiAuth } from '../services/api';
 import { isUsernameAlreadyTaken, registerUsernameLocally } from '../utils/usernameUtils';
 import { 
   Settings, X, Search, User, ShieldCheck, Bell, Lock, Globe, Palette,
@@ -15,7 +16,8 @@ export default function SettingsModal(props) {
     userAvatar, setUserAvatar,
     userName, setUserName,
     userBio, setUserBio,
-    currentUsername, authUsername,
+    currentUsername, authUsername, authEmail,
+    currentTelegramId, userGender, isVerified, verificationsList,
     isUserRayan, userLevel, vipPlan,
     userCoins, userDiamonds, userCashBalance,
     isRtl,
@@ -215,10 +217,6 @@ export default function SettingsModal(props) {
                       <p className="font-bold text-cyan-300 font-mono">@rayan_vlive (ID: 108492039)</p>
                     </div>
 
-                    <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                      <span className="text-[10px] text-slate-400 block">Connected Google Account</span>
-                      <p className="font-bold text-rose-300 font-mono">tattoo.rayan2015@gmail.com</p>
-                    </div>
 
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
@@ -281,17 +279,20 @@ export default function SettingsModal(props) {
                           className="flex-1 px-3 py-2 rounded-2xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500"
                         />
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             const cleanNewUser = editUsernameInput.trim();
                             if (!cleanNewUser) return;
-                            const isDup = isUsernameAlreadyTaken(cleanNewUser, currentUsername, [...usersList, ...adminUsersList]);
-                            if (isDup) {
+                            const isDup = isUsernameAlreadyTaken(cleanNewUser, currentUsername, [...(props.usersList || []), ...(props.adminRolesList || [])]);
+                            const isDupDb = await apiAuth.isUsernameTakenInDb(cleanNewUser);
+                            
+                            if (isDup || isDupDb) {
                               showToast(window.loc('❌ این نام کاربری قبلاً ثبت شده است! هر نام کاربری منحصر‌به‌فرد بوده و فقط یکبار قابل ثبت است.', '❌ Username already registered! Every username must be unique.'));
                               return;
                             }
-                            setCurrentUsername(cleanNewUser);
+                            props.setCurrentUsername && props.setCurrentUsername(cleanNewUser);
                             registerUsernameLocally(cleanNewUser);
                             safeStorage.setItem('vlive_current_username', cleanNewUser);
+                            apiAuth.saveUserToBackend({ username: cleanNewUser, name: props.userName, avatar: props.userAvatar });
                             setEditUsernameInput('');
                             showToast(window.loc('نام کاربری با موفقیت به‌روزرسانی شد ✨', 'Username updated successfully!'));
                           }}
@@ -472,7 +473,7 @@ export default function SettingsModal(props) {
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
                         <p className="font-bold text-white">{window.loc('احراز هویت دو مرحله‌ای (2FA)', 'Two-factor authentication (2FA)')}</p>
-                        <span className="text-[10px] text-purple-300">Telegram Bot & Google OTP verification</span>
+                        <span className="text-[10px] text-purple-300">Telegram Bot verification</span>
                       </div>
                       <input
                         type="checkbox"
