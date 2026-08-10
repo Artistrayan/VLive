@@ -45,7 +45,7 @@ export const apiAuth = {
     // Check if username is already taken in DB
     const takenInDb = await this.isUsernameTakenInDb(username);
     if (takenInDb) {
-      return { success: false, error: '❌ این نام کاربری قبلاً ثبت شده است! لطفا نام دیگری انتخاب کنید.' };
+      return { success: false, error: '«این نام کاربری قبلاً استفاده شده است.»' };
     }
 
     let { data: authData, error: authError } = await supabase.auth.signUp({

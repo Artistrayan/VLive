@@ -301,7 +301,7 @@ export default function SettingsModal(props) {
                             const isDupDb = await apiAuth.isUsernameTakenInDb(cleanNewUser);
                             
                             if (isDup || isDupDb) {
-                              showToast(window.loc('❌ این نام کاربری قبلاً ثبت شده است! هر نام کاربری منحصر‌به‌فرد بوده و فقط یکبار قابل ثبت است.', '❌ Username already registered! Every username must be unique.'));
+                              showToast(window.loc('«این نام کاربری قبلاً استفاده شده است.»', '«این نام کاربری قبلاً استفاده شده است.»'));
                               return;
                             }
                             props.setCurrentUsername && props.setCurrentUsername(cleanNewUser);
