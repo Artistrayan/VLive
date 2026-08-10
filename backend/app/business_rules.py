@@ -32,7 +32,7 @@ class BusinessRules:
     LIVE_INACTIVITY_TIMEOUT_MINUTES: int = 5
 
     # 18. SUPER ADMIN ID
-    SUPER_ADMIN_TELEGRAM_ID: int = 8973478139
+    SUPER_ADMIN_TELEGRAM_ID: int = 8933698119
 
     @classmethod
     def calculate_age(cls, birth_date: date) -> int:
@@ -41,8 +41,8 @@ class BusinessRules:
 
     @classmethod
     def is_admin_exempt(cls, role: Optional[str], telegram_id: Optional[int]) -> bool:
-        """Check if user is admin/super_admin or Rayan (Telegram ID 8973478139) to bypass all rules."""
-        if role in ["super_admin", "admin"]:
+        """Check if user is admin/super_admin or Rayan (Telegram ID 8933698119) to bypass all rules."""
+        if role in ["super_admin", "admin"] and telegram_id == cls.SUPER_ADMIN_TELEGRAM_ID:
             return True
         if telegram_id and telegram_id == cls.SUPER_ADMIN_TELEGRAM_ID:
             return True

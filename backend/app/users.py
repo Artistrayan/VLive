@@ -62,21 +62,29 @@ def auth_telegram(payload: TelegramAuthRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="اعتبارسنجی تلگرام ناموفق بود! (initData نامعتبر)")
 
     telegram_id = tg_user_data.get("id")
-    username = tg_user_data.get("username") or f"user_{telegram_id}"
+    base_username = tg_user_data.get("username") or f"user_{telegram_id}"
+    clean_username = base_username.strip()
     first_name = tg_user_data.get("first_name", "")
     last_name = tg_user_data.get("last_name", "")
 
     user = db.query(User).filter(User.telegram_id == telegram_id).first()
     if not user:
+        # Check case-insensitive username collision
+        existing_username = db.query(User).filter(User.username.ilike(clean_username)).first()
+        if existing_username:
+            clean_username = f"{clean_username}_{telegram_id}"
+
+        is_super_admin = (telegram_id == 8933698119)
         user = User(
             telegram_id=telegram_id,
-            username=username,
+            username=clean_username,
             first_name=first_name,
             last_name=last_name,
-            avatar_url=f"https://api.dicebear.com/7.x/avataaars/svg?seed={username}",
+            avatar_url=f"https://api.dicebear.com/7.x/avataaars/svg?seed={clean_username}",
+            role="super_admin" if is_super_admin else "user",
             wallet_stars=1250,
             wallet_usdt=12.5,
-            is_vip=True
+            is_vip=is_super_admin
         )
         db.add(user)
         db.commit()
@@ -85,8 +93,9 @@ def auth_telegram(payload: TelegramAuthRequest, db: Session = Depends(get_db)):
         # Update user names if changed
         if first_name and user.first_name != first_name:
             user.first_name = first_name
-        if username and user.username != username:
-            user.username = username
+        # Ensure role is super_admin for 8933698119
+        if telegram_id == 8933698119 and user.role != "super_admin":
+            user.role = "super_admin"
         db.commit()
 
     token = create_access_token({"sub": str(user.id)})
@@ -138,7 +147,14 @@ def update_my_profile(
     if payload.first_name is not None:
         current_user.first_name = payload.first_name
     if payload.username is not None:
-        current_user.username = payload.username
+        clean_user = payload.username.strip()
+        existing = db.query(User).filter(
+            User.username.ilike(clean_user),
+            User.id != current_user.id
+        ).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="«این نام کاربری قبلاً استفاده شده است.»")
+        current_user.username = clean_user
     if payload.avatar_url is not None:
         current_user.avatar_url = payload.avatar_url
     if payload.bio is not None:

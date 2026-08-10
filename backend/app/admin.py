@@ -12,7 +12,7 @@ from app.models import (
 )
 from app.config import settings
 
-SUPER_ADMIN_TELEGRAM_ID = 8973478139
+SUPER_ADMIN_TELEGRAM_ID = 8933698119
 
 def verify_super_admin_access(
     x_telegram_id: Optional[str] = Header(None),
@@ -26,37 +26,28 @@ def verify_super_admin_access(
     if x_admin_key and x_admin_key == admin_key:
         return True
         
-    # Check 2: Telegram ID match for Rayan (8973478139)
+    # Check 2: Validated Telegram ID match for Rayan (8933698119)
     if x_telegram_id:
         try:
-            tg_id = int(x_telegram_id)
+            tg_id = int(str(x_telegram_id).strip())
             if tg_id == SUPER_ADMIN_TELEGRAM_ID:
                 return True
         except ValueError:
             pass
-
-    # Check 3: Role in header or user DB record
-    if x_user_role in ["super_admin", "admin"]:
-        return True
-        
-    # Query database user role if telegram ID passed
+            
+    # Check 3: Query database user record for telegram_id matching 8933698119 with super_admin role
     if x_telegram_id:
         try:
-            tg_id = int(x_telegram_id)
+            tg_id = int(str(x_telegram_id).strip())
             user = db.query(User).filter(User.telegram_id == tg_id).first()
-            if user and user.role in ["super_admin", "admin"]:
+            if user and user.telegram_id == SUPER_ADMIN_TELEGRAM_ID and user.role in ["super_admin", "admin"]:
                 return True
         except ValueError:
             pass
 
-    # Fallback default: If environment or dev session active with default key allow, else 403
-    if not x_telegram_id and not x_user_role and not x_admin_key:
-        # Default allow for local test requests, but reject explicit unauthorized attempts
-        return True
-
     raise HTTPException(
         status_code=403, 
-        detail="403 Forbidden: Access Denied. Requires super_admin role or authorized Telegram ID (8973478139)."
+        detail="403 Forbidden: Access Denied. Requires authorized Telegram ID (8933698119)."
     )
 
 router = APIRouter(prefix="/api/admin", tags=["Admin Panel"], dependencies=[Depends(verify_super_admin_access)])
