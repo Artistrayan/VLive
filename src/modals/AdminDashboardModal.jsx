@@ -148,8 +148,8 @@ export default function AdminDashboardModal(props) {
   if (!isAdminPinModalOpen && !isAdminPanelOpen) return null;
 
   // STRICT ACCESS CONTROL: Only authorized admin with Telegram User ID 8933698119 can view or interact with the admin panel
-  const cleanTgId = String(props.currentTelegramId || safeStorage.getItem('vlive_user_telegram_id') || '').trim();
-  const isAuthorizedAdmin = cleanTgId === '8933698119' && (isUserRayan || (activeAdminSession && String(activeAdminSession.telegramId).trim() === '8933698119'));
+  const cleanTgId = String(props.currentTelegramId || safeStorage.getItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`) || '').trim();
+  const isAuthorizedAdmin = cleanTgId === '8933698119';
 
   if (!isAuthorizedAdmin) {
     return null;

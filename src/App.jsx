@@ -452,7 +452,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
 
     // SUPABASE PROFILE SYNC
     apiProfile.getProfile().then(profile => {
-      if (profile) {
+      if (profile && profile.id === localStorage.getItem('vlive_user_id')) {
         setUserName(profile.name || profile.username);
         setCurrentUsername(profile.username);
         setUserAvatar(profile.avatar || profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
@@ -469,8 +469,10 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
         setUserRole(profile.role || 'user');
         if (profile.telegram_id) {
           setCurrentTelegramId(String(profile.telegram_id));
+          safeStorage.setItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`, String(profile.telegram_id));
         } else {
           setCurrentTelegramId('');
+          safeStorage.removeItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`);
         }
         setIsVerified(profile.is_verified || false);
       }
@@ -1368,7 +1370,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const SUPER_ADMIN_TELEGRAM_ID = '8933698119';
 
   const [currentTelegramId, setCurrentTelegramId] = useState(() => {
-    return safeStorage.getItem('vlive_user_telegram_id') || '';
+    return safeStorage.getItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`) || '';
   });
 
   const currentCleanTgHandle = (
@@ -1381,7 +1383,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   ).replace('@', '').trim().toLowerCase();
 
   const [currentUserRole, setCurrentUserRole] = useState('user');
-  const isUserRayan = currentUserRole === 'admin' || currentUserRole === 'super_admin';
+  const isUserRayan = currentTelegramId === '8933698119';
 
   // Admin Credentials Authentication state
   const [enteredAdminUsername, setEnteredAdminUsername] = useState('');
@@ -3801,6 +3803,16 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       setUserGender(existingUser.gender || 'Not Specified');
       setUserAvatar(existingUser.avatar);
       setUserBio(existingUser.bio || '');
+      
+      // FIX: Restore Telegram Identity during Manual Login
+      if (existingUser.telegram_id) {
+        setCurrentTelegramId(String(existingUser.telegram_id));
+        safeStorage.setItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`, String(existingUser.telegram_id));
+      } else {
+        setCurrentTelegramId('');
+        safeStorage.removeItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`);
+      }
+      
       setIsLoggedIn(true);
       safeStorage.setItem('vlive_user_logged_in', 'true');
       safeStorage.setItem('vlive_current_username', existingUser.username);
@@ -3935,13 +3947,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // Handle User Logout
   const handleLogout = async () => {
+    const prevUserId = localStorage.getItem('vlive_user_id') || 'guest';
+    
     if (apiAuth && typeof apiAuth.logout === 'function') {
       await apiAuth.logout();
     }
     setIsLoggedIn(false);
     setAuthStep('welcome');
     safeStorage.setItem('vlive_user_logged_in', 'false');
-    safeStorage.removeItem('vlive_user_telegram_id');
+    safeStorage.removeItem(`vlive_user_telegram_id_${prevUserId}`);
     safeStorage.removeItem('vlive_current_username');
     safeStorage.removeItem('vlive_user_name');
     safeStorage.removeItem('vlive_user_avatar');
@@ -3953,7 +3967,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     setCurrentUserRole('user');
     setUserRole('user');
     localStorage.removeItem('vlive_user_id');
-    localStorage.removeItem('supabase.auth.token'); // if supabase stores token here
+    localStorage.removeItem('supabase.auth.token');
     showToast(loc('با موفقیت از حساب کاربری خارج شدید', 'Logged out successfully'));
   };
 
@@ -4294,7 +4308,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             || safeStorage.getItem('vlive_user_avatar') 
             || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
             
-          const detectedTgId = tgUser?.id ? String(tgUser.id) : (safeStorage.getItem('vlive_user_telegram_id') || 'Not Connected');
+          const detectedTgId = tgUser?.id ? String(tgUser.id) : (safeStorage.getItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`) || 'Not Connected');
 
           const handleTelegramOneTapAuth = async () => {
             if (!termsAgreed) {
@@ -4324,7 +4338,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               
               if (u.telegram_id) {
                 setCurrentTelegramId(u.telegram_id);
-                safeStorage.setItem('vlive_user_telegram_id', u.telegram_id);
+                safeStorage.setItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`, u.telegram_id);
               }
 
               setIsLoggedIn(true);
