@@ -467,12 +467,17 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
         // Security Identity Sync
         setCurrentUserRole(profile.role || 'user');
         setUserRole(profile.role || 'user');
+        const activeUid = profile.id;
         if (profile.telegram_id) {
           setCurrentTelegramId(String(profile.telegram_id));
-          safeStorage.setItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`, String(profile.telegram_id));
+          if (activeUid) {
+            safeStorage.setItem(`vlive_user_telegram_id_${activeUid}`, String(profile.telegram_id));
+          }
         } else {
           setCurrentTelegramId('');
-          safeStorage.removeItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`);
+          if (activeUid) {
+            safeStorage.removeItem(`vlive_user_telegram_id_${activeUid}`);
+          }
         }
         setIsVerified(profile.is_verified || false);
       }
@@ -1370,7 +1375,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const SUPER_ADMIN_TELEGRAM_ID = '8933698119';
 
   const [currentTelegramId, setCurrentTelegramId] = useState(() => {
-    return safeStorage.getItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`) || '';
+    const activeUid = localStorage.getItem('vlive_user_id');
+    if (!activeUid) return '';
+    return safeStorage.getItem(`vlive_user_telegram_id_${activeUid}`) || '';
   });
 
   const currentCleanTgHandle = (
@@ -3805,12 +3812,17 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       setUserBio(existingUser.bio || '');
       
       // FIX: Restore Telegram Identity during Manual Login
+      const loginUid = existingUser?.id || localStorage.getItem('vlive_user_id');
       if (existingUser.telegram_id) {
         setCurrentTelegramId(String(existingUser.telegram_id));
-        safeStorage.setItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`, String(existingUser.telegram_id));
+        if (loginUid) {
+          safeStorage.setItem(`vlive_user_telegram_id_${loginUid}`, String(existingUser.telegram_id));
+        }
       } else {
         setCurrentTelegramId('');
-        safeStorage.removeItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`);
+        if (loginUid) {
+          safeStorage.removeItem(`vlive_user_telegram_id_${loginUid}`);
+        }
       }
       
       setIsLoggedIn(true);
@@ -3947,7 +3959,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // Handle User Logout
   const handleLogout = async () => {
-    const prevUserId = localStorage.getItem('vlive_user_id') || 'guest';
+    const logoutUid = localStorage.getItem('vlive_user_id');
+    if (logoutUid) {
+      safeStorage.removeItem(`vlive_user_telegram_id_${logoutUid}`);
+    }
     
     if (apiAuth && typeof apiAuth.logout === 'function') {
       await apiAuth.logout();
@@ -3955,7 +3970,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     setIsLoggedIn(false);
     setAuthStep('welcome');
     safeStorage.setItem('vlive_user_logged_in', 'false');
-    safeStorage.removeItem(`vlive_user_telegram_id_${prevUserId}`);
     safeStorage.removeItem('vlive_current_username');
     safeStorage.removeItem('vlive_user_name');
     safeStorage.removeItem('vlive_user_avatar');
@@ -4308,7 +4322,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             || safeStorage.getItem('vlive_user_avatar') 
             || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
             
-          const detectedTgId = tgUser?.id ? String(tgUser.id) : (safeStorage.getItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`) || 'Not Connected');
+          const activeUidForTg = localStorage.getItem('vlive_user_id');
+          const detectedTgId = tgUser?.id 
+            ? String(tgUser.id) 
+            : (activeUidForTg ? (safeStorage.getItem(`vlive_user_telegram_id_${activeUidForTg}`) || 'Not Connected') : 'Not Connected');
 
           const handleTelegramOneTapAuth = async () => {
             if (!termsAgreed) {
@@ -4336,9 +4353,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               setAuthFullName(finalName);
               setAuthUsername(finalUsername);
               
+              const authUid = u.id || localStorage.getItem('vlive_user_id');
               if (u.telegram_id) {
-                setCurrentTelegramId(u.telegram_id);
-                safeStorage.setItem(`vlive_user_telegram_id_${localStorage.getItem("vlive_user_id") || "guest"}`, u.telegram_id);
+                setCurrentTelegramId(String(u.telegram_id));
+                if (authUid) {
+                  safeStorage.setItem(`vlive_user_telegram_id_${authUid}`, String(u.telegram_id));
+                }
               }
 
               setIsLoggedIn(true);
