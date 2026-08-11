@@ -9,7 +9,6 @@ import AdminDashboardModal from './modals/AdminDashboardModal';
 import ContentAndEngagementModals from './modals/ContentAndEngagementModals';
 import TermsModal from './modals/TermsModal';
 import VipAndRewardModals from './modals/VipAndRewardModals';
-import SecurityModal from './modals/SecurityModal';
 import NotificationsModal from './modals/NotificationsModal';
 import UserProfileViewModal from './modals/UserProfileViewModal';
 import HelpCenterModal from './modals/HelpCenterModal';
@@ -154,8 +153,6 @@ export default function App() {
   const [showAdminPinModal, setShowAdminPinModal] = useState(false);
   const [showEditPasswordOld, setShowEditPasswordOld] = useState(false);
   const [showEditPasswordNew, setShowEditPasswordNew] = useState(false);
-  const [showChangeOldPassword, setShowChangeOldPassword] = useState(false);
-  const [showChangeNewPassword, setShowChangeNewPassword] = useState(false);
   const [authFullName, setAuthFullName] = useState('');
   const [authGender, setAuthGender] = useState('female');
   const [authTelegramId, setAuthTelegramId] = useState('');
@@ -184,7 +181,6 @@ export default function App() {
   const [forgotNewPassword, setForgotNewPassword] = useState('');
 
   // Security & Account Management Modal State
-  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
 
   // REAL 3-TIER + ELITE VIP SYSTEM STATES
   const [vipPlan, setVipPlan] = useState(() => {
@@ -226,13 +222,6 @@ export default function App() {
   const [lastWithdrawalTimestamp, setLastWithdrawalTimestamp] = useState(() => {
     return parseInt(safeStorage.getItem('vlive_last_withdrawal_ts') || '0', 10);
   });
-  const [securityTab, setSecurityTab] = useState('password'); // 'password' | 'accounts' | 'devices'
-  const [telegramConnected, setTelegramConnected] = useState(true);
-  const [connectedTelegramUser, setConnectedTelegramUser] = useState('');
-  const [changeOldPassword, setChangeOldPassword] = useState('');
-  const [changeNewPassword, setChangeNewPassword] = useState('');
-  const [changeUsernameInput, setChangeUsernameInput] = useState('');
-  const [activeDevices, setActiveDevices] = useState([]);
 
   // Main UI State
   const [activeTab, setActiveTab] = useState('home'); // 'streams', 'messages', 'wallet', 'profile'
@@ -464,21 +453,16 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     // SUPABASE PROFILE SYNC
     apiProfile.getProfile().then(profile => {
       if (profile) {
-        const handle = profile.username_handle || profile.username || 'Vlive1001';
-        const displayName = profile.name || handle;
-        setUserName(displayName);
-        setCurrentUsername(handle);
+        setUserName(profile.name || profile.username);
+        setCurrentUsername(profile.username);
         setUserAvatar(profile.avatar || profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
         setUserBio(profile.bio || '');
         setUserGender(profile.gender || 'Not Specified');
-        setEditFullName(displayName);
-        setEditUsername(handle);
+        setEditFullName(profile.name || profile.username);
+        setEditUsername(profile.username);
         setEditAvatarUrl(profile.avatar || profile.avatar_url || '');
         setEditBio(profile.bio || '');
         setEditGender(profile.gender || 'Not Specified');
-        
-        safeStorage.setItem('vlive_user_name', displayName);
-        safeStorage.setItem('vlive_current_username', handle);
         
         // Security Identity Sync
         setCurrentUserRole(profile.role || 'user');
@@ -3516,32 +3500,37 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     }
 
     const cleanName = editFullName.trim();
+    const cleanUsername = editUsername.trim();
     const cleanAvatar = editAvatarUrl.trim() || userAvatar;
     const cleanBio = editBio.trim();
 
     setUserName(cleanName);
+    setCurrentUsername(cleanUsername);
     setUserAvatar(cleanAvatar);
     setUserBio(cleanBio);
     setUserGender(editGender);
 
-    // Step 2: Sync Profile updates to Backend API (Note: username_handle is permanent & omitted)
+    // Step 2: Sync Profile updates to Backend API
     apiProfile.updateProfile({
       name: cleanName,
+      username: cleanUsername,
       avatar: cleanAvatar,
       bio: cleanBio,
       gender: editGender
     }).catch(err => console.warn('Profile sync warning:', err));
 
     safeStorage.setItem('vlive_user_name', cleanName);
+    safeStorage.setItem('vlive_current_username', cleanUsername);
     safeStorage.setItem('vlive_user_avatar', cleanAvatar);
     safeStorage.setItem('vlive_user_bio', cleanBio);
     safeStorage.setItem('vlive_user_gender', editGender);
 
     setUsersList(prev => prev.map(u => {
-      if (u.id === getUserId() || u.username_handle === currentUsername || u.username === currentUsername || u.isMe) {
+      if (u.username?.toLowerCase() === currentUsername.toLowerCase() || u.isMe) {
         return {
           ...u,
           name: cleanName,
+          username: cleanUsername,
           avatar: cleanAvatar,
           gender: editGender,
           bio: cleanBio
@@ -5430,7 +5419,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           PRESET_AVATARS={PRESET_AVATARS}
           compressImageFile={compressImageFile}
           setIsVipModalOpen={setIsVipModalOpen}
-          setIsSecurityModalOpen={setIsSecurityModalOpen}
           setIsLanguageModalOpen={setIsLanguageModalOpen}
           handleSelectLanguage={handleSelectLanguage}
           currentAppLang={currentAppLang}
@@ -5569,7 +5557,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         setNotifSettings={setNotifSettings}
         appThemeMode={appThemeMode}
         setAppThemeMode={setAppThemeMode}
-        setIsSecurityModalOpen={setIsSecurityModalOpen}
         setIsKycModalOpen={setIsKycModalOpen}
         setIsSuggestionModalOpen={setIsSuggestionModalOpen}
         setIsTermsModalOpen={setIsTermsModalOpen}
@@ -5579,35 +5566,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         showToast={showToast}
         loc={loc}
       />
-      {/* MODAL: SECURITY & ACCOUNT MANAGEMENT */}
-      <SecurityModal
-        isSecurityModalOpen={isSecurityModalOpen}
-        setIsSecurityModalOpen={setIsSecurityModalOpen}
-        securityTab={securityTab}
-        setSecurityTab={setSecurityTab}
-        currentUsername={currentUsername}
-        authUsername={authUsername}
-        changeUsernameInput={changeUsernameInput}
-        setChangeUsernameInput={setChangeUsernameInput}
-        setCurrentUsername={setCurrentUsername}
-        changeOldPassword={changeOldPassword}
-        setChangeOldPassword={setChangeOldPassword}
-        changeNewPassword={changeNewPassword}
-        setChangeNewPassword={setChangeNewPassword}
-        showChangeOldPassword={showChangeOldPassword}
-        setShowChangeOldPassword={setShowChangeOldPassword}
-        showChangeNewPassword={showChangeNewPassword}
-        setShowChangeNewPassword={setShowChangeNewPassword}
-        telegramConnected={telegramConnected}
-        setTelegramConnected={setTelegramConnected}
-        connectedTelegramUser={connectedTelegramUser}
-        activeDevices={activeDevices}
-        setActiveDevices={setActiveDevices}
-        setIsLoggedIn={setIsLoggedIn}
-        setAuthStep={setAuthStep}
-        safeStorage={safeStorage}
-        showToast={showToast}
-      />
+
       {/* MODAL: VIP & REWARD SYSTEM MODALS */}
       <VipAndRewardModals
         isLevelUpModalOpen={isLevelUpModalOpen}
@@ -7306,6 +7265,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         setNewAdminGiftCoins={setNewAdminGiftCoins}
         verificationsList={verificationsList}
         setVerificationsList={setVerificationsList}
+        currentUsername={currentUsername}
         setIsVerified={setIsVerified}
 
       />

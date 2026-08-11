@@ -45,7 +45,7 @@ export default function ProfileTab(props) {
     isUserRayan, userLevel = 24, vipPlan,
     PRESET_AVATARS = [], compressImageFile,
     setIsEditProfileModalOpen = (() => {}), setIsVipModalOpen = (() => {}),
-    setIsSecurityModalOpen = (() => {}), setIsLanguageModalOpen = (() => {}), handleSelectLanguage = (() => {}), setIsQrCodeModalOpen = (() => {}),
+     setIsLanguageModalOpen = (() => {}), handleSelectLanguage = (() => {}), setIsQrCodeModalOpen = (() => {}),
     setWalletSubTab = (() => {}), setIsLoggedIn = (() => {}), setAuthStep = (() => {}),
     showToast = (() => {}), loc = ((a, b) => b || a),
     isVerified = true,
@@ -331,14 +331,6 @@ export default function ProfileTab(props) {
                   title="Share QR Code"
                 >
                   <QrCode className="w-4 h-4 text-cyan-400" />
-                </button>
-                
-                <button
-                  onClick={() => setIsSecurityModalOpen(true)}
-                  className="p-2 rounded-2xl bg-slate-950/70 hover:bg-slate-900 text-white backdrop-blur-md transition border border-white/20"
-                  title="Settings & Security"
-                >
-                  <Settings className="w-4 h-4 text-slate-300" />
                 </button>
               </div>
             </div>
@@ -1310,10 +1302,6 @@ export default function ProfileTab(props) {
               <Settings className="w-5 h-5 text-slate-400" />
               <span className="text-[10px] text-slate-400 font-bold">{window.loc('تنظیمات', 'Settings')}</span>
             </button>
-            <button onClick={() => setIsSecurityModalOpen && setIsSecurityModalOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Shield className="w-5 h-5 text-emerald-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('حریم‌خصوصی', 'Privacy')}</span>
-            </button>
             <button onClick={() => props.setIsSupportModalOpen && props.setIsSupportModalOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
               <MessageSquare className="w-5 h-5 text-blue-400" />
               <span className="text-[10px] text-slate-400 font-bold">{window.loc('پشتیبانی', 'Support')}</span>
@@ -1340,18 +1328,9 @@ export default function ProfileTab(props) {
 
             <div className="space-y-3.5 max-h-[70vh] overflow-y-auto pr-1">
               
-              {/* Permanent Read-Only Username Handle */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300">{window.loc('شناسه یکتای دائمی (Username Handle)', 'Permanent Username Handle')}</label>
-                <div className="w-full p-3 rounded-2xl bg-slate-900 border border-slate-800 text-pink-400 font-mono text-xs flex items-center justify-between cursor-not-allowed select-all">
-                  <span>@{user?.username_handle || user?.username || currentUsername || 'Vlive1001'}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">🔒 {window.loc('غیر قابل تغییر', 'Read-Only')}</span>
-                </div>
-              </div>
-
               {/* Display Name & Bio */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300">{window.loc('نام کامل / نام مستعار (Display Name)', 'Full name / Nickname (Display Name)')}</label>
+                <label className="text-xs font-bold text-slate-300">{window.loc('نام کامل / نام مستعار', 'Full name / Nickname')}</label>
                 <input
                   type="text"
                   value={editForm.name}

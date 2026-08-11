@@ -23,7 +23,7 @@ export default function SettingsModal(props) {
     isRtl,
     notifSettings, setNotifSettings,
     appThemeMode, setAppThemeMode,
-    setIsSecurityModalOpen, setIsKycModalOpen, setIsSuggestionModalOpen, setIsTermsModalOpen, setIsVipModalOpen,
+    setIsKycModalOpen, setIsSuggestionModalOpen, setIsTermsModalOpen, setIsVipModalOpen,
     PRESET_AVATARS, compressImageFile,
     showToast, loc
   } = props;
