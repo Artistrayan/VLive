@@ -12,8 +12,8 @@ export const apiAuth = {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('username')
-        .ilike('username', clean)
+        .select('username_handle, username')
+        .or(`username_handle.ilike.${clean},username.ilike.${clean}`)
         .limit(1);
       if (error) {
         console.warn('isUsernameTakenInDb error', error);
@@ -30,39 +30,39 @@ export const apiAuth = {
     const { data: authData } = await supabase.auth.getUser();
     if (!authData?.user) return null;
     
-    const { data, error } = await supabase.from('profiles').upsert([{ 
-      id: authData.user.id,
-      username: user.username || `user_${Date.now()}`, 
-      name: user.name, 
-      avatar: user.avatar 
-    }], { onConflict: 'id' }).select();
+    // Clean user object: username_handle is strictly immutable
+    const safePayload = {
+      name: user.name || user.displayName,
+      avatar: user.avatar || user.avatarUrl,
+      bio: user.bio,
+      gender: user.gender
+    };
+
+    // Remove any undefined values
+    Object.keys(safePayload).forEach(key => safePayload[key] === undefined && delete safePayload[key]);
     
+    const { data, error } = await supabase.from('profiles').update(safePayload).eq('id', authData.user.id).select();
     if (error) console.error('saveUserToBackend error', error);
     return data;
   },
 
-  async registerWithCredentials(username, name, email, password, gender, avatar) {
-    // Check if username is already taken in DB
-    const takenInDb = await this.isUsernameTakenInDb(username);
-    if (takenInDb) {
-      return { success: false, error: '«این نام کاربری قبلاً استفاده شده است.»' };
-    }
-
+  async registerWithCredentials(name, email, password, gender, avatar) {
     let { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { username, name, avatar } }
+      options: { data: { name, avatar } }
     });
 
     if (authError) return { success: false, error: authError.message };
 
     const userId = authData.user.id;
+    // Profile is auto-created by auth trigger with Vlive sequence handle.
+    // Fetch or upsert additional display metadata:
     const { data: profileData, error: profileError } = await supabase.from('profiles').upsert([{
       id: userId,
-      username,
-      name,
+      name: name || 'V.Live User',
       avatar,
-      gender,
+      gender: gender || 'female',
       status: 'approved'
     }], { onConflict: 'id' }).select();
 
@@ -118,7 +118,6 @@ export const apiAuth = {
     const tgId = tgUser.id;
     const email = `tg_${tgId}@vlive.app`;
     const password = `tg_secure_password_${tgId}!`;
-    const username = tgUser.username || `user_${tgId}`;
     
     // Check if user is already registered in auth by signing in first
     const { data: existingUser } = await supabase.auth.signInWithPassword({
@@ -134,11 +133,6 @@ export const apiAuth = {
         localStorage.setItem('vlive_user_id', userId);
         return { success: true, user: profileData };
     }
-
-    const takenInDb = await this.isUsernameTakenInDb(username);
-    if (takenInDb) {
-      return { success: false, error: 'USERNAME_ALREADY_TAKEN' };
-    }
     
     const name = tgUser.first_name || 'Telegram User';
     const avatar = tgUser.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';
@@ -153,7 +147,6 @@ export const apiAuth = {
         password,
         options: {
           data: {
-            username,
             name,
             avatar
           }
@@ -188,9 +181,10 @@ export const apiAuth = {
     if (!existingProfile) {
         const res = await supabase.from('profiles').upsert([{
             id: userId,
-            username,
             name,
             avatar,
+            telegram_id: tgId,
+            telegram_username: tgUser.username,
             status: 'approved'
         }], { onConflict: 'id' }).select();
         manualData = res.data;
@@ -269,7 +263,21 @@ export const apiProfile = {
   async updateProfile(updates) {
     const uid = getUserId();
     if (!uid) return { success: false };
-    const { data, error } = await supabase.from('profiles').update(updates).eq('id', uid).select();
+
+    // Create safe updates payload by stripping immutable fields
+    const safeUpdates = { ...updates };
+    const hadHandleAttempt = 'username_handle' in safeUpdates || 'username' in safeUpdates;
+    delete safeUpdates.username_handle;
+    delete safeUpdates.username;
+    delete safeUpdates.id;
+    delete safeUpdates.created_at;
+
+    if (hadHandleAttempt && Object.keys(safeUpdates).length === 0) {
+      console.warn('REJECTED: username_handle is strictly permanent and cannot be modified.');
+      return { success: false, error: 'USERNAME_HANDLE_IMMUTABLE' };
+    }
+
+    const { data, error } = await supabase.from('profiles').update(safeUpdates).eq('id', uid).select();
     return { success: !error, data };
   }
 };

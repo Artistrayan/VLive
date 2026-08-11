@@ -464,16 +464,21 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     // SUPABASE PROFILE SYNC
     apiProfile.getProfile().then(profile => {
       if (profile) {
-        setUserName(profile.name || profile.username);
-        setCurrentUsername(profile.username);
+        const handle = profile.username_handle || profile.username || 'Vlive1001';
+        const displayName = profile.name || handle;
+        setUserName(displayName);
+        setCurrentUsername(handle);
         setUserAvatar(profile.avatar || profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
         setUserBio(profile.bio || '');
         setUserGender(profile.gender || 'Not Specified');
-        setEditFullName(profile.name || profile.username);
-        setEditUsername(profile.username);
+        setEditFullName(displayName);
+        setEditUsername(handle);
         setEditAvatarUrl(profile.avatar || profile.avatar_url || '');
         setEditBio(profile.bio || '');
         setEditGender(profile.gender || 'Not Specified');
+        
+        safeStorage.setItem('vlive_user_name', displayName);
+        safeStorage.setItem('vlive_current_username', handle);
         
         // Security Identity Sync
         setCurrentUserRole(profile.role || 'user');
@@ -3511,37 +3516,32 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     }
 
     const cleanName = editFullName.trim();
-    const cleanUsername = editUsername.trim();
     const cleanAvatar = editAvatarUrl.trim() || userAvatar;
     const cleanBio = editBio.trim();
 
     setUserName(cleanName);
-    setCurrentUsername(cleanUsername);
     setUserAvatar(cleanAvatar);
     setUserBio(cleanBio);
     setUserGender(editGender);
 
-    // Step 2: Sync Profile updates to Backend API
+    // Step 2: Sync Profile updates to Backend API (Note: username_handle is permanent & omitted)
     apiProfile.updateProfile({
       name: cleanName,
-      username: cleanUsername,
       avatar: cleanAvatar,
       bio: cleanBio,
       gender: editGender
     }).catch(err => console.warn('Profile sync warning:', err));
 
     safeStorage.setItem('vlive_user_name', cleanName);
-    safeStorage.setItem('vlive_current_username', cleanUsername);
     safeStorage.setItem('vlive_user_avatar', cleanAvatar);
     safeStorage.setItem('vlive_user_bio', cleanBio);
     safeStorage.setItem('vlive_user_gender', editGender);
 
     setUsersList(prev => prev.map(u => {
-      if (u.username?.toLowerCase() === currentUsername.toLowerCase() || u.isMe) {
+      if (u.id === getUserId() || u.username_handle === currentUsername || u.username === currentUsername || u.isMe) {
         return {
           ...u,
           name: cleanName,
-          username: cleanUsername,
           avatar: cleanAvatar,
           gender: editGender,
           bio: cleanBio
@@ -7306,7 +7306,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         setNewAdminGiftCoins={setNewAdminGiftCoins}
         verificationsList={verificationsList}
         setVerificationsList={setVerificationsList}
-        currentUsername={currentUsername}
         setIsVerified={setIsVerified}
 
       />

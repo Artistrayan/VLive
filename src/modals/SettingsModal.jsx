@@ -284,37 +284,10 @@ export default function SettingsModal(props) {
                     </div>
 
                     <div>
-                      <label className="text-slate-300 font-semibold mb-1 block">{window.loc('Change Username (نام کاربری)', 'Change Username')}</label>
-                      <div className="flex gap-1.5">
-                        <input
-                          type="text"
-                          value={editUsernameInput}
-                          onChange={e => setEditUsernameInput(e.target.value)}
-                          placeholder={`Current: @${currentUsername}`}
-                          className="flex-1 px-3 py-2 rounded-2xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500"
-                        />
-                        <button
-                          onClick={async () => {
-                            const cleanNewUser = editUsernameInput.trim();
-                            if (!cleanNewUser) return;
-                            const isDup = isUsernameAlreadyTaken(cleanNewUser, currentUsername, [...(props.usersList || []), ...(props.adminRolesList || [])]);
-                            const isDupDb = await apiAuth.isUsernameTakenInDb(cleanNewUser);
-                            
-                            if (isDup || isDupDb) {
-                              showToast(window.loc('«این نام کاربری قبلاً استفاده شده است.»', '«این نام کاربری قبلاً استفاده شده است.»'));
-                              return;
-                            }
-                            props.setCurrentUsername && props.setCurrentUsername(cleanNewUser);
-                            registerUsernameLocally(cleanNewUser);
-                            safeStorage.setItem('vlive_current_username', cleanNewUser);
-                            apiAuth.saveUserToBackend({ username: cleanNewUser, name: props.userName, avatar: props.userAvatar });
-                            setEditUsernameInput('');
-                            showToast(window.loc('نام کاربری با موفقیت به‌روزرسانی شد ✨', 'Username updated successfully!'));
-                          }}
-                          className="px-3 py-2 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold"
-                        >
-                          Save
-                        </button>
+                      <label className="text-slate-300 font-semibold mb-1 block">{window.loc('شناسه کاربری (Username Handle)', 'Username Handle')}</label>
+                      <div className="flex items-center justify-between px-3 py-2 rounded-2xl bg-slate-900 border border-slate-800/80 text-white font-mono text-xs cursor-not-allowed">
+                        <span className="text-pink-400 font-bold">@{currentUsername || 'Vlive1001'}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">{window.loc('دائمی و غیرقابل تغییر', 'Permanent & Read-Only')}</span>
                       </div>
                     </div>
 

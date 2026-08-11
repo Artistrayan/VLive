@@ -1340,9 +1340,18 @@ export default function ProfileTab(props) {
 
             <div className="space-y-3.5 max-h-[70vh] overflow-y-auto pr-1">
               
+              {/* Permanent Read-Only Username Handle */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300">{window.loc('شناسه یکتای دائمی (Username Handle)', 'Permanent Username Handle')}</label>
+                <div className="w-full p-3 rounded-2xl bg-slate-900 border border-slate-800 text-pink-400 font-mono text-xs flex items-center justify-between cursor-not-allowed select-all">
+                  <span>@{user?.username_handle || user?.username || currentUsername || 'Vlive1001'}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">🔒 {window.loc('غیر قابل تغییر', 'Read-Only')}</span>
+                </div>
+              </div>
+
               {/* Display Name & Bio */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300">{window.loc('نام کامل / نام مستعار', 'Full name / Nickname')}</label>
+                <label className="text-xs font-bold text-slate-300">{window.loc('نام کامل / نام مستعار (Display Name)', 'Full name / Nickname (Display Name)')}</label>
                 <input
                   type="text"
                   value={editForm.name}
