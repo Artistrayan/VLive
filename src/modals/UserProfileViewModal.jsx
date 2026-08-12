@@ -27,7 +27,7 @@ export default function UserProfileViewModal({
 }) {
   if (!isOpen || !user) return null;
 
-  const isAdminUser = Boolean(isUserRayan);
+  const isAdminUser = currentUser?.role === 'admin' || currentUser?.role === 'super_admin' || Boolean(isUserRayan) || Boolean(isSuperAdmin);
 
   // --- STATE FOR INTERACTION ---
   const [isFollowing, setIsFollowing] = useState(user.isFollowing || user.followed || false);

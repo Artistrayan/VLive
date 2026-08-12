@@ -452,7 +452,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
 
     // SUPABASE PROFILE SYNC
     apiProfile.getProfile().then(profile => {
-      if (profile && profile.id === localStorage.getItem('vlive_user_id')) {
+      if (profile) {
         setUserName(profile.name || profile.username);
         setCurrentUsername(profile.username);
         setUserAvatar(profile.avatar || profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
@@ -464,21 +464,11 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
         setEditBio(profile.bio || '');
         setEditGender(profile.gender || 'Not Specified');
         
-        // Security Identity Sync
-        setCurrentUserRole(profile.role || 'user');
-        setUserRole(profile.role || 'user');
-        const activeUid = profile.id;
-        if (profile.telegram_id) {
-          setCurrentTelegramId(String(profile.telegram_id));
-          if (activeUid) {
-            safeStorage.setItem(`vlive_user_telegram_id_${activeUid}`, String(profile.telegram_id));
-          }
-        } else {
-          setCurrentTelegramId('');
-          if (activeUid) {
-            safeStorage.removeItem(`vlive_user_telegram_id_${activeUid}`);
-          }
-        }
+        // Security Identity Sync directly from DB profile
+        const assignedRole = profile.role || (String(profile.telegram_id) === '8933698119' ? 'admin' : 'user');
+        setCurrentUserRole(assignedRole);
+        setUserRole(assignedRole);
+        setCurrentTelegramId(profile.telegram_id ? String(profile.telegram_id) : '');
         setIsVerified(profile.is_verified || false);
       }
     }).catch(err => console.warn('Profile load err:', err));
@@ -1374,11 +1364,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const SUPER_ADMIN_TELEGRAM_HANDLE = 'Rayan_Vlive';
   const SUPER_ADMIN_TELEGRAM_ID = '8933698119';
 
-  const [currentTelegramId, setCurrentTelegramId] = useState(() => {
-    const activeUid = localStorage.getItem('vlive_user_id');
-    if (!activeUid) return '';
-    return safeStorage.getItem(`vlive_user_telegram_id_${activeUid}`) || '';
-  });
+  const [currentTelegramId, setCurrentTelegramId] = useState('');
 
   const currentCleanTgHandle = (
     currentUsername || 
@@ -1390,14 +1376,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   ).replace('@', '').trim().toLowerCase();
 
   const [currentUserRole, setCurrentUserRole] = useState('user');
-  const isUserRayan = currentTelegramId === '8933698119';
-
-  // Admin Credentials Authentication state
-  const [enteredAdminUsername, setEnteredAdminUsername] = useState('');
-  const [enteredAdminPassword, setEnteredAdminPassword] = useState('');
-  const [activeAdminSession, setActiveAdminSession] = useState(null);
-
-  const isUserSuperAdmin = isUserRayan;
+  const isUserSuperAdmin = (currentUserRole === 'admin' || userRole === 'admin') && currentTelegramId === '8933698119';
+  const isUserRayan = isUserSuperAdmin;
 
   // Transactions State for Admin & Payouts
   const [transactionsList, setTransactionsList] = useState(INITIAL_TRANSACTIONS);
@@ -3501,10 +3481,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   };
 
   // Save User Profile Settings Handler
-  const handleSaveProfileSettings = (e) => {
+  const handleSaveProfileSettings = async (e) => {
     e?.preventDefault();
     if (!editFullName.trim() || !editUsername.trim()) {
-      showToast('Please fill out full name and username');
+      showToast(loc('لطفاً نام و نام کاربری را وارد کنید', 'Please fill out full name and username'));
       return;
     }
 
@@ -3513,20 +3493,37 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     const cleanAvatar = editAvatarUrl.trim() || userAvatar;
     const cleanBio = editBio.trim();
 
-    setUserName(cleanName);
-    setCurrentUsername(cleanUsername);
-    setUserAvatar(cleanAvatar);
-    setUserBio(cleanBio);
-    setUserGender(editGender);
+    // Check case-insensitive username uniqueness in DB
+    if (cleanUsername.toLowerCase() !== (currentUsername || '').toLowerCase()) {
+      const isTaken = await apiAuth.isUsernameTakenInDb(cleanUsername);
+      if (isTaken) {
+        showToast(loc('این نام کاربری قبلاً استفاده شده است.', 'This username is already taken.'));
+        return;
+      }
+    }
 
-    // Step 2: Sync Profile updates to Backend API
-    apiProfile.updateProfile({
+    const updateRes = await apiProfile.updateProfile({
       name: cleanName,
       username: cleanUsername,
       avatar: cleanAvatar,
       bio: cleanBio,
       gender: editGender
-    }).catch(err => console.warn('Profile sync warning:', err));
+    });
+
+    if (updateRes && !updateRes.success) {
+      if (updateRes.error === 'USERNAME_ALREADY_TAKEN') {
+        showToast(loc('این نام کاربری قبلاً استفاده شده است.', 'This username is already taken.'));
+        return;
+      }
+      showToast(loc('خطا در به‌روزرسانی پروفایل: ', 'Error updating profile: ') + (updateRes.error || ''));
+      return;
+    }
+
+    setUserName(cleanName);
+    setCurrentUsername(cleanUsername);
+    setUserAvatar(cleanAvatar);
+    setUserBio(cleanBio);
+    setUserGender(editGender);
 
     safeStorage.setItem('vlive_user_name', cleanName);
     safeStorage.setItem('vlive_current_username', cleanUsername);
@@ -3748,88 +3745,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     setIsTermsAccepted(true);
     safeStorage.setItem('vlive_terms_accepted', 'true');
     showToast('V.Live+ Terms & Regulations accepted');
-  };
-
-  // Auth Handler
-  const handleAuthSubmit = async (e) => {
-    e.preventDefault();
-    if (!authUsername.trim() || !authPassword.trim()) {
-      showToast('Please enter username and password');
-      return;
-    }
-
-    const cleanUsername = authUsername.trim();
-    const email = `${cleanUsername.toLowerCase()}@vlive.app`;
-    showToast('Connecting to server...');
-
-    if (authTab === 'register') {
-      if (!authFullName.trim()) {
-        showToast('Please enter your full name');
-        return;
-      }
-      
-      const avatarUrl = authGender === 'female' 
-          ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'
-          : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80';
-          
-      const res = await apiAuth.registerWithCredentials(
-        cleanUsername, 
-        authFullName.trim(), 
-        email, 
-        authPassword, 
-        authGender,
-        avatarUrl
-      );
-      
-      if (!res.success) {
-        showToast('Registration failed: ' + res.error);
-        return;
-      }
-
-      const newUser = res.user;
-      setUserName(newUser.name);
-      setCurrentUsername(newUser.username);
-      setUserGender(newUser.gender);
-      setUserAvatar(newUser.avatar);
-      setUserCoins(1000);
-      setIsLoggedIn(true);
-      safeStorage.setItem('vlive_user_logged_in', 'true');
-      safeStorage.setItem('vlive_current_username', newUser.username);
-      showToast(`Account created for @${newUser.username}`);
-      
-    } else {
-      const res = await apiAuth.loginWithCredentials(email, authPassword);
-      if (!res.success) {
-        showToast('Login failed: ' + res.error);
-        return;
-      }
-      
-      const existingUser = res.user;
-      setUserName(existingUser.name);
-      setCurrentUsername(existingUser.username);
-      setUserGender(existingUser.gender || 'Not Specified');
-      setUserAvatar(existingUser.avatar);
-      setUserBio(existingUser.bio || '');
-      
-      // FIX: Restore Telegram Identity during Manual Login
-      const loginUid = existingUser?.id || localStorage.getItem('vlive_user_id');
-      if (existingUser.telegram_id) {
-        setCurrentTelegramId(String(existingUser.telegram_id));
-        if (loginUid) {
-          safeStorage.setItem(`vlive_user_telegram_id_${loginUid}`, String(existingUser.telegram_id));
-        }
-      } else {
-        setCurrentTelegramId('');
-        if (loginUid) {
-          safeStorage.removeItem(`vlive_user_telegram_id_${loginUid}`);
-        }
-      }
-      
-      setIsLoggedIn(true);
-      safeStorage.setItem('vlive_user_logged_in', 'true');
-      safeStorage.setItem('vlive_current_username', existingUser.username);
-      showToast(`Welcome back, ${existingUser.name}`);
-    }
   };
 
   // Submit KYC & Gender Verification Request
@@ -4322,14 +4237,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             || safeStorage.getItem('vlive_user_avatar') 
             || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
             
-          const activeUidForTg = localStorage.getItem('vlive_user_id');
           const detectedTgId = tgUser?.id 
             ? String(tgUser.id) 
-            : (activeUidForTg ? (safeStorage.getItem(`vlive_user_telegram_id_${activeUidForTg}`) || 'Not Connected') : 'Not Connected');
+            : (currentTelegramId || 'Not Connected');
 
           const handleTelegramOneTapAuth = async () => {
             if (!termsAgreed) {
-              showToast(loc('لطفاً ابتدا قوانین و شرایط استفاده را تأیید کنید', 'Please accept Terms of Service & Privacy Policy to continue'));
+              showToast(loc('لطفاً ابتدا قوانین و شرایط استفاده را تأیid کنید', 'Please accept Terms of Service & Privacy Policy to continue'));
               return;
             }
 
@@ -4346,20 +4260,17 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               const finalName = u.first_name || u.name || u.username;
               const finalUsername = u.username;
               const finalAvatar = u.avatar_url || u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';
+              const assignedRole = u.role || (String(u.telegram_id) === '8933698119' ? 'admin' : 'user');
               
               setUserName(finalName);
               setCurrentUsername(finalUsername);
               setUserAvatar(finalAvatar);
               setAuthFullName(finalName);
               setAuthUsername(finalUsername);
-              
-              const authUid = u.id || localStorage.getItem('vlive_user_id');
-              if (u.telegram_id) {
-                setCurrentTelegramId(String(u.telegram_id));
-                if (authUid) {
-                  safeStorage.setItem(`vlive_user_telegram_id_${authUid}`, String(u.telegram_id));
-                }
-              }
+              setCurrentUserRole(assignedRole);
+              setUserRole(assignedRole);
+              setCurrentTelegramId(u.telegram_id ? String(u.telegram_id) : '');
+              setIsVerified(u.is_verified || false);
 
               setIsLoggedIn(true);
               setHasRegistered(true);

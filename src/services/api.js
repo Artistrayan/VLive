@@ -6,15 +6,23 @@ export const getStoredToken = () => localStorage.getItem('vlive_token');
 export const getUserId = () => localStorage.getItem('vlive_user_id');
 
 export const apiAuth = {
-  async isUsernameTakenInDb(username) {
+  async isUsernameTakenInDb(username, excludeUserId = null) {
     if (!username) return false;
     const clean = username.trim().toLowerCase();
     try {
-      const { data, error } = await supabase
+      const { data: authData } = await supabase.auth.getUser();
+      const currentUid = excludeUserId || authData?.user?.id || localStorage.getItem('vlive_user_id');
+
+      let query = supabase
         .from('profiles')
-        .select('username_handle, username')
-        .or(`username_handle.ilike.${clean},username.ilike.${clean}`)
-        .limit(1);
+        .select('id, username_handle, username')
+        .or(`username_handle.ilike.${clean},username.ilike.${clean}`);
+
+      if (currentUid) {
+        query = query.neq('id', currentUid);
+      }
+
+      const { data, error } = await query.limit(1);
       if (error) {
         console.warn('isUsernameTakenInDb error', error);
         return false;
@@ -46,51 +54,6 @@ export const apiAuth = {
     return data;
   },
 
-  async registerWithCredentials(name, email, password, gender, avatar) {
-    let { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name, avatar } }
-    });
-
-    if (authError) return { success: false, error: authError.message };
-
-    const userId = authData.user.id;
-    // Profile is auto-created by auth trigger with Vlive sequence handle.
-    // Fetch or upsert additional display metadata:
-    const { data: profileData, error: profileError } = await supabase.from('profiles').upsert([{
-      id: userId,
-      name: name || 'V.Live User',
-      avatar,
-      gender: gender || 'female',
-      status: 'approved'
-    }], { onConflict: 'id' }).select();
-
-    if (profileError) return { success: false, error: profileError.message };
-    
-    await supabase.from('wallets').upsert([{ user_id: userId, coins: 1000, usdt_balance: 0.0 }], { onConflict: 'user_id' });
-
-    localStorage.setItem('vlive_user_id', userId);
-    return { success: true, user: profileData[0] };
-  },
-
-  async loginWithCredentials(email, password) {
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (authError) return { success: false, error: authError.message };
-
-    const userId = authData.user.id;
-    const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('id', userId).single();
-
-    if (profileError) return { success: false, error: profileError.message };
-
-    localStorage.setItem('vlive_user_id', userId);
-    return { success: true, user: profileData };
-  },
-  
   async logout() {
     await supabase.auth.signOut();
     localStorage.removeItem('vlive_user_id');
@@ -118,7 +81,8 @@ export const apiAuth = {
     const tgId = tgUser.id;
     const email = `tg_${tgId}@vlive.app`;
     const password = `tg_secure_password_${tgId}!`;
-    
+    const roleForTgUser = (String(tgId) === '8933698119') ? 'admin' : 'user';
+
     // Check if user is already registered in auth by signing in first
     const { data: existingUser } = await supabase.auth.signInWithPassword({
         email,
@@ -127,8 +91,12 @@ export const apiAuth = {
     
     if (existingUser?.user) {
         const userId = existingUser.user.id;
-        // Update telegram info
-        await supabase.from('profiles').update({ telegram_id: tgId, telegram_username: tgUser.username }).eq('id', userId);
+        // Update telegram info and role strictly in DB
+        await supabase.from('profiles').update({ 
+          telegram_id: tgId, 
+          telegram_username: tgUser.username,
+          role: roleForTgUser
+        }).eq('id', userId);
         const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userId).single();
         localStorage.setItem('vlive_user_id', userId);
         return { success: true, user: profileData };
@@ -185,6 +153,7 @@ export const apiAuth = {
             avatar,
             telegram_id: tgId,
             telegram_username: tgUser.username,
+            role: roleForTgUser,
             status: 'approved'
         }], { onConflict: 'id' }).select();
         manualData = res.data;
@@ -255,22 +224,34 @@ export const apiVerification = {
 
 export const apiProfile = {
   async getProfile() {
-    const uid = getUserId();
+    const { data: authData } = await supabase.auth.getUser();
+    const uid = authData?.user?.id || getUserId();
     if (!uid) return null;
     const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
     return error ? null : data;
   },
   async updateProfile(updates) {
-    const uid = getUserId();
-    if (!uid) return { success: false };
+    const { data: authData } = await supabase.auth.getUser();
+    const uid = authData?.user?.id || getUserId();
+    if (!uid) return { success: false, error: 'NOT_AUTHENTICATED' };
 
     // Create safe updates payload by stripping immutable fields
     const safeUpdates = { ...updates };
-    const hadHandleAttempt = 'username_handle' in safeUpdates || 'username' in safeUpdates;
+    const hadHandleAttempt = 'username_handle' in safeUpdates;
     delete safeUpdates.username_handle;
-    delete safeUpdates.username;
     delete safeUpdates.id;
     delete safeUpdates.created_at;
+
+    if (safeUpdates.username) {
+      const isTaken = await apiAuth.isUsernameTakenInDb(safeUpdates.username, uid);
+      if (isTaken) {
+        return { 
+          success: false, 
+          error: 'USERNAME_ALREADY_TAKEN', 
+          message: 'این نام کاربری قبلاً استفاده شده است.' 
+        };
+      }
+    }
 
     if (hadHandleAttempt && Object.keys(safeUpdates).length === 0) {
       console.warn('REJECTED: username_handle is strictly permanent and cannot be modified.');
@@ -278,7 +259,7 @@ export const apiProfile = {
     }
 
     const { data, error } = await supabase.from('profiles').update(safeUpdates).eq('id', uid).select();
-    return { success: !error, data };
+    return { success: !error, data, error: error?.message };
   }
 };
 
@@ -685,20 +666,41 @@ export const apiNotifications = {
 export const apiCreatorStudio = {};
 export const apiReferral = {};
 
+async function verifyAdminServerRole() {
+  try {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return false;
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, telegram_id')
+      .eq('id', authData.user.id)
+      .single();
+    if (!profile) return false;
+    const cleanTg = String(profile.telegram_id || '').trim();
+    return profile.role === 'admin' && cleanTg === '8933698119';
+  } catch (err) {
+    return false;
+  }
+}
+
 export const apiAdmin = {
   async getAllUsers() {
+    if (!(await verifyAdminServerRole())) return [];
     const { data, error } = await supabase.from('profiles').select('*');
     return error ? [] : data;
   },
   async updateUserStatus(userId, status) {
+    if (!(await verifyAdminServerRole())) return { success: false, error: '403 Forbidden: Admin privileges required.' };
     const { data, error } = await supabase.from('profiles').update({ status }).eq('id', userId);
     return { success: !error };
   },
   async deleteUser(userId) {
+    if (!(await verifyAdminServerRole())) return { success: false, error: '403 Forbidden: Admin privileges required.' };
     const { error } = await supabase.from('profiles').delete().eq('id', userId);
     return { success: !error };
   },
   async getReports() {
+    if (!(await verifyAdminServerRole())) return [];
     try {
       const { data, error } = await supabase.from('live_reports').select('*').order('created_at', { ascending: false });
       return error ? [] : data;
@@ -707,6 +709,7 @@ export const apiAdmin = {
     }
   },
   async getLiveStreams() {
+    if (!(await verifyAdminServerRole())) return [];
     try {
       const { data, error } = await supabase.from('live_streams').select('*').order('created_at', { ascending: false });
       return error ? [] : data;
@@ -715,6 +718,7 @@ export const apiAdmin = {
     }
   },
   async endLiveStream(streamId) {
+    if (!(await verifyAdminServerRole())) return { success: false, error: '403 Forbidden: Admin privileges required.' };
     try {
       const { error } = await supabase.from('live_streams').update({ status: 'ended' }).eq('id', streamId);
       return { success: !error };

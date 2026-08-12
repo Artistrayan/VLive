@@ -104,20 +104,13 @@ export function registerUsernameLocally(username) {
 
 /**
  * Validates if a user has Admin privileges.
- * Admin access is granted ONLY when verified Telegram User ID is 8933698119.
- * Username or display name alone NEVER grants admin privileges.
+ * Admin access is granted ONLY when verified profile role is 'admin' AND Telegram ID is 8933698119.
  *
- * @param {string} username - User's username
- * @param {boolean} [isUserRayan=false] - Explicit Rayan admin flag from verified Telegram ID
- * @param {Array} [adminWhitelist=[]] - Array of whitelisted admin handles
- * @param {Array} [adminRolesList=[]] - Array of admin objects
- * @param {string|number} [telegramId=''] - User's verified Telegram ID
+ * @param {string} userRole - User's authenticated role from DB profile
+ * @param {string|number} [telegramId=''] - User's verified Telegram ID from DB profile
  * @returns {boolean} true if admin, false if standard user
  */
-export function isUserAnAdmin(username = '', isUserRayan = false, adminWhitelist = [], adminRolesList = [], telegramId = '') {
+export function isUserAnAdmin(userRole = 'user', telegramId = '') {
   const cleanTg = String(telegramId || '').trim();
-  if (cleanTg === '8933698119' && isUserRayan) {
-    return true;
-  }
-  return false;
+  return userRole === 'admin' && cleanTg === '8933698119';
 }

@@ -303,7 +303,7 @@ export default function ProfileTab(props) {
     showToast(window.loc('پست جدید با موفقیت منتشر شد 🎉', 'New post published successfully 🎉'));
   };
 
-  const isAdminUser = Boolean(isUserRayan);
+  const isAdminUser = props.userRole === 'admin' || props.currentUserRole === 'admin' || Boolean(isUserRayan);
 
   return (
     <>
