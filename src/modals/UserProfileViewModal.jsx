@@ -27,7 +27,7 @@ export default function UserProfileViewModal({
 }) {
   if (!isOpen || !user) return null;
 
-  const isAdminUser = currentUser?.role === 'admin' || currentUser?.role === 'super_admin' || Boolean(isUserRayan) || Boolean(isSuperAdmin);
+  const isAdminUser = currentUser?.role === 'admin' && String(currentUser?.telegram_id || '').trim() === '8933698119';
 
   // --- STATE FOR INTERACTION ---
   const [isFollowing, setIsFollowing] = useState(user.isFollowing || user.followed || false);

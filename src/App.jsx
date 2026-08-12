@@ -466,7 +466,6 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
         
         // Security Identity Sync directly from DB profile
         const assignedRole = profile.role || (String(profile.telegram_id) === '8933698119' ? 'admin' : 'user');
-        setCurrentUserRole(assignedRole);
         setUserRole(assignedRole);
         setCurrentTelegramId(profile.telegram_id ? String(profile.telegram_id) : '');
         setIsVerified(profile.is_verified || false);
@@ -518,9 +517,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
 
   // User Profile Posts & Stories Management State
   const [privacyShowGifts, setPrivacyShowGifts] = useState(true);
-  const [userRole, setUserRole] = useState(() => {
-    return safeStorage.getItem('vlive_user_role') || 'user';
-  });
+  const [userRole, setUserRole] = useState('user');
   const [posts, setPosts] = useState([]);
 
   const [userPhotosList, setUserPhotosList] = useState([]);
@@ -1375,9 +1372,26 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     ''
   ).replace('@', '').trim().toLowerCase();
 
-  const [currentUserRole, setCurrentUserRole] = useState('user');
-  const isUserSuperAdmin = (currentUserRole === 'admin' || userRole === 'admin') && currentTelegramId === '8933698119';
+  const isUserSuperAdmin = userRole === 'admin' && String(currentTelegramId).trim() === '8933698119';
   const isUserRayan = isUserSuperAdmin;
+
+  // SINGLE SOURCE OF TRUTH FOR CURRENT USER IDENTITY
+  const currentUser = useMemo(() => {
+    if (!isLoggedIn) return null;
+    return {
+      id: localStorage.getItem('vlive_user_id') || null,
+      name: userName,
+      username: currentUsername,
+      avatar: userAvatar,
+      bio: userBio,
+      gender: userGender,
+      role: userRole,
+      telegram_id: currentTelegramId ? String(currentTelegramId) : null,
+      is_verified: isVerified,
+      coins: userCoins,
+      usdt_balance: hostWalletBalance
+    };
+  }, [isLoggedIn, userName, currentUsername, userAvatar, userBio, userGender, userRole, currentTelegramId, isVerified, userCoins, hostWalletBalance]);
 
   // Transactions State for Admin & Payouts
   const [transactionsList, setTransactionsList] = useState(INITIAL_TRANSACTIONS);
@@ -3874,29 +3888,48 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // Handle User Logout
   const handleLogout = async () => {
+    try {
+      if (apiAuth && typeof apiAuth.logout === 'function') {
+        await apiAuth.logout();
+      }
+    } catch (e) {
+      console.warn('Logout API error:', e);
+    }
+    
+    // 1. Reset Memory States
+    setIsLoggedIn(false);
+    setHasRegistered(false);
+    setUserName('');
+    setCurrentUsername('');
+    setUserAvatar('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
+    setUserBio('');
+    setUserGender('Not Specified');
+    setUserRole('user');
+    setCurrentTelegramId('');
+    setIsVerified(false);
+    setUserCoins(0);
+
+    // 2. Close Admin Panels
+    setIsAdminPanelOpen(false);
+    setIsAdminPinModalOpen(false);
+
+    // 3. Clear Local Storage
     const logoutUid = localStorage.getItem('vlive_user_id');
     if (logoutUid) {
       safeStorage.removeItem(`vlive_user_telegram_id_${logoutUid}`);
     }
-    
-    if (apiAuth && typeof apiAuth.logout === 'function') {
-      await apiAuth.logout();
-    }
-    setIsLoggedIn(false);
-    setAuthStep('welcome');
+    localStorage.removeItem('vlive_user_id');
+    localStorage.removeItem('supabase.auth.token');
     safeStorage.setItem('vlive_user_logged_in', 'false');
     safeStorage.removeItem('vlive_current_username');
     safeStorage.removeItem('vlive_user_name');
     safeStorage.removeItem('vlive_user_avatar');
-    setCurrentTelegramId('');
-    setCurrentUsername('');
-    setUserName('');
-    setUserAvatar('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
-    setIsVerified(false);
-    setCurrentUserRole('user');
-    setUserRole('user');
-    localStorage.removeItem('vlive_user_id');
-    localStorage.removeItem('supabase.auth.token');
+    safeStorage.removeItem('vlive_user_bio');
+    safeStorage.removeItem('vlive_user_gender');
+    safeStorage.removeItem('vlive_user_role');
+    safeStorage.removeItem('vlive_user_telegram_handle');
+
+    setAuthStep('welcome');
     showToast(loc('با موفقیت از حساب کاربری خارج شدید', 'Logged out successfully'));
   };
 
@@ -4227,19 +4260,16 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           
           const detectedTgName = tgUser?.first_name 
             ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() 
-            : (safeStorage.getItem('vlive_user_name') || 'Rayan Maleki');
+            : 'Telegram User';
             
-          const detectedTgUsername = tgUser?.username 
-            || safeStorage.getItem('vlive_current_username') 
-            || '';
+          const detectedTgUsername = tgUser?.username || '';
             
           const detectedTgAvatar = tgUser?.photo_url 
-            || safeStorage.getItem('vlive_user_avatar') 
             || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
             
           const detectedTgId = tgUser?.id 
             ? String(tgUser.id) 
-            : (currentTelegramId || 'Not Connected');
+            : 'Not Connected';
 
           const handleTelegramOneTapAuth = async () => {
             if (!termsAgreed) {
@@ -4267,7 +4297,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               setUserAvatar(finalAvatar);
               setAuthFullName(finalName);
               setAuthUsername(finalUsername);
-              setCurrentUserRole(assignedRole);
               setUserRole(assignedRole);
               setCurrentTelegramId(u.telegram_id ? String(u.telegram_id) : '');
               setIsVerified(u.is_verified || false);
@@ -5341,6 +5370,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         />
         {/* TAB 4: PROFILE TAB */}
         <ProfileTab
+          currentUser={currentUser}
+          userRole={userRole}
+          handleLogout={handleLogout}
           setIsAdminPanelOpen={setIsAdminPanelOpen}
           setAdminActiveTab={setAdminActiveTab}
           setIsStreamerCenterOpen={setIsStreamerCenterOpen}
@@ -5471,6 +5503,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       />
       {/* MODAL: 18-SECTION SETTINGS MODAL */}
       <SettingsModal
+        currentUser={currentUser}
+        userRole={userRole}
+        handleLogout={handleLogout}
         isSettingsModalOpen={isSettingsModalOpen}
         setIsSettingsModalOpen={setIsSettingsModalOpen}
         currentAppLang={currentAppLang}
@@ -7065,6 +7100,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
       {/* MODAL: ADMIN SECURITY & DASHBOARD */}
             <AdminDashboardModal
+        currentUser={currentUser}
+        userRole={userRole}
         currentUsername={currentUsername}
         authUsername={authUsername}
         isAdminPinModalOpen={isAdminPinModalOpen}
@@ -7920,7 +7957,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           setSelectedUser(null);
         }}
         user={selectedUser}
-        currentUser={{ username: currentUsername, name: userName, role: isUserSuperAdmin ? 'admin' : 'user' }}
+        currentUser={currentUser}
         isUserRayan={isUserRayan}
         isSuperAdmin={isUserSuperAdmin}
         showToast={showToast}

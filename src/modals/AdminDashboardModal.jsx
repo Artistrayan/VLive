@@ -148,8 +148,8 @@ export default function AdminDashboardModal(props) {
   if (!isAdminPinModalOpen && !isAdminPanelOpen) return null;
 
   // STRICT ACCESS CONTROL: Only authorized admin with Telegram User ID 8933698119 and DB role 'admin' can view or interact
-  const cleanTgId = String(props.currentTelegramId || '').trim();
-  const userRole = props.currentUserRole || props.userRole || 'user';
+  const cleanTgId = String(props.currentUser?.telegram_id || props.currentTelegramId || '').trim();
+  const userRole = props.currentUser?.role || props.userRole || 'user';
   const isAuthorizedAdmin = userRole === 'admin' && cleanTgId === '8933698119';
 
   if (!isAuthorizedAdmin) {

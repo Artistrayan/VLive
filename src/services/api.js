@@ -247,8 +247,8 @@ export const apiProfile = {
       if (isTaken) {
         return { 
           success: false, 
-          error: 'USERNAME_ALREADY_TAKEN', 
-          message: 'این نام کاربری قبلاً استفاده شده است.' 
+          error: 'USERNAME_TAKEN', 
+          message: 'USERNAME_TAKEN: این نام کاربری قبلاً ثبت شده است.' 
         };
       }
     }

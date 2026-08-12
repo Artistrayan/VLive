@@ -1080,10 +1080,14 @@ export default function SettingsModal(props) {
                   <button
                     onClick={() => {
                       setIsSettingsModalOpen(false);
-                      setIsLoggedIn(false);
-                      setAuthStep('welcome');
-                      safeStorage.setItem('vlive_user_logged_in', 'false');
-                      showToast('Logged out of V.Live');
+                      if (props.handleLogout) {
+                        props.handleLogout();
+                      } else {
+                        setIsLoggedIn(false);
+                        setAuthStep('welcome');
+                        safeStorage.setItem('vlive_user_logged_in', 'false');
+                        showToast('Logged out of V.Live');
+                      }
                     }}
                     className="py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-black flex items-center justify-center gap-2 shadow-lg"
                   >

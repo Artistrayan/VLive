@@ -303,7 +303,7 @@ export default function ProfileTab(props) {
     showToast(window.loc('پست جدید با موفقیت منتشر شد 🎉', 'New post published successfully 🎉'));
   };
 
-  const isAdminUser = props.userRole === 'admin' || props.currentUserRole === 'admin' || Boolean(isUserRayan);
+  const isAdminUser = (props.currentUser?.role === 'admin' || props.userRole === 'admin') && String(props.currentUser?.telegram_id || props.currentTelegramId || '').trim() === '8933698119';
 
   return (
     <>
@@ -1118,9 +1118,13 @@ export default function ProfileTab(props) {
 
               <button
                 onClick={() => {
-                  setIsLoggedIn(false);
-                  setAuthStep('splash');
-                  showToast('👋 You have been logged out.');
+                  if (props.handleLogout) {
+                    props.handleLogout();
+                  } else {
+                    setIsLoggedIn(false);
+                    setAuthStep('splash');
+                    showToast('👋 You have been logged out.');
+                  }
                 }}
                 className="w-full p-4 rounded-2xl bg-rose-950/40 hover:bg-rose-900/40 border border-rose-500/30 flex items-center justify-between text-xs text-rose-300 transition mt-4"
               >
