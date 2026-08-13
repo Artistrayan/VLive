@@ -1415,6 +1415,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [enteredAdminPin, setEnteredAdminPin] = useState('');
   const [enteredAdminUsername, setEnteredAdminUsername] = useState('');
   const [enteredAdminPassword, setEnteredAdminPassword] = useState('');
+  const [activeAdminSession, setActiveAdminSession] = useState(null);
   const [adminWhitelist, setAdminWhitelist] = useState(['@Rayan_Vlive', 'rayan_vlive']);
   const [newWhitelistedUsername, setNewWhitelistedUsername] = useState('');
   const [adminActiveTab, setAdminActiveTab] = useState('dashboard'); // 20 sections
