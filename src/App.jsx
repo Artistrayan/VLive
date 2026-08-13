@@ -102,6 +102,7 @@ export default function App() {
       return 5000;
     }
   });
+  const [userCashBalance, setUserCashBalance] = useState(25.00);
   const [userGender, setUserGender] = useState(() => {
     return safeStorage.getItem('vlive_user_gender') || 'female';
   });
@@ -1389,9 +1390,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       telegram_id: currentTelegramId ? String(currentTelegramId) : null,
       is_verified: isVerified,
       coins: userCoins,
-      usdt_balance: hostWalletBalance
+      usdt_balance: userCashBalance
     };
-  }, [isLoggedIn, userName, currentUsername, userAvatar, userBio, userGender, userRole, currentTelegramId, isVerified, userCoins, hostWalletBalance]);
+  }, [isLoggedIn, userName, currentUsername, userAvatar, userBio, userGender, userRole, currentTelegramId, isVerified, userCoins, userCashBalance]);
 
   // Transactions State for Admin & Payouts
   const [transactionsList, setTransactionsList] = useState(INITIAL_TRANSACTIONS);
@@ -2638,7 +2639,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   };
 // REDESIGNED WALLET SYSTEM STATES & HELPERS
   const [userDiamonds, setUserDiamonds] = useState(10000); // 10,000 Diamonds
-  const [userCashBalance, setUserCashBalance] = useState(25.00); // $25.00 USDT
   const [walletSubTab, setWalletSubTab] = useState('overview'); // 'overview' | 'buy' | 'convert' | 'withdraw' | 'history' | 'creator' | 'referral' | 'security' | 'giftshop'
   
   const [txHistoryList, setTxHistoryList] = useState([
