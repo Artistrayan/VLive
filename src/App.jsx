@@ -28,7 +28,7 @@ import { CoinsIcon, VerifiedBadge, VipStatusBadge, StreamerScoresBadges } from '
 import { safeStorage } from './utils/safeStorage';
 import { isUsernameAlreadyTaken, registerUsernameLocally, isUserAnAdmin } from './utils/usernameUtils';
 import { economyService } from './services/economyService';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   apiAuth, setStoredToken, setStoredSession, getStoredToken,
   apiProfile, apiHome, apiDiscover, apiMessages, apiLive,
