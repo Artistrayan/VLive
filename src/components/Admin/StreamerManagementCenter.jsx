@@ -1,3 +1,4 @@
+import { apiAdmin } from "../../services/api";
 import React, { useState } from 'react';
 import { 
   Video, ShieldCheck, ShieldAlert, CheckCircle2, XCircle, AlertTriangle, 
@@ -38,28 +39,34 @@ export default function StreamerManagementCenter({
   // Extract streamers & pending applicants
   const streamersList = usersList.filter(u => u.isStreamer || u.isHost || u.is_streamer);
   
-  const handleApproveKyc = (app) => {
+  const handleApproveKyc = async (app) => {
+    if (apiAdmin && apiAdmin.updateKycStatus) {
+      await apiAdmin.updateKycStatus(app.id, 'Approved', app.user_id);
+    }
     setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Approved' } : a));
-    setUsersList(prev => prev.map(u => u.username === app.username ? { ...u, isStreamer: true, isHost: true, isVerified: true, xp: 1000, reputationScore: 10, creatorRank: 5 } : u));
-    addAdminAuditLog(`Approved Streamer KYC Application #${app.id} for @${app.username}`);
+    setUsersList(prev => prev.map(u => u.username === app.username ? { ...u, isStreamer: true, isHost: true, isVerified: true, role: 'streamer' } : u));
+    addAdminAuditLog(`Approved Streamer KYC Application #${app.id.slice(0,6)} for @${app.username}`);
     showToast(window.loc(`✅ درخواست استریمی @${app.username} با موفقیت تایید شد`, `✅ Streamer app @${app.username} approved`));
-    setSelectedApplication(null);
   };
 
-  const handleRejectKyc = (app) => {
+  const handleRejectKyc = async (app) => {
     const reason = prompt(window.loc('دلیل رد درخواست (برای کاربر نمایش داده می‌شود):', 'Reason for rejection:')) || 'Rejected by admin';
+    if (apiAdmin && apiAdmin.updateKycStatus) {
+      await apiAdmin.updateKycStatus(app.id, 'Rejected', app.user_id);
+    }
     setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Rejected', rejectionReason: reason } : a));
-    addAdminAuditLog(`Rejected Streamer KYC Application #${app.id} for @${app.username}`);
+    addAdminAuditLog(`Rejected Streamer KYC Application #${app.id.slice(0,6)} for @${app.username}`);
     showToast(window.loc(`✕ درخواست استریمی @${app.username} رد شد`, `✕ Streamer app @${app.username} rejected`));
-    setSelectedApplication(null);
   };
 
-  const handleCorrectionKyc = (app) => {
+  const handleCorrectionKyc = async (app) => {
     const msg = prompt(window.loc('پیام اصلاحیه برای کاربر:', 'Correction message:')) || 'Please update your documents';
+    if (apiAdmin && apiAdmin.updateKycStatus) {
+      await apiAdmin.updateKycStatus(app.id, 'Correction', app.user_id);
+    }
     setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Correction', correctionMessage: msg } : a));
-    addAdminAuditLog(`Requested Correction for KYC Application #${app.id} for @${app.username}`);
+    addAdminAuditLog(`Requested Correction for KYC Application #${app.id.slice(0,6)} for @${app.username}`);
     showToast(window.loc(`درخواست اصلاحیه برای @${app.username} ارسال شد`, `Correction request sent to @${app.username}`));
-    setSelectedApplication(null);
   };
 
   const handleToggleFreezeIncome = (streamer) => {
@@ -170,7 +177,7 @@ export default function StreamerManagementCenter({
                 <div key={s.id || s.username} className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 shadow-lg">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <img src={s.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-pink-500" />
+                      <img src={s.avatar || ''} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-pink-500" />
                       <div>
                         <h4 className="font-bold text-white text-xs flex items-center gap-1">
                           <span>{s.name || s.username}</span>
@@ -247,7 +254,7 @@ export default function StreamerManagementCenter({
                 return (
                   <div key={s.id || s.username} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <img src={s.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'} alt="" className="w-10 h-10 rounded-full object-cover" />
+                      <img src={s.avatar || ''} alt="" className="w-10 h-10 rounded-full object-cover" />
                       <div>
                         <span className="font-bold text-white text-xs block">{s.name || s.username}</span>
                         <div className="flex items-center gap-1 text-[9px] text-slate-400 font-mono">

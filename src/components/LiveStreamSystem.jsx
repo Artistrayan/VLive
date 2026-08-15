@@ -48,7 +48,7 @@ export default function LiveStreamSystem({
   const [newLiveTitle, setNewLiveTitle] = useState('');
   const [newLiveCategory, setNewLiveCategory] = useState('Gaming');
   const [newLiveDesc, setNewLiveDesc] = useState('');
-  const [newLiveThumbnail, setNewLiveThumbnail] = useState('https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80');
+  const [newLiveThumbnail, setNewLiveThumbnail] = useState('');
   const [newLiveTags, setNewLiveTags] = useState('#game #chat');
 
   // Check Streamer Permission
@@ -180,12 +180,12 @@ export default function LiveStreamSystem({
     const streamPayload = {
       host: currentUser?.name || currentUsername || 'Streamer',
       host_id: currentUser?.id,
-      avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      avatar: currentUser?.avatar || '',
       title: newLiveTitle.trim(),
       category: newLiveCategory,
       live_type: newLiveType,
       description: newLiveDesc,
-      thumbnail: newLiveThumbnail || 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
+      thumbnail: newLiveThumbnail || '',
       tags: newLiveTags,
       livekit_token: tokenRes.token,
       livekit_room: tokenRes.roomName,

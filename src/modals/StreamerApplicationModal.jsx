@@ -94,8 +94,8 @@ export default function StreamerApplicationModal({
       rulesAcceptedAt: new Date().toISOString(),
       camTested,
       micTested,
-      videoDemoUrl: 'https://cdn.v.live/demos/sample.mp4',
-      docUrl: 'https://cdn.v.live/docs/id_sample.jpg'
+      videoDemoUrl: '',
+      docUrl: ''
     };
     
     setKycApplications(prev => {

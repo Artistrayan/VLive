@@ -208,7 +208,7 @@ export default function UserManagementCenter({
                     <td className="p-3.5">
                       <div className="flex items-center gap-2.5">
                         <img 
-                          src={u.avatar || u.thumbnail || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'} 
+                          src={u.avatar || u.thumbnail || ''} 
                           alt="" 
                           className="w-9 h-9 rounded-full object-cover border border-slate-700" 
                         />
@@ -308,7 +308,7 @@ export default function UserManagementCenter({
         <div className="p-5 rounded-3xl bg-slate-950 border border-cyan-500/40 space-y-4 shadow-2xl animate-fadeIn">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <div className="flex items-center gap-3">
-              <img src={selectedUserDetail.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-cyan-400" />
+              <img src={selectedUserDetail.avatar || ''} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-cyan-400" />
               <div>
                 <h3 className="font-bold text-white text-sm">{selectedUserDetail.name || selectedUserDetail.username}</h3>
                 <span className="text-xs text-cyan-400 font-mono">@{selectedUserDetail.username} • ID: {selectedUserDetail.id || 'N/A'}</span>

@@ -1075,7 +1075,7 @@ export default function ChatTab(props) {
                         user: {
                           username: "group_" + Date.now(),
                           name: newGroupName,
-                          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+                          avatar: '',
                           isVerified: true,
                           role: 'Group Admin',
                           online: true
@@ -1116,9 +1116,9 @@ export default function ChatTab(props) {
 
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
-                      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
-                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'
+                      '',
+                      '',
+                      ''
                     ].map((img, i) => (
                       <img key={i} src={img} alt="media" className="w-full h-24 rounded-2xl object-cover ring-1 ring-slate-800" />
                     ))}

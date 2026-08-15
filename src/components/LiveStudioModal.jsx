@@ -34,7 +34,7 @@ export default function LiveStudioModal({
   const [liveDesc, setLiveDesc] = useState('');
   const [liveTags, setLiveTags] = useState('#game #vlive #stream');
   const [liveLanguage, setLiveLanguage] = useState(window.loc('فارسی (Persian)', 'Persian'));
-  const [thumbnailUrl, setThumbnailUrl] = useState('https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80');
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [entryCoinRate, setEntryCoinRate] = useState(10);
   const [adultConsent, setAdultConsent] = useState(false);
 
@@ -80,7 +80,7 @@ export default function LiveStudioModal({
 
   // PK State
   const [isPkActive, setIsPkActive] = useState(false);
-  const [pkOpponent, setPkOpponent] = useState({ name: 'Elnaz_Live', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80' });
+  const [pkOpponent, setPkOpponent] = useState(null);
   const [pkRedScore, setPkRedScore] = useState(3400);
   const [pkBlueScore, setPkBlueScore] = useState(2800);
   const [pkTimeLeft, setPkTimeLeft] = useState(180);
@@ -453,7 +453,7 @@ export default function LiveStudioModal({
       id: `stream_${Date.now()}`,
       host: currentUser?.name || currentUsername || 'Verified Streamer',
       host_id: currentUser?.id,
-      avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      avatar: currentUser?.avatar || '',
       title: liveTitle.trim(),
       category: liveCategory,
       live_type: liveType,

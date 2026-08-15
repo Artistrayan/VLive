@@ -32,7 +32,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   apiAuth, setStoredToken, setStoredSession, getStoredToken,
   apiProfile, apiHome, apiDiscover, apiMessages, apiLive,
-  apiWallet, apiGiftShop, apiVip, apiCalls, apiNotifications,
+  apiSocial, apiWallet, apiGiftShop, apiVip, apiCalls, apiNotifications,
   apiCreatorStudio, apiReferral, apiAdmin
 } from './services/api';
 import { supabase } from './supabaseClient';
@@ -60,7 +60,6 @@ const DEFAULT_REAL_USERS = [];
 const INITIAL_TRANSACTIONS = [];
 
 // Initial KYC & Gender Verifications
-const INITIAL_VERIFICATIONS = [];
 
 // Initial Direct Messages Conversations
 const INITIAL_CONVERSATIONS = [];
@@ -108,7 +107,7 @@ export default function App() {
   });
   const [userRank, setUserRank] = useState('VIP Streamer');
   const [userAvatar, setUserAvatar] = useState(() => {
-    return safeStorage.getItem('vlive_user_avatar') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
+    return safeStorage.getItem('vlive_user_avatar') || '';
   });
   const [userBio, setUserBio] = useState(() => {
     return safeStorage.getItem('vlive_user_bio') || loc('استریمر رسمی V.Live+ | پخش زنده باکیفیت و چت تعاملی', 'V.Live+ official streamer | High quality live streaming and interactive chat');
@@ -158,7 +157,7 @@ export default function App() {
   const [authGender, setAuthGender] = useState('female');
   const [authTelegramId, setAuthTelegramId] = useState('');
   const [authEmail, setAuthEmail] = useState('');
-  const [authAvatar, setAuthAvatar] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80');
+  const [authAvatar, setAuthAvatar] = useState('');
 
   // Profile Onboarding State
   const [authCity, setAuthCity] = useState('Tehran');
@@ -444,8 +443,9 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
 
     // Fetch Wallet balance from API
     apiWallet.getBalance().then(bal => {
-      if (bal && typeof bal.wallet_stars === 'number') {
-        setUserCoins(bal.wallet_stars);
+      if (bal && typeof bal.coins === 'number') {
+        setUserCoins(bal.coins);
+        apiWallet.getTransactions().then(txs => setTxHistoryList(txs || []));
       }
     }).catch(err => console.warn('Wallet balance fetch notice:', err));
 
@@ -456,7 +456,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
       if (profile) {
         setUserName(profile.name || profile.username);
         setCurrentUsername(profile.username);
-        setUserAvatar(profile.avatar || profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
+        setUserAvatar(profile.avatar || profile.avatar_url || '');
         setUserBio(profile.bio || '');
         setUserGender(profile.gender || 'Not Specified');
         setEditFullName(profile.name || profile.username);
@@ -478,6 +478,11 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     if (apiAdmin && typeof apiAdmin.getPosts === 'function') {
       apiAdmin.getPosts().then(p => { if (p) setPosts(p); });
     }
+    if (apiAdmin && typeof apiAdmin.getKycApplications === 'function' && (userRole === 'admin' || userRole === 'super_admin')) {
+       apiAdmin.getKycApplications().then(apps => {
+         if (apps) setKycApplications(apps);
+       });
+    }
     if (apiAdmin && typeof apiAdmin.getAllUsers === 'function' && isUserSuperAdmin) {
        apiAdmin.getAllUsers().then(users => {
          if (users) setAdminUsersList(users);
@@ -489,9 +494,16 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
         setMatchDeckProfiles(users);
       }
     }).catch(err => console.warn('Users load err:', err));
+    if (typeof apiSocial !== "undefined" && apiSocial.getPosts) {
+      apiSocial.getPosts().then(res => setPosts(res || []));
+    }
+    if (typeof apiSocial !== "undefined" && apiSocial.getPosts) {
+      apiSocial.getPosts().then(res => setPosts(res || []));
+      apiSocial.getStories().then(res => setAdvancedStories(res || []));
+    }
     apiHome.getActiveStreams().then(streams => {
       if (streams && streams.length > 0) {
-        console.log('Active API Streams Loaded:', streams.length);
+        setStreamsList(streams);
       }
     }).catch(err => console.warn('Streams fetch notice:', err));
 
@@ -553,7 +565,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
           username: u.username,
           age: u.age || 22,
           city: u.city || 'Tehran',
-          avatar: u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+          avatar: u.avatar || '',
           isVerified: u.isVerified !== false,
           isVip: u.isVip !== false,
           user_type: u.user_type || 'VERIFIED_USER',
@@ -601,9 +613,9 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
       const validTargets = (Array.isArray(usersList) && usersList.length > 0)
         ? usersList.filter(u => u && u.username !== currentUsername && u.user_type !== 'TEST_USER' && u.user_type !== 'DEMO_USER')
         : [
-            { id: 101, name: loc('سارا ملکی', 'Sarah Maleki'), avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80', city: loc('تهران', 'Tehran'), isVerified: true, isStreamer: true },
-            { id: 102, name: loc('الناز کریمی', 'Elnaz Karimi'), avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80', city: loc('شیراز', 'Shiraz'), isVerified: true, isStreamer: false },
-            { id: 103, name: loc('سحر محمودی', 'Sahar Mahmoudi'), avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', city: loc('مشهد', 'Mashhad'), isVerified: true, isStreamer: true }
+            { id: 101, name: loc('سارا ملکی', 'Sarah Maleki'), avatar: '', city: loc('تهران', 'Tehran'), isVerified: true, isStreamer: true },
+            { id: 102, name: loc('الناز کریمی', 'Elnaz Karimi'), avatar: '', city: loc('شیراز', 'Shiraz'), isVerified: true, isStreamer: false },
+            { id: 103, name: loc('سحر محمودی', 'Sahar Mahmoudi'), avatar: '', city: loc('مشهد', 'Mashhad'), isVerified: true, isStreamer: true }
           ];
 
       const randomTarget = validTargets[Math.floor(Math.random() * validTargets.length)] || validTargets[0];
@@ -734,7 +746,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
       const newItem = { id: 'p_' + Date.now(), url: newPostUrl.trim(), caption: newPostTitle.trim() };
       const updated = [newItem, ...userPhotosList];
       setUserPhotosList(updated);
-      safeStorage.setItem('vlive_user_photos_v1', JSON.stringify(updated));
+      // MOCK removed. We would upload and call apiSocial.createPost() here.
       showToast(loc('عکس با موفقیت به گالری پروفایل اضافه شد', 'Photo added to profile gallery successfully'));
     } else {
       const newItem = { id: 'v_' + Date.now(), title: newPostTitle.trim(), views: '1', thumb: newPostUrl.trim() };
@@ -752,7 +764,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
   const handleDeletePhotoPost = (id) => {
     const updated = userPhotosList.filter(p => p.id !== id);
     setUserPhotosList(updated);
-    safeStorage.setItem('vlive_user_photos_v1', JSON.stringify(updated));
+      // MOCK removed. We would upload and call apiSocial.createPost() here.
     showToast(loc('عکس از پروفایل حذف شد', 'Photo deleted from profile'));
   };
 
@@ -787,7 +799,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
           ...copy[myStoryIndex],
           items: [newStoryItem, ...copy[myStoryIndex].items]
         };
-        safeStorage.setItem('vlive_advanced_stories_v1', JSON.stringify(copy));
+        // MOCK removed. We would upload and call apiSocial.createStory() here.
         return copy;
       } else {
         const newGroup = {
@@ -798,7 +810,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
           items: [newStoryItem]
         };
         const copy = [newGroup, ...prev];
-        safeStorage.setItem('vlive_advanced_stories_v1', JSON.stringify(copy));
+        // MOCK removed. We would upload and call apiSocial.createStory() here.
         return copy;
       }
     });
@@ -818,7 +830,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
         }
         return group;
       }).filter(group => !group.isMe || group.items.length > 0);
-      safeStorage.setItem('vlive_advanced_stories_v1', JSON.stringify(copy));
+        // MOCK removed. We would upload and call apiSocial.createStory() here.
       return copy;
     });
     showToast(loc('استوری مورد نظر حذف گردید', 'Story deleted successfully'));
@@ -980,8 +992,8 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
 
     const initialParticipants = mode === 'group' ? [
       targetUser,
-      { username: 'Elnaz_Karimi', name: 'Elnaz Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', isVip: true, role: 'Online Model', isMuted: false },
-      { username: 'Arash_VIP', name: 'Arash VIP Host', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', isVip: true, role: 'Top Streamer', isMuted: false }
+      { username: 'Elnaz_Karimi', name: 'Elnaz Karimi', avatar: '', isVip: true, role: 'Online Model', isMuted: false },
+      { username: 'Arash_VIP', name: 'Arash VIP Host', avatar: '', isVip: true, role: 'Top Streamer', isMuted: false }
     ] : [targetUser];
 
     const newCall = {
@@ -2014,14 +2026,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [advancedStories, setAdvancedStories] = useState([]);
 
   const [storyArchive, setStoryArchive] = useState([
-    { id: 'arc1', date: 'Yesterday', url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=200&q=80', views: 350 },
-    { id: 'arc2', date: 'Last Week', url: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=200&q=80', views: 820 },
+    { id: 'arc1', date: 'Yesterday', url: '', views: 350 },
+    { id: 'arc2', date: 'Last Week', url: '', views: 820 },
   ]);
 
-  const [highlights, setHighlights] = useState([
-    { id: 'h1', title: 'Travel ✈️', cover: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=200&q=80' },
-    { id: 'h2', title: 'Live Moments 🔴', cover: 'https://images.unsplash.com/photo-1516280440502-861159f81792?auto=format&fit=crop&w=200&q=80' }
-  ]);
+  const [highlights, setHighlights] = useState([]);
 
   
 
@@ -2095,12 +2104,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   const [privacyShowLastSeen, setPrivacyShowLastSeen] = useState(true);
 
-  // 20+ GIFTS MODAL STATE
-  const [isGiftCatalogOpen, setIsGiftCatalogOpen] = useState(false);
 
-  // DEPOSIT & WITHDRAWAL USDT WALLET MODAL STATE
-  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
-  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
 
 
   // ==================== REDESIGNED ADVANCED DAILY MISSIONS SYSTEM STATE ====================
@@ -2437,7 +2441,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         showToast(loc('بخش استوری‌های روزانه 📖', 'Daily stories section 📖'));
         break;
       case 'giftshop':
-        setIsGiftCatalogOpen(true);
+        setActiveTab('wallet');
+        setWalletSubTab('giftshop');
         showToast(loc('فروشگاه و ارسال هدایا 🎁', 'Shop and send gifts 🎁'));
         break;
       case 'wallet':
@@ -2512,10 +2517,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // Followers List (REAL VERIFIED USERS)
   const [creatorFollowersList, setCreatorFollowersList] = useState([
-    { id: 'f1', name: 'Sara Maleki', handle: '@Sara_Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', badge: 'VIP Streamer 👑', isFollowing: true, user_type: 'VERIFIED_USER' },
-    { id: 'f2', name: 'Elnaz Karimi', handle: '@Elnaz_Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', badge: 'VIP Member 👑', isFollowing: true, user_type: 'VERIFIED_USER' },
-    { id: 'f3', name: 'Sahar Miller', handle: '@Sahar_Miller', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', badge: 'Creator 🎥', isFollowing: true, user_type: 'VERIFIED_USER' },
-    { id: 'f4', name: 'Maryam Hosseini', handle: '@Maryam_Hosseini', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80', badge: 'Official Host 🎙️', isFollowing: true, user_type: 'VERIFIED_USER' }
+    { id: 'f1', name: 'Sara Maleki', handle: '@Sara_Maleki', avatar: '', badge: 'VIP Streamer 👑', isFollowing: true, user_type: 'VERIFIED_USER' },
+    { id: 'f2', name: 'Elnaz Karimi', handle: '@Elnaz_Karimi', avatar: '', badge: 'VIP Member 👑', isFollowing: true, user_type: 'VERIFIED_USER' },
+    { id: 'f3', name: 'Sahar Miller', handle: '@Sahar_Miller', avatar: '', badge: 'Creator 🎥', isFollowing: true, user_type: 'VERIFIED_USER' },
+    { id: 'f4', name: 'Maryam Hosseini', handle: '@Maryam_Hosseini', avatar: '', badge: 'Official Host 🎙️', isFollowing: true, user_type: 'VERIFIED_USER' }
   ]);
 
   // Content List
@@ -2538,11 +2543,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [isReferralRulesModalOpen, setIsReferralRulesModalOpen] = useState(false);
 
   const [invitesList, setInvitesList] = useState([
-    { id: 'inv1', name: 'Ali Reza 🔥', handle: '@ali_reza84', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80', date: loc('امروز ۱۴:۲۰', 'Today 14:20'), status: 'Active', rewardUnlocked: true, rewardAmount: 200, minutesUsed: 25 },
-    { id: 'inv2', name: 'Sara Model 💎', handle: '@sara_m', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80', date: loc('دیروز ۱۸:۴۵', 'Yesterday 18:45'), status: 'Active', rewardUnlocked: true, rewardAmount: 200, minutesUsed: 42 },
-    { id: 'inv3', name: 'Mehdi Gamer 🎮', handle: '@mehdi_g', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=300&q=80', date: loc('۲ روز پیش', '2 days ago'), status: 'Pending', rewardUnlocked: false, rewardAmount: 100, minutesUsed: 4 },
-    { id: 'inv4', name: 'Neda Streamer 🎥', handle: '@neda_live', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', date: loc('۳ روز پیش', '3 days ago'), status: 'Active', rewardUnlocked: true, rewardAmount: 100, minutesUsed: 15 },
-    { id: 'inv5', name: 'Arash Cyber 🚀', handle: '@arash_c', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', date: loc('۴ روز پیش', '4 days ago'), status: 'Active', rewardUnlocked: true, rewardAmount: 100, minutesUsed: 60 }
+    { id: 'inv1', name: 'Ali Reza 🔥', handle: '@ali_reza84', avatar: '', date: loc('امروز ۱۴:۲۰', 'Today 14:20'), status: 'Active', rewardUnlocked: true, rewardAmount: 200, minutesUsed: 25 },
+    { id: 'inv2', name: 'Sara Model 💎', handle: '@sara_m', avatar: '', date: loc('دیروز ۱۸:۴۵', 'Yesterday 18:45'), status: 'Active', rewardUnlocked: true, rewardAmount: 200, minutesUsed: 42 },
+    { id: 'inv3', name: 'Mehdi Gamer 🎮', handle: '@mehdi_g', avatar: '', date: loc('۲ روز پیش', '2 days ago'), status: 'Pending', rewardUnlocked: false, rewardAmount: 100, minutesUsed: 4 },
+    { id: 'inv4', name: 'Neda Streamer 🎥', handle: '@neda_live', avatar: '', date: loc('۳ روز پیش', '3 days ago'), status: 'Active', rewardUnlocked: true, rewardAmount: 100, minutesUsed: 15 },
+    { id: 'inv5', name: 'Arash Cyber 🚀', handle: '@arash_c', avatar: '', date: loc('۴ روز پیش', '4 days ago'), status: 'Active', rewardUnlocked: true, rewardAmount: 100, minutesUsed: 60 }
   ]);
 
   const [referralMilestones, setReferralMilestones] = useState([
@@ -2670,16 +2675,33 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [isPinConfigured, setIsPinConfigured] = useState(true);
 
   // WALLET HELPER ACTIONS
-  const handleBuyCoinsPack = (coinsCount, priceUsdt) => {
-    setUserCoins(prev => prev + coinsCount);
-    const newTx = {
-      id: `TX-${Date.now().toString().slice(-4)}`,
-      type: 'Buy Coins',
-      description: window.loc(`خرید ${coinsCount.toLocaleString()} سکه ($${priceUsdt} USDT)`, `خرید ${coinsCount.toLocaleString()} سکه ($${priceUsdt} USDT)`)
-      };
-
-    setTxHistoryList(prev => [newTx, ...prev]);
-    showToast(window.loc(`🎉 ${coinsCount.toLocaleString()} سکه با موفقیت خریداری شد!`, `🎉 ${coinsCount.toLocaleString()} سکه با موفقیت خریداری شد!`));
+  const handleBuyService = async (serviceName, costUsdt) => {
+    // 1 usdt = 100 coins? No, let's just deduct coins.
+    const costCoins = costUsdt * 100;
+    if (userCoins < costCoins) {
+      showToast('Insufficient coins');
+      return false;
+    }
+    const res = await apiWallet.buyService(serviceName, costCoins);
+    if (res && res.success) {
+      setUserCoins(res.newCoins);
+      apiWallet.getTransactions().then(txs => setTxHistoryList(txs || []));
+      return true;
+    } else {
+      showToast('Transaction failed: ' + (res.error || ''));
+      return false;
+    }
+  };
+  const handleBuyCoinsPack = async (coinsCount, priceUsdt) => {
+    const res = await apiWallet.addCoins(coinsCount, priceUsdt);
+    if (res && res.success) {
+      setUserCoins(res.newCoins);
+      const newTxs = await apiWallet.getTransactions();
+      setTxHistoryList(newTxs || []);
+      showToast(window.loc(`🎉 ${coinsCount.toLocaleString()} سکه با موفقیت خریداری شد!`, `🎉 ${coinsCount.toLocaleString()} سکه با موفقیت خریداری شد!`));
+    } else {
+      showToast(window.loc('خطا در خرید سکه', 'Error buying coins') + ': ' + (res?.error || 'Unknown error'));
+    }
   };
 
   const handleConvertDiamondsAction = () => {
@@ -2957,7 +2979,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [pkBlueScore, setPkBlueScore] = useState(9800);
   const [pkOpponent, setPkOpponent] = useState({
     name: 'Elnaz Karimi',
-    avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
+    avatar: '',
     title: 'VIP Streamer'
   });
   const [pkWinner, setPkWinner] = useState(null);
@@ -3089,43 +3111,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   
   const rawLeaderboardLists = {
-    streamers: [
-      { rank: 1, user: 'Sara_Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', score: '380,000', label: 'Coins', badge: 'Legend 👑', level: 99, viewers: '12K', gifts: '8.5K', income: '$3,800', isMe: false },
-      { rank: 2, user: 'Arash_VIP', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', score: '295,000', label: 'Coins', badge: 'Diamond 💎', level: 85, viewers: '9K', gifts: '5.2K', income: '$2,950', isMe: false },
-      { rank: 3, user: 'Elnaz_Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', score: '210,000', label: 'Coins', badge: 'Gold 🥇', level: 72, viewers: '6K', gifts: '4.1K', income: '$2,100', isMe: false },
-      { rank: 4, user: 'Kian_Royal', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80', score: '150,000', label: 'Coins', badge: 'Silver 🥈', level: 60, viewers: '4K', gifts: '2.5K', income: '$1,500', isMe: false },
-      { rank: 5, user: 'Sahar_Star', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80', score: '98,000', label: 'Coins', badge: 'Bronze 🥉', level: 45, viewers: '2.5K', gifts: '1.2K', income: '$980', isMe: false },
-      { rank: 158, user: userName, avatar: userAvatar, score: '4,500', label: 'Coins', badge: 'Rising 🔥', level: 12, viewers: '150', gifts: '45', income: '$45', isMe: true }
-    ],
-    gifters: [
-      { rank: 1, user: 'Lord_Sina', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80', score: '1,250,000', label: 'Gifts Sent', badge: 'Whale 🐋', level: 100, viewers: '15K', gifts: '45K', income: '$12,500', isMe: false },
-      { rank: 2, user: 'Niloofar_Diamond', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', score: '920,000', label: 'Gifts Sent', badge: 'Super VIP 👑', level: 95, viewers: '10K', gifts: '32K', income: '$9,200', isMe: false },
-      { rank: 3, user: 'Reza_Tehran', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80', score: '680,000', label: 'Gifts Sent', badge: 'Gold 🥇', level: 88, viewers: '8K', gifts: '21K', income: '$6,800', isMe: false },
-      { rank: 4, user: 'Mina_Gifter', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', score: '410,000', label: 'Gifts Sent', badge: 'Silver 🥈', level: 75, viewers: '5K', gifts: '14K', income: '$4,100', isMe: false },
-      { rank: 89, user: userName, avatar: userAvatar, score: '12,500', label: 'Gifts Sent', badge: 'Supporter 💖', level: 12, viewers: '150', gifts: '120', income: '$125', isMe: true }
-    ],
-    earnings: [
-      { rank: 1, user: 'Sara_Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', score: '$18,500', label: 'USD', badge: 'Top Earner 💵', level: 99, viewers: '12K', gifts: '8.5K', income: '$18,500', isMe: false },
-      { rank: 2, user: 'Arash_VIP', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', score: '$14,200', label: 'USD', badge: 'Pro Partner 💎', level: 85, viewers: '9K', gifts: '5.2K', income: '$14,200', isMe: false },
-      { rank: 3, user: 'Elnaz_Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', score: '$9,800', label: 'USD', badge: 'Gold Earner 🥇', level: 72, viewers: '6K', gifts: '4.1K', income: '$9,800', isMe: false },
-      { rank: 112, user: userName, avatar: userAvatar, score: '$340', label: 'USD', badge: 'Partner 🌟', level: 12, viewers: '150', gifts: '45', income: '$340', isMe: true }
-    ],
-    popular: [
-      { rank: 1, user: 'Sara_Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', score: '1.2M', label: 'Likes', badge: 'Viral Star 🔥', level: 99, viewers: '12K', gifts: '8.5K', income: '$3,800', isMe: false },
-      { rank: 2, user: 'Elnaz_Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', score: '850K', label: 'Likes', badge: 'Popular Idol 💖', level: 72, viewers: '6K', gifts: '4.1K', income: '$2,100', isMe: false },
-      { rank: 3, user: 'Arash_VIP', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', score: '620K', label: 'Likes', badge: 'Icon 🌟', level: 85, viewers: '9K', gifts: '5.2K', income: '$2,950', isMe: false },
-      { rank: 64, user: userName, avatar: userAvatar, score: '45K', label: 'Likes', badge: 'Fav ❤️', level: 12, viewers: '150', gifts: '45', income: '$45', isMe: true }
-    ],
-    rising: [
-      { rank: 1, user: 'Kian_Royal', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80', score: '+420%', label: 'Growth', badge: 'Rocket 🚀', level: 60, viewers: '4K', gifts: '2.5K', income: '$1,500', isMe: false },
-      { rank: 2, user: 'Sahar_Star', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80', score: '+310%', label: 'Growth', badge: 'Rising Star ✨', level: 45, viewers: '2.5K', gifts: '1.2K', income: '$980', isMe: false },
-      { rank: 3, user: userName, avatar: userAvatar, score: '+180%', label: 'Growth', badge: 'Fastest Rising 🔥', level: 12, viewers: '150', gifts: '45', income: '$45', isMe: true }
-    ],
-    vip: [
-      { rank: 1, user: 'Lord_Sina', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80', score: 'VIP Level 10', label: 'Supreme', badge: 'Emperor 👑', level: 100, viewers: '15K', gifts: '45K', income: '$12,500', isMe: false },
-      { rank: 2, user: 'Sara_Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', score: 'VIP Level 9', label: 'Crown', badge: 'Queen 👸', level: 99, viewers: '12K', gifts: '8.5K', income: '$3,800', isMe: false },
-      { rank: 3, user: 'Arash_VIP', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', score: 'VIP Level 8', label: 'Royal', badge: 'King 🤴', level: 85, viewers: '9K', gifts: '5.2K', income: '$2,950', isMe: false }
-    ]
+    streamers: [],
+    gifters: [],
+    earnings: [],
+    popular: [],
+    rising: [],
+    vip: []
   };
 
   const leaderboardData = rawLeaderboardLists[lbMainTab] || rawLeaderboardLists.streamers;
@@ -3445,7 +3436,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     // Live Timer for Story Progress
   useEffect(() => {
     let timer;
-    if (activeStoryView && !isGiftCatalogOpen && !isStoryViewersOpen) {
+    if (activeStoryView && !isStoryViewersOpen) {
       const currentItem = activeStoryView.group.items[activeStoryView.currentIndex];
       const duration = currentItem.duration * 1000;
       const step = 50; // update every 50ms
@@ -3464,7 +3455,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       }, step);
     }
     return () => clearInterval(timer);
-  }, [activeStoryView, isGiftCatalogOpen, isStoryViewersOpen]);
+  }, [activeStoryView, isStoryViewersOpen]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -3645,7 +3636,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     const rate = host.streamer_rate || 500;
     if (userCoins < rate) {
       showToast(`Insufficient coin balance for private video call (${rate} coins/min). Please top up USDT.`);
-      setIsDepositModalOpen(true);
+      setActiveTab('wallet');
+      setWalletSubTab('buy');
       return;
     }
     setActivePrivateCallHost(host);
@@ -3765,90 +3757,70 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   };
 
   // Submit KYC & Gender Verification Request
-  const handleSubmitKyc = () => {
+  const handleSubmitKyc = async () => {
     if (!kycNationalId.trim()) {
       showToast('Please enter ID Document Number');
       return;
     }
 
-    const newVerif = {
-      id: Date.now(),
-      name: userName,
+    const res = await apiProfile.submitKyc({
       username: currentUsername,
-      gender: userGender,
-      nationalCard: `ID Document Number: ${kycNationalId}`,
-      selfiePhoto: kycDescription || 'Selfie & Badge Verification Submitted',
-      date: new Date().toISOString().slice(0, 10),
-      type: userGender === 'female' ? 'Female Streamer Verification' : 'Identity Verification'
-    };
-
-    setVerificationsList(prev => [newVerif, ...prev]);
-    
-    // Also add to Admin Streamer Management Center KYC Applications
-    const newKycApp = {
-      id: newVerif.id,
-      username: currentUsername || 'user',
-      status: 'Pending',
-      date: new Date().toLocaleDateString(),
-      videoDemoUrl: 'https://cdn.v.live/demos/sample.mp4',
-      docUrl: 'https://cdn.v.live/docs/id_sample.jpg'
-    };
-    
-    setKycApplications(prev => {
-      const updated = [newKycApp, ...prev];
-      safeStorage.setItem('vlive_kyc_applications', JSON.stringify(updated));
-      return updated;
+      nationalId: kycNationalId,
+      description: kycDescription,
+      videoUrl: '', // Could integrate real uploads here later
+      docUrl: ''
     });
 
-    setIsKycModalOpen(false);
-    showToast('Verification request submitted for admin review');
+    if (res && res.success) {
+      showToast('Verification request submitted for admin review');
+      setIsKycModalOpen(false);
+      
+      // Update admin list if admin is online
+      if (['admin', 'super_admin'].includes(userRole)) {
+         apiAdmin.getKycApplications().then(apps => setKycApplications(apps || []));
+      }
+    } else {
+      showToast('Error submitting request');
+    }
   };
 
   // Handle Send 20+ Gifts
-  const handleSendGift = (gift) => {
+  const handleSendGift = async (gift) => {
     if (userCoins < gift.coins) {
       showToast(`Insufficient Coins! ${gift.name} costs ${gift.coins} coins`);
       return;
     }
 
-    const grossCoins = gift.coins;
-    const commissionCoins = Math.round(grossCoins * 0.29);
-    const netCreatorCoins = grossCoins - commissionCoins;
+    // Attempt real transaction
+    let recipientId = null;
+    if (viewingStream) {
+      // Find streamer ID
+      const streamer = activeStreams.find(s => s.id === viewingStream);
+      if (streamer) recipientId = streamer.user_id;
+    } else if (activeConversationId) {
+      // Find chat partner ID
+      const conv = conversations.find(c => c.id === activeConversationId);
+      if (conv) recipientId = conv.partner_id;
+    }
 
-    setUserCoins(prev => {
-      const nextCoins = Math.max(0, prev - grossCoins);
-      safeStorage.setItem('vlive_user_coins', String(nextCoins));
-      return nextCoins;
-    });
+    const res = await apiWallet.sendGift(gift.coins, gift.name, recipientId);
+    if (!res.success) {
+      showToast('Transaction failed: ' + res.error);
+      return;
+    }
 
-    setUserDiamonds(d => d + Math.round(netCreatorCoins / 5));
+    // Deduct coins locally for immediate feedback
+    setUserCoins(res.newCoins);
+    const newTxs = await apiWallet.getTransactions();
+    setTxHistoryList(newTxs || []);
 
-    // Record Transaction Entry with 29% Commission
-    const giftTx = {
-      id: `TX-GFT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      type: 'gift_received',
-      description: `Virtual Gift: ${gift.name}`,
-      grossAmountCoins: grossCoins,
-      commissionAmountCoins: commissionCoins,
-      netEarningsCoins: netCreatorCoins,
-      grossUsdt: (grossCoins / 50).toFixed(2),
-      commissionUsdt: (commissionCoins / 50).toFixed(2),
-      netUsdt: (netCreatorCoins / 50).toFixed(2),
-      time: 'Just now',
-      timestamp: new Date().toISOString(),
-      status: 'Completed',
-      icon: gift.emoji || '🎁'
-    };
-
-    setTransactionsList(prev => [giftTx, ...prev]);
-
-    // Add In-App Notification
+    // Add In-App Notification (local for now, should be server pushed ideally)
     setNotificationsList(prev => [{
       id: Date.now(),
       type: 'gifts',
       group: 'today',
-      title: `Gift Received: ${gift.name} 🎁`,
-      body: `You received ${gift.name} (${grossCoins} Coins). Net earnings (+${netCreatorCoins} Coins / $${(netCreatorCoins/50).toFixed(2)} USDT) added after 29% platform commission.`,
+      title: `Gift Sent: ${gift.name} 🎁`,
+      body: `You sent ${gift.name} (${gift.coins} Coins).`,
       time: 'Just now',
       unread: true
     }, ...prev]);
@@ -3869,7 +3841,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     if (viewingStream) {
       setStreamChatMessages(prev => [...prev, { user: userName, text: `Sent gift: ${gift.name}! 🎁`, isVip: true }]);
     }
-
     if (activeConversationId) {
       const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       setConversations(prev => prev.map(conv => {
@@ -3885,10 +3856,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       }));
     }
     
-    setIsGiftCatalogOpen(false);
-    showToast(`🎁 Gift ${gift.name} (${gift.coins} coins) sent! Net earnings credited after 29% commission.`);
+    showToast(`🎁 Gift ${gift.name} (${gift.coins} coins) sent!`);
   };
-
   // Handle User Logout
   const handleLogout = async () => {
     try {
@@ -3904,7 +3873,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     setHasRegistered(false);
     setUserName('');
     setCurrentUsername('');
-    setUserAvatar('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80');
+    setUserAvatar('');
     setUserBio('');
     setUserGender('Not Specified');
     setUserRole('user');
@@ -3959,7 +3928,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
     setTransactionsList(prev => [newTx, ...prev]);
     setUserCoins(prev => prev + addedCoins);
-    setIsDepositModalOpen(false);
     setDepositTxId('');
     showToast(`USDT deposit submitted. Added ${addedCoins.toLocaleString()} coins.`);
   };
@@ -4086,7 +4054,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       unread: true
     }, ...prev]);
 
-    setIsWithdrawModalOpen(false);
     setWithdrawCoinsAmount('');
     showToast(`Withdrawal request #${txId} ($${netUsdtPayout} USDT) submitted for admin review`);
   };
@@ -4268,7 +4235,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           const detectedTgUsername = tgUser?.username || '';
             
           const detectedTgAvatar = tgUser?.photo_url 
-            || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
+            || '';
             
           const detectedTgId = tgUser?.id 
             ? String(tgUser.id) 
@@ -4292,7 +4259,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               const u = authRes.user;
               const finalName = u.first_name || u.name || u.username;
               const finalUsername = u.username;
-              const finalAvatar = u.avatar_url || u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';
+              const finalAvatar = u.avatar_url || u.avatar || '';
               const assignedRole = u.role || (String(u.telegram_id) === '8933698119' ? 'admin' : 'user');
               
               setUserName(finalName);
@@ -5101,7 +5068,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       title={matchDeckProfiles[0]?.name || 'Sara'}
                     >
                       <img 
-                        src={matchDeckProfiles[0]?.avatar || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80'} 
+                        src={matchDeckProfiles[0]?.avatar || ''} 
                         alt="Candidate" 
                         className="w-full h-full rounded-full object-cover border border-slate-950" 
                       />
@@ -5121,7 +5088,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       title={matchDeckProfiles[1]?.name || 'Elnaz'}
                     >
                       <img 
-                        src={matchDeckProfiles[1]?.avatar || 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80'} 
+                        src={matchDeckProfiles[1]?.avatar || ''} 
                         alt="Candidate" 
                         className="w-full h-full rounded-full object-cover border border-slate-950" 
                       />
@@ -5141,7 +5108,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       title={matchDeckProfiles[2]?.name || 'Sahar'}
                     >
                       <img 
-                        src={matchDeckProfiles[2]?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'} 
+                        src={matchDeckProfiles[2]?.avatar || ''} 
                         alt="Candidate" 
                         className="w-full h-full rounded-full object-cover border border-slate-950" 
                       />
@@ -5161,7 +5128,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       title={matchDeckProfiles[3]?.name || 'Mina'}
                     >
                       <img 
-                        src={matchDeckProfiles[3]?.avatar || 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=200&q=80'} 
+                        src={matchDeckProfiles[3]?.avatar || ''} 
                         alt="Candidate" 
                         className="w-full h-full rounded-full object-cover border border-slate-950" 
                       />
@@ -5184,7 +5151,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       className="absolute top-2 right-2 w-9 h-9 rounded-full p-0.5 bg-lime-300 shadow-[0_0_10px_#a3e635] cursor-pointer hover:scale-125 transition z-30"
                     >
                       <img 
-                        src={matchDeckProfiles[0]?.avatar || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80'} 
+                        src={matchDeckProfiles[0]?.avatar || ''} 
                         alt="Candidate" 
                         className="w-full h-full rounded-full object-cover border border-slate-950" 
                       />
@@ -5200,7 +5167,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       className="absolute bottom-2 left-2 w-9 h-9 rounded-full p-0.5 bg-pink-400 shadow-[0_0_10px_#ec4899] cursor-pointer hover:scale-125 transition z-30"
                     >
                       <img 
-                        src={matchDeckProfiles[1]?.avatar || 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80'} 
+                        src={matchDeckProfiles[1]?.avatar || ''} 
                         alt="Candidate" 
                         className="w-full h-full rounded-full object-cover border border-slate-950" 
                       />
@@ -5312,6 +5279,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         {/* TAB 2: MESSAGES & CHAT TAB */}
         <ChatTab
           activeTab={activeTab}
+          txHistoryList={txHistoryList}
           userAvatar={userAvatar}
           userName={userName}
           totalUnreadMessages={totalUnreadMessages}
@@ -5354,7 +5322,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         />
         {/* TAB 3: WALLET & EARNINGS TAB */}
         <WalletTab
+          handleBuyService={handleBuyService}
           activeTab={activeTab}
+          txHistoryList={txHistoryList}
           userCoins={userCoins}
           setUserCoins={setUserCoins}
           userDiamonds={userDiamonds}
@@ -5378,8 +5348,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           handleLogout={handleLogout}
           setIsAdminPanelOpen={setIsAdminPanelOpen}
           setAdminActiveTab={setAdminActiveTab}
+          setActiveTab={setActiveTab}
+          setIsSettingsModalOpen={setIsSettingsModalOpen}
           setIsStreamerCenterOpen={setIsStreamerCenterOpen}
           activeTab={activeTab}
+          txHistoryList={txHistoryList}
           userAvatar={userAvatar}
           setUserAvatar={setUserAvatar}
           userName={userName}
@@ -5615,42 +5588,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         </div>
       )}
 
-      {/* MODAL 2: 20+ GIFTS CATALOG */}
-      {isGiftCatalogOpen && (
-        <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md card-3d p-5 border border-pink-500/50 bg-slate-900 rounded-3xl space-y-4 max-h-[80vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Gift className="w-4 h-4 text-pink-400" />
-                Select Virtual Gift (20+ Catalog)
-              </h2>
-              <button onClick={() => setIsGiftCatalogOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto grid grid-cols-4 gap-2 pr-1">
-              {GIFTS_CATALOG.map(gift => {
-                const IconComponent = gift.icon;
-                return (
-                  <button
-                    key={gift.id}
-                    onClick={() => handleSendGift(gift)}
-                    className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-pink-500 flex flex-col items-center gap-1.5 transition text-center group"
-                  >
-                    <div className={`p-2 rounded-xl ${gift.bg}`}>
-                      <IconComponent className={`w-6 h-6 ${gift.color}`} />
-                    </div>
-                    <span className="text-[10px] font-bold text-white truncate w-full">{gift.name}</span>
-                    <span className="text-[9px] font-bold text-amber-300">{gift.coins} coins</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 7-DAY CONSECUTIVE DAILY REWARD MODAL */}
       {isRewardOpeningModalOpen && (() => {
         const rewardStatus = economyService.getDailyRewardStatus(lastRewardClaimTimestamp, dailyStreak);
@@ -5782,180 +5719,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           </div>
         );
       })()}
-
-      {/* MODAL 3: WITHDRAWAL / PAYOUT MODAL */}
-      {isWithdrawModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-          <div className="w-full max-w-md card-3d p-6 border-2 border-emerald-500/50 bg-slate-900 rounded-3xl space-y-4 shadow-[0_0_50px_rgba(16,185,129,0.25)]">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  <ArrowUpRight className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-black text-white">
-                    Request Creator Earnings Payout
-                  </h2>
-                  <p className="text-[10px] text-slate-400">Tether USDT (TRC20) Network Withdrawal</p>
-                </div>
-              </div>
-              <button onClick={() => setIsWithdrawModalOpen(false)} className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* CHECK CREATOR ELIGIBILITY FIRST */}
-            {(userGender !== 'female' || (!isVerified && !verificationsList.some(v => v.user === userName && v.status === 'Approved'))) ? (
-              <div className="p-4 rounded-2xl bg-amber-950/60 border border-amber-500/50 space-y-3 text-center">
-                <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-400 border border-amber-400/30">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="font-black text-amber-300 text-xs">{loc('احراز هویت و حساب بانوان استریمر الزامی است', 'Authentication and account of female streamers is required')}</h3>
-                  <p className="text-[11px] text-slate-300 mt-1">
-                    {loc('برداشت درآمد اختصاصاً برای حساب‌های بانوان استریمر تأییدشده فعال می‌باشد. برای ارسال درخواست تسویه، ابتدا مدارک هویت خود را ثبت نمایید.', 'Earnings are only active for verified female streamer accounts. To send a settlement request, first register your identity documents.')}
-                  </p>
-                </div>
-
-                <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-right text-[10px] space-y-1.5 text-slate-300">
-                  <p className="flex items-center gap-1.5 font-bold text-amber-400">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" /> {loc('شرایط ثبت درخواست برداشت:', 'Conditions for registration of withdrawal request:')}
-                  </p>
-                  <p className="pr-4">{loc('• حساب بانوان استریمر (Female Creator Account)', 'Female Creator Account')}</p>
-                  <p className="pr-4">{loc('• آپلود کارت ملی / پاسپورت و تصویر سلفی', '• Upload national card/passport and selfie picture')}</p>
-                  <p className="pr-4">{loc('• تأیید حساب توسط تیم مدیریت vLive+', '• Account verification by vLive+ management team')}</p>
-                </div>
-
-                <button
-                  onClick={() => {
-                    setIsWithdrawModalOpen(false);
-                    setIsKycModalOpen(true);
-                  }}
-                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-md hover:brightness-110 transition flex items-center justify-center gap-1.5"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  {loc('شروع احراز هویت (Start KYC Verification)', 'Start authentication (Start KYC Verification)')}
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3 text-xs">
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-1 font-bold">
-                    {loc('Coins to Withdraw (سکه برای تبدیل به تتر)', 'Coins to Withdraw')}
-                  </label>
-                  <input 
-                    type="number"
-                    value={withdrawCoinsAmount}
-                    onChange={e => setWithdrawCoinsAmount(e.target.value)}
-                    placeholder="e.g. 2500 coins = $50 USDT"
-                    className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-white font-mono outline-none focus:border-emerald-500"
-                  />
-                  <span className="text-[10px] text-emerald-400 block mt-1 font-mono">
-                    {loc('موجودی قابل برداشت شما:', 'Your withdrawable balance:')} {userCoins.toLocaleString()} {loc('سکه (≈ $', 'coin (≈ $')}{(userCoins / 50).toFixed(2)} USDT)
-                  </span>
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-1 font-bold">
-                    {loc('TRON (TRC20) USDT Wallet Address (آدرس کیف پول تتر)', 'TRON (TRC20) USDT Wallet Address')}
-                  </label>
-                  <input 
-                    type="text"
-                    value={withdrawUsdtAddressInput}
-                    onChange={e => setWithdrawUsdtAddressInput(e.target.value)}
-                    placeholder="TKh8zXpQ7yM3vN1L9R2W4b6K8a0C..."
-                    className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-white font-mono outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                {/* LIVE DYNAMIC FEE BREAKDOWN CARD */}
-                {(() => {
-                  const coinsNum = parseInt(withdrawCoinsAmount, 10) || 0;
-                  const grossUsdtNum = coinsNum / 50;
-                  const netUsdtNum = Math.max(0, grossUsdtNum - adminNetworkFee).toFixed(2);
-                  return (
-                    <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-2 text-[11px]">
-                      <div className="flex justify-between text-slate-300">
-                        <span>{loc('مبلغ درخواستی (Gross USDT):', 'Amount requested (Gross USDT):')}</span>
-                        <span className="font-mono font-bold text-white">${grossUsdtNum.toFixed(2)} USDT</span>
-                      </div>
-                      <div className="flex justify-between text-amber-300 border-t border-slate-800/80 pt-1.5">
-                        <span>{loc('کارمزد شبکه (TRC20 Gas Fee):', 'Network fee (TRC20 Gas Fee):')}</span>
-                        <span className="font-mono font-bold text-amber-400">-${adminNetworkFee.toFixed(2)} USDT</span>
-                      </div>
-                      <div className="flex justify-between text-emerald-300 border-t border-slate-800/80 pt-1.5 font-bold">
-                        <span>{loc('صافی واریزی به کیف پول (Net Payout):', 'Net Payout:')}</span>
-                        <span className="font-mono text-sm text-emerald-400">${netUsdtNum} USDT</span>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* BLOCKCHAIN NETWORK NOTICE */}
-                <div className="p-3 bg-emerald-950/30 rounded-2xl border border-emerald-500/30 text-[10px] text-emerald-300 space-y-1">
-                  <p className="font-bold flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                    {loc('اطلاعیه زمان‌بندی تسویه شبکه:', 'Network settlement schedule notice:')}
-                  </p>
-                  <p className="text-slate-300">
-                    * Withdrawal completion time depends on blockchain network conditions.
-                  </p>
-                  <p className="text-slate-400">
-                    {loc('(زمان نهایی شدن تسویه حساب بسته به ترافیک شبکه بلاک‌چین ترون متغیر می‌باشد)', '(The finalization time of the account settlement varies depending on the Tron blockchain network traffic)')}
-                  </p>
-                </div>
-
-                <button 
-                  onClick={handleSubmitWithdrawal}
-                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-1.5"
-                >
-                  <ArrowUpRight className="w-4 h-4" />
-                  {loc('ارسال درخواست برداشت درآمد', 'Send income withdrawal request')}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 4: DEPOSIT USDT */}
-      {isDepositModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md card-3d p-6 border border-pink-500/50 bg-slate-900 rounded-3xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Plus className="w-4 h-4 text-pink-400" />
-                Deposit Tether USDT (TRC20)
-              </h2>
-              <button onClick={() => setIsDepositModalOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center font-mono text-xs text-slate-300">
-                Official Wallet: TKh8zXpQ7yM3vN1L9R2W4b6K8a0C
-              </div>
-
-              <input 
-                type="text" 
-                value={depositTxId}
-                onChange={e => setDepositTxId(e.target.value)}
-                placeholder="Enter TRON TXID reference hash..."
-                className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white"
-              />
-
-              <button 
-                onClick={handleConfirmDeposit}
-                className="w-full py-3 rounded-2xl btn-neon-pink text-xs font-bold"
-              >
-                Confirm USDT Deposit
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       
       {/* ==================== ACTIVE CALL OVERLAY & PIP FLOATING CARD ==================== */}
       <ActiveCallOverlay
@@ -6238,8 +6001,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   <span className="text-[10px] font-bold text-amber-400 block">{loc('👑 حامیان برتر (Top Supporters):', '👑 Top Supporters:')}</span>
                   <div className="space-y-1">
                     {[
-                      { name: 'Arash_VIP', coins: '12,500 🪙', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80' },
-                      { name: 'Sahar_Royal', coins: '8,200 🪙', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80' }
+                      { name: 'Arash_VIP', coins: '12,500 🪙', avatar: '' },
+                      { name: 'Sahar_Royal', coins: '8,200 🪙', avatar: '' }
                     ].map((sup, idx) => (
                       <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-amber-500/20">
                         <div className="flex items-center gap-2">
@@ -6403,7 +6166,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   <span className="text-[10px] font-black text-red-300">{streamLikes}</span>
                 </button>
 
-                <button onClick={() => setIsGiftCatalogOpen(true)} className="p-2.5 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30">
+                <button onClick={() => { setActiveTab('wallet'); setWalletSubTab('giftshop'); }} className="p-2.5 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30">
                   <Gift className="w-5 h-5 text-amber-400 animate-bounce" />
                 </button>
               </div>
@@ -6886,7 +6649,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               </button>
 
               <button 
-                onClick={() => setIsGiftCatalogOpen(true)}
+                onClick={() => { setActiveTab('wallet'); setWalletSubTab('giftshop'); }}
                 className="flex-1 py-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center justify-center gap-2"
               >
                 <Gift className="w-4 h-4" />
@@ -7250,7 +7013,6 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         setNewAdminGiftCoins={setNewAdminGiftCoins}
         verificationsList={verificationsList}
         setVerificationsList={setVerificationsList}
-        currentUsername={currentUsername}
         setIsVerified={setIsVerified}
 
       />
@@ -7519,13 +7281,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                           const realPartners = (Array.isArray(usersList) && usersList.length > 0)
                             ? usersList.filter(u => u && u.username !== currentUsername && u.user_type !== 'TEST_USER' && u.user_type !== 'DEMO_USER' && (u.status === 'approved' || u.isApproved !== false))
                             : [
-                                { name: 'Sara Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80', city: 'Tehran', isVerified: true },
-                                { name: 'Elnaz Karimi', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80', city: 'Shiraz', isVerified: true },
-                                { name: 'Sahar Miller', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', city: 'Tehran', isVerified: true }
+                                { name: 'Sara Maleki', avatar: '', city: 'Tehran', isVerified: true },
+                                { name: 'Elnaz Karimi', avatar: '', city: 'Shiraz', isVerified: true },
+                                { name: 'Sahar Miller', avatar: '', city: 'Tehran', isVerified: true }
                               ];
                           const randomPartner = realPartners.length > 0
                             ? realPartners[Math.floor(Math.random() * realPartners.length)]
-                            : { name: 'Sara Maleki', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80', city: 'Tehran', isVerified: true };
+                            : { name: 'Sara Maleki', avatar: '', city: 'Tehran', isVerified: true };
                           setMatchedMatchUser(randomPartner);
                           setMatchState('connected');
                           setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));
@@ -7606,7 +7368,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
             {/* Dual Avatars Merging */}
             <div className="flex items-center justify-center gap-3 relative z-10 py-2">
-              <img src={userAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80"} alt="Me" className="w-20 h-20 rounded-full object-cover border-4 border-pink-500 shadow-xl" />
+              <img src={userAvatar || ''} alt="Me" className="w-20 h-20 rounded-full object-cover border-4 border-pink-500 shadow-xl" />
               <div className="w-10 h-10 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 flex items-center justify-center shadow-lg text-white text-lg animate-pulse z-20 -mx-4">
                 ❤️
               </div>

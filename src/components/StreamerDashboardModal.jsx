@@ -59,9 +59,9 @@ export default function StreamerDashboardModal({
 
   // Top Supporters State
   const [topSupporters, setTopSupporters] = useState([
-    { rank: 1, name: 'Sahar_Vip', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80', amount: '45,000 Coins', badge: '🥇 Top Supporter' },
-    { rank: 2, name: 'Ali_K', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80', amount: '28,500 Coins', badge: '🥈 Silver Supporter' },
-    { rank: 3, name: 'Elnaz_M', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80', amount: '18,200 Coins', badge: '🥉 Bronze Supporter' }
+    { rank: 1, name: 'Sahar_Vip', avatar: '', amount: '45,000 Coins', badge: '🥇 Top Supporter' },
+    { rank: 2, name: 'Ali_K', avatar: '', amount: '28,500 Coins', badge: '🥈 Silver Supporter' },
+    { rank: 3, name: 'Elnaz_M', avatar: '', amount: '18,200 Coins', badge: '🥉 Bronze Supporter' }
   ]);
 
   // Payout Form States
@@ -253,7 +253,7 @@ export default function StreamerDashboardModal({
                     <div className="flex items-center gap-3.5">
                       <div className="relative">
                         <img
-                          src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'}
+                          src={currentUser?.avatar || ''}
                           alt={currentUsername}
                           className="w-14 h-14 rounded-2xl object-cover border-2 border-pink-500 shadow-md"
                         />

@@ -2075,8 +2075,6 @@ export default function WalletTab(props) {
 
                     
 
-                                  </div>
-                )}
                 {/* 3. DURATION & PAYMENT OPTIONS */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   
@@ -2504,3 +2502,4 @@ export default function WalletTab(props) {
     </>
   );
 }
+</>);}

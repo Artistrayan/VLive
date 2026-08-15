@@ -103,7 +103,7 @@ export const apiAuth = {
     }
     
     const name = tgUser.first_name || 'Telegram User';
-    const avatar = tgUser.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';
+    const avatar = tgUser.photo_url || '';
 
     console.log("loginWithTelegram: signing up user", email);
 
@@ -261,6 +261,20 @@ export const apiProfile = {
     const { data, error } = await supabase.from('profiles').update(safeUpdates).eq('id', uid).select();
     return { success: !error, data, error: error?.message };
   }
+, async submitKyc(data) {
+    const uid = getUserId();
+    if (!uid) return { success: false };
+    const { error } = await supabase.from('kyc_applications').insert([{
+      user_id: uid,
+      username: data.username,
+      national_id: data.nationalId,
+      description: data.description,
+      status: 'Pending',
+      video_demo_url: data.videoUrl || '',
+      doc_url: data.docUrl || ''
+    }]);
+    return { success: !error };
+  },
 };
 
 export const apiHome = {
@@ -269,8 +283,14 @@ export const apiHome = {
     return error ? [] : data;
   },
   async getActiveStreams() {
-    const { data, error } = await supabase.from('streams').select('*').eq('status', 'active');
-    return error ? [] : data;
+    const { data, error } = await supabase.from('streams').select('*, profiles(name, username, avatar)').eq('status', 'active');
+    if (error) return [];
+    return data.map(s => ({
+      ...s,
+      name: s.profiles?.name || s.profiles?.username || 'Streamer',
+      username: s.profiles?.username || 'streamer',
+      avatar: s.profiles?.avatar || ''
+    }));
   }
 };
 
@@ -644,9 +664,119 @@ export const apiLive = {
 export const apiWallet = {
   async getBalance() {
     const uid = getUserId();
-    if (!uid) return { coins: 0 };
-    const { data, error } = await supabase.from('wallets').select('coins').eq('user_id', uid).single();
-    return error ? { coins: 0 } : data;
+    if (!uid) return { coins: 0, usdt_balance: 0 };
+    const { data, error } = await supabase.from('wallets').select('coins, usdt_balance').eq('user_id', uid).single();
+    return error ? { coins: 0, usdt_balance: 0 } : data;
+  },
+  
+  async getTransactions() {
+    const uid = getUserId();
+    if (!uid) return [];
+    const { data, error } = await supabase.from('transactions').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(100);
+    if (error || !data) return [];
+    
+    return data.map(tx => {
+      let icon = '🔄';
+      let color = 'text-slate-400';
+      let amountStr = '';
+      if (tx.tx_type === 'buy_coins') { icon = '🪙'; color = 'text-amber-400'; amountStr = `+${tx.amount_coins} Coins`; }
+      else if (tx.tx_type === 'send_gift') { icon = '🎁'; color = 'text-rose-400'; amountStr = `${tx.amount_coins} Coins`; }
+      else if (tx.tx_type === 'receive_gift') { icon = '🎁'; color = 'text-emerald-400'; amountStr = `+${tx.amount_coins} Coins`; }
+      
+      const timeStr = new Date(tx.created_at).toLocaleString();
+      return {
+        id: tx.id.slice(0,8).toUpperCase(),
+        type: tx.tx_type,
+        description: tx.description,
+        amount: amountStr,
+        category: 'All', // We could refine this
+        time: timeStr,
+        status: 'Completed',
+        icon,
+        color
+      };
+    });
+  },
+
+  async addCoins(coinsToAdd, priceUsdt, description) {
+    const uid = getUserId();
+    if (!uid) return { success: false, error: 'Unauthorized' };
+    
+    // 1. Get current balance
+    const current = await this.getBalance();
+    const newCoins = (current.coins || 0) + coinsToAdd;
+
+    // 2. Update wallet
+    const { error: walletError } = await supabase.from('wallets').update({ coins: newCoins }).eq('user_id', uid);
+    if (walletError) return { success: false, error: walletError.message };
+
+    // 3. Record transaction
+    await supabase.from('transactions').insert([{
+      user_id: uid,
+      tx_type: 'buy_coins',
+      amount_coins: coinsToAdd,
+      amount_usdt: priceUsdt,
+      description: description || `Bought ${coinsToAdd} coins`
+    }]);
+
+    return { success: true, newCoins };
+  },
+
+  async buyService(name, costCoins) {
+    const uid = getUserId();
+    if (!uid) return { success: false, error: 'Unauthorized' };
+    const current = await this.getBalance();
+    if (current.coins < costCoins) return { success: false, error: 'Insufficient coins' };
+    
+    const newCoins = current.coins - costCoins;
+    const { error: walletError } = await supabase.from('wallets').update({ coins: newCoins }).eq('user_id', uid);
+    if (walletError) return { success: false, error: walletError.message };
+    
+    await supabase.from('transactions').insert([{
+      user_id: uid,
+      tx_type: 'buy_service',
+      amount_coins: -costCoins,
+      description: `Purchased service: ${name}`
+    }]);
+    return { success: true, newCoins };
+  }
+, async sendGift(giftCoins, giftName, recipientId) {
+    const uid = getUserId();
+    if (!uid) return { success: false, error: 'Unauthorized' };
+    
+    const current = await this.getBalance();
+    if (current.coins < giftCoins) return { success: false, error: 'Insufficient coins' };
+
+    const newCoins = current.coins - giftCoins;
+
+    // Deduct from sender
+    const { error: walletError } = await supabase.from('wallets').update({ coins: newCoins }).eq('user_id', uid);
+    if (walletError) return { success: false, error: walletError.message };
+
+    // Record sender transaction
+    await supabase.from('transactions').insert([{
+      user_id: uid,
+      tx_type: 'send_gift',
+      amount_coins: -giftCoins,
+      description: `Sent gift: ${giftName}`
+    }]);
+
+    // If recipient is a real user, add to their balance (mocking the creator cut)
+    if (recipientId) {
+       const netCoins = Math.floor(giftCoins * 0.71); // 29% platform commission
+       const { data: recWallet } = await supabase.from('wallets').select('coins').eq('user_id', recipientId).single();
+       if (recWallet) {
+           await supabase.from('wallets').update({ coins: (recWallet.coins || 0) + netCoins }).eq('user_id', recipientId);
+           await supabase.from('transactions').insert([{
+             user_id: recipientId,
+             tx_type: 'receive_gift',
+             amount_coins: netCoins,
+             description: `Received gift: ${giftName} (Net after commission)`
+           }]);
+       }
+    }
+
+    return { success: true, newCoins };
   }
 };
 
@@ -684,6 +814,18 @@ async function verifyAdminServerRole() {
 }
 
 export const apiAdmin = {
+  async getKycApplications() {
+    const { data } = await supabase.from('kyc_applications').select('*').order('created_at', { ascending: false });
+    return data || [];
+  },
+  async updateKycStatus(id, status, userId) {
+    const { error } = await supabase.from('kyc_applications').update({ status }).eq('id', id);
+    if (!error && status === 'Approved' && userId) {
+      // Elevate role to streamer
+      await supabase.from('profiles').update({ role: 'streamer' }).eq('id', userId);
+    }
+    return { success: !error };
+  },
   async getAllUsers() {
     if (!(await verifyAdminServerRole())) return [];
     const { data, error } = await supabase.from('profiles').select('*');
@@ -870,5 +1012,63 @@ export const apiStreamer = {
     } catch (e) {
       return { success: false, error: e.message };
     }
+  }
+};
+
+export const apiSupport = {
+  async createTicket(subject, message) {
+    const uid = getUserId();
+    if (!uid) return { success: false };
+    const { error } = await supabase.from('support_tickets').insert([{ user_id: uid, subject, message }]);
+    return { success: !error, error: error?.message };
+  }
+};
+export const apiSocial = {
+  async getPosts() {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*, profiles(username, avatar)')
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    return data.map(p => ({
+      id: p.id,
+      userId: p.user_id,
+      username: p.profiles?.username || 'Unknown',
+      userAvatar: p.profiles?.avatar || '',
+      caption: p.caption,
+      videoUrl: p.media_url,
+      imageUrl: p.media_url,
+      likes: p.likes_count,
+      comments: p.comments_count,
+      time: new Date(p.created_at).toLocaleDateString()
+    }));
+  },
+  async createPost(mediaUrl, caption) {
+    const uid = getUserId();
+    if (!uid) return { success: false };
+    const { data, error } = await supabase.from('posts').insert([{ user_id: uid, media_url: mediaUrl, caption }]).select();
+    return { success: !error, data: data?.[0] };
+  },
+  async getStories() {
+    const { data, error } = await supabase
+      .from('stories')
+      .select('*, profiles(username, avatar)')
+      .gt('expires_at', new Date().toISOString());
+    if (error) return [];
+    return data.map(s => ({
+      id: s.id,
+      username: s.profiles?.username || 'Unknown',
+      userAvatar: s.profiles?.avatar || '',
+      imageUrl: s.media_url,
+      videoUrl: s.media_url,
+      hasRing: true
+    }));
+  },
+  async createStory(mediaUrl) {
+    const uid = getUserId();
+    if (!uid) return { success: false };
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabase.from('stories').insert([{ user_id: uid, media_url: mediaUrl, expires_at: expiresAt }]).select();
+    return { success: !error, data: data?.[0] };
   }
 };

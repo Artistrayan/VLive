@@ -67,7 +67,7 @@ export default function InterestsModal({ isOpen, onClose, userId, showToast }) {
       }
     } else {
       // Local testing fallback
-      localStorage.setItem('vlive_profile_interests_mock', JSON.stringify(selectedIds));
+      // MOCK removed
       showToast && showToast('علاقه‌مندی‌ها با موفقیت ذخیره شد (Local)', 'Interests saved (Local)');
       onClose(selectedIds);
     }

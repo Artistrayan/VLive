@@ -50,23 +50,18 @@ export default function UserProfileViewModal({
 
   const userName = user.name || user.fullName || user.hostName || 'User';
   const username = user.username || user.host || user.id || 'user_vlive';
-  const avatar = user.avatar || user.thumbnail || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
-  const cover = user.cover || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80';
-  const age = user.age || 23;
-  const city = user.city || user.location || 'Tehran, Iran';
-  const bio = user.bio || user.description || 'V.Live active host & streamer. Enjoy live video streams and private chats!';
+  const avatar = user.avatar || user.thumbnail || '';
+  const cover = user.cover || '';
+  const age = user.age || '';
+  const city = user.city || user.location || '';
+  const bio = user.bio || user.description || '';
   const isOnline = user.online !== false;
   const isVip = user.isVip || user.is_vip || user.vip || false;
-  const matchScore = user.matchScore || 95;
-  const distance = user.distance || '2.4 km away';
+  const matchScore = user.matchScore || '';
+  const distance = user.distance || '';
 
   // Sample User Media
-  const publicPhotos = user.photos || [
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80'
-  ];
+  const publicPhotos = user.photos || [];
 
   const toggleFollow = () => {
     const nextState = !isFollowing;

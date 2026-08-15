@@ -66,7 +66,7 @@ export default function ProfileTab(props) {
 
   // --- PERSISTENT PROFILE EDIT STATES ---
   const [coverPhoto, setCoverPhoto] = useState(() => {
-    return safeStorage.getItem('vlive_profile_cover') || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80';
+    return safeStorage.getItem('vlive_profile_cover') || '';
   });
   const [userCity, setUserCity] = useState(() => {
     return safeStorage.getItem('vlive_profile_city') || authCity || 'Tehran, Iran';
@@ -204,7 +204,7 @@ export default function ProfileTab(props) {
       avatar: userAvatar || PRESET_AVATARS[0],
       time: '2 hours ago',
       content: window.loc('🎬 لایواستریم اختصاصی امشب ساعت ۲۲:۰۰ شروع میشه! منتظر همگی در بخش لایو هستیم 💖✨', '🎬 Exclusive livestream starts tonight at 22:00! We are waiting for everyone in the live section 💖✨'),
-      image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80',
+      image: '',
       likes: 0,
       comments: 0,
       shares: 0,
@@ -413,10 +413,10 @@ export default function ProfileTab(props) {
 
                   {/* Story Circles */}
                   {[
-                    { title: 'Daily Vlog', img: PRESET_AVATARS[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80' },
-                    { title: 'Stream Moments', img: PRESET_AVATARS[1] || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80' },
-                    { title: 'VIP Exclusive', img: PRESET_AVATARS[2] || 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80' },
-                    { title: 'Travel ✈️', img: PRESET_AVATARS[3] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80' },
+                    { title: 'Daily Vlog', img: PRESET_AVATARS[0] || '' },
+                    { title: 'Stream Moments', img: PRESET_AVATARS[1] || '' },
+                    { title: 'VIP Exclusive', img: PRESET_AVATARS[2] || '' },
+                    { title: 'Travel ✈️', img: PRESET_AVATARS[3] || '' },
                   ].map((story, i) => (
                     <div key={i} className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group">
                       <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-md">
@@ -601,16 +601,16 @@ export default function ProfileTab(props) {
               {/* Followers List Grid */}
               <div className="space-y-2.5">
                 {(usersList.length > 0 ? usersList.slice(0, 8) : [
-                  { id: 'f1', username: 'Sara_VLive', name: 'Sara Ahmadi', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', isOnline: true, isVIP: true, level: 32 },
-                  { id: 'f2', username: 'Alireza_Stream', name: 'Alireza Rezaei', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', isOnline: true, isVIP: false, level: 18 },
-                  { id: 'f3', username: 'Elena_Live', name: 'Elena Rostami', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', isOnline: false, isVIP: true, level: 45 },
-                  { id: 'f4', username: 'Kian_Host', name: 'Kian VVIP', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150', isOnline: true, isVIP: true, level: 50 },
-                  { id: 'f5', username: 'Nika_Stars', name: 'Nika Sharifi', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', isOnline: false, isVIP: false, level: 12 }
+                  { id: 'f1', username: 'Sara_VLive', name: 'Sara Ahmadi', avatar: '', isOnline: true, isVIP: true, level: 32 },
+                  { id: 'f2', username: 'Alireza_Stream', name: 'Alireza Rezaei', avatar: '', isOnline: true, isVIP: false, level: 18 },
+                  { id: 'f3', username: 'Elena_Live', name: 'Elena Rostami', avatar: '', isOnline: false, isVIP: true, level: 45 },
+                  { id: 'f4', username: 'Kian_Host', name: 'Kian VVIP', avatar: '', isOnline: true, isVIP: true, level: 50 },
+                  { id: 'f5', username: 'Nika_Stars', name: 'Nika Sharifi', avatar: '', isOnline: false, isVIP: false, level: 12 }
                 ]).map(u => (
                   <div key={u.id || u.username} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 transition flex items-center justify-between gap-3 shadow-sm">
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        <img src={u.avatar || u.userAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                        <img src={u.avatar || u.userAvatar || ''} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
                         {u.isOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-950 animate-pulse" />}
                       </div>
                       <div>
@@ -657,10 +657,10 @@ export default function ProfileTab(props) {
               {/* Following List Grid */}
               <div className="space-y-2.5">
                 {[
-                  { id: 'fg1', username: 'Rayan_Super_Admin', name: 'Rayan Admin', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', isLive: true, role: 'Super Admin', level: 99 },
-                  { id: 'fg2', username: 'Mina_Music', name: 'Mina Music Host', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', isLive: true, role: 'Top Streamer', level: 42 },
-                  { id: 'fg3', username: 'Darius_Game', name: 'Darius Gamer', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', isLive: false, role: 'PRO Gamer', level: 28 },
-                  { id: 'fg4', username: 'Zeinab_Art', name: 'Zeinab Digital Art', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', isLive: false, role: 'Creator', level: 35 }
+                  { id: 'fg1', username: 'Rayan_Super_Admin', name: 'Rayan Admin', avatar: '', isLive: true, role: 'Super Admin', level: 99 },
+                  { id: 'fg2', username: 'Mina_Music', name: 'Mina Music Host', avatar: '', isLive: true, role: 'Top Streamer', level: 42 },
+                  { id: 'fg3', username: 'Darius_Game', name: 'Darius Gamer', avatar: '', isLive: false, role: 'PRO Gamer', level: 28 },
+                  { id: 'fg4', username: 'Zeinab_Art', name: 'Zeinab Digital Art', avatar: '', isLive: false, role: 'Creator', level: 35 }
                 ].map(u => (
                   <div key={u.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between gap-3 shadow-sm">
                     <div className="flex items-center gap-3">
@@ -1026,117 +1026,6 @@ export default function ProfileTab(props) {
           </div>
         )}
 
-        {/* TAB 8: WALLET */}
-        {activeProfileTab === 'wallet' && (
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5 animate-fadeIn">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div>
-                <h3 className="font-black text-white text-lg">Wallet & Balance</h3>
-                <p className="text-xs text-slate-400">Manage your V.Live Stars & USDT Earnings</p>
-              </div>
-              <div className="text-right">
-                <span className="text-2xl font-black text-amber-400 block">{userCoins.toLocaleString()}</span>
-                <span className="text-[10px] text-slate-400">Available Stars</span>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setWalletSubTab('buy')}
-                className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-xs shadow-lg flex items-center justify-center gap-2"
-              >
-                <CoinsIcon className="w-4 h-4 text-amber-300" />
-                <span>Buy Stars</span>
-              </button>
-              <button
-                onClick={() => setWalletSubTab('withdraw')}
-                className="flex-1 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center gap-2"
-              >
-                <DollarSign className="w-4 h-4 text-emerald-400" />
-                <span>Withdraw USDT</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 9: SETTINGS & PRIVACY */}
-        {activeProfileTab === 'settings' && (
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5 animate-fadeIn">
-            <h3 className="font-bold text-white text-sm pb-2 border-b border-slate-800">Account Preferences & Privacy</h3>
-            
-            {/* Privacy Controls */}
-            <div className="space-y-3 text-xs">
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                <span>{window.loc('نمایش وضعیت آنلاین در پروفایل', 'Show Online Status')}</span>
-                <input
-                  type="checkbox"
-                  checked={showOnlineStatus}
-                  onChange={(e) => {
-                    setShowOnlineStatus(e.target.checked);
-                    safeStorage.setItem('vlive_priv_online', e.target.checked ? 'true' : 'false');
-                  }}
-                  className="w-4 h-4 text-pink-500 rounded"
-                />
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                <span>{window.loc('نمایش شهر و موقعیت جغرافیایی', 'Show Location on Profile')}</span>
-                <input
-                  type="checkbox"
-                  checked={showLocation}
-                  onChange={(e) => {
-                    setShowLocation(e.target.checked);
-                    safeStorage.setItem('vlive_priv_loc', e.target.checked ? 'true' : 'false');
-                  }}
-                  className="w-4 h-4 text-pink-500 rounded"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <button
-                onClick={() => props.setIsSupportModalOpen && props.setIsSupportModalOpen(true)}
-                className="w-full p-4 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 transition"
-              >
-                <div className="flex items-center gap-3">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>{window.loc('قوانین و حریم خصوصی', 'Rules & Privacy')}</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-500" />
-              </button>
-
-              <button
-                onClick={() => setIsQrCodeModalOpen(true)}
-                className="w-full p-4 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs text-slate-200 transition"
-              >
-                <div className="flex items-center gap-3">
-                  <QrCode className="w-4 h-4 text-cyan-400" />
-                  <span>My QR Code</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-500" />
-              </button>
-
-              <button
-                onClick={() => {
-                  if (props.handleLogout) {
-                    props.handleLogout();
-                  } else {
-                    setIsLoggedIn(false);
-                    setAuthStep('splash');
-                    showToast('👋 You have been logged out.');
-                  }
-                }}
-                className="w-full p-4 rounded-2xl bg-rose-950/40 hover:bg-rose-900/40 border border-rose-500/30 flex items-center justify-between text-xs text-rose-300 transition mt-4"
-              >
-                <div className="flex items-center gap-3">
-                  <LogOut className="w-4 h-4 text-rose-400" />
-                  <span className="font-bold">Log Out Account</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-rose-500" />
-              </button>
-            </div>
-          </div>
-        )}
 
       </div>
 
@@ -1268,7 +1157,7 @@ export default function ProfileTab(props) {
               <Edit3 className="w-5 h-5 text-slate-300" />
               <span className="text-[10px] text-slate-400 font-bold">{window.loc('ویرایش', 'Edit')}</span>
             </button>
-            <button onClick={() => { setActiveProfileTab('wallet'); setWalletSubTab && setWalletSubTab('buy'); }} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+            <button onClick={() => { if(props.setActiveTab) props.setActiveTab('wallet'); if(props.setWalletSubTab) props.setWalletSubTab('buy'); }} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
               <Wallet className="w-5 h-5 text-amber-400" />
               <span className="text-[10px] text-slate-400 font-bold">{window.loc('کیف پول', 'Wallet')}</span>
             </button>
@@ -1302,7 +1191,7 @@ export default function ProfileTab(props) {
               <Users className="w-5 h-5 text-blue-400" />
               <span className="text-[10px] text-slate-400 font-bold">{window.loc('فالووینگ', 'Following')}</span>
             </button>
-            <button onClick={() => setActiveProfileTab('settings')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+            <button onClick={() => { if(props.setIsSettingsModalOpen) props.setIsSettingsModalOpen(true); }} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
               <Settings className="w-5 h-5 text-slate-400" />
               <span className="text-[10px] text-slate-400 font-bold">{window.loc('تنظیمات', 'Settings')}</span>
             </button>
@@ -1410,11 +1299,11 @@ export default function ProfileTab(props) {
                     <span className="text-[10px] text-slate-400 font-bold block mb-1.5">{window.loc('یا انتخاب از آواتارهای آماده:', 'Or choosing from ready-made avatars:')}</span>
                     <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                       {(PRESET_AVATARS.length > 0 ? PRESET_AVATARS : [
-                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-                        'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
-                        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-                        'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80',
-                        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80'
+                        '',
+                        '',
+                        '',
+                        '',
+                        ''
                       ]).map((presetUrl, pIdx) => (
                         <button
                           key={pIdx}
@@ -1593,7 +1482,7 @@ export default function ProfileTab(props) {
             setUserInterests(stored);
             safeStorage.setItem("vlive_profile_interests", stored);
           } else {
-            const stored = localStorage.getItem("vlive_profile_interests_mock");
+            // MOCK removed, fetching from DB (handled upstream or later)
             if (stored) {
               setUserInterests(stored);
               safeStorage.setItem("vlive_profile_interests", stored);

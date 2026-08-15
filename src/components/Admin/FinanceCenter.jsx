@@ -477,7 +477,7 @@ export default function FinanceCenter({
               .map(u => (
                 <div key={u.id || u.username} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <img src={u.avatar || u.thumbnail || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    <img src={u.avatar || u.thumbnail || ''} alt="" className="w-10 h-10 rounded-full object-cover" />
                     <div>
                       <h4 className="font-bold text-white">{u.name || u.username}</h4>
                       <span className="text-[10px] text-slate-400 font-mono">@{u.username}</span>
