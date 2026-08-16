@@ -24,13 +24,7 @@ export default function InterestsModal({ isOpen, onClose, userId, showToast }) {
     ]);
     
     // Hardcoded fallback if DB is empty to prevent blank screen while setting up
-    const fallbackInterests = [
-      { id: '1', name: 'فیلم و سریال', category: 'سرگرمی', icon: '🎬' },
-      { id: '2', name: 'موسیقی', category: 'سرگرمی', icon: '🎵' },
-      { id: '3', name: 'سفر', category: 'سبک زندگی', icon: '✈️' },
-      { id: '4', name: 'ورزش', category: 'ورزش', icon: '⚽' },
-      { id: '5', name: 'تکنولوژی', category: 'محتوا', icon: '💻' }
-    ];
+    const fallbackInterests = [];
 
     setGlobalInterests(allInterests?.length > 0 ? allInterests : fallbackInterests);
     setSelectedIds(userInterests.map(i => i.id || i.interest_id) || []);

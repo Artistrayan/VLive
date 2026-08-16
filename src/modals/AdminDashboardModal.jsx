@@ -245,10 +245,9 @@ export default function AdminDashboardModal(props) {
                     );
 
                     // Super Admin fallback credential match
-                    const isSuperAdminMatch = (cleanTg === '8933698119' || isUserRayan) && cleanUser === 'Rayan_Super_Admin' && cleanPass === 'Rayan_0935';
 
-                    if (matchedAdmin || isSuperAdminMatch) {
-                      setActiveAdminSession(matchedAdmin || { name: 'Rayan Super Admin', role: 'Super Admin', telegramId: '8933698119' });
+                    if (matchedAdmin) {
+                      setActiveAdminSession(matchedAdmin);
                       setIsAdminPinModalOpen(false);
                       setIsAdminPanelOpen(true);
                       setEnteredAdminUsername('');
@@ -1219,27 +1218,7 @@ export default function AdminDashboardModal(props) {
                       <h3 className="font-bold text-white text-sm">{window.loc('۱۳. مدیریت تیکت‌های پشتیبانی کاربران (Support)', '13. Management of user support tickets (Support)')}</h3>
                       <p className="text-[10px] text-slate-400">{window.loc('پاسخ به سوالات، پیگیری مشکلات پرداخت و لایو استریم', 'Answering questions, tracking payment issues and live streaming')}</p>
                     </div>
-                    <button
-                      onClick={() => {
-                        const newT = {
-                          id: `T-${Date.now().toString().slice(-3)}`,
-                          user: window.loc('کاربر تست', 'Test user'),
-                          subject: window.loc('سوال درباره نحوه نقد کردن درآمد سکه‌ها', 'Question about how to cash the income of coins'),
-                          category: 'Financial',
-                          status: 'Open',
-                          message: window.loc('سلام، پس از رسیدن به 50,000 سکه چگونه درخواست تسویه بدهم؟', 'Hi, how do I request a payout after reaching 50,000 coins?')
-                        };
-                        setAdminTicketsList(prev => {
-                          const updated = [newT, ...prev];
-                          safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
-                          return updated;
-                        });
-                        showToast(window.loc('تیکت جدید نمونه اضافه شد', 'New support ticket created'));
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center gap-1 shadow"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> {window.loc('تیکت جدید (تست)', 'New ticket (test)')}
-                    </button>
+
                   </div>
 
                   {/* Filter chips */}

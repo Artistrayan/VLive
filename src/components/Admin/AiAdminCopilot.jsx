@@ -19,14 +19,7 @@ export default function AiAdminCopilot({
   const [searchQuery, setSearchQuery] = useState('');
   
   // AI Chat State
-  const [chatMessages, setChatMessages] = useState([
-    {
-      id: 1,
-      sender: 'ai',
-      text: window.loc('درود مدیر گرامی! من دستیار هوشمند و کوپایلوت ادمین V.Live هستم. آماده‌ام تا گزارش‌های مالی، امنیت پلتفرم، رفتار کاربران و آنالیز سرورها را به صورت لحظه‌ای بررسی کنم. چطور می‌توانم کمک کنم؟', 'Hello dear manager! I am the smart assistant and copilot of V.Live admin. I am ready to review financial reports, platform security, user behavior and server analysis on a real-time basis. How can I help?'),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
+  const [chatMessages, setChatMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
   const [isAiTyping, setIsAiTyping] = useState(false);
   const chatEndRef = useRef(null);

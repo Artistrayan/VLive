@@ -31,9 +31,9 @@ import { economyService } from './services/economyService';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   apiAuth, setStoredToken, setStoredSession, getStoredToken,
-  apiProfile, apiHome, apiDiscover, apiMessages, apiLive,
-  apiSocial, apiWallet, apiGiftShop, apiVip, apiCalls, apiNotifications,
-  apiCreatorStudio, apiReferral, apiAdmin
+  apiProfile, apiHome, apiMessages, apiLive,
+  apiSocial, apiWallet, apiNotifications,
+  apiAdmin, apiVip, apiCalls, apiStorage, apiStreamer, apiSupport
 } from './services/api';
 import { supabase } from './supabaseClient';
 import { compressImageFile, cacheManager, startKeepAlivePing, STREAM_QUALITY_PRESETS } from './services/performance';
@@ -163,7 +163,7 @@ export default function App() {
   const [authCity, setAuthCity] = useState('Tehran');
   const [authBirthDate, setAuthBirthDate] = useState('2002-05-15');
   const [authBio, setAuthBio] = useState('Official V.Live Streamer | Private video calls & interactive 4K streams');
-  const [authInterests, setAuthInterests] = useState(['🎥 4K Live', '👑 VIP Chat', '🔥 PK Battles', '🎵 Music & DJ']);
+  const [authInterests, setAuthInterests] = useState([]);
   const [authAge, setAuthAge] = useState('22');
   const [authCountry, setAuthCountry] = useState('ایران');
   const [captchaCode, setCaptchaCode] = useState(() => String(Math.floor(1000 + Math.random() * 9000)));
@@ -554,9 +554,8 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     if (Array.isArray(usersList) && usersList.length > 0) {
       const realApproved = usersList.filter(u => {
         if (!u) return false;
-        const isTest = u.user_type === 'TEST_USER' || u.user_type === 'DEMO_USER' || u.isTest === true || u.isDemo === true || u.isFake === true;
         const isSelf = u.username === currentUsername;
-        return !isTest && !isSelf && (u.status === 'approved' || u.isApproved !== false);
+        return !isSelf && (u.status === 'approved' || u.isApproved !== false);
       });
       if (realApproved.length > 0) {
         const mapped = realApproved.map((u, idx) => ({
@@ -564,7 +563,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
           name: u.name || u.username,
           username: u.username,
           age: u.age || 22,
-          city: u.city || 'Tehran',
+          city: u.city,
           avatar: u.avatar || '',
           isVerified: u.isVerified !== false,
           isVip: u.isVip !== false,
@@ -611,9 +610,9 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     setMatchState('searching');
     setTimeout(() => {
       const validTargets = (Array.isArray(usersList) && usersList.length > 0)
-        ? usersList.filter(u => u && u.username !== currentUsername && u.user_type !== 'TEST_USER' && u.user_type !== 'DEMO_USER')
+        ? usersList.filter(u => u && u.username !== currentUsername)
         : [
-            { id: 101, name: loc('سارا ملکی', 'Sarah Maleki'), avatar: '', city: loc('تهران', 'Tehran'), isVerified: true, isStreamer: true },
+            { id: 101, name: loc('سارا ملکی', 'Sarah Maleki'), avatar: '', city: '', isVerified: true, isStreamer: true },
             { id: 102, name: loc('الناز کریمی', 'Elnaz Karimi'), avatar: '', city: loc('شیراز', 'Shiraz'), isVerified: true, isStreamer: false },
             { id: 103, name: loc('سحر محمودی', 'Sahar Mahmoudi'), avatar: '', city: loc('مشهد', 'Mashhad'), isVerified: true, isStreamer: true }
           ];
@@ -761,17 +760,17 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     setIsAddPostModalOpen(false);
   };
 
-  const handleDeletePhotoPost = (id) => {
-    const updated = userPhotosList.filter(p => p.id !== id);
-    setUserPhotosList(updated);
-      // MOCK removed. We would upload and call apiSocial.createPost() here.
+  const handleDeletePhotoPost = async (id) => {
+    await apiSocial.deletePost(id);
+    setUserPhotosList(prev => prev.filter(p => p.id !== id));
+    apiSocial.getPosts().then(p => setPosts(p || []));
     showToast(loc('عکس از پروفایل حذف شد', 'Photo deleted from profile'));
   };
 
-  const handleDeleteVideoPost = (id) => {
-    const updated = userVideosList.filter(v => v.id !== id);
-    setUserVideosList(updated);
-    safeStorage.setItem('vlive_user_videos_v1', JSON.stringify(updated));
+  const handleDeleteVideoPost = async (id) => {
+    await apiSocial.deletePost(id);
+    setUserVideosList(prev => prev.filter(v => v.id !== id));
+    apiSocial.getPosts().then(p => setPosts(p || []));
     showToast(loc('ویدیو از پروفایل حذف شد', 'Video deleted from profile'));
   };
 
@@ -1023,6 +1022,16 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
       securityEncrypted: true
     };
 
+    apiCalls.startCall({
+      receiverId: targetUser?.id || targetUser?.userId,
+      callType: type,
+      tariffRate: isPaid ? tariffRate : 0
+    }).then(res => {
+      if (res && res.session) {
+        newCall.sessionId = res.session.id;
+      }
+    }).catch(err => console.warn('startCall notice:', err));
+
     setActiveCall(newCall);
     setUserPresenceStatus('in_call');
 
@@ -1096,6 +1105,17 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
 
           if (prev.isPaid && nextSec % 60 === 0 && nextSec > 0) {
             if (userCoins >= prev.tariffPerMin) {
+              apiCalls.chargeMinute({
+                sessionId: prev.sessionId,
+                receiverId: prev.user?.id || prev.user?.userId,
+                tariffRate: prev.tariffPerMin
+              }).then(chargeRes => {
+                if (chargeRes && chargeRes.success) {
+                  setUserCoins(chargeRes.newCoins);
+                  apiWallet.getTransactions().then(txs => setTxHistoryList(txs || []));
+                }
+              }).catch(err => console.warn('chargeMinute notice:', err));
+
               setUserCoins(c => Math.max(0, c - prev.tariffPerMin));
               nextCoins += prev.tariffPerMin;
               setTotalEarnings(e => e + (prev.tariffPerMin * 0.8));
@@ -1466,7 +1486,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         ...r,
         isAnalyzing: false,
         aiClassification: res.classification || 'Spam',
-        aiRiskScore: res.riskScore || 50,
+        aiRiskScore: res.riskScore0,
         aiRiskLevel: res.riskLevel || 'Medium',
         aiReasoning: res.reasoning || loc('تحلیل امنیت توسط هوش مصنوعی تکمیل شد', 'Security analysis completed by artificial intelligence')
       } : r));
@@ -1592,19 +1612,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch (e) {}
     }
-    return DEFAULT_REAL_USERS.map(u => ({
-      id: u.id,
-      name: u.name,
-      username: u.username,
-      email: `${u.username.toLowerCase()}@vlive.com`,
-      coins: u.coins || 10000,
-      status: u.status === 'banned' ? 'Banned' : 'Active',
-      isVerified: u.isVerified || false,
-      role: u.role || 'User',
-      reportsCount: 0,
-      avatar: u.avatar,
-      registeredAt: u.registeredAt || '2026-01-01'
-    }));
+    return [];
   });
 
   // Live Streams Management State
@@ -1976,10 +1984,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [wifiVideoQuality, setWifiVideoQuality] = useState('4K Ultra HD');
 
   // 12. Blocked Users
-  const [blockedUsers, setBlockedUsers] = useState([
-    { id: 1, name: 'Spam Bot 99', username: 'spambot99' },
-    { id: 2, name: 'Anonymous User', username: 'anon_user' }
-  ]);
+  const [blockedUsers, setBlockedUsers] = useState([]);
 
   // 13. System Permissions
   const [systemPerms, setSystemPerms] = useState({
@@ -2000,7 +2005,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [homeSearchQuery, setHomeSearchQuery] = useState('');
   const [homeCityFilter, setHomeCityFilter] = useState('All');
   const [homeGenderFilter, setHomeGenderFilter] = useState('all');
-  const [followedUsers, setFollowedUsers] = useState([1, 2]);
+  const [followedUsers, setFollowedUsers] = useState([]);
 
   const [notificationsList, setNotificationsList] = useState([]);
   
@@ -2025,10 +2030,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   const [advancedStories, setAdvancedStories] = useState([]);
 
-  const [storyArchive, setStoryArchive] = useState([
-    { id: 'arc1', date: 'Yesterday', url: '', views: 350 },
-    { id: 'arc2', date: 'Last Week', url: '', views: 820 },
-  ]);
+  const [storyArchive, setStoryArchive] = useState([]);
 
   const [highlights, setHighlights] = useState([]);
 
@@ -2115,7 +2117,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [userMaxXP, setUserMaxXP] = useState(10000);
   
   // 30-Day Daily Login Rewards Calendar State
-  const [claimedCheckInDays, setClaimedCheckInDays] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+  const [claimedCheckInDays, setClaimedCheckInDays] = useState([]);
   const [todayCheckInDay] = useState(17);
 
   // Bonus Lucky Mission & Chests
@@ -2148,54 +2150,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [adCountdown, setAdCountdown] = useState(5);
 
   // 20+ Comprehensive Missions Data
-  const [allMissions, setAllMissions] = useState([
-    // DAILY (10 Tasks)
-    { id: 'm_d1', category: 'daily', title: loc('💬 ارسال ۵ پیام در گفتگوها', '💬 Send 5 messages in conversations'), difficulty: 'easy', progress: 4, total: 5, rewardType: 'coins', rewardVal: 50, xpVal: 30, completed: false, claimed: false, actionRoute: 'messages', desc: loc('5 پیام در بخش پیام‌ها ارسال کنید', '5 Send a message in the messages section') },
-    { id: 'm_d2', category: 'daily', title: loc('❤️ لایک کردن ۱۰ پروفایل استریمر', '❤️ Like 10 streamer profiles'), difficulty: 'easy', progress: 10, total: 10, rewardType: 'coins', rewardVal: 30, xpVal: 20, completed: true, claimed: false, actionRoute: 'streams', desc: loc('۱۰ پروفایل کاربر یا استریمر را لایک کنید', 'Like 10 user or streamer profiles') },
-    { id: 'm_d3', category: 'daily', title: loc('👥 دنبال کردن ۳ کاربر جدید', '👥 Follow 3 new users'), difficulty: 'easy', progress: 3, total: 3, rewardType: 'coins', rewardVal: 40, xpVal: 25, completed: true, claimed: true, actionRoute: 'streams', desc: loc('۳ استریمر جدید را فالو کنید', 'Follow 3 new streamers') },
-    { id: 'm_d4', category: 'daily', title: loc('📖 مشاهده ۵ استوری روزانه', '📖 View 5 daily stories'), difficulty: 'easy', progress: 5, total: 5, rewardType: 'coins', rewardVal: 30, xpVal: 20, completed: true, claimed: false, actionRoute: 'stories', desc: loc('۵ استوری روزانه کاربران را مشاهده کنید', 'View 5 daily user stories') },
-    { id: 'm_d5', category: 'daily', title: loc('🎥 تماشای ۱۵ دقیقه لایو استریم', '🎥 Watch 15 minutes of live stream'), difficulty: 'medium', progress: 12, total: 15, rewardType: 'coins', rewardVal: 100, xpVal: 50, completed: false, claimed: false, actionRoute: 'streams', desc: loc('به مدت ۱۵ دقیقه به لایوهای 4K بپیوندید', 'Join 4K Lives for 15 minutes') },
-    { id: 'm_d6', category: 'daily', title: loc('🎁 ارسال یک هدیه در لایو یا چت', '🎁 Send a gift in live or chat'), difficulty: 'medium', progress: 1, total: 1, rewardType: 'diamonds', rewardVal: 20, xpVal: 60, completed: true, claimed: false, actionRoute: 'giftshop', desc: loc('حداقل یک هدیه در لایو یا چت ارسال کنید', 'Send at least one gift in live or chat') },
-    { id: 'm_d7', category: 'daily', title: loc('🔍 بازدید از بخش Discover & Explore', '🔍 Visit the Discover & Explore section'), difficulty: 'easy', progress: 1, total: 1, rewardType: 'coins', rewardVal: 25, xpVal: 15, completed: true, claimed: true, actionRoute: 'discover', desc: loc('از بخش اکسپلور دیدن کنید', 'Visit the Explore section') },
-    { id: 'm_d8', category: 'daily', title: loc('✍️ تکمیل اطلاعات و آواتار پروفایل', '✍️ Complete information and profile avatar'), difficulty: 'easy', progress: 1, total: 1, rewardType: 'badge', rewardVal: '🏅 Profile Star', xpVal: 40, completed: true, claimed: false, actionRoute: 'profile', desc: loc('آواتار و بیوگرافی پروفایل خود را تکمیل کنید', 'Complete your profile avatar and bio') },
-    { id: 'm_d9', category: 'daily', title: loc('📞 برقراری یک تماس صوتی یا تصویری', '📞 Making a voice or video call'), difficulty: 'hard', progress: 1, total: 1, rewardType: 'coins', rewardVal: 150, xpVal: 80, completed: true, claimed: false, actionRoute: 'call', desc: loc('یک تماس صوتی یا تصویری برقرار نمایید', 'Make a voice or video call') },
-    { id: 'm_d10', category: 'daily', title: loc('📲 ورود روزانه موفق به حساب', '📲 Successful daily login to the account'), difficulty: 'easy', progress: 1, total: 1, rewardType: 'coins', rewardVal: 20, xpVal: 10, completed: true, claimed: true, actionRoute: 'home', desc: loc('ورود موفق به حساب کاربری V.Live', 'Successful login to V.Live account') },
+  const [allMissions, setAllMissions] = useState([]);
 
-    // WEEKLY (5 Tasks)
-    { id: 'm_w1', category: 'weekly', title: loc('📹 برگزاری ۳ لایو استریم مستقل', '📹 Holding 3 independent live streams'), difficulty: 'hard', progress: 2, total: 3, rewardType: 'coins', rewardVal: 500, xpVal: 200, completed: false, claimed: false, actionRoute: 'start_live', desc: loc('حداقل ۳ بار لایو استریم شروع کنید', 'Start live streaming at least 3 times') },
-    { id: 'm_w2', category: 'weekly', title: loc('🪙 دریافت ۵۰۰ سکه هدیه از بینندگان', '🪙 Receive 500 gift coins from viewers'), difficulty: 'hard', progress: 500, total: 500, rewardType: 'diamonds', rewardVal: 100, xpVal: 250, completed: true, claimed: false, actionRoute: 'wallet', desc: loc('از بینندگان لایو ۵۰۰ سکه هدیه دریافت کنید', 'Receive 500 coins as a gift from live viewers') },
-    { id: 'm_w3', category: 'weekly', title: loc('👥 دعوت ۲ دوست جدید با کد اختصاصی', '👥 Invite 2 new friends with a special code'), difficulty: 'medium', progress: 1, total: 2, rewardType: 'coins', rewardVal: 200, xpVal: 100, completed: false, claimed: false, actionRoute: 'invite', desc: loc('کد دعوت اختصاصی خود را به دوستان ارسال کنید', 'Send your exclusive invitation code to friends') },
-    { id: 'm_w4', category: 'weekly', title: loc('⏱️ تماشای ۵ ساعت لایو استریم', '⏱️ Watch 5 hours of live stream'), difficulty: 'medium', progress: 3.5, total: 5, rewardType: 'vip_trial', rewardVal: '👑 1-Day VIP Trial', xpVal: 150, completed: false, claimed: false, actionRoute: 'streams', desc: loc('در مجموع ۵ ساعت لایو مشاهده کنید', 'Watch a total of 5 hours of live') },
-    { id: 'm_w5', category: 'weekly', title: loc('🎯 تکمیل همه مأموریت‌های روزانه', '🎯 Complete all daily missions'), difficulty: 'hard', progress: 6, total: 7, rewardType: 'coupon', rewardVal: '🎟 30% VIP Coupon', xpVal: 300, completed: false, claimed: false, actionRoute: 'quests', desc: loc('تمام مأموریت‌های روزانه را کامل کنید', 'Complete all daily missions') },
-
-    // MONTHLY (5 Tasks)
-    { id: 'm_m1', category: 'monthly', title: loc('📅 ۳۰ روز حضور و ورود مستمر ماهانه', '📅 30 days of continuous monthly attendance and entry'), difficulty: 'hard', progress: 17, total: 30, rewardType: 'badge', rewardVal: '🏅 Legend 30-Day Badge', xpVal: 500, completed: false, claimed: false, actionRoute: 'home', desc: loc('۳۰ روز متوالی وارد برنامه شوید', 'Enter the program for 30 consecutive days') },
-    { id: 'm_m2', category: 'monthly', title: loc('🎥 برگزاری ۲۰ لایو استریم ماهانه', '🎥 Holding 20 monthly live streams'), difficulty: 'hard', progress: 12, total: 20, rewardType: 'coins', rewardVal: 2000, xpVal: 800, completed: false, claimed: false, actionRoute: 'start_live', desc: loc('۲۰ لایو استریم موفق در طول ماه برگزار کنید', 'Hold 20 successful live streams during the month') },
-    { id: 'm_m3', category: 'monthly', title: loc('💬 ارسال ۱,۰۰۰ پیام تعاملی در چت', '💬 Send 1,000 interactive messages in chat'), difficulty: 'medium', progress: 680, total: 1000, rewardType: 'coins', rewardVal: 800, xpVal: 400, completed: false, claimed: false, actionRoute: 'messages', desc: loc('۱,۰۰۰ پیام در گفتگوها ارسال نمایید', 'Send 1,000 messages in conversations') },
-    { id: 'm_m4', category: 'monthly', title: loc('🎁 ارسال ۵۰ هدیه به دوستان و استریمرها', '🎁 Sending 50 gifts to friends and streamers'), difficulty: 'medium', progress: 50, total: 50, rewardType: 'frame', rewardVal: '🎨 Golden Crown Profile Frame', xpVal: 450, completed: true, claimed: false, actionRoute: 'giftshop', desc: loc('۵۰ هدیه مختلف اهدا کنید', 'Give 50 different gifts') },
-    { id: 'm_m5', category: 'monthly', title: loc('🤝 اضافه کردن ۵ دوست جدید به لیست', '🤝 Add 5 new friends to the list'), difficulty: 'easy', progress: 5, total: 5, rewardType: 'diamonds', rewardVal: 150, xpVal: 200, completed: true, claimed: true, actionRoute: 'messages', desc: loc('۵ دوست جدید به لیست مخاطبین اضافه نمایید', 'Add 5 new friends to the contact list') },
-
-    // STREAMER TASKS
-    { id: 'm_s1', category: 'streamer', isStreamerExclusive: true, title: loc('🔴 شروع لایو و ۱۰ دقیقه استریم 4K', '🔴 Live start and 10 minutes of 4K streaming'), difficulty: 'medium', progress: 1, total: 1, rewardType: 'coins', rewardVal: 300, xpVal: 120, completed: true, claimed: false, actionRoute: 'start_live', desc: loc('لایو 4K شروع کرده و حداقل ۱۰ دقیقه بمانید', 'Start live 4K and stay for at least 10 minutes') },
-    { id: 'm_s2', category: 'streamer', isStreamerExclusive: true, title: loc('👑 دریافت هدیه Supercar یا Crown', '👑 Receive Supercar or Crown gift'), difficulty: 'hard', progress: 1, total: 1, rewardType: 'diamonds', rewardVal: 200, xpVal: 250, completed: true, claimed: false, actionRoute: 'start_live', desc: loc('یک هدیه سلطنتی در لایو دریافت نمایید', 'Receive a royal gift in live') },
-    { id: 'm_s3', category: 'streamer', isStreamerExclusive: true, title: loc('👥 رسیدن به ۵0 بیننده همزمان', '👥 reaching 50 simultaneous viewers'), difficulty: 'hard', progress: 35, total: 50, rewardType: 'coins', rewardVal: 500, xpVal: 300, completed: false, claimed: false, actionRoute: 'start_live', desc: loc('۵۰ بیننده آنلاین به لایو بپیوندند', '50 online viewers join the live') },
-
-    // VIP EXCLUSIVE TASKS
-    { id: 'm_v1', category: 'vip', isVipExclusive: true, title: loc('👑 تماس تصویری 4K اختصاصی با استریمر VIP', '👑 Exclusive 4K video call with VIP streamer'), difficulty: 'hard', progress: 1, total: 1, rewardType: 'frame', rewardVal: '🎨 Gold Crown VIP Frame', xpVal: 350, completed: true, claimed: false, actionRoute: 'call', desc: loc('با عضویت VIP یک تماس 4K ثبت کنید', 'Record a 4K call with VIP membership') },
-    { id: 'm_v2', category: 'vip', isVipExclusive: true, title: loc('💎 ارسال هدیه ویژه VIP Diamond', '💎 Send a special VIP Diamond gift'), difficulty: 'medium', progress: 1, total: 1, rewardType: 'coins', rewardVal: 500, xpVal: 200, completed: true, claimed: true, actionRoute: 'giftshop', desc: loc('هدیه اختصاصی VIP اهدا کنید', 'Give an exclusive VIP gift') },
-
-    // AD & REFERRAL TASKS
-    { id: 'm_ad', category: 'daily', title: loc('📺 تماشای ویدیو تبلیغاتی جایزه‌دار (Rewarded Ad)', '📺 Watch the rewarded advertising video (Rewarded Ad)'), difficulty: 'easy', progress: 0, total: 1, rewardType: 'coins', rewardVal: 20, xpVal: 10, completed: false, claimed: false, actionRoute: 'watch_ad', desc: loc('یک ویدیو کوتاه تماشا کنید و ۲۰ سکه بگیرید', 'Watch a short video and get 20 coins') },
-    { id: 'm_ref', category: 'daily', title: loc('📲 دعوت دوست با کد اختصاصی (Invite Friend)', '📲 invite a friend with a special code (Invite Friend)'), difficulty: 'medium', progress: 1, total: 1, rewardType: 'coins', rewardVal: 100, xpVal: 50, completed: true, claimed: false, actionRoute: 'invite', desc: loc('کد دعوت V.Live را برای دوستان بفرستید', 'Send V.Live invite code to friends') }
-  ]);
-
-  const [claimedMissionsHistory, setClaimedMissionsHistory] = useState([
-    { id: 'h_1', title: loc('📲 ورود روزانه به اپلیکیشن', '📲 Daily login to the application'), reward: '+20 Coins & +10 XP', date: loc('امروز ۰۹:۰۰', 'Today 09:00'), icon: '🪙' },
-    { id: 'h_2', title: loc('👥 دنبال کردن ۳ کاربر جدید', '👥 Follow 3 new users'), reward: '+40 Coins & +25 XP', date: loc('امروز ۱۰:۳۰', 'Today at 10:30'), icon: '🪙' },
-    { id: 'h_3', title: loc('🔍 بازدید از بخش Discover', '🔍 Visit the Discover section'), reward: '+25 Coins & +15 XP', date: loc('امروز ۱۱:۱۵', 'today 11:15'), icon: '🪙' },
-    { id: 'h_4', title: loc('🤝 اضافه کردن ۵ دوست جدید', '🤝 Add 5 new friends'), reward: '+150 Diamonds & +200 XP', date: loc('دیروز ۱۶:۴۰', 'Yesterday 16:40'), icon: '💎' },
-    { id: 'h_5', title: loc('💎 ارسال هدیه ویژه VIP Diamond', '💎 Send a special VIP Diamond gift'), reward: '+500 Coins & +200 XP', date: loc('۲ روز پیش', '2 days ago'), icon: '👑' }
-  ]);
+  const [claimedMissionsHistory, setClaimedMissionsHistory] = useState([]);
 
   // Handler for Claiming a Mission Reward
   const handleClaimMissionReward = (missionId) => {
@@ -2499,14 +2456,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   // Community & Polls State
   const [creatorBroadcastMsg, setCreatorBroadcastMsg] = useState('');
   const [creatorPollQuestion, setCreatorPollQuestion] = useState(loc('چه سبکی برای لایو فردا شب اجرا بشه؟', 'What style will be performed for live tomorrow night?'));
-  const [creatorPollOptions, setCreatorPollOptions] = useState(['🎵 DJ & EDM Remix', '🎮 PK Battle Clash', '💬 Chat & Live Q&A']);
+  const [creatorPollOptions, setCreatorPollOptions] = useState([]);
 
   // Schedule State
-  const [creatorScheduleList, setCreatorScheduleList] = useState([
-    { id: 1, day: loc('جمعه (Friday)', 'Friday'), time: loc('۲۱:۰۰', '21:00'), title: 'Music Live & DJ Night 🎵', category: 'Music', description: loc('اجرای زنده موسیقی الکترونیک با کیفیت 4K', 'Live performance of electronic music with 4K quality') },
-    { id: 2, day: loc('یکشنبه (Sunday)', 'Sunday'), time: loc('۲۰:۰۰', '20:00'), title: 'PK Battle Clash vs @Soren 🥊', category: 'Gaming', description: loc('مسابقه چالش نهایی هیجان‌انگیز', 'Exciting ultimate challenge race') },
-    { id: 3, day: loc('سه‌شنبه (Tuesday)', 'Tuesday'), time: loc('۲۲:۳۰', '22:30'), title: 'Late Night Q&A & Chill ☕', category: 'Talk', description: loc('گفتگوی صمیمانه و پاسخ به سوالات بینندگان', 'Sincere conversation and answers to viewers\' questions') }
-  ]);
+  const [creatorScheduleList, setCreatorScheduleList] = useState([]);
   const [creatorNewScheduleTitle, setCreatorNewScheduleTitle] = useState('');
   const [creatorNewScheduleTime, setCreatorNewScheduleTime] = useState('21:00');
   const [creatorNewScheduleDay, setCreatorNewScheduleDay] = useState(loc('پنج‌شنبه (Thursday)', 'Thursday'));
@@ -2516,19 +2469,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [creatorSupportMessage, setCreatorSupportMessage] = useState('');
 
   // Followers List (REAL VERIFIED USERS)
-  const [creatorFollowersList, setCreatorFollowersList] = useState([
-    { id: 'f1', name: 'Sara Maleki', handle: '@Sara_Maleki', avatar: '', badge: 'VIP Streamer 👑', isFollowing: true, user_type: 'VERIFIED_USER' },
-    { id: 'f2', name: 'Elnaz Karimi', handle: '@Elnaz_Karimi', avatar: '', badge: 'VIP Member 👑', isFollowing: true, user_type: 'VERIFIED_USER' },
-    { id: 'f3', name: 'Sahar Miller', handle: '@Sahar_Miller', avatar: '', badge: 'Creator 🎥', isFollowing: true, user_type: 'VERIFIED_USER' },
-    { id: 'f4', name: 'Maryam Hosseini', handle: '@Maryam_Hosseini', avatar: '', badge: 'Official Host 🎙️', isFollowing: true, user_type: 'VERIFIED_USER' }
-  ]);
+  const [creatorFollowersList, setCreatorFollowersList] = useState([]);
 
   // Content List
-  const [creatorContentList, setCreatorContentList] = useState([
-    { id: 'c1', title: '🔴 4K DJ Festival Party Live', type: 'vod', duration: '1h 45m', views: '24,500', date: loc('دیروز', 'yesterday'), likes: 3200 },
-    { id: 'c2', title: '🏆 Final PK Battle Victory Clips', type: 'vod', duration: '45m', views: '18,200', date: loc('۳ روز پیش', '3 days ago'), likes: 2100 },
-    { id: 'c3', title: '📖 Behind the Scenes Backstage Story', type: 'story', duration: '15s', views: '5,400', date: loc('امروز', 'today'), likes: 890 }
-  ]);
+  const [creatorContentList, setCreatorContentList] = useState([]);
   
   // ==================== REDESIGNED REFERRAL SYSTEM STATE (18 FEATURES) ====================
   const [referralCode, setReferralCode] = useState('RAYAN8475');
@@ -2542,28 +2486,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [isAntiFraudModalOpen, setIsAntiFraudModalOpen] = useState(false);
   const [isReferralRulesModalOpen, setIsReferralRulesModalOpen] = useState(false);
 
-  const [invitesList, setInvitesList] = useState([
-    { id: 'inv1', name: 'Ali Reza 🔥', handle: '@ali_reza84', avatar: '', date: loc('امروز ۱۴:۲۰', 'Today 14:20'), status: 'Active', rewardUnlocked: true, rewardAmount: 200, minutesUsed: 25 },
-    { id: 'inv2', name: 'Sara Model 💎', handle: '@sara_m', avatar: '', date: loc('دیروز ۱۸:۴۵', 'Yesterday 18:45'), status: 'Active', rewardUnlocked: true, rewardAmount: 200, minutesUsed: 42 },
-    { id: 'inv3', name: 'Mehdi Gamer 🎮', handle: '@mehdi_g', avatar: '', date: loc('۲ روز پیش', '2 days ago'), status: 'Pending', rewardUnlocked: false, rewardAmount: 100, minutesUsed: 4 },
-    { id: 'inv4', name: 'Neda Streamer 🎥', handle: '@neda_live', avatar: '', date: loc('۳ روز پیش', '3 days ago'), status: 'Active', rewardUnlocked: true, rewardAmount: 100, minutesUsed: 15 },
-    { id: 'inv5', name: 'Arash Cyber 🚀', handle: '@arash_c', avatar: '', date: loc('۴ روز پیش', '4 days ago'), status: 'Active', rewardUnlocked: true, rewardAmount: 100, minutesUsed: 60 }
-  ]);
+  const [invitesList, setInvitesList] = useState([]);
 
-  const [referralMilestones, setReferralMilestones] = useState([
-    { id: 1, count: 5, rewardTitle: '🎁 200 Coins', rewardType: 'coins', amount: 200, status: 'Claimed' },
-    { id: 2, count: 10, rewardTitle: '👑 VIP 7 Days Trial', rewardType: 'vip', amount: 7, status: 'Claimable' },
-    { id: 3, count: 25, rewardTitle: '🪙 1,000 Coins Pack', rewardType: 'coins', amount: 1000, status: 'Locked' },
-    { id: 4, count: 50, rewardTitle: '💎 Exclusive Diamond Badge', rewardType: 'badge', amount: 1, status: 'Locked' },
-    { id: 5, count: 100, rewardTitle: '🏆 Special Champion Reward ($100 USDT)', rewardType: 'usdt', amount: 100, status: 'Locked' }
-  ]);
+  const [referralMilestones, setReferralMilestones] = useState([]);
 
-  const [topInvitersLeaderboard, setTopInvitersLeaderboard] = useState([
-    { rank: 1, name: 'Sara Maleki', handle: '@Sara_Maleki', invites: 142, totalEarned: '14,200 Coins', badge: '🥇 Top Inviter', user_type: 'VERIFIED_USER' },
-    { rank: 2, name: 'Elnaz Karimi', handle: '@Elnaz_Karimi', invites: 98, totalEarned: '9,800 Coins', badge: '🥈 Silver Master', user_type: 'VERIFIED_USER' },
-    { rank: 3, name: 'Sahar Miller', handle: '@Sahar_Miller', invites: 64, totalEarned: '6,400 Coins', badge: '🥉 Bronze Pro', user_type: 'VERIFIED_USER' },
-    { rank: 4, name: userName, handle: `@${currentUsername}`, invites: 12, totalEarned: '1,250 Coins', badge: '⭐ Gold Level', user_type: 'REAL_USER' }
-  ]);
+  const [topInvitersLeaderboard, setTopInvitersLeaderboard] = useState([]);
 
   // ==================== REDESIGNED LEVEL & BADGES SYSTEM STATE (18 FEATURES) ====================
   const [maxXP, setMaxXP] = useState(10000);
@@ -2576,46 +2503,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [equippedBadge, setEquippedBadge] = useState('👑 VIP');
   const [levelActiveTab, setLevelActiveTab] = useState('overview'); // 'overview' | 'badges' | 'achievements' | 'roadmap' | 'leaderboard' | 'store'
 
-  const [xpActivitiesList, setXpActivitiesList] = useState([
-    { id: 'xp1', title: loc('ورود روزانه (Daily Login)', 'Daily Login'), xp: '+50 XP', category: 'daily', isClaimed: true },
-    { id: 'xp2', title: loc('تماشای لایو (Watch Stream 15m)', 'Watch Live (Watch Stream 15m)'), xp: '+100 XP', category: 'live', isClaimed: false },
-    { id: 'xp3', title: loc('برگزاری لایو استریم (Host Stream)', 'Holding a live stream (Host Stream)'), xp: '+300 XP', category: 'host', isClaimed: false },
-    { id: 'xp4', title: loc('ارسال هدیه به استریمر (Send Gift)', 'Send a gift to the streamer (Send Gift)'), xp: '+150 XP', category: 'gift', isClaimed: false },
-    { id: 'xp5', title: loc('دریافت هدیه از بینندگان (Receive Gift)', 'Receive gift from viewers (Receive Gift)'), xp: '+200 XP', category: 'gift', isClaimed: true },
-    { id: 'xp6', title: loc('تکمیل ماموریت روزانه (Daily Mission)', 'Completing the Daily Mission'), xp: '+100 XP', category: 'mission', isClaimed: false },
-    { id: 'xp7', title: loc('دعوت دوست جدید (Referral Invite)', 'Invite a new friend (Referral Invite)'), xp: '+250 XP', category: 'referral', isClaimed: true },
-    { id: 'xp8', title: loc('تکمیل اطلاعات پروفایل (Complete Profile)', 'Completing profile information (Complete Profile)'), xp: '+150 XP', category: 'profile', isClaimed: true }
-  ]);
+  const [xpActivitiesList, setXpActivitiesList] = useState([]);
 
-  const [userBadgesList, setUserBadgesList] = useState([
-    { id: 'b1', name: '🥇 Top Streamer', icon: '🥇', rarity: 'Legendary', isUnlocked: true, isEquipped: false, desc: loc('استریمر برتر ماه با بیش از ۵۰ ساعت لایو', 'The best streamer of the month with more than 50 live hours') },
-    { id: 'b2', name: '👑 VIP Member', icon: '👑', rarity: 'Epic', isUnlocked: true, isEquipped: true, desc: loc('عضویت ویژه طلایی V.Live Premium', 'V.Live Premium Golden Special Membership') },
-    { id: 'b3', name: '💎 Diamond Master', icon: '💎', rarity: 'Mythic', isUnlocked: true, isEquipped: false, desc: loc('کسب بیش از ۱۰,۰۰۰ الماس از لایو', 'Earn more than 10,000 diamonds from Live') },
-    { id: 'b4', name: '🎁 Top Gifter', icon: '🎁', rarity: 'Legendary', isUnlocked: true, isEquipped: false, desc: loc('ارسال بیش از ۱,۰۰۰ هدیه به دوستان', 'Send over 1,000 gifts to friends') },
-    { id: 'b5', name: '⭐ Verified Official', icon: '⭐', rarity: 'Unique', isUnlocked: true, isEquipped: false, desc: loc('تایید رسمی هویت توسط پشتیبانی', 'Official confirmation of identity by support') },
-    { id: 'b6', name: '🔥 Popular Host', icon: '🔥', rarity: 'Rare', isUnlocked: true, isEquipped: false, desc: loc('بیش از ۱,۰۰۰ بیننده همزمان در لایو', 'More than 1,000 simultaneous live viewers') },
-    { id: 'b7', name: '🏆 Champion 2026', icon: '🏆', rarity: 'Seasonal', isUnlocked: true, isEquipped: false, desc: loc('قهرمان تورنمنت تابستان ۲۰۲۶', 'Summer 2026 tournament champion') },
-    { id: 'b8', name: '❤️ Supporter', icon: '❤️', rarity: 'Common', isUnlocked: true, isEquipped: false, desc: loc('حمایت مداوم از استریمرها', 'Continued support for streamers') },
-    { id: 'b9', name: '🚀 Early Supporter', icon: '🚀', rarity: 'Rare', isUnlocked: true, isEquipped: false, desc: loc('پیوستن به برنامه در فاز اولیه', 'Join the program in the initial phase') },
-    { id: 'b10', name: '🛡️ Founder Badge', icon: '🛡️', rarity: 'Mythic', isUnlocked: false, isEquipped: false, desc: loc('مدال بنیان‌گذاران اولیه شبکه', 'Medal of the original founders of the network') }
-  ]);
+  const [userBadgesList, setUserBadgesList] = useState([]);
 
-  const [userAchievementsList, setUserAchievementsList] = useState([
-    { id: 'a1', title: loc('🎥 اولین لایو استریم', '🎥 The first live stream'), progress: 100, current: 1, target: 1, reward: '+100 XP & 🪙 50 Coins', isCompleted: true },
-    { id: 'a2', title: loc('🎁 اولین هدیه ارسالی', '🎁 The first gift sent'), progress: 100, current: 1, target: 1, reward: '+150 XP & 🎁 Gift Box', isCompleted: true },
-    { id: 'a3', title: loc('❤️ کسب ۱۰۰ دنبال‌کننده', '❤️ Gain 100 followers'), progress: 100, current: 100, target: 100, reward: '+200 XP & 👑 VIP 3 Days', isCompleted: true },
-    { id: 'a4', title: loc('👥 کسب ۱,۰۰۰ دنبال‌کننده', '👥 Gain 1,000 followers'), progress: 65, current: 650, target: 1000, reward: '+500 XP & 💎 Diamond Badge', isCompleted: false },
-    { id: 'a5', title: loc('🔥 ۱۰۰ ساعت لایو استریم', '🔥 100 hours of live stream'), progress: 40, current: 40, target: 100, reward: '+1,000 XP & 🏆 Trophy', isCompleted: false },
-    { id: 'a6', title: loc('👥 دعوت ۱۰ دوست فعال', '👥 Invite 10 active friends'), progress: 90, current: 9, target: 10, reward: '+300 XP & 🪙 200 Coins', isCompleted: false }
-  ]);
+  const [userAchievementsList, setUserAchievementsList] = useState([]);
 
-  const [levelRoadmapList, setLevelRoadmapList] = useState([
-    { level: 5, rewardTitle: '🪙 100 Coins Bonus', rewardType: 'coins', amount: 100, isUnlocked: true },
-    { level: 10, rewardTitle: '👑 VIP 7 Days Trial', rewardType: 'vip', amount: 7, isUnlocked: true },
-    { level: 20, rewardTitle: '💎 Exclusive VIP Crown Badge', rewardType: 'badge', amount: 1, isUnlocked: false },
-    { level: 30, rewardTitle: '🪙 500 Coins Pack', rewardType: 'coins', amount: 500, isUnlocked: false },
-    { level: 50, rewardTitle: '🖼️ Animated Glow Profile Frame', rewardType: 'frame', amount: 1, isUnlocked: false }
-  ]);
+  const [levelRoadmapList, setLevelRoadmapList] = useState([]);
 
   // LEVEL & REFERRAL HELPER HANDLERS
   const handleGainXP = (xpAmount, sourceTitle) => {
@@ -2649,14 +2543,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [userDiamonds, setUserDiamonds] = useState(10000); // 10,000 Diamonds
   const [walletSubTab, setWalletSubTab] = useState('overview'); // 'overview' | 'buy' | 'convert' | 'withdraw' | 'history' | 'creator' | 'referral' | 'security' | 'giftshop'
   
-  const [txHistoryList, setTxHistoryList] = useState([
-    { id: 'TX-901', type: 'Received Gift', description: loc('دریافت هدیه تاج سلطنتی 👑 از Soren', 'Receive the gift of Royal Crown 👑 from Soren'), amount: '+500 Diamonds', category: 'Gifts', time: loc('امروز ۱۴:۳۰', 'Today at 14:30'), status: 'Completed', icon: '🎁', color: 'text-pink-400' },
-    { id: 'TX-902', type: 'Buy Coins', description: loc('خرید ۱,۰۰۰ سکه با USDT TRC20', 'Buy 1,000 coins with USDT TRC20'), amount: '+1,000 Coins', category: 'Coins', time: loc('امروز ۱۱:۱۵', 'today 11:15'), status: 'Completed', icon: '🪙', color: 'text-amber-400' },
-    { id: 'TX-903', type: 'Convert Diamonds', description: loc('تبدیل ۵,۰۰۰ الماس به ارز نقد USDT', 'Convert 5,000 diamonds to USDT cash'), amount: '+$50.00 USDT', category: 'Convert', time: loc('دیروز ۱۹:۴۰', 'Yesterday 19:40'), status: 'Completed', icon: '💎', color: 'text-cyan-400' },
-    { id: 'TX-904', type: 'Withdrawal', description: loc('برداشت درآمد به ولت TRC20', 'Withdraw income to TRC20 volts'), amount: '-$100.00 USDT', category: 'Withdrawals', time: loc('۲ روز پیش', '2 days ago'), status: 'Pending', icon: '💸', color: 'text-rose-400' },
-    { id: 'TX-905', type: 'VIP Purchase', description: loc('خرید اشتراک ۱ ماهه VIP', 'Buy a 1-month VIP subscription'), amount: '-500 Coins', category: 'VIP', time: loc('۳ روز پیش', '3 days ago'), status: 'Completed', icon: '👑', color: 'text-amber-300' },
-    { id: 'TX-906', type: 'Referral Reward', description: loc('پاداش دعوت دوست (@ali_user)', 'friend invitation bonus (@ali_user)'), amount: '+2,500 Coins', category: 'Referral', time: loc('۴ روز پیش', '4 days ago'), status: 'Completed', icon: '👥', color: 'text-emerald-400' }
-  ]);
+  const [txHistoryList, setTxHistoryList] = useState([]);
   const [txCategoryFilter, setTxCategoryFilter] = useState('All');
 
   const [withdrawAmountInput, setWithdrawAmountInput] = useState('25');
@@ -2664,10 +2551,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [withdrawAddressInput, setWithdrawAddressInput] = useState('TBMvBiVB6mhu1gnaAAE1Pg5YohKvV1NSnB');
   const [withdrawPinInput, setWithdrawPinInput] = useState('');
 
-  const [withdrawalsHistoryList, setWithdrawalsHistoryList] = useState([
-    { id: 'W-801', amount: '$100.00 USDT', method: 'USDT TRC20', address: 'TBMvBi...1NSnB', date: '2026-07-26 18:20', status: 'Pending', reason: '', txHash: '' },
-    { id: 'W-800', amount: '$250.00 USDT', method: 'USDT TRC20', address: 'TBMvBi...1NSnB', date: '2026-07-20 14:10', status: 'Completed', reason: '', txHash: 'f4b23c9...a1b2' }
-  ]);
+  const [withdrawalsHistoryList, setWithdrawalsHistoryList] = useState([]);
 
   const [convertDiamondsInput, setConvertDiamondsInput] = useState('5000');
   const [selectedCoinPackPayment, setSelectedCoinPackPayment] = useState('USDT TRC20');
@@ -2788,9 +2672,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [recentlyViewedStreams, setRecentlyViewedStreams] = useState([]);
   const [isMuteStreamChat, setIsMuteStreamChat] = useState(false);
   const [isHideStreamChat, setIsHideStreamChat] = useState(false);
-  const [streamPinnedMessages, setStreamPinnedMessages] = useState([
-    { id: 'p1', user: 'V.LIVE System', text: loc('به بث زنده خوش آمدید! قوانین احترام متقابل را رعایت کنید 🌟', 'Welcome to Beth Live! Follow the rules of mutual respect') }
-  ]);
+  const [streamPinnedMessages, setStreamPinnedMessages] = useState([]);
   const [replyingToChatMessage, setReplyingToChatMessage] = useState(null);
   const [isStreamerFollowed, setIsStreamerFollowed] = useState(false);
 
@@ -3077,26 +2959,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [wonPrize, setWonPrize] = useState(null);
 
   // 7. AGENCY / FAMILY GUILD SYSTEM STATE
-  const [agenciesList, setAgenciesList] = useState([
-    {
-      id: 'ag_1',
-      name: 'Persian VIP Agency',
-      leader: 'Sara_Maleki',
-      membersCount: 42,
-      monthlyCoins: 850000,
-      badge: 'Top Agency',
-      description: 'Official Premier Agency for Top Female Hosts & Stream Stars'
-    },
-    {
-      id: 'ag_2',
-      name: 'Golden Crown Family',
-      leader: 'Elnaz_Karimi',
-      membersCount: 28,
-      monthlyCoins: 620000,
-      badge: 'Diamond Guild',
-      description: 'Exclusive Family Guild for Live Performers & Content Creators'
-    }
-  ]);
+  const [agenciesList, setAgenciesList] = useState([]);
   const [userAgency, setUserAgency] = useState('Persian VIP Agency');
   const [isCreateAgencyModalOpen, setIsCreateAgencyModalOpen] = useState(false);
   const [newAgencyName, setNewAgencyName] = useState('');
@@ -3126,12 +2989,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [momentsFeed, setMomentsFeed] = useState([]);
 
   // 10. DAILY QUESTS & TASKS REWARD CENTER STATE
-  const [dailyQuests, setDailyQuests] = useState([
-    { id: 'q_1', title: 'Watch Live Broadcasts for 3 Mins', reward: 25, progress: '3/3 mins', completed: true, claimed: false },
-    { id: 'q_2', title: 'Send 1 Gift to Any Host', reward: 50, progress: '0/1 gift', completed: false, claimed: false },
-    { id: 'q_3', title: 'Spin Lucky Wheel of Fortune', reward: 30, progress: '1/1 spin', completed: true, claimed: false },
-    { id: 'q_4', title: 'Share Stream or Moment Clip', reward: 20, progress: '0/1 share', completed: false, claimed: false }
-  ]);
+  const [dailyQuests, setDailyQuests] = useState([]);
 
   // 11. IN-STREAM SOUND FX SOUNDBOARD
   const playSoundEffect = (type) => {
@@ -3331,7 +3189,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   const [isCreatePollModalOpen, setIsCreatePollModalOpen] = useState(false);
   const [pollQuestionInput, setPollQuestionInput] = useState('');
-  const [pollOptionInputs, setPollOptionInputs] = useState(['', '', '', '']); // up to 4 options
+  const [pollOptionInputs, setPollOptionInputs] = useState([]); // up to 4 options
 
   // REAL-TIME LIVE POLL PERIODIC SIMULATION FOR OTHER VIEWERS
   useEffect(() => {
@@ -3633,7 +3491,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // START PRIVATE 1-ON-1 VIDEO CALL WITH A HOST
   const handleStartPrivateCall = (host) => {
-    const rate = host.streamer_rate || 500;
+    const rate = host.streamer_rate00;
     if (userCoins < rate) {
       showToast(`Insufficient coin balance for private video call (${rate} coins/min). Please top up USDT.`);
       setActiveTab('wallet');
@@ -4849,7 +4707,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                             <span className="truncate">{user.name}, {user.age || 22}</span>
                             <BadgeCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0 inline-block" />
                           </h4>
-                          <p className="text-[9px] text-pink-300 font-bold drop-shadow-md truncate">📍 {user.city || 'Tehran'} • Lv.{user.level || 5}</p>
+                          <p className="text-[9px] text-pink-300 font-bold drop-shadow-md truncate">📍 {user.city} • Lv.{user.level}</p>
                         </div>
                       </div>
 
@@ -5065,7 +4923,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         setIsUserProfileModalOpen(true);
                       }}
                       className="absolute -top-5 left-1/2 -translate-x-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-lime-400 to-emerald-400 shadow-[0_0_15px_#a3e635] cursor-pointer hover:scale-130 transition duration-300 z-30 group"
-                      title={matchDeckProfiles[0]?.name || 'Sara'}
+                      title={matchDeckProfiles[0]?.name || ''}
                     >
                       <img 
                         src={matchDeckProfiles[0]?.avatar || ''} 
@@ -5085,7 +4943,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         setIsUserProfileModalOpen(true);
                       }}
                       className="absolute top-1/2 -right-5 -translate-y-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-purple-500 shadow-[0_0_15px_#ec4899] cursor-pointer hover:scale-130 transition duration-300 z-30 group"
-                      title={matchDeckProfiles[1]?.name || 'Elnaz'}
+                      title={matchDeckProfiles[1]?.name || ''}
                     >
                       <img 
                         src={matchDeckProfiles[1]?.avatar || ''} 
@@ -5105,7 +4963,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         setIsUserProfileModalOpen(true);
                       }}
                       className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-yellow-300 shadow-[0_0_15px_#fde047] cursor-pointer hover:scale-130 transition duration-300 z-30 group"
-                      title={matchDeckProfiles[2]?.name || 'Sahar'}
+                      title={matchDeckProfiles[2]?.name || ''}
                     >
                       <img 
                         src={matchDeckProfiles[2]?.avatar || ''} 
@@ -5125,7 +4983,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         setIsUserProfileModalOpen(true);
                       }}
                       className="absolute top-1/2 -left-5 -translate-y-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-cyan-400 to-blue-500 shadow-[0_0_15px_#22d3ee] cursor-pointer hover:scale-130 transition duration-300 z-30 group"
-                      title={matchDeckProfiles[3]?.name || 'Mina'}
+                      title={matchDeckProfiles[3]?.name || ''}
                     >
                       <img 
                         src={matchDeckProfiles[3]?.avatar || ''} 
@@ -7279,15 +7137,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         setMatchState('searching');
                         setTimeout(() => {
                           const realPartners = (Array.isArray(usersList) && usersList.length > 0)
-                            ? usersList.filter(u => u && u.username !== currentUsername && u.user_type !== 'TEST_USER' && u.user_type !== 'DEMO_USER' && (u.status === 'approved' || u.isApproved !== false))
+                            ? usersList.filter(u => u && u.username !== currentUsername && (u.status === 'approved' || u.isApproved !== false))
                             : [
-                                { name: 'Sara Maleki', avatar: '', city: 'Tehran', isVerified: true },
+                                null,
                                 { name: 'Elnaz Karimi', avatar: '', city: 'Shiraz', isVerified: true },
-                                { name: 'Sahar Miller', avatar: '', city: 'Tehran', isVerified: true }
+                                null
                               ];
                           const randomPartner = realPartners.length > 0
                             ? realPartners[Math.floor(Math.random() * realPartners.length)]
-                            : { name: 'Sara Maleki', avatar: '', city: 'Tehran', isVerified: true };
+                            : null;
                           setMatchedMatchUser(randomPartner);
                           setMatchState('connected');
                           setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));

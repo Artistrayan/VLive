@@ -1,3 +1,4 @@
+import { apiVip } from '../services/api';
 import React from 'react';
 import { Crown, ShieldAlert, X, Clock, CreditCard } from 'lucide-react';
 

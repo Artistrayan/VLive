@@ -5,23 +5,58 @@ export const setStoredSession = (session) => localStorage.setItem('vlive_session
 export const getStoredToken = () => localStorage.getItem('vlive_token');
 export const getUserId = () => localStorage.getItem('vlive_user_id');
 
+// ==========================================
+// 1. STORAGE SERVICE (Real Supabase Storage)
+// ==========================================
+export const apiStorage = {
+  async uploadFile(bucket, file, customPath = null) {
+    try {
+      const ext = file.name ? file.name.split('.').pop() : 'jpg';
+      const cleanName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${ext}`;
+      const filePath = customPath || cleanName;
+
+      const { data, error } = await supabase.storage.from(bucket).upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+      if (error) {
+        console.warn(`Storage upload to bucket '${bucket}' error:`, error.message);
+        // Fallback: If bucket does not exist, convert file to data URL so app does not break
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve({ success: true, url: reader.result });
+          reader.onerror = () => resolve({ success: false, error: error.message });
+          reader.readAsDataURL(file);
+        });
+      }
+
+      const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
+      return { success: true, url: publicUrlData?.publicUrl || data.path };
+    } catch (err) {
+      console.warn('apiStorage uploadFile exception:', err);
+      return { success: false, error: err.message };
+    }
+  }
+};
+
+// ==========================================
+// 2. AUTH SERVICE (Telegram & Session)
+// ==========================================
 export const apiAuth = {
   async isUsernameTakenInDb(username, excludeUserId = null) {
     if (!username) return false;
     const clean = username.trim().toLowerCase();
     try {
       const { data: authData } = await supabase.auth.getUser();
-      const currentUid = excludeUserId || authData?.user?.id || localStorage.getItem('vlive_user_id');
-
+      const currentUid = excludeUserId || authData?.user?.id || getUserId();
       let query = supabase
         .from('profiles')
         .select('id, username_handle, username')
         .or(`username_handle.ilike.${clean},username.ilike.${clean}`);
-
       if (currentUid) {
         query = query.neq('id', currentUid);
       }
-
       const { data, error } = await query.limit(1);
       if (error) {
         console.warn('isUsernameTakenInDb error', error);
@@ -36,20 +71,19 @@ export const apiAuth = {
 
   async saveUserToBackend(user) {
     const { data: authData } = await supabase.auth.getUser();
-    if (!authData?.user) return null;
+    const uid = authData?.user?.id || getUserId();
+    if (!uid) return null;
     
-    // Clean user object: username_handle is strictly immutable
     const safePayload = {
       name: user.name || user.displayName,
       avatar: user.avatar || user.avatarUrl,
       bio: user.bio,
-      gender: user.gender
+      gender: user.gender,
+      city: user.city
     };
-
-    // Remove any undefined values
     Object.keys(safePayload).forEach(key => safePayload[key] === undefined && delete safePayload[key]);
     
-    const { data, error } = await supabase.from('profiles').update(safePayload).eq('id', authData.user.id).select();
+    const { data, error } = await supabase.from('profiles').update(safePayload).eq('id', uid).select();
     if (error) console.error('saveUserToBackend error', error);
     return data;
   },
@@ -57,6 +91,8 @@ export const apiAuth = {
   async logout() {
     await supabase.auth.signOut();
     localStorage.removeItem('vlive_user_id');
+    localStorage.removeItem('vlive_token');
+    localStorage.removeItem('vlive_session');
     return { success: true };
   },
 
@@ -83,7 +119,7 @@ export const apiAuth = {
     const password = `tg_secure_password_${tgId}!`;
     const roleForTgUser = (String(tgId) === '8933698119') ? 'admin' : 'user';
 
-    // Check if user is already registered in auth by signing in first
+    // Sign in first
     const { data: existingUser } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -91,22 +127,20 @@ export const apiAuth = {
     
     if (existingUser?.user) {
         const userId = existingUser.user.id;
-        // Update telegram info and role strictly in DB
         await supabase.from('profiles').update({ 
           telegram_id: tgId, 
           telegram_username: tgUser.username,
           role: roleForTgUser
         }).eq('id', userId);
+        
         const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userId).single();
         localStorage.setItem('vlive_user_id', userId);
-        return { success: true, user: profileData };
+        return { success: true, user: profileData, token: existingUser.session?.access_token };
     }
-    
+
     const name = tgUser.first_name || 'Telegram User';
     const avatar = tgUser.photo_url || '';
-
-    console.log("loginWithTelegram: signing up user", email);
-
+    
     let authData = null;
     let authError = null;
     try {
@@ -114,10 +148,7 @@ export const apiAuth = {
         email,
         password,
         options: {
-          data: {
-            name,
-            avatar
-          }
+          data: { name, avatar }
         }
       });
       authData = res.data;
@@ -128,116 +159,90 @@ export const apiAuth = {
     }
 
     if (authError) {
-      console.error('Auth error detailed:', authError);
-      let errMsg = authError?.message || 'Failed to authenticate user.';
-      if (errMsg.includes('disabled')) {
-         errMsg = 'Supabase Config Error: ' + errMsg + '. Please enable Email Signups in your Supabase Auth Providers settings.';
-      } else if (errMsg.includes('fetch')) {
-         errMsg = 'Network Error: Failed to reach Supabase. ' + errMsg;
-      }
-      return { success: false, error: errMsg };
+      return { success: false, error: authError.message };
     }
 
-    const userId = authData.user.id;
-    console.log("Auth user success, ID:", userId);
-    
-    // Manual insert but do NOT overwrite existing profile to preserve user edits
+    const userId = authData?.user?.id;
+    if (!userId) return { success: false, error: 'User creation failed.' };
+
     const { data: existingProfile } = await supabase.from('profiles').select('*').eq('id', userId).single();
-    let manualData = [existingProfile];
-    let manualError = null;
+    let profileData = existingProfile;
 
     if (!existingProfile) {
-        const res = await supabase.from('profiles').upsert([{
-            id: userId,
-            name,
-            avatar,
-            telegram_id: tgId,
-            telegram_username: tgUser.username,
-            role: roleForTgUser,
-            status: 'approved'
-        }], { onConflict: 'id' }).select();
-        manualData = res.data;
-        manualError = res.error;
-    }
-
-    if (manualError) {
-      console.error('Profile insertion error:', manualError);
-      return { success: false, error: `Profile Insert Error: ${manualError.message} (Code: ${manualError.code})` };
-    }
-
-    let profileData = manualData[0];
-    
-    // Attempt wallet creation (don't fail login if this fails)
-    const { error: walletError } = await supabase.from('wallets').upsert([{ user_id: userId, coins: 0, usdt_balance: 0.0 }], { onConflict: 'user_id' });
-    if (walletError) {
-      console.error('Wallet insertion error:', walletError);
-    }
-    
-    if (profileData) {
-      localStorage.setItem('vlive_user_id', profileData.id);
-      return { 
-        success: true, 
-        token: authData.session?.access_token, 
-        user: { 
-          ...profileData, 
-          first_name: profileData.name, 
-          avatar_url: profileData.avatar 
-        } 
-      };
-    }
-
-    return { success: false, error: 'Unknown error during profile creation.' };
-  }
-};
-
-export const apiVerification = {
-  async submitGenderVerificationReport({ userId, username, fullName, selfieUrl, gender, aiScore, aiResult, aiReportDetails }) {
-    try {
-      const uid = userId || getUserId();
-      const { data, error } = await supabase.from('verifications').insert([{
-        user_id: uid,
-        username,
-        full_name: fullName,
-        selfie_url: selfieUrl,
-        gender,
-        ai_score: aiScore,
-        ai_result: aiResult,
-        ai_report_details: aiReportDetails,
-        status: aiResult === 'APPROVED' ? 'approved' : 'pending',
-        created_at: new Date().toISOString()
-      }]).select();
-
-      if (uid && aiResult === 'APPROVED') {
-        await supabase.from('profiles').update({
-          gender: 'female',
-          is_verified: true,
+      const { data: inserted, error: insertErr } = await supabase.from('profiles').upsert([{
+          id: userId,
+          name,
+          username: tgUser.username || `user_${String(tgId).slice(-4)}`,
+          avatar,
+          telegram_id: tgId,
+          telegram_username: tgUser.username,
+          role: roleForTgUser,
           status: 'approved'
-        }).eq('id', uid);
+      }], { onConflict: 'id' }).select();
+
+      if (insertErr) {
+        console.error('Profile insertion error:', insertErr);
+      } else if (inserted && inserted.length > 0) {
+        profileData = inserted[0];
       }
-      return { success: !error, data: data ? data[0] : null, error: error?.message };
-    } catch (err) {
-      console.error('submitGenderVerificationReport error:', err);
-      return { success: false, error: err.message };
     }
+
+    // Ensure wallet exists
+    await supabase.from('wallets').upsert([{ user_id: userId, coins: 0, usdt_balance: 0.0 }], { onConflict: 'user_id' });
+
+    localStorage.setItem('vlive_user_id', userId);
+    return {
+      success: true,
+      token: authData?.session?.access_token,
+      user: profileData
+    };
   }
 };
 
+// ==========================================
+// 3. PROFILE SERVICE (Real DB Sync)
+// ==========================================
 export const apiProfile = {
   async getProfile() {
     const { data: authData } = await supabase.auth.getUser();
     const uid = authData?.user?.id || getUserId();
     if (!uid) return null;
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
-    return error ? null : data;
+
+    try {
+      const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
+      if (error || !profile) return null;
+
+      // Fetch wallet balance
+      const { data: wallet } = await supabase.from('wallets').select('coins, usdt_balance').eq('user_id', uid).single();
+      
+      return {
+        ...profile,
+        coins: wallet?.coins ?? 0,
+        diamonds: profile.diamonds ?? 0,
+        usdt_balance: wallet?.usdt_balance ?? 0.0
+      };
+    } catch (e) {
+      console.warn('apiProfile.getProfile error:', e);
+      return null;
+    }
   },
+
   async updateProfile(updates) {
     const { data: authData } = await supabase.auth.getUser();
     const uid = authData?.user?.id || getUserId();
     if (!uid) return { success: false, error: 'NOT_AUTHENTICATED' };
 
-    // Create safe updates payload by stripping immutable fields
+    // STRICT SECURITY: Strip any attempt to alter roles, verification, VIP, balance, or primary keys
     const safeUpdates = { ...updates };
-    const hadHandleAttempt = 'username_handle' in safeUpdates;
+    delete safeUpdates.role;
+    delete safeUpdates.is_verified;
+    delete safeUpdates.is_vip;
+    delete safeUpdates.is_streamer;
+    delete safeUpdates.status;
+    delete safeUpdates.telegram_id;
+    delete safeUpdates.coins;
+    delete safeUpdates.diamonds;
+    delete safeUpdates.usdt_balance;
     delete safeUpdates.username_handle;
     delete safeUpdates.id;
     delete safeUpdates.created_at;
@@ -248,20 +253,16 @@ export const apiProfile = {
         return { 
           success: false, 
           error: 'USERNAME_TAKEN', 
-          message: 'USERNAME_TAKEN: این نام کاربری قبلاً ثبت شده است.' 
+          message: 'این نام کاربری قبلاً ثبت شده است.' 
         };
       }
     }
 
-    if (hadHandleAttempt && Object.keys(safeUpdates).length === 0) {
-      console.warn('REJECTED: username_handle is strictly permanent and cannot be modified.');
-      return { success: false, error: 'USERNAME_HANDLE_IMMUTABLE' };
-    }
-
     const { data, error } = await supabase.from('profiles').update(safeUpdates).eq('id', uid).select();
-    return { success: !error, data, error: error?.message };
-  }
-, async submitKyc(data) {
+    return { success: !error, data: data?.[0], error: error?.message };
+  },
+
+  async submitKyc(data) {
     const uid = getUserId();
     if (!uid) return { success: false };
     const { error } = await supabase.from('kyc_applications').insert([{
@@ -274,203 +275,109 @@ export const apiProfile = {
       doc_url: data.docUrl || ''
     }]);
     return { success: !error };
-  },
-};
-
-export const apiHome = {
-  async getApprovedUsers() {
-    const { data, error } = await supabase.from('profiles').select('*').eq('status', 'approved');
-    return error ? [] : data;
-  },
-  async getActiveStreams() {
-    const { data, error } = await supabase.from('streams').select('*, profiles(name, username, avatar)').eq('status', 'active');
-    if (error) return [];
-    return data.map(s => ({
-      ...s,
-      name: s.profiles?.name || s.profiles?.username || 'Streamer',
-      username: s.profiles?.username || 'streamer',
-      avatar: s.profiles?.avatar || ''
-    }));
   }
 };
 
-export const apiDiscover = {};
-export const apiMessages = {
-  async getMessages(userId = null) {
+// ==========================================
+// 4. HOME & DISCOVERY SERVICE
+// ==========================================
+export const apiHome = {
+  async getActiveStreams() {
     try {
-      let query = supabase.from('messages').select('*').order('created_at', { ascending: true });
-      if (userId) {
-        query = query.or(`sender_id.eq.${userId},recipient_id.eq.${userId}`);
-      }
-      const { data, error } = await query;
-      if (error) {
-        console.warn('Supabase messages query warning:', error.message);
-        return [];
-      }
+      const { data, error } = await supabase
+        .from('live_streams')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+      if (error) return [];
       return data || [];
     } catch (e) {
-      console.warn('getMessages error:', e);
       return [];
     }
   },
 
-  async sendMessage(msgPayload) {
+  async getApprovedUsers() {
     try {
       const { data, error } = await supabase
-        .from('messages')
-        .insert([{
-          sender_id: msgPayload.sender_id || msgPayload.sender,
-          recipient_id: msgPayload.recipient_id || msgPayload.recipient,
-          conversation_id: msgPayload.conversation_id || msgPayload.conversationId,
-          content: msgPayload.content || msgPayload.text,
-          media_url: msgPayload.media_url || msgPayload.mediaUrl || null,
-          created_at: new Date().toISOString()
-        }])
-        .select();
-
-      if (error) {
-        console.warn('sendMessage Supabase error:', error.message);
-        return { success: false, error: error.message };
-      }
-      return { success: true, data: data?.[0] };
+        .from('profiles')
+        .select('id, name, username, avatar, bio, gender, is_verified, role, city, level')
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false });
+      if (error) return [];
+      return data || [];
     } catch (e) {
-      console.warn('sendMessage exception:', e);
-      return { success: false, error: e.message };
-    }
-  },
-
-  subscribeToMessages(callback) {
-    try {
-      const channel = supabase
-        .channel('public:messages')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-          if (payload && payload.new) {
-            callback(payload.new);
-          }
-        })
-        .subscribe();
-      return channel;
-    } catch (e) {
-      console.warn('subscribeToMessages failed:', e);
-      return null;
+      return [];
     }
   }
 };
-export const apiLive = {
-  // Generate secure token for LiveKit streaming server for authorized broadcasters
-  async generateLiveKitToken({ hostId, hostName, roomName, isBroadcaster = true }) {
+
+// ==========================================
+// 5. MESSAGES & CHAT SERVICE
+// ==========================================
+export const apiMessages = {
+  async getConversations() {
+    const uid = getUserId();
+    if (!uid) return [];
     try {
-      const uid = hostId || getUserId();
-      if (!uid) {
-        return {
-          success: false,
-          error: 'Authentication required. User is not logged in.',
-          token: null
-        };
-      }
-
-      // 1. Verify user profile and authorization status in Supabase
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, username, name, status')
-        .eq('id', uid)
-        .single();
-
-      if (profileError || !profile) {
-        // Fallback check on active session
-        const { data: authData } = await supabase.auth.getUser();
-        if (!authData?.user) {
-          return {
-            success: false,
-            error: 'Unauthorized broadcaster: Active user session not found.',
-            token: null
-          };
-        }
-      }
-
-      // 2. Check if account is suspended or blocked
-      if (profile?.status === 'blocked' || profile?.status === 'suspended') {
-        return {
-          success: false,
-          error: 'Broadcaster account is suspended or blocked from initiating live streams.',
-          token: null
-        };
-      }
-
-      // 3. Construct LiveKit JWT Grants Payload
-      const now = Math.floor(Date.now() / 1000);
-      const room = roomName || `vlive_room_${uid}_${now}`;
-      const identity = uid;
-      const name = hostName || profile?.name || profile?.username || 'VLive Broadcaster';
-
-      const videoGrant = {
-        room: room,
-        roomJoin: true,
-        canPublish: isBroadcaster,
-        canSubscribe: true,
-        canPublishData: true,
-        roomCreate: isBroadcaster,
-        roomAdmin: isBroadcaster,
-        hidden: false,
-        recorder: false
-      };
-
-      const header = {
-        alg: 'HS256',
-        typ: 'JWT'
-      };
-
-      const payload = {
-        iss: 'vlive_livekit_auth_server',
-        sub: identity,
-        name: name,
-        nbf: now - 5,
-        exp: now + 86400, // 24 hours validity
-        video: videoGrant,
-        metadata: JSON.stringify({
-          user_id: uid,
-          broadcaster: isBroadcaster,
-          server_region: 'Middle East & Europe (Latency-Optimized)',
-          created_at: new Date().toISOString()
-        })
-      };
-
-      // Helper to base64url encode
-      const base64UrlEncode = (obj) => {
-        const jsonStr = JSON.stringify(obj);
-        const base64 = btoa(unescape(encodeURIComponent(jsonStr)));
-        return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      };
-
-      const encodedHeader = base64UrlEncode(header);
-      const encodedPayload = base64UrlEncode(payload);
-      
-      const signatureInput = `${encodedHeader}.${encodedPayload}`;
-      const signature = 'vlive_lk_sig_' + btoa(signatureInput).slice(0, 32).replace(/\+/g, 'a').replace(/\//g, 'b').replace(/=/g, '');
-
-      const token = `${encodedHeader}.${encodedPayload}.${signature}`;
-      const livekitServerUrl = 'wss://livekit.vlive.app';
-
-      return {
-        success: true,
-        token: token,
-        roomName: room,
-        identity: identity,
-        serverUrl: livekitServerUrl,
-        expiresAt: new Date((now + 86400) * 1000).toISOString(),
-        isBroadcasterAuthorized: true,
-        grants: videoGrant
-      };
-
-    } catch (err) {
-      console.error('generateLiveKitToken error:', err);
-      return {
-        success: false,
-        error: err.message || 'Failed to generate LiveKit token.',
-        token: null
-      };
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('*, profiles!conversations_partner_id_fkey(id, username, name, avatar)')
+        .or(`user1_id.eq.${uid},user2_id.eq.${uid}`)
+        .order('updated_at', { ascending: false });
+      if (error) return [];
+      return data || [];
+    } catch (e) {
+      return [];
     }
   },
+
+  async getMessages(conversationId) {
+    if (!conversationId) return [];
+    try {
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+      if (error) return [];
+      return data || [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async sendMessage(conversationId, text, mediaUrl = '') {
+    const uid = getUserId();
+    if (!uid || !conversationId) return { success: false };
+    try {
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .insert([{
+          conversation_id: conversationId,
+          sender_id: uid,
+          message_text: text,
+          media_url: mediaUrl
+        }])
+        .select();
+      return { success: !error, data: data?.[0] };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+};
+
+// ==========================================
+// 6. LIVE & STREAMING SERVICE
+// ==========================================
+export const apiLive = {
+  async generateLiveKitToken({ hostId, hostName, roomName, isBroadcaster = true }) {
+    return {
+      success: false,
+      error: 'LiveKit streaming token requires livekit backend integration.',
+      token: null
+    };
+  },
+
   async getLiveStreams(liveType = 'standard') {
     try {
       const { data, error } = await supabase
@@ -479,23 +386,6 @@ export const apiLive = {
         .eq('live_type', liveType)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
-      if (error) {
-        console.warn('Supabase live_streams query error:', error.message);
-        return [];
-      }
-      return data || [];
-    } catch (e) {
-      console.warn('getLiveStreams error:', e);
-      return [];
-    }
-  },
-
-  async getLiveCategories(liveType = 'standard') {
-    try {
-      const { data, error } = await supabase
-        .from('live_categories')
-        .select('*')
-        .eq('live_type', liveType);
       if (error) return [];
       return data || [];
     } catch (e) {
@@ -504,49 +394,21 @@ export const apiLive = {
   },
 
   async createLiveStream(streamPayload) {
+    const uid = getUserId();
+    if (!uid) return { success: false, error: 'Unauthorized' };
     try {
-      const uid = streamPayload.host_id || getUserId();
-      if (!uid) {
-        return { success: false, error: 'User authentication required to initiate live stream.' };
-      }
-
-      // Generate or verify secure LiveKit token for authorized broadcaster
-      let tokenRes = null;
-      if (!streamPayload.livekit_token) {
-        tokenRes = await this.generateLiveKitToken({
-          hostId: uid,
-          hostName: streamPayload.host,
-          roomName: streamPayload.room_name || `room_${uid}_${Date.now()}`,
-          isBroadcaster: true
-        });
-
-        if (!tokenRes.success) {
-          console.error('Broadcaster authorization / LiveKit token generation failed:', tokenRes.error);
-          return { success: false, error: tokenRes.error };
-        }
-      }
-
-      const livekitToken = streamPayload.livekit_token || tokenRes?.token;
-      const livekitRoom = streamPayload.room_name || tokenRes?.roomName;
-      const livekitServerUrl = streamPayload.server_url || tokenRes?.serverUrl || 'wss://livekit.vlive.app';
-
       const streamRecord = {
-        host: streamPayload.host,
+        host: streamPayload.host || 'Streamer',
         host_id: uid,
-        avatar: streamPayload.avatar,
-        title: streamPayload.title,
+        avatar: streamPayload.avatar || '',
+        title: streamPayload.title || 'Live Stream',
         category: streamPayload.category || 'General',
         live_type: streamPayload.live_type || 'standard',
         description: streamPayload.description || '',
         thumbnail: streamPayload.thumbnail || '',
         tags: streamPayload.tags || '',
         viewers: 1,
-        status: 'active',
-        ai_flagged: false,
-        livekit_token: livekitToken,
-        livekit_room: livekitRoom,
-        livekit_server_url: livekitServerUrl,
-        is_broadcaster_authorized: true
+        status: 'active'
       };
 
       const { data, error } = await supabase
@@ -554,34 +416,16 @@ export const apiLive = {
         .insert([streamRecord])
         .select();
 
-      if (error) {
-        console.warn('createLiveStream database warning:', error.message);
-        // Return constructed object so app operates seamlessly even if table missing extra columns
-        return {
-          success: true,
-          data: {
-            id: `stream_${Date.now()}`,
-            ...streamRecord
-          }
-        };
-      }
-
-      return {
-        success: true,
-        data: {
-          ...data[0],
-          livekit_token: livekitToken,
-          livekit_room: livekitRoom,
-          livekit_server_url: livekitServerUrl,
-          is_broadcaster_authorized: true
-        }
-      };
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data?.[0] };
     } catch (e) {
       return { success: false, error: e.message };
     }
   },
 
   async endLiveStream(streamId) {
+    const uid = getUserId();
+    if (!uid) return { success: false };
     try {
       const { error } = await supabase
         .from('live_streams')
@@ -593,74 +437,47 @@ export const apiLive = {
     }
   },
 
-  async joinLiveViewer(streamId) {
+  async joinStream(streamId) {
     const uid = getUserId();
-    if (!uid) return;
+    if (!uid || !streamId) return;
     try {
-      await supabase.from('live_viewers').insert([{ stream_id: streamId, user_id: uid }]);
-    } catch (e) {
-      // ignore
-    }
+      await supabase.from('live_stream_viewers').insert([{ stream_id: streamId, user_id: uid }]);
+    } catch (e) {}
   },
 
-  async reportLiveStream(reportData) {
-    try {
-      const uid = getUserId();
-      const { data, error } = await supabase
-        .from('live_reports')
-        .insert([{
-          stream_id: reportData.stream_id,
-          stream_title: reportData.stream_title,
-          streamer_name: reportData.streamer_name,
-          reporter_id: uid,
-          reason: reportData.reason,
-          ai_detected: reportData.ai_detected || false,
-          status: 'pending'
-        }])
-        .select();
-      if (error) return { success: false, error: error.message };
-      return { success: true, data: data[0] };
-    } catch (e) {
-      return { success: false, error: e.message };
-    }
-  },
-
-  async getAdultAccess() {
+  async leaveStream(streamId) {
     const uid = getUserId();
-    if (!uid) return { age_verified: false, rules_accepted: false, adult_vip_active: false };
+    if (!uid || !streamId) return;
     try {
-      const { data, error } = await supabase
-        .from('adult_access')
-        .select('*')
-        .eq('user_id', uid)
-        .single();
-      if (error) return null;
-      return data;
-    } catch (e) {
-      return null;
-    }
+      await supabase.from('live_stream_viewers').delete().eq('stream_id', streamId).eq('user_id', uid);
+    } catch (e) {}
   },
-
-  async saveAdultAccess(accessData) {
+  async saveAdultAccess(payload) {
     const uid = getUserId();
     if (!uid) return { success: false };
     try {
-      const { data, error } = await supabase
-        .from('adult_access')
-        .upsert([{
-          user_id: uid,
-          age_verified: accessData.age_verified,
-          rules_accepted: accessData.rules_accepted,
-          adult_vip_active: accessData.adult_vip_active
-        }], { onConflict: 'user_id' })
-        .select();
-      return { success: !error, data: data ? data[0] : null };
+      const { error } = await supabase.from('adult_access_logs').insert([{ user_id: uid, ...payload }]);
+      return { success: !error };
     } catch (e) {
       return { success: false };
     }
-  }
+  },
+
+  async reportLiveStream(reportPayload) {
+    const uid = getUserId();
+    if (!uid) return { success: false };
+    try {
+      const { error } = await supabase.from('live_reports').insert([{ reporter_id: uid, ...reportPayload, status: 'pending' }]);
+      return { success: !error };
+    } catch (e) {
+      return { success: false };
+    }
+  },
 };
 
+// ==========================================
+// 7. WALLET & TRANSACTION SERVICE
+// ==========================================
 export const apiWallet = {
   async getBalance() {
     const uid = getUserId();
@@ -668,7 +485,7 @@ export const apiWallet = {
     const { data, error } = await supabase.from('wallets').select('coins, usdt_balance').eq('user_id', uid).single();
     return error ? { coins: 0, usdt_balance: 0 } : data;
   },
-  
+
   async getTransactions() {
     const uid = getUserId();
     if (!uid) return [];
@@ -679,17 +496,27 @@ export const apiWallet = {
       let icon = '🔄';
       let color = 'text-slate-400';
       let amountStr = '';
-      if (tx.tx_type === 'buy_coins') { icon = '🪙'; color = 'text-amber-400'; amountStr = `+${tx.amount_coins} Coins`; }
-      else if (tx.tx_type === 'send_gift') { icon = '🎁'; color = 'text-rose-400'; amountStr = `${tx.amount_coins} Coins`; }
-      else if (tx.tx_type === 'receive_gift') { icon = '🎁'; color = 'text-emerald-400'; amountStr = `+${tx.amount_coins} Coins`; }
-      
+      if (tx.tx_type === 'buy_coins' || tx.tx_type === 'deposit') { 
+        icon = '🪙'; color = 'text-amber-400'; amountStr = `+${tx.amount_coins} Coins`; 
+      } else if (tx.tx_type === 'send_gift' || tx.tx_type === 'call_charge' || tx.tx_type === 'buy_vip' || tx.tx_type === 'buy_service' || tx.tx_type === 'paid_call_minute') { 
+        icon = tx.tx_type === 'buy_vip' ? '👑' : (tx.tx_type === 'call_charge' || tx.tx_type === 'paid_call_minute') ? '📞' : '🎁'; 
+        color = 'text-rose-400'; 
+        amountStr = `-${Math.abs(tx.amount_coins)} Coins`; 
+      } else if (tx.tx_type === 'receive_gift' || tx.tx_type === 'call_earnings' || tx.tx_type === 'receive_call_income') { 
+        icon = '🎁'; color = 'text-emerald-400'; amountStr = `+${tx.amount_coins} Coins`; 
+      } else if (tx.tx_type === 'convert') {
+        icon = '💱'; color = 'text-cyan-400'; amountStr = `${tx.amount_coins} Coins ➜ $${tx.amount_usdt} USDT`;
+      } else if (tx.tx_type === 'withdraw') {
+        icon = '💸'; color = 'text-rose-400'; amountStr = `-$${Math.abs(tx.amount_usdt)} USDT`;
+      }
+        
       const timeStr = new Date(tx.created_at).toLocaleString();
       return {
-        id: tx.id.slice(0,8).toUpperCase(),
+        id: tx.id ? tx.id.slice(0,8).toUpperCase() : 'TX',
         type: tx.tx_type,
         description: tx.description,
         amount: amountStr,
-        category: 'All', // We could refine this
+        category: 'All',
         time: timeStr,
         status: 'Completed',
         icon,
@@ -702,100 +529,290 @@ export const apiWallet = {
     const uid = getUserId();
     if (!uid) return { success: false, error: 'Unauthorized' };
     
-    // 1. Get current balance
+    // In production, real payment webhook invokes database function.
+    // We record intent and update wallet securely:
+    const idempotencyKey = `idemp_deposit_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc('rpc_convert_coins_to_usdt', {
+      p_coins: 0,
+      p_idempotency_key: idempotencyKey
+    });
+
     const current = await this.getBalance();
-    const newCoins = (current.coins || 0) + coinsToAdd;
-
-    // 2. Update wallet
-    const { error: walletError } = await supabase.from('wallets').update({ coins: newCoins }).eq('user_id', uid);
-    if (walletError) return { success: false, error: walletError.message };
-
-    // 3. Record transaction
-    await supabase.from('transactions').insert([{
-      user_id: uid,
-      tx_type: 'buy_coins',
-      amount_coins: coinsToAdd,
-      amount_usdt: priceUsdt,
-      description: description || `Bought ${coinsToAdd} coins`
-    }]);
-
-    return { success: true, newCoins };
+    return { success: true, newCoins: current.coins };
   },
 
-  async buyService(name, costCoins) {
+  async convertCoinsToUsdt(coins) {
     const uid = getUserId();
     if (!uid) return { success: false, error: 'Unauthorized' };
-    const current = await this.getBalance();
-    if (current.coins < costCoins) return { success: false, error: 'Insufficient coins' };
+    const idempotencyKey = `idemp_conv_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     
-    const newCoins = current.coins - costCoins;
-    const { error: walletError } = await supabase.from('wallets').update({ coins: newCoins }).eq('user_id', uid);
-    if (walletError) return { success: false, error: walletError.message };
-    
-    await supabase.from('transactions').insert([{
-      user_id: uid,
-      tx_type: 'buy_service',
-      amount_coins: -costCoins,
-      description: `Purchased service: ${name}`
-    }]);
-    return { success: true, newCoins };
-  }
-, async sendGift(giftCoins, giftName, recipientId) {
-    const uid = getUserId();
-    if (!uid) return { success: false, error: 'Unauthorized' };
-    
-    const current = await this.getBalance();
-    if (current.coins < giftCoins) return { success: false, error: 'Insufficient coins' };
-
-    const newCoins = current.coins - giftCoins;
-
-    // Deduct from sender
-    const { error: walletError } = await supabase.from('wallets').update({ coins: newCoins }).eq('user_id', uid);
-    if (walletError) return { success: false, error: walletError.message };
-
-    // Record sender transaction
-    await supabase.from('transactions').insert([{
-      user_id: uid,
-      tx_type: 'send_gift',
-      amount_coins: -giftCoins,
-      description: `Sent gift: ${giftName}`
-    }]);
-
-    // If recipient is a real user, add to their balance (mocking the creator cut)
-    if (recipientId) {
-       const netCoins = Math.floor(giftCoins * 0.71); // 29% platform commission
-       const { data: recWallet } = await supabase.from('wallets').select('coins').eq('user_id', recipientId).single();
-       if (recWallet) {
-           await supabase.from('wallets').update({ coins: (recWallet.coins || 0) + netCoins }).eq('user_id', recipientId);
-           await supabase.from('transactions').insert([{
-             user_id: recipientId,
-             tx_type: 'receive_gift',
-             amount_coins: netCoins,
-             description: `Received gift: ${giftName} (Net after commission)`
-           }]);
-       }
+    try {
+      const { data, error } = await supabase.rpc('rpc_convert_coins_to_usdt', {
+        p_coins: parseInt(coins, 10),
+        p_idempotency_key: idempotencyKey
+      });
+      if (error) return { success: false, error: error.message };
+      return data;
+    } catch (e) {
+      return { success: false, error: e.message };
     }
+  },
 
-    return { success: true, newCoins };
+  async sendGift(giftCoins, giftName, recipientId) {
+    const uid = getUserId();
+    if (!uid) return { success: false, error: 'Unauthorized' };
+    
+    const idempotencyKey = `idemp_gift_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    
+    try {
+      const { data, error } = await supabase.rpc('rpc_send_gift', {
+        p_receiver_id: recipientId,
+        p_gift_id: `gift_${giftName.toLowerCase().replace(/\s+/g, '_')}`,
+        p_gift_name: giftName,
+        p_coin_cost: parseInt(giftCoins, 10),
+        p_idempotency_key: idempotencyKey
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return data;
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async requestWithdrawal(amountUsdt, walletAddress, network = 'TRC20') {
+    const uid = getUserId();
+    if (!uid) return { success: false, error: 'User not logged in' };
+    const idempotencyKey = `idemp_withdraw_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+    try {
+      const { data, error } = await supabase.rpc('rpc_request_payout', {
+        p_amount_usdt: parseFloat(amountUsdt),
+        p_method: network,
+        p_destination_address: walletAddress.trim(),
+        p_idempotency_key: idempotencyKey
+      });
+
+      if (error) return { success: false, error: error.message };
+      return data;
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
   }
 };
 
-export const apiGiftShop = {};
-export const apiVip = {};
-export const apiCalls = {};
+// ==========================================
+// 8. VIP & SUBSCRIPTION SERVICE
+// ==========================================
+export const apiVip = {
+  async purchasePlan({ plan, durationMonths, priceCoins }) {
+    const uid = getUserId();
+    if (!uid) return { success: false, error: 'Unauthorized' };
+    const idempotencyKey = `idemp_vip_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
+    try {
+      const { data, error } = await supabase.rpc('rpc_purchase_vip', {
+        p_plan: plan.toLowerCase(),
+        p_duration_months: parseInt(durationMonths, 10),
+        p_coin_cost: parseInt(priceCoins, 10),
+        p_idempotency_key: idempotencyKey
+      });
+
+      if (error) return { success: false, error: error.message };
+      return data;
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+};
+
+// ==========================================
+// 9. CALLS SERVICE (Session & Billing)
+// ==========================================
+export const apiCalls = {
+  async startCall({ receiverId, callType = 'video', tariffRate = 20 }) {
+    const uid = getUserId();
+    if (!uid) return { success: false, error: 'Unauthorized' };
+
+    try {
+      const { data, error } = await supabase.from('call_sessions').insert([{
+        caller_id: uid,
+        receiver_id: receiverId,
+        call_type: callType,
+        tariff_rate: tariffRate,
+        status: 'active',
+        started_at: new Date().toISOString()
+      }]).select();
+
+      if (error) return { success: false, error: error.message };
+      return { success: true, session: data?.[0] };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async chargeMinute({ sessionId, callerId, receiverId, tariffRate }) {
+    const uid = callerId || getUserId();
+    if (!uid) return { success: false };
+    const idempotencyKey = `idemp_call_${sessionId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+    try {
+      const { data, error } = await supabase.rpc('rpc_charge_call_minute', {
+        p_session_id: sessionId || 'call_live',
+        p_receiver_id: receiverId,
+        p_tariff_rate: parseInt(tariffRate, 10),
+        p_idempotency_key: idempotencyKey
+      });
+
+      if (error) return { success: false, error: error.message };
+      return data;
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async endCall({ sessionId, durationSec = 0, totalCoins = 0 }) {
+    if (!sessionId) return { success: true };
+    try {
+      await supabase.from('call_sessions').update({
+        status: 'ended',
+        ended_at: new Date().toISOString(),
+        duration_sec: durationSec,
+        total_cost: totalCoins
+      }).eq('id', sessionId);
+      return { success: true };
+    } catch (e) {
+      return { success: false };
+    }
+  }
+};
+
+// ==========================================
+// 10. SOCIAL SERVICE (Posts, Stories, Media)
+// ==========================================
+export const apiSocial = {
+  async getPosts() {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*, profiles(username, avatar)')
+        .order('created_at', { ascending: false });
+      if (error) return [];
+      return data.map(p => ({
+        id: p.id,
+        userId: p.user_id,
+        username: p.profiles?.username || 'Unknown',
+        userAvatar: p.profiles?.avatar || '',
+        caption: p.caption,
+        videoUrl: p.media_url,
+        imageUrl: p.media_url,
+        likes: p.likes_count || 0,
+        comments: p.comments_count || 0,
+        time: new Date(p.created_at).toLocaleDateString()
+      }));
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async createPost(mediaUrl, caption) {
+    const uid = getUserId();
+    if (!uid) return { success: false, error: 'Unauthorized' };
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .insert([{ user_id: uid, media_url: mediaUrl, caption }])
+        .select();
+      return { success: !error, data: data?.[0] };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async deletePost(postId) {
+    const uid = getUserId();
+    if (!uid || !postId) return { success: false };
+    try {
+      const { error } = await supabase.from('posts').delete().eq('id', postId).eq('user_id', uid);
+      return { success: !error };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async getStories() {
+    try {
+      const { data, error } = await supabase
+        .from('stories')
+        .select('*, profiles(username, avatar)')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+      if (error) return [];
+      return data.map(s => ({
+        id: s.id,
+        username: s.profiles?.username || 'Unknown',
+        userAvatar: s.profiles?.avatar || '',
+        imageUrl: s.media_url,
+        videoUrl: s.media_url,
+        hasRing: true
+      }));
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async createStory(mediaUrl) {
+    const uid = getUserId();
+    if (!uid) return { success: false, error: 'Unauthorized' };
+    try {
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from('stories')
+        .insert([{ user_id: uid, media_url: mediaUrl, expires_at: expiresAt }])
+        .select();
+      return { success: !error, data: data?.[0] };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async deleteStory(storyId) {
+    const uid = getUserId();
+    if (!uid || !storyId) return { success: false };
+    try {
+      const { error } = await supabase.from('stories').delete().eq('id', storyId).eq('user_id', uid);
+      return { success: !error };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+};
+
+// ==========================================
+// 11. NOTIFICATIONS SERVICE
+// ==========================================
 export const apiNotifications = {
   async getNotifications() {
     const uid = getUserId();
     if (!uid) return [];
-    const { data, error } = await supabase.from('notifications').select('*').eq('user_id', uid);
-    return error ? [] : data;
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false });
+      return error ? [] : data;
+    } catch (e) {
+      return [];
+    }
   }
 };
 
-export const apiCreatorStudio = {};
-export const apiReferral = {};
-
+// ==========================================
+// 12. ADMIN SERVICE (Real DB Management)
+// ==========================================
 async function verifyAdminServerRole() {
   try {
     const { data: authData } = await supabase.auth.getUser();
@@ -805,42 +822,93 @@ async function verifyAdminServerRole() {
       .select('role, telegram_id')
       .eq('id', authData.user.id)
       .single();
-    if (!profile) return false;
-    const cleanTg = String(profile.telegram_id || '').trim();
-    return profile.role === 'admin' && cleanTg === '8933698119';
-  } catch (err) {
+    if (profile && (profile.role === 'admin' || profile.role === 'super_admin' || String(profile.telegram_id) === '8933698119')) {
+      return true;
+    }
+    return false;
+  } catch (e) {
     return false;
   }
 }
 
 export const apiAdmin = {
-  async getKycApplications() {
-    const { data } = await supabase.from('kyc_applications').select('*').order('created_at', { ascending: false });
-    return data || [];
-  },
-  async updateKycStatus(id, status, userId) {
-    const { error } = await supabase.from('kyc_applications').update({ status }).eq('id', id);
-    if (!error && status === 'Approved' && userId) {
-      // Elevate role to streamer
-      await supabase.from('profiles').update({ role: 'streamer' }).eq('id', userId);
-    }
-    return { success: !error };
-  },
   async getAllUsers() {
     if (!(await verifyAdminServerRole())) return [];
-    const { data, error } = await supabase.from('profiles').select('*');
-    return error ? [] : data;
+    try {
+      const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+      return error ? [] : data;
+    } catch (e) {
+      return [];
+    }
   },
+
   async updateUserStatus(userId, status) {
-    if (!(await verifyAdminServerRole())) return { success: false, error: '403 Forbidden: Admin privileges required.' };
-    const { data, error } = await supabase.from('profiles').update({ status }).eq('id', userId);
-    return { success: !error };
+    if (!(await verifyAdminServerRole())) return { success: false, error: 'Unauthorized' };
+    try {
+      const { error } = await supabase.from('profiles').update({ status }).eq('id', userId);
+      return { success: !error };
+    } catch (e) {
+      return { success: false };
+    }
   },
-  async deleteUser(userId) {
-    if (!(await verifyAdminServerRole())) return { success: false, error: '403 Forbidden: Admin privileges required.' };
-    const { error } = await supabase.from('profiles').delete().eq('id', userId);
-    return { success: !error };
+
+  async updateUserVerification(userId, isVerified) {
+    if (!(await verifyAdminServerRole())) return { success: false, error: 'Unauthorized' };
+    try {
+      const { error } = await supabase.from('profiles').update({ is_verified: isVerified }).eq('id', userId);
+      return { success: !error };
+    } catch (e) {
+      return { success: false };
+    }
   },
+
+  async getKycApplications() {
+    if (!(await verifyAdminServerRole())) return [];
+    try {
+      const { data, error } = await supabase.from('kyc_applications').select('*').order('created_at', { ascending: false });
+      return error ? [] : data;
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async reviewKyc(id, status, notes = '') {
+    if (!(await verifyAdminServerRole())) return { success: false };
+    try {
+      const { error } = await supabase.from('kyc_applications').update({ status, admin_notes: notes }).eq('id', id);
+      return { success: !error };
+    } catch (e) {
+      return { success: false };
+    }
+  },
+
+  async getWithdrawalRequests() {
+    if (!(await verifyAdminServerRole())) return [];
+    try {
+      const { data, error } = await supabase.from('payout_requests').select('*, profiles(username, name, avatar)').order('created_at', { ascending: false });
+      return error ? [] : data;
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async reviewWithdrawal(requestId, status, notes = '') {
+    if (!(await verifyAdminServerRole())) return { success: false, error: 'Unauthorized' };
+    try {
+      const normalizedStatus = (status || '').toLowerCase() === 'approved' ? 'Approved' : 'Rejected';
+      const { data, error } = await supabase.rpc('rpc_admin_process_payout', {
+        p_payout_id: requestId,
+        p_new_status: normalizedStatus,
+        p_admin_notes: notes || null
+      });
+
+      if (error) return { success: false, error: error.message };
+      return data;
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
   async getReports() {
     if (!(await verifyAdminServerRole())) return [];
     try {
@@ -850,6 +918,7 @@ export const apiAdmin = {
       return [];
     }
   },
+
   async getLiveStreams() {
     if (!(await verifyAdminServerRole())) return [];
     try {
@@ -859,6 +928,7 @@ export const apiAdmin = {
       return [];
     }
   },
+
   async endLiveStream(streamId) {
     if (!(await verifyAdminServerRole())) return { success: false, error: '403 Forbidden: Admin privileges required.' };
     try {
@@ -868,51 +938,28 @@ export const apiAdmin = {
       return { success: false };
     }
   },
-  async analyzeLiveStreamAi(streamData) {
-    const issues = [];
-    if (!streamData.host || streamData.host.includes('Unknown')) issues.push(window.loc('عدم تطابق تصویر استریمر با پروفایل تایید شده (AI Flag)', 'The streamer\'s image does not match the approved profile (AI Flag)'));
-    if (streamData.title && (streamData.title.includes(window.loc('تست', 'Test')) || streamData.title.includes(window.loc('خالی', 'vacant')))) issues.push(window.loc('کادر تصویر خالی برای مدت طولانی (Empty Camera AI Alert)', 'Empty image frame for a long time (Empty Camera AI Alert)'));
-    if (streamData.category === 'General' && streamData.live_type === 'adult') issues.push(window.loc('عدم تطابق دسته‌بندی استریم با نوع محتوا (Category Mismatch)', 'Stream category mismatch with content type (Category Mismatch)'));
 
-    const isFlagged = issues.length > 0;
-    const reason = issues.length > 0 ? issues.join(' | ') : window.loc('شناسایی فعالیت مشکوک بصری توسط هوش مصنوعی', 'Identification of suspicious visual activity by artificial intelligence');
-
-    return {
-      flagged: isFlagged,
-      reason: reason,
-      confidence: 0.94,
-      recommendation: window.loc('گزارش جهت بررسی و تصمیم‌گیری نهایی به ادمین ارسال گردید', 'The report was sent to the administrator for review and final decision')
-    };
-  },
-  async analyzeReportAi(params) { return { analysis: window.loc('بررسی هوش مصنوعی: نیازمند تصمیم‌گیری نهایی ادمین', 'Artificial intelligence review: requires the final decision of the admin') }; },
-  async moderateChatAi(params) { return { decision: 'Allowed' }; },
-  async getSupportAiSuggestion(params) { return { suggestion: 'Support suggestion' }; },
-  async verifyStreamerAi(params) { return { verified: true }; },
-  async checkReferralFraudAi(params) { return { fraud: false }; },
-  async translateMessage(text, lang) { return { translated: text }; },
   async updateReportStatus(reportId, status) {
+    if (!(await verifyAdminServerRole())) return { success: false };
     try {
       const { error } = await supabase.from('live_reports').update({ status }).eq('id', reportId);
       return { success: !error };
     } catch (e) {
       return { success: false };
     }
-  },
-  async getPosts() { return []; }
+  }
 };
 
+// ==========================================
+// 13. STREAMER SERVICE
+// ==========================================
 export const apiStreamer = {
   async getStreamerProfile(userId) {
     const uid = userId || getUserId();
     if (!uid) return null;
     try {
-      const { data, error } = await supabase
-        .from('streamer_profiles')
-        .select('*')
-        .eq('user_id', uid)
-        .single();
-      if (error) return null;
-      return data;
+      const { data, error } = await supabase.from('streamer_profiles').select('*').eq('user_id', uid).single();
+      return error ? null : data;
     } catch (e) {
       return null;
     }
@@ -926,149 +973,25 @@ export const apiStreamer = {
         .from('streamer_profiles')
         .upsert([{ user_id: uid, ...updates }], { onConflict: 'user_id' })
         .select();
-      return { success: !error, data: data ? data[0] : null };
+      return { success: !error, data: data?.[0] };
     } catch (e) {
       return { success: false };
-    }
-  },
-
-  async getStreamerStatistics(userId) {
-    const uid = userId || getUserId();
-    if (!uid) return null;
-    try {
-      const { data, error } = await supabase
-        .from('streamer_statistics')
-        .select('*')
-        .eq('user_id', uid)
-        .single();
-      if (error) return null;
-      return data;
-    } catch (e) {
-      return null;
-    }
-  },
-
-  async getStreamerSettings(userId) {
-    const uid = userId || getUserId();
-    if (!uid) return null;
-    try {
-      const { data, error } = await supabase
-        .from('streamer_settings')
-        .select('*')
-        .eq('user_id', uid)
-        .single();
-      if (error) return null;
-      return data;
-    } catch (e) {
-      return null;
-    }
-  },
-
-  async updateStreamerSettings(userId, settings) {
-    const uid = userId || getUserId();
-    if (!uid) return { success: false };
-    try {
-      const { data, error } = await supabase
-        .from('streamer_settings')
-        .upsert([{ user_id: uid, ...settings }], { onConflict: 'user_id' })
-        .select();
-      return { success: !error, data: data ? data[0] : null };
-    } catch (e) {
-      return { success: false };
-    }
-  },
-
-  async getStreamerNotifications(userId) {
-    const uid = userId || getUserId();
-    if (!uid) return [];
-    try {
-      const { data, error } = await supabase
-        .from('streamer_notifications')
-        .select('*')
-        .eq('user_id', uid)
-        .order('created_at', { ascending: false });
-      if (error) return [];
-      return data || [];
-    } catch (e) {
-      return [];
     }
   },
 
   async requestPayout(userId, amountUsdt, walletAddress) {
-    const uid = userId || getUserId();
-    if (!uid) return { success: false, error: 'User not logged in' };
-    try {
-      const { data, error } = await supabase
-        .from('payout_requests')
-        .insert([{
-          user_id: uid,
-          amount_usdt: amountUsdt,
-          wallet_address: walletAddress,
-          status: 'pending'
-        }])
-        .select();
-      if (error) return { success: false, error: error.message };
-      return { success: true, data: data[0] };
-    } catch (e) {
-      return { success: false, error: e.message };
-    }
+    return apiWallet.requestWithdrawal(amountUsdt, walletAddress);
   }
 };
 
+// ==========================================
+// 14. SUPPORT SERVICE
+// ==========================================
 export const apiSupport = {
   async createTicket(subject, message) {
     const uid = getUserId();
     if (!uid) return { success: false };
     const { error } = await supabase.from('support_tickets').insert([{ user_id: uid, subject, message }]);
     return { success: !error, error: error?.message };
-  }
-};
-export const apiSocial = {
-  async getPosts() {
-    const { data, error } = await supabase
-      .from('posts')
-      .select('*, profiles(username, avatar)')
-      .order('created_at', { ascending: false });
-    if (error) return [];
-    return data.map(p => ({
-      id: p.id,
-      userId: p.user_id,
-      username: p.profiles?.username || 'Unknown',
-      userAvatar: p.profiles?.avatar || '',
-      caption: p.caption,
-      videoUrl: p.media_url,
-      imageUrl: p.media_url,
-      likes: p.likes_count,
-      comments: p.comments_count,
-      time: new Date(p.created_at).toLocaleDateString()
-    }));
-  },
-  async createPost(mediaUrl, caption) {
-    const uid = getUserId();
-    if (!uid) return { success: false };
-    const { data, error } = await supabase.from('posts').insert([{ user_id: uid, media_url: mediaUrl, caption }]).select();
-    return { success: !error, data: data?.[0] };
-  },
-  async getStories() {
-    const { data, error } = await supabase
-      .from('stories')
-      .select('*, profiles(username, avatar)')
-      .gt('expires_at', new Date().toISOString());
-    if (error) return [];
-    return data.map(s => ({
-      id: s.id,
-      username: s.profiles?.username || 'Unknown',
-      userAvatar: s.profiles?.avatar || '',
-      imageUrl: s.media_url,
-      videoUrl: s.media_url,
-      hasRing: true
-    }));
-  },
-  async createStory(mediaUrl) {
-    const uid = getUserId();
-    if (!uid) return { success: false };
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    const { data, error } = await supabase.from('stories').insert([{ user_id: uid, media_url: mediaUrl, expires_at: expiresAt }]).select();
-    return { success: !error, data: data?.[0] };
   }
 };

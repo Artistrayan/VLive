@@ -45,17 +45,10 @@ export default function StreamerDashboardModal({
   });
 
   // Scheduled Live State
-  const [scheduledStreams, setScheduledStreams] = useState([
-    { id: 'sch_1', title: window.loc('شب‌نشینی زنده موسیقی 🎸', 'Live music party 🎸'), date: window.loc('فردا - ساعت ۲۱:۰۰', 'Tomorrow - 21:00'), category: 'Music', live_type: 'standard' },
-    { id: 'sch_2', title: window.loc('چت اختصاصی و پاسخ به سوالات 💬', 'Exclusive chat and answers to questions 💬'), date: window.loc('جمعه - ساعت ۲۲:۳۰', 'Friday - 22:30'), category: 'VIP Chat', live_type: 'adult' }
-  ]);
+  const [scheduledStreams, setScheduledStreams] = useState([]);
 
   // Past Live History State
-  const [liveHistory, setLiveHistory] = useState([
-    { id: 'h_1', title: window.loc('لایو ویژه آخر هفته 🔥', 'Weekend special live 🔥'), date: window.loc('دیروز', 'yesterday'), duration: '2h 15m', viewers: 4200, earnedCoins: 12400 },
-    { id: 'h_2', title: window.loc('استریم گیمینگ PUBG 🎮', 'PUBG gaming stream 🎮'), date: window.loc('۳ روز پیش', '3 days ago'), duration: '1h 45m', viewers: 2890, earnedCoins: 8500 },
-    { id: 'h_3', title: window.loc('گپ و گفت ۱۸+ VIP 🔞', 'Chat and say 18+ VIP 🔞'), date: window.loc('۵ روز پیش', '5 days ago'), duration: '3h 10m', viewers: 5600, earnedCoins: 24000 }
-  ]);
+  const [liveHistory, setLiveHistory] = useState([]);
 
   // Top Supporters State
   const [topSupporters, setTopSupporters] = useState([

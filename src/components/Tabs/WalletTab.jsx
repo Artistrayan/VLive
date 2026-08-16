@@ -1,3 +1,4 @@
+import { apiVip, apiWallet } from '../../services/api';
 import React from 'react';
 import { safeStorage } from '../../utils/safeStorage';
 import { economyService } from '../../services/economyService';
@@ -32,8 +33,8 @@ export default function WalletTab(props) {
 
   const [creatorPollQuestionInput, setCreatorPollQuestionInput] = React.useState('');
   const [creatorPollQuestion, setCreatorPollQuestion] = React.useState('');
-  const [creatorPollOptions, setCreatorPollOptions] = React.useState(['', '']);
-  const [pollOptionInputs, setPollOptionInputs] = React.useState(['', '']);
+  const [creatorPollOptions, setCreatorPollOptions] = React.useState([]);
+  const [pollOptionInputs, setPollOptionInputs] = React.useState([]);
   const [isCreatePollModalOpen, setIsCreatePollModalOpen] = React.useState(false);
   const [creatorActiveTab, setCreatorActiveTab] = React.useState('dashboard');
   const [withdrawMethodInput, setWithdrawMethodInput] = React.useState('USDT');
@@ -51,11 +52,7 @@ export default function WalletTab(props) {
   const [referralLink] = React.useState('https://t.me/vlive_app_bot?start=ref_rayan');
   const [referralActiveTab, setReferralActiveTab] = React.useState('overview');
   const [invitesList] = React.useState([]);
-  const [referralMilestones, setReferralMilestones] = React.useState([
-    { id: 1, target: 5, rewardCoins: 1000, claimed: true },
-    { id: 2, target: 10, rewardCoins: 2500, claimed: false },
-    { id: 3, target: 25, rewardCoins: 7500, claimed: false }
-  ]);
+  const [referralMilestones, setReferralMilestones] = React.useState([]);
   const [topInvitersLeaderboard] = React.useState([
     { rank: 1, name: 'Sina_Pro', invites: 142, reward: '50,000 Coins' },
     { rank: 2, name: 'Sara_Live', invites: 98, reward: '25,000 Coins' },
@@ -2405,7 +2402,7 @@ export default function WalletTab(props) {
                       <button 
                         onClick={() => {
                           if (userCoins < 500) { showToast(window.loc('موجودی سکه کافی نیست!', 'Not enough coins!')); return; }
-                          setUserCoins(p => p - 500);
+                          /* Removed mock transaction 500 */
                           showToast(window.loc('👑 اشتراک VIP برای شما فعال شد!', '👑 VIP subscription has been activated for you!'));
                         }}
                         className="w-full py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold"
@@ -2420,7 +2417,7 @@ export default function WalletTab(props) {
                       <button 
                         onClick={() => {
                           if (userCoins < 200) { showToast(window.loc('موجودی سکه کافی نیست!', 'Not enough coins!')); return; }
-                          setUserCoins(p => p - 200);
+                          /* Removed mock transaction 200 */
                           showToast(window.loc('🚀 پروفایل شما به صورت ویژه نمایش داده شد!', '🚀 Your profile has been featured!'));
                         }}
                         className="w-full py-1.5 rounded-xl bg-purple-600 text-white font-bold"
@@ -2435,7 +2432,7 @@ export default function WalletTab(props) {
                       <button 
                         onClick={() => {
                           if (userCoins < 1000) { showToast(window.loc('موجودی سکه کافی نیست!', 'Not enough coins!')); return; }
-                          setUserCoins(p => p - 1000);
+                          /* Removed mock transaction 1000 */
                           showToast(window.loc('🎥 لایو شما در بالای صفحه اول سنجاق شد!', '🎥 Your live was pinned at the top of the first page!'));
                         }}
                         className="w-full py-1.5 rounded-xl bg-pink-600 text-white font-bold"
@@ -2485,7 +2482,7 @@ export default function WalletTab(props) {
                               setWalletSubTab('buy');
                               return;
                             }
-                            setUserCoins(p => p - g.coins);
+                            /* Removed mock transaction g.coins */
                             showToast(window.loc(`🎁 هدیه ${g.name} با موفقیت ارسال شد!`, `🎁 هدیه ${g.name} با موفقیت ارسال شد!`));
                           }}
                           className="w-full py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs shadow"

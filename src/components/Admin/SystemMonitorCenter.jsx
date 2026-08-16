@@ -20,17 +20,7 @@ export default function SystemMonitorCenter({
   const [aiSystemReport, setAiSystemReport] = useState(null);
 
   // System Services Health
-  const [servicesStatus, setServicesStatus] = useState([
-    { name: 'Supabase Database', category: 'Database', status: 'HEALTHY', latency: '24ms', uptime: '99.98%' },
-    { name: 'Supabase Auth & JWT', category: 'Authentication', status: 'HEALTHY', latency: '18ms', uptime: '100%' },
-    { name: 'Supabase Realtime Subscriptions', category: 'Realtime', status: 'HEALTHY', latency: '12ms', uptime: '99.95%' },
-    { name: 'Supabase Storage Buckets', category: 'Storage', status: 'HEALTHY', latency: '32ms', uptime: '99.99%' },
-    { name: 'LiveKit Streaming Server', category: 'Live Engine', status: 'HEALTHY', latency: '15ms', uptime: '99.90%' },
-    { name: 'Gemini AI API Engine', category: 'AI Services', status: 'HEALTHY', latency: '110ms', uptime: '99.99%' },
-    { name: 'Telegram Bot Sync Service', category: 'Integration', status: 'HEALTHY', latency: '45ms', uptime: '99.92%' },
-    { name: 'TRC20 Crypto Payment Gateway', category: 'Payments', status: 'HEALTHY', latency: '85ms', uptime: '100%' },
-    { name: 'Background Cron & Push Notifications', category: 'Jobs & Queue', status: 'HEALTHY', latency: '10ms', uptime: '100%' }
-  ]);
+  const [servicesStatus, setServicesStatus] = useState([]);
 
   // Automated System Health Check
   const runHealthCheck = () => {

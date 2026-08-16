@@ -86,7 +86,7 @@ export default function LiveStudioModal({
   const [pkTimeLeft, setPkTimeLeft] = useState(180);
 
   // Moderation Lists
-  const [moderatorsList, setModeratorsList] = useState(['Mod_Sahar', 'Mod_Kian']);
+  const [moderatorsList, setModeratorsList] = useState([]);
   const [mutedUsers, setMutedUsers] = useState([]);
   const [blockedUsers, setBlockedUsers] = useState([]);
 
