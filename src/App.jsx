@@ -61,6 +61,7 @@ const DEFAULT_REAL_USERS = [];
 const INITIAL_TRANSACTIONS = [];
 
 // Initial KYC & Gender Verifications
+const INITIAL_VERIFICATIONS = [];
 
 // Initial Direct Messages Conversations
 const INITIAL_CONVERSATIONS = [];
