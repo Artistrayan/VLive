@@ -212,12 +212,24 @@ export default function SettingsModal(props) {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                      <span className="text-[10px] text-slate-400 block">Connected Telegram Account</span>
-                      <p className="font-bold text-cyan-300 font-mono">
-                        {currentTelegramId ? `@${currentUsername || authUsername || 'user'} (ID: ${currentTelegramId})` : 'Not Connected'}
-                      </p>
-                    </div>
+                    {(() => {
+                      const effectiveTgId = currentTelegramId || props.currentUser?.telegram_id || (typeof window !== 'undefined' ? window.Telegram?.WebApp?.initDataUnsafe?.user?.id : '') || '';
+                      const effectiveTgUsername = (typeof window !== 'undefined' ? window.Telegram?.WebApp?.initDataUnsafe?.user?.username : '') || currentUsername || authUsername || userName || 'user';
+                      const isConnected = Boolean(effectiveTgId);
+                      return (
+                        <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-slate-400 block">Connected Telegram Account</span>
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${isConnected ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
+                              {isConnected ? 'Connected' : 'Not Connected'}
+                            </span>
+                          </div>
+                          <p className="font-bold text-cyan-300 font-mono">
+                            {isConnected ? `@${effectiveTgUsername} (ID: ${effectiveTgId})` : 'Not Connected'}
+                          </p>
+                        </div>
+                      );
+                    })()}
 
                     {(() => {
                       const isKycApproved = Boolean(isVerified || (verificationsList && Array.isArray(verificationsList) && verificationsList.some(v => v.user === (currentUsername || userName) && v.status === 'Approved')));

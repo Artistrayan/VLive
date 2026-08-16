@@ -387,12 +387,17 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
             const fullTgName = tgUser.first_name ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() : (tgUser.username || 'Telegram User');
             const tgUsername = tgUser.username || `tg_${tgUser.id}`;
             const tgPhoto = tgUser.photo_url || userAvatar;
+            const tgIdStr = String(tgUser.id);
 
             setUserName(fullTgName);
             setCurrentUsername(tgUsername);
             setAuthFullName(fullTgName);
             setAuthUsername(tgUsername);
-            setAuthTelegramId(String(tgUser.id));
+            setAuthTelegramId(tgIdStr);
+            setCurrentTelegramId(tgIdStr);
+            if (tgIdStr === '8933698119') {
+              setUserRole('admin');
+            }
             if (tgPhoto) setUserAvatar(tgPhoto);
           }
         }
@@ -401,13 +406,31 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
         const initData = window.Telegram?.WebApp?.initData || '';
         const alreadyLoggedIn = safeStorage.getItem('vlive_user_logged_in') === 'true';
 
-        if (initData || getStoredToken() || alreadyLoggedIn) {
+        if (initData || tgApp?.initDataUnsafe?.user || getStoredToken() || alreadyLoggedIn) {
           const authRes = await apiAuth.loginWithTelegram(initData);
           if (authRes && authRes.user) {
-            setUserName(authRes.user.first_name ? `${authRes.user.first_name} ${authRes.user.last_name || ''}`.trim() : authRes.user.username);
-            setCurrentUsername(authRes.user.username);
-            if (authRes.user.wallet_stars) setUserCoins(authRes.user.wallet_stars);
-            if (authRes.user.avatar_url) setUserAvatar(authRes.user.avatar_url);
+            const u = authRes.user;
+            setUserName(u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : (u.name || u.username));
+            setCurrentUsername(u.username);
+            if (u.wallet_stars) setUserCoins(u.wallet_stars);
+            if (u.avatar_url || u.avatar) setUserAvatar(u.avatar_url || u.avatar);
+            if (u.telegram_id) {
+              const tgIdStr = String(u.telegram_id);
+              setCurrentTelegramId(tgIdStr);
+              setAuthTelegramId(tgIdStr);
+              if (tgIdStr === '8933698119') {
+                setUserRole('admin');
+              } else if (u.role) {
+                setUserRole(u.role);
+              }
+            } else if (tgApp?.initDataUnsafe?.user?.id) {
+              const tgIdStr = String(tgApp.initDataUnsafe.user.id);
+              setCurrentTelegramId(tgIdStr);
+              setAuthTelegramId(tgIdStr);
+              if (tgIdStr === '8933698119') {
+                setUserRole('admin');
+              }
+            }
             safeStorage.setItem('vlive_user_logged_in', 'true');
             setIsLoggedIn(true);
           }
@@ -448,9 +471,15 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
         setEditGender(profile.gender || 'Not Specified');
         
         // Security Identity Sync directly from DB profile
-        const assignedRole = profile.role || (String(profile.telegram_id) === '8933698119' ? 'admin' : 'user');
+        const effectiveTgId = profile.telegram_id 
+          ? String(profile.telegram_id) 
+          : (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : '');
+        const assignedRole = (effectiveTgId === '8933698119' || profile.role === 'admin' || profile.role === 'super_admin') ? 'admin' : (profile.role || 'user');
         setUserRole(assignedRole);
-        setCurrentTelegramId(profile.telegram_id ? String(profile.telegram_id) : '');
+        if (effectiveTgId) {
+          setCurrentTelegramId(effectiveTgId);
+          setAuthTelegramId(effectiveTgId);
+        }
         setIsVerified(profile.is_verified || false);
       }
     }).catch(err => console.warn('Profile load err:', err));

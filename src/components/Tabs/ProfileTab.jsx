@@ -303,7 +303,8 @@ export default function ProfileTab(props) {
     showToast(window.loc('پست جدید با موفقیت منتشر شد 🎉', 'New post published successfully 🎉'));
   };
 
-  const isAdminUser = (props.currentUser?.role === 'admin' || props.userRole === 'admin') && String(props.currentUser?.telegram_id || props.currentTelegramId || '').trim() === '8933698119';
+  const detectedTgId = props.currentUser?.telegram_id || props.currentTelegramId || (typeof window !== 'undefined' ? window.Telegram?.WebApp?.initDataUnsafe?.user?.id : '') || '';
+  const isAdminUser = (props.currentUser?.role === 'admin' || props.userRole === 'admin' || String(detectedTgId).trim() === '8933698119') && String(detectedTgId).trim() === '8933698119';
 
   return (
     <>
@@ -325,6 +326,16 @@ export default function ProfileTab(props) {
               
               {/* Top Quick Action Buttons */}
               <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+                {isAdminUser && (
+                  <button
+                    onClick={() => setIsAdminPanelOpen && setIsAdminPanelOpen(true)}
+                    className="p-2 rounded-2xl bg-rose-600/90 hover:bg-rose-500 text-white backdrop-blur-md transition border border-rose-400/50 shadow-lg flex items-center gap-1 text-xs font-black"
+                    title={window.loc('پنل مدیریت', 'Admin Panel')}
+                  >
+                    <Shield className="w-4 h-4 text-white" />
+                    <span className="hidden sm:inline">{window.loc('مدیریت', 'Admin')}</span>
+                  </button>
+                )}
                 <button
                   onClick={() => setIsQrCodeModalOpen(true)}
                   className="p-2 rounded-2xl bg-slate-950/70 hover:bg-slate-900 text-white backdrop-blur-md transition border border-white/20"

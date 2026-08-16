@@ -106,6 +106,10 @@ export const apiAuth = {
           tgUser = JSON.parse(decodeURIComponent(userParam));
         }
       }
+      // Fallback: Check window.Telegram.WebApp.initDataUnsafe if initData string wasn't parsed
+      if (!tgUser && typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user) {
+        tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+      }
     } catch (e) {
       console.warn('Could not parse initData', e);
     }
@@ -114,7 +118,7 @@ export const apiAuth = {
       return { success: false, error: 'Telegram identity is currently NOT connected to the application.' };
     }
 
-    const tgId = tgUser.id;
+    const tgId = String(tgUser.id);
     const email = `tg_${tgId}@vlive.app`;
     const password = `tg_secure_password_${tgId}!`;
     const roleForTgUser = (String(tgId) === '8933698119') ? 'admin' : 'user';
@@ -135,7 +139,7 @@ export const apiAuth = {
         
         const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userId).single();
         localStorage.setItem('vlive_user_id', userId);
-        return { success: true, user: profileData, token: existingUser.session?.access_token };
+        return { success: true, user: profileData || { id: userId, telegram_id: tgId, role: roleForTgUser, username: tgUser.username }, token: existingUser.session?.access_token };
     }
 
     const name = tgUser.first_name || 'Telegram User';

@@ -317,13 +317,28 @@ export default function LiveStudioModal({
       }
       el.muted = true;
       el.defaultMuted = true;
+      el.volume = 0;
       el.playsInline = true;
       el.setAttribute('playsinline', 'true');
       el.setAttribute('webkit-playsinline', 'true');
-      el.onloadedmetadata = () => {
-        el.play().catch(e => console.warn('Video element play onloadedmetadata warning:', e));
+      el.setAttribute('autoplay', 'true');
+      el.setAttribute('muted', 'true');
+      
+      const attemptPlay = () => {
+        if (el.paused || el.ended) {
+          el.play().catch(e => {
+            console.warn('Video element play retry warning:', e);
+            // Secondary retry on user interaction or next frame
+            setTimeout(() => {
+              el.play().catch(() => {});
+            }, 300);
+          });
+        }
       };
-      el.play().catch(e => console.warn('Video element play warning:', e));
+
+      el.onloadedmetadata = attemptPlay;
+      el.oncanplay = attemptPlay;
+      attemptPlay();
     }
   };
 
