@@ -999,14 +999,32 @@ export const apiAdmin = {
     }
   },
 
-  async reviewKyc(id, status, notes = '') {
-    if (!(await verifyAdminServerRole())) return { success: false };
+  async updateKycStatus(id, status, userId = null, notes = '') {
+    if (!(await verifyAdminServerRole())) return { success: false, error: 'Unauthorized' };
     try {
-      const { error } = await supabase.from('kyc_applications').update({ status, admin_notes: notes }).eq('id', id);
+      const { error } = await supabase
+        .from('kyc_applications')
+        .update({ 
+          status: status, 
+          admin_notes: notes || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+      
+      if (status === 'Approved' && userId) {
+        await supabase
+          .from('profiles')
+          .update({ is_verified: true, role: 'streamer' })
+          .eq('id', userId);
+      }
       return { success: !error };
     } catch (e) {
-      return { success: false };
+      return { success: false, error: e.message };
     }
+  },
+
+  async reviewKyc(id, status, notes = '') {
+    return this.updateKycStatus(id, status, null, notes);
   },
 
   async getWithdrawalRequests() {
