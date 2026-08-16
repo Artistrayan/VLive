@@ -2,7 +2,7 @@ import { APP_LANGUAGES as DEFAULT_APP_LANGUAGES } from '../constants/i18n';
 import React from 'react';
 import { safeStorage } from '../utils/safeStorage';
 import { apiAuth } from '../services/api';
-import { isUsernameAlreadyTaken, registerUsernameLocally } from '../utils/usernameUtils';
+import { isUsernameAlreadyTaken, normalizeUsername, isValidUsername } from '../utils/usernameUtils';
 import { 
   Settings, X, Search, User, ShieldCheck, Bell, Lock, Globe, Palette,
   Volume2, Video, Database, Award, HelpCircle, FileText, Info, Camera,

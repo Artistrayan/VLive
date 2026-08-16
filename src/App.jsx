@@ -27,7 +27,7 @@ import { PRESET_AVATARS, GIFTS_CATALOG } from './constants/appConstants';
 import { CoinsIcon, VerifiedBadge, VipStatusBadge, StreamerScoresBadges } from './components/CommonBadges';
 import { safeStorage } from './utils/safeStorage';
 import { loc, getSavedLang } from './utils/i18n';
-import { isUsernameAlreadyTaken, registerUsernameLocally, isUserAnAdmin } from './utils/usernameUtils';
+import { isUsernameAlreadyTaken, normalizeUsername, isValidUsername, isUserAnAdmin } from './utils/usernameUtils';
 import { economyService } from './services/economyService';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
