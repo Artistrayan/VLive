@@ -25,6 +25,9 @@ import VisualSectionWrapper from './components/VisualUiEditor/VisualSectionWrapp
 import { APP_LANGUAGES, I18N_DICTIONARY } from './constants/i18n';
 import { PRESET_AVATARS, GIFTS_CATALOG } from './constants/appConstants';
 import { CoinsIcon, VerifiedBadge, VipStatusBadge, StreamerScoresBadges } from './components/CommonBadges';
+import LuxuryGiftOverlay from './components/Overlays/LuxuryGiftOverlay';
+import VipEntranceBanner from './components/Overlays/VipEntranceBanner';
+import { filterMessageContent } from './services/aiModeration';
 import { safeStorage } from './utils/safeStorage';
 import { loc, getSavedLang } from './utils/i18n';
 import { isUsernameAlreadyTaken, normalizeUsername, isValidUsername, isUserAnAdmin } from './utils/usernameUtils';
@@ -2731,6 +2734,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [floatingHearts, setFloatingHearts] = useState([]);
   const [streamChatMessages, setStreamChatMessages] = useState([]);
   const [streamChatInput, setStreamChatInput] = useState('');
+  const [activeLuxuryGift, setActiveLuxuryGift] = useState(null);
+  const [activeVipEntrance, setActiveVipEntrance] = useState(null);
+  const [isStreamGiftTrayOpen, setIsStreamGiftTrayOpen] = useState(false);
 
   // Helper to publish live stream network events (Real-time BroadcastChannel & LocalStorage Sync)
   const broadcastLiveEvent = (type, payload) => {
@@ -2756,12 +2762,17 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     }
   };
 
-  // Handler for sending live stream chat message
+  // Handler for sending live stream chat message with AI Moderation
   const handleSendStreamChat = () => {
     if (!streamChatInput.trim()) return;
+    const filterRes = filterMessageContent(streamChatInput.trim());
+    if (!filterRes.isClean) {
+      showToast(loc('⚠️ پیام شما حاوی کلمات نامناسب بود و خودکار اصلاح شد.', '⚠️ Your message contained restricted words and was filtered.'));
+    }
+
     const newMsg = {
       user: userName,
-      text: streamChatInput.trim(),
+      text: filterRes.filteredText,
       isVip: userVipLevel > 0,
       timestamp: Date.now()
     };
@@ -2775,6 +2786,40 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       message: newMsg
     });
   };
+
+  // Handler for sending luxury gifts with animated overlay
+  const handleSendLuxuryGift = (gift) => {
+    if (userCoins < gift.coins) {
+      showToast(loc('⚠️ موجودی سکه شما برای ارسال این هدیه کافی نیست.', '⚠️ Insufficient coins to send this gift.'));
+      setActiveTab('wallet');
+      setWalletSubTab('buy');
+      setIsStreamGiftTrayOpen(false);
+      return;
+    }
+
+    setUserCoins(prev => prev - gift.coins);
+    setIsStreamGiftTrayOpen(false);
+
+    // Trigger full-screen luxury animation
+    const giftPayload = {
+      name: gift.name,
+      sender: userName || 'V.LIVE VIP',
+      receiver: viewingStream?.host || 'Streamer',
+      amount: gift.coins,
+      icon: gift.icon,
+      animationType: gift.animationType || 'crown'
+    };
+
+    setActiveLuxuryGift(giftPayload);
+    showToast(loc(`🎁 هدیه لاکچری ${gift.name} با شکوه تمام ارسال شد!`, `🎁 Luxury gift ${gift.name} sent successfully!`));
+
+    // Broadcast in real-time
+    broadcastLiveEvent('LUXURY_GIFT_EVENT', {
+      streamId: viewingStream ? viewingStream.id : 'default',
+      gift: giftPayload
+    });
+  };
+
 
   // Handler for liking live stream with animated floating heart
   const handleLikeStream = () => {

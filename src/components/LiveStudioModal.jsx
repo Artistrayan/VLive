@@ -4,10 +4,13 @@ import {
   Crown, Users, Eye, Heart, Gift, MessageSquare, Settings, Flame, Lock, Zap, Clock, 
   ThumbsUp, Send, AlertTriangle, X, Check, ChevronUp, ChevronDown, Sliders, Volume2, 
   VolumeX, UserPlus, Swords, BarChart2, UserX, UserMinus, Pin, CornerUpLeft, Trash2, 
-  Cpu, BatteryCharging, Wifi, Play, Square, Award, Filter, ArrowRight, Share2, Info
+  Cpu, BatteryCharging, Wifi, Play, Square, Award, Filter, ArrowRight, Share2, Info, Coins
 } from 'lucide-react';
 import { apiLive, apiAdmin } from '../services/api';
 import { livekitManager, fetchLiveKitToken } from '../services/livekitService';
+import LuxuryGiftOverlay from './Overlays/LuxuryGiftOverlay';
+import VipEntranceBanner from './Overlays/VipEntranceBanner';
+import { filterMessageContent } from '../services/aiModeration';
 
 export default function LiveStudioModal({
   isOpen,
@@ -38,6 +41,13 @@ export default function LiveStudioModal({
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [entryCoinRate, setEntryCoinRate] = useState(10);
   const [adultConsent, setAdultConsent] = useState(false);
+  const [isTicketedLive, setIsTicketedLive] = useState(false);
+  const [ticketPrice, setTicketPrice] = useState(50);
+
+  // Luxury FX & VIP Entrance States
+  const [activeLuxuryGift, setActiveLuxuryGift] = useState(null);
+  const [activeVipEntrance, setActiveVipEntrance] = useState(null);
+
 
   // Hardware / Device States
   const [selectedCamera, setSelectedCamera] = useState('Front Camera (HD)');
@@ -502,6 +512,8 @@ export default function LiveStudioModal({
       viewers: 1,
       isSelfStream: true,
       status: 'active',
+      is_ticketed: isTicketedLive,
+      ticket_price: isTicketedLive ? Number(ticketPrice) : 0,
       livekit_token: tokenRes.token,
       livekit_room: tokenRes.roomName,
       livekit_server_url: tokenRes.serverUrl,
@@ -538,22 +550,29 @@ export default function LiveStudioModal({
     showToast(window.loc('⏹️ پخش زنده پایان یافت. خلاصه عملکرد تولید شد.', '⏹️ The live broadcast has ended. A performance summary was generated.'));
   };
 
-  // Chat message send
+  // Chat message send with AI Moderation
   const handleSendChat = () => {
     if (!chatInput.trim()) return;
     if (isCommentsDisabled) {
       showToast(window.loc('⚠️ کامنت‌های لایو توسط شما غیرفعال شده است.', '⚠️ Live comments have been disabled by you.'));
       return;
     }
+
+    const filterRes = filterMessageContent(chatInput.trim());
+    if (!filterRes.isClean) {
+      showToast(window.loc('⚠️ پیام شما حاوی کلمات فیلتر شده بود و سانسور شد.', '⚠️ Your message contained filtered keywords and was sanitized.'));
+    }
+
     const newMsg = {
       id: Date.now(),
       user: currentUsername || 'Streamer (Host)',
-      text: chatInput.trim(),
+      text: filterRes.filteredText,
       isHost: true
     };
     setChatMessages(prev => [...prev, newMsg]);
     setChatInput('');
   };
+
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col font-sans select-none overflow-hidden text-xs dir-rtl">
@@ -820,6 +839,53 @@ export default function LiveStudioModal({
               </div>
             </div>
 
+            {/* Ticketed VIP Stream Switch & Pricing */}
+            <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${isTicketedLive ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-slate-400'}`}>
+                    <Lock className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-white text-xs block">{window.loc('لایو پولی / ورودی بلیطی (Ticketed Live)', 'Ticketed VIP Live')}</span>
+                    <span className="text-[10px] text-slate-400 block">{window.loc('دریافت ورودی سکه‌ای از بینندگان برای ورود به اتاق', 'Charge viewers coins to enter the room')}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsTicketedLive(!isTicketedLive)}
+                  className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${isTicketedLive ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-slate-800'}`}
+                >
+                  <div className={`w-5 h-5 rounded-full bg-white transition-transform ${isTicketedLive ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              {isTicketedLive && (
+                <div className="pt-2 border-t border-slate-800 space-y-1.5 animate-fadeIn">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-300 font-bold">{window.loc('💰 مبلغ بلیط ورودی:', '💰 Ticket price:')}</span>
+                    <span className="font-mono font-black text-amber-300">{ticketPrice} Coins</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[25, 50, 100, 250].map((price) => (
+                      <button
+                        key={price}
+                        type="button"
+                        onClick={() => setTicketPrice(price)}
+                        className={`py-1.5 rounded-xl font-mono text-[11px] font-bold border transition ${
+                          ticketPrice === price 
+                            ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-black' 
+                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {price} 🪙
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Adult Consent Box if Adult Type */}
             {liveType === 'adult' && (
               <div className="p-3 rounded-2xl bg-rose-950/40 border border-rose-500/40 space-y-2">
@@ -877,6 +943,21 @@ export default function LiveStudioModal({
       {studioPhase === 'LIVE' && (
         <div className="flex-1 relative bg-slate-950 flex flex-col overflow-hidden">
           
+          {/* LUXURY GIFT OVERLAY & VIP ENTRANCE FX */}
+          {activeLuxuryGift && (
+            <LuxuryGiftOverlay
+              giftData={activeLuxuryGift}
+              onComplete={() => setActiveLuxuryGift(null)}
+            />
+          )}
+
+          {activeVipEntrance && (
+            <VipEntranceBanner
+              vipUser={activeVipEntrance}
+              onComplete={() => setActiveVipEntrance(null)}
+            />
+          )}
+
           {/* CENTER LARGE CAMERA PREVIEW AREA */}
           <div className="relative flex-1 bg-slate-900 overflow-hidden">
             {isCamEnabled && mediaStream ? (

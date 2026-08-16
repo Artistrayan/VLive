@@ -37,6 +37,38 @@ export function VipStatusBadge({ size = "normal", showText = true, className = "
   );
 }
 
+export function VipAvatarRing({ children, isVip = false, isLive = false, size = "md", className = "" }) {
+  if (!isVip && !isLive) {
+    return <div className={`relative inline-block ${className}`}>{children}</div>;
+  }
+
+  const ringStyles = isVip
+    ? "p-0.5 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.8)] animate-pulse"
+    : "p-0.5 bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 rounded-full shadow-[0_0_12px_rgba(236,72,153,0.7)]";
+
+  return (
+    <div className={`relative inline-flex items-center justify-center ${className}`}>
+      <div className={ringStyles}>
+        <div className="rounded-full overflow-hidden bg-slate-950">
+          {children}
+        </div>
+      </div>
+      {isVip && (
+        <div className="absolute -top-1.5 -right-1 z-10 bg-gradient-to-tr from-amber-400 to-yellow-300 p-0.5 rounded-full shadow">
+          <Crown className="w-3 h-3 text-slate-950 fill-slate-950" />
+        </div>
+      )}
+      {isLive && (
+        <div className="absolute -bottom-1 inset-x-0 flex justify-center z-10">
+          <span className="px-1.5 py-0.2 rounded-full bg-red-600 text-white text-[8px] font-black uppercase tracking-wider shadow animate-pulse">
+            LIVE
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function StreamerScoresBadges({ userObj = {}, compact = false }) {
   const scores = getStreamerScores(userObj);
 
@@ -81,4 +113,6 @@ export function StreamerScoresBadges({ userObj = {}, compact = false }) {
     </div>
   );
 }
+
+
 
