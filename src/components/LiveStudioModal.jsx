@@ -7,6 +7,7 @@ import {
   Cpu, BatteryCharging, Wifi, Play, Square, Award, Filter, ArrowRight, Share2, Info
 } from 'lucide-react';
 import { apiLive, apiAdmin } from '../services/api';
+import { livekitManager, fetchLiveKitToken } from '../services/livekitService';
 
 export default function LiveStudioModal({
   isOpen,
@@ -308,12 +309,20 @@ export default function LiveStudioModal({
     }
   };
 
-  // Helper to attach mediaStream to video element reliably
+  // Helper to attach mediaStream to video element reliably (fixes Android / WebView black screen)
   const attachStreamToVideo = (el) => {
     if (el && mediaStream && isCamEnabled) {
       if (el.srcObject !== mediaStream) {
         el.srcObject = mediaStream;
       }
+      el.muted = true;
+      el.defaultMuted = true;
+      el.playsInline = true;
+      el.setAttribute('playsinline', 'true');
+      el.setAttribute('webkit-playsinline', 'true');
+      el.onloadedmetadata = () => {
+        el.play().catch(e => console.warn('Video element play onloadedmetadata warning:', e));
+      };
       el.play().catch(e => console.warn('Video element play warning:', e));
     }
   };
@@ -429,13 +438,14 @@ export default function LiveStudioModal({
 
   // Execute Live Start after Countdown
   const executeLiveStart = async () => {
-    // Generate secure token for LiveKit streaming server for authorized broadcaster
+    // Generate secure authentic signed token from LiveKit backend
     const roomName = `room_${currentUser?.id || 'broadcaster'}_${Date.now()}`;
     const tokenRes = await apiLive.generateLiveKitToken({
       hostId: currentUser?.id,
       hostName: currentUser?.name || currentUsername || 'Verified Broadcaster',
       roomName: roomName,
-      isBroadcaster: true
+      isBroadcaster: true,
+      role: 'host'
     });
 
     if (!tokenRes.success) {
@@ -448,6 +458,21 @@ export default function LiveStudioModal({
     setLivekitRoom(tokenRes.roomName);
     setLivekitServerUrl(tokenRes.serverUrl);
     setBroadcasterAuthorized(true);
+
+    // Connect to LiveKit Room via livekitManager
+    try {
+      await livekitManager.connect({
+        roomName: tokenRes.roomName,
+        identity: currentUser?.id || `host_${Date.now()}`,
+        name: currentUser?.name || currentUsername || 'Host',
+        role: 'host',
+        token: tokenRes.token,
+        serverUrl: tokenRes.serverUrl
+      });
+      setIsLiveKitConnected(true);
+    } catch (lkErr) {
+      console.warn('LiveKit Room connection attempt:', lkErr);
+    }
 
     const newStreamObj = {
       id: `stream_${Date.now()}`,
@@ -486,9 +511,14 @@ export default function LiveStudioModal({
     }
   };
 
-  // End Live Stream
-  const handleEndLiveStream = () => {
+  // End Live Stream cleanly via LiveKit & Supabase
+  const handleEndLiveStream = async () => {
     setIsEndConfirmOpen(false);
+    try {
+      await livekitManager.endLiveStream(livekitRoom);
+    } catch (e) {
+      console.warn('Error closing LiveKit room:', e);
+    }
     setStudioPhase('SUMMARY');
     showToast(window.loc('⏹️ پخش زنده پایان یافت. خلاصه عملکرد تولید شد.', '⏹️ The live broadcast has ended. A performance summary was generated.'));
   };

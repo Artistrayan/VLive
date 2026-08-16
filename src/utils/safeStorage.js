@@ -31,3 +31,8 @@ export const safeStorage = {
     }
   }
 };
+
+if (typeof window !== 'undefined') {
+  window.safeStorage = safeStorage;
+}
+

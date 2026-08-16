@@ -1,11 +1,5 @@
 // V.LIVE Streamer Level, Reputation & Creator Rank Scoring System Service
-
-const safeLoc = (fa, en) => {
-  if (typeof window !== 'undefined' && typeof window.loc === 'function') {
-    return window.loc(fa, en);
-  }
-  return fa;
-};
+import { loc as safeLoc } from '../utils/i18n';
 
 export const STREAMER_LEVELS = [
   { level: 1, name: 'New Streamer', minXp: 0, minHours: 0, minViewers: 0, minFollowers: 0, badgeColor: 'from-slate-600 to-slate-800', get benefits() { return [safeLoc('پروفایل عمومی', 'General profile'), safeLoc('چت زنده پایه', 'Basic live chat'), safeLoc('دریافت هدیه', 'Receive a gift')]; } },

@@ -266,25 +266,42 @@ export default function VipAndRewardModals(props) {
                     </button>
                   </div>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       const basePrices = { silver: 300, gold: 500, diamond: 1000 };
+                      const durationMonthsMap = { '1m': 1, '3m': 3, '6m': 6, '12m': 12 };
+                      const durationNum = typeof selectedVipDuration === 'number' ? selectedVipDuration : (durationMonthsMap[selectedVipDuration] || 1);
                       const discountMultipliers = { 1: 1.0, 3: 0.85, 6: 0.75, 12: 0.60 };
-                      const monthlyCost = basePrices[selectedVipPlan] || 500;
-                      const totalBaseCoins = monthlyCost * selectedVipDuration;
-                      const finalCoinsCost = Math.round(totalBaseCoins * (discountMultipliers[selectedVipDuration] || 1.0));
+                      const planKey = (selectedVipPlan || 'gold').toLowerCase();
+                      const monthlyCost = basePrices[planKey] || 500;
+                      const totalBaseCoins = monthlyCost * durationNum;
+                      const finalCoinsCost = Math.round(totalBaseCoins * (discountMultipliers[durationNum] || 1.0));
+                      
                       if (selectedVipPayMethod === 'coins') {
                         if (userCoins < finalCoinsCost) {
                           showToast(window.loc(`موجودی سکه کافی نیست! هزینه: ${finalCoinsCost} سکه`, `موجودی سکه کافی نیست! هزینه: ${finalCoinsCost} سکه`));
                           return;
                         }
-                        setUserCoins(prev => prev - finalCoinsCost);
                       }
-                      setVipPlan(selectedVipPlan);
-                      setVipExpireDays(selectedVipDuration * 30);
-                      setIsVipMonthlyClaimed(false);
-                      setIsVipModalOpen(false);
-                      setIsVipCelebrationOpen(true);
-                      showToast(window.loc(`👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت فعال شد!`, `👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت فعال شد!`));
+
+                      const res = await apiVip.purchasePlan({
+                        plan: planKey,
+                        durationMonths: durationNum,
+                        priceCoins: finalCoinsCost
+                      });
+
+                      if (res && res.success !== false) {
+                        if (selectedVipPayMethod === 'coins') {
+                          setUserCoins(prev => Math.max(0, prev - finalCoinsCost));
+                        }
+                        setVipPlan(planKey);
+                        setVipExpireDays(durationNum * 30);
+                        setIsVipMonthlyClaimed(false);
+                        setIsVipModalOpen(false);
+                        setIsVipCelebrationOpen(true);
+                        showToast(window.loc(`👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت در دیتابیس فعال شد!`, `👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت در دیتابیس فعال شد!`));
+                      } else {
+                        showToast(window.loc('خطا در فعال‌سازی اشتراک: ', 'Error activating subscription: ') + (res?.error || ''));
+                      }
                     }}
                     className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition"
                   >

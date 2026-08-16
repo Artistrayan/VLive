@@ -4,13 +4,7 @@ import {
   Sliders, Eye, EyeOff, ArrowUp, ArrowDown, Move, Layers, X, ChevronRight,
   ChevronLeft, Palette, Sparkles, RotateCcw, ShieldCheck, Copy
 } from 'lucide-react';
-
-const safeLoc = (fa, en) => {
-  if (typeof window !== 'undefined' && typeof window.loc === 'function') {
-    return window.loc(fa, en);
-  }
-  return fa;
-};
+import { loc as safeLoc } from '../../utils/i18n';
 
 const BG_PRESETS = [
   { get name() { return safeLoc('شفاف (Transparent)', 'Transparent'); }, value: 'transparent' },

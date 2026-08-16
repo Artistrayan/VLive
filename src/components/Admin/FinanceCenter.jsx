@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { economyService } from '../../services/economyService';
+import { apiAdmin } from '../../services/api';
 import AdminFaqManager from './AdminFaqManager';
 import { 
   DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, Wallet, Gift,
@@ -573,18 +574,20 @@ export default function FinanceCenter({
                     {w.status === 'Pending' || w.status === 'Pending Review' ? (
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Completed' } : item));
+                            await apiAdmin.reviewWithdrawal(w.id, 'Approved', 'Approved by Admin');
                             addAdminAuditLog(`Approved withdrawal #${w.id} for ${w.user}`);
-                            showToast(window.loc('✅ درخواست برداشت با موفقیت تأیید شد', '✅ Withdrawal request has been successfully approved'));
+                            showToast(window.loc('✅ درخواست برداشت با موفقیت در دیتابیس تأیید شد', '✅ Withdrawal request has been successfully approved in DB'));
                           }}
                           className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow"
                         >
                           {window.loc('✓ تأیید و واریز', '✓ Verification and deposit')}
                         </button>
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             setAdminWithdrawalsList(prev => prev.map(item => item.id === w.id ? { ...item, status: 'Rejected' } : item));
+                            await apiAdmin.reviewWithdrawal(w.id, 'Rejected', 'Rejected by Admin');
                             addAdminAuditLog(`Rejected withdrawal #${w.id} for ${w.user}`);
                             showToast(window.loc('✕ درخواست برداشت رد شد', '✕ Withdrawal request rejected'));
                           }}

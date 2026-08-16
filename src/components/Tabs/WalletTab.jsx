@@ -1,4 +1,4 @@
-import { apiVip, apiWallet } from '../../services/api';
+import { apiVip, apiWallet, apiReferral } from '../../services/api';
 import React from 'react';
 import { safeStorage } from '../../utils/safeStorage';
 import { economyService } from '../../services/economyService';
@@ -45,19 +45,44 @@ export default function WalletTab(props) {
 
   const handleShareTelegramReferral = props.handleShareTelegramReferral || (() => showToast('Telegram referral link generated'));
   const [isBonusEventActive] = React.useState(true);
-  const [totalInvitesCount] = React.useState(12);
-  const [totalReferralEarnings] = React.useState(1250);
-  const [activeInvitesCount] = React.useState(8);
+  const [totalInvitesCount, setTotalInvitesCount] = React.useState(0);
+  const [totalReferralEarnings, setTotalReferralEarnings] = React.useState(0);
+  const [activeInvitesCount, setActiveInvitesCount] = React.useState(0);
   const [referralTier] = React.useState('Gold Tier');
-  const [referralLink] = React.useState('https://t.me/vlive_app_bot?start=ref_rayan');
+  const userReferralCode = referralCode || safeStorage.getItem('vlive_user_id') || 'vlive_user';
+  const referralLink = `https://vlive.app/join?ref=${userReferralCode}`;
   const [referralActiveTab, setReferralActiveTab] = React.useState('overview');
-  const [invitesList] = React.useState([]);
+  const [invitesList, setInvitesList] = React.useState([]);
   const [referralMilestones, setReferralMilestones] = React.useState([]);
-  const [topInvitersLeaderboard] = React.useState([
-    { rank: 1, name: 'Sina_Pro', invites: 142, reward: '50,000 Coins' },
-    { rank: 2, name: 'Sara_Live', invites: 98, reward: '25,000 Coins' },
-    { rank: 3, name: 'Rayan_VLive', invites: 64, reward: '10,000 Coins' }
-  ]);
+  const [topInvitersLeaderboard, setTopInvitersLeaderboard] = React.useState([]);
+
+  // Load Real Data from Supabase
+  React.useEffect(() => {
+    const loadRealData = async () => {
+      try {
+        const payouts = await apiWallet.getPayoutRequests();
+        if (payouts && payouts.length > 0) {
+          setWithdrawalsHistoryList(payouts);
+        }
+        const refStats = await apiReferral.getReferralStats();
+        if (refStats) {
+          setTotalInvitesCount(refStats.totalInvites || 0);
+          setActiveInvitesCount(refStats.totalInvites || 0);
+          setTotalReferralEarnings(refStats.totalEarnings || 0);
+          if (refStats.invitesList && refStats.invitesList.length > 0) {
+            setInvitesList(refStats.invitesList);
+          }
+        }
+        const leaders = await apiReferral.getLeaderboard();
+        if (leaders && leaders.length > 0) {
+          setTopInvitersLeaderboard(leaders);
+        }
+      } catch (e) {
+        console.warn('WalletTab load data error:', e);
+      }
+    };
+    loadRealData();
+  }, []);
 
   const vipPlan = props.vipPlan || 'Free';
   const vipExpireDays = props.vipExpireDays || 0;
@@ -583,7 +608,7 @@ export default function WalletTab(props) {
                         className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-emerald-400"
                       >
                         <option value="USDT TRC20">{window.loc('USDT TRC20 (تتر شبکه‌ ترون)', 'USDT TRC20 (Tether Tron Network)')}</option>
-                        <option value="Crypto Wallet">Crypto Web3 Wallet</option>
+                        <option value="USDT BEP20">{window.loc('USDT BEP20 (تتر شبکه بایننس)', 'USDT BEP20 (Tether BSC Network)')}</option>
                       </select>
                     </div>
                   </div>
@@ -1537,8 +1562,26 @@ export default function WalletTab(props) {
                         </div>
 
                         <button
-                          onClick={() => {
-                            showToast(window.loc(`درخواست برداشت $${withdrawAmountInput} ثبت گردید و تا ۲۴ ساعت آینده تسویه می‌شود ✅`, `درخواست برداشت $${withdrawAmountInput} ثبت گردید و تا ۲۴ ساعت آینده تسویه می‌شود ✅`));
+                          onClick={async () => {
+                            const amt = parseFloat(withdrawAmountInput);
+                            if (isNaN(amt) || amt < 50) {
+                              showToast(window.loc('⚠️ حداقل مبلغ قابل برداشت ۵۰ دلار (USDT) می‌باشد.', '⚠️ The minimum withdrawal amount is 50 USDT.'));
+                              return;
+                            }
+                            if (!withdrawAddressInput || withdrawAddressInput.trim().length < 8) {
+                              showToast(window.loc('⚠️ لطفاً آدرس کیف پول معتبر وارد کنید.', '⚠️ Please enter a valid wallet address.'));
+                              return;
+                            }
+                            const res = await apiWallet.requestWithdrawal(amt, withdrawAddressInput.trim(), withdrawMethodInput);
+                            if (res.success) {
+                              showToast(window.loc(`درخواست برداشت $${amt} ثبت گردید و در صف تایید قرار گرفت ✅`, `Withdrawal request for $${amt} was registered and queued ✅`));
+                              setWithdrawAmountInput('');
+                              setWithdrawAddressInput('');
+                              const updatedPayouts = await apiWallet.getPayoutRequests();
+                              if (updatedPayouts) setWithdrawalsHistoryList(updatedPayouts);
+                            } else {
+                              showToast(window.loc('خطا در ثبت درخواست: ', 'Error requesting withdrawal: ') + (res.error || ''));
+                            }
                           }}
                           className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-black text-xs shadow-lg"
                         >
@@ -2037,27 +2080,33 @@ export default function WalletTab(props) {
                     </h3>
 
                     <div className="space-y-2.5">
-                      {topInvitersLeaderboard.map(inviter => (
-                        <div key={inviter.rank} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="w-7 h-7 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center font-black text-xs text-amber-400 font-mono">
-                              #{inviter.rank}
-                            </span>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="text-xs font-bold text-white">{inviter.name}</h4>
-                                <span className="text-[9px] px-2 py-0.2 rounded-full bg-amber-500/10 text-amber-300 font-bold">{inviter.badge}</span>
+                      {topInvitersLeaderboard.length > 0 ? (
+                        topInvitersLeaderboard.map(inviter => (
+                          <div key={inviter.rank} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="w-7 h-7 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center font-black text-xs text-amber-400 font-mono">
+                                #{inviter.rank}
+                              </span>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-xs font-bold text-white">{inviter.name}</h4>
+                                  <span className="text-[9px] px-2 py-0.2 rounded-full bg-amber-500/10 text-amber-300 font-bold">{inviter.badge}</span>
+                                </div>
+                                <span className="text-[10px] text-slate-400">{inviter.handle}</span>
                               </div>
-                              <span className="text-[10px] text-slate-400">{inviter.handle}</span>
+                            </div>
+
+                            <div className="text-left space-y-0.5">
+                              <span className="text-xs font-black text-cyan-300 block">{inviter.invites} {window.loc('دعوت', 'invitation')}</span>
+                              <span className="text-[10px] text-amber-400 font-mono">{inviter.totalEarned}</span>
                             </div>
                           </div>
-
-                          <div className="text-left space-y-0.5">
-                            <span className="text-xs font-black text-cyan-300 block">{inviter.invites} {window.loc('دعوت', 'invitation')}</span>
-                            <span className="text-[10px] text-amber-400 font-mono">{inviter.totalEarned}</span>
-                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-6 text-slate-500 text-xs">
+                          {window.loc('هنوز رتبه‌بندی ثبت نشده است.', 'No referral rankings recorded yet.')}
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
                 )}
@@ -2160,7 +2209,7 @@ export default function WalletTab(props) {
                         </button>
                       ) : (
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             const basePrices = { silver: 300, gold: 500, diamond: 1000 };
                             const discountMultipliers = { 1: 1.0, 3: 0.85, 6: 0.75, 12: 0.60 };
                             const monthlyCost = basePrices[selectedVipPlan] || 500;
@@ -2172,18 +2221,30 @@ export default function WalletTab(props) {
                                 showToast(window.loc(`موجودی سکه کافی نیست! هزینه: ${finalCoinsCost} سکه`, `موجودی سکه کافی نیست! هزینه: ${finalCoinsCost} سکه`));
                                 return;
                               }
-                              setUserCoins(prev => prev - finalCoinsCost);
                             }
 
-                            setVipPlan(selectedVipPlan);
-                            setVipExpireDays(selectedVipDuration * 30);
-                            setIsVipMonthlyClaimed(false);
-                            safeStorage.setItem('vlive_vip_plan', selectedVipPlan);
-                            safeStorage.setItem('vlive_vip_expire_days', (selectedVipDuration * 30).toString());
-                            safeStorage.setItem('vlive_vip_monthly_claimed', 'false');
+                            const res = await apiVip.purchasePlan({
+                              plan: selectedVipPlan,
+                              durationMonths: selectedVipDuration,
+                              priceCoins: finalCoinsCost
+                            });
 
-                            setIsVipCelebrationOpen(true);
-                            showToast(window.loc(`👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت فعال شد!`, `👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت فعال شد!`));
+                            if (res && res.success !== false) {
+                              if (selectedVipPayMethod === 'coins') {
+                                setUserCoins(prev => Math.max(0, prev - finalCoinsCost));
+                              }
+                              setVipPlan(selectedVipPlan);
+                              setVipExpireDays(selectedVipDuration * 30);
+                              setIsVipMonthlyClaimed(false);
+                              safeStorage.setItem('vlive_vip_plan', selectedVipPlan);
+                              safeStorage.setItem('vlive_vip_expire_days', (selectedVipDuration * 30).toString());
+                              safeStorage.setItem('vlive_vip_monthly_claimed', 'false');
+
+                              setIsVipCelebrationOpen(true);
+                              showToast(window.loc(`👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت در دیتابیس فعال شد!`, `👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت در دیتابیس فعال شد!`));
+                            } else {
+                              showToast(window.loc('خطا در خرید اشتراک VIP: ', 'Error purchasing VIP: ') + (res?.error || ''));
+                            }
                           }}
                           className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-[0_0_25px_rgba(245,158,11,0.4)] hover:brightness-110 transition active:scale-95 flex items-center justify-center gap-2 animate-pulse"
                         >

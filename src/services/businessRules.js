@@ -3,12 +3,7 @@
  * Defines and enforces the 20 official platform rules across the UI & APIs.
  */
 
-const safeLoc = (fa, en) => {
-  if (typeof window !== 'undefined' && typeof window.loc === 'function') {
-    return window.loc(fa, en);
-  }
-  return fa;
-};
+import { loc as safeLoc } from '../utils/i18n';
 
 export const PLATFORM_RULES = {
   // 1. AGE RULE

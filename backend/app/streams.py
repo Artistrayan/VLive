@@ -1,14 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 import uuid
+import time
+from jose import jwt
 
 from app.database import get_db
 from app.models import User, LiveStream, MediaVaultItem, VaultUnlock, Transaction
 from app.auth import get_current_user
+from app.config import settings
 
 router = APIRouter(prefix="/api/streams", tags=["Live Streams & Media Vault"])
+
+class LiveKitTokenRequest(BaseModel):
+    roomName: str
+    identity: Optional[str] = None
+    name: Optional[str] = None
+    role: Optional[str] = "viewer"
+    metadata: Optional[Dict[str, Any]] = None
 
 class StreamCreate(BaseModel):
     title: str
@@ -101,6 +111,56 @@ def start_stream(
         "is_live": True,
         "viewer_count": 1,
         "active_ar_filter": stream.active_ar_filter
+    }
+
+@router.post("/token")
+def generate_livekit_token(payload: LiveKitTokenRequest):
+    """Generate real LiveKit JWT signed token with video grant permissions"""
+    api_key = settings.LIVEKIT_API_KEY or "devkey"
+    api_secret = settings.LIVEKIT_API_SECRET or "secret"
+    livekit_url = settings.LIVEKIT_URL or "wss://livekit.vlive.app"
+
+    identity = payload.identity or f"user_{uuid.uuid4().hex[:8]}"
+    name = payload.name or identity
+    role = (payload.role or "viewer").lower()
+
+    is_publisher = role in ["host", "guest", "match", "streamer"]
+    is_admin = role in ["host", "streamer"]
+
+    now = int(time.time())
+    exp = now + 43200  # 12 hours
+
+    claims = {
+        "exp": exp,
+        "nbf": now - 10,
+        "iss": api_key,
+        "sub": identity,
+        "name": name,
+        "video": {
+            "room": payload.roomName,
+            "roomJoin": True,
+            "canPublish": is_publisher,
+            "canSubscribe": True,
+            "canPublishData": True,
+            "roomAdmin": is_admin,
+            "roomCreate": is_admin
+        }
+    }
+
+    if payload.metadata:
+        import json
+        claims["metadata"] = json.dumps(payload.metadata)
+
+    token = jwt.encode(claims, api_secret, algorithm="HS256")
+
+    return {
+        "success": True,
+        "token": token,
+        "roomName": payload.roomName,
+        "serverUrl": livekit_url,
+        "identity": identity,
+        "name": name,
+        "role": role
     }
 
 @router.post("/{stream_id}/stop")

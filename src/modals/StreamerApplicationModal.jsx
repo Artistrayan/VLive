@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Star, Shield, Camera, Info, FileText, CheckCircle, Clock, Check, X, Mic, AlertTriangle, Video, ArrowRight, ArrowLeft } from 'lucide-react';
+import { apiProfile } from '../services/api';
+import { safeStorage } from '../utils/safeStorage';
 
 export default function StreamerApplicationModal({
   isOpen,
@@ -77,7 +79,7 @@ export default function StreamerApplicationModal({
     );
   };
 
-  const submitApplication = () => {
+  const submitApplication = async () => {
     if (!streamCategory || !streamTopic || !description || !rulesAccepted || !camTested || !micTested) {
       showToast(loc('لطفا تمام مراحل را کامل کنید.', 'Please complete all steps.'));
       return;
@@ -98,11 +100,21 @@ export default function StreamerApplicationModal({
       docUrl: ''
     };
     
+    try {
+      await apiProfile.submitKyc({
+        username,
+        nationalId: `streamer_${Date.now()}`,
+        description: `[Category: ${streamCategory}] [Topic: ${streamTopic}] ${description}`,
+        videoUrl: '',
+        docUrl: ''
+      });
+    } catch (e) {
+      console.warn('submitKyc error:', e);
+    }
+
     setKycApplications(prev => {
       const updated = [newApp, ...prev];
-      if (window.safeStorage) {
-         window.safeStorage.setItem('vlive_kyc_applications', JSON.stringify(updated));
-      }
+      safeStorage.setItem('vlive_kyc_applications', JSON.stringify(updated));
       return updated;
     });
     

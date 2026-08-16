@@ -4,6 +4,7 @@ import {
   CreditCard, Save, RefreshCw, Sparkles, Layers, Sliders
 } from 'lucide-react';
 import { helpCenterService, FAQ_CATEGORIES } from '../../services/helpCenterService';
+import { loc } from '../../utils/i18n';
 
 export default function AdminFaqManager({ showToast = () => {} }) {
   const [activeSubTab, setActiveSubTab] = useState('faqs'); // 'faqs' | 'deposit_methods'
@@ -24,8 +25,6 @@ export default function AdminFaqManager({ showToast = () => {} }) {
     categoryId: 'account',
     popular: false
   });
-
-  const loc = (fa, en) => (window.loc ? window.loc(fa, en) : fa);
 
   const refreshFaqs = () => {
     setFaqsList(helpCenterService.getFaqs(selectedCategory, searchQuery));

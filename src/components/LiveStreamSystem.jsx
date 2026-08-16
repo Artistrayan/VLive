@@ -448,9 +448,9 @@ export default function LiveStreamSystem({
                     className="card-3d bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 group relative cursor-pointer shadow-lg hover:border-pink-500/50 transition duration-300"
                   >
                     {/* THUMBNAIL CONTAINER */}
-                    <div className="aspect-[3/4] relative overflow-hidden">
+                    <div className="aspect-[3/4] relative overflow-hidden bg-slate-950">
                       <img
-                        src={stream.thumbnail || stream.avatar || 'https://via.placeholder.com/300'}
+                        src={stream.thumbnail || stream.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='400' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='1.5'%3E%3Cpolygon points='23 7 16 12 23 17 23 7'/%3E%3Crect x='1' y='5' width='15' height='14' rx='2' ry='2'/%3E%3C/svg%3E`}
                         alt={stream.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                       />
@@ -493,7 +493,7 @@ export default function LiveStreamSystem({
 
                         <div className="flex items-center gap-1.5 pt-0.5">
                           <img
-                            src={stream.avatar || 'https://via.placeholder.com/100'}
+                            src={stream.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`}
                             alt={stream.host}
                             className="w-4 h-4 rounded-full object-cover border border-white/40"
                           />

@@ -82,10 +82,10 @@ const DEFAULT_FAQS = [
   {
     id: 'faq_3',
     categoryId: 'auth',
-    questionFa: 'کد تایید پیامکی/ایمیلی دریافت نکرده‌ام، چه کنم؟',
-    questionEn: 'I did not receive OTP code, what should I do?',
-    answerFa: 'لطفاً پوشه Spam ایمیل خود را بررسی کنید یا مطمئن شوید پیامک‌های تبلیغاتی سیم‌کارت شما مسدود نباشد. همچنین می‌توانید از ورود جایگزین تلگرام استفاده کنید.',
-    answerEn: 'Check Spam email folder and verify your carrier allows SMS. Alternatively, use Telegram login.',
+    questionFa: 'چگونه وارد حساب کاربری خود شوم یا رمز را بازیابی کنم؟',
+    questionEn: 'How do I log in to my account or reset my password?',
+    answerFa: 'شما می‌توانید با استفاده از نام کاربری و رمز عبور یا از طریق احراز هویت سریع تلگرام وارد حساب خود شوید.',
+    answerEn: 'You can log in securely using your username and password or via instant Telegram authentication.',
     popular: false,
     active: true
   },

@@ -4,11 +4,55 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { AccessToken } from 'livekit-server-sdk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 10000;
+
+// LiveKit Server Credentials
+const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY || 'devkey';
+const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET || 'secret';
+const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://livekit.vlive.app';
+
+// Helper: Real LiveKit Token Generator
+async function createLiveKitToken({ roomName, identity, name, role = 'viewer', metadata = {} }) {
+  const cleanRoom = (roomName || `vlive_room_${Date.now()}`).trim();
+  const cleanIdentity = String(identity || `user_${Date.now()}`).trim();
+  const cleanName = String(name || cleanIdentity || 'User').trim();
+  
+  const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
+    identity: cleanIdentity,
+    name: cleanName,
+    metadata: typeof metadata === 'string' ? metadata : JSON.stringify(metadata),
+    ttl: '12h'
+  });
+
+  const isPublisher = role === 'host' || role === 'guest' || role === 'match';
+  const isHost = role === 'host';
+
+  at.addGrant({
+    room: cleanRoom,
+    roomJoin: true,
+    canPublish: isPublisher,
+    canSubscribe: true,
+    canPublishData: true,
+    roomAdmin: isHost,
+    roomCreate: isHost
+  });
+
+  const jwt = await at.toJwt();
+  return {
+    success: true,
+    token: jwt,
+    roomName: cleanRoom,
+    serverUrl: LIVEKIT_URL,
+    identity: cleanIdentity,
+    name: cleanName,
+    role
+  };
+}
 
 // Ensure dist directory exists before serving on platforms like Render
 const distDir = path.join(__dirname, 'dist');
@@ -338,6 +382,50 @@ const server = http.createServer(async (req, res) => {
         });
 
         return res.end(JSON.stringify(filtered));
+      }
+
+      // LiveKit Secure Token Generation Endpoint (CRITICAL: Authentic signed server JWT)
+      if (reqUrl === '/api/livekit/token' || reqUrl === '/api/streams/token') {
+        try {
+          const { 
+            roomName = data.room_name || data.channelName, 
+            identity = data.user_id || data.hostId, 
+            name = data.username || data.hostName, 
+            role = data.isBroadcaster ? 'host' : (data.role || 'viewer'),
+            metadata = data.metadata || {}
+          } = data;
+
+          if (!roomName) {
+            return res.end(JSON.stringify({ success: false, error: 'roomName is required' }));
+          }
+
+          const tokenResult = await createLiveKitToken({
+            roomName,
+            identity: identity || `user_${Date.now()}`,
+            name: name || identity || 'Viewer',
+            role,
+            metadata
+          });
+
+          return res.end(JSON.stringify(tokenResult));
+        } catch (tokenErr) {
+          console.error('Error generating LiveKit token:', tokenErr);
+          return res.end(JSON.stringify({ success: false, error: tokenErr.message }));
+        }
+      }
+
+      // LiveKit Server Configuration Endpoint
+      if (reqUrl === '/api/livekit/config') {
+        return res.end(JSON.stringify({
+          success: true,
+          serverUrl: LIVEKIT_URL,
+          features: {
+            adaptiveStream: true,
+            dynacast: true,
+            simulcast: true,
+            supportedRoles: ['host', 'viewer', 'guest', 'match']
+          }
+        }));
       }
 
       // GET /api/streams/active - Get active live streams from approved real users

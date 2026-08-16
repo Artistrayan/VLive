@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { helpCenterService, FAQ_CATEGORIES } from '../services/helpCenterService';
 import { economyService } from '../services/economyService';
+import { loc } from '../utils/i18n';
 
 export default function HelpCenterModal({ 
   isOpen, 
@@ -43,8 +44,6 @@ export default function HelpCenterModal({
   // Ticket Form State
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
-
-  const loc = (fa, en) => (window.loc ? window.loc(fa, en) : fa);
 
   // Filter FAQs
   const faqsList = useMemo(() => {

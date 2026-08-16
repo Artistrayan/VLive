@@ -5,19 +5,13 @@
  */
 
 import { safeStorage } from '../utils/safeStorage';
+import { loc as safeLoc } from '../utils/i18n';
 
 const STORAGE_KEYS = {
   CONFIG: 'vlive_economy_config_v2',
   TX_LOGS: 'vlive_economy_tx_logs_v2',
   AUDIT_LOGS: 'vlive_economy_audit_logs_v2',
   AI_RECOMMENDATIONS: 'vlive_economy_ai_recs_v2'
-};
-
-const safeLoc = (fa, en) => {
-  if (typeof window !== 'undefined' && typeof window.loc === 'function') {
-    return window.loc(fa, en);
-  }
-  return fa;
 };
 
 // DEFAULT CONFIGURABLE ECONOMY SETTINGS (NO HARDCODED VALUES)

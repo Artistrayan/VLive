@@ -26,6 +26,7 @@ import { APP_LANGUAGES, I18N_DICTIONARY } from './constants/i18n';
 import { PRESET_AVATARS, GIFTS_CATALOG } from './constants/appConstants';
 import { CoinsIcon, VerifiedBadge, VipStatusBadge, StreamerScoresBadges } from './components/CommonBadges';
 import { safeStorage } from './utils/safeStorage';
+import { loc, getSavedLang } from './utils/i18n';
 import { isUsernameAlreadyTaken, registerUsernameLocally, isUserAnAdmin } from './utils/usernameUtils';
 import { economyService } from './services/economyService';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -63,26 +64,6 @@ const INITIAL_TRANSACTIONS = [];
 
 // Initial Direct Messages Conversations
 const INITIAL_CONVERSATIONS = [];
-
-// Module-level localization helper to ensure loc is available before component state initialization
-const getSavedLang = () => {
-  if (typeof window !== 'undefined') {
-    return safeStorage.getItem('vlive_app_lang') || 'en';
-  }
-  return 'en';
-};
-
-const loc = (faStr, enStr) => {
-  const lang = getSavedLang();
-  if (lang === 'fa' || lang === 'ar') {
-    return faStr || enStr || '';
-  }
-  return enStr || faStr || '';
-};
-
-if (typeof window !== 'undefined') {
-  window.loc = loc;
-}
 
 export default function App() {
   // Current User State
@@ -703,39 +684,71 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
   const [newStoryUrl, setNewStoryUrl] = useState('');
   const [newStoryCaption, setNewStoryCaption] = useState('');
 
-  const handlePostFileChange = (e) => {
+  const handlePostFileChange = async (e) => {
     const file = e.target.files && e.target.files[0];
     if (file) {
       if (file.size > 25 * 1024 * 1024) {
         showToast(loc('حجم فایل نباید بیشتر از ۲۵ مگابایت باشد', 'File size must be under 25MB'));
         return;
       }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setNewPostUrl(event.target.result);
-        showToast(loc('فایل انتخابی با موفقیت بارگذاری شد', 'File loaded successfully'));
-      };
-      reader.readAsDataURL(file);
+      try {
+        if (file.type.startsWith('image/')) {
+          showToast(loc('⚡ در حال بهینه‌سازی و فشرده‌سازی تصویر...', '⚡ Optimizing and compressing image...'));
+          const compressed = await compressImageFile(file, 1280, 0.82);
+          setNewPostUrl(compressed);
+          showToast(loc('فایل تصویر با کیفیت بهینه بارگذاری شد', 'Image optimized and loaded successfully'));
+        } else {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            setNewPostUrl(event.target.result);
+            showToast(loc('فایل انتخابی با موفقیت بارگذاری شد', 'File loaded successfully'));
+          };
+          reader.readAsDataURL(file);
+        }
+      } catch (err) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setNewPostUrl(event.target.result);
+          showToast(loc('فایل انتخابی بارگذاری شد', 'File loaded successfully'));
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
-  const handleStoryFileChange = (e) => {
+  const handleStoryFileChange = async (e) => {
     const file = e.target.files && e.target.files[0];
     if (file) {
       if (file.size > 25 * 1024 * 1024) {
         showToast(loc('حجم فایل نباید بیشتر از ۲۵ مگابایت باشد', 'File size must be under 25MB'));
         return;
       }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setNewStoryUrl(event.target.result);
-        showToast(loc('تصویر استوری با موفقیت بارگذاری شد', 'Story image loaded successfully'));
-      };
-      reader.readAsDataURL(file);
+      try {
+        if (file.type.startsWith('image/')) {
+          showToast(loc('⚡ در حال بهینه‌سازی و فشرده‌سازی استوری...', '⚡ Optimizing and compressing story...'));
+          const compressed = await compressImageFile(file, 1080, 0.85);
+          setNewStoryUrl(compressed);
+          showToast(loc('تصویر استوری با کیفیت عالی بهینه شد', 'Story image optimized successfully'));
+        } else {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            setNewStoryUrl(event.target.result);
+            showToast(loc('تصویر استوری با موفقیت بارگذاری شد', 'Story image loaded successfully'));
+          };
+          reader.readAsDataURL(file);
+        }
+      } catch (err) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setNewStoryUrl(event.target.result);
+          showToast(loc('تصویر استوری بارگذاری شد', 'Story image loaded successfully'));
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
-  const handleAddNewPost = () => {
+  const handleAddNewPost = async () => {
     if (!newPostUrl.trim() || !newPostTitle.trim()) {
       showToast(loc('لطفاً لینک تصویر/ویدیو و عنوان را وارد کنید', 'Please enter media URL and title'));
       return;
@@ -745,13 +758,16 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
       const newItem = { id: 'p_' + Date.now(), url: newPostUrl.trim(), caption: newPostTitle.trim() };
       const updated = [newItem, ...userPhotosList];
       setUserPhotosList(updated);
-      // MOCK removed. We would upload and call apiSocial.createPost() here.
+      await apiSocial.createPost(newPostUrl.trim(), newPostTitle.trim());
+      apiSocial.getPosts().then(p => setPosts(p || []));
       showToast(loc('عکس با موفقیت به گالری پروفایل اضافه شد', 'Photo added to profile gallery successfully'));
     } else {
       const newItem = { id: 'v_' + Date.now(), title: newPostTitle.trim(), views: '1', thumb: newPostUrl.trim() };
       const updated = [newItem, ...userVideosList];
       setUserVideosList(updated);
       safeStorage.setItem('vlive_user_videos_v1', JSON.stringify(updated));
+      await apiSocial.createPost(newPostUrl.trim(), newPostTitle.trim());
+      apiSocial.getPosts().then(p => setPosts(p || []));
       showToast(loc('ویدیو با موفقیت به گالری پروفایل اضافه شد', 'Video added to profile gallery successfully'));
     }
 
@@ -774,7 +790,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     showToast(loc('ویدیو از پروفایل حذف شد', 'Video deleted from profile'));
   };
 
-  const handleAddUserStory = () => {
+  const handleAddUserStory = async () => {
     if (!newStoryUrl.trim()) {
       showToast(loc('لطفاً لینک تصویر استوری را وارد کنید', 'Please enter story image URL'));
       return;
@@ -798,7 +814,6 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
           ...copy[myStoryIndex],
           items: [newStoryItem, ...copy[myStoryIndex].items]
         };
-        // MOCK removed. We would upload and call apiSocial.createStory() here.
         return copy;
       } else {
         const newGroup = {
@@ -808,9 +823,14 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
           user: { name: userName, avatar: userAvatar, isVip: true },
           items: [newStoryItem]
         };
-        const copy = [newGroup, ...prev];
-        // MOCK removed. We would upload and call apiSocial.createStory() here.
-        return copy;
+        return [newGroup, ...prev];
+      }
+    });
+
+    await apiSocial.createStory(newStoryUrl.trim());
+    apiSocial.getStories().then(st => {
+      if (st && st.length > 0) {
+        // update stories list
       }
     });
 
@@ -820,7 +840,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     showToast(loc('استوری جدید با موفقیت در پروفایل منتشر شد', 'New story published on profile successfully'));
   };
 
-  const handleDeleteUserStoryItem = (itemId) => {
+  const handleDeleteUserStoryItem = async (itemId) => {
     setAdvancedStories(prev => {
       const copy = prev.map(group => {
         if (group.isMe) {
@@ -829,9 +849,9 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
         }
         return group;
       }).filter(group => !group.isMe || group.items.length > 0);
-        // MOCK removed. We would upload and call apiSocial.createStory() here.
       return copy;
     });
+    await apiSocial.deleteStory(itemId);
     showToast(loc('استوری مورد نظر حذف گردید', 'Story deleted successfully'));
   };
 
@@ -4627,7 +4647,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     {usersList.filter(u => u.isVip || u.is_vip || u.isTop).map(user => (
                       <div key={user.id} className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group" onClick={() => { setSelectedUser(user); setIsUserProfileModalOpen(true); }}>
                         <div className="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-orange-500 shadow-md group-hover:scale-105 transition">
-                          <img src={user.avatar || 'https://via.placeholder.com/150'} alt={user.name} className="w-full h-full object-cover rounded-full border border-slate-950" />
+                          <img src={user.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={user.name} className="w-full h-full object-cover rounded-full border border-slate-950" />
                           {user.online && (
                             <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border border-slate-950" />
                           )}
@@ -4682,7 +4702,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                           }
                         }}
                       >
-                        <img src={user.avatar || 'https://via.placeholder.com/150'} alt={user.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                        <img src={user.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={user.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none" />
                         
                         {/* Top Left: Online Dot */}
