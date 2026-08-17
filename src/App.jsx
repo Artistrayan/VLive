@@ -28,6 +28,9 @@ import { PRESET_AVATARS, GIFTS_CATALOG } from './constants/appConstants';
 import { CoinsIcon, VerifiedBadge, VipStatusBadge, StreamerScoresBadges } from './components/CommonBadges';
 import LuxuryGiftOverlay from './components/Overlays/LuxuryGiftOverlay';
 import VipEntranceBanner from './components/Overlays/VipEntranceBanner';
+import LivePkBattleOverlay from './components/Overlays/LivePkBattleOverlay';
+import LiveMiniGamesOverlay from './components/Overlays/LiveMiniGamesOverlay';
+import { AvatarWithFrame, EntranceRibbonOverlay } from './components/Overlays/AvatarFramesAndRibbons';
 import { filterMessageContent } from './services/aiModeration';
 import { safeStorage } from './utils/safeStorage';
 import { loc, getSavedLang } from './utils/i18n';
@@ -2740,6 +2743,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [activeLuxuryGift, setActiveLuxuryGift] = useState(null);
   const [activeVipEntrance, setActiveVipEntrance] = useState(null);
   const [isStreamGiftTrayOpen, setIsStreamGiftTrayOpen] = useState(false);
+  const [isPkBattleOpen, setIsPkBattleOpen] = useState(false);
+  const [isLiveMiniGamesOpen, setIsLiveMiniGamesOpen] = useState(false);
+  const [userAvatarFrame, setUserAvatarFrame] = useState(() => safeStorage.getItem('vlive_user_frame') || 'gold_vip');
+  const [activeEntranceRibbon, setActiveEntranceRibbon] = useState(null);
 
   // Helper to publish live stream network events (Real-time BroadcastChannel & LocalStorage Sync)
   const broadcastLiveEvent = (type, payload) => {
@@ -4057,21 +4064,36 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     showToast('Verification request rejected');
   };
 
-  // Filtered Users computation: Displays real onboarded and approved community users
-  const filteredUsersList = usersList.filter(u => {
-    // If user is banned, hide
-    if (u.status === 'banned') return false;
+  // Filtered Users computation: Displays real onboarded and approved community users with AI Personalized Feed
+  const filteredUsersList = useMemo(() => {
+    return usersList
+      .filter(u => {
+        // If user is banned, hide
+        if (u.status === 'banned') return false;
 
-    // Female users are prioritized on home explore
-    const isFemale = !u.gender || u.gender.toLowerCase() === 'female';
-    if (!isFemale) return false;
+        // Female users are prioritized on home explore
+        const isFemale = !u.gender || u.gender.toLowerCase() === 'female';
+        if (!isFemale) return false;
 
-    if (userFilter === 'online') return u.online;
-    if (userFilter === 'followers') return u.isFollowed || u.following;
-    if (userFilter === 'top') return u.isTop;
-    if (userFilter === 'verified') return Boolean(u.isVerified || u.is_verified);
-    return true;
-  });
+        if (userFilter === 'online') return u.online;
+        if (userFilter === 'followers') return u.isFollowed || u.following;
+        if (userFilter === 'top') return u.isTop;
+        if (userFilter === 'verified') return Boolean(u.isVerified || u.is_verified);
+        return true;
+      })
+      .map(user => {
+        // Personalized Feed AI Recommendation Score Calculation
+        let matchScore = 50;
+        if (user.online) matchScore += 25;
+        if (user.is_streamer || user.isStreaming) matchScore += 20;
+        if (user.isVerified || user.is_verified) matchScore += 15;
+        if (user.interests && Array.isArray(user.interests)) {
+          matchScore += Math.min(30, user.interests.length * 5);
+        }
+        return { ...user, aiMatchScore: matchScore };
+      })
+      .sort((a, b) => (b.aiMatchScore || 0) - (a.aiMatchScore || 0));
+  }, [usersList, userFilter]);
 
   // Calculate Host Earnings Metrics (71% payout rate to hosts = 1% higher than other platforms)
   const grossCoinsEarned = userCoins;
@@ -5880,6 +5902,39 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             />
           )}
 
+          {/* PK BATTLE OVERLAY */}
+          <LivePkBattleOverlay
+            isOpen={isPkBattleOpen}
+            onClose={() => setIsPkBattleOpen(false)}
+            streamerA={{ name: viewingStream.host || 'استریمر', avatar: viewingStream.avatar || '', score: 3800 }}
+            streamerB={{ name: 'سارا لایو 🌟', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', score: 3200 }}
+            userCoins={userCoins}
+            onSendGiftToPk={(side, amount) => {
+              setUserCoins(prev => Math.max(0, prev - amount));
+              showToast(loc(`🎁 ۵۰ سکه به تیم ${side === 'A' ? 'میزبان' : 'رقیب'} اضافه شد!`, `🎁 50 coins added to Team ${side}!`));
+            }}
+          />
+
+          {/* LIVE MINI-GAMES OVERLAY (Lucky Wheel / Mystery Boxes) */}
+          <LiveMiniGamesOverlay
+            isOpen={isLiveMiniGamesOpen}
+            onClose={() => setIsLiveMiniGamesOpen(false)}
+            userCoins={userCoins}
+            setUserCoins={setUserCoins}
+            showToast={showToast}
+            onWinPrize={(prize) => {
+              showToast(loc(`🎉 برنده شدید: ${prize.label}`, `🎉 You won: ${prize.label}`));
+            }}
+          />
+
+          {/* ENTRANCE RIBBON OVERLAY */}
+          {activeEntranceRibbon && (
+            <EntranceRibbonOverlay
+              entranceData={activeEntranceRibbon}
+              onComplete={() => setActiveEntranceRibbon(null)}
+            />
+          )}
+
           {/* VIP ENTRANCE BANNER */}
           {activeVipEntrance && (
             <VipEntranceBanner
@@ -6078,8 +6133,22 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 </div>
               )}
 
-              {/* FLOATING SOUNDBOARD & GIFT TOOLBAR */}
+              {/* FLOATING SOUNDBOARD & GIFT & MINI-GAMES TOOLBAR */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar dir-rtl">
+                <button 
+                  onClick={() => setIsPkBattleOpen(true)}
+                  className="px-3 py-1 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 text-white text-[10px] font-black shrink-0 flex items-center gap-1 shadow-md hover:scale-105 active:scale-95 transition"
+                >
+                  <Swords className="w-3.5 h-3.5 text-amber-300" />
+                  <span>{loc('دوئل PK ⚔️', 'PK Battle ⚔️')}</span>
+                </button>
+                <button 
+                  onClick={() => setIsLiveMiniGamesOpen(true)}
+                  className="px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 text-[10px] font-black shrink-0 flex items-center gap-1 shadow-md hover:scale-105 active:scale-95 transition"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                  <span>{loc('گردونه شانس 🎡', 'Lucky Wheel 🎡')}</span>
+                </button>
                 <button 
                   onClick={() => playSoundEffect('applause')}
                   className="px-3 py-1 rounded-xl bg-purple-950/80 border border-purple-500/40 text-purple-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-purple-900"
