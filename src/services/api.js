@@ -79,7 +79,8 @@ export const apiAuth = {
       avatar: user.avatar || user.avatarUrl,
       bio: user.bio,
       gender: user.gender,
-      city: user.city
+      city: user.city,
+      is_onboarded: true
     };
     Object.keys(safePayload).forEach(key => safePayload[key] === undefined && delete safePayload[key]);
     

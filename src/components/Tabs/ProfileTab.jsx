@@ -2,7 +2,7 @@ import { useVisualUiEditor } from '../../context/VisualUiEditorContext';
 import React, { useState, useEffect } from 'react';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { safeStorage } from '../../utils/safeStorage';
-import { getUserId } from '../../services/api';
+import { getUserId, apiProfile } from '../../services/api';
 import { isUserAnAdmin } from '../../utils/usernameUtils';
 import { 
   Camera, Edit3, Settings, ShieldAlert, Sparkles, QrCode, Lock, Crown,
@@ -269,6 +269,17 @@ export default function ProfileTab(props) {
     safeStorage.setItem('vlive_profile_languages', editForm.languages);
     safeStorage.setItem('vlive_profile_ig', editForm.instagram);
     safeStorage.setItem('vlive_profile_tg', editForm.telegram);
+
+    // Real backend database sync
+    apiProfile.updateProfile({
+      name: editForm.name,
+      bio: editForm.bio,
+      avatar: editForm.avatar,
+      city: editForm.city,
+      age: Number(editForm.age) || undefined,
+      interests: editForm.interests,
+      is_onboarded: true
+    }).catch(e => console.warn('ProfileTab backend sync note:', e));
 
     setIsEditModalOpen(false);
     showToast(window.loc('پروفایل شما با موفقیت به‌روزرسانی و ذخیره شد ✨', 'Profile updated & saved successfully ✨'));

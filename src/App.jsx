@@ -58,7 +58,7 @@ import { LifeBuoy, ShoppingBag, Video, Shield, ShieldCheck, Star, Wallet, User, 
   Home, BarChart2, Tv, Megaphone, Target, Paperclip, Pin, Reply, MoreVertical,
   VolumeX, Trash2, Archive, FileText, CheckCheck, Laugh, Forward, SmilePlus,
   LockKeyhole, SendHorizontal, MessageCircle, Info, PhoneIncoming, PhoneOutgoing,
-  PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert, Shuffle, BarChart3, Palette, LogIn, HelpCircle
+  PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert, Shuffle, BarChart3, Palette, LogIn, HelpCircle, Swords
 } from 'lucide-react';
 
 // Default Real Users seed stored in local storage
@@ -4064,20 +4064,21 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     showToast('Verification request rejected');
   };
 
-  // Filtered Users computation: Displays real onboarded and approved community users with AI Personalized Feed
+  // Filtered Users computation: Strictly displays approved female community users on Home Explore feed
   const filteredUsersList = useMemo(() => {
     return usersList
       .filter(u => {
         // If user is banned, hide
-        if (u.status === 'banned') return false;
+        if (u.status === 'banned' || u.isBanned) return false;
 
-        // Female users are prioritized on home explore
-        const isFemale = !u.gender || u.gender.toLowerCase() === 'female';
+        // STRICT FEMALE FILTER: Only display female users on Home explore
+        const genderLower = String(u.gender || '').trim().toLowerCase();
+        const isFemale = genderLower === 'female' || genderLower === 'زن' || genderLower === 'خانم' || (!u.gender && u.role !== 'admin' && u.role !== 'super_admin');
         if (!isFemale) return false;
 
-        if (userFilter === 'online') return u.online;
-        if (userFilter === 'followers') return u.isFollowed || u.following;
-        if (userFilter === 'top') return u.isTop;
+        if (userFilter === 'online') return Boolean(u.online);
+        if (userFilter === 'followers') return Boolean(u.isFollowed || u.following);
+        if (userFilter === 'top') return Boolean(u.isTop);
         if (userFilter === 'verified') return Boolean(u.isVerified || u.is_verified);
         return true;
       })
@@ -4759,7 +4760,12 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                     </span>
                   </div>
                   <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
-                    {usersList.filter(u => u.isVip || u.is_vip || u.isTop).map(user => (
+                    {usersList.filter(u => {
+                      if (u.status === 'banned' || u.isBanned) return false;
+                      const g = String(u.gender || '').trim().toLowerCase();
+                      const isF = g === 'female' || g === 'زن' || g === 'خانم' || (!u.gender && u.role !== 'admin');
+                      return isF && (u.isVip || u.is_vip || u.isTop);
+                    }).map(user => (
                       <div key={user.id} className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group" onClick={() => { setSelectedUser(user); setIsUserProfileModalOpen(true); }}>
                         <div className="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-orange-500 shadow-md group-hover:scale-105 transition">
                           <img src={user.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={user.name} className="w-full h-full object-cover rounded-full border border-slate-950" />
