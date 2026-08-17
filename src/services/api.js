@@ -304,8 +304,8 @@ export const apiHome = {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, username, avatar, bio, gender, is_verified, role, city, level')
-        .eq('status', 'approved')
+        .select('id, name, username, avatar, bio, gender, is_verified, is_streamer, role, city, level, country, interests, is_onboarded, status')
+        .neq('status', 'banned')
         .order('created_at', { ascending: false });
       if (error) return [];
       return data || [];

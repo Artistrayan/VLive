@@ -336,6 +336,22 @@ export default function ProfileTab(props) {
                     <span className="hidden sm:inline">{window.loc('مدیریت', 'Admin')}</span>
                   </button>
                 )}
+                {(isAdminUser || isVerified || isUserRayan) && (
+                  <button
+                    onClick={() => {
+                      if (props.setIsLiveStudioOpen) {
+                        props.setIsLiveStudioOpen(true);
+                      } else if (setIsHostLiveOpen) {
+                        setIsHostLiveOpen(true);
+                      }
+                    }}
+                    className="p-2 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 hover:opacity-90 text-white backdrop-blur-md transition border border-pink-400/50 shadow-lg flex items-center gap-1 text-xs font-black"
+                    title={window.loc('ورود به استودیو لایو', 'Enter Live Studio')}
+                  >
+                    <Video className="w-4 h-4 text-white animate-pulse" />
+                    <span className="hidden sm:inline">{window.loc('لایو استودیو 🎥', 'Live Studio 🎥')}</span>
+                  </button>
+                )}
                 <button
                   onClick={() => setIsQrCodeModalOpen(true)}
                   className="p-2 rounded-2xl bg-slate-950/70 hover:bg-slate-900 text-white backdrop-blur-md transition border border-white/20"

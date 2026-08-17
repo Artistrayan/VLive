@@ -13,6 +13,7 @@ import NotificationsModal from './modals/NotificationsModal';
 import UserProfileViewModal from './modals/UserProfileViewModal';
 import HelpCenterModal from './modals/HelpCenterModal';
 import StreamerApplicationModal from './modals/StreamerApplicationModal';
+import UserOnboardingModal from './modals/UserOnboardingModal';
 import ActiveCallOverlay from './components/Overlays/ActiveCallOverlay';
 import PreCallConfirmModal from './components/Overlays/PreCallConfirmModal';
 import { VisualUiEditorProvider } from './context/VisualUiEditorContext';
@@ -116,6 +117,8 @@ export default function App() {
   const [showEntrySplash, setShowEntrySplash] = useState(() => {
     return safeStorage.getItem('vlive_has_registered') === 'true';
   });
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [pendingOnboardUser, setPendingOnboardUser] = useState(null);
   const [authStep, setAuthStep] = useState('welcome');
   const [selectedUser, setSelectedUser] = useState(null);
   const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
@@ -4054,18 +4057,19 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     showToast('Verification request rejected');
   };
 
-  // Filtered Users computation: STRICT REQUIREMENT - Only verified female users displayed
+  // Filtered Users computation: Displays real onboarded and approved community users
   const filteredUsersList = usersList.filter(u => {
-    const isUserVerified = Boolean(u.isVerified || u.is_verified || u.isVerifiedStreamer || u.isVip || u.verified);
-    if (!isUserVerified) return false;
+    // If user is banned, hide
+    if (u.status === 'banned') return false;
 
+    // Female users are prioritized on home explore
     const isFemale = !u.gender || u.gender.toLowerCase() === 'female';
     if (!isFemale) return false;
 
     if (userFilter === 'online') return u.online;
     if (userFilter === 'followers') return u.isFollowed || u.following;
     if (userFilter === 'top') return u.isTop;
-    if (userFilter === 'verified') return u.isVerified;
+    if (userFilter === 'verified') return Boolean(u.isVerified || u.is_verified);
     return true;
   });
 
@@ -4223,6 +4227,20 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               setUserRole(assignedRole);
               setCurrentTelegramId(u.telegram_id ? String(u.telegram_id) : '');
               setIsVerified(u.is_verified || false);
+
+              // Check if user has already completed onboarding
+              const isOnboarded = u.is_onboarded || safeStorage.getItem('vlive_user_onboarded') === 'true' || assignedRole === 'admin';
+              
+              if (!isOnboarded) {
+                setPendingOnboardUser({
+                  username: finalUsername,
+                  name: finalName,
+                  avatar: finalAvatar,
+                  telegram_id: u.telegram_id ? String(u.telegram_id) : ''
+                });
+                setIsOnboardingOpen(true);
+                return;
+              }
 
               setIsLoggedIn(true);
               setHasRegistered(true);
@@ -5333,6 +5351,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           setIsLoggedIn={setIsLoggedIn}
           setAuthStep={setAuthStep}
           setIsHostLiveOpen={setIsHostLiveOpen}
+          setIsLiveStudioOpen={setIsLiveStudioOpen}
+          isVerified={isVerified || userRole === 'admin' || isUserRayan}
           followedUsers={followedUsers}
           usersList={usersList}
           adminReportsList={adminReportsList}
@@ -5851,6 +5871,23 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       {/* ==================== FULLSCREEN LIVE STREAM VIEWER ==================== */}
       {viewingStream && !isMiniPlayer && (
         <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col justify-between overflow-hidden animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+          
+          {/* FULL SCREEN LUXURY GIFT OVERLAY */}
+          {activeLuxuryGift && (
+            <LuxuryGiftOverlay
+              giftData={activeLuxuryGift}
+              onComplete={() => setActiveLuxuryGift(null)}
+            />
+          )}
+
+          {/* VIP ENTRANCE BANNER */}
+          {activeVipEntrance && (
+            <VipEntranceBanner
+              vipUser={activeVipEntrance}
+              onComplete={() => setActiveVipEntrance(null)}
+            />
+          )}
+
           {/* Header */}
           <div className="absolute top-0 inset-x-0 p-4 bg-gradient-to-b from-black/80 to-transparent z-30 flex items-center justify-between">
             <div className="flex items-center gap-2 bg-black/40 rounded-full pr-1 pl-3 py-1 border border-white/10 backdrop-blur-md">
@@ -6119,10 +6156,66 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   <span className="text-[10px] font-black text-red-300">{streamLikes}</span>
                 </button>
 
-                <button onClick={() => { setActiveTab('wallet'); setWalletSubTab('giftshop'); }} className="p-2.5 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30">
-                  <Gift className="w-5 h-5 text-amber-400 animate-bounce" />
+                <button 
+                  onClick={() => setIsStreamGiftTrayOpen(!isStreamGiftTrayOpen)} 
+                  className={`p-2.5 rounded-2xl border transition flex items-center justify-center ${
+                    isStreamGiftTrayOpen 
+                      ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.6)]' 
+                      : 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
+                  }`}
+                  title={loc('ارسال هدیه زنده', 'Send live gifts')}
+                >
+                  <Gift className="w-5 h-5 animate-bounce" />
                 </button>
               </div>
+
+              {/* IN-STREAM LUXURY GIFT TRAY BOTTOM SHEET */}
+              {isStreamGiftTrayOpen && (
+                <div className="p-3.5 rounded-3xl bg-slate-950/95 border-2 border-amber-500/50 backdrop-blur-2xl shadow-[0_0_35px_rgba(0,0,0,0.9)] space-y-3 animate-fadeIn dir-rtl text-right">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <div className="flex items-center gap-1.5">
+                      <Gift className="w-4 h-4 text-amber-400" />
+                      <span className="font-black text-xs text-white">{loc('🎁 ارسال هدیه به استریمر', '🎁 Send gift to streamer')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono font-black text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                        {userCoins.toLocaleString()} 🪙
+                      </span>
+                      <button 
+                        onClick={() => setIsStreamGiftTrayOpen(false)}
+                        className="text-slate-400 hover:text-white p-1"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Gift Items Grid */}
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
+                    {(GIFTS_CATALOG || [
+                      { id: 'rose', name: 'گل رز', icon: '🌹', coins: 10, animationType: 'rose' },
+                      { id: 'heart', name: 'قلب آتشین', icon: '💖', coins: 50, animationType: 'heart' },
+                      { id: 'perfume', name: 'عطر لوکس', icon: '💎', coins: 100, animationType: 'diamond' },
+                      { id: 'crown', name: 'تاج پادشاهی', icon: '👑', coins: 500, animationType: 'crown' },
+                      { id: 'supercar', name: 'سوپراسپرت قرمز', icon: '🏎️', coins: 1000, animationType: 'supercar' },
+                      { id: 'jet', name: 'جت شخصی VIP', icon: '🚀', coins: 2500, animationType: 'jet' },
+                      { id: 'vault', name: 'صندوقچه شمش طلا', icon: '📦', coins: 5000, animationType: 'vault' }
+                    ]).map((g) => (
+                      <button
+                        key={g.id}
+                        onClick={() => handleSendLuxuryGift(g)}
+                        className="p-2 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-amber-400 hover:bg-slate-850 hover:scale-105 active:scale-95 transition flex flex-col items-center justify-center gap-1 group shadow"
+                      >
+                        <span className="text-2xl group-hover:scale-110 transition-transform">{g.icon}</span>
+                        <span className="text-[10px] font-bold text-white truncate max-w-full">{g.name}</span>
+                        <span className="text-[9px] font-mono font-bold text-amber-400 bg-slate-950 px-1.5 py-0.2 rounded-full border border-slate-800">
+                          {g.coins} 🪙
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
             </div>
 
@@ -7498,6 +7591,32 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           </div>
         </div>
       )}
+
+      {/* MODAL: MANDATORY FIRST-TIME ONBOARDING & BIOMETRIC AI VERIFICATION */}
+      <UserOnboardingModal
+        isOpen={isOnboardingOpen}
+        initialUsername={pendingOnboardUser?.username || currentUsername}
+        initialName={pendingOnboardUser?.name || userName}
+        initialAvatar={pendingOnboardUser?.avatar || userAvatar}
+        telegramId={pendingOnboardUser?.telegram_id || currentTelegramId}
+        showToast={showToast}
+        onComplete={(finalProfile) => {
+          setIsOnboardingOpen(false);
+          setPendingOnboardUser(null);
+          setUserName(finalProfile.name);
+          setCurrentUsername(finalProfile.username);
+          if (finalProfile.avatar) setUserAvatar(finalProfile.avatar);
+          if (finalProfile.gender) setAuthGender(finalProfile.gender);
+          setIsLoggedIn(true);
+          setHasRegistered(true);
+          setShowEntrySplash(false);
+          setActiveTab('home');
+          safeStorage.setItem('vlive_user_logged_in', 'true');
+          safeStorage.setItem('vlive_has_registered', 'true');
+          safeStorage.setItem('vlive_user_onboarded', 'true');
+          showToast(loc(`✨ ثبت‌نام و تکمیل مشخصات با موفقیت انجام شد! خوش آمدید @${finalProfile.username}`, `✨ Profile completed successfully! Welcome @${finalProfile.username}`));
+        }}
+      />
 
       {/* MODAL: BECOME A STREAMER & STAR BADGE */}
       <StreamerApplicationModal
