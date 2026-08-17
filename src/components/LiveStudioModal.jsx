@@ -10,6 +10,7 @@ import { apiLive, apiAdmin } from '../services/api';
 import { livekitManager, fetchLiveKitToken } from '../services/livekitService';
 import LuxuryGiftOverlay from './Overlays/LuxuryGiftOverlay';
 import VipEntranceBanner from './Overlays/VipEntranceBanner';
+import AiFaceEffectOverlay from './Overlays/AiFaceEffectOverlay';
 import { filterMessageContent } from '../services/aiModeration';
 
 export default function LiveStudioModal({
@@ -673,6 +674,17 @@ export default function LiveStudioModal({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40 pointer-events-none" />
 
+                  {/* Real-time AI Face, Hair & Makeup AR Overlay */}
+                  <AiFaceEffectOverlay
+                    videoRef={previewVideoRef}
+                    isMirrored={isMirrored}
+                    hairColorEffect={hairColorEffect}
+                    lipShade={lipShade}
+                    faceSticker={faceSticker}
+                    lightingEffect={lightingEffect}
+                    skinSmoothing={skinSmoothing}
+                  />
+
                   {/* LocalVideoTrack Status Badge */}
                   <div className="absolute top-3 left-3 bg-slate-950/80 border border-slate-800 text-slate-300 text-[9px] font-mono font-bold px-2 py-0.5 rounded-full backdrop-blur-md flex items-center gap-1">
                     <Wifi className="w-3 h-3 text-cyan-400" />
@@ -1003,78 +1015,18 @@ export default function LiveStudioModal({
                   className={`w-full h-full object-cover transition-all duration-300 ${isMirrored ? 'scale-x-[-1]' : ''}`}
                 />
 
-                {/* AR Hair Color Tint Overlay */}
-                {hairColorEffect !== 'none' && (
-                  <div 
-                    className="absolute inset-0 pointer-events-none mix-blend-color opacity-45 transition-all duration-500"
-                    style={{
-                      background: hairColorEffect === 'blonde' ? 'radial-gradient(ellipse at 50% 20%, #fef08a 0%, #ca8a04 60%, transparent 80%)' :
-                                  hairColorEffect === 'pink' ? 'radial-gradient(ellipse at 50% 20%, #f472b6 0%, #db2777 60%, transparent 80%)' :
-                                  hairColorEffect === 'purple' ? 'radial-gradient(ellipse at 50% 20%, #c084fc 0%, #7e22ce 60%, transparent 80%)' :
-                                  hairColorEffect === 'cyan' ? 'radial-gradient(ellipse at 50% 20%, #38bdf8 0%, #0284c7 60%, transparent 80%)' :
-                                  hairColorEffect === 'fire' ? 'radial-gradient(ellipse at 50% 20%, #fb923c 0%, #dc2626 60%, transparent 80%)' : 'none'
-                    }}
-                  />
-                )}
-
-                {/* Studio Lighting Ambient Glow */}
-                {lightingEffect !== 'none' && (
-                  <div 
-                    className="absolute inset-0 pointer-events-none mix-blend-soft-light opacity-60"
-                    style={{
-                      background: lightingEffect === 'warm' ? 'radial-gradient(circle at 50% 35%, rgba(251,191,36,0.3) 0%, transparent 70%)' :
-                                  lightingEffect === 'cool' ? 'radial-gradient(circle at 50% 35%, rgba(56,189,248,0.3) 0%, transparent 70%)' :
-                                  lightingEffect === 'neon' ? 'linear-gradient(135deg, rgba(236,72,153,0.25) 0%, rgba(139,92,246,0.25) 100%)' :
-                                  lightingEffect === 'sunset' ? 'linear-gradient(to top, rgba(244,63,94,0.3) 0%, rgba(251,146,60,0.3) 100%)' :
-                                  'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.35) 0%, transparent 75%)'
-                    }}
-                  />
-                )}
-
-                {/* Virtual Lip Tint Overlay */}
-                {lipShade !== 'none' && (
-                  <div 
-                    className="absolute top-[52%] left-[45%] w-12 h-6 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none blur-sm opacity-55 mix-blend-overlay"
-                    style={{
-                      backgroundColor: lipShade === 'ruby' ? '#e11d48' :
-                                       lipShade === 'coral' ? '#fb7185' :
-                                       lipShade === 'plum' ? '#9333ea' : '#ea580c'
-                    }}
-                  />
-                )}
-
-                {/* AR Face Stickers Overlay */}
-                {faceSticker !== 'none' && (
-                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                    {faceSticker === 'cat_ears' && (
-                      <div className="absolute top-[12%] text-5xl animate-pulse filter drop-shadow-[0_0_12px_rgba(244,114,182,0.8)]">
-                        🐱
-                      </div>
-                    )}
-                    {faceSticker === 'crown' && (
-                      <div className="absolute top-[10%] text-6xl animate-bounce filter drop-shadow-[0_0_15px_rgba(234,179,8,0.9)]">
-                        👑
-                      </div>
-                    )}
-                    {faceSticker === 'sparkles' && (
-                      <div className="absolute inset-x-8 top-[20%] flex justify-between text-4xl animate-spin" style={{ animationDuration: '6s' }}>
-                        <span>✨</span>
-                        <span>🌟</span>
-                      </div>
-                    )}
-                    {faceSticker === 'sunglasses' && (
-                      <div className="absolute top-[28%] text-5xl filter drop-shadow-lg">
-                        🕶️
-                      </div>
-                    )}
-                    {faceSticker === 'hearts' && (
-                      <div className="absolute inset-x-10 top-[25%] flex justify-between text-3xl animate-pulse">
-                        <span className="text-pink-500">💖</span>
-                        <span className="text-rose-500">💕</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* Real-time AI Face, Hair & Makeup AR Overlay with Facial Tracking */}
+                <AiFaceEffectOverlay
+                  videoRef={liveVideoRef}
+                  isMirrored={isMirrored}
+                  hairColorEffect={hairColorEffect}
+                  lipShade={lipShade}
+                  faceSticker={faceSticker}
+                  lightingEffect={lightingEffect}
+                  skinSmoothing={skinSmoothing}
+                  eyeEnlarge={eyeEnlarge}
+                  slimmingLevel={slimmingLevel}
+                />
               </div>
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-500 space-y-2">
