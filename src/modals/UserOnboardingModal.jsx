@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   User, Shield, Camera, Image, Check, AlertTriangle, Sparkles, 
   ChevronRight, Radio, RefreshCw, X, CheckCircle2, Lock, Heart, Globe
