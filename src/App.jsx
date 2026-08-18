@@ -7432,7 +7432,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 {matchState === 'connected' && matchedMatchUser && (
                   <div className="space-y-4">
                     <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-pink-500/30 flex items-center justify-center">
-                      <img src={matchedMatchUser.avatar} alt={matchedMatchUser.name} className="absolute inset-0 w-full h-full object-cover opacity-85" />
+                      <img src={matchedMatchUser.avatar || ''} alt={matchedMatchUser.name || matchedMatchUser.username || 'User'} className="absolute inset-0 w-full h-full object-cover opacity-85" />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-black/40" />
                       
                       <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md border border-pink-500/40 text-pink-400 font-black text-xs flex items-center gap-1.5 animate-pulse">
@@ -7443,10 +7443,10 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                       <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between">
                         <div>
                           <h4 className="text-xs font-black text-white flex items-center gap-1">
-                            {matchedMatchUser.name}
+                            {matchedMatchUser.name || matchedMatchUser.username || loc('کاربر آنلاین', 'Online User')}
                             {matchedMatchUser.isVerified && <span className="text-blue-400 text-[10px]">✔</span>}
                           </h4>
-                          <p className="text-[10px] text-slate-300">📍 {matchedMatchUser.city}</p>
+                          <p className="text-[10px] text-slate-300">📍 {matchedMatchUser.city || loc('آنلاین', 'Online')}</p>
                         </div>
                         <button
                           onClick={() => {
@@ -7481,7 +7481,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 🎉 It's a Match! 🎉
               </h2>
               <p className="text-xs text-slate-300">
-                {loc('شما و', 'You and')} <span className="font-bold text-pink-400">@{matchResultPopup.name}</span> {loc('یکدیگر را لایک کردید!', 'liked each other!')}
+                {loc('شما و', 'You and')} <span className="font-bold text-pink-400">@{matchResultPopup.name || matchResultPopup.username || 'User'}</span> {loc('یکدیگر را لایک کردید!', 'liked each other!')}
               </p>
             </div>
 
@@ -7491,7 +7491,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               <div className="w-10 h-10 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 flex items-center justify-center shadow-lg text-white text-lg animate-pulse z-20 -mx-4">
                 ❤️
               </div>
-              <img src={matchResultPopup.avatar} alt={matchResultPopup.name} className="w-20 h-20 rounded-full object-cover border-4 border-purple-500 shadow-xl" />
+              <img src={matchResultPopup.avatar || ''} alt={matchResultPopup.name || matchResultPopup.username || 'Match'} className="w-20 h-20 rounded-full object-cover border-4 border-purple-500 shadow-xl" />
             </div>
 
             <div className="space-y-2 pt-2 relative z-10">
@@ -7501,7 +7501,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                   setMatchResultPopup(null);
                   setIsMatchModalOpen(false);
                   setActiveTab('messages');
-                  showToast(`💬 Opened chat with ${target.name}`);
+                  showToast(`💬 Opened chat with ${target?.name || target?.username || 'User'}`);
                 }}
                 className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white font-black text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition flex items-center justify-center gap-2"
               >

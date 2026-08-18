@@ -1,6 +1,7 @@
 /**
  * AI Face & Landmark Detection Engine for Real-Time AR Effects
- * Uses browser FaceDetector API when available, or lightweight fast canvas color/skin/hair & facial ratio tracking with smooth interpolation
+ * Uses browser FaceDetector API when available, or ultra-fast color & luminance clustering.
+ * Only marks face as detected when valid facial skin pixels and contours are verified.
  */
 
 export class AiFaceTracker {
@@ -23,11 +24,11 @@ export class AiFaceTracker {
       // Key facial points
       landmarks: {
         forehead: { x: 0.5, y: 0.22 },
-        hairRegion: { x: 0.5, y: 0.18, rx: 0.32, ry: 0.24 },
+        hairRegion: { x: 0.5, y: 0.18, rx: 0.28, ry: 0.20 },
         leftEye: { x: 0.38, y: 0.42 },
         rightEye: { x: 0.62, y: 0.42 },
         nose: { x: 0.5, y: 0.52 },
-        mouth: { x: 0.5, y: 0.68, width: 0.18, height: 0.08, open: false },
+        mouth: { x: 0.5, y: 0.68, width: 0.16, height: 0.07, open: false },
         chin: { x: 0.5, y: 0.82 },
         leftCheek: { x: 0.32, y: 0.55 },
         rightCheek: { x: 0.68, y: 0.55 }
@@ -54,21 +55,23 @@ export class AiFaceTracker {
    */
   async update(videoElement) {
     if (!videoElement || videoElement.readyState < 2 || videoElement.videoWidth === 0) {
+      this.face.detected = false;
       return this.face;
     }
 
     const now = performance.now();
-    // Run AI detection every ~50ms to keep 60fps rendering buttery smooth
+    // Run AI detection every ~50ms
     if (now - this.lastProcessed > 50) {
       this.lastProcessed = now;
       await this._detectFace(videoElement);
     }
 
     // Smooth lerp (linear interpolation) for jitter-free tracking
-    const lerpFactor = 0.35;
+    const lerpFactor = 0.4;
     const lerp = (a, b) => a + (b - a) * lerpFactor;
 
     this.face.detected = this.targetFace.detected;
+    this.face.confidence = this.targetFace.confidence;
     this.face.box.x = lerp(this.face.box.x, this.targetFace.box.x);
     this.face.box.y = lerp(this.face.box.y, this.targetFace.box.y);
     this.face.box.width = lerp(this.face.box.width, this.targetFace.box.width);
@@ -110,6 +113,7 @@ export class AiFaceTracker {
           const nh = bb.height / vH;
 
           this.targetFace.detected = true;
+          this.targetFace.confidence = 0.95;
           this.targetFace.box = { x: nx, y: ny, width: nw, height: nh };
 
           let leftEye = null;
@@ -135,27 +139,27 @@ export class AiFaceTracker {
 
           this.targetFace.landmarks.leftEye = leftEye || { x: nx + nw * 0.32, y: ny + nh * 0.38 };
           this.targetFace.landmarks.rightEye = rightEye || { x: nx + nw * 0.68, y: ny + nh * 0.38 };
-          this.targetFace.landmarks.forehead = { x: centerX, y: ny + nh * 0.15 };
+          this.targetFace.landmarks.forehead = { x: centerX, y: ny + nh * 0.16 };
           this.targetFace.landmarks.hairRegion = {
             x: centerX,
-            y: Math.max(0.05, ny + nh * 0.05),
-            rx: nw * 0.68,
-            ry: nh * 0.48
+            y: Math.max(0.04, ny + nh * 0.05),
+            rx: nw * 0.55,
+            ry: nh * 0.38
           };
           this.targetFace.landmarks.nose = { x: centerX, y: ny + nh * 0.54 };
           this.targetFace.landmarks.mouth = {
             x: mouth ? mouth.x : centerX,
-            y: mouth ? mouth.y : ny + nh * 0.76,
-            width: nw * 0.38,
-            height: nh * 0.16
+            y: mouth ? mouth.y : ny + nh * 0.74,
+            width: nw * 0.32,
+            height: nh * 0.12
           };
-          this.targetFace.landmarks.chin = { x: centerX, y: ny + nh * 0.96 };
-          this.targetFace.landmarks.leftCheek = { x: nx + nw * 0.22, y: ny + nh * 0.58 };
-          this.targetFace.landmarks.rightCheek = { x: nx + nw * 0.78, y: ny + nh * 0.58 };
+          this.targetFace.landmarks.chin = { x: centerX, y: ny + nh * 0.94 };
+          this.targetFace.landmarks.leftCheek = { x: nx + nw * 0.24, y: ny + nh * 0.56 };
+          this.targetFace.landmarks.rightCheek = { x: nx + nw * 0.76, y: ny + nh * 0.56 };
           return;
         }
       } catch (err) {
-        // Fallback to fast computer-vision heuristic
+        // Fallback to computer-vision heuristic
       }
     }
 
@@ -205,16 +209,18 @@ export class AiFaceTracker {
         }
       }
 
-      if (skinPixels > 120) {
+      // Minimum required skin pixels to confirm actual face presence
+      if (skinPixels > 160) {
         const avgX = (sumX / skinPixels) / sW;
         const avgY = (sumY / skinPixels) / sH;
-        const boxW = Math.max(0.28, Math.min(0.75, (maxX - minX) / sW));
-        const boxH = Math.max(0.35, Math.min(0.85, (maxY - minY) / sH));
+        const boxW = Math.max(0.24, Math.min(0.65, (maxX - minX) / sW));
+        const boxH = Math.max(0.30, Math.min(0.75, (maxY - minY) / sH));
 
         const cX = Math.max(boxW * 0.5, Math.min(1 - boxW * 0.5, avgX));
         const cY = Math.max(boxH * 0.45, Math.min(1 - boxH * 0.45, avgY));
 
         this.targetFace.detected = true;
+        this.targetFace.confidence = Math.min(0.92, skinPixels / 1000);
         this.targetFace.box = {
           x: cX - boxW * 0.5,
           y: cY - boxH * 0.5,
@@ -222,41 +228,32 @@ export class AiFaceTracker {
           height: boxH
         };
 
-        this.targetFace.landmarks.forehead = { x: cX, y: cY - boxH * 0.32 };
+        this.targetFace.landmarks.forehead = { x: cX, y: cY - boxH * 0.30 };
         this.targetFace.landmarks.hairRegion = {
           x: cX,
-          y: Math.max(0.04, cY - boxH * 0.45),
-          rx: boxW * 0.65,
-          ry: boxH * 0.42
+          y: Math.max(0.04, cY - boxH * 0.42),
+          rx: boxW * 0.55,
+          ry: boxH * 0.35
         };
         this.targetFace.landmarks.leftEye = { x: cX - boxW * 0.22, y: cY - boxH * 0.14 };
         this.targetFace.landmarks.rightEye = { x: cX + boxW * 0.22, y: cY - boxH * 0.14 };
         this.targetFace.landmarks.nose = { x: cX, y: cY + boxH * 0.04 };
         this.targetFace.landmarks.mouth = {
           x: cX,
-          y: cY + boxH * 0.28,
-          width: boxW * 0.35,
-          height: boxH * 0.16
+          y: cY + boxH * 0.26,
+          width: boxW * 0.30,
+          height: boxH * 0.12
         };
-        this.targetFace.landmarks.chin = { x: cX, y: cY + boxH * 0.48 };
-        this.targetFace.landmarks.leftCheek = { x: cX - boxW * 0.32, y: cY + boxH * 0.08 };
-        this.targetFace.landmarks.rightCheek = { x: cX + boxW * 0.32, y: cY + boxH * 0.08 };
+        this.targetFace.landmarks.chin = { x: cX, y: cY + boxH * 0.46 };
+        this.targetFace.landmarks.leftCheek = { x: cX - boxW * 0.30, y: cY + boxH * 0.08 };
+        this.targetFace.landmarks.rightCheek = { x: cX + boxW * 0.30, y: cY + boxH * 0.08 };
       } else {
-        // Default centered face landmarks
-        this.targetFace.detected = true;
-        this.targetFace.box = { x: 0.25, y: 0.15, width: 0.5, height: 0.65 };
-        this.targetFace.landmarks.forehead = { x: 0.5, y: 0.22 };
-        this.targetFace.landmarks.hairRegion = { x: 0.5, y: 0.16, rx: 0.34, ry: 0.26 };
-        this.targetFace.landmarks.leftEye = { x: 0.38, y: 0.40 };
-        this.targetFace.landmarks.rightEye = { x: 0.62, y: 0.40 };
-        this.targetFace.landmarks.nose = { x: 0.5, y: 0.52 };
-        this.targetFace.landmarks.mouth = { x: 0.5, y: 0.68, width: 0.2, height: 0.09 };
-        this.targetFace.landmarks.chin = { x: 0.5, y: 0.84 };
-        this.targetFace.landmarks.leftCheek = { x: 0.32, y: 0.55 };
-        this.targetFace.landmarks.rightCheek = { x: 0.68, y: 0.55 };
+        // Face is NOT detected in current frame -> Do NOT render AR effects floating in empty space
+        this.targetFace.detected = false;
+        this.targetFace.confidence = 0;
       }
     } catch (e) {
-      // Ignored for performance
+      this.targetFace.detected = false;
     }
   }
 }

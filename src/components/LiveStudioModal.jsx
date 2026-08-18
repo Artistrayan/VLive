@@ -64,7 +64,7 @@ export default function LiveStudioModal({
   const [hairColorEffect, setHairColorEffect] = useState('none'); // 'none' | 'blonde' | 'pink' | 'purple' | 'cyan' | 'fire'
   const [faceSticker, setFaceSticker] = useState('none'); // 'none' | 'cat_ears' | 'crown' | 'sparkles' | 'sunglasses' | 'hearts'
   const [lipShade, setLipShade] = useState('none'); // 'none' | 'ruby' | 'coral' | 'plum' | 'nude'
-  const [lightingEffect, setLightingEffect] = useState('warm'); // 'studio' | 'warm' | 'cool' | 'neon' | 'sunset'
+  const [lightingEffect, setLightingEffect] = useState('none'); // 'none' | 'studio' | 'warm' | 'cool' | 'neon' | 'sunset'
   const [networkQuality, setNetworkQuality] = useState('EXCELLENT'); // 'EXCELLENT' | 'GOOD' | 'POOR'
   const [estimatedBitrate, setEstimatedBitrate] = useState(4500); // kbps
 
@@ -1004,12 +1004,12 @@ export default function LiveStudioModal({
                   muted
                   style={{
                     filter: `
-                      blur(${Math.max(0, (skinSmoothing - 40) * 0.008)}px)
-                      brightness(${1 + (skinSmoothing * 0.002) + (lightingEffect === 'studio' ? 0.15 : lightingEffect === 'warm' ? 0.1 : lightingEffect === 'neon' ? 0.05 : 0)})
-                      contrast(${1 - (skinSmoothing * 0.001) + (lightingEffect === 'studio' ? 0.05 : 0)})
-                      saturate(${1 + (lightingEffect === 'warm' ? 0.2 : lightingEffect === 'neon' ? 0.35 : lightingEffect === 'sunset' ? 0.25 : 0.1)})
-                      ${beautyFilter === 'rose' ? 'sepia(0.2) hue-rotate(310deg)' : ''}
-                      ${beautyFilter === 'bronze' ? 'sepia(0.35) saturate(1.3)' : ''}
+                      blur(${Math.max(0, (skinSmoothing - 60) * 0.005)}px)
+                      brightness(${1 + (skinSmoothing * 0.001) + (lightingEffect === 'studio' ? 0.08 : lightingEffect === 'warm' ? 0.04 : 0)})
+                      contrast(${1 - (skinSmoothing * 0.0005) + (lightingEffect === 'studio' ? 0.02 : 0)})
+                      saturate(${1 + (lightingEffect === 'warm' ? 0.08 : lightingEffect === 'neon' ? 0.12 : lightingEffect === 'sunset' ? 0.1 : 0)})
+                      ${beautyFilter === 'rose' ? 'sepia(0.12) hue-rotate(320deg)' : ''}
+                      ${beautyFilter === 'bronze' ? 'sepia(0.18) saturate(1.15)' : ''}
                     `
                   }}
                   className={`w-full h-full object-cover transition-all duration-300 ${isMirrored ? 'scale-x-[-1]' : ''}`}
@@ -1095,7 +1095,7 @@ export default function LiveStudioModal({
                 <div className="flex items-center justify-between text-[10px] font-bold text-white">
                   <span className="text-rose-400 font-mono">{window.loc('شما:', 'you:')} {pkRedScore} pts</span>
                   <span className="text-amber-300 font-mono">{window.loc('زمان PK:', 'PK Time:')} {pkTimeLeft}s</span>
-                  <span className="text-cyan-400 font-mono">{pkOpponent.name}: {pkBlueScore} pts</span>
+                  <span className="text-cyan-400 font-mono">{(pkOpponent && (pkOpponent.name || pkOpponent.username)) ? (pkOpponent.name || pkOpponent.username) : window.loc('حریف PK', 'PK Rival')}: {pkBlueScore} pts</span>
                 </div>
                 <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden flex">
                   <div className="bg-rose-500 h-full" style={{ width: `${(pkRedScore / (pkRedScore + pkBlueScore)) * 100}%` }} />
@@ -1501,8 +1501,9 @@ export default function LiveStudioModal({
                   {/* Studio Lighting Mood */}
                   <div className="space-y-1.5 bg-slate-900/80 p-2.5 rounded-2xl border border-slate-800">
                     <span className="text-xs font-bold text-slate-200">{window.loc('نورپردازی استودیویی (Studio Lighting)', 'Studio Lighting Mood')}</span>
-                    <div className="grid grid-cols-5 gap-1.5 pt-1">
+                    <div className="grid grid-cols-6 gap-1.5 pt-1">
                       {[
+                        { id: 'none', label: 'طبیعی', icon: '🚫' },
                         { id: 'studio', label: 'استودیو', icon: '💡' },
                         { id: 'warm', label: 'گرم و طلایی', icon: '☀️' },
                         { id: 'cool', label: 'خنک کریستال', icon: '❄️' },
