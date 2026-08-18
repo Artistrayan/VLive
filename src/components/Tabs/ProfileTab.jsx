@@ -638,36 +638,36 @@ export default function ProfileTab(props) {
 
               {/* Followers List Grid */}
               <div className="space-y-2.5">
-                {(usersList.length > 0 ? usersList.slice(0, 8) : [
-                  { id: 'f1', username: 'Sara_VLive', name: 'Sara Ahmadi', avatar: '', isOnline: true, isVIP: true, level: 32 },
-                  { id: 'f2', username: 'Alireza_Stream', name: 'Alireza Rezaei', avatar: '', isOnline: true, isVIP: false, level: 18 },
-                  { id: 'f3', username: 'Elena_Live', name: 'Elena Rostami', avatar: '', isOnline: false, isVIP: true, level: 45 },
-                  { id: 'f4', username: 'Kian_Host', name: 'Kian VVIP', avatar: '', isOnline: true, isVIP: true, level: 50 },
-                  { id: 'f5', username: 'Nika_Stars', name: 'Nika Sharifi', avatar: '', isOnline: false, isVIP: false, level: 12 }
-                ]).map(u => (
-                  <div key={u.id || u.username} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 transition flex items-center justify-between gap-3 shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <img src={u.avatar || u.userAvatar || ''} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
-                        {u.isOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-950 animate-pulse" />}
+                {usersList.length > 0 ? (
+                  usersList.slice(0, 8).map(u => (
+                    <div key={u.id || u.username} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 transition flex items-center justify-between gap-3 shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <img src={u.avatar || u.userAvatar || ''} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                          {u.isOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-950 animate-pulse" />}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                            <span>{u.name || u.username}</span>
+                            {u.isVIP && <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-black border border-amber-500/40">VIP</span>}
+                          </h4>
+                          <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level || 15)}</span>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
-                          <span>{u.name || u.username}</span>
-                          {u.isVIP && <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-black border border-amber-500/40">VIP</span>}
-                        </h4>
-                        <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level || 15)}</span>
-                      </div>
+                      <button
+                        onClick={() => showToast(`${window.loc('درخواست دنبال‌کردن متقابل ارسال شد به', 'Follow request sent to')} @${u.username}`)}
+                        className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] shadow transition active:scale-95 flex items-center gap-1"
+                      >
+                        <UserCheck className="w-3.5 h-3.5" />
+                        <span>{window.loc('فالو متقابل', 'Follow Back')}</span>
+                      </button>
                     </div>
-                    <button
-                      onClick={() => showToast(`${window.loc('درخواست دنبال‌کردن متقابل ارسال شد به', 'Follow request sent to')} @${u.username}`)}
-                      className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] shadow transition active:scale-95 flex items-center gap-1"
-                    >
-                      <UserCheck className="w-3.5 h-3.5" />
-                      <span>{window.loc('فالو متقابل', 'Follow Back')}</span>
-                    </button>
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-slate-500 text-xs font-medium">
+                    {window.loc('هنوز دنبال‌کننده‌ای ثبت نشده است.', 'No followers yet.')}
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>

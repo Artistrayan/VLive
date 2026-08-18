@@ -631,13 +631,15 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     setTimeout(() => {
       const validTargets = (Array.isArray(usersList) && usersList.length > 0)
         ? usersList.filter(u => u && u.username !== currentUsername)
-        : [
-            { id: 101, name: loc('سارا ملکی', 'Sarah Maleki'), avatar: '', city: '', isVerified: true, isStreamer: true },
-            { id: 102, name: loc('الناز کریمی', 'Elnaz Karimi'), avatar: '', city: loc('شیراز', 'Shiraz'), isVerified: true, isStreamer: false },
-            { id: 103, name: loc('سحر محمودی', 'Sahar Mahmoudi'), avatar: '', city: loc('مشهد', 'Mashhad'), isVerified: true, isStreamer: true }
-          ];
+        : [];
 
-      const randomTarget = validTargets[Math.floor(Math.random() * validTargets.length)] || validTargets[0];
+      if (validTargets.length === 0) {
+        setMatchState('idle');
+        showToast(loc('کاربر دیگری در حال حاضر برای اتصال یافت نشد', 'No other active users found at the moment'));
+        return;
+      }
+
+      const randomTarget = validTargets[Math.floor(Math.random() * validTargets.length)];
       setMatchedMatchUser(randomTarget);
       setMatchState('connected');
 
@@ -1050,8 +1052,7 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
 
     const initialParticipants = mode === 'group' ? [
       targetUser,
-      { username: 'Elnaz_Karimi', name: 'Elnaz Karimi', avatar: '', isVip: true, role: 'Online Model', isMuted: false },
-      { username: 'Arash_VIP', name: 'Arash VIP Host', avatar: '', isVip: true, role: 'Top Streamer', isMuted: false }
+      ...usersList.filter(u => u && u.username !== targetUser?.username && u.username !== currentUsername).slice(0, 2)
     ] : [targetUser];
 
     const newCall = {
@@ -2927,17 +2928,19 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         if (Math.random() > 0.75) {
           const realUsersForComments = (Array.isArray(usersList) && usersList.length > 0)
             ? usersList.map(u => u.username || u.name).filter(Boolean)
-            : ['Sara_Maleki', 'Elnaz_Karimi', 'Sahar_Miller', 'Maryam_Hosseini', 'Rayan_VIP'];
-          const peerComments = [
-            'Amazing stream quality! 🔥',
-            'Loving the live music vibes ✨',
-            'Super crisp 4K stream!',
-            'Sending support from VIP club! 👑',
-            'Top streamer of the day! ❤️'
-          ];
-          const rUser = realUsersForComments[Math.floor(Math.random() * realUsersForComments.length)];
-          const rText = peerComments[Math.floor(Math.random() * peerComments.length)];
-          setStreamChatMessages(prev => [...prev.slice(-30), { user: rUser, text: rText, isVip: true }]);
+            : [];
+          if (realUsersForComments.length > 0) {
+            const peerComments = [
+              'Amazing stream quality! 🔥',
+              'Loving the live music vibes ✨',
+              'Super crisp stream!',
+              'Sending support! 👑',
+              'Top streamer of the day! ❤️'
+            ];
+            const rUser = realUsersForComments[Math.floor(Math.random() * realUsersForComments.length)];
+            const rText = peerComments[Math.floor(Math.random() * peerComments.length)];
+            setStreamChatMessages(prev => [...prev.slice(-30), { user: rUser, text: rText, isVip: true }]);
+          }
         }
       }, 3000);
     }
@@ -2964,11 +2967,7 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [pkTimeLeft, setPkTimeLeft] = useState(180); // 3 minutes
   const [pkRedScore, setPkRedScore] = useState(12400);
   const [pkBlueScore, setPkBlueScore] = useState(9800);
-  const [pkOpponent, setPkOpponent] = useState({
-    name: 'Elnaz Karimi',
-    avatar: '',
-    title: 'VIP Streamer'
-  });
+  const [pkOpponent, setPkOpponent] = useState(null);
   const [pkWinner, setPkWinner] = useState(null);
 
   // 2. MULTI-GUEST PARTY ROOMS STATE
@@ -7401,19 +7400,18 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                         setTimeout(() => {
                           const realPartners = (Array.isArray(usersList) && usersList.length > 0)
                             ? usersList.filter(u => u && u.username !== currentUsername && (u.status === 'approved' || u.isApproved !== false))
-                            : [
-                                null,
-                                { name: 'Elnaz Karimi', avatar: '', city: 'Shiraz', isVerified: true },
-                                null
-                              ];
-                          const randomPartner = realPartners.length > 0
-                            ? realPartners[Math.floor(Math.random() * realPartners.length)]
-                            : null;
+                            : [];
+                          if (realPartners.length === 0) {
+                            setMatchState('idle');
+                            showToast(window.loc('در حال حاضر کاربر دیگری برای اتصال رولت آنلاین نیست', 'No other active users online for roulette right now'));
+                            return;
+                          }
+                          const randomPartner = realPartners[Math.floor(Math.random() * realPartners.length)];
                           setMatchedMatchUser(randomPartner);
                           setMatchState('connected');
                           setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));
                           setMatchCallSeconds(30);
-                          showToast(window.loc(`🎉 مچ موفق با ${randomPartner.name || randomPartner.username}!`, `🎉 مچ موفق با ${randomPartner.name || randomPartner.username}!`));
+                          showToast(window.loc(`🎉 مچ موفق با ${randomPartner.name || randomPartner.username}!`, `🎉 Successful match with ${randomPartner.name || randomPartner.username}!`));
                         }, 2500);
                       }}
                       className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition"
