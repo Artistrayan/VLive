@@ -379,11 +379,11 @@ export default function StreamerManagementCenter({
                     <div>
                       <h4 className="font-bold text-white text-xs">{app.name || app.username} (@{app.username})</h4>
                       <span className="text-[10px] text-slate-400 font-mono">
-                        {window.loc('دسته‌بندی:', 'Category:')} {app.streamCategory || 'N/A'} {window.loc('• موضوع:', '• Topic:')} {app.streamTopic || 'N/A'}
+                        {app.requestedPose ? `ژست درخواستی: ${app.requestedPose}` : `${window.loc('دسته‌بندی:', 'Category:')} ${app.streamCategory || 'N/A'}`}
                       </span>
                     </div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold border border-emerald-500/30">
-                      {app.aiConfidence || 'AI: 95%'}
+                    <span className="px-2.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 text-[10px] font-mono font-bold border border-pink-500/30">
+                      {app.verificationType === 'MANUAL_GESTURE_SELFIE' ? 'احراز هویت دستی ✋' : (app.aiConfidence || 'بررسی هویت')}
                     </span>
                   </div>
 
@@ -393,12 +393,20 @@ export default function StreamerManagementCenter({
 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <span className="text-[9px] text-slate-400 font-bold">{window.loc('تست دوربین/مدارک:', 'Camera/Docs Test:')}</span>
-                      <img src={app.idCardPhoto || app.docUrl} alt="ID Card" className="w-full h-28 object-cover rounded-2xl border border-slate-800" />
+                      <span className="text-[9px] text-slate-400 font-bold">{window.loc('عکس انتخابی پروفایل:', 'Profile Photo:')}</span>
+                      <img src={app.idCardPhoto || app.docUrl || app.avatar} alt="Profile Photo" className="w-full h-28 object-cover rounded-2xl border border-slate-800" />
                     </div>
                     <div className="space-y-1">
-                      <span className="text-[9px] text-slate-400 font-bold">{window.loc('دمو/سلفی:', 'Demo/Selfie:')}</span>
-                      <video src={app.videoDemoUrl} poster={app.selfiePhoto} className="w-full h-28 object-cover rounded-2xl border border-slate-800" controls />
+                      <span className="text-[9px] text-pink-400 font-bold">{window.loc('سلفی ژست دست (دوربین):', 'Live Gesture Selfie:')}</span>
+                      {app.selfiePhoto ? (
+                        <img src={app.selfiePhoto} alt="Live Gesture Selfie" className="w-full h-28 object-cover rounded-2xl border border-pink-500/40" />
+                      ) : app.videoDemoUrl ? (
+                        <video src={app.videoDemoUrl} className="w-full h-28 object-cover rounded-2xl border border-slate-800" controls />
+                      ) : (
+                        <div className="w-full h-28 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center text-[10px] text-slate-500">
+                          بدون سلفی
+                        </div>
+                      )}
                     </div>
                   </div>
 

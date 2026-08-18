@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   User, Shield, Camera, Image, Check, AlertTriangle, Sparkles, 
-  ChevronRight, Radio, RefreshCw, X, CheckCircle2, Lock, Heart, Globe
+  ChevronRight, Radio, RefreshCw, X, CheckCircle2, Lock, Heart, Globe,
+  Hand, ShieldCheck, Clock, UserCheck
 } from 'lucide-react';
 import { safeStorage } from '../utils/safeStorage';
 import { apiProfile, apiAdmin } from '../services/api';
 import { compressImageFile } from '../services/performance';
 import { interestService } from '../services/interestService';
-import { BiometricVerificationService } from '../services/biometricVerificationService';
 
 const AVAILABLE_COUNTRIES = [
   { code: 'IR', name: 'ایران (Iran)', flag: '🇮🇷' },
@@ -27,6 +27,42 @@ const PRESET_INTERESTS = [
   '💻 تکنولوژی و برنامه‌نویسی', '⚽ ورزش و تناسب اندام', '💬 گفتگو و چت دوستانه'
 ];
 
+// Randomized verification poses requested from female applicants
+const VERIFICATION_POSES = [
+  {
+    id: 'HAND_LEFT_UP',
+    titleFa: 'بالا بردن دست چپ کنار صورت ✋',
+    titleEn: 'Raise Left Hand next to face ✋',
+    instructionFa: 'لطفاً دست چپ خود را باز کرده و کنار صورت بالا نگه‌دارید و سلفی بگیرید.',
+    instructionEn: 'Please raise your open left hand next to your face and take a selfie.',
+    icon: '✋'
+  },
+  {
+    id: 'HAND_RIGHT_UP',
+    titleFa: 'بالا بردن دست راست کنار صورت ✋',
+    titleEn: 'Raise Right Hand next to face ✋',
+    instructionFa: 'لطفاً دست راست خود را باز کرده و کنار صورت بالا نگه‌دارید و سلفی بگیرید.',
+    instructionEn: 'Please raise your open right hand next to your face and take a selfie.',
+    icon: '✋'
+  },
+  {
+    id: 'PEACE_SIGN',
+    titleFa: 'نشان دادن علامت پیروزی (V) با دو انگشت ✌️',
+    titleEn: 'Show Peace (V) Sign with fingers ✌️',
+    instructionFa: 'لطفاً با دو انگشت دست خود علامت پیروزی (V) را کنار صورت نشان داده و سلفی بگیرید.',
+    instructionEn: 'Please show a peace (V) sign with your fingers next to your face.',
+    icon: '✌️'
+  },
+  {
+    id: 'THUMBS_UP',
+    titleFa: 'نشان دادن علامت لایک (Thumbs Up) کنار چانه 👍',
+    titleEn: 'Show Thumbs Up next to chin 👍',
+    instructionFa: 'لطفاً علامت لایک (انگشت شست بالا) را کنار چانه خود نشان دهید و عکس سلفی بگیرید.',
+    instructionEn: 'Please show a thumbs up gesture next to your chin and take a selfie.',
+    icon: '👍'
+  }
+];
+
 export default function UserOnboardingModal({
   isOpen,
   initialUsername = '',
@@ -38,7 +74,7 @@ export default function UserOnboardingModal({
 }) {
   if (!isOpen) return null;
 
-  // Step state: 'BASE_INFO' -> 'FEMALE_PHOTO' -> 'FEMALE_AI_SELFIE' -> 'FEMALE_STREAMER_OPTION'
+  // Step state: 'BASE_INFO' -> 'FEMALE_PHOTO' -> 'FEMALE_SELFIE_POSE' -> 'FEMALE_STREAMER_OPTION'
   const [step, setStep] = useState('BASE_INFO');
 
   // Form states
@@ -55,14 +91,13 @@ export default function UserOnboardingModal({
   const [avatarPreview, setAvatarPreview] = useState(initialAvatar || '');
   const [avatarError, setAvatarError] = useState('');
 
-  // Camera & Face Verification states (Female Only)
+  // Camera & Manual Verification states (Female Only)
   const [cameraStream, setCameraStream] = useState(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [capturedSelfie, setCapturedSelfie] = useState(null);
-  const [isAiMatching, setIsAiMatching] = useState(false);
-  const [aiMatchScore, setAiMatchScore] = useState(null);
-  const [aiVerificationPassed, setAiVerificationPassed] = useState(false);
-  const [aiVerificationMessage, setAiVerificationMessage] = useState('');
+  const [selectedPose, setSelectedPose] = useState(() => {
+    return VERIFICATION_POSES[Math.floor(Math.random() * VERIFICATION_POSES.length)];
+  });
   const videoRef = useRef(null);
   const selfieFileInputRef = useRef(null);
 
@@ -154,7 +189,7 @@ export default function UserOnboardingModal({
     }
   };
 
-  // Step 3: Camera & AI Matching logic
+  // Step 3: Camera & Manual Gesture Selfie logic
   const startCamera = async () => {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -194,9 +229,7 @@ export default function UserOnboardingModal({
     const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
     setCapturedSelfie(dataUrl);
     stopCamera();
-
-    // Run AI Face Verification & Match against profile photo
-    runAiFaceMatch(dataUrl, avatarPreview);
+    showToast(window.loc('📸 سلفی با ژست درخواستی با موفقیت ثبت شد و آماده ارسال به مدیریت است.', '📸 Gesture selfie captured successfully and ready for admin review.'));
   };
 
   const handleSelfieFileSelect = async (e) => {
@@ -206,47 +239,17 @@ export default function UserOnboardingModal({
       const compressed = await compressImageFile(file, 600, 600, 0.85);
       setCapturedSelfie(compressed);
       stopCamera();
-      runAiFaceMatch(compressed, avatarPreview);
+      showToast(window.loc('📸 سلفی با ژست درخواستی با موفقیت انتخاب شد.', '📸 Gesture selfie selected successfully.'));
     } catch (err) {
       showToast(window.loc('خطا در بارگذاری عکس سلفی', 'Error processing selfie photo'));
     }
   };
 
-  const runAiFaceMatch = async (selfie, profilePhoto) => {
-    setIsAiMatching(true);
-    setAiVerificationPassed(false);
-    setAiVerificationMessage('');
-
-    try {
-      if (!profilePhoto) {
-        setIsAiMatching(false);
-        setAiVerificationPassed(false);
-        setAiVerificationMessage(window.loc('ابتدا باید یک عکس پروفایل معتبر انتخاب کنید.', 'Please select a valid profile photo first.'));
-        showToast(window.loc('عکس پروفایل یافت نشد ⚠️', 'Profile photo not found ⚠️'));
-        return;
-      }
-
-      // Execute comprehensive multi-tier biometric analysis
-      const result = await BiometricVerificationService.verifyBiometricMatch(selfie, profilePhoto, gender);
-      
-      setAiMatchScore(result.score);
-      setAiVerificationPassed(result.passed);
-      setAiVerificationMessage(window.loc(result.messageFa, result.messageEn));
-      setIsAiMatching(false);
-
-      if (result.passed) {
-        showToast(window.loc(result.messageFa, result.messageEn));
-      } else {
-        showToast(window.loc(result.messageFa, result.messageEn));
-      }
-    } catch (e) {
-      console.warn('runAiFaceMatch error:', e);
-      setIsAiMatching(false);
-      setAiVerificationPassed(false);
-      const errMsg = window.loc('خطا در پردازش تصویر بیومتریک. لطفاً دوباره تلاش کنید.', 'Error processing biometric image. Please try again.');
-      setAiVerificationMessage(errMsg);
-      showToast(errMsg);
-    }
+  const randomizePose = () => {
+    const nextList = VERIFICATION_POSES.filter(p => p.id !== selectedPose.id);
+    const randomOne = nextList[Math.floor(Math.random() * nextList.length)];
+    setSelectedPose(randomOne);
+    setCapturedSelfie(null);
   };
 
   // Finish Onboarding and save to DB
@@ -280,27 +283,35 @@ export default function UserOnboardingModal({
     try {
       await apiProfile.updateProfile(finalProfileData);
 
-      // If user requested to be a streamer, submit request to Admin KYC / Streamer queue
-      if (wantToBeStreamer) {
+      // If user is female, ALWAYS submit the Profile Photo & Pose Selfie to Admin KYC queue for manual human inspection
+      if (gender === 'female' && capturedSelfie) {
         const kycReq = {
+          id: 'kyc_' + Date.now(),
           username: username.trim(),
           name: fullName.trim() || username.trim(),
           avatar: avatarPreview || '',
-          selfie: capturedSelfie || '',
+          idCardPhoto: avatarPreview || '', // Profile Photo
+          selfiePhoto: capturedSelfie || '', // Live Gesture Selfie
+          docUrl: avatarPreview || '',
+          videoDemoUrl: '',
           gender: 'female',
-          aiScore: aiMatchScore || 96,
+          verificationType: 'MANUAL_GESTURE_SELFIE',
+          requestedPose: selectedPose.titleFa,
+          aiConfidence: 'تایید دستی مدیر',
+          description: `احراز هویت بیومتریک و ژست عکاسی: ${selectedPose.titleFa} | کاربر خانم`,
+          wantToBeStreamer: wantToBeStreamer,
           status: 'Pending',
           requestedAt: new Date().toISOString()
         };
 
         const existingApps = JSON.parse(safeStorage.getItem('vlive_kyc_applications') || '[]');
-        existingApps.push(kycReq);
+        existingApps.unshift(kycReq);
         safeStorage.setItem('vlive_kyc_applications', JSON.stringify(existingApps));
 
         if (apiAdmin && typeof apiAdmin.submitKycApplication === 'function') {
           await apiAdmin.submitKycApplication(kycReq);
         }
-        showToast(window.loc('👑 درخواست استریمر شدن شما با موفقیت برای مدیریت ارسال شد و در صف تایید قرار گرفت.', '👑 Streamer request sent to admin for approval.'));
+        showToast(window.loc('📩 عکس پروفایل و سلفی شما جهت بررسی و تایید دستی برای مدیریت ارسال شد.', '📩 Your profile photo and gesture selfie have been submitted for manual admin verification.'));
       }
     } catch (e) {
       console.warn('Onboarding sync note:', e);
@@ -321,14 +332,14 @@ export default function UserOnboardingModal({
               <Sparkles className="w-5 h-5 text-white animate-pulse" />
             </div>
             <div>
-              <h2 className="font-black text-sm text-white">تکمیل پروفایل و احراز هویت اولیه</h2>
+              <h2 className="font-black text-sm text-white">تکمیل پروفایل و احراز هویت دستی</h2>
               <span className="text-[10px] text-slate-400">ورود امن به جامعه اختصاصی V.LIVE</span>
             </div>
           </div>
           <span className="text-xs font-mono font-bold text-pink-400 bg-pink-500/10 px-2.5 py-1 rounded-full border border-pink-500/20">
             {step === 'BASE_INFO' && 'گام ۱ از ۲'}
             {step === 'FEMALE_PHOTO' && 'گام ۲: گالری'}
-            {step === 'FEMALE_AI_SELFIE' && 'گام ۳: هوش مصنوعی'}
+            {step === 'FEMALE_SELFIE_POSE' && 'گام ۳: سلفی با ژست'}
             {step === 'FEMALE_STREAMER_OPTION' && 'گام نهایی'}
           </span>
         </div>
@@ -540,10 +551,10 @@ export default function UserOnboardingModal({
                   {avatarPreview && (
                     <button
                       type="button"
-                      onClick={() => setStep('FEMALE_AI_SELFIE')}
+                      onClick={() => setStep('FEMALE_SELFIE_POSE')}
                       className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg shadow-pink-500/30 hover:opacity-95 transition flex items-center justify-center gap-1.5"
                     >
-                      <span>تایید عکس و رفتن به سلفی تطابق هوش مصنوعی 📸</span>
+                      <span>تایید عکس و رفتن به گرفتن سلفی با ژست دست 📸</span>
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   )}
@@ -566,31 +577,48 @@ export default function UserOnboardingModal({
             </div>
           )}
 
-          {/* ================= STEP 3: FEMALE AI CAMERA SELFIE MATCH ================= */}
-          {step === 'FEMALE_AI_SELFIE' && (
+          {/* ================= STEP 3: FEMALE CAMERA SELFIE WITH REQUESTED POSE / GESTURE ================= */}
+          {step === 'FEMALE_SELFIE_POSE' && (
             <div className="space-y-4 animate-fadeIn">
-              <div className="p-3.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-200 leading-relaxed">
-                🤖 <strong>تطبیق بیومتریک هوش مصنوعی:</strong> لطفاً با دوربین جلو یک سلفی بگیرید تا هوش مصنوعی چهره شما را با عکس پروفایل انتخاب‌شده تطبیق دهد.
+              
+              {/* Pose Instruction Banner */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-500/20 via-purple-500/20 to-slate-900 border border-pink-500/40 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{selectedPose.icon}</span>
+                    <div>
+                      <span className="text-[10px] text-pink-300 font-bold block">دستور احراز هویت دستی مدیر:</span>
+                      <h4 className="text-xs font-black text-white">{selectedPose.titleFa}</h4>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={randomizePose}
+                    className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] flex items-center gap-1 border border-slate-700 transition"
+                    title="تغییر ژست درخواستی"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>تغییر ژست</span>
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                  {selectedPose.instructionFa}
+                  <span className="block text-[10px] text-amber-300/90 mt-1">
+                    🛡️ این عکس برای مدیر برنامه ارسال شده و بررسی دستی انجام می‌شود.
+                  </span>
+                </p>
               </div>
 
               {/* Camera Preview / Capture Box */}
               <div className="relative rounded-3xl bg-black overflow-hidden border border-slate-800 aspect-square max-w-[280px] mx-auto flex items-center justify-center shadow-2xl">
                 {capturedSelfie ? (
-                  <img src={capturedSelfie} alt="Captured Selfie" className="w-full h-full object-cover" />
+                  <img src={capturedSelfie} alt="Captured Gesture Selfie" className="w-full h-full object-cover" />
                 ) : isCameraActive ? (
                   <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
                 ) : (
                   <div className="text-center p-4 space-y-2">
                     <Camera className="w-12 h-12 text-slate-600 mx-auto animate-pulse" />
-                    <span className="text-xs text-slate-400 block">دوربین جلو آماده فعال‌سازی</span>
-                  </div>
-                )}
-
-                {/* AI Matching Overlay */}
-                {isAiMatching && (
-                  <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center gap-2 text-white">
-                    <Sparkles className="w-8 h-8 text-cyan-400 animate-spin" />
-                    <span className="text-xs font-bold font-mono">در حال اسکن و تطابق بیومتریک چهره...</span>
+                    <span className="text-xs text-slate-400 block">دوربین آماده ثبت سلفی با ژست درخواستی</span>
                   </div>
                 )}
               </div>
@@ -613,7 +641,7 @@ export default function UserOnboardingModal({
                       <button
                         type="button"
                         onClick={startCamera}
-                        className="flex-1 py-3 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-cyan-500/30"
+                        className="flex-1 py-3 rounded-2xl bg-pink-500 hover:bg-pink-400 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-pink-500/30"
                       >
                         <Camera className="w-4 h-4" />
                         <span>روشن کردن دوربین زنده 📷</span>
@@ -624,8 +652,8 @@ export default function UserOnboardingModal({
                         onClick={captureSelfieFromCamera}
                         className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-pink-500/30"
                       >
-                        <Sparkles className="w-4 h-4" />
-                        <span>ثبت سلفی زنده 📸</span>
+                        <Check className="w-4 h-4" />
+                        <span>ثبت سلفی با ژست {selectedPose.icon}</span>
                       </button>
                     )}
                   </div>
@@ -636,41 +664,26 @@ export default function UserOnboardingModal({
                     className="w-full py-2.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-pink-500/40 text-slate-300 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition"
                   >
                     <Camera className="w-4 h-4 text-pink-400" />
-                    <span>عکاسی با دوربین گوشی یا انتخاب عکس سلفی 📱</span>
+                    <span>عکاسی با برنامه دوربین گوشی یا انتخاب فایل سلفی 📱</span>
                   </button>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {aiVerificationPassed ? (
-                    <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 text-center space-y-1 animate-fadeIn">
-                      <div className="flex items-center justify-center gap-1.5 text-emerald-400 font-black text-xs">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <span>{aiVerificationMessage || window.loc(`تطابق بیومتریک چهره با موفقیت تایید شد (${aiMatchScore}%)`, `Face verification passed successfully (${aiMatchScore}%)`)}</span>
-                      </div>
-                      <span className="text-[10px] text-slate-400 block">{window.loc('گزارش این احراز هویت برای سرور امن V.LIVE ذخیره گردید.', 'Verification record stored securely on V.LIVE servers.')}</span>
+                  <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 text-center space-y-1 animate-fadeIn">
+                    <div className="flex items-center justify-center gap-1.5 text-emerald-400 font-black text-xs">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>سلفی با ژست «{selectedPose.titleFa}» ثبت گردید</span>
                     </div>
-                  ) : (
-                    <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/40 text-center space-y-1.5 animate-fadeIn">
-                      <div className="flex items-center justify-center gap-1.5 text-rose-400 font-bold text-xs">
-                        <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                        <span>{aiVerificationMessage || window.loc('عدم تطابق یا عدم شناسایی چهره معتبر', 'Face mismatch or no valid human face detected')}</span>
-                      </div>
-                      {aiMatchScore !== null && (
-                        <span className="text-[10px] text-slate-400 block font-mono">
-                          {window.loc(`امتیاز تطابق: ${aiMatchScore}% (حداقل مورد نیاز: ۶۵%)`, `Match Score: ${aiMatchScore}% (65% required)`)}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                    <span className="text-[10px] text-slate-400 block">
+                      عکس پروفایل و سلفی جهت تایید دستی به مدیریت ارسال خواهد شد.
+                    </span>
+                  </div>
 
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => {
                         setCapturedSelfie(null);
-                        setAiVerificationPassed(false);
-                        setAiVerificationMessage('');
-                        setAiMatchScore(null);
                         startCamera();
                       }}
                       className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center justify-center gap-1 transition"
@@ -681,9 +694,8 @@ export default function UserOnboardingModal({
 
                     <button
                       type="button"
-                      disabled={!aiVerificationPassed}
                       onClick={() => setStep('FEMALE_STREAMER_OPTION')}
-                      className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-xs shadow-lg flex items-center justify-center gap-1.5 transition"
+                      className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg flex items-center justify-center gap-1.5 transition"
                     >
                       <span>{window.loc('مرحله بعد: وضعیت استریمر 👑', 'Next: Streamer Status 👑')}</span>
                       <ChevronRight className="w-4 h-4" />
