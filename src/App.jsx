@@ -2047,12 +2047,18 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
   const [blockedUsers, setBlockedUsers] = useState([]);
 
   // 13. System Permissions
-  const [systemPerms, setSystemPerms] = useState({
-    camera: true,
-    microphone: true,
-    notifications: true,
-    gallery: true,
-    location: false
+  const [systemPerms, setSystemPerms] = useState(() => {
+    try {
+      const saved = safeStorage.getItem('vlive_system_perms');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {
+      camera: true,
+      microphone: true,
+      notifications: true,
+      gallery: true,
+      location: false
+    };
   });
 
   // 14. Support Forms

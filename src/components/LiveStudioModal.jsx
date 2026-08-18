@@ -1245,7 +1245,7 @@ export default function LiveStudioModal({
                 } else {
                   setIsPkActive(true);
                   setPkTimeLeft(180);
-                  showToast(window.loc('⚔️ مسابقه PK با @Elnaz_Live شروع گردید!', '⚔️ The PK match has started with @Elnaz_Live!'));
+                  showToast(window.loc('⚔️ مسابقه PK آغاز شد!', '⚔️ The PK match has started!'));
                 }
               }}
               className={`p-2.5 rounded-2xl border transition shrink-0 ${
