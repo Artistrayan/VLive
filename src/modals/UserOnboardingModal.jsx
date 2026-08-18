@@ -88,7 +88,7 @@ export default function UserOnboardingModal({
   
   // Photo & Gallery permission
   const [hasGalleryPermission, setHasGalleryPermission] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(initialAvatar || '');
+  const [avatarPreview, setAvatarPreview] = useState('');
   const [avatarError, setAvatarError] = useState('');
 
   // Camera & Manual Verification states (Female Only)
@@ -137,7 +137,7 @@ export default function UserOnboardingModal({
 
   // Step 1: Base validation
   const handleValidateBaseInfo = () => {
-    if (!username.trim() || username.length < 3) {
+    if (!username.trim() || username.trim().length < 3) {
       showToast(window.loc('نام کاربری باید حداقل ۳ حرف باشد', 'Username must be at least 3 characters'));
       return;
     }
@@ -150,7 +150,7 @@ export default function UserOnboardingModal({
       showToast(window.loc('تایید سن بالای ۱۸ سال الزامی است', '18+ age confirmation is required'));
       return;
     }
-    if (selectedInterests.length === 0) {
+    if (!selectedInterests || selectedInterests.length === 0) {
       showToast(window.loc('لطفاً حداقل ۱ مورد از علایق خود را انتخاب کنید', 'Please select at least 1 interest'));
       return;
     }
@@ -164,7 +164,7 @@ export default function UserOnboardingModal({
         status: 'approved'
       });
     } else {
-      // Female moves to Gallery upload & permission step
+      // Female moves to Gallery upload & permission step (strictly empty avatar required from gallery)
       setStep('FEMALE_PHOTO');
     }
   };
@@ -175,7 +175,7 @@ export default function UserOnboardingModal({
     if (!file) return;
 
     if (!hasGalleryPermission) {
-      showToast(window.loc('ابتدا باید اجازه دسترسی به گالری را تایید کنید ⚠️', 'You must first grant gallery access permission ⚠️'));
+      showToast(window.loc('ابتدا باید تیک تایید اجازه دسترسی به گالری را فعال کنید ⚠️', 'You must first grant gallery access permission ⚠️'));
       return;
     }
 
@@ -187,6 +187,29 @@ export default function UserOnboardingModal({
     } catch (err) {
       setAvatarError('خطا در فشرده‌سازی عکس');
     }
+  };
+
+  // Strict transition from Step 2 to Step 3
+  const handleProceedToSelfie = () => {
+    if (!hasGalleryPermission) {
+      showToast(window.loc('لطفاً ابتدا تیک مجوز دسترسی به گالری را فعال کنید ⚠️', 'Please enable gallery permission first ⚠️'));
+      return;
+    }
+    if (!avatarPreview || avatarPreview.trim().length === 0) {
+      showToast(window.loc('انتخاب عکس پروفایل از گالری برای ادامه الزامی است 📸', 'Profile photo from gallery is required 📸'));
+      return;
+    }
+    setStep('FEMALE_SELFIE_POSE');
+  };
+
+  // Strict transition from Step 3 to Step 4
+  const handleProceedToStreamerOption = () => {
+    if (!capturedSelfie || capturedSelfie.trim().length === 0) {
+      showToast(window.loc('ثبت سلفی با ژست درخواستی الزامی است ✋', 'Gesture selfie capture is required ✋'));
+      return;
+    }
+    stopCamera();
+    setStep('FEMALE_STREAMER_OPTION');
   };
 
   // Step 3: Camera & Manual Gesture Selfie logic
@@ -254,6 +277,25 @@ export default function UserOnboardingModal({
 
   // Finish Onboarding and save to DB
   const finishOnboarding = async (additionalProps = {}) => {
+    // Strict Guard for Female Users
+    if (gender === 'female') {
+      if (!hasGalleryPermission) {
+        showToast(window.loc('اجازه دسترسی به گالری تایید نشده است ⚠️', 'Gallery permission is not approved ⚠️'));
+        setStep('FEMALE_PHOTO');
+        return;
+      }
+      if (!avatarPreview || avatarPreview.trim().length === 0) {
+        showToast(window.loc('عکس پروفایل گالری انتخاب نشده است ⚠️', 'Profile photo is missing ⚠️'));
+        setStep('FEMALE_PHOTO');
+        return;
+      }
+      if (!capturedSelfie || capturedSelfie.trim().length === 0) {
+        showToast(window.loc('سلفی با ژست دست ثبت نشده است ⚠️', 'Gesture selfie is required ⚠️'));
+        setStep('FEMALE_SELFIE_POSE');
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     stopCamera();
 
@@ -548,15 +590,19 @@ export default function UserOnboardingModal({
                     )}
                   </label>
 
-                  {avatarPreview && (
+                  {avatarPreview ? (
                     <button
                       type="button"
-                      onClick={() => setStep('FEMALE_SELFIE_POSE')}
+                      onClick={handleProceedToSelfie}
                       className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg shadow-pink-500/30 hover:opacity-95 transition flex items-center justify-center gap-1.5"
                     >
-                      <span>تایید عکس و رفتن به گرفتن سلفی با ژست دست 📸</span>
+                      <span>تایید عکس پروفایل و رفتن به گام سلفی با ژست 📸</span>
                       <ChevronRight className="w-4 h-4" />
                     </button>
+                  ) : (
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+                      <span className="text-[11px] text-slate-400">⚠️ لطفاً ابتدا یک عکس پروفایل از گالری بالا انتخاب کنید تا دکمه مرحله بعد فعال شود.</span>
+                    </div>
                   )}
                 </div>
               ) : (
@@ -694,7 +740,7 @@ export default function UserOnboardingModal({
 
                     <button
                       type="button"
-                      onClick={() => setStep('FEMALE_STREAMER_OPTION')}
+                      onClick={handleProceedToStreamerOption}
                       className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg flex items-center justify-center gap-1.5 transition"
                     >
                       <span>{window.loc('مرحله بعد: وضعیت استریمر 👑', 'Next: Streamer Status 👑')}</span>
