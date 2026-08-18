@@ -7,6 +7,7 @@ import { safeStorage } from '../utils/safeStorage';
 import { apiProfile, apiAdmin } from '../services/api';
 import { compressImageFile } from '../services/performance';
 import { interestService } from '../services/interestService';
+import { BiometricVerificationService } from '../services/biometricVerificationService';
 
 const AVAILABLE_COUNTRIES = [
   { code: 'IR', name: 'ایران (Iran)', flag: '🇮🇷' },
@@ -61,6 +62,7 @@ export default function UserOnboardingModal({
   const [isAiMatching, setIsAiMatching] = useState(false);
   const [aiMatchScore, setAiMatchScore] = useState(null);
   const [aiVerificationPassed, setAiVerificationPassed] = useState(false);
+  const [aiVerificationMessage, setAiVerificationMessage] = useState('');
   const videoRef = useRef(null);
   const selfieFileInputRef = useRef(null);
 
@@ -213,47 +215,37 @@ export default function UserOnboardingModal({
   const runAiFaceMatch = async (selfie, profilePhoto) => {
     setIsAiMatching(true);
     setAiVerificationPassed(false);
+    setAiVerificationMessage('');
 
     try {
-      const img = new window.Image();
-      img.crossOrigin = 'anonymous';
-      img.src = selfie;
-      await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
-
-      const canvas = document.createElement('canvas');
-      canvas.width = 120;
-      canvas.height = 120;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, 120, 120);
-      const imgData = ctx.getImageData(0, 0, 120, 120).data;
-
-      let skinPixels = 0;
-      for (let i = 0; i < imgData.length; i += 4) {
-        const r = imgData[i];
-        const g = imgData[i + 1];
-        const b = imgData[i + 2];
-        if (r > 60 && g > 40 && b > 20 && r > g && g > b * 0.8) {
-          skinPixels++;
-        }
+      if (!profilePhoto) {
+        setIsAiMatching(false);
+        setAiVerificationPassed(false);
+        setAiVerificationMessage(window.loc('ابتدا باید یک عکس پروفایل معتبر انتخاب کنید.', 'Please select a valid profile photo first.'));
+        showToast(window.loc('عکس پروفایل یافت نشد ⚠️', 'Profile photo not found ⚠️'));
+        return;
       }
 
-      const totalPixels = 120 * 120;
-      const skinRatio = skinPixels / totalPixels;
-      const score = Math.min(99.2, Math.max(88.5, Math.round((skinRatio * 25 + 85 + (Math.random() * 5)) * 10) / 10));
+      // Execute comprehensive multi-tier biometric analysis
+      const result = await BiometricVerificationService.verifyBiometricMatch(selfie, profilePhoto, gender);
+      
+      setAiMatchScore(result.score);
+      setAiVerificationPassed(result.passed);
+      setAiVerificationMessage(window.loc(result.messageFa, result.messageEn));
+      setIsAiMatching(false);
 
-      setTimeout(() => {
-        setAiMatchScore(score);
-        setAiVerificationPassed(true);
-        setIsAiMatching(false);
-        showToast(window.loc(`✅ هوش مصنوعی هویت چهره شما را با دقت ${score}٪ تایید کرد.`, `✅ Biometric AI verified your identity with ${score}% confidence.`));
-      }, 1600);
+      if (result.passed) {
+        showToast(window.loc(result.messageFa, result.messageEn));
+      } else {
+        showToast(window.loc(result.messageFa, result.messageEn));
+      }
     } catch (e) {
-      setTimeout(() => {
-        setAiMatchScore(94.8);
-        setAiVerificationPassed(true);
-        setIsAiMatching(false);
-        showToast(window.loc('✅ تطابق بیومتریک چهره با موفقیت تایید شد.', '✅ Biometric facial match verified successfully.'));
-      }, 1600);
+      console.warn('runAiFaceMatch error:', e);
+      setIsAiMatching(false);
+      setAiVerificationPassed(false);
+      const errMsg = window.loc('خطا در پردازش تصویر بیومتریک. لطفاً دوباره تلاش کنید.', 'Error processing biometric image. Please try again.');
+      setAiVerificationMessage(errMsg);
+      showToast(errMsg);
     }
   };
 
@@ -649,10 +641,25 @@ export default function UserOnboardingModal({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {aiVerificationPassed && (
-                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 text-center space-y-1">
-                      <span className="text-xs font-black text-emerald-300 block">✅ تطابق چهره موفقیت‌آمیز بود (امتیاز تطابق: {aiMatchScore}%)</span>
-                      <span className="text-[10px] text-slate-400 block">گزارش این احراز هویت برای مدیریت ارسال گردید.</span>
+                  {aiVerificationPassed ? (
+                    <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 text-center space-y-1 animate-fadeIn">
+                      <div className="flex items-center justify-center gap-1.5 text-emerald-400 font-black text-xs">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>{aiVerificationMessage || window.loc(`تطابق بیومتریک چهره با موفقیت تایید شد (${aiMatchScore}%)`, `Face verification passed successfully (${aiMatchScore}%)`)}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 block">{window.loc('گزارش این احراز هویت برای سرور امن V.LIVE ذخیره گردید.', 'Verification record stored securely on V.LIVE servers.')}</span>
+                    </div>
+                  ) : (
+                    <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/40 text-center space-y-1.5 animate-fadeIn">
+                      <div className="flex items-center justify-center gap-1.5 text-rose-400 font-bold text-xs">
+                        <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                        <span>{aiVerificationMessage || window.loc('عدم تطابق یا عدم شناسایی چهره معتبر', 'Face mismatch or no valid human face detected')}</span>
+                      </div>
+                      {aiMatchScore !== null && (
+                        <span className="text-[10px] text-slate-400 block font-mono">
+                          {window.loc(`امتیاز تطابق: ${aiMatchScore}% (حداقل مورد نیاز: ۶۵%)`, `Match Score: ${aiMatchScore}% (65% required)`)}
+                        </span>
+                      )}
                     </div>
                   )}
 
@@ -662,21 +669,23 @@ export default function UserOnboardingModal({
                       onClick={() => {
                         setCapturedSelfie(null);
                         setAiVerificationPassed(false);
+                        setAiVerificationMessage('');
+                        setAiMatchScore(null);
                         startCamera();
                       }}
-                      className="p-2.5 rounded-2xl bg-slate-800 text-slate-300 text-xs flex items-center justify-center gap-1"
+                      className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center justify-center gap-1 transition"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
-                      <span>سلفی مجدد</span>
+                      <span>{window.loc('سلفی مجدد', 'Retry Selfie')}</span>
                     </button>
 
                     <button
                       type="button"
                       disabled={!aiVerificationPassed}
                       onClick={() => setStep('FEMALE_STREAMER_OPTION')}
-                      className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 disabled:opacity-50 text-white font-black text-xs shadow-lg flex items-center justify-center gap-1.5"
+                      className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-xs shadow-lg flex items-center justify-center gap-1.5 transition"
                     >
-                      <span>مرحله بعد: وضعیت استریمر 👑</span>
+                      <span>{window.loc('مرحله بعد: وضعیت استریمر 👑', 'Next: Streamer Status 👑')}</span>
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
