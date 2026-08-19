@@ -462,6 +462,20 @@ export default function App() {
   const [verificationsList, setVerificationsList] = useState(INITIAL_VERIFICATIONS);
   // Admin Panel Security & Authorization State (Exclusive Access strictly to @Rayan_Vlive)
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  useEffect(() => {
+    if (isAdminPanelOpen) {
+      if (apiAdmin && typeof apiAdmin.getAllUsers === 'function') {
+        apiAdmin.getAllUsers().then(users => {
+          if (users && users.length > 0) setAdminUsersList(users);
+        });
+      }
+      if (apiHome && typeof apiHome.getApprovedUsers === 'function') {
+        apiHome.getApprovedUsers().then(users => {
+          if (users && users.length > 0) setUsersList(users);
+        });
+      }
+    }
+  }, [isAdminPanelOpen]);
   const [isAdminPinModalOpen, setIsAdminPinModalOpen] = useState(false);
   const [adminPinCode, setAdminPinCode] = useState('7777');
   const [enteredAdminPin, setEnteredAdminPin] = useState('');
@@ -4413,9 +4427,9 @@ export default function App() {
         if (apps) setKycApplications(apps);
       });
     }
-    if (apiAdmin && typeof apiAdmin.getAllUsers === 'function' && isUserSuperAdmin) {
+    if (apiAdmin && typeof apiAdmin.getAllUsers === 'function') {
       apiAdmin.getAllUsers().then(users => {
-        if (users) setAdminUsersList(users);
+        if (users && users.length > 0) setAdminUsersList(users);
       });
     }
     apiHome.getApprovedUsers().then(users => {

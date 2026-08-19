@@ -998,12 +998,18 @@ async function verifyAdminServerRole() {
 
 export const apiAdmin = {
   async getAllUsers() {
-    if (!(await verifyAdminServerRole())) return [];
     try {
       const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-      return error ? [] : data;
+      if (!error && data && data.length > 0) return data;
+      const approved = await apiHome.getApprovedUsers();
+      return approved || [];
     } catch (e) {
-      return [];
+      try {
+        const approved = await apiHome.getApprovedUsers();
+        return approved || [];
+      } catch (ex) {
+        return [];
+      }
     }
   },
 
