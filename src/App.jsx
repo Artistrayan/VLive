@@ -1,3 +1,6 @@
+import { PartyRoomStageModal, LuckyWheelModal, CreateAgencyModal, StreamerWelcomeGuideModal } from './modals/EntertainmentModals';
+import PermissionsPromptModal from './modals/PermissionsPromptModal';
+import HostLiveModal from './modals/HostLiveModal';
 import SettingsModal from './modals/SettingsModal';
 import LiveStreamSystem from './components/LiveStreamSystem';
 import StreamerDashboardModal from './components/StreamerDashboardModal';
@@ -6430,649 +6433,103 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       )}
 
       
-      {/* MODAL: LIVE HOST SETUP & BROADCAST (شروع استریم و لایو بزرگسال) */}
-      {(isHostLiveOpen || isLiveModalOpen) && (
-        <div className="fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-xl flex flex-col p-4 animate-fadeIn overflow-y-auto" dir={isRtl ? "rtl" : "ltr"}>
-          <div className="flex-1 w-full max-w-lg mx-auto space-y-5 my-auto py-6">
-            
-            {/* Modal Header */}
-            {/* Live Step-by-Step Spotlight Walkthrough Header Bar */}
-            {liveGuideStep > 0 && (
-              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-pink-600/90 via-purple-700/90 to-cyan-600/90 border border-pink-400/60 shadow-[0_0_25px_rgba(236,72,153,0.5)] text-white space-y-2 animate-pulse transition-all">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-black text-xs">
-                    <Sparkles className="w-4 h-4 text-amber-300 animate-spin" />
-                    <span>{loc(`راهنمای گام به گام پخش زنده (گام ${liveGuideStep} از ۴)`, `Live Setup Walkthrough (Step ${liveGuideStep} of 4)`)}</span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setLiveGuideStep(0);
-                      safeStorage.setItem('vlive_live_setup_guide_seen', 'true');
-                      showToast(loc('راهنما بسته شد', 'Walkthrough dismissed'));
-                    }}
-                    className="text-[10px] bg-slate-950/60 hover:bg-slate-950 px-2 py-0.5 rounded-lg text-slate-300 hover:text-white transition"
-                  >
-                    {loc('رد شدن ✕', 'Skip ✕')}
-                  </button>
-                </div>
-                <p className="text-[11px] font-bold text-pink-100 leading-relaxed">
-                  {liveGuideStep === 1 && loc('💡 گام اول: نوع استریم خود را انتخاب کنید (عمومی، لایو بزرگسالان 🔞 یا اختصاصی)', '💡 Step 1: Select your broadcast type (Public, Adult 18+ VIP or Private)')}
-                  {liveGuideStep === 2 && loc('💡 گام دوم: برای جذب بینندگان، عنوان و تگ دسته‌بندی استریم خود را تنظیم نمایید', '💡 Step 2: Set an engaging title & category tags to attract viewers')}
-                  {liveGuideStep === 3 && loc('💡 گام سوم: پیش‌نمایش تصویر دوربین و صدای میکروفون را قبل از پخش بررسی کنید', '💡 Step 3: Check your camera preview and microphone connection')}
-                  {liveGuideStep === 4 && loc('💡 گام چهارم: با لمس دکمه شروع، پخش زنده شما آغاز و در دسترس کاربران قرار می‌گیرد 🚀', '💡 Step 4: Tap the Start Broadcast button to go live and start streaming 🚀')}
-                </p>
-                <div className="flex items-center justify-between pt-1 border-t border-white/20">
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4].map(s => (
-                      <span key={s} className={`w-2 h-2 rounded-full transition-all ${s === liveGuideStep ? 'w-5 bg-amber-300' : s < liveGuideStep ? 'bg-emerald-400' : 'bg-white/40'}`} />
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (liveGuideStep < 4) {
-                        setLiveGuideStep(prev => prev + 1);
-                      } else {
-                        setLiveGuideStep(0);
-                        safeStorage.setItem('vlive_live_setup_guide_seen', 'true');
-                        showToast(loc('🎉 راهنمای راه‌اندازی با موفقیت تکمیل شد', '🎉 Setup walkthrough completed successfully'));
-                      }
-                    }}
-                    className="px-3 py-1 rounded-xl bg-white text-slate-950 font-black text-xs hover:bg-amber-300 transition flex items-center gap-1 shadow-md"
-                  >
-                    <span>{liveGuideStep < 4 ? loc('گام بعدی ❯', 'Next Step ❯') : loc('پایان راهنما ✓', 'Finish Guide ✓')}</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between bg-slate-900/80 p-4 rounded-3xl border border-pink-500/30">
-              <div className="flex items-center gap-3">
-                <div className={`w-11 h-11 rounded-2xl p-0.5 flex items-center justify-center shadow-lg ${
-                  hostLiveType === 'adult' 
-                    ? 'bg-gradient-to-tr from-rose-600 via-pink-600 to-amber-500 shadow-rose-500/40' 
-                    : hostLiveType === 'private'
-                    ? 'bg-gradient-to-tr from-purple-600 to-cyan-500 shadow-purple-500/40'
-                    : 'bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 shadow-pink-500/30'
-                }`}>
-                  <Video className="w-6 h-6 text-white animate-pulse" />
-                </div>
-                <div>
-                  <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
-                    <span>{loc('استودیو و اجرای لایواستریم', 'Live Broadcast Setup')}</span>
-                    {hostLiveType === 'adult' && (
-                      <span className="bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse">
-                        🔞 VIP 18+
-                      </span>
-                    )}
-                  </h2>
-                  <p className="text-xs text-slate-400 font-medium">
-                    {loc('تنظیمات پخش زنده عمومی، لایو بزرگسالان و لایو اختصاصی', 'Configure public live, adult 18+ live & private streams')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setLiveGuideStep(1)}
-                  className="px-2.5 py-1 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/40 text-xs font-bold transition flex items-center gap-1"
-                  title={loc('راهنمای گام به گام مراحل لایو', 'Step-by-step Live Walkthrough')}
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>{loc('راهنما', 'Guide')}</span>
-                </button>
-                <button 
-                  onClick={() => {
-                    setIsHostLiveOpen(false);
-                    setIsLiveModalOpen(false);
-                  }}
-                  className="w-9 h-9 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-sm transition"
-                >✕</button>
-              </div>
-            </div>
-
-            {/* BROADCAST MODE SELECTOR (عمومی / بزرگسال 18+ / خصوصی) */}
-            <div className={`space-y-2 transition-all duration-500 ${
-              liveGuideStep === 1 
-                ? 'relative z-30 ring-4 ring-pink-500 shadow-[0_0_35px_rgba(236,72,153,0.7)] bg-slate-900/90 rounded-3xl p-3' 
-                : liveGuideStep > 0 ? 'opacity-40 pointer-events-none' : 'opacity-100'
-            }`}>
-              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                <Radio className="w-4 h-4 text-pink-400" />
-                <span>{loc('نوع و دسته‌بندی استریم', 'Broadcast Type')}</span>
-              </label>
-
-              <div className="grid grid-cols-3 gap-2 p-1.5 bg-slate-900 rounded-2xl border border-slate-800">
-                <button
-                  onClick={() => {
-                    setHostLiveType('standard');
-                    setHostLiveCategory('Chatting');
-                  }}
-                  className={`py-3 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 ${
-                    hostLiveType === 'standard'
-                      ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md font-black'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                  }`}
-                >
-                  <Video className="w-4 h-4" />
-                  <span>🎥 {loc('لایو عمومی', 'Public Stream')}</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setHostLiveType('adult');
-                    setHostLiveCategory('18+ VIP Adult');
-                  }}
-                  className={`py-3 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 relative overflow-hidden ${
-                    hostLiveType === 'adult'
-                      ? 'bg-gradient-to-r from-rose-600 via-pink-600 to-purple-700 text-white shadow-lg shadow-rose-500/30 font-black'
-                      : 'text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 border border-rose-500/20'
-                  }`}
-                >
-                  <Flame className="w-4 h-4 text-rose-300 animate-bounce" />
-                  <span className="flex items-center gap-1">
-                    <span>🔞 {loc('لایو بزرگسال', 'Adult 18+')}</span>
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setHostLiveType('private');
-                    setHostLiveCategory('Private 1-on-1');
-                  }}
-                  className={`py-3 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 ${
-                    hostLiveType === 'private'
-                      ? 'bg-gradient-to-r from-purple-600 to-cyan-600 text-white shadow-md font-black'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                  }`}
-                >
-                  <Lock className="w-4 h-4" />
-                  <span>🔒 {loc('لایو خصوصی', 'Private Stream')}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* ADULT 18+ VIP BANNER & WARNING */}
-            {hostLiveType === 'adult' && (
-              <div className="p-4 rounded-3xl bg-gradient-to-r from-rose-950/80 via-slate-900 to-slate-900 border border-rose-500/40 space-y-3 animate-fadeIn">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-rose-400 font-black text-xs">
-                    <ShieldAlert className="w-4 h-4 text-rose-400" />
-                    <span>{loc('محیط اختصاصی بزرگسالان (VIP 18+ Adult Zone)', 'VIP 18+ Adult Zone')}</span>
-                  </div>
-                  <span className="bg-rose-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
-                    🔞 18+ ONLY
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-300 leading-relaxed dir-rtl">
-                  {loc('این لایواستریم فقط برای کاربران بالای ۱۸ سال و دارندگان اشتراک VIP نمایش داده می‌شود. لطفاً قوانین اخلاقی و قوانین بسترهای اجتماعی را رعایت کنید.', 'This live stream is only shown to users over 18 years old and VIP subscription holders. Please follow the rules of ethics and rules of social platforms.')}
-                </p>
-
-                <div className="flex items-center justify-between pt-1 border-t border-rose-500/20">
-                  <span className="text-xs font-bold text-slate-300">{loc('قیمت ورود هر دقیقه (سکه):', 'Entry price per minute (coins):')}</span>
-                  <div className="flex items-center gap-2">
-                    {[5, 10, 20, 50].map(rate => (
-                      <button
-                        key={rate}
-                        onClick={() => setHostCoinRate(rate)}
-                        className={`px-2.5 py-1 rounded-xl text-xs font-black transition ${
-                          hostCoinRate === rate
-                            ? 'bg-amber-400 text-slate-950 font-black shadow-md'
-                            : 'bg-slate-800 text-slate-300 hover:text-white'
-                        }`}
-                      >
-                        {rate} 🪙
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <label className="flex items-center gap-2 pt-2 cursor-pointer dir-rtl">
-                  <input 
-                    type="checkbox"
-                    checked={hostAdultConsent}
-                    onChange={(e) => setHostAdultConsent(e.target.checked)}
-                    className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500 bg-slate-900 border-slate-700"
-                  />
-                  <span className="text-xs text-slate-300 font-semibold">{loc('تأیید می‌کنم که محتوای این لایو ویژه بزرگسالان است', 'I confirm that the content of this live is intended for adults')}</span>
-                </label>
-              </div>
-            )}
-
-            {/* PRIVATE STREAM RATE SELECTOR */}
-            {hostLiveType === 'private' && (
-              <div className="p-4 rounded-3xl bg-slate-900 border border-purple-500/30 space-y-3 animate-fadeIn">
-                <div className="flex items-center justify-between text-xs font-bold text-purple-300">
-                  <span className="flex items-center gap-1.5">
-                    <Lock className="w-4 h-4 text-purple-400" />
-                    <span>{loc('تنظیم قیمت لایواستریم اختصاصی / خصوصی:', 'Setting the price of exclusive / private livestream:')}</span>
-                  </span>
-                  <span className="text-amber-400 font-black">{hostCoinRate} {loc('🪙 / دقیقه', '🪙 / minute')}</span>
-                </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {[10, 25, 50, 100].map(rate => (
-                    <button
-                      key={rate}
-                      onClick={() => setHostCoinRate(rate)}
-                      className={`py-2 rounded-xl text-xs font-black border transition ${
-                        hostCoinRate === rate
-                          ? 'bg-purple-600 text-white border-purple-400 shadow-md'
-                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
-                      }`}
-                    >
-                      {rate} {loc('🪙 / دقیقه', '🪙 / minute')}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* INPUTS: TITLE & CATEGORY */}
-            <div className={`space-y-3 transition-all duration-500 ${
-              liveGuideStep === 2 
-                ? 'relative z-30 ring-4 ring-pink-500 shadow-[0_0_35px_rgba(236,72,153,0.7)] bg-slate-900/90 rounded-3xl p-3' 
-                : liveGuideStep > 0 ? 'opacity-40 pointer-events-none' : 'opacity-100'
-            }`}>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300">
-                  {loc('عنوان لایواستریم', 'Broadcast Title')}
-                </label>
-                <input 
-                  type="text"
-                  value={hostLiveTitle}
-                  onChange={(e) => setHostLiveTitle(e.target.value)}
-                  placeholder={
-                    hostLiveType === 'adult'
-                      ? loc('عنوان جذاب لایو بزرگسالان (مثلاً: دورهمی VIP امشب 🔞)...', 'Attractive title of adult live (for example: VIP session tonight 🔞)...')
-                      : hostLiveType === 'private'
-                      ? loc('عنوان لایواستریم اختصاصی و خصوصی...', 'Exclusive and private live stream title...')
-                      : loc('عنوان جذاب برای لایواستریم امشب...', 'Interesting title for tonight\'s live stream...')
-                  }
-                  className="w-full p-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-pink-500 text-sm font-medium"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300">
-                  {loc('برچسب دسته‌بندی', 'Category Tags')}
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {['Chatting', 'Gaming', '18+ VIP', 'Music', 'Dance', 'Talk Show'].map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => setHostLiveCategory(cat)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
-                        hostLiveCategory === cat
-                          ? 'bg-pink-500/20 text-pink-300 border-pink-500/50 shadow-sm'
-                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                      }`}
-                    >
-                      #{cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* CAMERA & MIC PREVIEW BOX */}
-            <div className={`p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 transition-all duration-500 ${
-              liveGuideStep === 3 
-                ? 'relative z-30 ring-4 ring-pink-500 shadow-[0_0_35px_rgba(236,72,153,0.7)]' 
-                : liveGuideStep > 0 ? 'opacity-40 pointer-events-none' : 'opacity-100'
-            }`}>
-              <div className="flex items-center justify-between text-xs font-bold text-slate-300">
-                <span>{loc('پیش‌نمایش دوربین و صدا', 'Camera & Audio Preview')}</span>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setIsCamEnabled(!isCamEnabled)}
-                    className={`p-2 rounded-xl text-xs font-bold border transition flex items-center gap-1 ${
-                      isCamEnabled ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                    }`}
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                    <span>{isCamEnabled ? loc('دوربین روشن', 'Camera on') : loc('دوربین خاموش', 'Camera off')}</span>
-                  </button>
-
-                  <button
-                    onClick={() => setIsMicEnabled(!isMicEnabled)}
-                    className={`p-2 rounded-xl text-xs font-bold border transition flex items-center gap-1 ${
-                      isMicEnabled ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                    }`}
-                  >
-                    {isMicEnabled ? <Mic className="w-3.5 h-3.5" /> : <MicOff className="w-3.5 h-3.5" />}
-                    <span>{isMicEnabled ? loc('میکروفون فعال', 'Active microphone') : loc('میکروفون قطع', 'Microphone cut off')}</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="relative w-full h-44 bg-slate-950 rounded-2xl overflow-hidden border-2 border-dashed border-slate-800 flex flex-col items-center justify-center text-slate-500">
-                {isCamEnabled ? (
-                  <div className="relative w-full h-full flex items-center justify-center bg-slate-900">
-                    <img
-                      src={userAvatar}
-                      alt="Host Preview"
-                      className="w-full h-full object-cover opacity-60"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/50" />
-                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs font-bold text-white z-10">
-                      <span className="flex items-center gap-1 bg-emerald-500/80 px-2.5 py-0.5 rounded-full text-[10px]">
-                        <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                        <span>Ready to Broadcast</span>
-                      </span>
-                      <span className="text-slate-300 text-[10px]">@{currentUsername || userName}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-2 text-slate-500">
-                    <Video className="w-8 h-8 opacity-40" />
-                    <span className="text-xs">{loc('تصویر دوربین غیرفعال است', 'Camera image is disabled')}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ACTION BUTTONS */}
-            <div className={`space-y-2.5 pt-1 transition-all duration-500 ${
-              liveGuideStep === 4 
-                ? 'relative z-30 ring-4 ring-pink-500 shadow-[0_0_35px_rgba(236,72,153,0.7)] bg-slate-900/90 rounded-3xl p-3' 
-                : liveGuideStep > 0 ? 'opacity-40 pointer-events-none' : 'opacity-100'
-            }`}>
-              <button 
-                onClick={() => {
-                  if (hostLiveType === 'adult' && !hostAdultConsent) {
-                    showToast(loc('⚠️ لطفاً قوانین و تاییدیه محتوای 18+ را علامت بزنید', '⚠️ Please tick 18+ content rules and approval'));
-                    return;
-                  }
-                  
-                  const finalTitle = hostLiveTitle.trim() || (
-                    hostLiveType === 'adult' 
-                      ? window.loc(`🔞 لایو بزرگسالان @${currentUsername || userName}`, `🔞 لایو بزرگسالان @${currentUsername || userName}`)
-                      : window.loc(`لایواستریم @${currentUsername || userName}`, `Livestream @${currentUsername || userName}`)
-                  );
-
-                  showToast(loc('در حال آماده‌سازی و شروع لایواستریم...', 'Starting Live Broadcast...'));
-                  setTimeout(() => {
-                    setIsHostLiveOpen(false);
-                    setIsLiveModalOpen(false);
-                    setIsStreaming(true);
-                    setViewingStream({
-                      id: 'self_' + Date.now(),
-                      host: currentUsername || userName,
-                      hostName: userName,
-                      title: finalTitle,
-                      category: hostLiveCategory,
-                      type: hostLiveType,
-                      isAdult: hostLiveType === 'adult',
-                      badge: hostLiveType === 'adult' ? '🔞 18+ VIP' : hostLiveType === 'private' ? '🔒 Private' : '🎥 Public',
-                      coinRate: hostLiveType === 'standard' ? 0 : hostCoinRate,
-                      isSelfStream: true,
-                      thumbnail: userAvatar,
-                      viewersCount: 1,
-                      likesCount: 0
-                    });
-                  }, 1200);
-                }}
-                className={`w-full py-4 rounded-2xl text-white font-black text-base shadow-xl active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 ${
-                  hostLiveType === 'adult'
-                    ? 'bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 shadow-rose-500/40 hover:from-rose-500 hover:to-purple-500'
-                    : hostLiveType === 'private'
-                    ? 'bg-gradient-to-r from-purple-600 to-cyan-500 shadow-purple-500/40'
-                    : 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 shadow-pink-500/30'
-                }`}
-              >
-                <Sparkles className="w-5 h-5 animate-spin" />
-                <span>
-                  {hostLiveType === 'adult' 
-                    ? loc('🚀 شروع لایو بزرگسالان (VIP 18+)', '🚀 adult live (VIP 18+) start') 
-                    : hostLiveType === 'private'
-                    ? loc('🔒 شروع لایواستریم اختصاصی', '🔒 Start of exclusive livestream')
-                    : loc('🚀 شروع و پخش زنده استریم', '🚀 Start and play live stream')}
-                </span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setIsHostLiveOpen(false);
-                  setIsLiveModalOpen(false);
-                  setIsStreamerCenterOpen(true);
-                }}
-                className="w-full py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs flex items-center justify-center gap-2 transition"
-              >
-                <Crown className="w-4 h-4 text-amber-400" />
-                <span>{loc('ورود به استودیو و داشبورد استریمر', 'Open Full Streamer Studio & Center')}</span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-{/* MODAL FOR PARTY ROOM STAGE */}
-      {activePartyRoom && (
-        <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col p-4 dir-ltr overflow-y-auto">
-          <div className="w-full max-w-2xl mx-auto space-y-4 my-auto">
-            <div className="flex items-center justify-between bg-slate-900/90 p-4 rounded-3xl border border-purple-500/40">
-              <div>
-                <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Users className="w-4 h-4 text-purple-400" />
-                  {activePartyRoom.title}
-                </h2>
-                <p className="text-[10px] text-purple-300">Host: @{activePartyRoom.hostName} • Tap any seat to take stage</p>
-              </div>
-
-              <button 
-                onClick={() => {
-                  setActivePartyRoom(null);
-                  setMySeatIndex(null);
-                }} 
-                className="p-2 rounded-2xl bg-slate-800 text-slate-300 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Interactive Party Seats Grid (3x3 or 2x3) */}
-            <div className="grid grid-cols-3 gap-3 p-4 bg-slate-900/60 rounded-3xl border border-slate-800">
-              {activePartyRoom.seats.map((seat, idx) => (
-                <div 
-                  key={idx}
-                  onClick={() => handleTogglePartySeat(idx)}
-                  className={`p-3 rounded-2xl border flex flex-col items-center justify-center gap-2 cursor-pointer transition ${seat.user ? 'border-purple-500 bg-purple-950/40 shadow-lg' : 'border-slate-800 bg-slate-950/80 hover:border-purple-500/50'}`}
-                >
-                  <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-purple-400 flex items-center justify-center bg-slate-900">
-                    {seat.avatar ? (
-                      <img src={seat.avatar} alt="Seat" className="w-full h-full object-cover" />
-                    ) : (
-                      <Plus className="w-6 h-6 text-slate-600" />
-                    )}
-
-                    {seat.isHost && (
-                      <span className="absolute top-0 right-0 bg-amber-500 text-slate-950 text-[8px] font-black px-1 rounded-full">
-                        HOST
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="text-center">
-                    <p className="text-[10px] font-bold text-white truncate max-w-[80px]">
-                      {seat.user || `Seat #${idx + 1}`}
-                    </p>
-                    <span className="text-[8px] text-purple-300">
-                      {seat.user ? (seat.user === userName ? 'You (On Stage)' : 'Co-Host') : 'Tap to Join'}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Stage Controls */}
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setIsMicMuted(!isMicMuted)}
-                className={`flex-1 py-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition ${isMicMuted ? 'bg-red-600/20 border border-red-500 text-red-300' : 'bg-emerald-600/20 border border-emerald-500 text-emerald-300'}`}
-              >
-                {isMicMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                {isMicMuted ? 'Mic Muted' : 'Mic Active'}
-              </button>
-
-              <button 
-                onClick={() => { setActiveTab('wallet'); setWalletSubTab('giftshop'); }}
-                className="flex-1 py-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center justify-center gap-2"
-              >
-                <Gift className="w-4 h-4" />
-                Send Group Gift
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL FOR LUCKY WHEEL (GARDONE SHANS) */}
-      {isLuckyWheelOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-sm card-3d p-6 border-2 border-amber-400/60 bg-slate-900 rounded-3xl space-y-4 text-center relative overflow-hidden shadow-[0_0_50px_rgba(234,179,8,0.3)]">
-            <button 
-              onClick={() => setIsLuckyWheelOpen(false)}
-              className="absolute top-4 left-4 text-slate-400 hover:text-white bg-slate-800/60 p-1.5 rounded-full"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div>
-              <h2 className="text-lg font-black text-white flex items-center justify-center gap-2">
-                <Disc className="w-6 h-6 text-yellow-400 animate-spin" style={{ animationDuration: '4s' }} />
-                🎯 Daily Lucky Wheel
-              </h2>
-              <p className="text-xs text-yellow-200/90 font-medium mt-1">
-                Spin to win coins, red roses, VIP badges & supercar gifts!
-              </p>
-            </div>
-
-            {/* SVG Interactive Wheel */}
-            <div className="relative w-60 h-60 mx-auto flex items-center justify-center my-1">
-              {/* Pointer Indicator */}
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 text-yellow-300 text-3xl drop-shadow-[0_0_12px_rgba(234,179,8,1)] animate-pulse">
-                ▼
-              </div>
-
-              {/* Wheel Container */}
-              <div 
-                className="w-full h-full rounded-full border-4 border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.5)] overflow-hidden relative"
-                style={{
-                  transform: `rotate(${wheelRotationDeg}deg)`,
-                  transition: isWheelSpinning ? 'transform 4s cubic-bezier(0.15, 0.85, 0.35, 1.2)' : 'none'
-                }}
-              >
-                <svg viewBox="0 0 100 100" className="w-full h-full">
-                  <g>
-                    <path d="M 50 50 L 50 0 A 50 50 0 0 1 85.35 14.64 Z" fill="#ec4899" />
-                    <path d="M 50 50 L 85.35 14.64 A 50 50 0 0 1 100 50 Z" fill="#a855f7" />
-                    <path d="M 50 50 L 100 50 A 50 50 0 0 1 85.35 85.35 Z" fill="#3b82f6" />
-                    <path d="M 50 50 L 85.35 85.35 A 50 50 0 0 1 50 100 Z" fill="#10b981" />
-                    <path d="M 50 50 L 50 100 A 50 50 0 0 1 14.64 85.35 Z" fill="#eab308" />
-                    <path d="M 50 50 L 14.64 85.35 A 50 50 0 0 1 0 50 Z" fill="#f97316" />
-                    <path d="M 50 50 L 0 50 A 50 50 0 0 1 14.64 14.64 Z" fill="#06b6d4" />
-                    <path d="M 50 50 L 14.64 14.64 A 50 50 0 0 1 50 0 Z" fill="#6366f1" />
-                  </g>
-                  <g fill="#ffffff" fontSize="4.5" fontWeight="900" textAnchor="middle" dominantBaseline="middle">
-                    <text x="76" y="32" transform="rotate(22.5 76 32)">100🪙</text>
-                    <text x="64" y="18" transform="rotate(67.5 64 18)">🌹</text>
-                    <text x="36" y="18" transform="rotate(112.5 36 18)">50🪙</text>
-                    <text x="24" y="32" transform="rotate(157.5 24 32)">VIP✨</text>
-                    <text x="24" y="68" transform="rotate(202.5 24 68)">500💎</text>
-                    <text x="36" y="82" transform="rotate(247.5 36 82)">🏎️</text>
-                    <text x="64" y="82" transform="rotate(292.5 64 82)">10🪙</text>
-                    <text x="76" y="68" transform="rotate(337.5 76 68)">1000🏆</text>
-                  </g>
-                </svg>
-
-                {/* Center Hub */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-slate-950 border-2 border-yellow-400 flex items-center justify-center shadow-lg">
-                  <Gem className="w-6 h-6 text-amber-400 animate-pulse" />
-                </div>
-              </div>
-            </div>
-
-            {/* Prize Legend Badges */}
-            <div className="grid grid-cols-4 gap-1.5 text-[10px] font-bold text-slate-300 bg-slate-950/60 p-2 rounded-2xl border border-slate-800">
-              <span className="bg-pink-900/40 text-pink-300 p-1 rounded-lg">100 Coins</span>
-              <span className="bg-purple-900/40 text-purple-300 p-1 rounded-lg">Red Rose 🌹</span>
-              <span className="bg-blue-900/40 text-blue-300 p-1 rounded-lg">50 Coins</span>
-              <span className="bg-emerald-900/40 text-emerald-300 p-1 rounded-lg">VIP Badge ✨</span>
-              <span className="bg-amber-900/40 text-amber-300 p-1 rounded-lg">500 Coins</span>
-              <span className="bg-orange-900/40 text-orange-300 p-1 rounded-lg">Supercar 🏎️</span>
-              <span className="bg-cyan-900/40 text-cyan-300 p-1 rounded-lg">10 Coins</span>
-              <span className="bg-yellow-900/40 text-yellow-300 p-1 rounded-lg font-black">1000 Jackpot</span>
-            </div>
-
-            {/* Won Prize Banner */}
-            {wonPrize && (
-              <div className="p-3 bg-amber-500/20 border-2 border-amber-400/80 rounded-2xl text-amber-300 font-extrabold text-xs animate-bounce flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.4)]">
-                <Sparkles className="w-5 h-5 text-amber-300 animate-spin" />
-                Congratulations! Prize: {wonPrize.text}
-              </div>
-            )}
-
-            {/* Spin Button & Daily Free Spin Tracker */}
-            <div className="space-y-2 pt-1">
-              <button 
-                onClick={handleSpinLuckyWheel}
-                disabled={isWheelSpinning}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-yellow-500 via-pink-600 to-purple-600 text-white font-black text-sm shadow-xl hover:brightness-110 active:scale-95 transition disabled:opacity-50 border border-yellow-300/40"
-              >
-                {isWheelSpinning ? 'Spinning Wheel...' : (dailyFreeSpins > 0 ? '🎯 Spin Free Today (1 Spin Remaining)' : '🎯 Spin Again for 50 Coins')}
-              </button>
-              <p className="text-[10px] text-slate-400 font-medium">Daily free spin resets every 24 hours</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL FOR CREATE AGENCY */}
-      {isCreateAgencyModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 dir-ltr">
-          <div className="w-full max-w-md card-3d p-6 border border-indigo-500/50 bg-slate-900 rounded-3xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Shield className="w-4 h-4 text-indigo-400" />
-                Establish New Streamer Agency
-              </h2>
-              <button onClick={() => setIsCreateAgencyModalOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="text-[10px] text-slate-300 font-bold block mb-1">Agency Guild Name</label>
-                <input 
-                  type="text" 
-                  value={newAgencyName}
-                  onChange={e => setNewAgencyName(e.target.value)}
-                  placeholder="e.g. Persian Royal Guild"
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] text-slate-300 font-bold block mb-1">Agency Description</label>
-                <textarea 
-                  value={newAgencyDesc}
-                  onChange={e => setNewAgencyDesc(e.target.value)}
-                  placeholder="Describe agency mission, host guidelines..."
-                  className="w-full p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-indigo-500 h-20"
-                />
-              </div>
-
-              <button 
-                onClick={handleCreateAgency}
-                className="w-full py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white font-bold text-xs shadow-xl"
-              >
-                Create Agency & Invite Hosts
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* MODAL: LIVE HOST SETUP & BROADCAST */}
+      <HostLiveModal
+        isOpen={isHostLiveOpen || isLiveModalOpen}
+        onClose={() => {
+          setIsHostLiveOpen(false);
+          setIsLiveModalOpen(false);
+        }}
+        loc={loc}
+        isRtl={isRtl}
+        currentUsername={currentUsername}
+        userName={userName}
+        userAvatar={userAvatar}
+        hostLiveType={hostLiveType}
+        setHostLiveType={setHostLiveType}
+        hostLiveTitle={hostLiveTitle}
+        setHostLiveTitle={setHostLiveTitle}
+        hostLiveCategory={hostLiveCategory}
+        setHostLiveCategory={setHostLiveCategory}
+        hostCoinRate={hostCoinRate}
+        setHostCoinRate={setHostCoinRate}
+        hostAdultConsent={hostAdultConsent}
+        setHostAdultConsent={setHostAdultConsent}
+        isCamEnabled={isCamEnabled}
+        setIsCamEnabled={setIsCamEnabled}
+        isMicEnabled={isMicEnabled}
+        setIsMicEnabled={setIsMicEnabled}
+        liveGuideStep={liveGuideStep}
+        setLiveGuideStep={setLiveGuideStep}
+        onStartLive={() => {
+          if (hostLiveType === 'adult' && !hostAdultConsent) {
+            showToast(loc('⚠️ لطفاً قوانین و تاییدیه محتوای 18+ را علامت بزنید', '⚠️ Please confirm 18+ content rules'));
+            return;
+          }
+          const finalTitle = hostLiveTitle.trim() || (
+            hostLiveType === 'adult' 
+              ? `🔞 لایو بزرگسالان @${currentUsername || userName}`
+              : `لایواستریم @${currentUsername || userName}`
+          );
+          showToast(loc('در حال آماده‌سازی و شروع لایواستریم...', 'Starting Live Broadcast...'));
+          setTimeout(() => {
+            setIsHostLiveOpen(false);
+            setIsLiveModalOpen(false);
+            setIsStreaming(true);
+            setViewingStream({
+              id: 'self_' + Date.now(),
+              host: currentUsername || userName,
+              hostName: userName,
+              title: finalTitle,
+              category: hostLiveCategory,
+              type: hostLiveType,
+              isAdult: hostLiveType === 'adult',
+              badge: hostLiveType === 'adult' ? '🔞 18+ VIP' : hostLiveType === 'private' ? '🔒 Private' : '🎥 Public',
+              coinRate: hostLiveType === 'standard' ? 0 : hostCoinRate,
+              isSelfStream: true,
+              thumbnail: userAvatar,
+              viewersCount: 1,
+              likesCount: 0
+            });
+          }, 1200);
+        }}
+        onOpenStreamerCenter={() => {
+          setIsHostLiveOpen(false);
+          setIsLiveModalOpen(false);
+          setIsStreamerCenterOpen(true);
+        }}
+      />
+{/* MODALS: PARTY ROOM, LUCKY WHEEL & CREATE AGENCY */}
+      <PartyRoomStageModal
+        activePartyRoom={activePartyRoom}
+        onClose={() => {
+          setActivePartyRoom(null);
+          setMySeatIndex(null);
+        }}
+        userName={userName}
+        onToggleSeat={handleTogglePartySeat}
+        isMicMuted={isMicMuted}
+        setIsMicMuted={setIsMicMuted}
+        onOpenGiftShop={() => { setActiveTab('wallet'); setWalletSubTab('giftshop'); }}
+      />
+      <LuckyWheelModal
+        isOpen={isLuckyWheelOpen}
+        onClose={() => setIsLuckyWheelOpen(false)}
+        isWheelSpinning={isWheelSpinning}
+        wheelRotationDeg={wheelRotationDeg}
+        wonPrize={wonPrize}
+        dailyFreeSpins={dailyFreeSpins}
+        onSpin={handleSpinLuckyWheel}
+      />
+      <CreateAgencyModal
+        isOpen={isCreateAgencyModalOpen}
+        onClose={() => setIsCreateAgencyModalOpen(false)}
+        newAgencyName={newAgencyName}
+        setNewAgencyName={setNewAgencyName}
+        newAgencyDesc={newAgencyDesc}
+        setNewAgencyDesc={setNewAgencyDesc}
+        onCreateAgency={handleCreateAgency}
+      />
       {/* MODAL 7: PRE-STREAM WARNING */}
       {preStreamWarningStream && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -7880,129 +7337,13 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
       )}
 
       {/* FIRST TIME SYSTEM PERMISSIONS & TERMS MODAL */}
-      {isPermissionsPromptOpen && (
-        <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-2xl flex items-center justify-center p-4 animate-fadeIn dir-rtl overflow-y-auto">
-          <div className="card-3d w-full max-w-lg bg-slate-900 rounded-3xl border border-cyan-500/50 p-6 space-y-5 shadow-[0_0_60px_rgba(6,182,212,0.3)] text-right relative overflow-hidden my-auto">
-            
-            {/* Header */}
-            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-purple-600 to-pink-500 p-0.5 flex items-center justify-center shadow-lg shrink-0">
-                <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-                  <ShieldCheck className="w-6 h-6 text-cyan-400 animate-pulse" />
-                </div>
-              </div>
-              <div>
-                <h3 className="font-black text-base text-white">
-                  {loc('🔑 درخواست دسترسی‌های سیستم و قبول قوانین V.LIVE', '🔑 System Permissions & Terms of Service')}
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {loc('برای تجربه کامل، لایواستریم HD/4K، چت صوتی و دریافت اعلان‌ها، لطفاً دسترسی‌ها را در همین ورود اولیه فعال کنید.', 'For the complete experience, 4K streaming, voice chat & notifications, please enable permissions on first launch.')}
-                </p>
-              </div>
-            </div>
-
-            {/* Permissions List */}
-            <div className="space-y-2.5 text-xs text-slate-300 max-h-[50vh] overflow-y-auto custom-scrollbar pl-1">
-              {/* 1. Camera */}
-              <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800/80 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
-                    <Camera className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-white">{loc('📹 دسترسی به دوربین (Camera Access)', '📹 Camera Access')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('برای برگزاری لایواستریم 4K، تماس تصویری مستقیم و استوری', 'For 4K live broadcasts, direct video calls & stories')}</p>
-                  </div>
-                </div>
-                <div className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
-                  {loc('الزامی', 'Required')}
-                </div>
-              </div>
-
-              {/* 2. Microphone */}
-              <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800/80 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-pink-500/10 text-pink-400 border border-pink-500/20 shrink-0">
-                    <Mic className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-white">{loc('🎙️ دسترسی به میکروفون (Microphone Access)', '🎙️ Microphone Access')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('برای گفتگوهای صوتی شفاف، روم‌های گفتگو و صدای پخش زنده', 'For clear voice chats, audio rooms & broadcast sound')}</p>
-                  </div>
-                </div>
-                <div className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
-                  {loc('الزامی', 'Required')}
-                </div>
-              </div>
-
-              {/* 3. Notifications */}
-              <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800/80 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 shrink-0">
-                    <Bell className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-white">{loc('🔔 فعال‌سازی اعلان‌ها (Push Notifications)', '🔔 Push Notifications')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('اطلاع‌رسانی فوری آغاز لایو استریمرهای محبوب، پیام‌ها و هدیه‌ها', 'Instant alerts when favorite streamers go live, messages & gifts')}</p>
-                  </div>
-                </div>
-                <div className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
-                  {loc('توصیه‌شده', 'Recommended')}
-                </div>
-              </div>
-
-              {/* 4. Storage & Media */}
-              <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800/80 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
-                    <Image className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-white">{loc('🖼️ دسترسی به گالری و رسانه (Media & Storage)', '🖼️ Media & Storage')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('برای آپلود تصویر پروفایل، ارسال عکس در چت و ذخیره فایل‌ها', 'For uploading avatar, sending photos in chat & saving media')}</p>
-                  </div>
-                </div>
-                <div className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
-                  {loc('اختیاری', 'Optional')}
-                </div>
-              </div>
-
-              {/* 5. Terms & Regulations */}
-              <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-amber-500/30 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-amber-300">{loc('📜 قبول قوانین و شرایط استفاده (Terms & Rules)', '📜 Terms & Platform Rules')}</h4>
-                    <p className="text-[10px] text-slate-400">{loc('احترام متقابل در چت، عدم انتشار اسپم و رعایت قوانین محتوای استریم', 'Mutual respect in chat, anti-spam & stream content policies')}</p>
-                  </div>
-                </div>
-                <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0" />
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="space-y-2 pt-2">
-              <button
-                onClick={() => handleSavePermissionsPrompt(true)}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-purple-600 to-pink-500 text-white font-black text-sm shadow-xl shadow-cyan-500/20 hover:scale-102 active:scale-95 transition flex items-center justify-center gap-2"
-              >
-                <Check className="w-5 h-5 font-black text-cyan-200" />
-                <span>{loc('🚀 تایید قوانین و اعطای کامل دسترسی‌ها', '🚀 Accept Rules & Grant All Permissions')}</span>
-              </button>
-
-              <button
-                onClick={() => handleSavePermissionsPrompt(false)}
-                className="w-full py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-white font-bold text-xs transition"
-              >
-                {loc('ذخیره و ورود با دسترسی پایه', 'Save & Enter with Basic Access')}
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
+      <PermissionsPromptModal
+        isOpen={isPermissionsPromptOpen}
+        onAcceptAll={() => handleSavePermissionsPrompt(true)}
+        onAcceptBasic={() => handleSavePermissionsPrompt(false)}
+        loc={loc}
+        isRtl={isRtl}
+      />
 
       {/* VIEW OTHER USER PROFILE MODAL */}
       <UserProfileViewModal
@@ -8055,60 +7396,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
         }}
       />
 
-      {/* STREAMER WELCOME GUIDE MODAL (راهنمای میزبانی بانوان) */}
-      {showStreamerWelcomeModal && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn dir-rtl text-right">
-          <div className="w-full max-w-lg bg-slate-900 border border-pink-500/50 rounded-3xl p-6 sm:p-8 space-y-6 shadow-[0_0_80px_rgba(236,72,153,0.35)] relative overflow-hidden">
-            <div className="absolute -top-12 -right-12 w-40 h-40 bg-pink-500/20 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-pink-500 to-purple-600 text-white flex items-center justify-center shadow-xl text-3xl">
-                🌸
-              </div>
-              <h2 className="text-xl sm:text-2xl font-black text-white">
-                خوش آمدید به جمع میزبانی V.Live! 🎉
-              </h2>
-              <p className="text-xs text-pink-400 font-bold">
-                تایید حساب میزبانی شما با موفقیت انجام گردید
-              </p>
-            </div>
-
-            <div className="space-y-3 bg-slate-950/80 p-4 rounded-2xl border border-slate-800 text-xs text-slate-300 leading-relaxed">
-              <h4 className="font-black text-white text-sm mb-2 flex items-center gap-1.5 text-pink-400">
-                <Sparkles className="w-4 h-4" />
-                نکات کلیدی فعالیت و کسب درآمد میزبانی:
-              </h4>
-              <ul className="space-y-2.5 list-disc pr-4 text-[11px]">
-                <li>
-                  <strong className="text-white">🎥 شروع استریم 4K با نور مناسب:</strong> همیشه محیط روشن و شاداب را برای جلب مخاطب انتخاب کنید.
-                </li>
-                <li>
-                  <strong className="text-white">💎 درآمد دلاری از تماس تصویری:</strong> نرخ دقیقه استریم و تماس‌های VIP را در Creator Studio تنظیم کنید.
-                </li>
-                <li>
-                  <strong className="text-white">🎁 دریافت هدیه و تسویه USDT:</strong> هدایای بینندگان مستقیماً به ولت شما اضافه شده و قابل برداشت است.
-                </li>
-                <li>
-                  <strong className="text-white">🛡️ رعایت پوشش و قوانین:</strong> عدم رعایت پوشش مناسب موجب مسدودی حساب توسط مدیریت خواهد شد.
-                </li>
-                <li>
-                  <strong className="text-white">💬 پاسخگویی به پیام‌ها:</strong> ارتباط صمیمی با مخاطبان موجب افزایش فالوور و سطح VIP شما می‌شود.
-                </li>
-              </ul>
-            </div>
-
-            <button
-              onClick={() => {
-                setShowStreamerWelcomeModal(false);
-                showToast('🚀 فعالیت میزبانی شما فعال شد! خوش آمدید.');
-              }}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 hover:brightness-110 active:scale-95 text-white font-black text-xs shadow-xl transition border border-pink-400/30 flex items-center justify-center gap-2"
-            >
-              <span>متوجه شدم - شروع فعالیت میزبانی 🚀</span>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* STREAMER WELCOME GUIDE MODAL */}
+      <StreamerWelcomeGuideModal
+        isOpen={showStreamerWelcomeModal}
+        onClose={() => {
+          setShowStreamerWelcomeModal(false);
+          showToast('🚀 فعالیت میزبانی شما فعال شد! خوش آمدید.');
+        }}
+        loc={loc}
+      />
   
 </div>
       </DevicePreviewFrame>
