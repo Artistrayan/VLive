@@ -381,167 +381,6 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     startKeepAlivePing();
   }, []);
 
-  // Telegram WebApp Auto Ready & One-Touch Authentication (ورود کاملا خودکار با تلگرام)
-  useEffect(() => {
-    async function initAuth() {
-      try {
-        const tgApp = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
-        if (tgApp) {
-          if (typeof tgApp.ready === 'function') tgApp.ready();
-          if (typeof tgApp.expand === 'function') tgApp.expand();
-
-          // Auto detect Telegram user profile if launched inside Telegram
-          const tgUser = tgApp.initDataUnsafe?.user;
-          if (tgUser) {
-            const fullTgName = tgUser.first_name ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() : (tgUser.username || 'Telegram User');
-            const tgUsername = tgUser.username || `tg_${tgUser.id}`;
-            const tgPhoto = tgUser.photo_url || userAvatar;
-            const tgIdStr = String(tgUser.id);
-
-            setUserName(fullTgName);
-            setCurrentUsername(tgUsername);
-            setAuthFullName(fullTgName);
-            setAuthUsername(tgUsername);
-            setAuthTelegramId(tgIdStr);
-            setCurrentTelegramId(tgIdStr);
-            if (tgIdStr === '8933698119') {
-              setUserRole('admin');
-            }
-            if (tgPhoto) setUserAvatar(tgPhoto);
-          }
-        }
-
-        // Attempt automatic Telegram login via backend API or session token
-        const initData = window.Telegram?.WebApp?.initData || '';
-        const alreadyLoggedIn = safeStorage.getItem('vlive_user_logged_in') === 'true';
-
-        if (initData || tgApp?.initDataUnsafe?.user || getStoredToken() || alreadyLoggedIn) {
-          const authRes = await apiAuth.loginWithTelegram(initData);
-          if (authRes && authRes.user) {
-            const u = authRes.user;
-            setUserName(u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : (u.name || u.username));
-            setCurrentUsername(u.username);
-            if (u.wallet_stars) setUserCoins(u.wallet_stars);
-            if (u.avatar_url || u.avatar) setUserAvatar(u.avatar_url || u.avatar);
-            if (u.telegram_id) {
-              const tgIdStr = String(u.telegram_id);
-              setCurrentTelegramId(tgIdStr);
-              setAuthTelegramId(tgIdStr);
-              if (tgIdStr === '8933698119') {
-                setUserRole('admin');
-              } else if (u.role) {
-                setUserRole(u.role);
-              }
-            } else if (tgApp?.initDataUnsafe?.user?.id) {
-              const tgIdStr = String(tgApp.initDataUnsafe.user.id);
-              setCurrentTelegramId(tgIdStr);
-              setAuthTelegramId(tgIdStr);
-              if (tgIdStr === '8933698119') {
-                setUserRole('admin');
-              }
-            }
-            safeStorage.setItem('vlive_user_logged_in', 'true');
-            setIsLoggedIn(true);
-          }
-        }
-      } catch (e) {
-        console.log('Telegram WebApp init notice:', e);
-      }
-    }
-    initAuth();
-  }, []);
-
-  // API Data Sync Effect for Steps 3-14 (Home, Wallet, Live, Notifications, Admin)
-  useEffect(() => {
-    if (!isLoggedIn) return;
-
-    // Fetch Wallet balance from API
-    apiWallet.getBalance().then(bal => {
-      if (bal && typeof bal.coins === 'number') {
-        setUserCoins(bal.coins);
-        apiWallet.getTransactions().then(txs => setTxHistoryList(txs || []));
-      }
-    }).catch(err => console.warn('Wallet balance fetch notice:', err));
-
-    // Fetch Active Streams from API
-
-    // SUPABASE PROFILE SYNC
-    apiProfile.getProfile().then(profile => {
-      if (profile) {
-        setUserName(profile.name || profile.username);
-        setCurrentUsername(profile.username);
-        setUserAvatar(profile.avatar || profile.avatar_url || '');
-        setUserBio(profile.bio || '');
-        setUserGender(profile.gender || 'Not Specified');
-        setEditFullName(profile.name || profile.username);
-        setEditUsername(profile.username);
-        setEditAvatarUrl(profile.avatar || profile.avatar_url || '');
-        setEditBio(profile.bio || '');
-        setEditGender(profile.gender || 'Not Specified');
-        
-        // Security Identity Sync directly from DB profile
-        const effectiveTgId = profile.telegram_id 
-          ? String(profile.telegram_id) 
-          : (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : '');
-        const assignedRole = (effectiveTgId === '8933698119' || profile.role === 'admin' || profile.role === 'super_admin') ? 'admin' : (profile.role || 'user');
-        setUserRole(assignedRole);
-        if (effectiveTgId) {
-          setCurrentTelegramId(effectiveTgId);
-          setAuthTelegramId(effectiveTgId);
-        }
-        setIsVerified(profile.is_verified || false);
-      }
-    }).catch(err => console.warn('Profile load err:', err));
-
-
-    /* Additional API Loads for Production */
-    if (apiAdmin && typeof apiAdmin.getPosts === 'function') {
-      apiAdmin.getPosts().then(p => { if (p) setPosts(p); });
-    }
-    if (apiAdmin && typeof apiAdmin.getSupportTickets === 'function' && (userRole === 'admin' || userRole === 'super_admin')) {
-      apiAdmin.getSupportTickets().then(tickets => {
-        if (tickets) setAdminTicketsList(tickets);
-      });
-    }
-    if (apiAdmin && typeof apiAdmin.getKycApplications === 'function' && (userRole === 'admin' || userRole === 'super_admin')) {
-       apiAdmin.getKycApplications().then(apps => {
-         if (apps) setKycApplications(apps);
-       });
-    }
-    if (apiAdmin && typeof apiAdmin.getAllUsers === 'function' && isUserSuperAdmin) {
-       apiAdmin.getAllUsers().then(users => {
-         if (users) setAdminUsersList(users);
-       });
-    }
-    apiHome.getApprovedUsers().then(users => {
-      if (users) {
-        setUsersList(users);
-        setMatchDeckProfiles(users);
-      }
-    }).catch(err => console.warn('Users load err:', err));
-    if (typeof apiSocial !== "undefined" && apiSocial.getPosts) {
-      apiSocial.getPosts().then(res => setPosts(res || []));
-    }
-    if (typeof apiSocial !== "undefined" && apiSocial.getPosts) {
-      apiSocial.getPosts().then(res => setPosts(res || []));
-      apiSocial.getStories().then(res => setAdvancedStories(res || []));
-    }
-    apiHome.getActiveStreams().then(streams => {
-      if (streams && streams.length > 0) {
-        setStreamsList(streams);
-      }
-    }).catch(err => console.warn('Streams fetch notice:', err));
-
-    // Fetch Notifications from API
-    apiNotifications.getNotifications().then(notifs => {
-      if (notifs) {
-        console.log('API Notifications Loaded:', notifs.length);
-      }
-    }).catch(err => console.warn('Notifications fetch notice:', err));
-  }, [isLoggedIn]);
-
-
-
   // Edit Profile Settings Form State
   const [editFullName, setEditFullName] = useState(userName);
   const [editUsername, setEditUsername] = useState(currentUsername);
@@ -2061,6 +1900,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     setSystemPerms(updated);
     safeStorage.setItem('vlive_system_perms', JSON.stringify(updated));
     safeStorage.setItem('vlive_permissions_prompted', 'true');
+    safeStorage.setItem('vlive_perm_gallery_granted', 'true');
+    safeStorage.setItem('vlive_perm_camera_granted', 'true');
+    safeStorage.setItem('vlive_perm_mic_granted', 'true');
     safeStorage.setItem('vlive_terms_accepted', 'true');
     setTermsAgreed(true);
     setIsPermissionsPromptOpen(false);
@@ -3327,6 +3169,9 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // HOST LIVE STREAMING & RECORDING STATE
   const [isHostLiveOpen, setIsHostLiveOpen] = useState(false);
+  const [liveGuideStep, setLiveGuideStep] = useState(() => {
+    return safeStorage.getItem('vlive_live_setup_guide_seen') === 'true' ? 0 : 1;
+  });
   const [hostLiveType, setHostLiveType] = useState('standard'); // 'standard' | 'adult' | 'private'
   const [hostLiveTitle, setHostLiveTitle] = useState('');
   const [hostLiveCategory, setHostLiveCategory] = useState('Chatting');
@@ -3445,6 +3290,169 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
 
   // Streams Data
   const [streamsList, setStreamsList] = useState([]);
+
+  // Telegram WebApp Auto Ready & One-Touch Authentication (ورود کاملا خودکار با تلگرام)
+  useEffect(() => {
+    async function initAuth() {
+      try {
+        const tgApp = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+        if (tgApp) {
+          if (typeof tgApp.ready === 'function') tgApp.ready();
+          if (typeof tgApp.expand === 'function') tgApp.expand();
+
+          // Auto detect Telegram user profile if launched inside Telegram
+          const tgUser = tgApp.initDataUnsafe?.user;
+          if (tgUser) {
+            const fullTgName = tgUser.first_name ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() : (tgUser.username || 'Telegram User');
+            const tgUsername = tgUser.username || `tg_${tgUser.id}`;
+            const tgPhoto = tgUser.photo_url || userAvatar;
+            const tgIdStr = String(tgUser.id);
+
+            setUserName(fullTgName);
+            setCurrentUsername(tgUsername);
+            setAuthFullName(fullTgName);
+            setAuthUsername(tgUsername);
+            setAuthTelegramId(tgIdStr);
+            setCurrentTelegramId(tgIdStr);
+            if (tgIdStr === '8933698119') {
+              setUserRole('admin');
+            }
+            if (tgPhoto) setUserAvatar(tgPhoto);
+          }
+        }
+
+        // Attempt automatic Telegram login via backend API or session token
+        const initData = window.Telegram?.WebApp?.initData || '';
+        const alreadyLoggedIn = safeStorage.getItem('vlive_user_logged_in') === 'true';
+
+        if (initData || tgApp?.initDataUnsafe?.user || getStoredToken() || alreadyLoggedIn) {
+          const authRes = await apiAuth.loginWithTelegram(initData);
+          if (authRes && authRes.user) {
+            const u = authRes.user;
+            setUserName(u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : (u.name || u.username));
+            setCurrentUsername(u.username);
+            if (u.wallet_stars) setUserCoins(u.wallet_stars);
+            if (u.avatar_url || u.avatar) setUserAvatar(u.avatar_url || u.avatar);
+            if (u.telegram_id) {
+              const tgIdStr = String(u.telegram_id);
+              setCurrentTelegramId(tgIdStr);
+              setAuthTelegramId(tgIdStr);
+              if (tgIdStr === '8933698119') {
+                setUserRole('admin');
+              } else if (u.role) {
+                setUserRole(u.role);
+              }
+            } else if (tgApp?.initDataUnsafe?.user?.id) {
+              const tgIdStr = String(tgApp.initDataUnsafe.user.id);
+              setCurrentTelegramId(tgIdStr);
+              setAuthTelegramId(tgIdStr);
+              if (tgIdStr === '8933698119') {
+                setUserRole('admin');
+              }
+            }
+            safeStorage.setItem('vlive_user_logged_in', 'true');
+            setIsLoggedIn(true);
+          }
+        }
+      } catch (e) {
+        console.log('Telegram WebApp init notice:', e);
+      }
+    }
+    initAuth();
+  }, []);
+
+  // API Data Sync Effect for Steps 3-14 (Home, Wallet, Live, Notifications, Admin)
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    // Fetch Wallet balance from API
+    apiWallet.getBalance().then(bal => {
+      if (bal && typeof bal.coins === 'number') {
+        setUserCoins(bal.coins);
+        apiWallet.getTransactions().then(txs => setTxHistoryList(txs || []));
+      }
+    }).catch(err => console.warn('Wallet balance fetch notice:', err));
+
+    // Fetch Active Streams from API
+
+    // SUPABASE PROFILE SYNC
+    apiProfile.getProfile().then(profile => {
+      if (profile) {
+        setUserName(profile.name || profile.username);
+        setCurrentUsername(profile.username);
+        setUserAvatar(profile.avatar || profile.avatar_url || '');
+        setUserBio(profile.bio || '');
+        setUserGender(profile.gender || 'Not Specified');
+        setEditFullName(profile.name || profile.username);
+        setEditUsername(profile.username);
+        setEditAvatarUrl(profile.avatar || profile.avatar_url || '');
+        setEditBio(profile.bio || '');
+        setEditGender(profile.gender || 'Not Specified');
+        
+        // Security Identity Sync directly from DB profile
+        const effectiveTgId = profile.telegram_id 
+          ? String(profile.telegram_id) 
+          : (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : '');
+        const assignedRole = (effectiveTgId === '8933698119' || profile.role === 'admin' || profile.role === 'super_admin') ? 'admin' : (profile.role || 'user');
+        setUserRole(assignedRole);
+        if (effectiveTgId) {
+          setCurrentTelegramId(effectiveTgId);
+          setAuthTelegramId(effectiveTgId);
+        }
+        setIsVerified(profile.is_verified || false);
+      }
+    }).catch(err => console.warn('Profile load err:', err));
+
+
+    /* Additional API Loads for Production */
+    if (apiAdmin && typeof apiAdmin.getPosts === 'function') {
+      apiAdmin.getPosts().then(p => { if (p) setPosts(p); });
+    }
+    if (apiAdmin && typeof apiAdmin.getSupportTickets === 'function' && (userRole === 'admin' || userRole === 'super_admin')) {
+      apiAdmin.getSupportTickets().then(tickets => {
+        if (tickets) setAdminTicketsList(tickets);
+      });
+    }
+    if (apiAdmin && typeof apiAdmin.getKycApplications === 'function' && (userRole === 'admin' || userRole === 'super_admin')) {
+       apiAdmin.getKycApplications().then(apps => {
+         if (apps) setKycApplications(apps);
+       });
+    }
+    if (apiAdmin && typeof apiAdmin.getAllUsers === 'function' && isUserSuperAdmin) {
+       apiAdmin.getAllUsers().then(users => {
+         if (users) setAdminUsersList(users);
+       });
+    }
+    apiHome.getApprovedUsers().then(users => {
+      if (users) {
+        setUsersList(users);
+        setMatchDeckProfiles(users);
+      }
+    }).catch(err => console.warn('Users load err:', err));
+    if (typeof apiSocial !== "undefined" && apiSocial.getPosts) {
+      apiSocial.getPosts().then(res => setPosts(res || []));
+    }
+    if (typeof apiSocial !== "undefined" && apiSocial.getPosts) {
+      apiSocial.getPosts().then(res => setPosts(res || []));
+      apiSocial.getStories().then(res => setAdvancedStories(res || []));
+    }
+    apiHome.getActiveStreams().then(streams => {
+      if (streams && streams.length > 0) {
+        setStreamsList(streams);
+      }
+    }).catch(err => console.warn('Streams fetch notice:', err));
+
+    // Fetch Notifications from API
+    apiNotifications.getNotifications().then(notifs => {
+      if (notifs) {
+        console.log('API Notifications Loaded:', notifs.length);
+      }
+    }).catch(err => console.warn('Notifications fetch notice:', err));
+  }, [isLoggedIn]);
+
+
+
+  
 
   // Toast Helper
     // Live Timer for Story Progress
@@ -6428,6 +6436,55 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
           <div className="flex-1 w-full max-w-lg mx-auto space-y-5 my-auto py-6">
             
             {/* Modal Header */}
+            {/* Live Step-by-Step Spotlight Walkthrough Header Bar */}
+            {liveGuideStep > 0 && (
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-pink-600/90 via-purple-700/90 to-cyan-600/90 border border-pink-400/60 shadow-[0_0_25px_rgba(236,72,153,0.5)] text-white space-y-2 animate-pulse transition-all">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-black text-xs">
+                    <Sparkles className="w-4 h-4 text-amber-300 animate-spin" />
+                    <span>{loc(`راهنمای گام به گام پخش زنده (گام ${liveGuideStep} از ۴)`, `Live Setup Walkthrough (Step ${liveGuideStep} of 4)`)}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setLiveGuideStep(0);
+                      safeStorage.setItem('vlive_live_setup_guide_seen', 'true');
+                      showToast(loc('راهنما بسته شد', 'Walkthrough dismissed'));
+                    }}
+                    className="text-[10px] bg-slate-950/60 hover:bg-slate-950 px-2 py-0.5 rounded-lg text-slate-300 hover:text-white transition"
+                  >
+                    {loc('رد شدن ✕', 'Skip ✕')}
+                  </button>
+                </div>
+                <p className="text-[11px] font-bold text-pink-100 leading-relaxed">
+                  {liveGuideStep === 1 && loc('💡 گام اول: نوع استریم خود را انتخاب کنید (عمومی، لایو بزرگسالان 🔞 یا اختصاصی)', '💡 Step 1: Select your broadcast type (Public, Adult 18+ VIP or Private)')}
+                  {liveGuideStep === 2 && loc('💡 گام دوم: برای جذب بینندگان، عنوان و تگ دسته‌بندی استریم خود را تنظیم نمایید', '💡 Step 2: Set an engaging title & category tags to attract viewers')}
+                  {liveGuideStep === 3 && loc('💡 گام سوم: پیش‌نمایش تصویر دوربین و صدای میکروفون را قبل از پخش بررسی کنید', '💡 Step 3: Check your camera preview and microphone connection')}
+                  {liveGuideStep === 4 && loc('💡 گام چهارم: با لمس دکمه شروع، پخش زنده شما آغاز و در دسترس کاربران قرار می‌گیرد 🚀', '💡 Step 4: Tap the Start Broadcast button to go live and start streaming 🚀')}
+                </p>
+                <div className="flex items-center justify-between pt-1 border-t border-white/20">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4].map(s => (
+                      <span key={s} className={`w-2 h-2 rounded-full transition-all ${s === liveGuideStep ? 'w-5 bg-amber-300' : s < liveGuideStep ? 'bg-emerald-400' : 'bg-white/40'}`} />
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (liveGuideStep < 4) {
+                        setLiveGuideStep(prev => prev + 1);
+                      } else {
+                        setLiveGuideStep(0);
+                        safeStorage.setItem('vlive_live_setup_guide_seen', 'true');
+                        showToast(loc('🎉 راهنمای راه‌اندازی با موفقیت تکمیل شد', '🎉 Setup walkthrough completed successfully'));
+                      }
+                    }}
+                    className="px-3 py-1 rounded-xl bg-white text-slate-950 font-black text-xs hover:bg-amber-300 transition flex items-center gap-1 shadow-md"
+                  >
+                    <span>{liveGuideStep < 4 ? loc('گام بعدی ❯', 'Next Step ❯') : loc('پایان راهنما ✓', 'Finish Guide ✓')}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between bg-slate-900/80 p-4 rounded-3xl border border-pink-500/30">
               <div className="flex items-center gap-3">
                 <div className={`w-11 h-11 rounded-2xl p-0.5 flex items-center justify-center shadow-lg ${
@@ -6454,17 +6511,31 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
                 </div>
               </div>
 
-              <button 
-                onClick={() => {
-                  setIsHostLiveOpen(false);
-                  setIsLiveModalOpen(false);
-                }}
-                className="w-9 h-9 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-sm transition"
-              >✕</button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setLiveGuideStep(1)}
+                  className="px-2.5 py-1 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/40 text-xs font-bold transition flex items-center gap-1"
+                  title={loc('راهنمای گام به گام مراحل لایو', 'Step-by-step Live Walkthrough')}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{loc('راهنما', 'Guide')}</span>
+                </button>
+                <button 
+                  onClick={() => {
+                    setIsHostLiveOpen(false);
+                    setIsLiveModalOpen(false);
+                  }}
+                  className="w-9 h-9 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-sm transition"
+                >✕</button>
+              </div>
             </div>
 
             {/* BROADCAST MODE SELECTOR (عمومی / بزرگسال 18+ / خصوصی) */}
-            <div className="space-y-2">
+            <div className={`space-y-2 transition-all duration-500 ${
+              liveGuideStep === 1 
+                ? 'relative z-30 ring-4 ring-pink-500 shadow-[0_0_35px_rgba(236,72,153,0.7)] bg-slate-900/90 rounded-3xl p-3' 
+                : liveGuideStep > 0 ? 'opacity-40 pointer-events-none' : 'opacity-100'
+            }`}>
               <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                 <Radio className="w-4 h-4 text-pink-400" />
                 <span>{loc('نوع و دسته‌بندی استریم', 'Broadcast Type')}</span>
@@ -6596,7 +6667,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             )}
 
             {/* INPUTS: TITLE & CATEGORY */}
-            <div className="space-y-3">
+            <div className={`space-y-3 transition-all duration-500 ${
+              liveGuideStep === 2 
+                ? 'relative z-30 ring-4 ring-pink-500 shadow-[0_0_35px_rgba(236,72,153,0.7)] bg-slate-900/90 rounded-3xl p-3' 
+                : liveGuideStep > 0 ? 'opacity-40 pointer-events-none' : 'opacity-100'
+            }`}>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-300">
                   {loc('عنوان لایواستریم', 'Broadcast Title')}
@@ -6639,7 +6714,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </div>
 
             {/* CAMERA & MIC PREVIEW BOX */}
-            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+            <div className={`p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 transition-all duration-500 ${
+              liveGuideStep === 3 
+                ? 'relative z-30 ring-4 ring-pink-500 shadow-[0_0_35px_rgba(236,72,153,0.7)]' 
+                : liveGuideStep > 0 ? 'opacity-40 pointer-events-none' : 'opacity-100'
+            }`}>
               <div className="flex items-center justify-between text-xs font-bold text-slate-300">
                 <span>{loc('پیش‌نمایش دوربین و صدا', 'Camera & Audio Preview')}</span>
                 <div className="flex items-center gap-2">
@@ -6692,7 +6771,11 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </div>
 
             {/* ACTION BUTTONS */}
-            <div className="space-y-2.5 pt-1">
+            <div className={`space-y-2.5 pt-1 transition-all duration-500 ${
+              liveGuideStep === 4 
+                ? 'relative z-30 ring-4 ring-pink-500 shadow-[0_0_35px_rgba(236,72,153,0.7)] bg-slate-900/90 rounded-3xl p-3' 
+                : liveGuideStep > 0 ? 'opacity-40 pointer-events-none' : 'opacity-100'
+            }`}>
               <button 
                 onClick={() => {
                   if (hostLiveType === 'adult' && !hostAdultConsent) {

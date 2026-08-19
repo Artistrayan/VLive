@@ -1,0 +1,36 @@
+// mixins.scss
+@use './variables' as *;
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin glassmorphism($blur: 16px, $opacity: 0.85, $border-opacity: 0.08) {
+  background: rgba(15, 23, 42, $opacity);
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+  border: 1px solid rgba(255, 255, 255, $border-opacity);
+}
+
+@mixin neon-text($color) {
+  color: $color;
+  text-shadow: 0 0 8px rgba($color, 0.5);
+}
+
+@mixin neon-button($base-color, $gradient-end, $glow-color) {
+  background: linear-gradient(135deg, rgba($base-color, 0.25), rgba($gradient-end, 0.35));
+  border: 1px solid $base-color;
+  color: #fff;
+  box-shadow: 0 0 15px rgba($glow-color, 0.35);
+  transition: all 0.25s ease;
+  &:hover {
+    background: linear-gradient(135deg, rgba($base-color, 0.45), rgba($gradient-end, 0.55));
+    box-shadow: 0 0 25px rgba($glow-color, 0.65);
+    transform: translateY(-2px);
+  }
+  &:active {
+    transform: translateY(0);
+  }
+}

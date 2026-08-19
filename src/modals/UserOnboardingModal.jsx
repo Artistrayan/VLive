@@ -87,7 +87,10 @@ export default function UserOnboardingModal({
   const [selectedInterests, setSelectedInterests] = useState(['🎬 پخش زنده و استریم', '💬 گفتگو و چت دوستانه']);
   
   // Photo & Gallery permission
-  const [hasGalleryPermission, setHasGalleryPermission] = useState(false);
+  const [hasGalleryPermission, setHasGalleryPermission] = useState(() => {
+    return safeStorage.getItem('vlive_perm_gallery_granted') === 'true' || 
+           safeStorage.getItem('vlive_permissions_prompted') === 'true';
+  });
   const [avatarPreview, setAvatarPreview] = useState('');
   const [avatarError, setAvatarError] = useState('');
 
@@ -559,7 +562,11 @@ export default function UserOnboardingModal({
                   <input
                     type="checkbox"
                     checked={hasGalleryPermission}
-                    onChange={(e) => setHasGalleryPermission(e.target.checked)}
+                    onChange={(e) => {
+    const val = e.target.checked;
+    setHasGalleryPermission(val);
+    safeStorage.setItem('vlive_perm_gallery_granted', val ? 'true' : 'false');
+  }}
                     className="w-5 h-5 rounded text-pink-600 focus:ring-pink-500 bg-slate-900 border-slate-700 cursor-pointer"
                   />
                 </div>
