@@ -73,11 +73,11 @@ export default function LiveStudioModal({
 
   // Live Broadcast Real-time States
   const [liveDurationSeconds, setLiveDurationSeconds] = useState(0);
-  const [viewerCount, setViewerCount] = useState(1420);
-  const [likeCount, setLikeCount] = useState(8450);
-  const [giftCoinsEarned, setGiftCoinsEarned] = useState(12450);
-  const [batteryLevel, setBatteryLevel] = useState(85);
-  const [followersGained, setFollowersGained] = useState(48);
+  const [viewerCount, setViewerCount] = useState(1);
+  const [likeCount, setLikeCount] = useState(0);
+  const [giftCoinsEarned, setGiftCoinsEarned] = useState(0);
+  const [batteryLevel, setBatteryLevel] = useState(100);
+  const [followersGained, setFollowersGained] = useState(0);
 
   // Interactive Drawers / Panels
   const [isChatExpanded, setIsChatExpanded] = useState(true);
@@ -403,9 +403,6 @@ export default function LiveStudioModal({
     if (studioPhase === 'LIVE') {
       timer = setInterval(() => {
         setLiveDurationSeconds(prev => prev + 1);
-        // Simulate organic viewer & like count variations
-        if (Math.random() > 0.6) setViewerCount(v => Math.max(10, v + Math.floor(Math.random() * 5) - 2));
-        if (Math.random() > 0.4) setLikeCount(l => l + Math.floor(Math.random() * 3));
       }, 1000);
     }
     return () => clearInterval(timer);
@@ -671,6 +668,11 @@ export default function LiveStudioModal({
                       beautyFilter === 'glow' ? 'brightness-125 saturate-120' :
                       beautyFilter === 'ultra' ? 'brightness-135 contrast-105 saturate-130' : ''
                     }`}
+                    style={{
+                      filter: skinSmoothing > 0 
+                        ? `blur(${skinSmoothing * 0.015}px) brightness(${100 + skinSmoothing * 0.1}%) contrast(${100 - skinSmoothing * 0.05}%)`
+                        : undefined
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40 pointer-events-none" />
 
@@ -1004,13 +1006,13 @@ export default function LiveStudioModal({
                   muted
                   style={{
                     filter: `
-                      blur(${Math.max(0, (skinSmoothing - 60) * 0.005)}px)
-                      brightness(${1 + (skinSmoothing * 0.001) + (lightingEffect === 'studio' ? 0.08 : lightingEffect === 'warm' ? 0.04 : 0)})
-                      contrast(${1 - (skinSmoothing * 0.0005) + (lightingEffect === 'studio' ? 0.02 : 0)})
-                      saturate(${1 + (lightingEffect === 'warm' ? 0.08 : lightingEffect === 'neon' ? 0.12 : lightingEffect === 'sunset' ? 0.1 : 0)})
-                      ${beautyFilter === 'rose' ? 'sepia(0.12) hue-rotate(320deg)' : ''}
-                      ${beautyFilter === 'bronze' ? 'sepia(0.18) saturate(1.15)' : ''}
-                    `
+                      blur(${Math.max(0, skinSmoothing * 0.015)}px) 
+                      brightness(${100 + skinSmoothing * 0.1 + (lightingEffect === 'studio' ? 8 : lightingEffect === 'warm' ? 4 : 0)}%) 
+                      contrast(${100 - skinSmoothing * 0.05 + (lightingEffect === 'studio' ? 2 : 0)}%) 
+                      saturate(${100 + (lightingEffect === 'warm' ? 8 : lightingEffect === 'neon' ? 12 : lightingEffect === 'sunset' ? 10 : 0)}%)
+                      ${beautyFilter === 'rose' ? 'sepia(12%) hue-rotate(320deg)' : ''}
+                      ${beautyFilter === 'bronze' ? 'sepia(18%) saturate(115%)' : ''}
+                    `.trim()
                   }}
                   className={`w-full h-full object-cover transition-all duration-300 ${isMirrored ? 'scale-x-[-1]' : ''}`}
                 />

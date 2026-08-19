@@ -53,10 +53,20 @@ export default function AiFaceEffectOverlay({
           const isFacePresent = face && face.detected;
           const { landmarks } = face || {};
 
-          // Convert normalized points (0..1) to canvas coordinates
-          // Take mirroring into account for stickers/effects if video is mirrored
-          const mapX = (nx) => (isMirrored ? (1 - nx) * dW : nx * dW);
-          const mapY = (ny) => ny * dH;
+          // Convert normalized points (0..1) to canvas coordinates accounting for object-fit: cover
+          const vW = video.videoWidth;
+          const vH = video.videoHeight;
+          const scale = Math.max(dW / vW, dH / vH);
+          const drawW = vW * scale;
+          const drawH = vH * scale;
+          const offsetX = (dW - drawW) / 2;
+          const offsetY = (dH - drawH) / 2;
+
+          const mapX = (nx) => {
+            const scaledX = offsetX + (nx * drawW);
+            return isMirrored ? dW - scaledX : scaledX;
+          };
+          const mapY = (ny) => offsetY + (ny * drawH);
 
           // -------------------------------------------------------------
           // 1. AI HAIR COLOR EFFECT (Targeted Hair & Crown Region Only)
