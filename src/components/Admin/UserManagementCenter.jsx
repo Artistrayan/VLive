@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiAdmin } from '../../services/api';
 import { 
   Users, Search, Filter, ShieldCheck, ShieldAlert, Ban, UserX, UserCheck, 
   Crown, Video, CheckCircle2, AlertTriangle, Key, Trash2, RefreshCw, Eye, 
@@ -44,9 +45,12 @@ export default function UserManagementCenter({
   });
 
   // Action handlers
-  const handleToggleBan = (user) => {
+  const handleToggleBan = async (user) => {
     const nextBanned = !user.isBanned;
-    setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isBanned: nextBanned } : u));
+    setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isBanned: nextBanned, status: nextBanned ? 'banned' : 'approved' } : u));
+    if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') {
+       await apiAdmin.updateUserFields(user.id, { is_banned: nextBanned, status: nextBanned ? 'banned' : 'approved' });
+    }
     if (selectedUserDetail?.id === user.id) {
       setSelectedUserDetail(prev => ({ ...prev, isBanned: nextBanned }));
     }
@@ -54,9 +58,12 @@ export default function UserManagementCenter({
     showToast(nextBanned ? window.loc(`🚫 کاربر @${user.username} مسدود شد`, `🚫 User @${user.username} banned`) : window.loc(`انسداد کاربر @${user.username} لغو شد`, `User @${user.username} unbanned`));
   };
 
-  const handleToggleMute = (user) => {
+  const handleToggleMute = async (user) => {
     const nextMuted = !user.isMuted;
     setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isMuted: nextMuted } : u));
+    if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') {
+       await apiAdmin.updateUserFields(user.id, { is_muted: nextMuted });
+    }
     if (selectedUserDetail?.id === user.id) {
       setSelectedUserDetail(prev => ({ ...prev, isMuted: nextMuted }));
     }

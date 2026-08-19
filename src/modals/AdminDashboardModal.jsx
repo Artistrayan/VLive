@@ -560,8 +560,8 @@ export default function AdminDashboardModal(props) {
               {/* 2. USER MANAGEMENT CENTER */}
               {adminActiveTab === 'users' && (
                 <UserManagementCenter
-                  usersList={usersList}
-                  setUsersList={setUsersList}
+                  usersList={adminUsersList.length > 0 ? adminUsersList : usersList}
+                  setUsersList={setAdminUsersList}
                   addAdminAuditLog={addAdminAuditLog}
                   showToast={showToast}
                   loc={loc}
@@ -814,7 +814,7 @@ export default function AdminDashboardModal(props) {
               {/* CENTRALIZED FINANCE & ECONOMY CENTER */}
               {(adminActiveTab === 'finance' || adminActiveTab === 'wallet' || adminActiveTab === 'economy') && (
                 <FinanceCenter
-                  usersList={usersList}
+                  usersList={adminUsersList.length > 0 ? adminUsersList : usersList}
                   setUsersList={setUsersList}
                   adminWithdrawalsList={adminWithdrawalsList}
                   setAdminWithdrawalsList={setAdminWithdrawalsList}
@@ -1200,7 +1200,7 @@ export default function AdminDashboardModal(props) {
               {/* 12. ANALYTICS CENTER & STATISTICS */}
               {adminActiveTab === 'statistics' && (
                 <AnalyticsCenter
-                  usersList={usersList}
+                  usersList={adminUsersList.length > 0 ? adminUsersList : usersList}
                   adminWithdrawalsList={adminWithdrawalsList}
                   financialTransactionsList={financialTransactionsList}
                   addAdminAuditLog={addAdminAuditLog}
@@ -1279,8 +1279,11 @@ export default function AdminDashboardModal(props) {
                                 <button
                                   onClick={() => {
                                     if (!adminTicketReplyText.trim()) return;
+                                    import('../services/api.js').then(({ apiAdmin }) => {
+                                      apiAdmin.updateSupportTicket(t.id, 'Answered', adminTicketReplyText.trim());
+                                    });
                                     setAdminTicketsList(prev => {
-                                      const updated = prev.map(item => item.id === t.id ? { ...item, status: 'Answered', reply: adminTicketReplyText.trim() } : item);
+                                      const updated = prev.map(item => item.id === t.id ? { ...item, status: 'Answered', admin_reply: adminTicketReplyText.trim(), reply: adminTicketReplyText.trim() } : item);
                                       safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
                                       return updated;
                                     });
@@ -1355,8 +1358,8 @@ export default function AdminDashboardModal(props) {
               {/* 14. STREAMER MANAGEMENT CENTER & VERIFICATION */}
               {adminActiveTab === 'verification' && (
                 <StreamerManagementCenter
-                  usersList={usersList}
-                  setUsersList={setUsersList}
+                  usersList={adminUsersList.length > 0 ? adminUsersList : usersList}
+                  setUsersList={setAdminUsersList}
                   adminWithdrawalsList={adminWithdrawalsList}
                   setAdminWithdrawalsList={setAdminWithdrawalsList}
                   addAdminAuditLog={addAdminAuditLog}
@@ -1903,7 +1906,7 @@ export default function AdminDashboardModal(props) {
               {/* 17.5 AI ADMIN COPILOT */}
               {adminActiveTab === 'aicopilot' && (
                 <AiAdminCopilot
-                  usersList={usersList}
+                  usersList={adminUsersList.length > 0 ? adminUsersList : usersList}
                   adminWithdrawalsList={adminWithdrawalsList}
                   financialTransactionsList={financialTransactionsList}
                   addAdminAuditLog={addAdminAuditLog}

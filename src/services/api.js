@@ -948,11 +948,12 @@ export const apiNotifications = {
 async function verifyAdminServerRole() {
   try {
     const { data: authData } = await supabase.auth.getUser();
-    if (!authData?.user) return false;
+    const userId = authData?.user?.id || getUserId();
+    if (!userId) return false;
     const { data: profile } = await supabase
       .from('profiles')
       .select('role, telegram_id')
-      .eq('id', authData.user.id)
+      .eq('id', userId)
       .single();
     if (profile && (profile.role === 'admin' || profile.role === 'super_admin' || String(profile.telegram_id) === '8933698119')) {
       return true;
@@ -984,6 +985,16 @@ export const apiAdmin = {
     }
   },
 
+  async updateUserFields(userId, updates) {
+    if (!(await verifyAdminServerRole())) return { success: false, error: 'Unauthorized' };
+    try {
+      const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
+      return { success: !error };
+    } catch (e) {
+      return { success: false };
+    }
+  },
+
   async updateUserVerification(userId, isVerified) {
     if (!(await verifyAdminServerRole())) return { success: false, error: 'Unauthorized' };
     try {
@@ -998,7 +1009,33 @@ export const apiAdmin = {
     if (!(await verifyAdminServerRole())) return [];
     try {
       const { data, error } = await supabase.from('kyc_applications').select('*').order('created_at', { ascending: false });
-      return error ? [] : data;
+      if (error) return [];
+      
+      return data.map(app => {
+        let parsed = {};
+        try {
+           parsed = JSON.parse(app.description || '{}');
+        } catch(e) {}
+        
+        return {
+          id: app.id,
+          user_id: app.user_id,
+          username: app.username,
+          name: parsed.name || app.username,
+          status: app.status,
+          description: parsed.description || app.description,
+          streamCategory: parsed.streamCategory || '',
+          requestedPose: parsed.requestedPose || '',
+          verificationType: parsed.verificationType || '',
+          aiConfidence: parsed.aiConfidence || '',
+          idCardPhoto: parsed.idCardPhoto || parsed.avatar || app.doc_url || '',
+          avatar: parsed.avatar || app.doc_url || '',
+          selfiePhoto: parsed.selfiePhoto || '',
+          videoDemoUrl: parsed.videoDemoUrl || app.video_demo_url || '',
+          docUrl: parsed.docUrl || app.doc_url || '',
+          created_at: app.created_at
+        };
+      });
     } catch (e) {
       return [];
     }
@@ -1104,6 +1141,26 @@ export const apiAdmin = {
 // 13. STREAMER SERVICE
 // ==========================================
 export const apiStreamer = {
+  async getSupportTickets() {
+    if (!(await verifyAdminServerRole())) return [];
+    try {
+      const { data, error } = await supabase.from('support_tickets').select('*').order('created_at', { ascending: false });
+      return error ? [] : data;
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async updateSupportTicket(ticketId, status, adminReply) {
+    if (!(await verifyAdminServerRole())) return { success: false, error: 'Unauthorized' };
+    try {
+      const { error } = await supabase.from('support_tickets').update({ status, admin_reply: adminReply, updated_at: new Date().toISOString() }).eq('id', ticketId);
+      return { success: !error, error: error?.message };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
   async getStreamerProfile(userId) {
     const uid = userId || getUserId();
     if (!uid) return null;

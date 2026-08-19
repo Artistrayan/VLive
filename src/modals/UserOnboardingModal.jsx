@@ -350,9 +350,10 @@ export default function UserOnboardingModal({
         existingApps.unshift(kycReq);
         safeStorage.setItem('vlive_kyc_applications', JSON.stringify(existingApps));
 
-        if (apiAdmin && typeof apiAdmin.submitKycApplication === 'function') {
-          await apiAdmin.submitKycApplication(kycReq);
-        }
+        // Send to real backend
+        import('../services/api.js').then(({ apiProfile }) => {
+          apiProfile.submitKyc(kycReq);
+        });
         showToast(window.loc('📩 عکس پروفایل و سلفی شما جهت بررسی و تایید دستی برای مدیریت ارسال شد.', '📩 Your profile photo and gesture selfie have been submitted for manual admin verification.'));
       }
     } catch (e) {

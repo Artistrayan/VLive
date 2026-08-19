@@ -101,13 +101,7 @@ export default function StreamerApplicationModal({
     };
     
     try {
-      await apiProfile.submitKyc({
-        username,
-        nationalId: `streamer_${Date.now()}`,
-        description: `[Category: ${streamCategory}] [Topic: ${streamTopic}] ${description}`,
-        videoUrl: '',
-        docUrl: ''
-      });
+      await apiProfile.submitKyc(newApp);
     } catch (e) {
       console.warn('submitKyc error:', e);
     }

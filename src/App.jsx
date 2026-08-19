@@ -498,6 +498,11 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     if (apiAdmin && typeof apiAdmin.getPosts === 'function') {
       apiAdmin.getPosts().then(p => { if (p) setPosts(p); });
     }
+    if (apiAdmin && typeof apiAdmin.getSupportTickets === 'function' && (userRole === 'admin' || userRole === 'super_admin')) {
+      apiAdmin.getSupportTickets().then(tickets => {
+        if (tickets) setAdminTicketsList(tickets);
+      });
+    }
     if (apiAdmin && typeof apiAdmin.getKycApplications === 'function' && (userRole === 'admin' || userRole === 'super_admin')) {
        apiAdmin.getKycApplications().then(apps => {
          if (apps) setKycApplications(apps);
@@ -574,27 +579,33 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
     if (Array.isArray(usersList) && usersList.length > 0) {
       const realApproved = usersList.filter(u => {
         if (!u) return false;
-        const isSelf = u.username === currentUsername;
-        return !isSelf && (u.status === 'approved' || u.isApproved !== false);
+        
+        const isSelf = String(u.username).trim() === String(currentUsername).trim() || 
+                       String(u.id) === String(currentUser?.id) || 
+                       String(u.id) === String(localStorage.getItem('vlive_user_id'));
+        if (isSelf) return false;
+
+        if (matchFilterVerifiedOnly && !u.isVerified && u.is_verified !== true) return false;
+        if (matchFilterOnlineOnly && u.online_status !== 'online') return false;
+
+        return u.status === 'approved' || u.isApproved !== false;
       });
-      if (realApproved.length > 0) {
-        const mapped = realApproved.map((u, idx) => ({
-          id: u.id || idx + 1,
-          name: u.name || u.username,
-          username: u.username,
-          age: u.age || 22,
-          city: u.city,
-          avatar: u.avatar || '',
-          isVerified: u.isVerified !== false,
-          isVip: u.isVip !== false,
-          user_type: u.user_type || 'VERIFIED_USER',
-          distance: `${(idx + 1) * 2} km`,
-          interests: u.interests || ['🎥 4K Live', '💖 VIP Chat', '☕ Coffee', '✨ Verified']
-        }));
-        setMatchDeckProfiles(mapped);
-      }
+      const mapped = realApproved.map((u, idx) => ({
+        id: u.id || idx + 1,
+        name: u.name || u.username,
+        username: u.username,
+        age: u.age || 22,
+        city: u.city,
+        avatar: u.avatar || '',
+        isVerified: u.isVerified !== false || u.is_verified === true,
+        isVip: u.isVip !== false,
+        user_type: u.user_type || 'VERIFIED_USER',
+        distance: `${(idx + 1) * 2} km`,
+        interests: u.interests || ['🎥 4K Live', '💖 VIP Chat', '☕ Coffee', '✨ Verified']
+      }));
+      setMatchDeckProfiles(mapped);
     }
-  }, [usersList, currentUsername]);
+  }, [usersList, currentUsername, currentUser, matchFilterVerifiedOnly, matchFilterOnlineOnly, matchFilterMaxDistance]);
   const [matchCardIndex, setMatchCardIndex] = useState(0);
   const [matchAnimationEffect, setMatchAnimationEffect] = useState(null); // 'like' | 'reject' | 'superlike' | 'gift'
   const [matchResultPopup, setMatchResultPopup] = useState(null);
@@ -659,6 +670,32 @@ const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
       const randomIndex = Math.floor(Math.random() * matchDeckProfiles.length);
       setMatchCardIndex(randomIndex);
       showToast(`🎲 Discovery: Found @${matchDeckProfiles[randomIndex]?.name || matchDeckProfiles[randomIndex]?.username}!`);
+    }
+  };
+
+
+  const handleTouchStart = (e) => {
+    setIsSwipeDragging(true);
+    swipeStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isSwipeDragging) return;
+    const deltaX = e.touches[0].clientX - swipeStartPos.current.x;
+    const deltaY = e.touches[0].clientY - swipeStartPos.current.y;
+    setSwipeDragPos({ x: deltaX, y: deltaY });
+  };
+
+  const handleTouchEnd = () => {
+    if (!isSwipeDragging) return;
+    setIsSwipeDragging(false);
+    
+    if (swipeDragPos.x > 100) {
+      triggerMatchAction('like');
+    } else if (swipeDragPos.x < -100) {
+      triggerMatchAction('reject');
+    } else {
+      setSwipeDragPos({ x: 0, y: 0 });
     }
   };
 
@@ -1474,8 +1511,8 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
     ''
   ).replace('@', '').trim().toLowerCase();
 
-  const isUserSuperAdmin = userRole === 'admin' && String(currentTelegramId).trim() === '8933698119';
-  const isUserRayan = isUserSuperAdmin;
+  const isUserSuperAdmin = userRole === 'admin' || userRole === 'super_admin';
+  const isUserRayan = userRole === 'admin' || userRole === 'super_admin';
 
   // SINGLE SOURCE OF TRUTH FOR CURRENT USER IDENTITY
   const currentUser = useMemo(() => {
@@ -4677,14 +4714,16 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
             </div>
 
             {/* Camera Go-Live Icon Button (Opens Live Setup Modal with Adult 18+ & Streamer Studio) */}
-            <button 
-              onClick={() => setIsHostLiveOpen(true)} 
-              className="ml-1 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 border border-pink-400/80 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-300 relative shrink-0 shadow-[0_0_15px_rgba(236,72,153,0.7)] group"
-              title={loc('اجرا و شروع لایواستریم', 'Start Live & Adult Broadcast')}
-            >
-              <Video className="w-4 h-4 text-white animate-pulse" />
-              <span className="absolute -top-1 -right-1 bg-lime-400 text-slate-950 text-[8px] font-black w-3.5 h-3.5 flex items-center justify-center rounded-full border border-slate-950 shadow-md">+</span>
-            </button>
+            {isVerified && (
+              <button 
+                onClick={() => setIsHostLiveOpen(true)} 
+                className="ml-1 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 border border-pink-400/80 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-300 relative shrink-0 shadow-[0_0_15px_rgba(236,72,153,0.7)] group"
+                title={loc('اجرا و شروع لایواستریم', 'Start Live & Adult Broadcast')}
+              >
+                <Video className="w-4 h-4 text-white animate-pulse" />
+                <span className="absolute -top-1 -right-1 bg-lime-400 text-slate-950 text-[8px] font-black w-3.5 h-3.5 flex items-center justify-center rounded-full border border-slate-950 shadow-md">+</span>
+              </button>
+            )}
           </div>
 
           {/* Center App Title */}
@@ -5213,7 +5252,15 @@ const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 
               /* CARD SWIPE MODE */
               <div className="flex-1 flex flex-col justify-center items-center overflow-hidden py-1">
                 {matchCardIndex < matchDeckProfiles.length && matchDeckProfiles[matchCardIndex] ? (
-                  <div className="relative w-full max-w-xs h-[340px] rounded-3xl overflow-hidden bg-slate-950 border border-pink-500/30 shadow-2xl flex flex-col justify-end">
+                  <div className="relative w-full max-w-xs h-[340px] rounded-3xl overflow-hidden bg-slate-950 border border-pink-500/30 shadow-2xl flex flex-col justify-end transition-transform duration-200"
+                    style={{ transform: `translate(${swipeDragPos.x}px, ${swipeDragPos.y}px) rotate(${swipeDragPos.x * 0.05}deg)` }}
+                    onTouchStart={handleTouchStart}
+                    onMouseDown={(e) => handleTouchStart({ touches: [{ clientX: e.clientX, clientY: e.clientY }] })}
+                    onTouchMove={handleTouchMove}
+                    onMouseMove={(e) => handleTouchMove({ touches: [{ clientX: e.clientX, clientY: e.clientY }] })}
+                    onTouchEnd={handleTouchEnd}
+                    onMouseUp={handleTouchEnd}
+                    onMouseLeave={handleTouchEnd}>
                     <img 
                       src={matchDeckProfiles[matchCardIndex].avatar} 
                       alt={matchDeckProfiles[matchCardIndex].name} 
