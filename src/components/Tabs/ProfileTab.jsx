@@ -60,7 +60,7 @@ export default function ProfileTab(props) {
     addAdminAuditLog = (() => {})
   } = props;
 
-  if (activeTab !== 'profile') return null;
+  // if (activeTab !== 'profile') return null;
 
   const { isSuperAdmin, isEditMode, setIsEditMode } = useVisualUiEditor();
 
@@ -319,6 +319,8 @@ export default function ProfileTab(props) {
 
   return (
     <>
+      {activeTab === 'profile' && (
+        <>
       <div className="space-y-1.5 pb-28 animate-fadeIn dir-ltr">
         
         {/* ========================================== */}
@@ -1664,6 +1666,8 @@ export default function ProfileTab(props) {
 
         
   </>
+      )}
+    </>
 );
 }
 
