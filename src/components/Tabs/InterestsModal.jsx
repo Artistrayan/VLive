@@ -9,12 +9,6 @@ export default function InterestsModal({ isOpen, onClose, userId, showToast }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadData();
-    }
-  }, [isOpen]);
-
   const loadData = async () => {
     setLoading(true);
     // Fetch global and user interests
@@ -30,6 +24,12 @@ export default function InterestsModal({ isOpen, onClose, userId, showToast }) {
     setSelectedIds(userInterests.map(i => i.id || i.interest_id) || []);
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      loadData();
+    }
+  }, [isOpen]);
 
   const handleToggle = (id) => {
     if (selectedIds.includes(id)) {
