@@ -20,8 +20,6 @@ export default function LiveMiniGamesOverlay({
   showToast,
   onWinPrize
 }) {
-  if (!isOpen) return null;
-
   const [activeTab, setActiveTab] = useState('wheel'); // 'wheel' | 'mystery_box'
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotationAngle, setRotationAngle] = useState(0);
@@ -36,6 +34,8 @@ export default function LiveMiniGamesOverlay({
     { id: 5, opened: false, prize: 'پوچ! 💨', coins: 0 },
     { id: 6, opened: false, prize: '۲۵۰ سکه 🪙', coins: 250 }
   ]);
+
+  if (!isOpen) return null;
 
   // Spin Lucky Wheel
   const handleSpinWheel = () => {

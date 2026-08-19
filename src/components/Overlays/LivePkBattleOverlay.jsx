@@ -13,8 +13,6 @@ export default function LivePkBattleOverlay({
   userCoins = 0,
   isHost = false
 }) {
-  if (!isOpen) return null;
-
   const [timeLeft, setTimeLeft] = useState(180); // 3-minute battle
   const [scoreA, setScoreA] = useState(streamerA.score || 3200);
   const [scoreB, setScoreB] = useState(streamerB.score || 2900);
@@ -23,6 +21,7 @@ export default function LivePkBattleOverlay({
 
   // Countdown timer
   useEffect(() => {
+    if (!isOpen) return;
     if (timeLeft <= 0) {
       if (battleState === 'BATTLE') {
         setBattleState('PUNISHMENT');
@@ -38,7 +37,9 @@ export default function LivePkBattleOverlay({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, battleState]);
+  }, [timeLeft, battleState, isOpen]);
+
+  if (!isOpen) return null;
 
   // Score bar percentage calculation
   const totalScore = Math.max(1, scoreA + scoreB);
