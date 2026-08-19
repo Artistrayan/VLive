@@ -58,7 +58,7 @@ export default function LiveStudioModal({
   const [isFlashOn, setIsFlashOn] = useState(false);
   const [isMirrored, setIsMirrored] = useState(true);
   const [beautyFilter, setBeautyFilter] = useState('smooth'); // 'off' | 'smooth' | 'glow' | 'ultra' | 'rose' | 'bronze'
-  const [skinSmoothing, setSkinSmoothing] = useState(75); // 0 - 100
+  const [skinSmoothing, setSkinSmoothing] = useState(50); // 0 - 100
   const [eyeEnlarge, setEyeEnlarge] = useState(40); // 0 - 100
   const [slimmingLevel, setSlimmingLevel] = useState(30); // 0 - 100
   const [hairColorEffect, setHairColorEffect] = useState('none'); // 'none' | 'blonde' | 'pink' | 'purple' | 'cyan' | 'fire'
@@ -671,7 +671,7 @@ export default function LiveStudioModal({
                     style={{
                       filter: skinSmoothing > 0 
                         ? `blur(${skinSmoothing * 0.015}px) brightness(${100 + skinSmoothing * 0.1}%) contrast(${100 - skinSmoothing * 0.05}%)`
-                        : undefined
+                        : ''
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40 pointer-events-none" />
