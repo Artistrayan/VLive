@@ -80,7 +80,9 @@ export const apiAuth = {
       bio: user.bio,
       gender: user.gender,
       city: user.city,
-      is_onboarded: true
+      is_onboarded: true,
+      online: true,
+      last_seen: new Date().toISOString()
     };
     Object.keys(safePayload).forEach(key => safePayload[key] === undefined && delete safePayload[key]);
     
@@ -337,11 +339,20 @@ export const apiHome = {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, username, avatar, bio, gender, is_verified, is_streamer, role, city, level, country, interests, is_onboarded, status')
+        .select('id, name, username, avatar, bio, gender, is_verified, is_streamer, role, city, level, country, interests, is_onboarded, status, online, last_seen')
         .neq('status', 'banned')
         .order('created_at', { ascending: false });
       if (error) return [];
-      return data || [];
+      const now = new Date().getTime();
+      return (data || []).map(u => {
+        const lastSeenTime = u.last_seen ? new Date(u.last_seen).getTime() : 0;
+        const isRecent = (now - lastSeenTime) < 5 * 60 * 1000; // active within last 5 minutes
+        const isOnline = Boolean(u.online || isRecent);
+        return {
+          ...u,
+          online: isOnline
+        };
+      });
     } catch (e) {
       return [];
     }
@@ -1000,9 +1011,19 @@ export const apiAdmin = {
   async getAllUsers() {
     try {
       const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) return data;
+      const now = new Date().getTime();
+      const processUsers = (list) => (list || []).map(u => {
+        const lastSeenTime = u.last_seen ? new Date(u.last_seen).getTime() : 0;
+        const isRecent = (now - lastSeenTime) < 5 * 60 * 1000;
+        return {
+          ...u,
+          online: Boolean(u.online || isRecent)
+        };
+      });
+
+      if (!error && data && data.length > 0) return processUsers(data);
       const approved = await apiHome.getApprovedUsers();
-      return approved || [];
+      return processUsers(approved) || [];
     } catch (e) {
       try {
         const approved = await apiHome.getApprovedUsers();
