@@ -56,7 +56,68 @@ const INITIAL_VERIFICATIONS = [];
 
 // Initial Direct Messages Conversations
 const INITIAL_CONVERSATIONS = [];
+
 export default function App() {
+  // 1. Toast Notification State & Language (Declared first before any other states)
+  const [toastMessage, setToastMessage] = useState(null);
+  const showToast = useCallback(msg => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3500);
+  }, []);
+
+  const [currentAppLang, setCurrentAppLang] = useState(() => {
+    return safeStorage.getItem('vlive_app_lang') || 'fa';
+  });
+  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
+
+  const getLangCode = useCallback(langName => {
+    if (!langName) return 'fa';
+    if (typeof langName === 'object') return langName.code || 'fa';
+    if (langName === 'en' || langName === 'English') return 'en';
+    if (langName === 'fa' || langName === 'فارسی' || langName === 'Farsi' || langName === 'Persian') return 'fa';
+    if (langName === 'ar' || langName === 'العربية' || langName === 'Arabic') return 'ar';
+    if (langName === 'tr' || langName === 'Türkçe' || langName === 'Turkish') return 'tr';
+    if (langName === 'ru' || langName === 'Русский' || langName === 'Russian') return 'ru';
+    return langName || 'fa';
+  }, []);
+
+  const currentLangObj = useMemo(() => {
+    return APP_LANGUAGES.find(l => l.code === currentAppLang || l.name === currentAppLang) || APP_LANGUAGES[0];
+  }, [currentAppLang]);
+  const langCode = currentLangObj.code;
+  const isRtl = currentLangObj.dir === 'rtl';
+
+  const t = useCallback((key, fallback = '') => {
+    return I18N_DICTIONARY[langCode]?.[key] || I18N_DICTIONARY['fa']?.[key] || I18N_DICTIONARY['en']?.[key] || fallback || key;
+  }, [langCode]);
+
+  const handleSelectLanguage = useCallback(lang => {
+    const code = getLangCode(lang);
+    setCurrentAppLang(code);
+    safeStorage.setItem('vlive_app_lang', code);
+    setIsLanguageModalOpen(false);
+    const selectedObj = APP_LANGUAGES.find(l => l.code === code || l.name === code) || {
+      dir: code === 'fa' || code === 'ar' ? 'rtl' : 'ltr',
+      name: code,
+      flag: '🌐'
+    };
+    if (typeof document !== 'undefined') {
+      document.documentElement.dir = selectedObj.dir === 'rtl' ? 'rtl' : 'ltr';
+      document.documentElement.lang = code;
+    }
+    if (typeof window !== 'undefined') {
+      window.loc = (faStr, enStr) => {
+        if (code === 'fa' || code === 'ar') {
+          return faStr || enStr || '';
+        }
+        return enStr || faStr || '';
+      };
+    }
+    showToast(`${t('changeLangSuccess', 'App language changed to')} ${selectedObj.flag || ''} ${selectedObj.name || code}`);
+  }, [getLangCode, t, showToast]);
+
   // Current User State
   const [userName, setUserName] = useState(() => {
     return safeStorage.getItem('vlive_user_name') || loc('کاربر VIP', 'VIP user');
@@ -209,7 +270,6 @@ export default function App() {
   const [userFilter, setUserFilter] = useState('all');
   const [homeSubTab, setHomeSubTab] = useState('explore'); // 'explore' or 'live'
 
-  const [toastMessage, setToastMessage] = useState(null);
   const [earningsTimeframe, setEarningsTimeframe] = useState('daily');
   const [paidVoiceRate, setPaidVoiceRate] = useState(5);
   const [paidVideoRate, setPaidVideoRate] = useState(10);
@@ -683,13 +743,6 @@ export default function App() {
     return safeStorage.getItem('vlive_app_animations') !== 'false';
   });
 
-  // Sync Theme Mode to LocalStorage and Document
-
-  // 6. Language & Real-time Translation System
-  const [currentAppLang, setCurrentAppLang] = useState(() => {
-    return safeStorage.getItem('vlive_app_lang') || 'en';
-  });
-  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
   // 13. System Permissions Prompt State & Persistence
   const [isPermissionsPromptOpen, setIsPermissionsPromptOpen] = useState(() => {
     return safeStorage.getItem('vlive_permissions_prompted') !== 'true';
@@ -1037,16 +1090,13 @@ export default function App() {
   // Streams Data
   const [streamsList, setStreamsList] = useState([]);
 
-  // Telegram WebApp Auto Ready & One-Touch Authentication (ورود کاملا خودکار با تلگرام)
+  // Terms Acceptance Handler
+  const handleAcceptTerms = useCallback(() => {
+    setIsTermsAccepted(true);
+    safeStorage.setItem('vlive_terms_accepted', 'true');
+    showToast('V.Live+ Terms & Regulations accepted');
+  }, [showToast]);
 
-  const showToast = msg => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3500);
-  };
-
-  // Private Call Timer Effect
   // SINGLE SOURCE OF TRUTH FOR CURRENT USER IDENTITY
   const currentUser = useMemo(() => {
     if (!isLoggedIn) return null;
@@ -1096,67 +1146,6 @@ export default function App() {
   }, [usersList, userFilter]);
 
   // Calculate Host Earnings Metrics (71% payout rate to hosts = 1% higher than other platforms)
-
-  // 14. LANGUAGE TRANSLATION & I18N SYSTEM (Declared above conditional views)
-  const loc = useCallback((faStr, enStr) => {
-    if (currentAppLang === 'fa' || currentAppLang === 'ar') {
-      return faStr || enStr || '';
-    }
-    return enStr || faStr || '';
-  }, [currentAppLang]);
-
-  const getLangCode = useCallback(langName => {
-    if (!langName) return 'fa';
-    if (typeof langName === 'object') return langName.code || 'fa';
-    if (langName === 'en' || langName === 'English') return 'en';
-    if (langName === 'fa' || langName === 'فارسی' || langName === 'Farsi' || langName === 'Persian') return 'fa';
-    if (langName === 'ar' || langName === 'العربية' || langName === 'Arabic') return 'ar';
-    if (langName === 'tr' || langName === 'Türkçe' || langName === 'Turkish') return 'tr';
-    if (langName === 'ru' || langName === 'Русский' || langName === 'Russian') return 'ru';
-    return langName || 'fa';
-  }, []);
-
-  const currentLangObj = useMemo(() => {
-    return APP_LANGUAGES.find(l => l.code === currentAppLang || l.name === currentAppLang) || APP_LANGUAGES[0];
-  }, [currentAppLang]);
-  const langCode = currentLangObj.code;
-  const isRtl = currentLangObj.dir === 'rtl';
-
-  const t = useCallback((key, fallback = '') => {
-    return I18N_DICTIONARY[langCode]?.[key] || I18N_DICTIONARY['fa']?.[key] || I18N_DICTIONARY['en']?.[key] || fallback || key;
-  }, [langCode]);
-
-  const handleSelectLanguage = useCallback(lang => {
-    const code = getLangCode(lang);
-    setCurrentAppLang(code);
-    safeStorage.setItem('vlive_app_lang', code);
-    setIsLanguageModalOpen(false);
-    const selectedObj = APP_LANGUAGES.find(l => l.code === code || l.name === code) || {
-      dir: code === 'fa' || code === 'ar' ? 'rtl' : 'ltr',
-      name: code,
-      flag: '🌐'
-    };
-    if (typeof document !== 'undefined') {
-      document.documentElement.dir = selectedObj.dir === 'rtl' ? 'rtl' : 'ltr';
-      document.documentElement.lang = code;
-    }
-    if (typeof window !== 'undefined') {
-      window.loc = (faStr, enStr) => {
-        if (code === 'fa' || code === 'ar') {
-          return faStr || enStr || '';
-        }
-        return enStr || faStr || '';
-      };
-    }
-    showToast(`${t('changeLangSuccess', 'App language changed to')} ${selectedObj.flag || ''} ${selectedObj.name || code}`);
-  }, [getLangCode, t]);
-
-  // Terms Acceptance Handler
-  const handleAcceptTerms = useCallback(() => {
-    setIsTermsAccepted(true);
-    safeStorage.setItem('vlive_terms_accepted', 'true');
-    showToast('V.Live+ Terms & Regulations accepted');
-  }, []);
 
   // MODAL: TERMS & CONDITIONS AGREEMENT
   if (!isTermsAccepted) {
@@ -1572,36 +1561,6 @@ export default function App() {
       showToast(`🎲 Discovery: Found @${matchDeckProfiles[randomIndex]?.name || matchDeckProfiles[randomIndex]?.username}!`);
     }
   };
-  const handleTouchStart = e => {
-    setIsSwipeDragging(true);
-    swipeStartPos.current = {
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY
-    };
-  };
-  const handleTouchMove = e => {
-    if (!isSwipeDragging) return;
-    const deltaX = e.touches[0].clientX - swipeStartPos.current.x;
-    const deltaY = e.touches[0].clientY - swipeStartPos.current.y;
-    setSwipeDragPos({
-      x: deltaX,
-      y: deltaY
-    });
-  };
-  const handleTouchEnd = () => {
-    if (!isSwipeDragging) return;
-    setIsSwipeDragging(false);
-    if (swipeDragPos.x > 100) {
-      triggerMatchAction('like');
-    } else if (swipeDragPos.x < -100) {
-      triggerMatchAction('reject');
-    } else {
-      setSwipeDragPos({
-        x: 0,
-        y: 0
-      });
-    }
-  };
   const triggerMatchAction = actionType => {
     setMatchAnimationEffect(actionType);
     const currentProfile = matchDeckProfiles[matchCardIndex];
@@ -1642,6 +1601,36 @@ export default function App() {
       setMatchCardIndex(randomIndex);
       showToast(loc('🎲 کاربر تصادفی انتخاب شد!', '🎲 Random match discovered!'));
       setMatchAnimationEffect(null);
+      setSwipeDragPos({
+        x: 0,
+        y: 0
+      });
+    }
+  };
+  const handleTouchStart = e => {
+    setIsSwipeDragging(true);
+    swipeStartPos.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    };
+  };
+  const handleTouchMove = e => {
+    if (!isSwipeDragging) return;
+    const deltaX = e.touches[0].clientX - swipeStartPos.current.x;
+    const deltaY = e.touches[0].clientY - swipeStartPos.current.y;
+    setSwipeDragPos({
+      x: deltaX,
+      y: deltaY
+    });
+  };
+  const handleTouchEnd = () => {
+    if (!isSwipeDragging) return;
+    setIsSwipeDragging(false);
+    if (swipeDragPos.x > 100) {
+      triggerMatchAction('like');
+    } else if (swipeDragPos.x < -100) {
+      triggerMatchAction('reject');
+    } else {
       setSwipeDragPos({
         x: 0,
         y: 0
