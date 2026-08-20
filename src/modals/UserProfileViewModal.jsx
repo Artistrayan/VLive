@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { isUserAnAdmin } from '../utils/usernameUtils';
 import { 
   X, Heart, MessageSquare, PhoneCall, Video, Gift, Share2, ShieldAlert,
@@ -28,11 +28,11 @@ export default function UserProfileViewModal({
   const isAdminUser = currentUser?.role === 'admin' && String(currentUser?.telegram_id || '').trim() === '8933698119';
 
   // --- STATE FOR INTERACTION ---
-  const [isFollowing, setIsFollowing] = useState(user?.isFollowing || user.followed || false);
+  const [isFollowing, setIsFollowing] = useState(user?.isFollowing || user?.followed || false);
   const [isLiked, setIsLiked] = useState(user?.isLiked || false);
   const [isSuperLiked, setIsSuperLiked] = useState(user?.isSuperLiked || false);
-  const [likesCount, setLikesCount] = useState(user?.likes || user.likesCount || 0);
-  const [followersCount, setFollowersCount] = useState(user?.followers || user.followersCount || 0);
+  const [likesCount, setLikesCount] = useState(user?.likes || user?.likesCount || 0);
+  const [followersCount, setFollowersCount] = useState(user?.followers || user?.followersCount || 0);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'media' | 'lives' | 'about'
   
   // Report Modal State
@@ -42,24 +42,40 @@ export default function UserProfileViewModal({
 
   // Admin Actions State
   const [isBanned, setIsBanned] = useState(user?.isBanned || false);
-  const [isVerified, setIsVerified] = useState(user?.isVerified || user.verified || false);
-  const [isStreamer, setIsStreamer] = useState(user?.isStreamer || user.is_streamer || user.isHost || false);
+  const [isVerified, setIsVerified] = useState(user?.isVerified || user?.verified || false);
+  const [isStreamer, setIsStreamer] = useState(user?.isStreamer || user?.is_streamer || user?.isHost || false);
   const [adminNote, setAdminNote] = useState('');
 
-  const userName = user.name || user.fullName || user.hostName || 'User';
-  const username = user.username || user.host || user.id || 'user_vlive';
-  const avatar = user.avatar || user.thumbnail || '';
-  const cover = user.cover || '';
-  const age = user.age || '';
-  const city = user.city || user.location || '';
-  const bio = user.bio || user.description || '';
-  const isOnline = Boolean(user.online || user.isOnline);
-  const isVip = user.isVip || user.is_vip || user.vip || false;
-  const matchScore = user.matchScore || '';
-  const distance = user.distance || '';
+  // Sync states whenever a new user object is passed
+  useEffect(() => {
+    if (user) {
+      setIsFollowing(Boolean(user.isFollowing || user.followed));
+      setIsLiked(Boolean(user.isLiked));
+      setIsSuperLiked(Boolean(user.isSuperLiked));
+      setLikesCount(user.likes || user.likesCount || 0);
+      setFollowersCount(user.followers || user.followersCount || 0);
+      setIsBanned(Boolean(user.isBanned));
+      setIsVerified(Boolean(user.isVerified || user.verified));
+      setIsStreamer(Boolean(user.isStreamer || user.is_streamer || user.isHost));
+    }
+  }, [user]);
+
+  if (!isOpen || !user) return null;
+
+  const userName = user?.name || user?.fullName || user?.hostName || 'User';
+  const username = user?.username || user?.host || user?.id || 'user_vlive';
+  const avatar = user?.avatar || user?.thumbnail || '';
+  const cover = user?.cover || '';
+  const age = user?.age || '';
+  const city = user?.city || user?.location || '';
+  const bio = user?.bio || user?.description || '';
+  const isOnline = Boolean(user?.online || user?.isOnline);
+  const isVip = user?.isVip || user?.is_vip || user?.vip || false;
+  const matchScore = user?.matchScore || '';
+  const distance = user?.distance || '';
 
   // Sample User Media
-  const publicPhotos = user.photos || [];
+  const publicPhotos = user?.photos || [];
 
   const toggleFollow = () => {
     const nextState = !isFollowing;
@@ -82,7 +98,7 @@ export default function UserProfileViewModal({
   };
 
   const submitReport = () => {
-    onReportUser(user.id || username, reportReason, reportNotes);
+    onReportUser(user?.id || username, reportReason, reportNotes);
     setIsReportModalOpen(false);
     setReportNotes('');
     showToast(window.loc('🚩 گزارش تخلف با موفقیت ثبت شد و بررسی خواهد شد', '🚩 Violation report has been successfully registered and will be reviewed'));
@@ -91,25 +107,23 @@ export default function UserProfileViewModal({
   const handleAdminBanToggle = () => {
     const nextState = !isBanned;
     setIsBanned(nextState);
-    onAdminAction('ban', { userId: user.id, username, isBanned: nextState });
+    onAdminAction('ban', { userId: user?.id, username, isBanned: nextState });
     showToast(nextState ? window.loc(`🚫 کاربر ${userName} مسدود شد`, `🚫 کاربر ${userName} مسدود شد`) : window.loc('عملیات لغو شد', 'Action cancelled'));
   };
 
   const handleAdminVerifyToggle = () => {
     const nextState = !isVerified;
     setIsVerified(nextState);
-    onAdminAction('verify', { userId: user.id, username, isVerified: nextState });
+    onAdminAction('verify', { userId: user?.id, username, isVerified: nextState });
     showToast(nextState ? window.loc(`✅ نشان تایید برای ${userName} فعال شد`, `✅ نشان تایید برای ${userName} فعال شد`) : window.loc('عملیات لغو شد', 'Action cancelled'));
   };
 
   const handleAdminStreamerToggle = () => {
     const nextState = !isStreamer;
     setIsStreamer(nextState);
-    onAdminAction('streamer', { userId: user.id, username, isStreamer: nextState });
+    onAdminAction('streamer', { userId: user?.id, username, isStreamer: nextState });
     showToast(nextState ? window.loc(`🎥 مقام استریمر به ${userName} اعطا شد`, `🎥 مقام استریمر به ${userName} اعطا شد`) : window.loc('عملیات لغو شد', 'Action cancelled'));
   };
-
-  if (!isOpen || !user) return null;
 
   return (
     <div className="fixed inset-0 z-[70] bg-slate-950/90 backdrop-blur-xl flex flex-col justify-end sm:justify-center p-0 sm:p-4 overflow-y-auto animate-fadeIn dir-ltr">
