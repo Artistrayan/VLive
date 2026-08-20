@@ -63,9 +63,7 @@ export default function LiveStudioModal({
   const [skinTonePreset, setSkinTonePreset] = useState('natural'); // 'natural' | 'fair' | 'warm' | 'bronze' | 'porcelain'
   const [eyeEnlarge, setEyeEnlarge] = useState(40); // 0 - 100
   const [slimmingLevel, setSlimmingLevel] = useState(30); // 0 - 100
-  const [hairColorEffect, setHairColorEffect] = useState('none'); // 'none' | 'blonde' | 'pink' | 'purple' | 'cyan' | 'fire'
   const [faceSticker, setFaceSticker] = useState('none'); // 'none' | 'cat_ears' | 'crown' | 'sparkles' | 'sunglasses' | 'hearts'
-  const [lipShade, setLipShade] = useState('none'); // 'none' | 'ruby' | 'coral' | 'plum' | 'nude'
   const [lightingEffect, setLightingEffect] = useState('none'); // 'none' | 'studio' | 'warm' | 'cool' | 'neon' | 'sunset'
   const [networkQuality, setNetworkQuality] = useState('EXCELLENT'); // 'EXCELLENT' | 'GOOD' | 'POOR'
   const [estimatedBitrate, setEstimatedBitrate] = useState(4500); // kbps
@@ -744,12 +742,10 @@ export default function LiveStudioModal({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40 pointer-events-none" />
 
-                  {/* Real-time AI Face, Hair & Makeup AR Overlay */}
+                  {/* Real-time AI Face & AR Overlay */}
                   <AiFaceEffectOverlay
                     videoRef={previewVideoRef}
                     isMirrored={isMirrored}
-                    hairColorEffect={hairColorEffect}
-                    lipShade={lipShade}
                     faceSticker={faceSticker}
                     lightingEffect={lightingEffect}
                     skinSmoothing={skinSmoothing}
@@ -1085,12 +1081,10 @@ export default function LiveStudioModal({
                   className={`w-full h-full object-cover transition-all duration-300 ${isMirrored ? 'scale-x-[-1]' : ''}`}
                 />
 
-                {/* Real-time AI Face, Hair & Makeup AR Overlay with Facial Tracking */}
+                {/* Real-time AI Face & AR Overlay with Facial Tracking */}
                 <AiFaceEffectOverlay
                   videoRef={liveVideoRef}
                   isMirrored={isMirrored}
-                  hairColorEffect={hairColorEffect}
-                  lipShade={lipShade}
                   faceSticker={faceSticker}
                   lightingEffect={lightingEffect}
                   skinSmoothing={skinSmoothing}
@@ -1516,32 +1510,6 @@ export default function LiveStudioModal({
                     />
                   </div>
 
-                  {/* Hair Color AR Tint */}
-                  <div className="space-y-1.5 bg-slate-900/80 p-2.5 rounded-2xl border border-slate-800">
-                    <span className="text-xs font-bold text-slate-200">{window.loc('رنگ موی واقعیت افزوده (AR Hair Color)', 'AR Hair Color')}</span>
-                    <div className="grid grid-cols-6 gap-1.5 pt-1">
-                      {[
-                        { id: 'none', label: 'طبیعی', color: '#64748b' },
-                        { id: 'blonde', label: 'بلوند', color: '#eab308' },
-                        { id: 'pink', label: 'صورتی', color: '#ec4899' },
-                        { id: 'purple', label: 'بنفش', color: '#a855f7' },
-                        { id: 'cyan', label: 'آبی نئون', color: '#06b6d4' },
-                        { id: 'fire', label: 'آتشی', color: '#f97316' },
-                      ].map(h => (
-                        <button
-                          key={h.id}
-                          onClick={() => setHairColorEffect(h.id)}
-                          className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
-                            hairColorEffect === h.id ? 'border-pink-400 bg-pink-950/50 scale-105 shadow-md' : 'border-slate-800 bg-slate-950/50 hover:bg-slate-900'
-                          }`}
-                        >
-                          <span className="w-4 h-4 rounded-full border border-white/20 shadow-inner" style={{ backgroundColor: h.color }} />
-                          <span className="text-[8px] font-bold text-slate-300 truncate w-full text-center">{h.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   {/* Face AR Stickers & Accessories */}
                   <div className="space-y-1.5 bg-slate-900/80 p-2.5 rounded-2xl border border-slate-800">
                     <span className="text-xs font-bold text-slate-200">{window.loc('افکت‌های سه‌بعدی و استیکر چهره (AR Stickers)', 'AR Stickers & Face Accessories')}</span>
@@ -1563,31 +1531,6 @@ export default function LiveStudioModal({
                         >
                           <span className="text-base">{s.icon}</span>
                           <span className="text-[8px] font-bold text-slate-300 truncate w-full text-center">{s.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Virtual Lip Tint */}
-                  <div className="space-y-1.5 bg-slate-900/80 p-2.5 rounded-2xl border border-slate-800">
-                    <span className="text-xs font-bold text-slate-200">{window.loc('رژ لب هوشمند (Smart Lip Tint)', 'Smart Lip Tint')}</span>
-                    <div className="grid grid-cols-5 gap-1.5 pt-1">
-                      {[
-                        { id: 'none', label: 'خاموش', color: '#475569' },
-                        { id: 'ruby', label: 'قرمز یاقوتی', color: '#e11d48' },
-                        { id: 'coral', label: 'مرجانی', color: '#fb7185' },
-                        { id: 'plum', label: 'تمشکی', color: '#9333ea' },
-                        { id: 'nude', label: 'کالباسی', color: '#ea580c' },
-                      ].map(l => (
-                        <button
-                          key={l.id}
-                          onClick={() => setLipShade(l.id)}
-                          className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
-                            lipShade === l.id ? 'border-rose-400 bg-rose-950/50 scale-105 shadow-md' : 'border-slate-800 bg-slate-950/50 hover:bg-slate-900'
-                          }`}
-                        >
-                          <span className="w-3.5 h-3.5 rounded-full border border-white/20" style={{ backgroundColor: l.color }} />
-                          <span className="text-[8px] font-bold text-slate-300 truncate w-full text-center">{l.label}</span>
                         </button>
                       ))}
                     </div>

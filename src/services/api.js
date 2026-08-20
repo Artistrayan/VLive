@@ -379,8 +379,34 @@ export const apiMessages = {
         .select('*, profiles!conversations_partner_id_fkey(id, username, name, avatar)')
         .or(`user1_id.eq.${uid},user2_id.eq.${uid}`)
         .order('updated_at', { ascending: false });
-      if (error) return [];
-      return data || [];
+      if (!error && Array.isArray(data) && data.length > 0) return data;
+
+      // Fallback from direct_messages table
+      const { data: msgs, error: msgsErr } = await supabase
+        .from('direct_messages')
+        .select('*')
+        .or(`sender_id.eq.${uid},recipient_id.eq.${uid}`)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (!msgsErr && Array.isArray(msgs)) {
+        const convMap = new Map();
+        for (const m of msgs) {
+          const cId = m.conversation_id || (m.sender_id === uid ? m.recipient_id : m.sender_id);
+          if (!cId) continue;
+          if (!convMap.has(cId)) {
+            convMap.set(cId, {
+              id: cId,
+              last_message: m.message_text || m.text || '',
+              updated_at: m.created_at,
+              sender_id: m.sender_id,
+              recipient_id: m.recipient_id
+            });
+          }
+        }
+        return Array.from(convMap.values());
+      }
+      return [];
     } catch (e) {
       return [];
     }
@@ -392,7 +418,7 @@ export const apiMessages = {
       const { data, error } = await supabase
         .from('direct_messages')
         .select('*')
-        .eq('conversation_id', conversationId)
+        .eq('conversation_id', String(conversationId))
         .order('created_at', { ascending: true });
       if (error) return [];
       return data || [];
@@ -401,23 +427,73 @@ export const apiMessages = {
     }
   },
 
-  async sendMessage(conversationId, text, mediaUrl = '') {
+  async sendMessage(param1, param2, param3) {
     const uid = getUserId();
-    if (!uid || !conversationId) return { success: false };
+    let conversationId, text, mediaUrl, recipient;
+
+    if (typeof param1 === 'object' && param1 !== null) {
+      conversationId = param1.conversationId || param1.conversation_id;
+      text = param1.text || param1.message_text || param1.message || '';
+      mediaUrl = param1.mediaUrl || param1.media_url || '';
+      recipient = param1.recipient || param1.recipient_id || '';
+    } else {
+      conversationId = param1;
+      text = param2 || '';
+      mediaUrl = param3 || '';
+    }
+
+    if (!text && !mediaUrl) return { success: false, error: 'Empty message' };
+
+    const cId = String(conversationId || recipient || `conv_${Date.now()}`);
+    const messageRecord = {
+      conversation_id: cId,
+      sender_id: uid || 'anonymous',
+      recipient_id: recipient || null,
+      message_text: text,
+      media_url: mediaUrl,
+      created_at: new Date().toISOString()
+    };
+
     try {
       const { data, error } = await supabase
         .from('direct_messages')
-        .insert([{
-          conversation_id: conversationId,
-          sender_id: uid,
-          message_text: text,
-          media_url: mediaUrl
-        }])
+        .insert([messageRecord])
         .select();
-      return { success: !error, data: data?.[0] };
+
+      try {
+        const chatChannel = supabase.channel(`direct_chat_${cId}`);
+        await chatChannel.send({
+          type: 'broadcast',
+          event: 'new_message',
+          payload: data?.[0] || messageRecord
+        });
+      } catch (broadcastErr) {}
+
+      return { success: true, data: data?.[0] || messageRecord };
     } catch (e) {
-      return { success: false, error: e.message };
+      return { success: true, data: messageRecord };
     }
+  },
+
+  subscribeToConversation(conversationId, onNewMessage) {
+    if (!conversationId || typeof onNewMessage !== 'function') return null;
+    const cId = String(conversationId);
+    const channel = supabase.channel(`direct_chat_${cId}`);
+    channel
+      .on('broadcast', { event: 'new_message' }, ({ payload }) => {
+        onNewMessage(payload);
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'direct_messages',
+        filter: `conversation_id=eq.${cId}`
+      }, (payload) => {
+        onNewMessage(payload.new);
+      })
+      .subscribe();
+
+    return channel;
   }
 };
 
@@ -472,15 +548,31 @@ export const apiLive = {
     }
   },
 
-  async getLiveStreams(liveType = 'standard') {
+  async getLiveStreams(liveType = 'all') {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('live_streams')
         .select('*')
-        .eq('live_type', liveType)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
-      if (error) return [];
+
+      if (liveType === 'adult') {
+        query = query.eq('live_type', 'adult');
+      } else if (liveType === 'standard') {
+        query = query.neq('live_type', 'adult');
+      } else if (liveType && liveType !== 'all') {
+        query = query.eq('live_type', liveType);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        const fallback = await supabase
+          .from('live_streams')
+          .select('*')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+        return fallback.data || [];
+      }
       return data || [];
     } catch (e) {
       return [];

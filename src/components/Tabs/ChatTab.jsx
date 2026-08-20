@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { VerifiedBadge } from '../CommonBadges';
+import { apiMessages, getUserId } from '../../services/api';
 import { 
   Search, Plus, Filter, MessageSquare, PhoneCall, Video, Pin, BellOff, Trash2, 
   CheckCheck, Send, Mic, Image, Paperclip, Smile, Gift, Sparkles, X, ChevronRight,
@@ -61,12 +62,121 @@ export default function ChatTab(props) {
   const [showEmojiPicker, setShowEmojiPicker] = React.useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = React.useState(false);
   const [audioRecordingSeconds] = React.useState(0);
-  const handleSendDirectMessage = props.handleSendDirectMessage || (() => {
-    if (directInputText.trim()) {
-      showToast('Message sent');
-      setDirectInputText('');
+
+  // Sync real messages from Supabase when opening a conversation
+  useEffect(() => {
+    if (!activeConversationId) return;
+
+    let isMounted = true;
+    const loadRealMessages = async () => {
+      try {
+        const msgs = await apiMessages.getMessages(activeConversationId);
+        if (isMounted && Array.isArray(msgs) && msgs.length > 0) {
+          const currentUid = getUserId();
+          const formatted = msgs.map(m => ({
+            id: m.id || `msg_${Date.now()}_${Math.random()}`,
+            sender: m.sender_id === currentUid ? 'me' : 'them',
+            text: m.message_text || m.text || '',
+            mediaUrl: m.media_url || '',
+            time: m.created_at ? new Date(m.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Now',
+            raw: m
+          }));
+
+          setConversations(prev => prev.map(c => {
+            if (c.id === activeConversationId) {
+              return {
+                ...c,
+                messages: formatted,
+                lastMessage: formatted[formatted.length - 1]?.text || c.lastMessage
+              };
+            }
+            return c;
+          }));
+        }
+      } catch (err) {
+        console.warn('loadRealMessages error:', err);
+      }
+    };
+
+    loadRealMessages();
+
+    // Subscribe to realtime incoming messages for active conversation
+    const channel = apiMessages.subscribeToConversation(activeConversationId, (newMsgRecord) => {
+      if (!isMounted || !newMsgRecord) return;
+      const currentUid = getUserId();
+      const isMe = newMsgRecord.sender_id === currentUid;
+      if (isMe) return; // already added optimistically
+
+      const incomingFormatted = {
+        id: newMsgRecord.id || `msg_${Date.now()}`,
+        sender: 'them',
+        text: newMsgRecord.message_text || newMsgRecord.text || '',
+        mediaUrl: newMsgRecord.media_url || '',
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setConversations(prev => prev.map(c => {
+        if (c.id === activeConversationId) {
+          return {
+            ...c,
+            lastMessage: incomingFormatted.text,
+            lastTime: incomingFormatted.time,
+            messages: [...(c.messages || []), incomingFormatted]
+          };
+        }
+        return c;
+      }));
+    });
+
+    return () => {
+      isMounted = false;
+      if (channel) channel.unsubscribe();
+    };
+  }, [activeConversationId]);
+
+  // Real message send handler
+  const handleSendDirectMessage = async (customText) => {
+    const textToSend = typeof customText === 'string' ? customText.trim() : directInputText.trim();
+    if (!textToSend || !activeConversationId) return;
+
+    const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const localMsg = {
+      id: Date.now(),
+      sender: 'me',
+      text: textToSend,
+      time: nowTime
+    };
+
+    // 1. Optimistic UI update
+    setConversations(prev => prev.map(c => {
+      if (c.id === activeConversationId) {
+        return {
+          ...c,
+          lastMessage: textToSend,
+          lastTime: nowTime,
+          messages: [...(c.messages || []), localMsg]
+        };
+      }
+      return c;
+    }));
+
+    setDirectInputText('');
+
+    // 2. Real API send to Supabase & Realtime broadcast
+    try {
+      const activeConv = conversations?.find(c => c.id === activeConversationId);
+      const res = await apiMessages.sendMessage({
+        conversationId: activeConversationId,
+        recipient: activeConv?.user?.id || activeConv?.user?.username || activeConv?.partner_id,
+        text: textToSend
+      });
+      if (res.success) {
+        showToast(window.loc('پیام ارسال شد ✅', 'Message sent ✅'));
+      }
+    } catch (err) {
+      console.warn('Real direct message send exception:', err);
     }
-  });
+  };
 
 
   if (activeTab !== 'messages') return null;

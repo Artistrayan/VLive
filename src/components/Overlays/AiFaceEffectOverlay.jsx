@@ -13,8 +13,6 @@ import { AiFaceTracker } from '../../services/aiFaceTracker';
 export default function AiFaceEffectOverlay({
   videoRef,
   isMirrored = true,
-  hairColorEffect = 'none',
-  lipShade = 'none',
   faceSticker = 'none',
   lightingEffect = 'none',
   skinSmoothing = 0,
@@ -95,90 +93,7 @@ export default function AiFaceEffectOverlay({
           }
 
           // -------------------------------------------------------------
-          // 1. AI HAIR COLOR EFFECT (Targeted Hair & Crown Region Only)
-          // -------------------------------------------------------------
-          if (isFacePresent && landmarks?.hairRegion && hairColorEffect && hairColorEffect !== 'none') {
-            const hr = landmarks.hairRegion;
-            const hx = mapX(hr.x);
-            const hy = mapY(hr.y);
-            const hrx = Math.max(25, hr.rx * drawW * 0.85);
-            const hry = Math.max(20, hr.ry * drawH * 0.70);
-
-            ctx.save();
-            ctx.globalCompositeOperation = 'color'; // Softly blends color into natural hair texture
-            ctx.filter = 'blur(12px)';
-
-            const hairGrad = ctx.createRadialGradient(hx, hy, 5, hx, hy, hrx);
-
-            let primaryColor = 'rgba(234, 179, 8, 0.70)'; // blonde
-            let secondaryColor = 'rgba(161, 98, 7, 0.25)';
-
-            if (hairColorEffect === 'pink') {
-              primaryColor = 'rgba(244, 114, 182, 0.80)';
-              secondaryColor = 'rgba(219, 39, 119, 0.30)';
-            } else if (hairColorEffect === 'purple') {
-              primaryColor = 'rgba(192, 132, 252, 0.80)';
-              secondaryColor = 'rgba(126, 34, 206, 0.30)';
-            } else if (hairColorEffect === 'cyan') {
-              primaryColor = 'rgba(56, 189, 248, 0.80)';
-              secondaryColor = 'rgba(2, 132, 199, 0.30)';
-            } else if (hairColorEffect === 'fire') {
-              primaryColor = 'rgba(251, 146, 60, 0.80)';
-              secondaryColor = 'rgba(220, 38, 38, 0.30)';
-            }
-
-            hairGrad.addColorStop(0, primaryColor);
-            hairGrad.addColorStop(0.6, secondaryColor);
-            hairGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-            ctx.fillStyle = hairGrad;
-            ctx.beginPath();
-            ctx.ellipse(hx, hy, hrx, hry, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.restore();
-          }
-
-          // -------------------------------------------------------------
-          // 2. AI SMART LIP TINT (Accurately Clamped to Mouth Landmarks)
-          // -------------------------------------------------------------
-          if (isFacePresent && landmarks?.mouth && lipShade && lipShade !== 'none') {
-            const m = landmarks.mouth;
-            const mx = mapX(m.x);
-            const my = mapY(m.y);
-            const mw = Math.max(12, m.width * drawW * 0.42);
-            const mh = Math.max(6, m.height * drawH * 0.32);
-
-            ctx.save();
-            ctx.globalCompositeOperation = 'multiply'; // Natural lipstick texture
-            ctx.filter = 'blur(2px)';
-
-            let lipColor = 'rgba(225, 29, 72, 0.70)'; // ruby
-            if (lipShade === 'coral') lipColor = 'rgba(251, 113, 133, 0.65)';
-            else if (lipShade === 'plum') lipColor = 'rgba(147, 51, 234, 0.70)';
-            else if (lipShade === 'nude') lipColor = 'rgba(234, 88, 12, 0.60)';
-
-            ctx.fillStyle = lipColor;
-
-            // Draw upper and lower lip contour
-            ctx.beginPath();
-            ctx.ellipse(mx, my - mh * 0.15, mw * 0.48, mh * 0.38, 0, 0, Math.PI * 2);
-            ctx.ellipse(mx, my + mh * 0.15, mw * 0.52, mh * 0.44, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Lip Gloss Highlight
-            ctx.globalCompositeOperation = 'screen';
-            ctx.filter = 'blur(1px)';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
-            ctx.beginPath();
-            ctx.ellipse(mx, my + mh * 0.15, mw * 0.20, mh * 0.10, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.restore();
-          }
-
-          // -------------------------------------------------------------
-          // 3. AI AR FACE STICKERS & ACCESSORIES (Pinned to Face Tracking)
+          // 1. AI AR FACE STICKERS & ACCESSORIES (Pinned to Face Tracking)
           // -------------------------------------------------------------
           if (isFacePresent && landmarks && faceSticker && faceSticker !== 'none') {
             const fhX = mapX(landmarks.forehead?.x || 0.5);
@@ -299,7 +214,7 @@ export default function AiFaceEffectOverlay({
         cancelAnimationFrame(animFrameRef.current);
       }
     };
-  }, [videoRef, isMirrored, hairColorEffect, lipShade, faceSticker, lightingEffect, skinSmoothing]);
+  }, [videoRef, isMirrored, faceSticker, lightingEffect, skinSmoothing]);
 
   return (
     <canvas
