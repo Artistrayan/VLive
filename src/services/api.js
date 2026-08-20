@@ -1,4 +1,7 @@
 import { supabase } from '../supabaseClient';
+import { presenceService } from './presenceService';
+
+export { presenceService };
 
 export const setStoredToken = (token) => localStorage.setItem('vlive_token', token);
 export const setStoredSession = (session) => localStorage.setItem('vlive_session', JSON.stringify(session));
@@ -79,10 +82,13 @@ export const apiAuth = {
       avatar: user.avatar || user.avatarUrl,
       bio: user.bio,
       gender: user.gender,
-      city: user.city,
-      is_onboarded: true,
-      online: true,
-      last_seen: new Date().toISOString()
+      location: user.location || user.city || user.country,
+      language: user.language,
+      status: user.status || 'approved',
+      user_type: user.user_type || (user.is_streamer ? 'STREAMER' : 'REAL_USER'),
+      is_verified: user.is_verified,
+      is_vip: user.is_vip,
+      updated_at: new Date().toISOString()
     };
     Object.keys(safePayload).forEach(key => safePayload[key] === undefined && delete safePayload[key]);
     
@@ -339,18 +345,19 @@ export const apiHome = {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, username, avatar, bio, gender, is_verified, is_streamer, role, city, level, country, interests, is_onboarded, status, online, last_seen')
+        .select('*')
         .neq('status', 'banned')
         .order('created_at', { ascending: false });
       if (error) return [];
-      const now = new Date().getTime();
       return (data || []).map(u => {
-        const lastSeenTime = u.last_seen ? new Date(u.last_seen).getTime() : 0;
-        const isRecent = (now - lastSeenTime) < 5 * 60 * 1000; // active within last 5 minutes
-        const isOnline = Boolean(u.online || isRecent);
+        const isOnline = presenceService.isUserOnline(u);
         return {
           ...u,
-          online: isOnline
+          city: u.location || u.city || '',
+          is_streamer: u.user_type === 'STREAMER' || Boolean(u.is_streamer),
+          online: isOnline,
+          isOnline: isOnline,
+          last_seen: u.updated_at || u.created_at
         };
       });
     } catch (e) {
@@ -1011,13 +1018,15 @@ export const apiAdmin = {
   async getAllUsers() {
     try {
       const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-      const now = new Date().getTime();
       const processUsers = (list) => (list || []).map(u => {
-        const lastSeenTime = u.last_seen ? new Date(u.last_seen).getTime() : 0;
-        const isRecent = (now - lastSeenTime) < 5 * 60 * 1000;
+        const isOnline = presenceService.isUserOnline(u);
         return {
           ...u,
-          online: Boolean(u.online || isRecent)
+          city: u.location || u.city || '',
+          is_streamer: u.user_type === 'STREAMER' || Boolean(u.is_streamer),
+          online: isOnline,
+          isOnline: isOnline,
+          last_seen: u.updated_at || u.created_at
         };
       });
 

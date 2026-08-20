@@ -631,7 +631,7 @@ export default function ProfileTab(props) {
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <img src={u.avatar || u.userAvatar || ''} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
-                          {u.isOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-950 animate-pulse" />}
+                          {(u.isOnline || u.online) && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-950 animate-pulse" />}
                         </div>
                         <div>
                           <h4 className="font-bold text-white text-xs flex items-center gap-1.5">

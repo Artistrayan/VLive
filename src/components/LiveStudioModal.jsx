@@ -7,6 +7,7 @@ import {
   Cpu, BatteryCharging, Wifi, Play, Square, Award, Filter, ArrowRight, Share2, Info, Coins
 } from 'lucide-react';
 import { apiLive, apiAdmin } from '../services/api';
+import { LiveStreamRoomService } from '../services/liveStreamRoomService';
 import { livekitManager, fetchLiveKitToken } from '../services/livekitService';
 import LuxuryGiftOverlay from './Overlays/LuxuryGiftOverlay';
 import VipEntranceBanner from './Overlays/VipEntranceBanner';
@@ -57,8 +58,9 @@ export default function LiveStudioModal({
   const [isMicEnabled, setIsMicEnabled] = useState(true);
   const [isFlashOn, setIsFlashOn] = useState(false);
   const [isMirrored, setIsMirrored] = useState(true);
-  const [beautyFilter, setBeautyFilter] = useState('smooth'); // 'off' | 'smooth' | 'glow' | 'ultra' | 'rose' | 'bronze'
+  const [beautyFilter, setBeautyFilter] = useState('smooth'); // 'off' | 'smooth' | 'glow' | 'ultra' | 'rose' | 'bronze' | 'fair' | 'tan'
   const [skinSmoothing, setSkinSmoothing] = useState(50); // 0 - 100
+  const [skinTonePreset, setSkinTonePreset] = useState('natural'); // 'natural' | 'fair' | 'warm' | 'bronze' | 'porcelain'
   const [eyeEnlarge, setEyeEnlarge] = useState(40); // 0 - 100
   const [slimmingLevel, setSlimmingLevel] = useState(30); // 0 - 100
   const [hairColorEffect, setHairColorEffect] = useState('none'); // 'none' | 'blonde' | 'pink' | 'purple' | 'cyan' | 'fire'
@@ -120,6 +122,8 @@ export default function LiveStudioModal({
   const previewVideoRef = useRef(null);
   const liveVideoRef = useRef(null);
   const mediaStreamRef = useRef(null);
+  const roomServiceRef = useRef(null);
+  const [activeStreamRecord, setActiveStreamRecord] = useState(null);
 
   // Camera & Permission Verification States
   const [mediaStream, setMediaStream] = useState(null);
@@ -529,15 +533,62 @@ export default function LiveStudioModal({
       is_broadcaster_authorized: true
     };
 
+    let createdStream = newStreamObj;
     try {
       const res = await apiLive.createLiveStream(newStreamObj);
-      const createdStream = res.success ? res.data : newStreamObj;
+      if (res.success && res.data) {
+        createdStream = res.data;
+      }
       if (setStreamsList) setStreamsList(prev => [createdStream, ...prev]);
       if (setViewingStream) setViewingStream(createdStream);
     } catch (err) {
       console.warn('createLiveStream catch:', err);
       if (setStreamsList) setStreamsList(prev => [newStreamObj, ...prev]);
       if (setViewingStream) setViewingStream(newStreamObj);
+    }
+
+    setActiveStreamRecord(createdStream);
+
+    // Initialize real-time Supabase presence and room sync for live stats & interactions
+    try {
+      if (roomServiceRef.current) {
+        roomServiceRef.current.unsubscribe();
+      }
+      const roomService = new LiveStreamRoomService(createdStream.id, {
+        onViewerUpdate: (count) => {
+          setViewerCount(Math.max(1, count));
+        },
+        onLikeUpdate: (count, payload) => {
+          setLikeCount(prev => prev + (count || 1));
+          showToast?.(window.loc(`❤️ لایک دریافت شد!`, `❤️ Like received!`));
+        },
+        onGiftReceived: (giftData) => {
+          const coins = giftData.coins || 0;
+          setGiftCoinsEarned(prev => prev + coins);
+          if (setUserCoins) {
+            setUserCoins(prev => prev + coins);
+          }
+          setActiveLuxuryGift(giftData);
+          showToast?.(window.loc(`🎁 هدیه ${giftData.name || ''} (+${coins} سکه) دریافت شد!`, `🎁 Gift received!`));
+        },
+        onChatMessage: (chatData) => {
+          setChatMessages(prev => [...prev, {
+            id: Date.now() + Math.random(),
+            user: chatData.username || 'Viewer',
+            text: chatData.text,
+            isVip: chatData.isVip,
+            isHost: false
+          }]);
+        },
+        onFollowerGained: (followerData) => {
+          setFollowersGained(prev => prev + 1);
+          showToast?.(window.loc(`🌟 کاربر @${followerData.username || ''} شما را دنبال کرد!`, `🌟 User followed you!`));
+        }
+      });
+      roomService.subscribe(currentUser);
+      roomServiceRef.current = roomService;
+    } catch (roomErr) {
+      console.warn('Live room real-time sync warning:', roomErr);
     }
 
     setStudioPhase('LIVE');
@@ -560,6 +611,13 @@ export default function LiveStudioModal({
   const handleEndLiveStream = async () => {
     setIsEndConfirmOpen(false);
     try {
+      if (roomServiceRef.current) {
+        roomServiceRef.current.unsubscribe();
+        roomServiceRef.current = null;
+      }
+      if (activeStreamRecord?.id) {
+        await apiLive.endLiveStream(activeStreamRecord.id);
+      }
       await livekitManager.endLiveStream(livekitRoom);
     } catch (e) {
       console.warn('Error closing LiveKit room:', e);
@@ -588,6 +646,16 @@ export default function LiveStudioModal({
       isHost: true
     };
     setChatMessages(prev => [...prev, newMsg]);
+
+    // Broadcast to room
+    if (roomServiceRef.current) {
+      roomServiceRef.current.sendChatMessage({
+        username: currentUsername || 'Streamer (Host)',
+        text: filterRes.filteredText,
+        isHost: true
+      });
+    }
+
     setChatInput('');
   };
 
@@ -1404,6 +1472,31 @@ export default function LiveStudioModal({
               {activeTabDrawer === 'beauty' && (
                 <div className="space-y-4 max-h-72 overflow-y-auto custom-scrollbar p-1">
                   
+                  {/* Skin Tone Filter Preset */}
+                  <div className="space-y-1.5 bg-slate-900/80 p-2.5 rounded-2xl border border-slate-800">
+                    <span className="text-xs font-bold text-slate-200">{window.loc('تن و افکت رنگ پوست (Skin Tone & Filter)', 'Skin Tone & Filter')}</span>
+                    <div className="grid grid-cols-5 gap-1.5 pt-1">
+                      {[
+                        { id: 'off', label: 'طبیعی', color: '#94a3b8' },
+                        { id: 'smooth', label: 'صافی ابریشم', color: '#fbcfe8' },
+                        { id: 'glow', label: 'درخشان', color: '#fef08a' },
+                        { id: 'rose', label: 'گلگون', color: '#f43f5e' },
+                        { id: 'bronze', label: 'برنزه طلایی', color: '#b45309' },
+                      ].map(filter => (
+                        <button
+                          key={filter.id}
+                          onClick={() => setBeautyFilter(filter.id)}
+                          className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
+                            beautyFilter === filter.id ? 'border-pink-400 bg-pink-950/50 scale-105 shadow-md' : 'border-slate-800 bg-slate-950/50 hover:bg-slate-900'
+                          }`}
+                        >
+                          <span className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner" style={{ backgroundColor: filter.color }} />
+                          <span className="text-[8px] font-bold text-slate-300 truncate w-full text-center">{filter.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Skin Smoothing Slider */}
                   <div className="space-y-1.5 bg-slate-900/80 p-2.5 rounded-2xl border border-slate-800">
                     <div className="flex items-center justify-between text-xs font-bold">

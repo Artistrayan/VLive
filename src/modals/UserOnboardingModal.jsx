@@ -72,8 +72,6 @@ export default function UserOnboardingModal({
   onComplete,
   showToast
 }) {
-  if (!isOpen) return null;
-
   // Step state: 'BASE_INFO' -> 'FEMALE_PHOTO' -> 'FEMALE_SELFIE_POSE' -> 'FEMALE_STREAMER_OPTION'
   const [step, setStep] = useState('BASE_INFO');
 
@@ -366,6 +364,8 @@ export default function UserOnboardingModal({
     setIsSubmitting(false);
     onComplete(finalProfileData);
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-2xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn dir-rtl text-right font-sans">

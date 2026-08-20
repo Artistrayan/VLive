@@ -4,10 +4,11 @@ import { AiFaceTracker } from '../../services/aiFaceTracker';
 /**
  * AI Face Mesh & AR Effects Canvas Overlay
  * Accurately renders:
- *  1. Realistic Hair Color Tint ONLY on the detected hair & head crown contour (never floods screen)
- *  2. Smart Lip Tint ONLY when broadcaster's face & lips are actually detected (never stays static in empty space)
+ *  1. Realistic Hair Color Tint ONLY on the detected hair & head crown contour (never misplaced)
+ *  2. Smart Lip Tint ONLY when broadcaster's face & lips are actually detected (pinned accurately)
  *  3. Dynamic 3D Face Stickers (Cat Ears, Royal Crown, Sparkles, Sunglasses, Hearts) pinned to real detected landmarks
- *  4. Subtle Studio Lighting ambiance (only when explicitly selected)
+ *  4. Skin Smoothing & Facial Tone Enhancement
+ *  5. Subtle Studio Lighting ambiance (only when explicitly selected)
  */
 export default function AiFaceEffectOverlay({
   videoRef,
@@ -69,37 +70,61 @@ export default function AiFaceEffectOverlay({
           const mapY = (ny) => offsetY + (ny * drawH);
 
           // -------------------------------------------------------------
+          // 0. SKIN SMOOTHING & RETOUCH OVERLAY (Targeted on detected face)
+          // -------------------------------------------------------------
+          if (isFacePresent && skinSmoothing > 0 && landmarks?.leftCheek && landmarks?.rightCheek) {
+            const cX = mapX((landmarks.leftCheek.x + landmarks.rightCheek.x) * 0.5);
+            const cY = mapY((landmarks.forehead?.y || 0.2) + ((landmarks.chin?.y || 0.8) - (landmarks.forehead?.y || 0.2)) * 0.5);
+            const faceRadius = Math.max(30, Math.abs(mapX(landmarks.rightCheek.x) - mapX(landmarks.leftCheek.x)) * 0.85);
+
+            ctx.save();
+            ctx.globalCompositeOperation = 'soft-light';
+            ctx.filter = `blur(${Math.max(4, skinSmoothing * 0.15)}px)`;
+
+            const skinGlow = ctx.createRadialGradient(cX, cY, faceRadius * 0.2, cX, cY, faceRadius);
+            const alpha = Math.min(0.45, skinSmoothing * 0.005);
+            skinGlow.addColorStop(0, `rgba(255, 240, 230, ${alpha})`);
+            skinGlow.addColorStop(0.7, `rgba(255, 230, 220, ${alpha * 0.5})`);
+            skinGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+            ctx.fillStyle = skinGlow;
+            ctx.beginPath();
+            ctx.ellipse(cX, cY, faceRadius, faceRadius * 1.15, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+
+          // -------------------------------------------------------------
           // 1. AI HAIR COLOR EFFECT (Targeted Hair & Crown Region Only)
           // -------------------------------------------------------------
-          // ONLY render if face is physically detected in camera
           if (isFacePresent && landmarks?.hairRegion && hairColorEffect && hairColorEffect !== 'none') {
             const hr = landmarks.hairRegion;
             const hx = mapX(hr.x);
             const hy = mapY(hr.y);
-            const hrx = Math.max(20, hr.rx * dW * 0.9);
-            const hry = Math.max(15, hr.ry * dH * 0.75);
+            const hrx = Math.max(25, hr.rx * drawW * 0.85);
+            const hry = Math.max(20, hr.ry * drawH * 0.70);
 
             ctx.save();
             ctx.globalCompositeOperation = 'color'; // Softly blends color into natural hair texture
-            ctx.filter = 'blur(10px)';
+            ctx.filter = 'blur(12px)';
 
             const hairGrad = ctx.createRadialGradient(hx, hy, 5, hx, hy, hrx);
 
-            let primaryColor = 'rgba(234, 179, 8, 0.65)'; // blonde
+            let primaryColor = 'rgba(234, 179, 8, 0.70)'; // blonde
             let secondaryColor = 'rgba(161, 98, 7, 0.25)';
 
             if (hairColorEffect === 'pink') {
-              primaryColor = 'rgba(244, 114, 182, 0.75)';
-              secondaryColor = 'rgba(219, 39, 119, 0.25)';
+              primaryColor = 'rgba(244, 114, 182, 0.80)';
+              secondaryColor = 'rgba(219, 39, 119, 0.30)';
             } else if (hairColorEffect === 'purple') {
-              primaryColor = 'rgba(192, 132, 252, 0.75)';
-              secondaryColor = 'rgba(126, 34, 206, 0.25)';
+              primaryColor = 'rgba(192, 132, 252, 0.80)';
+              secondaryColor = 'rgba(126, 34, 206, 0.30)';
             } else if (hairColorEffect === 'cyan') {
-              primaryColor = 'rgba(56, 189, 248, 0.75)';
-              secondaryColor = 'rgba(2, 132, 199, 0.25)';
+              primaryColor = 'rgba(56, 189, 248, 0.80)';
+              secondaryColor = 'rgba(2, 132, 199, 0.30)';
             } else if (hairColorEffect === 'fire') {
-              primaryColor = 'rgba(251, 146, 60, 0.75)';
-              secondaryColor = 'rgba(220, 38, 38, 0.25)';
+              primaryColor = 'rgba(251, 146, 60, 0.80)';
+              secondaryColor = 'rgba(220, 38, 38, 0.30)';
             }
 
             hairGrad.addColorStop(0, primaryColor);
@@ -108,7 +133,6 @@ export default function AiFaceEffectOverlay({
 
             ctx.fillStyle = hairGrad;
             ctx.beginPath();
-            // Arch strictly covering hair crown
             ctx.ellipse(hx, hy, hrx, hry, 0, 0, Math.PI * 2);
             ctx.fill();
 
@@ -118,22 +142,21 @@ export default function AiFaceEffectOverlay({
           // -------------------------------------------------------------
           // 2. AI SMART LIP TINT (Accurately Clamped to Mouth Landmarks)
           // -------------------------------------------------------------
-          // ONLY render if face is physically detected in camera
           if (isFacePresent && landmarks?.mouth && lipShade && lipShade !== 'none') {
             const m = landmarks.mouth;
             const mx = mapX(m.x);
             const my = mapY(m.y);
-            const mw = Math.max(10, m.width * dW * 0.45);
-            const mh = Math.max(5, m.height * dH * 0.35);
+            const mw = Math.max(12, m.width * drawW * 0.42);
+            const mh = Math.max(6, m.height * drawH * 0.32);
 
             ctx.save();
             ctx.globalCompositeOperation = 'multiply'; // Natural lipstick texture
-            ctx.filter = 'blur(2.5px)';
+            ctx.filter = 'blur(2px)';
 
-            let lipColor = 'rgba(225, 29, 72, 0.65)'; // ruby
-            if (lipShade === 'coral') lipColor = 'rgba(251, 113, 133, 0.6)';
-            else if (lipShade === 'plum') lipColor = 'rgba(147, 51, 234, 0.65)';
-            else if (lipShade === 'nude') lipColor = 'rgba(234, 88, 12, 0.55)';
+            let lipColor = 'rgba(225, 29, 72, 0.70)'; // ruby
+            if (lipShade === 'coral') lipColor = 'rgba(251, 113, 133, 0.65)';
+            else if (lipShade === 'plum') lipColor = 'rgba(147, 51, 234, 0.70)';
+            else if (lipShade === 'nude') lipColor = 'rgba(234, 88, 12, 0.60)';
 
             ctx.fillStyle = lipColor;
 
@@ -145,10 +168,10 @@ export default function AiFaceEffectOverlay({
 
             // Lip Gloss Highlight
             ctx.globalCompositeOperation = 'screen';
-            ctx.filter = 'blur(1.5px)';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+            ctx.filter = 'blur(1px)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
             ctx.beginPath();
-            ctx.ellipse(mx, my + mh * 0.15, mw * 0.22, mh * 0.12, 0, 0, Math.PI * 2);
+            ctx.ellipse(mx, my + mh * 0.15, mw * 0.20, mh * 0.10, 0, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.restore();
@@ -157,12 +180,11 @@ export default function AiFaceEffectOverlay({
           // -------------------------------------------------------------
           // 3. AI AR FACE STICKERS & ACCESSORIES (Pinned to Face Tracking)
           // -------------------------------------------------------------
-          // ONLY render if face is physically detected in camera
           if (isFacePresent && landmarks && faceSticker && faceSticker !== 'none') {
             const fhX = mapX(landmarks.forehead?.x || 0.5);
-            const fhY = mapY(landmarks.forehead?.y || 0.22);
+            const fhY = mapY(landmarks.forehead?.y || 0.20);
             const noseX = mapX(landmarks.nose?.x || 0.5);
-            const noseY = mapY(landmarks.nose?.y || 0.52);
+            const noseY = mapY(landmarks.nose?.y || 0.50);
             const eyeDist = landmarks.rightEye && landmarks.leftEye ? Math.abs(mapX(landmarks.rightEye.x) - mapX(landmarks.leftEye.x)) : 100;
             const faceScale = Math.max(0.6, Math.min(1.6, eyeDist / 120));
 
@@ -177,19 +199,19 @@ export default function AiFaceEffectOverlay({
               ctx.shadowColor = 'rgba(234, 179, 8, 0.8)';
               ctx.shadowBlur = 12;
               const bobY = Math.sin(performance.now() * 0.004) * 5;
-              ctx.fillText('👑', fhX, Math.max(30, fhY - 45 * faceScale + bobY));
+              ctx.fillText('👑', fhX, Math.max(30, fhY - 40 * faceScale + bobY));
             } else if (faceSticker === 'cat_ears') {
               // Cute Cat Ears pinned to head sides
               const earSize = Math.round(50 * faceScale);
               ctx.font = `${earSize}px sans-serif`;
               ctx.shadowColor = 'rgba(244, 114, 182, 0.8)';
               ctx.shadowBlur = 10;
-              const earY = fhY - 35 * faceScale;
+              const earY = fhY - 32 * faceScale;
               ctx.fillText('🐱', fhX, earY);
             } else if (faceSticker === 'sunglasses') {
               // Sunglasses over the eye line
               const glassesSize = Math.round(62 * faceScale);
-              const eyeY = mapY(((landmarks.leftEye?.y || 0.4) + (landmarks.rightEye?.y || 0.4)) * 0.5);
+              const eyeY = mapY(((landmarks.leftEye?.y || 0.38) + (landmarks.rightEye?.y || 0.38)) * 0.5);
               ctx.font = `${glassesSize}px sans-serif`;
               ctx.shadowColor = 'rgba(15, 23, 42, 0.6)';
               ctx.shadowBlur = 8;
@@ -218,9 +240,9 @@ export default function AiFaceEffectOverlay({
               ctx.shadowBlur = 8;
               const t = performance.now() * 0.003;
               const h1X = mapX(landmarks.leftCheek?.x || 0.32);
-              const h1Y = mapY(landmarks.leftCheek?.y || 0.55) - Math.abs(Math.sin(t)) * 12;
+              const h1Y = mapY(landmarks.leftCheek?.y || 0.52) - Math.abs(Math.sin(t)) * 12;
               const h2X = mapX(landmarks.rightCheek?.x || 0.68);
-              const h2Y = mapY(landmarks.rightCheek?.y || 0.55) - Math.abs(Math.cos(t)) * 12;
+              const h2Y = mapY(landmarks.rightCheek?.y || 0.52) - Math.abs(Math.cos(t)) * 12;
 
               ctx.fillText('💖', h1X, h1Y);
               ctx.fillText('💕', h2X, h2Y);
@@ -277,7 +299,7 @@ export default function AiFaceEffectOverlay({
         cancelAnimationFrame(animFrameRef.current);
       }
     };
-  }, [videoRef, isMirrored, hairColorEffect, lipShade, faceSticker, lightingEffect]);
+  }, [videoRef, isMirrored, hairColorEffect, lipShade, faceSticker, lightingEffect, skinSmoothing]);
 
   return (
     <canvas
