@@ -1021,8 +1021,8 @@ export default function App() {
   // 1. PK BATTLE MODE STATE
   const [isPkBattleActive, setIsPkBattleActive] = useState(false);
   const [pkTimeLeft, setPkTimeLeft] = useState(180); // 3 minutes
-  const [pkRedScore, setPkRedScore] = useState(12400);
-  const [pkBlueScore, setPkBlueScore] = useState(9800);
+  const [pkRedScore, setPkRedScore] = useState(0);
+  const [pkBlueScore, setPkBlueScore] = useState(0);
   const [pkOpponent, setPkOpponent] = useState(null);
   const [pkWinner, setPkWinner] = useState(null);
 
@@ -1502,13 +1502,17 @@ export default function App() {
       const compressedDataUrl = await compressImageFile(file, 1080, 0.8);
       setEditAvatarUrl(compressedDataUrl);
       setUserAvatar(compressedDataUrl);
+      
+      await apiProfile.updateProfile({ avatar: compressedDataUrl });
+      
       showToast(loc('✅ تصویر پروفایل با موفقیت فشرده و جایگزین شد', 'Profile picture has been compressed and replaced successfully'));
     } catch (err) {
       console.warn('Compression error, fallback to reader:', err);
       const reader = new FileReader();
-      reader.onload = event => {
+      reader.onload = async event => {
         setEditAvatarUrl(event.target.result);
         setUserAvatar(event.target.result);
+        await apiProfile.updateProfile({ avatar: event.target.result });
         showToast('Profile image loaded from phone gallery');
       };
       reader.readAsDataURL(file);
@@ -4678,10 +4682,15 @@ export default function App() {
             <h1 className="font-black text-base tracking-wider text-white">V.LIVE</h1>
           </div>
 
-          {/* Right Controls: Gifts, Notifications, Settings */}
+          {/* Right Controls: Gifts, Messages, Notifications, Settings */}
           <div className="flex items-center gap-1">
             <button onClick={() => setIsRewardOpeningModalOpen(true)} className="p-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 transition" title="Daily Rewards">
               <Gift className="w-3.5 h-3.5" />
+            </button>
+
+            <button onClick={() => setActiveTab('messages')} className="relative p-1.5 rounded-full bg-slate-900 border border-slate-800 text-cyan-400 hover:text-cyan-300 transition" title="Messages">
+              <MessageSquare className="w-3.5 h-3.5" />
+              {totalUnreadMessages > 0 && <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-pink-500 text-white text-[8px] flex items-center justify-center font-bold">{totalUnreadMessages}</span>}
             </button>
 
             <button onClick={() => setIsNotificationsOpen(true)} className="relative p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition" title="Notifications">
@@ -5508,7 +5517,7 @@ export default function App() {
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                   <h3 className="text-sm font-black text-white flex items-center gap-1.5">
                     <Users className="w-4 h-4 text-purple-400" />
-                    <span>{loc('اعضای آنلاین روم (', 'Rome Online Members (')}{(viewingStream.viewers || 3820).toLocaleString()})</span>
+                    <span>{loc('اعضای آنلاین روم (', 'Rome Online Members (')}{(viewingStream.viewers || 0).toLocaleString()})</span>
                   </h3>
                   <button onClick={() => setIsLiveMembersOpen(false)} className="text-slate-400 hover:text-white">
                     <X className="w-4 h-4" />
@@ -5759,7 +5768,7 @@ export default function App() {
                 }} className="p-2 rounded-2xl bg-slate-950 border border-slate-800 hover:border-pink-500 cursor-pointer space-y-1 transition">
                     <img src={st.thumbnail || st.avatar} alt={st.title} className="w-full h-20 object-cover rounded-xl" />
                     <h4 className="text-[11px] font-bold text-white truncate">{st.title || st.host}</h4>
-                    <span className="text-[9px] text-pink-400 font-bold block">{st.category} • 👁️ {st.viewers || 120}</span>
+                    <span className="text-[9px] text-pink-400 font-bold block">{st.category} • 👁️ {st.viewers || 0}</span>
                   </div>)}
               </div>
             </div>

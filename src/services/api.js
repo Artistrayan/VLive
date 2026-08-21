@@ -303,7 +303,26 @@ export const apiProfile = {
       }
     }
 
-    const { data, error } = await supabase.from('profiles').update(safeUpdates).eq('id', uid).select();
+    if (safeUpdates.avatar) {
+      safeUpdates.avatar_url = safeUpdates.avatar;
+    }
+
+    let { data, error } = await supabase.from('profiles').update(safeUpdates).eq('id', uid).select();
+    if (error) {
+      // Fallback: in case avatar_url or avatar column does not exist in schema
+      const fallbackUpdates = { ...safeUpdates };
+      delete fallbackUpdates.avatar_url;
+      const res = await supabase.from('profiles').update(fallbackUpdates).eq('id', uid).select();
+      data = res.data;
+      error = res.error;
+    }
+
+    if (!error && safeUpdates.avatar) {
+      try {
+        localStorage.setItem('vlive_user_avatar', safeUpdates.avatar);
+      } catch (e) {}
+    }
+
     return { success: !error, data: data?.[0], error: error?.message };
   },
 
@@ -1355,10 +1374,38 @@ export const apiStreamer = {
 // 14. SUPPORT SERVICE
 // ==========================================
 export const apiSupport = {
-  async createTicket(subject, message) {
+  async submitTicket(subject, message) {
     const uid = getUserId();
-    if (!uid) return { success: false };
-    const { error } = await supabase.from('support_tickets').insert([{ user_id: uid, subject, message }]);
-    return { success: !error, error: error?.message };
+    if (!uid) return { success: false, error: 'Unauthorized' };
+    try {
+      const { data, error } = await supabase.from('support_tickets').insert([{ 
+        user_id: uid, 
+        subject, 
+        message,
+        status: 'Open'
+      }]).select();
+      return { success: !error, data: data?.[0], error: error?.message };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async createTicket(subject, message) {
+    return this.submitTicket(subject, message);
+  },
+
+  async getUserTickets() {
+    const uid = getUserId();
+    if (!uid) return [];
+    try {
+      const { data, error } = await supabase
+        .from('support_tickets')
+        .select('*')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false });
+      return error ? [] : data;
+    } catch (e) {
+      return [];
+    }
   }
 };

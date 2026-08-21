@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   HelpCircle, Search, MessageCircle, Send, X, ArrowUpRight, 
   CreditCard, ShieldCheck, DollarSign, Clock, Sparkles, ChevronDown, 
@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { helpCenterService, FAQ_CATEGORIES } from '../services/helpCenterService';
 import { economyService } from '../services/economyService';
+import { apiSupport, getUserId } from '../services/api';
+import { safeStorage } from '../utils/safeStorage';
 import { loc } from '../utils/i18n';
 
 export default function HelpCenterModal({ 
@@ -44,6 +46,21 @@ export default function HelpCenterModal({
   // Ticket Form State
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
+  const [realTickets, setRealTickets] = useState([]);
+
+  useEffect(() => {
+    if (activeTab === 'support' && isOpen) {
+      const fetchTickets = async () => {
+        try {
+          const tickets = await apiSupport.getUserTickets();
+          if (tickets && tickets.length > 0) {
+            setRealTickets(tickets);
+          }
+        } catch (e) {}
+      };
+      fetchTickets();
+    }
+  }, [activeTab, isOpen]);
 
   // Filter FAQs
   const faqsList = useMemo(() => {
@@ -682,55 +699,50 @@ export default function HelpCenterModal({
                   </div>
 
                   <button
-                    onClick={() => {
-                      if (!ticketSubject.trim() && !ticketMessage.trim()) {
+                    onClick={async () => {
+                      if (!ticketSubject.trim() || !ticketMessage.trim()) {
                         showToast(loc('لطفاً موضوع و شرح درخواست خود را وارد کنید.', 'Please fill subject and description.'));
                         return;
                       }
                       
-                      const newTicket = {
-                        id: Math.floor(Math.random() * 9000) + 1000,
-                        user: currentUsername || userName || 'user',
-                        subject: ticketSubject.trim(),
-                        message: ticketMessage.trim(),
-                        status: 'Open',
-                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-                      };
+                      setIsSubmitting(true);
+                      const res = await apiSupport.submitTicket(ticketSubject.trim(), ticketMessage.trim());
+                      setIsSubmitting(false);
 
-                      setAdminTicketsList(prev => {
-                        const updated = [newTicket, ...prev];
-                        safeStorage.setItem('vlive_admin_tickets', JSON.stringify(updated));
-                        return updated;
-                      });
-                      
-                      showToast(loc('✅ تیکت پشتیبانی با موفقیت ثبت گردید. پاسخ در بخش پیام‌ها ارسال می‌شود.', '✅ Ticket submitted successfully. Reply will be sent to messages.'));
-                      setTicketSubject('');
-                      setTicketMessage('');
+                      if (res.success) {
+                        showToast(loc('✅ تیکت پشتیبانی با موفقیت ثبت گردید.', '✅ Ticket submitted successfully.'));
+                        setTicketSubject('');
+                        setTicketMessage('');
+                        if (res.data) {
+                          setRealTickets(prev => [res.data, ...prev]);
+                        }
+                      } else {
+                        showToast(loc('خطا در ثبت تیکت', 'Error submitting ticket'));
+                      }
                     }}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 text-white font-bold text-xs shadow-md shadow-purple-500/20 hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2"
+                    disabled={isSubmitting}
+                    className={`w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 text-white font-bold text-xs shadow-md shadow-purple-500/20 hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <Send className="w-4 h-4" />
-                    <span>{loc('ارسال تیکت به کارشناسان پشتیبانی', 'Submit Ticket')}</span>
+                    <span>{isSubmitting ? loc('درحال ارسال...', 'Sending...') : loc('ارسال تیکت به کارشناسان پشتیبانی', 'Submit Ticket')}</span>
                   </button>
                 </div>
               </div>
 
               {/* User Tickets List */}
-              {adminTicketsList.filter(t => t.user === currentUsername || t.user === userName).length > 0 && (
+              {realTickets.length > 0 && (
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
                   <h4 className="font-black text-sm text-white flex items-center gap-2">
                     <MessageCircle className="w-4 h-4 text-cyan-400" />
                     {loc('پیام‌های پشتیبانی من', 'My Support Tickets')}
                   </h4>
                   <div className="space-y-2">
-                    {adminTicketsList
-                      .filter(t => t.user === currentUsername || t.user === userName)
-                      .map(t => (
+                    {realTickets.map(t => (
                         <div key={t.id} className="p-3 rounded-xl bg-slate-900 border border-slate-800/80 space-y-2 text-xs">
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-white text-[11px]">{t.subject}</span>
                             <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${t.status === 'Open' ? 'bg-amber-500/20 text-amber-300' : 'bg-cyan-500/20 text-cyan-300'}`}>
-                              {t.status}
+                              {t.status || 'Open'}
                             </span>
                           </div>
                           <p className="text-[10px] text-slate-400">{t.message}</p>
@@ -740,7 +752,7 @@ export default function HelpCenterModal({
                               <p className="text-[10px]">{t.reply}</p>
                             </div>
                           )}
-                          <span className="text-[9px] text-slate-500 block mt-1">{t.time}</span>
+                          <span className="text-[9px] text-slate-500 block mt-1">{new Date(t.created_at || Date.now()).toLocaleString()}</span>
                         </div>
                       ))}
                   </div>

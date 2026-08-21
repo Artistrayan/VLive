@@ -100,8 +100,8 @@ export default function LiveStudioModal({
   // PK State
   const [isPkActive, setIsPkActive] = useState(false);
   const [pkOpponent, setPkOpponent] = useState(null);
-  const [pkRedScore, setPkRedScore] = useState(3400);
-  const [pkBlueScore, setPkBlueScore] = useState(2800);
+  const [pkRedScore, setPkRedScore] = useState(0);
+  const [pkBlueScore, setPkBlueScore] = useState(0);
   const [pkTimeLeft, setPkTimeLeft] = useState(180);
 
   // Moderation Lists

@@ -473,7 +473,7 @@ export default function LiveStreamSystem({
                         {/* Viewers Badge */}
                         <div className="flex items-center gap-1 bg-slate-950/70 backdrop-blur-md px-2 py-0.5 rounded-full border border-slate-800 text-[10px] font-bold text-slate-200">
                           <Eye className="w-3 h-3 text-cyan-400" />
-                          <span>{(stream.viewers || 120).toLocaleString()}</span>
+                          <span>{(stream.viewers || 0).toLocaleString()}</span>
                         </div>
                       </div>
 
