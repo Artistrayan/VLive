@@ -1,17 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { VerifiedBadge } from '../CommonBadges';
-import { apiMessages, getUserId } from '../../services/api';
+import { apiMessages, apiHome, getUserId, presenceService, calculateAge } from '../../services/api';
 import { 
   Search, Plus, Filter, MessageSquare, PhoneCall, Video, Pin, BellOff, Trash2, 
   CheckCheck, Send, Mic, Image, Paperclip, Smile, Gift, Sparkles, X, ChevronRight,
   Shield, Check, UserPlus, Phone, Camera, User, Users, Archive, VolumeX, ChevronLeft,
-  MoreVertical, Lock, AlertTriangle, Ban, Globe, Bot, MapPin, DollarSign, MicOff
+  MoreVertical, Lock, AlertTriangle, Ban, Globe, Bot, MapPin, DollarSign, MicOff,
+  UserCheck
 } from 'lucide-react';
 
 export default function ChatTab(props) {
   const {
     activeTab,
+    usersList: propUsersList,
     isAutoTranslateActive: propAutoTranslate,
     setIsAutoTranslateActive: propSetAutoTranslate,
     userAvatar, userName, totalUnreadMessages,
@@ -62,6 +64,126 @@ export default function ChatTab(props) {
   const [showEmojiPicker, setShowEmojiPicker] = React.useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = React.useState(false);
   const [audioRecordingSeconds] = React.useState(0);
+  const [activeUsersList, setActiveUsersList] = useState(propUsersList || []);
+  const [newChatSearchQuery, setNewChatSearchQuery] = useState('');
+
+  // Fetch approved registered users if not provided
+  useEffect(() => {
+    if (propUsersList && propUsersList.length > 0) {
+      setActiveUsersList(propUsersList);
+    } else {
+      apiHome.getApprovedUsers().then(users => {
+        if (Array.isArray(users) && users.length > 0) {
+          setActiveUsersList(users);
+        }
+      }).catch(e => console.warn('ChatTab users load note:', e));
+    }
+  }, [propUsersList]);
+
+  // Load real conversations from Supabase on mount and track online presence
+  useEffect(() => {
+    let isMounted = true;
+    apiMessages.getConversations().then(realConvs => {
+      if (isMounted && Array.isArray(realConvs) && realConvs.length > 0) {
+        setConversations(prev => {
+          const currentList = Array.isArray(prev) ? [...prev] : [];
+          realConvs.forEach(rc => {
+            const partner = rc.profiles || {};
+            const convId = rc.id || rc.conversation_id;
+            const isOnline = presenceService.isUserOnline(partner);
+            if (!currentList.some(m => String(m.id) === String(convId))) {
+              currentList.push({
+                id: convId,
+                partner_id: partner.id || rc.partner_id || rc.recipient_id,
+                user: {
+                  id: partner.id || rc.partner_id || rc.recipient_id,
+                  username: partner.username || rc.recipient_id || 'User',
+                  name: partner.name || partner.username || 'User',
+                  avatar: partner.avatar || '',
+                  online: isOnline,
+                  isOnline: isOnline
+                },
+                lastMessage: rc.last_message || '',
+                lastTime: rc.updated_at ? new Date(rc.updated_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+                unreadCount: 0,
+                messages: []
+              });
+            }
+          });
+          return currentList;
+        });
+      }
+    }).catch(e => console.warn('ChatTab getConversations sync error:', e));
+
+    const unsubscribePresence = presenceService.subscribe(() => {
+      if (!isMounted) return;
+      setConversations(prev => {
+        if (!Array.isArray(prev)) return prev;
+        return prev.map(c => {
+          if (!c.user) return c;
+          const isOnline = presenceService.isUserOnline(c.user);
+          if (c.user.online !== isOnline) {
+            return {
+              ...c,
+              user: { ...c.user, online: isOnline, isOnline: isOnline }
+            };
+          }
+          return c;
+        });
+      });
+    });
+
+    return () => { 
+      isMounted = false; 
+      unsubscribePresence();
+    };
+  }, []);
+
+  // Compute active conversation safely (never null if activeConversationId is set)
+  const currentConv = useMemo(() => {
+    if (!activeConversationId) return null;
+    let found = (conversations || []).find(c => String(c.id) === String(activeConversationId));
+    if (!found) {
+      const allUsers = activeUsersList && activeUsersList.length > 0 ? activeUsersList : (propUsersList || []);
+      const targetUser = allUsers.find(u => String(u.id) === String(activeConversationId) || u.username === activeConversationId);
+      if (targetUser) {
+        found = {
+          id: activeConversationId,
+          partner_id: targetUser.id,
+          user: {
+            id: targetUser.id,
+            username: targetUser.username,
+            name: targetUser.name || targetUser.username,
+            avatar: targetUser.avatar || '',
+            isVerified: targetUser.isVerified || targetUser.is_verified || false,
+            online: targetUser.online || targetUser.isOnline || true,
+            role: targetUser.role || 'Member'
+          },
+          lastMessage: '',
+          lastTime: 'Just now',
+          unreadCount: 0,
+          messages: []
+        };
+      } else {
+        found = {
+          id: activeConversationId,
+          partner_id: activeConversationId,
+          user: {
+            id: activeConversationId,
+            username: String(activeConversationId),
+            name: `User ${activeConversationId}`,
+            avatar: '',
+            online: true
+          },
+          lastMessage: '',
+          lastTime: 'Just now',
+          unreadCount: 0,
+          messages: []
+        };
+      }
+    }
+    return found;
+  }, [conversations, activeConversationId, activeUsersList, propUsersList]);
 
   // Sync real messages from Supabase when opening a conversation
   useEffect(() => {
@@ -82,16 +204,25 @@ export default function ChatTab(props) {
             raw: m
           }));
 
-          setConversations(prev => prev.map(c => {
-            if (c.id === activeConversationId) {
-              return {
-                ...c,
-                messages: formatted,
-                lastMessage: formatted[formatted.length - 1]?.text || c.lastMessage
-              };
+          setConversations(prev => {
+            const list = Array.isArray(prev) ? prev : [];
+            const exists = list.some(c => String(c.id) === String(activeConversationId));
+            if (exists) {
+              return list.map(c => {
+                if (String(c.id) === String(activeConversationId)) {
+                  return {
+                    ...c,
+                    messages: formatted,
+                    lastMessage: formatted[formatted.length - 1]?.text || c.lastMessage
+                  };
+                }
+                return c;
+              });
+            } else if (currentConv) {
+              return [{ ...currentConv, messages: formatted, lastMessage: formatted[formatted.length - 1]?.text || '' }, ...list];
             }
-            return c;
-          }));
+            return list;
+          });
         }
       } catch (err) {
         console.warn('loadRealMessages error:', err);
@@ -115,17 +246,20 @@ export default function ChatTab(props) {
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
       };
 
-      setConversations(prev => prev.map(c => {
-        if (c.id === activeConversationId) {
-          return {
-            ...c,
-            lastMessage: incomingFormatted.text,
-            lastTime: incomingFormatted.time,
-            messages: [...(c.messages || []), incomingFormatted]
-          };
-        }
-        return c;
-      }));
+      setConversations(prev => {
+        const list = Array.isArray(prev) ? prev : [];
+        return list.map(c => {
+          if (String(c.id) === String(activeConversationId)) {
+            return {
+              ...c,
+              lastMessage: incomingFormatted.text,
+              lastTime: incomingFormatted.time,
+              messages: [...(c.messages || []), incomingFormatted]
+            };
+          }
+          return c;
+        });
+      });
     });
 
     return () => {
@@ -148,29 +282,43 @@ export default function ChatTab(props) {
     };
 
     // 1. Optimistic UI update
-    setConversations(prev => prev.map(c => {
-      if (c.id === activeConversationId) {
-        return {
-          ...c,
+    setConversations(prev => {
+      const list = Array.isArray(prev) ? prev : [];
+      const exists = list.some(c => String(c.id) === String(activeConversationId));
+      if (exists) {
+        return list.map(c => {
+          if (String(c.id) === String(activeConversationId)) {
+            return {
+              ...c,
+              lastMessage: textToSend,
+              lastTime: nowTime,
+              messages: [...(c.messages || []), localMsg]
+            };
+          }
+          return c;
+        });
+      } else if (currentConv) {
+        return [{
+          ...currentConv,
           lastMessage: textToSend,
           lastTime: nowTime,
-          messages: [...(c.messages || []), localMsg]
-        };
+          messages: [localMsg]
+        }, ...list];
       }
-      return c;
-    }));
+      return list;
+    });
 
     setDirectInputText('');
 
     // 2. Real API send to Supabase & Realtime broadcast
     try {
-      const activeConv = conversations?.find(c => c.id === activeConversationId);
+      const recipientId = currentConv?.user?.id || currentConv?.user?.username || currentConv?.partner_id || activeConversationId;
       const res = await apiMessages.sendMessage({
         conversationId: activeConversationId,
-        recipient: activeConv?.user?.id || activeConv?.user?.username || activeConv?.partner_id,
+        recipient: recipientId,
         text: textToSend
       });
-      if (res.success) {
+      if (res && res.success !== false) {
         showToast(window.loc('پیام ارسال شد ✅', 'Message sent ✅'));
       }
     } catch (err) {
@@ -418,11 +566,8 @@ export default function ChatTab(props) {
 
               {/* CHAT THREAD VIEW */}
               <div className={"flex-1 flex flex-col bg-slate-950/60 relative " + (!activeConversationId ? "hidden md:flex" : "flex")}>
-                {activeConversationId ? (
+                {activeConversationId && currentConv ? (
                   (() => {
-                    const currentConv = conversations.find(c => c.id === activeConversationId);
-                    if (!currentConv) return null;
-
                     return (
                       <>
                         {/* 1. CHAT THREAD TOP HEADER */}
@@ -951,14 +1096,55 @@ export default function ChatTab(props) {
                     );
                   })()
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-slate-500 p-8 space-y-3 text-center">
+                  <div className="flex-1 flex flex-col items-center justify-center text-slate-500 p-6 sm:p-8 space-y-4 text-center">
                     <div className="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center text-pink-400 shadow-xl animate-bounce">
                       <MessageSquare className="w-8 h-8" />
                     </div>
-                    <h3 className="text-sm font-bold text-white">Select a conversation to start messaging</h3>
-                    <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
-                      Send text, voice notes, photos, gifts, or start a 4K LiveKit video call with hosts directly inside V.Live.
-                    </p>
+                    <div className="space-y-1">
+                      <h3 className="text-base font-bold text-white">{window.loc('گفتگویی را انتخاب کنید یا چت جدید بسازید', 'Select a conversation or start a new chat')}</h3>
+                      <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
+                        {window.loc('امکان ارسال پیام متنی، ویس، عکس، و هدایا با کاربران و استریمرهای وی‌لایو', 'Send text messages, voice notes, photos, and gifts with V.Live users and streamers.')}
+                      </p>
+                    </div>
+
+                    <button 
+                      onClick={() => setIsNewChatModalOpen(true)}
+                      className="px-6 py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white font-bold text-xs shadow-lg shadow-pink-500/25 hover:scale-105 active:scale-95 transition flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>{window.loc('➕ شروع چت جدید با کاربران', '➕ Start New Chat with Users')}</span>
+                    </button>
+
+                    {/* Quick Contacts List */}
+                    {activeUsersList && activeUsersList.length > 0 && (
+                      <div className="w-full max-w-md pt-4 space-y-2 text-right dir-rtl">
+                        <span className="text-[11px] font-bold text-slate-400 block px-1">
+                          {window.loc('کاربران فعال و آنلاین برای پیام مستقیم:', 'Active users online for direct message:')}
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {activeUsersList.slice(0, 6).map((u, i) => (
+                            <button
+                              key={u.id || i}
+                              onClick={() => {
+                                const convId = u.id || `conv_${u.username}`;
+                                setActiveConversationId(convId);
+                              }}
+                              className="p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-pink-500/50 flex items-center gap-2.5 transition text-right group"
+                            >
+                              <div className="relative shrink-0">
+                                <img src={u.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={u.name} className="w-9 h-9 rounded-xl object-cover ring-1 ring-slate-800 group-hover:ring-pink-500 transition" />
+                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-white truncate">{u.name || u.username}</p>
+                                <span className="text-[10px] text-pink-400 font-mono">@{u.username}</span>
+                              </div>
+                              <MessageSquare className="w-4 h-4 text-slate-500 group-hover:text-pink-400 transition shrink-0" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1232,6 +1418,118 @@ export default function ChatTab(props) {
                     ].map((img, i) => (
                       <img key={i} src={img} alt="media" className="w-full h-24 rounded-2xl object-cover ring-1 ring-slate-800" />
                     ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* NEW CHAT / USER SELECTION MODAL */}
+            {isNewChatModalOpen && (
+              <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4" dir={isRtl ? "rtl" : "ltr"}>
+                <div className="card-3d p-5 rounded-3xl bg-slate-900 border border-pink-500/40 max-w-md w-full space-y-4 animate-scaleUp max-h-[85vh] flex flex-col">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-pink-400" />
+                      <span>{window.loc('💬 شروع گفتگوی جدید', '💬 Start New Direct Chat')}</span>
+                    </h3>
+                    <button onClick={() => setIsNewChatModalOpen(false)} className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Search user input */}
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-slate-400 absolute right-3 top-3" />
+                    <input 
+                      type="text"
+                      value={newChatSearchQuery}
+                      onChange={e => setNewChatSearchQuery(e.target.value)}
+                      placeholder={window.loc('جستجوی کاربر یا استریمر...', 'Search user or streamer...')}
+                      className="w-full pl-3 pr-9 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-pink-500"
+                    />
+                  </div>
+
+                  {/* Users list */}
+                  <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    {(() => {
+                      const allUsers = activeUsersList && activeUsersList.length > 0 ? activeUsersList : (propUsersList || []);
+                      const filtered = allUsers.filter(u => {
+                        if (!newChatSearchQuery.trim()) return true;
+                        const q = newChatSearchQuery.toLowerCase();
+                        return (u.name && u.name.toLowerCase().includes(q)) || (u.username && u.username.toLowerCase().includes(q));
+                      });
+
+                      if (filtered.length === 0) {
+                        return (
+                          <div className="p-8 text-center text-slate-400 text-xs space-y-2">
+                            <User className="w-8 h-8 mx-auto text-slate-600" />
+                            <p>{window.loc('کاربری با این مشخصات یافت نشد', 'No user found')}</p>
+                          </div>
+                        );
+                      }
+
+                      return filtered.map((targetUser, idx) => (
+                        <div
+                          key={targetUser.id || idx}
+                          onClick={() => {
+                            const convId = targetUser.id || `conv_${targetUser.username}`;
+                            const newConv = {
+                              id: convId,
+                              partner_id: targetUser.id,
+                              user: {
+                                id: targetUser.id,
+                                username: targetUser.username,
+                                name: targetUser.name || targetUser.username,
+                                avatar: targetUser.avatar || '',
+                                isVerified: targetUser.isVerified || targetUser.is_verified || false,
+                                online: targetUser.online || targetUser.isOnline || true,
+                                role: targetUser.role || 'Member'
+                              },
+                              lastMessage: '',
+                              lastTime: 'Just now',
+                              unreadCount: 0,
+                              messages: []
+                            };
+
+                            setConversations(prev => {
+                              const list = Array.isArray(prev) ? prev : [];
+                              if (!list.some(c => String(c.id) === String(convId))) {
+                                return [newConv, ...list];
+                              }
+                              return list;
+                            });
+
+                            setActiveConversationId(convId);
+                            setIsNewChatModalOpen(false);
+                            setNewChatSearchQuery('');
+                          }}
+                          className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 hover:border-pink-500/60 flex items-center justify-between gap-3 cursor-pointer transition group"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="relative shrink-0">
+                              <img 
+                                src={targetUser.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} 
+                                alt={targetUser.name} 
+                                className="w-10 h-10 rounded-2xl object-cover ring-1 ring-slate-800 group-hover:ring-pink-500 transition" 
+                              />
+                              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <h4 className="text-xs font-bold text-white truncate">{targetUser.name || targetUser.username}</h4>
+                                {(targetUser.isVerified || targetUser.is_verified) && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
+                              </div>
+                              <p className="text-[10px] text-pink-400 font-mono">@{targetUser.username}</p>
+                            </div>
+                          </div>
+
+                          <button className="px-3 py-1.5 rounded-xl bg-pink-500/15 border border-pink-500/30 text-pink-400 group-hover:bg-pink-500 group-hover:text-white text-xs font-bold transition flex items-center gap-1">
+                            <Send className="w-3 h-3" />
+                            <span>{window.loc('چت', 'Chat')}</span>
+                          </button>
+                        </div>
+                      ));
+                    })()}
                   </div>
                 </div>
               </div>

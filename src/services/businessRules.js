@@ -60,18 +60,24 @@ export function isAdminExempt(userRole, username, telegramId) {
   return false;
 }
 
-// 1. AGE VALIDATOR
-export function isAgeAllowed(birthDateString, userRole, username, telegramId) {
-  if (isAdminExempt(userRole, username, telegramId)) return true;
-  if (!birthDateString) return false;
-  
+// 1. AGE CALCULATOR & VALIDATOR
+export function calculateAge(birthDateString) {
+  if (!birthDateString) return null;
   const birth = new Date(birthDateString);
+  if (isNaN(birth.getTime())) return null;
   const today = new Date();
   let age = today.getFullYear() - birth.getFullYear();
   const m = today.getMonth() - birth.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
     age--;
   }
+  return age >= 0 && age < 130 ? age : null;
+}
+
+export function isAgeAllowed(birthDateString, userRole, username, telegramId) {
+  if (isAdminExempt(userRole, username, telegramId)) return true;
+  const age = calculateAge(birthDateString);
+  if (age === null) return false;
   return age >= PLATFORM_RULES.MIN_REQUIRED_AGE;
 }
 

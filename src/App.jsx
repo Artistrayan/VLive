@@ -40,7 +40,7 @@ import { loc, getSavedLang } from './utils/i18n';
 import { isUsernameAlreadyTaken, normalizeUsername, isValidUsername, isUserAnAdmin } from './utils/usernameUtils';
 import { economyService } from './services/economyService';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { apiAuth, setStoredToken, setStoredSession, getStoredToken, getUserId, apiProfile, apiHome, apiMessages, apiLive, apiSocial, apiWallet, apiNotifications, apiAdmin, apiVip, apiCalls, apiStorage, apiStreamer, apiSupport, presenceService } from './services/api';
+import { apiAuth, setStoredToken, setStoredSession, getStoredToken, getUserId, apiProfile, apiHome, apiMessages, apiLive, apiSocial, apiWallet, apiNotifications, apiAdmin, apiVip, apiCalls, apiStorage, apiStreamer, apiSupport, presenceService, calculateAge } from './services/api';
 import { supabase } from './supabaseClient';
 import { compressImageFile, cacheManager, startKeepAlivePing, STREAM_QUALITY_PRESETS } from './services/performance';
 import { LifeBuoy, ShoppingBag, Video, Shield, ShieldCheck, Star, Wallet, User, Lock, Award, Calendar, MessageSquare, Send, Camera, Mic, MicOff, Settings, Search, Check, Headphones, RefreshCw, LogOut, Flame, Heart, Crown, Plus, X, Globe, Sparkles, Coins, Sliders, ChevronLeft, ChevronRight, Eye, EyeOff, Radio, CreditCard, Gift, PhoneCall, Play, Image, Layers, CheckCircle, AlertCircle, Bot, Key, Mail, Phone, Smartphone, Copy, QrCode, ArrowRight, ExternalLink, SwitchCamera, TrendingUp, UserCheck, UserX, Ban, DollarSign, Activity, Filter, Users, ThumbsUp, UserPlus, Download, Disc, Gem, CircleDot, Wine, Car, Zap, Box, Anchor, Rocket, Smile, Flower, AlertTriangle, Edit3, HeartHandshake, CheckCircle2, BadgeCheck, Languages, Clock, ArrowUpRight, Bell, Share2, Compass, MapPin, CheckCircle2 as CheckIcon, Home, BarChart2, Tv, Megaphone, Target, Paperclip, Pin, Reply, MoreVertical, VolumeX, Trash2, Archive, FileText, CheckCheck, Laugh, Forward, SmilePlus, LockKeyhole, SendHorizontal, MessageCircle, Info, PhoneIncoming, PhoneOutgoing, PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert, Shuffle, BarChart3, Palette, LogIn, HelpCircle, Swords } from 'lucide-react';
@@ -195,10 +195,10 @@ export default function App() {
 
   // Profile Onboarding State
   const [authCity, setAuthCity] = useState('Tehran');
-  const [authBirthDate, setAuthBirthDate] = useState('2002-05-15');
-  const [authBio, setAuthBio] = useState('Official V.Live Streamer | Private video calls & interactive 4K streams');
+  const [authBirthDate, setAuthBirthDate] = useState('');
+  const [authBio, setAuthBio] = useState('');
   const [authInterests, setAuthInterests] = useState([]);
-  const [authAge, setAuthAge] = useState('22');
+  const [authAge, setAuthAge] = useState(() => safeStorage.getItem('vlive_profile_age') || '');
   const [authCountry, setAuthCountry] = useState('ایران');
   const [captchaCode, setCaptchaCode] = useState(() => String(Math.floor(1000 + Math.random() * 9000)));
   const [captchaInput, setCaptchaInput] = useState('');
@@ -3674,7 +3674,7 @@ export default function App() {
         id: u.id || idx + 1,
         name: u.name || u.username,
         username: u.username,
-        age: u.age || 22,
+        age: u.age || '',
         city: u.city,
         avatar: u.avatar || '',
         isVerified: u.isVerified !== false || u.is_verified === true,
@@ -4062,6 +4062,10 @@ export default function App() {
         setUserAvatar(profile.avatar || profile.avatar_url || '');
         setUserBio(profile.bio || '');
         setUserGender(profile.gender || 'Not Specified');
+        if (profile.age !== undefined && profile.age !== null && profile.age !== '') {
+          safeStorage.setItem('vlive_profile_age', String(profile.age));
+          setAuthAge(String(profile.age));
+        }
         setEditFullName(profile.name || profile.username);
         setEditUsername(profile.username);
         setEditAvatarUrl(profile.avatar || profile.avatar_url || '');
@@ -4156,10 +4160,42 @@ export default function App() {
         }
         return u;
       }));
+
+      setConversations(prev => {
+        if (!Array.isArray(prev)) return prev;
+        return prev.map(c => {
+          if (!c.user) return c;
+          const isOnline = presenceService.isUserOnline(c.user);
+          if (c.user.online !== isOnline) {
+            return {
+              ...c,
+              user: { ...c.user, online: isOnline, isOnline: isOnline }
+            };
+          }
+          return c;
+        });
+      });
     });
+
+    const handleProfileUpdated = (e) => {
+      const detail = e.detail;
+      if (!detail) return;
+      if (detail.name) setUserName(detail.name);
+      if (detail.avatar) setUserAvatar(detail.avatar);
+      if (detail.bio) setUserBio(detail.bio);
+      if (detail.birth_date) setAuthBirthDate(detail.birth_date);
+      if (detail.age) setAuthAge(String(detail.age));
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('vlive_profile_updated', handleProfileUpdated);
+    }
 
     return () => {
       unsubscribe();
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('vlive_profile_updated', handleProfileUpdated);
+      }
     };
   }, [isLoggedIn, currentUsername, userName, userAvatar, currentTelegramId]);
 
@@ -4803,7 +4839,7 @@ export default function App() {
                         {/* Bottom Info Overlay */}
                         <div className="absolute bottom-1.5 left-2 right-2 pointer-events-none">
                           <h4 className="text-xs font-black text-white drop-shadow-md truncate flex items-center gap-1">
-                            <span className="truncate">{user.name}, {user.age || 22}</span>
+                            <span className="truncate">{user.name}{user.age ? `, ${user.age}` : ''}</span>
                             <BadgeCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0 inline-block" />
                           </h4>
                           <p className="text-[9px] text-pink-300 font-bold drop-shadow-md truncate">📍 {user.city} • Lv.{user.level}</p>
@@ -5100,7 +5136,7 @@ export default function App() {
           </div>}
 
         {/* TAB 2: MESSAGES & CHAT TAB */}
-        <ChatTab activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} userName={userName} totalUnreadMessages={totalUnreadMessages} msgSearchQuery={msgSearchQuery} setMsgSearchQuery={setMsgSearchQuery} msgSearchField={msgSearchField} setMsgSearchField={setMsgSearchField} msgFilterTab={msgFilterTab} setMsgFilterTab={setMsgFilterTab} isCreateGroupModalOpen={isCreateGroupModalOpen} setIsCreateGroupModalOpen={setIsCreateGroupModalOpen} newGroupName={newGroupName} setNewGroupName={setNewGroupName} newGroupDesc={newGroupDesc} setNewGroupDesc={setNewGroupDesc} isNewChatModalOpen={isNewChatModalOpen} setIsNewChatModalOpen={setIsNewChatModalOpen} isChatGalleryOpen={isChatGalleryOpen} setIsChatGalleryOpen={setIsChatGalleryOpen} isSendGiftInChatOpen={isSendGiftInChatOpen} setIsSendGiftInChatOpen={setIsSendGiftInChatOpen} conversations={conversations} setConversations={setConversations} activeConversationId={activeConversationId} setActiveConversationId={setActiveConversationId} chatSearchQuery={chatSearchQuery} setChatSearchQuery={setChatSearchQuery} isChatSearchOpen={isChatSearchOpen} setIsChatSearchOpen={setIsChatSearchOpen} activeChatCall={activeChatCall} setActiveChatCall={setActiveChatCall} isAutoTranslateActive={isAutoTranslateActive} setIsAutoTranslateActive={setIsAutoTranslateActive} handleTranslateChatMessage={handleTranslateChatMessage} handleSendDirectMessage={handleSendDirectMessage} userCoins={userCoins} setUserCoins={setUserCoins} langCode={currentAppLang} t={t} showToast={showToast} loc={loc} isRtl={isRtl} />
+        <ChatTab activeTab={activeTab} usersList={usersList} txHistoryList={txHistoryList} userAvatar={userAvatar} userName={userName} totalUnreadMessages={totalUnreadMessages} msgSearchQuery={msgSearchQuery} setMsgSearchQuery={setMsgSearchQuery} msgSearchField={msgSearchField} setMsgSearchField={setMsgSearchField} msgFilterTab={msgFilterTab} setMsgFilterTab={setMsgFilterTab} isCreateGroupModalOpen={isCreateGroupModalOpen} setIsCreateGroupModalOpen={setIsCreateGroupModalOpen} newGroupName={newGroupName} setNewGroupName={setNewGroupName} newGroupDesc={newGroupDesc} setNewGroupDesc={setNewGroupDesc} isNewChatModalOpen={isNewChatModalOpen} setIsNewChatModalOpen={setIsNewChatModalOpen} isChatGalleryOpen={isChatGalleryOpen} setIsChatGalleryOpen={setIsChatGalleryOpen} isSendGiftInChatOpen={isSendGiftInChatOpen} setIsSendGiftInChatOpen={setIsSendGiftInChatOpen} conversations={conversations} setConversations={setConversations} activeConversationId={activeConversationId} setActiveConversationId={setActiveConversationId} chatSearchQuery={chatSearchQuery} setChatSearchQuery={setChatSearchQuery} isChatSearchOpen={isChatSearchOpen} setIsChatSearchOpen={setIsChatSearchOpen} activeChatCall={activeChatCall} setActiveChatCall={setActiveChatCall} isAutoTranslateActive={isAutoTranslateActive} setIsAutoTranslateActive={setIsAutoTranslateActive} handleTranslateChatMessage={handleTranslateChatMessage} handleSendDirectMessage={handleSendDirectMessage} userCoins={userCoins} setUserCoins={setUserCoins} langCode={currentAppLang} t={t} showToast={showToast} loc={loc} isRtl={isRtl} />
         {/* TAB 3: WALLET & EARNINGS TAB */}
         <WalletTab handleBuyService={handleBuyService} activeTab={activeTab} txHistoryList={txHistoryList} userCoins={userCoins} setUserCoins={setUserCoins} userDiamonds={userDiamonds} setUserDiamonds={setUserDiamonds} userCashBalance={userCashBalance} setUserCashBalance={setUserCashBalance} walletSubTab={walletSubTab} setWalletSubTab={setWalletSubTab} referralCode={referralCode} setIsVipModalOpen={setIsVipModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} showToast={showToast} isVerified={isVerified} loc={loc} isRtl={isRtl} />
         {/* TAB 4: PROFILE TAB */}

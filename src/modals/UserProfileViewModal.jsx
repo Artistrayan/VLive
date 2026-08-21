@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { isUserAnAdmin } from '../utils/usernameUtils';
+import { calculateAge } from '../services/businessRules';
 import { 
   X, Heart, MessageSquare, PhoneCall, Video, Gift, Share2, ShieldAlert,
   Crown, CheckCircle, MapPin, Sparkles, UserCheck, UserX, Ban, Flag,
@@ -66,7 +67,9 @@ export default function UserProfileViewModal({
   const username = user?.username || user?.host || user?.id || 'user_vlive';
   const avatar = user?.avatar || user?.thumbnail || '';
   const cover = user?.cover || '';
-  const age = user?.age || '';
+  const birthDateVal = user?.birth_date || user?.birthdate || user?.birthday;
+  const calculatedAge = birthDateVal ? calculateAge(birthDateVal) : null;
+  const age = calculatedAge !== null ? calculatedAge : (user?.age || '');
   const city = user?.city || user?.location || '';
   const bio = user?.bio || user?.description || '';
   const isOnline = Boolean(user?.online || user?.isOnline);

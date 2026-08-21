@@ -1,7 +1,8 @@
 import { supabase } from '../supabaseClient';
 import { presenceService } from './presenceService';
+import { calculateAge } from './businessRules';
 
-export { presenceService };
+export { presenceService, calculateAge };
 
 export const setStoredToken = (token) => localStorage.setItem('vlive_token', token);
 export const setStoredSession = (session) => localStorage.setItem('vlive_session', JSON.stringify(session));
@@ -260,8 +261,14 @@ export const apiProfile = {
       // Fetch wallet balance
       const { data: wallet } = await supabase.from('wallets').select('coins, usdt_balance').eq('user_id', uid).single();
       
+      // Calculate dynamic age from birthdate if available
+      const birthDateVal = profile.birth_date || profile.birthdate || profile.birthday || profile.birthDate;
+      const computedAge = birthDateVal ? calculateAge(birthDateVal) : (profile.age || null);
+
       return {
         ...profile,
+        birth_date: birthDateVal || '',
+        age: computedAge !== null ? computedAge : profile.age,
         coins: wallet?.coins ?? 0,
         diamonds: profile.diamonds ?? 0,
         usdt_balance: wallet?.usdt_balance ?? 0.0
@@ -291,6 +298,16 @@ export const apiProfile = {
     delete safeUpdates.username_handle;
     delete safeUpdates.id;
     delete safeUpdates.created_at;
+
+    // Calculate age automatically if birth_date is provided
+    const birthDateVal = safeUpdates.birth_date || safeUpdates.birthdate || safeUpdates.birthday;
+    if (birthDateVal) {
+      const calculated = calculateAge(birthDateVal);
+      if (calculated !== null) {
+        safeUpdates.age = calculated;
+      }
+      safeUpdates.birth_date = birthDateVal;
+    }
 
     if (safeUpdates.username) {
       const isTaken = await apiAuth.isUsernameTakenInDb(safeUpdates.username, uid);
@@ -324,6 +341,34 @@ export const apiProfile = {
     }
 
     return { success: !error, data: data?.[0], error: error?.message };
+  },
+
+  // Instant local state + DB sync function
+  async syncProfileState(updates) {
+    if (!updates || typeof updates !== 'object') return { success: false };
+
+    // 1. Immediately persist to localStorage
+    if (updates.name) localStorage.setItem('vlive_user_name', updates.name);
+    if (updates.bio) localStorage.setItem('vlive_user_bio', updates.bio);
+    if (updates.avatar) localStorage.setItem('vlive_user_avatar', updates.avatar);
+    if (updates.city) localStorage.setItem('vlive_profile_city', updates.city);
+    if (updates.birth_date) localStorage.setItem('vlive_profile_birthdate', updates.birth_date);
+    if (updates.age) localStorage.setItem('vlive_profile_age', String(updates.age));
+    if (updates.occupation) localStorage.setItem('vlive_profile_occupation', updates.occupation);
+    if (updates.education) localStorage.setItem('vlive_profile_education', updates.education);
+    if (updates.relationship) localStorage.setItem('vlive_profile_relationship', updates.relationship);
+    if (updates.interests) localStorage.setItem('vlive_profile_interests', updates.interests);
+    if (updates.languages) localStorage.setItem('vlive_profile_languages', updates.languages);
+    if (updates.instagram) localStorage.setItem('vlive_profile_ig', updates.instagram);
+    if (updates.telegram) localStorage.setItem('vlive_profile_tg', updates.telegram);
+
+    // 2. Dispatch custom event for cross-component immediate update
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('vlive_profile_updated', { detail: updates }));
+    }
+
+    // 3. Immediately persist to Database
+    return await this.updateProfile(updates);
   },
 
   async submitKyc(data) {
@@ -370,8 +415,12 @@ export const apiHome = {
       if (error) return [];
       return (data || []).map(u => {
         const isOnline = presenceService.isUserOnline(u);
+        const birthDateVal = u.birth_date || u.birthdate || u.birthday;
+        const calculatedAge = birthDateVal ? calculateAge(birthDateVal) : (u.age || null);
         return {
           ...u,
+          age: calculatedAge !== null ? calculatedAge : u.age,
+          birth_date: birthDateVal || '',
           city: u.location || u.city || '',
           is_streamer: u.user_type === 'STREAMER' || Boolean(u.is_streamer),
           online: isOnline,

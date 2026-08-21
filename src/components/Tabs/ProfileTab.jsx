@@ -2,7 +2,7 @@ import { useVisualUiEditor } from '../../context/VisualUiEditorContext';
 import React, { useState, useEffect } from 'react';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { safeStorage } from '../../utils/safeStorage';
-import { getUserId, apiProfile } from '../../services/api';
+import { getUserId, apiProfile, calculateAge } from '../../services/api';
 import { isUserAnAdmin } from '../../utils/usernameUtils';
 import { 
   Camera, Edit3, Settings, ShieldAlert, Sparkles, QrCode, Lock, Crown,
@@ -69,25 +69,33 @@ export default function ProfileTab(props) {
     return safeStorage.getItem('vlive_profile_cover') || '';
   });
   const [userCity, setUserCity] = useState(() => {
-    return safeStorage.getItem('vlive_profile_city') || authCity || 'Tehran, Iran';
+    return safeStorage.getItem('vlive_profile_city') || authCity || '';
+  });
+  const [userBirthDate, setUserBirthDate] = useState(() => {
+    return safeStorage.getItem('vlive_profile_birthdate') || '';
   });
   const [userAge, setUserAge] = useState(() => {
-    return safeStorage.getItem('vlive_profile_age') || '26';
+    const savedBirth = safeStorage.getItem('vlive_profile_birthdate');
+    if (savedBirth) {
+      const calc = calculateAge(savedBirth);
+      if (calc !== null) return String(calc);
+    }
+    return safeStorage.getItem('vlive_profile_age') || '';
   });
   const [userOccupation, setUserOccupation] = useState(() => {
-    return safeStorage.getItem('vlive_profile_occupation') || 'Digital Content Creator & Streamer Host';
+    return safeStorage.getItem('vlive_profile_occupation') || '';
   });
   const [userEducation, setUserEducation] = useState(() => {
-    return safeStorage.getItem('vlive_profile_education') || 'Software Engineering / Digital Arts';
+    return safeStorage.getItem('vlive_profile_education') || '';
   });
   const [userRelationship, setUserRelationship] = useState(() => {
     return safeStorage.getItem('vlive_profile_relationship') || 'Single';
   });
   const [userInterests, setUserInterests] = useState(() => {
-    return safeStorage.getItem('vlive_profile_interests') || 'Live Streaming, Music, Tech, Travel, Gaming';
+    return safeStorage.getItem('vlive_profile_interests') || '';
   });
   const [userLanguages, setUserLanguages] = useState(() => {
-    return safeStorage.getItem('vlive_profile_languages') || 'Persian, English, Turkish';
+    return safeStorage.getItem('vlive_profile_languages') || 'Persian, English';
   });
   const [instagramLink, setInstagramLink] = useState(() => {
     return safeStorage.getItem('vlive_profile_ig') || '';
@@ -95,6 +103,62 @@ export default function ProfileTab(props) {
   const [telegramLink, setTelegramLink] = useState(() => {
     return safeStorage.getItem('vlive_profile_tg') || '';
   });
+
+  // Sync real profile data from Supabase DB on mount
+  useEffect(() => {
+    let isMounted = true;
+    apiProfile.getProfile().then(profile => {
+      if (!isMounted || !profile) return;
+      
+      const birthVal = profile.birth_date || profile.birthdate || profile.birthday;
+      let effectiveAge = '';
+      if (birthVal) {
+        setUserBirthDate(birthVal);
+        safeStorage.setItem('vlive_profile_birthdate', birthVal);
+        const calc = calculateAge(birthVal);
+        if (calc !== null) {
+          effectiveAge = String(calc);
+        }
+      }
+
+      if (!effectiveAge && profile.age !== undefined && profile.age !== null && profile.age !== '') {
+        effectiveAge = String(profile.age);
+      }
+
+      if (effectiveAge) {
+        setUserAge(effectiveAge);
+        safeStorage.setItem('vlive_profile_age', effectiveAge);
+        setEditForm(prev => ({ ...prev, age: effectiveAge, birth_date: birthVal || prev.birth_date }));
+      }
+
+      if (profile.city) {
+        setUserCity(profile.city);
+        safeStorage.setItem('vlive_profile_city', profile.city);
+        setEditForm(prev => ({ ...prev, city: profile.city }));
+      }
+      if (profile.bio) {
+        setUserBio(profile.bio);
+        setEditForm(prev => ({ ...prev, bio: profile.bio }));
+      }
+      if (profile.occupation) {
+        setUserOccupation(profile.occupation);
+        safeStorage.setItem('vlive_profile_occupation', profile.occupation);
+        setEditForm(prev => ({ ...prev, occupation: profile.occupation }));
+      }
+      if (profile.education) {
+        setUserEducation(profile.education);
+        safeStorage.setItem('vlive_profile_education', profile.education);
+        setEditForm(prev => ({ ...prev, education: profile.education }));
+      }
+      if (profile.interests) {
+        setUserInterests(profile.interests);
+        safeStorage.setItem('vlive_profile_interests', profile.interests);
+        setEditForm(prev => ({ ...prev, interests: profile.interests }));
+      }
+    }).catch(e => console.warn('ProfileTab getProfile sync error:', e));
+
+    return () => { isMounted = false; };
+  }, []);
 
   // --- EDIT PROFILE MODAL STATE ---
   const [isInterestsModalOpen, setIsInterestsModalOpen] = useState(false);
@@ -109,6 +173,7 @@ export default function ProfileTab(props) {
     name: userName || authFullName || 'User',
     bio: userBio || authBio || '',
     city: userCity,
+    birth_date: userBirthDate,
     age: userAge,
     occupation: userOccupation,
     education: userEducation,
@@ -240,13 +305,14 @@ export default function ProfileTab(props) {
   const [newPostType, setNewPostType] = useState('photo');
   const [newPostImage, setNewPostImage] = useState('');
 
-  // Save changes to safeStorage
-  const handleSaveProfile = () => {
+  // Save changes to safeStorage and sync to database immediately
+  const handleSaveProfile = async () => {
     setUserName(editForm.name);
     setUserBio(editForm.bio);
     setUserAvatar(editForm.avatar);
     setCoverPhoto(editForm.cover);
     setUserCity(editForm.city);
+    setUserBirthDate(editForm.birth_date || '');
     setUserAge(editForm.age);
     setUserOccupation(editForm.occupation);
     setUserEducation(editForm.education);
@@ -261,6 +327,7 @@ export default function ProfileTab(props) {
     safeStorage.setItem('vlive_user_avatar', editForm.avatar);
     safeStorage.setItem('vlive_profile_cover', editForm.cover);
     safeStorage.setItem('vlive_profile_city', editForm.city);
+    safeStorage.setItem('vlive_profile_birthdate', editForm.birth_date || '');
     safeStorage.setItem('vlive_profile_age', editForm.age);
     safeStorage.setItem('vlive_profile_occupation', editForm.occupation);
     safeStorage.setItem('vlive_profile_education', editForm.education);
@@ -270,16 +337,27 @@ export default function ProfileTab(props) {
     safeStorage.setItem('vlive_profile_ig', editForm.instagram);
     safeStorage.setItem('vlive_profile_tg', editForm.telegram);
 
-    // Real backend database sync
-    apiProfile.updateProfile({
-      name: editForm.name,
-      bio: editForm.bio,
-      avatar: editForm.avatar,
-      city: editForm.city,
-      age: Number(editForm.age) || undefined,
-      interests: editForm.interests,
-      is_onboarded: true
-    }).catch(e => console.warn('ProfileTab backend sync note:', e));
+    // Immediate DB sync via apiProfile.syncProfileState
+    try {
+      await apiProfile.syncProfileState({
+        name: editForm.name,
+        bio: editForm.bio,
+        avatar: editForm.avatar,
+        city: editForm.city,
+        birth_date: editForm.birth_date || undefined,
+        age: Number(editForm.age) || undefined,
+        interests: editForm.interests,
+        occupation: editForm.occupation,
+        education: editForm.education,
+        relationship: editForm.relationship,
+        languages: editForm.languages,
+        instagram: editForm.instagram,
+        telegram: editForm.telegram,
+        is_onboarded: true
+      });
+    } catch (e) {
+      console.warn('ProfileTab backend sync note:', e);
+    }
 
     setIsEditModalOpen(false);
     showToast(window.loc('پروفایل شما با موفقیت به‌روزرسانی و ذخیره شد ✨', 'Profile updated & saved successfully ✨'));
@@ -854,7 +932,7 @@ export default function ProfileTab(props) {
                     <User className="w-3.5 h-3.5 text-pink-400" />
                     <span>{window.loc('سن و تاریخ تولد', 'Age & Birthday')}</span>
                   </span>
-                  <p className="text-white font-black text-sm">{userAge} years old</p>
+                  <p className="text-white font-black text-sm">{userAge ? `${userAge} ${window.loc('سال', 'years old')}` : window.loc('ثبت نشده (ویرایش نمایید)', 'Not specified (Edit profile)')}</p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
@@ -862,7 +940,7 @@ export default function ProfileTab(props) {
                     <MapPin className="w-3.5 h-3.5 text-cyan-400" />
                     <span>{window.loc('شهر و موقعیت', 'Location')}</span>
                   </span>
-                  <p className="text-white font-black text-sm">{userCity}</p>
+                  <p className="text-white font-black text-sm">{userCity || window.loc('ثبت نشده', 'Not specified')}</p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
@@ -870,7 +948,7 @@ export default function ProfileTab(props) {
                     <Briefcase className="w-3.5 h-3.5 text-amber-400" />
                     <span>{window.loc('شغل و فعالیت', 'Occupation')}</span>
                   </span>
-                  <p className="text-white font-black text-sm">{userOccupation}</p>
+                  <p className="text-white font-black text-sm">{userOccupation || window.loc('ثبت نشده', 'Not specified')}</p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
@@ -878,7 +956,7 @@ export default function ProfileTab(props) {
                     <GraduationCap className="w-3.5 h-3.5 text-purple-400" />
                     <span>{window.loc('تحصیلات', 'Education')}</span>
                   </span>
-                  <p className="text-white font-black text-sm">{userEducation}</p>
+                  <p className="text-white font-black text-sm">{userEducation || window.loc('ثبت نشده', 'Not specified')}</p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
@@ -1393,8 +1471,8 @@ export default function ProfileTab(props) {
                 </div>
               </div>
 
-              {/* City & Age */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* City, Birthdate & Age */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-300">{window.loc('شهر و کشور', 'city ​​and country')}</label>
                   <input
@@ -1404,13 +1482,35 @@ export default function ProfileTab(props) {
                     className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none"
                   />
                 </div>
+
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">{window.loc('سن', 'age')}</label>
+                  <label className="text-xs font-bold text-slate-300">{window.loc('تاریخ تولد (میلادی)', 'Date of Birth')}</label>
+                  <input
+                    type="date"
+                    value={editForm.birth_date || ''}
+                    onChange={(e) => {
+                      const dob = e.target.value;
+                      const calculated = calculateAge(dob);
+                      setEditForm(prev => ({
+                        ...prev,
+                        birth_date: dob,
+                        age: calculated !== null ? String(calculated) : prev.age
+                      }));
+                    }}
+                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-300">
+                    {window.loc('سن محاسبه‌شده', 'Calculated Age')}
+                  </label>
                   <input
                     type="text"
                     value={editForm.age}
                     onChange={(e) => setEditForm({ ...editForm, age: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none"
+                    placeholder="24"
+                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none font-mono font-bold text-pink-400"
                   />
                 </div>
               </div>

@@ -68,6 +68,7 @@ export default function UserOnboardingModal({
   initialUsername = '',
   initialName = '',
   initialAvatar = '',
+  initialAge = '',
   telegramId = '',
   onComplete,
   showToast
@@ -78,7 +79,7 @@ export default function UserOnboardingModal({
   // Form states
   const [username, setUsername] = useState(initialUsername || '');
   const [fullName, setFullName] = useState(initialName || '');
-  const [age, setAge] = useState('22');
+  const [age, setAge] = useState(initialAge || '');
   const [isAgeConfirmed, setIsAgeConfirmed] = useState(true);
   const [country, setCountry] = useState('ایران (Iran)');
   const [gender, setGender] = useState('female'); // 'male' | 'female'
@@ -318,6 +319,9 @@ export default function UserOnboardingModal({
     safeStorage.setItem('vlive_user_gender', gender);
     safeStorage.setItem('vlive_current_username', username.trim());
     safeStorage.setItem('vlive_user_name', fullName.trim() || username.trim());
+    if (age) {
+      safeStorage.setItem('vlive_profile_age', String(age));
+    }
     if (avatarPreview) {
       safeStorage.setItem('vlive_user_avatar', avatarPreview);
     }
