@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { VerifiedBadge } from '../CommonBadges';
-import { apiMessages, apiHome, getUserId, presenceService, calculateAge } from '../../services/api';
+import { apiMessages, apiHome, getUserId, presenceService, calculateAge, getCanonicalConversationId } from '../../services/api';
 import { 
   Search, Plus, Filter, MessageSquare, PhoneCall, Video, Pin, BellOff, Trash2, 
   CheckCheck, Send, Mic, Image, Paperclip, Smile, Gift, Sparkles, X, ChevronRight,
@@ -190,11 +190,14 @@ export default function ChatTab(props) {
     if (!activeConversationId) return;
 
     let isMounted = true;
+    const currentUid = getUserId();
+    const partnerId = currentConv?.partner_id || currentConv?.user?.id || (currentConv?.user?.username !== currentUid ? currentConv?.user?.username : null) || activeConversationId;
+    const canonicalId = (currentUid && partnerId) ? getCanonicalConversationId(currentUid, partnerId) : activeConversationId;
+
     const loadRealMessages = async () => {
       try {
-        const msgs = await apiMessages.getMessages(activeConversationId);
-        if (isMounted && Array.isArray(msgs) && msgs.length > 0) {
-          const currentUid = getUserId();
+        const msgs = await apiMessages.getMessages(activeConversationId, partnerId);
+        if (isMounted && Array.isArray(msgs)) {
           const formatted = msgs.map(m => ({
             id: m.id || `msg_${Date.now()}_${Math.random()}`,
             sender: m.sender_id === currentUid ? 'me' : 'them',
@@ -206,12 +209,13 @@ export default function ChatTab(props) {
 
           setConversations(prev => {
             const list = Array.isArray(prev) ? prev : [];
-            const exists = list.some(c => String(c.id) === String(activeConversationId));
+            const exists = list.some(c => String(c.id) === String(activeConversationId) || (canonicalId && String(c.id) === String(canonicalId)));
             if (exists) {
               return list.map(c => {
-                if (String(c.id) === String(activeConversationId)) {
+                if (String(c.id) === String(activeConversationId) || (canonicalId && String(c.id) === String(canonicalId))) {
                   return {
                     ...c,
+                    id: canonicalId || c.id,
                     messages: formatted,
                     lastMessage: formatted[formatted.length - 1]?.text || c.lastMessage
                   };
@@ -219,7 +223,7 @@ export default function ChatTab(props) {
                 return c;
               });
             } else if (currentConv) {
-              return [{ ...currentConv, messages: formatted, lastMessage: formatted[formatted.length - 1]?.text || '' }, ...list];
+              return [{ ...currentConv, id: canonicalId || activeConversationId, messages: formatted, lastMessage: formatted[formatted.length - 1]?.text || '' }, ...list];
             }
             return list;
           });
@@ -231,10 +235,9 @@ export default function ChatTab(props) {
 
     loadRealMessages();
 
-    // Subscribe to realtime incoming messages for active conversation
+    // 1. Subscribe to realtime incoming messages for active conversation
     const channel = apiMessages.subscribeToConversation(activeConversationId, (newMsgRecord) => {
       if (!isMounted || !newMsgRecord) return;
-      const currentUid = getUserId();
       const isMe = newMsgRecord.sender_id === currentUid;
       if (isMe) return; // already added optimistically
 
@@ -249,24 +252,73 @@ export default function ChatTab(props) {
       setConversations(prev => {
         const list = Array.isArray(prev) ? prev : [];
         return list.map(c => {
-          if (String(c.id) === String(activeConversationId)) {
+          if (String(c.id) === String(activeConversationId) || (canonicalId && String(c.id) === String(canonicalId))) {
+            const currentMsgs = c.messages || [];
+            if (currentMsgs.some(m => m.id === incomingFormatted.id || (m.text === incomingFormatted.text && m.sender === 'them' && Math.abs(Date.now() - (m.timestamp || 0)) < 2500))) {
+              return c;
+            }
             return {
               ...c,
               lastMessage: incomingFormatted.text,
               lastTime: incomingFormatted.time,
-              messages: [...(c.messages || []), incomingFormatted]
+              messages: [...currentMsgs, incomingFormatted]
             };
           }
           return c;
         });
       });
-    });
+    }, partnerId);
+
+    // 2. Subscribe to current user personal inbox for messages from other users
+    let inboxChannel = null;
+    if (currentUid) {
+      inboxChannel = apiMessages.subscribeToUserInbox(currentUid, (newMsgRecord) => {
+        if (!isMounted || !newMsgRecord) return;
+        if (newMsgRecord.sender_id === currentUid) return;
+
+        const isCurrentChat = (
+          newMsgRecord.sender_id === partnerId ||
+          newMsgRecord.conversation_id === activeConversationId ||
+          newMsgRecord.conversation_id === canonicalId
+        );
+
+        if (isCurrentChat) {
+          const incomingFormatted = {
+            id: newMsgRecord.id || `msg_${Date.now()}`,
+            sender: 'them',
+            text: newMsgRecord.message_text || newMsgRecord.text || '',
+            mediaUrl: newMsgRecord.media_url || '',
+            time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+          };
+
+          setConversations(prev => {
+            const list = Array.isArray(prev) ? prev : [];
+            return list.map(c => {
+              if (String(c.id) === String(activeConversationId) || (canonicalId && String(c.id) === String(canonicalId))) {
+                const currentMsgs = c.messages || [];
+                if (currentMsgs.some(m => m.id === incomingFormatted.id)) {
+                  return c;
+                }
+                return {
+                  ...c,
+                  lastMessage: incomingFormatted.text,
+                  lastTime: incomingFormatted.time,
+                  messages: [...currentMsgs, incomingFormatted]
+                };
+              }
+              return c;
+            });
+          });
+        }
+      });
+    }
 
     return () => {
       isMounted = false;
       if (channel) channel.unsubscribe();
+      if (inboxChannel) inboxChannel.unsubscribe();
     };
-  }, [activeConversationId]);
+  }, [activeConversationId, currentConv]);
 
   // Real message send handler
   const handleSendDirectMessage = async (customText) => {
@@ -274,22 +326,28 @@ export default function ChatTab(props) {
     if (!textToSend || !activeConversationId) return;
 
     const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const currentUid = getUserId();
+    const partnerId = currentConv?.partner_id || currentConv?.user?.id || (currentConv?.user?.username !== currentUid ? currentConv?.user?.username : null) || activeConversationId;
+    const canonicalId = (currentUid && partnerId) ? getCanonicalConversationId(currentUid, partnerId) : activeConversationId;
+
     const localMsg = {
       id: Date.now(),
       sender: 'me',
       text: textToSend,
-      time: nowTime
+      time: nowTime,
+      timestamp: Date.now()
     };
 
     // 1. Optimistic UI update
     setConversations(prev => {
       const list = Array.isArray(prev) ? prev : [];
-      const exists = list.some(c => String(c.id) === String(activeConversationId));
+      const exists = list.some(c => String(c.id) === String(activeConversationId) || (canonicalId && String(c.id) === String(canonicalId)));
       if (exists) {
         return list.map(c => {
-          if (String(c.id) === String(activeConversationId)) {
+          if (String(c.id) === String(activeConversationId) || (canonicalId && String(c.id) === String(canonicalId))) {
             return {
               ...c,
+              id: canonicalId || c.id,
               lastMessage: textToSend,
               lastTime: nowTime,
               messages: [...(c.messages || []), localMsg]
@@ -300,6 +358,7 @@ export default function ChatTab(props) {
       } else if (currentConv) {
         return [{
           ...currentConv,
+          id: canonicalId || activeConversationId,
           lastMessage: textToSend,
           lastTime: nowTime,
           messages: [localMsg]
@@ -310,12 +369,11 @@ export default function ChatTab(props) {
 
     setDirectInputText('');
 
-    // 2. Real API send to Supabase & Realtime broadcast
+    // 2. Real API send to Supabase & Realtime multi-channel broadcast
     try {
-      const recipientId = currentConv?.user?.id || currentConv?.user?.username || currentConv?.partner_id || activeConversationId;
       const res = await apiMessages.sendMessage({
-        conversationId: activeConversationId,
-        recipient: recipientId,
+        conversationId: canonicalId || activeConversationId,
+        recipient: partnerId,
         text: textToSend
       });
       if (res && res.success !== false) {
@@ -1126,7 +1184,36 @@ export default function ChatTab(props) {
                             <button
                               key={u.id || i}
                               onClick={() => {
-                                const convId = u.id || `conv_${u.username}`;
+                                const currentUid = getUserId();
+                                const targetId = u.id || u.username;
+                                const convId = currentUid ? getCanonicalConversationId(currentUid, targetId) : targetId;
+                                
+                                const newConv = {
+                                  id: convId,
+                                  partner_id: u.id || u.username,
+                                  user: {
+                                    id: u.id,
+                                    username: u.username,
+                                    name: u.name || u.username,
+                                    avatar: u.avatar || '',
+                                    isVerified: u.isVerified || u.is_verified || false,
+                                    online: u.online || u.isOnline || true,
+                                    role: u.role || 'Member'
+                                  },
+                                  lastMessage: '',
+                                  lastTime: 'Just now',
+                                  unreadCount: 0,
+                                  messages: []
+                                };
+
+                                setConversations(prev => {
+                                  const list = Array.isArray(prev) ? prev : [];
+                                  if (!list.some(c => String(c.id) === String(convId))) {
+                                    return [newConv, ...list];
+                                  }
+                                  return list;
+                                });
+
                                 setActiveConversationId(convId);
                               }}
                               className="p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-pink-500/50 flex items-center gap-2.5 transition text-right group"
@@ -1472,10 +1559,13 @@ export default function ChatTab(props) {
                         <div
                           key={targetUser.id || idx}
                           onClick={() => {
-                            const convId = targetUser.id || `conv_${targetUser.username}`;
+                            const currentUid = getUserId();
+                            const targetId = targetUser.id || targetUser.username;
+                            const convId = currentUid ? getCanonicalConversationId(currentUid, targetId) : targetId;
+                            
                             const newConv = {
                               id: convId,
-                              partner_id: targetUser.id,
+                              partner_id: targetUser.id || targetUser.username,
                               user: {
                                 id: targetUser.id,
                                 username: targetUser.username,

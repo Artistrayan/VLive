@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { isUserAnAdmin } from '../utils/usernameUtils';
 import { calculateAge } from '../services/businessRules';
+import { apiProfile, apiSocial } from '../services/api';
 import { 
   X, Heart, MessageSquare, PhoneCall, Video, Gift, Share2, ShieldAlert,
   Crown, CheckCircle, MapPin, Sparkles, UserCheck, UserX, Ban, Flag,
@@ -29,11 +30,12 @@ export default function UserProfileViewModal({
   const isAdminUser = currentUser?.role === 'admin' && String(currentUser?.telegram_id || '').trim() === '8933698119';
 
   // --- STATE FOR INTERACTION ---
-  const [isFollowing, setIsFollowing] = useState(user?.isFollowing || user?.followed || false);
-  const [isLiked, setIsLiked] = useState(user?.isLiked || false);
-  const [isSuperLiked, setIsSuperLiked] = useState(user?.isSuperLiked || false);
-  const [likesCount, setLikesCount] = useState(user?.likes || user?.likesCount || 0);
-  const [followersCount, setFollowersCount] = useState(user?.followers || user?.followersCount || 0);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isSuperLiked, setIsSuperLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [viewsCount, setViewsCount] = useState(0);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'media' | 'lives' | 'about'
   
   // Report Modal State
@@ -49,17 +51,31 @@ export default function UserProfileViewModal({
 
   // Sync states whenever a new user object is passed
   useEffect(() => {
-    if (user) {
-      setIsFollowing(Boolean(user.isFollowing || user.followed));
-      setIsLiked(Boolean(user.isLiked));
+    if (user && isOpen) {
+      const targetId = user.id || user.username;
+      const alreadyFollowed = apiProfile.isUserFollowed(targetId) || Boolean(user.isFollowing || user.followed);
+      const alreadyLiked = apiProfile.isUserProfileLiked(targetId) || Boolean(user.isLiked);
+      
+      setIsFollowing(alreadyFollowed);
+      setIsLiked(alreadyLiked);
       setIsSuperLiked(Boolean(user.isSuperLiked));
-      setLikesCount(user.likes || user.likesCount || 0);
-      setFollowersCount(user.followers || user.followersCount || 0);
+      setLikesCount(user.likes || user.likes_count || user.likesCount || 0);
+      setFollowersCount(user.followers || user.followers_count || user.followersCount || 0);
+      setViewsCount(user.views || user.views_count || user.viewsCount || 0);
       setIsBanned(Boolean(user.isBanned));
       setIsVerified(Boolean(user.isVerified || user.verified));
       setIsStreamer(Boolean(user.isStreamer || user.is_streamer || user.isHost));
+
+      // Record profile view in real-time
+      if (targetId) {
+        apiProfile.recordProfileView(targetId, currentUser).then(res => {
+          if (res && res.viewsCount) {
+            setViewsCount(res.viewsCount);
+          }
+        });
+      }
     }
-  }, [user]);
+  }, [user, isOpen]);
 
   if (!isOpen || !user) return null;
 
@@ -80,19 +96,35 @@ export default function UserProfileViewModal({
   // Sample User Media
   const publicPhotos = user?.photos || [];
 
-  const toggleFollow = () => {
+  const toggleFollow = async () => {
+    const targetId = user.id || user.username;
     const nextState = !isFollowing;
     setIsFollowing(nextState);
-    setFollowersCount(prev => nextState ? prev + 1 : prev - 1);
+    setFollowersCount(prev => Math.max(0, nextState ? prev + 1 : prev - 1));
+
+    if (nextState) {
+      await apiProfile.followUser(user);
+    } else {
+      await apiProfile.unfollowUser(targetId);
+    }
+
     onFollowToggle(user, nextState);
-    showToast(nextState ? window.loc(`با موفقیت ${userName} را دنبال کردید 👤`, `با موفقیت ${userName} را دنبال کردید 👤`) : window.loc(`دنبال کردن لغو شد`, `دنبال کردن لغو شد`));
+    showToast(nextState ? window.loc(`با موفقیت ${userName} را دنبال کردید 👤`, `You followed ${userName} 👤`) : window.loc(`دنبال کردن لغو شد`, `Unfollowed successfully`));
   };
 
-  const toggleLike = () => {
+  const toggleLike = async () => {
+    const targetId = user.id || user.username;
     const nextState = !isLiked;
     setIsLiked(nextState);
-    setLikesCount(prev => nextState ? prev + 1 : prev - 1);
-    showToast(nextState ? window.loc(`💖 لایک برای ${userName} ارسال شد`, `💖 لایک برای ${userName} ارسال شد`) : window.loc(`لایک برداشته شد`, `لایک برداشته شد`));
+    setLikesCount(prev => Math.max(0, nextState ? prev + 1 : prev - 1));
+
+    if (nextState) {
+      await apiProfile.likeUserProfile(targetId);
+    } else {
+      await apiProfile.unlikeUserProfile(targetId);
+    }
+
+    showToast(nextState ? window.loc(`💖 لایک برای ${userName} ثبت شد`, `💖 Liked ${userName}`) : window.loc(`لایک برداشته شد`, `Like removed`));
   };
 
   const triggerSuperLike = () => {
@@ -315,7 +347,7 @@ export default function UserProfileViewModal({
             </button>
           </div>
 
-          {/* Stats Bar */}
+          {/* Stats Bar with Real Statistics */}
           <div className="grid grid-cols-4 gap-2 p-3 bg-slate-950/80 rounded-2xl border border-slate-800 text-center text-xs">
             <div>
               <span className="block font-black text-white text-sm">{followersCount.toLocaleString()}</span>
@@ -330,8 +362,8 @@ export default function UserProfileViewModal({
               <span className="text-[10px] text-slate-400">{window.loc('عکس/فیلم', 'Media')}</span>
             </div>
             <div>
-              <span className="block font-black text-amber-400 text-sm">Lv.22</span>
-              <span className="text-[10px] text-slate-400">{window.loc('سطح', 'Level')}</span>
+              <span className="block font-black text-emerald-400 text-sm">{viewsCount.toLocaleString()}</span>
+              <span className="text-[10px] text-slate-400">{window.loc('بازدید', 'Views')}</span>
             </div>
           </div>
 

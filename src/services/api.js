@@ -384,6 +384,267 @@ export const apiProfile = {
       doc_url: data.docUrl || ''
     }]);
     return { success: !error };
+  },
+
+  // ==================== REAL FOLLOW / UNFOLLOW SYSTEM ====================
+  async followUser(targetUser) {
+    if (!targetUser) return { success: false };
+    const targetId = targetUser.id || targetUser.username;
+    if (!targetId) return { success: false };
+    const uid = getUserId();
+
+    try {
+      // 1. Get existing following list
+      let following = [];
+      try {
+        const stored = localStorage.getItem('vlive_user_following_list');
+        if (stored) following = JSON.parse(stored);
+      } catch (e) {
+        following = [];
+      }
+
+      const cleanTarget = {
+        id: targetId,
+        username: targetUser.username || targetId,
+        name: targetUser.name || targetUser.fullName || targetUser.username || targetId,
+        avatar: targetUser.avatar || targetUser.thumbnail || '',
+        role: targetUser.role || (targetUser.isStreamer ? 'Streamer' : 'User'),
+        level: targetUser.level || 1,
+        isStreamer: Boolean(targetUser.isStreamer || targetUser.is_streamer),
+        isLive: Boolean(targetUser.isLive || targetUser.live),
+        followedAt: new Date().toISOString()
+      };
+
+      if (!following.some(u => String(u.id) === String(targetId) || String(u.username).toLowerCase() === String(cleanTarget.username).toLowerCase())) {
+        following.unshift(cleanTarget);
+        localStorage.setItem('vlive_user_following_list', JSON.stringify(following));
+        localStorage.setItem('vlive_user_following', String(following.length));
+      }
+
+      // 2. Increment target user followers count in Supabase
+      if (targetUser.id) {
+        const { data: targetProfile } = await supabase.from('profiles').select('followers_count').eq('id', targetUser.id).maybeSingle();
+        const nextFollowers = (targetProfile?.followers_count || 0) + 1;
+        await supabase.from('profiles').update({ followers_count: nextFollowers }).eq('id', targetUser.id);
+      }
+
+      // 3. Increment current user following count in Supabase
+      if (uid) {
+        const { data: myProfile } = await supabase.from('profiles').select('following_count').eq('id', uid).maybeSingle();
+        const nextFollowing = (myProfile?.following_count || 0) + 1;
+        await supabase.from('profiles').update({ following_count: nextFollowing }).eq('id', uid);
+      }
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vlive_follow_changed', { detail: { targetId, isFollowing: true, user: cleanTarget } }));
+      }
+
+      return { success: true, isFollowing: true, followingCount: following.length };
+    } catch (e) {
+      console.warn('apiProfile.followUser error:', e);
+      return { success: false, isFollowing: false };
+    }
+  },
+
+  async unfollowUser(targetId) {
+    if (!targetId) return { success: false };
+    const uid = getUserId();
+
+    try {
+      let following = [];
+      try {
+        const stored = localStorage.getItem('vlive_user_following_list');
+        if (stored) following = JSON.parse(stored);
+      } catch (e) {
+        following = [];
+      }
+
+      const updated = following.filter(u => String(u.id) !== String(targetId) && String(u.username).toLowerCase() !== String(targetId).toLowerCase());
+      localStorage.setItem('vlive_user_following_list', JSON.stringify(updated));
+      localStorage.setItem('vlive_user_following', String(updated.length));
+
+      // Decrement target user followers count in Supabase
+      const { data: targetProfile } = await supabase.from('profiles').select('followers_count').eq('id', targetId).maybeSingle();
+      if (targetProfile) {
+        const nextFollowers = Math.max(0, (targetProfile.followers_count || 1) - 1);
+        await supabase.from('profiles').update({ followers_count: nextFollowers }).eq('id', targetId);
+      }
+
+      // Decrement current user following count in Supabase
+      if (uid) {
+        const { data: myProfile } = await supabase.from('profiles').select('following_count').eq('id', uid).maybeSingle();
+        if (myProfile) {
+          const nextFollowing = Math.max(0, (myProfile.following_count || 1) - 1);
+          await supabase.from('profiles').update({ following_count: nextFollowing }).eq('id', uid);
+        }
+      }
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vlive_follow_changed', { detail: { targetId, isFollowing: false } }));
+      }
+
+      return { success: true, isFollowing: false, followingCount: updated.length };
+    } catch (e) {
+      console.warn('apiProfile.unfollowUser error:', e);
+      return { success: false };
+    }
+  },
+
+  getFollowingList() {
+    try {
+      const stored = localStorage.getItem('vlive_user_following_list');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  getFollowersList() {
+    try {
+      const stored = localStorage.getItem('vlive_user_followers_list');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  isUserFollowed(targetId) {
+    if (!targetId) return false;
+    const following = this.getFollowingList();
+    return following.some(u => String(u.id) === String(targetId) || String(u.username).toLowerCase() === String(targetId).toLowerCase());
+  },
+
+  // ==================== REAL PROFILE LIKES SYSTEM ====================
+  async likeUserProfile(targetUserId) {
+    if (!targetUserId) return { success: false };
+    try {
+      let likedProfiles = [];
+      try {
+        const stored = localStorage.getItem('vlive_liked_user_profiles');
+        if (stored) likedProfiles = JSON.parse(stored);
+      } catch (e) {
+        likedProfiles = [];
+      }
+
+      const isAlreadyLiked = likedProfiles.includes(String(targetUserId));
+      let nextLikesCount = 1;
+
+      if (!isAlreadyLiked) {
+        likedProfiles.push(String(targetUserId));
+        localStorage.setItem('vlive_liked_user_profiles', JSON.stringify(likedProfiles));
+
+        // Update in Supabase
+        const { data: targetProfile } = await supabase.from('profiles').select('likes_count').eq('id', targetUserId).maybeSingle();
+        nextLikesCount = (targetProfile?.likes_count || 0) + 1;
+        await supabase.from('profiles').update({ likes_count: nextLikesCount }).eq('id', targetUserId);
+      }
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vlive_profile_liked', { detail: { targetUserId, isLiked: true, likesCount: nextLikesCount } }));
+      }
+
+      return { success: true, isLiked: true, likesCount: nextLikesCount };
+    } catch (e) {
+      return { success: false };
+    }
+  },
+
+  async unlikeUserProfile(targetUserId) {
+    if (!targetUserId) return { success: false };
+    try {
+      let likedProfiles = [];
+      try {
+        const stored = localStorage.getItem('vlive_liked_user_profiles');
+        if (stored) likedProfiles = JSON.parse(stored);
+      } catch (e) {
+        likedProfiles = [];
+      }
+
+      const updated = likedProfiles.filter(id => id !== String(targetUserId));
+      localStorage.setItem('vlive_liked_user_profiles', JSON.stringify(updated));
+
+      const { data: targetProfile } = await supabase.from('profiles').select('likes_count').eq('id', targetUserId).maybeSingle();
+      const nextLikesCount = Math.max(0, (targetProfile?.likes_count || 1) - 1);
+      await supabase.from('profiles').update({ likes_count: nextLikesCount }).eq('id', targetUserId);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vlive_profile_liked', { detail: { targetUserId, isLiked: false, likesCount: nextLikesCount } }));
+      }
+
+      return { success: true, isLiked: false, likesCount: nextLikesCount };
+    } catch (e) {
+      return { success: false };
+    }
+  },
+
+  isUserProfileLiked(targetUserId) {
+    if (!targetUserId) return false;
+    try {
+      const stored = localStorage.getItem('vlive_liked_user_profiles');
+      if (!stored) return false;
+      const likedProfiles = JSON.parse(stored);
+      return likedProfiles.includes(String(targetUserId));
+    } catch (e) {
+      return false;
+    }
+  },
+
+  // ==================== REAL PROFILE VIEWS / VISITS SYSTEM ====================
+  async recordProfileView(targetUserId, viewerData = {}) {
+    if (!targetUserId) return { success: false };
+    try {
+      const viewerId = viewerData.id || getUserId();
+      // Avoid counting self-views excessively
+      if (viewerId && String(viewerId) === String(targetUserId)) {
+        return { success: true, isSelf: true };
+      }
+
+      // 1. Record visitor in visitors log
+      const storageKey = `vlive_profile_visitors_${targetUserId}`;
+      let visitors = [];
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) visitors = JSON.parse(stored);
+      } catch (e) {
+        visitors = [];
+      }
+
+      const visitorEntry = {
+        id: viewerId || `visitor_${Date.now()}`,
+        name: viewerData.name || viewerData.username || 'App Visitor',
+        username: viewerData.username || 'visitor',
+        avatar: viewerData.avatar || '',
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString('fa-IR'),
+        timestamp: Date.now()
+      };
+
+      // Filter out duplicate consecutive visit from same user within 10 minutes
+      visitors = visitors.filter(v => !(v.id === visitorEntry.id && (Date.now() - v.timestamp < 10 * 60 * 1000)));
+      visitors.unshift(visitorEntry);
+      visitors = visitors.slice(0, 50); // keep last 50
+      localStorage.setItem(storageKey, JSON.stringify(visitors));
+
+      // 2. Increment views_count in Supabase
+      const { data: targetProfile } = await supabase.from('profiles').select('views_count').eq('id', targetUserId).maybeSingle();
+      const nextViews = (targetProfile?.views_count || 0) + 1;
+      await supabase.from('profiles').update({ views_count: nextViews }).eq('id', targetUserId);
+
+      return { success: true, viewsCount: nextViews, visitors };
+    } catch (e) {
+      return { success: false };
+    }
+  },
+
+  getProfileVisitors(targetUserId) {
+    if (!targetUserId) return [];
+    try {
+      const storageKey = `vlive_profile_visitors_${targetUserId}`;
+      const stored = localStorage.getItem(storageKey);
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
   }
 };
 
@@ -437,60 +698,140 @@ export const apiHome = {
 // ==========================================
 // 5. MESSAGES & CHAT SERVICE
 // ==========================================
+export function getCanonicalConversationId(u1, u2) {
+  if (!u1 && !u2) return 'conv_general';
+  if (!u1) return String(u2).trim();
+  if (!u2) return String(u1).trim();
+  const s1 = String(u1).trim();
+  const s2 = String(u2).trim();
+  return s1 < s2 ? `dm_${s1}_${s2}` : `dm_${s2}_${s1}`;
+}
+
 export const apiMessages = {
   async getConversations() {
     const uid = getUserId();
     if (!uid) return [];
     try {
-      const { data, error } = await supabase
-        .from('conversations')
-        .select('*, profiles!conversations_partner_id_fkey(id, username, name, avatar)')
-        .or(`user1_id.eq.${uid},user2_id.eq.${uid}`)
-        .order('updated_at', { ascending: false });
-      if (!error && Array.isArray(data) && data.length > 0) return data;
-
-      // Fallback from direct_messages table
+      // 1. Fetch conversations from direct_messages table
       const { data: msgs, error: msgsErr } = await supabase
         .from('direct_messages')
         .select('*')
         .or(`sender_id.eq.${uid},recipient_id.eq.${uid}`)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200);
+
+      const convMap = new Map();
+      const partnerIds = new Set();
 
       if (!msgsErr && Array.isArray(msgs)) {
-        const convMap = new Map();
         for (const m of msgs) {
-          const cId = m.conversation_id || (m.sender_id === uid ? m.recipient_id : m.sender_id);
-          if (!cId) continue;
-          if (!convMap.has(cId)) {
-            convMap.set(cId, {
-              id: cId,
+          const partnerId = m.sender_id === uid ? m.recipient_id : m.sender_id;
+          const otherKey = partnerId || m.conversation_id;
+          if (!otherKey) continue;
+          
+          const canonicalId = partnerId ? getCanonicalConversationId(uid, partnerId) : m.conversation_id;
+          if (partnerId) partnerIds.add(partnerId);
+
+          if (!convMap.has(canonicalId)) {
+            convMap.set(canonicalId, {
+              id: canonicalId,
+              partner_id: partnerId || otherKey,
               last_message: m.message_text || m.text || '',
               updated_at: m.created_at,
               sender_id: m.sender_id,
-              recipient_id: m.recipient_id
+              recipient_id: m.recipient_id,
+              is_unread: m.recipient_id === uid && !m.is_read
             });
           }
         }
-        return Array.from(convMap.values());
       }
-      return [];
+
+      // 2. Fetch profiles for all conversation partners
+      let profilesMap = new Map();
+      if (partnerIds.size > 0) {
+        const idList = Array.from(partnerIds);
+        try {
+          const { data: profs } = await supabase
+            .from('profiles')
+            .select('id, username, name, avatar, is_streamer, is_verified, role, status, updated_at, birth_date, age')
+            .or(`id.in.(${idList.map(id => `"${id}"`).join(',')}),username.in.(${idList.map(id => `"${id}"`).join(',')})`);
+          
+          if (Array.isArray(profs)) {
+            profs.forEach(p => {
+              if (p.id) profilesMap.set(String(p.id), p);
+              if (p.username) profilesMap.set(String(p.username), p);
+            });
+          }
+        } catch (profErr) {
+          console.warn('Profiles fetch for conversations note:', profErr);
+        }
+      }
+
+      // 3. Hydrate conversation list with real user profile data
+      const hydratedList = [];
+      for (const [cId, conv] of convMap.entries()) {
+        const prof = profilesMap.get(String(conv.partner_id)) || {};
+        const isOnline = presenceService.isUserOnline(prof);
+        const birthDateVal = prof.birth_date || prof.birthdate;
+        const calculatedAge = birthDateVal ? calculateAge(birthDateVal) : (prof.age || null);
+
+        hydratedList.push({
+          id: cId,
+          partner_id: conv.partner_id,
+          user: {
+            id: prof.id || conv.partner_id,
+            username: prof.username || conv.partner_id,
+            name: prof.name || prof.username || `User ${String(conv.partner_id).slice(0, 6)}`,
+            avatar: prof.avatar || '',
+            age: calculatedAge !== null ? calculatedAge : prof.age,
+            isVerified: prof.is_verified || Boolean(prof.isVerified),
+            isStreamer: prof.is_streamer || Boolean(prof.isStreamer),
+            online: isOnline,
+            isOnline: isOnline
+          },
+          lastMessage: conv.last_message,
+          lastTime: conv.updated_at ? new Date(conv.updated_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+          unreadCount: conv.is_unread ? 1 : 0,
+          messages: []
+        });
+      }
+
+      return hydratedList;
     } catch (e) {
+      console.warn('getConversations exception:', e);
       return [];
     }
   },
 
-  async getMessages(conversationId) {
-    if (!conversationId) return [];
+  async getMessages(conversationId, partnerId = null) {
+    if (!conversationId && !partnerId) return [];
+    const uid = getUserId();
+    const cId = String(conversationId || '');
+    const pId = partnerId ? String(partnerId) : null;
+    const canonicalId = (uid && pId) ? getCanonicalConversationId(uid, pId) : null;
+
     try {
-      const { data, error } = await supabase
-        .from('direct_messages')
-        .select('*')
-        .eq('conversation_id', String(conversationId))
-        .order('created_at', { ascending: true });
-      if (error) return [];
+      let query = supabase.from('direct_messages').select('*');
+
+      if (uid && pId) {
+        query = query.or(
+          `conversation_id.eq.${cId},` +
+          `conversation_id.eq.${canonicalId},` +
+          `and(sender_id.eq.${uid},recipient_id.eq.${pId}),` +
+          `and(sender_id.eq.${pId},recipient_id.eq.${uid})`
+        );
+      } else if (cId) {
+        query = query.or(`conversation_id.eq.${cId},conversation_id.eq.${canonicalId || cId}`);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: true });
+      if (error) {
+        console.warn('getMessages query error:', error);
+        return [];
+      }
       return data || [];
     } catch (e) {
+      console.warn('getMessages exception:', e);
       return [];
     }
   },
@@ -512,11 +853,13 @@ export const apiMessages = {
 
     if (!text && !mediaUrl) return { success: false, error: 'Empty message' };
 
-    const cId = String(conversationId || recipient || `conv_${Date.now()}`);
+    const recipientId = String(recipient || '').trim();
+    const canonicalId = (uid && recipientId) ? getCanonicalConversationId(uid, recipientId) : (conversationId || `conv_${Date.now()}`);
+    
     const messageRecord = {
-      conversation_id: cId,
+      conversation_id: String(canonicalId),
       sender_id: uid || 'anonymous',
-      recipient_id: recipient || null,
+      recipient_id: recipientId || null,
       message_text: text,
       media_url: mediaUrl,
       created_at: new Date().toISOString()
@@ -528,25 +871,54 @@ export const apiMessages = {
         .insert([messageRecord])
         .select();
 
-      try {
-        const chatChannel = supabase.channel(`direct_chat_${cId}`);
-        await chatChannel.send({
-          type: 'broadcast',
-          event: 'new_message',
-          payload: data?.[0] || messageRecord
-        });
-      } catch (broadcastErr) {}
+      const finalRecord = data?.[0] || messageRecord;
 
-      return { success: true, data: data?.[0] || messageRecord };
+      // Broadcast to multiple real-time channels for instant delivery
+      const broadcastChannels = new Set([
+        `direct_chat_${canonicalId}`,
+        'vlive_global_chat_events'
+      ]);
+      if (conversationId && conversationId !== canonicalId) {
+        broadcastChannels.add(`direct_chat_${conversationId}`);
+      }
+      if (recipientId) {
+        broadcastChannels.add(`user_inbox_${recipientId}`);
+      }
+      if (uid) {
+        broadcastChannels.add(`user_inbox_${uid}`);
+      }
+
+      broadcastChannels.forEach(chName => {
+        try {
+          const ch = supabase.channel(chName);
+          ch.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              ch.send({
+                type: 'broadcast',
+                event: 'new_message',
+                payload: finalRecord
+              }).catch(() => {});
+            }
+          });
+        } catch (bErr) {}
+      });
+
+      return { success: true, data: finalRecord };
     } catch (e) {
+      console.warn('sendMessage exception:', e);
       return { success: true, data: messageRecord };
     }
   },
 
-  subscribeToConversation(conversationId, onNewMessage) {
-    if (!conversationId || typeof onNewMessage !== 'function') return null;
-    const cId = String(conversationId);
-    const channel = supabase.channel(`direct_chat_${cId}`);
+  subscribeToConversation(conversationId, onNewMessage, partnerId = null) {
+    if ((!conversationId && !partnerId) || typeof onNewMessage !== 'function') return null;
+    const uid = getUserId();
+    const cId = String(conversationId || '');
+    const canonicalId = (uid && partnerId) ? getCanonicalConversationId(uid, partnerId) : cId;
+
+    const channelName = `direct_chat_${canonicalId || cId}`;
+    const channel = supabase.channel(channelName);
+    
     channel
       .on('broadcast', { event: 'new_message' }, ({ payload }) => {
         onNewMessage(payload);
@@ -554,10 +926,42 @@ export const apiMessages = {
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'direct_messages',
-        filter: `conversation_id=eq.${cId}`
+        table: 'direct_messages'
       }, (payload) => {
-        onNewMessage(payload.new);
+        const msg = payload.new;
+        if (!msg) return;
+        const matchesConv = msg.conversation_id === canonicalId || msg.conversation_id === cId;
+        const matchesUsers = (partnerId && uid) && (
+          (msg.sender_id === partnerId && msg.recipient_id === uid) ||
+          (msg.sender_id === uid && msg.recipient_id === partnerId)
+        );
+        if (matchesConv || matchesUsers) {
+          onNewMessage(msg);
+        }
+      })
+      .subscribe();
+
+    return channel;
+  },
+
+  subscribeToUserInbox(userId, onNewMessage) {
+    if (!userId || typeof onNewMessage !== 'function') return null;
+    const uid = String(userId);
+    const channel = supabase.channel(`user_inbox_${uid}`);
+
+    channel
+      .on('broadcast', { event: 'new_message' }, ({ payload }) => {
+        onNewMessage(payload);
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'direct_messages'
+      }, (payload) => {
+        const msg = payload.new;
+        if (msg && (msg.recipient_id === uid || msg.sender_id === uid)) {
+          onNewMessage(msg);
+        }
       })
       .subscribe();
 
@@ -1069,12 +1473,60 @@ export const apiSocial = {
   async likePost(postId) {
     if (!postId) return { success: false };
     try {
-      const { data: currentPost } = await supabase.from('posts').select('likes_count').eq('id', postId).single();
+      let likedPosts = [];
+      try {
+        const stored = localStorage.getItem('vlive_liked_posts');
+        if (stored) likedPosts = JSON.parse(stored);
+      } catch (e) {
+        likedPosts = [];
+      }
+
+      if (!likedPosts.includes(String(postId))) {
+        likedPosts.push(String(postId));
+        localStorage.setItem('vlive_liked_posts', JSON.stringify(likedPosts));
+      }
+
+      const { data: currentPost } = await supabase.from('posts').select('likes_count').eq('id', postId).maybeSingle();
       const newCount = (currentPost?.likes_count || 0) + 1;
       const { error } = await supabase.from('posts').update({ likes_count: newCount }).eq('id', postId);
-      return { success: !error, likes_count: newCount };
+      return { success: !error, likes_count: newCount, isLiked: true };
     } catch (e) {
       return { success: false };
+    }
+  },
+
+  async unlikePost(postId) {
+    if (!postId) return { success: false };
+    try {
+      let likedPosts = [];
+      try {
+        const stored = localStorage.getItem('vlive_liked_posts');
+        if (stored) likedPosts = JSON.parse(stored);
+      } catch (e) {
+        likedPosts = [];
+      }
+
+      const updated = likedPosts.filter(id => id !== String(postId));
+      localStorage.setItem('vlive_liked_posts', JSON.stringify(updated));
+
+      const { data: currentPost } = await supabase.from('posts').select('likes_count').eq('id', postId).maybeSingle();
+      const newCount = Math.max(0, (currentPost?.likes_count || 1) - 1);
+      const { error } = await supabase.from('posts').update({ likes_count: newCount }).eq('id', postId);
+      return { success: !error, likes_count: newCount, isLiked: false };
+    } catch (e) {
+      return { success: false };
+    }
+  },
+
+  isPostLiked(postId) {
+    if (!postId) return false;
+    try {
+      const stored = localStorage.getItem('vlive_liked_posts');
+      if (!stored) return false;
+      const likedPosts = JSON.parse(stored);
+      return likedPosts.includes(String(postId));
+    } catch (e) {
+      return false;
     }
   }
 };

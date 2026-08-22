@@ -2,7 +2,7 @@ import { useVisualUiEditor } from '../../context/VisualUiEditorContext';
 import React, { useState, useEffect } from 'react';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { safeStorage } from '../../utils/safeStorage';
-import { getUserId, apiProfile, calculateAge } from '../../services/api';
+import { getUserId, apiProfile, apiSocial, calculateAge } from '../../services/api';
 import { isUserAnAdmin } from '../../utils/usernameUtils';
 import { 
   Camera, Edit3, Settings, ShieldAlert, Sparkles, QrCode, Lock, Crown,
@@ -240,26 +240,39 @@ export default function ProfileTab(props) {
   const [showLocation, setShowLocation] = useState(() => safeStorage.getItem('vlive_priv_loc') !== 'false');
 
   // --- REAL PROFILE STATISTICS & PERSISTENCE ---
+  const [followingList, setFollowingList] = useState(() => apiProfile.getFollowingList());
+  const [followersList, setFollowersList] = useState(() => apiProfile.getFollowersList());
+  const [profileVisitors, setProfileVisitors] = useState(() => apiProfile.getProfileVisitors(currentUsername || 'me'));
   const [userFollowersCount, setUserFollowersCount] = useState(() => {
     return Number(safeStorage.getItem('vlive_user_followers') || 0);
   });
   const [userViewsCount, setUserViewsCount] = useState(() => {
     return Number(safeStorage.getItem('vlive_user_views') || 0);
   });
+  const [extraLikes, setExtraLikes] = useState(() => {
+    return Number(safeStorage.getItem('vlive_user_extra_likes') || 0);
+  });
 
-  // Calculate real Following count based on followedUsers prop or storage
-  const userFollowingCount = Array.isArray(props.followedUsers)
-    ? props.followedUsers.length
-    : Number(safeStorage.getItem('vlive_user_following') || 0);
+  const userFollowingCount = followingList.length;
+
+  useEffect(() => {
+    const syncFollow = () => {
+      setFollowingList(apiProfile.getFollowingList());
+      setFollowersList(apiProfile.getFollowersList());
+    };
+    window.addEventListener('vlive_follow_changed', syncFollow);
+    return () => window.removeEventListener('vlive_follow_changed', syncFollow);
+  }, []);
 
   // Increments real views count on profile visit
   useEffect(() => {
     const newViews = userViewsCount + 1;
     setUserViewsCount(newViews);
     safeStorage.setItem('vlive_user_views', String(newViews));
-  }, []);
+    setProfileVisitors(apiProfile.getProfileVisitors(currentUsername || 'me'));
+  }, [currentUsername]);
 
-  // --- LOCAL POSTS STATE WITH REAL LIKES & COMMENTS (STARTING FROM ZERO) ---
+  // --- LOCAL POSTS STATE WITH REAL LIKES & COMMENTS ---
   const [profilePosts, setProfilePosts] = useState([
     {
       id: 1,
@@ -292,7 +305,7 @@ export default function ProfileTab(props) {
   ]);
 
   // Real total likes calculation across posts + persistent likes
-  const userTotalLikes = profilePosts.reduce((sum, post) => sum + (post.likes || 0), 0) + Number(safeStorage.getItem('vlive_user_extra_likes') || 0);
+  const userTotalLikes = profilePosts.reduce((sum, post) => sum + (post.likes || 0), 0) + extraLikes;
 
   // Dynamic Profile Completion % based on filled details
   const profileCompletionPercent = (() => {
@@ -693,22 +706,22 @@ export default function ProfileTab(props) {
                   </div>
                   <div>
                     <h3 className="font-black text-white text-sm">{window.loc('دنبال‌کنندگان شما', 'Your Followers')}</h3>
-                    <span className="text-[10px] text-slate-400 font-mono">{formatNum(userFollowersCount)} {window.loc('فالوور واقعی', 'Real Followers')}</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{formatNum(followersList.length || userFollowersCount)} {window.loc('فالوور ثبت‌شده', 'Registered Followers')}</span>
                   </div>
                 </div>
                 <span className="text-xs font-bold text-indigo-400 bg-indigo-950/80 px-2.5 py-1 rounded-full border border-indigo-500/30">
-                  👥 {formatNum(userFollowersCount)}
+                  👥 {formatNum(followersList.length || userFollowersCount)}
                 </span>
               </div>
 
               {/* Followers List Grid */}
               <div className="space-y-2.5">
-                {usersList.length > 0 ? (
-                  usersList.slice(0, 8).map(u => (
+                {followersList.length > 0 ? (
+                  followersList.map(u => (
                     <div key={u.id || u.username} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 transition flex items-center justify-between gap-3 shadow-sm">
                       <div className="flex items-center gap-3">
                         <div className="relative">
-                          <img src={u.avatar || u.userAvatar || ''} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                          <img src={u.avatar || u.userAvatar || PRESET_AVATARS[0]} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
                           {(u.isOnline || u.online) && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-950 animate-pulse" />}
                         </div>
                         <div>
@@ -716,11 +729,14 @@ export default function ProfileTab(props) {
                             <span>{u.name || u.username}</span>
                             {u.isVIP && <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-black border border-amber-500/40">VIP</span>}
                           </h4>
-                          <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level || 15)}</span>
+                          <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level || 1)}</span>
                         </div>
                       </div>
                       <button
-                        onClick={() => showToast(`${window.loc('درخواست دنبال‌کردن متقابل ارسال شد به', 'Follow request sent to')} @${u.username}`)}
+                        onClick={async () => {
+                          await apiProfile.followUser(u);
+                          showToast(`${window.loc('شما با موفقیت دنبال کردید:', 'You successfully followed:')} @${u.username}`);
+                        }}
                         className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] shadow transition active:scale-95 flex items-center gap-1"
                       >
                         <UserCheck className="w-3.5 h-3.5" />
@@ -729,8 +745,10 @@ export default function ProfileTab(props) {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-6 text-slate-500 text-xs font-medium">
-                    {window.loc('هنوز دنبال‌کننده‌ای ثبت نشده است.', 'No followers yet.')}
+                  <div className="text-center py-8 px-4 rounded-2xl bg-slate-950 border border-dashed border-slate-800 space-y-2">
+                    <Users className="w-8 h-8 text-slate-600 mx-auto" />
+                    <p className="text-slate-400 text-xs font-bold">{window.loc('هنوز کاربری شما را دنبال نکرده است.', 'No followers yet.')}</p>
+                    <p className="text-slate-500 text-[11px]">{window.loc('با انتشار پست یا برگزاری لایواستریم، فالوورهای بیشتری جذب کنید.', 'Gain more followers by posting or hosting livestreams.')}</p>
                   </div>
                 )}
               </div>
@@ -759,45 +777,60 @@ export default function ProfileTab(props) {
 
               {/* Following List Grid */}
               <div className="space-y-2.5">
-                {[
-                  { id: 'fg1', username: 'Rayan_Super_Admin', name: 'Rayan Admin', avatar: '', isLive: true, role: 'Super Admin', level: 99 },
-                  { id: 'fg2', username: 'Mina_Music', name: 'Mina Music Host', avatar: '', isLive: true, role: 'Top Streamer', level: 42 },
-                  { id: 'fg3', username: 'Darius_Game', name: 'Darius Gamer', avatar: '', isLive: false, role: 'PRO Gamer', level: 28 },
-                  { id: 'fg4', username: 'Zeinab_Art', name: 'Zeinab Digital Art', avatar: '', isLive: false, role: 'Creator', level: 35 }
-                ].map(u => (
-                  <div key={u.id} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between gap-3 shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <img src={u.avatar} alt={u.name} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
-                        {u.isLive && <span className="absolute -top-1 -right-1 text-[8px] font-black bg-rose-600 text-white px-1 rounded-full border border-slate-950 animate-pulse">LIVE</span>}
+                {followingList.length > 0 ? (
+                  followingList.map(u => (
+                    <div key={u.id || u.username} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between gap-3 shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <img src={u.avatar || PRESET_AVATARS[0]} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                          {u.isLive && <span className="absolute -top-1 -right-1 text-[8px] font-black bg-rose-600 text-white px-1 rounded-full border border-slate-950 animate-pulse">LIVE</span>}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                            <span>{u.name || u.username}</span>
+                            {u.role && <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.2 rounded font-black border border-blue-500/40">{u.role}</span>}
+                          </h4>
+                          <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level || 1)}</span>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
-                          <span>{u.name}</span>
-                          <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.2 rounded font-black border border-blue-500/40">{u.role}</span>
-                        </h4>
-                        <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level)}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      {u.isLive && (
+                      <div className="flex items-center gap-1.5">
+                        {u.isLive && (
+                          <button
+                            onClick={() => {
+                              if (props.setActiveTab) props.setActiveTab('home');
+                              showToast(`${window.loc('ورود به لایواستریم', 'Joining livestream of')} @${u.username}`);
+                            }}
+                            className="px-2.5 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-[10px] border border-rose-500/40 transition flex items-center gap-1"
+                          >
+                            <Video className="w-3 h-3" />
+                            <span>{window.loc('لایو', 'Live')}</span>
+                          </button>
+                        )}
                         <button
-                          onClick={() => showToast(`${window.loc('ورود به لایک/استریم زنده', 'Joining live stream of')} @${u.username}`)}
-                          className="px-2.5 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-[10px] border border-rose-500/40 transition flex items-center gap-1"
+                          onClick={async () => {
+                            await apiProfile.unfollowUser(u.id || u.username);
+                            showToast(`${window.loc('لغو دنبال‌کردن', 'Unfollowed')} @${u.username}`);
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-red-950/60 hover:text-red-300 text-slate-300 font-bold text-[10px] border border-slate-800 transition"
                         >
-                          <Video className="w-3 h-3" />
-                          <span>{window.loc('تلاش لایو', 'Watch')}</span>
+                          {window.loc('دنبال‌شده (لغو)', 'Following (Unfollow)')}
                         </button>
-                      )}
-                      <button
-                        onClick={() => showToast(`${window.loc('لغو دنبال‌کردن', 'Unfollowed')} @${u.username}`)}
-                        className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-[10px] border border-slate-800 transition"
-                      >
-                        {window.loc('دنبال‌شده', 'Following')}
-                      </button>
+                      </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 px-4 rounded-2xl bg-slate-950 border border-dashed border-slate-800 space-y-3">
+                    <UserCheck className="w-8 h-8 text-slate-600 mx-auto" />
+                    <p className="text-slate-400 text-xs font-bold">{window.loc('هنوز کاربری را دنبال نکرده‌اید.', 'You are not following anyone yet.')}</p>
+                    <button
+                      onClick={() => props.setActiveTab && props.setActiveTab('home')}
+                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition inline-flex items-center gap-1.5"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>{window.loc('کشف استریمرها و کاربران', 'Discover Streamers & Users')}</span>
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
@@ -828,16 +861,29 @@ export default function ProfileTab(props) {
                   <div key={`liked-${post.id}`} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5 hover:border-pink-500/30 transition">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <img src={post.avatar} alt={post.author} className="w-8 h-8 rounded-full object-cover border border-slate-700" />
+                        <img src={post.avatar || PRESET_AVATARS[0]} alt={post.author} className="w-8 h-8 rounded-full object-cover border border-slate-700" />
                         <div>
                           <h4 className="font-bold text-white text-xs">{post.author}</h4>
                           <span className="text-[9.5px] text-slate-400">@{post.username} • {post.time}</span>
                         </div>
                       </div>
-                      <span className="text-xs font-black text-pink-400 flex items-center gap-1 bg-pink-950/60 px-2 py-0.5 rounded-full border border-pink-500/30">
-                        <Heart className="w-3 h-3 fill-pink-400" />
-                        {formatNum(post.likes)}
-                      </span>
+                      <button
+                        onClick={async () => {
+                          const nextLiked = !post.liked;
+                          if (nextLiked) {
+                            await apiSocial.likePost(post.id);
+                          } else {
+                            await apiSocial.unlikePost(post.id);
+                          }
+                          setProfilePosts(prev => prev.map(p => p.id === post.id ? { ...p, liked: nextLiked, likes: Math.max(0, p.likes + (nextLiked ? 1 : -1)) } : p));
+                        }}
+                        className={`text-xs font-black flex items-center gap-1 px-2.5 py-1 rounded-full border transition active:scale-95 ${
+                          post.liked ? 'bg-pink-600 text-white border-pink-500' : 'bg-pink-950/60 text-pink-400 border-pink-500/30 hover:bg-pink-900/60'
+                        }`}
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${post.liked ? 'fill-white' : 'fill-pink-400'}`} />
+                        <span>{formatNum(post.likes)}</span>
+                      </button>
                     </div>
                     <p className="text-xs text-slate-300 leading-relaxed dir-rtl">{post.content}</p>
                     {post.image && (
@@ -1016,32 +1062,51 @@ export default function ProfileTab(props) {
           </div>
         )}
 
-        {/* TAB 5: ACTIVITY TIMELINE */}
+        {/* TAB 5: ACTIVITY & PROFILE VIEWS TIMELINE */}
         {activeProfileTab === 'activity' && (
           <div className="space-y-4 animate-fadeIn">
+            {/* Views Summary Card */}
             <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-              <h3 className="font-bold text-white text-sm flex items-center gap-2">
-                <Activity className="w-4 h-4 text-cyan-400" />
-                <span>{window.loc('تاریخچه فعالیت‌های اخیر', 'Recent Activity Log')}</span>
-              </h3>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                    <Eye className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-white text-sm">{window.loc('آمار و بازدیدکنندگان پروفایل', 'Profile Views & Visitors')}</h3>
+                    <span className="text-[10px] text-slate-400 font-mono">{formatNum(userViewsCount)} {window.loc('بازدید ثبت‌شده', 'Total Views')}</span>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-cyan-400 bg-cyan-950/80 px-2.5 py-1 rounded-full border border-cyan-500/30">
+                  👁️ {formatNum(userViewsCount)}
+                </span>
+              </div>
 
-              <div className="space-y-3 text-xs">
-                {[
-                  { text: window.loc('برگزاری لایواستریم ۴K اختصاصی به مدت ۱.۵ ساعت', 'Holding an exclusive 4K live stream for 1.5 hours'), time: window.loc('امروز - ۱۰:۳۰', 'Today - 10:30'), icon: Video, color: 'text-pink-400' },
-                  { text: window.loc('دریافت هدیه VIP تاج طلایی از @Elnaz', 'Received Golden Crown VIP gift from @Elnaz'), time: window.loc('دیروز - ۲۱:۱۵', 'Yesterday - 21:15'), icon: Gift, color: 'text-amber-400' },
-                  { text: window.loc('رسیدن به سطح Lv.24 و دریافت بونوس ۵۰۰ سکه', 'Reach Lv.24 and get a bonus of 500 coins'), time: window.loc('۲ روز پیش', '2 days ago'), icon: Award, color: 'text-purple-400' },
-                ].map((act, i) => {
-                  const Icon = act.icon;
-                  return (
-                    <div key={i} className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Icon className={`w-4 h-4 ${act.color}`} />
-                        <span className="text-slate-200 font-medium">{act.text}</span>
+              {/* Profile Visitors List */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-slate-300">{window.loc('آخرین بازدیدکنندگان پروفایل شما', 'Recent Profile Visitors')}</h4>
+                {profileVisitors.length > 0 ? (
+                  <div className="space-y-2">
+                    {profileVisitors.map((v, i) => (
+                      <div key={v.id || i} className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <img src={v.avatar || PRESET_AVATARS[0]} alt={v.name || v.username} className="w-9 h-9 rounded-full object-cover border border-cyan-500/30" />
+                          <div>
+                            <h5 className="font-bold text-white text-xs">{v.name || v.username}</h5>
+                            <span className="text-[10px] text-slate-400">@{v.username}</span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-mono">{v.time || window.loc('به تازگی', 'Recently')}</span>
                       </div>
-                      <span className="text-[10px] text-slate-400 font-mono">{act.time}</span>
-                    </div>
-                  );
-                })}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 px-4 rounded-2xl bg-slate-950 border border-dashed border-slate-800 space-y-1">
+                    <Eye className="w-6 h-6 text-slate-600 mx-auto" />
+                    <p className="text-slate-400 text-xs font-bold">{window.loc('هنوز بازدیدی از پروفایل ثبت نشده است.', 'No profile visits recorded yet.')}</p>
+                    <p className="text-slate-500 text-[11px]">{window.loc('با فعالیت در چت و استریم، پروفایل خود را معرفی کنید.', 'Introduce your profile by chatting and streaming.')}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -40,7 +40,7 @@ import { loc, getSavedLang } from './utils/i18n';
 import { isUsernameAlreadyTaken, normalizeUsername, isValidUsername, isUserAnAdmin } from './utils/usernameUtils';
 import { economyService } from './services/economyService';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { apiAuth, setStoredToken, setStoredSession, getStoredToken, getUserId, apiProfile, apiHome, apiMessages, apiLive, apiSocial, apiWallet, apiNotifications, apiAdmin, apiVip, apiCalls, apiStorage, apiStreamer, apiSupport, presenceService, calculateAge } from './services/api';
+import { apiAuth, setStoredToken, setStoredSession, getStoredToken, getUserId, apiProfile, apiHome, apiMessages, apiLive, apiSocial, apiWallet, apiNotifications, apiAdmin, apiVip, apiCalls, apiStorage, apiStreamer, apiSupport, presenceService, calculateAge, getCanonicalConversationId } from './services/api';
 import { supabase } from './supabaseClient';
 import { compressImageFile, cacheManager, startKeepAlivePing, STREAM_QUALITY_PRESETS } from './services/performance';
 import { LifeBuoy, ShoppingBag, Video, Shield, ShieldCheck, Star, Wallet, User, Lock, Award, Calendar, MessageSquare, Send, Camera, Mic, MicOff, Settings, Search, Check, Headphones, RefreshCw, LogOut, Flame, Heart, Crown, Plus, X, Globe, Sparkles, Coins, Sliders, ChevronLeft, ChevronRight, Eye, EyeOff, Radio, CreditCard, Gift, PhoneCall, Play, Image, Layers, CheckCircle, AlertCircle, Bot, Key, Mail, Phone, Smartphone, Copy, QrCode, ArrowRight, ExternalLink, SwitchCamera, TrendingUp, UserCheck, UserX, Ban, DollarSign, Activity, Filter, Users, ThumbsUp, UserPlus, Download, Disc, Gem, CircleDot, Wine, Car, Zap, Box, Anchor, Rocket, Smile, Flower, AlertTriangle, Edit3, HeartHandshake, CheckCircle2, BadgeCheck, Languages, Clock, ArrowUpRight, Bell, Share2, Compass, MapPin, CheckCircle2 as CheckIcon, Home, BarChart2, Tv, Megaphone, Target, Paperclip, Pin, Reply, MoreVertical, VolumeX, Trash2, Archive, FileText, CheckCheck, Laugh, Forward, SmilePlus, LockKeyhole, SendHorizontal, MessageCircle, Info, PhoneIncoming, PhoneOutgoing, PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert, Shuffle, BarChart3, Palette, LogIn, HelpCircle, Swords } from 'lucide-react';
@@ -811,7 +811,15 @@ export default function App() {
   const [homeSearchQuery, setHomeSearchQuery] = useState('');
   const [homeCityFilter, setHomeCityFilter] = useState('All');
   const [homeGenderFilter, setHomeGenderFilter] = useState('all');
-  const [followedUsers, setFollowedUsers] = useState([]);
+  const [followedUsers, setFollowedUsers] = useState(() => apiProfile.getFollowingList());
+
+  useEffect(() => {
+    const handleFollowChange = () => {
+      setFollowedUsers(apiProfile.getFollowingList());
+    };
+    window.addEventListener('vlive_follow_changed', handleFollowChange);
+    return () => window.removeEventListener('vlive_follow_changed', handleFollowChange);
+  }, []);
   const [notificationsList, setNotificationsList] = useState([]);
 
   // ==================== ADVANCED STORIES SYSTEM STATE ====================
@@ -3041,37 +3049,39 @@ export default function App() {
   };
 
   // Handle Direct Messages Sending
-  const handleSendDirectMessage = () => {
+  const handleSendDirectMessage = async () => {
     if (!directInputText.trim() || !activeConversationId) return;
     const msgText = directInputText.trim();
     const nowTime = new Date().toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit'
     });
+    const currentUid = getUserId();
     const activeConv = conversations.find(c => c.id === activeConversationId);
+    const targetUserId = activeConv?.partner_id || activeConv?.user?.id || activeConv?.user?.username || activeConversationId;
+    const canonicalConvId = (currentUid && targetUserId) ? getCanonicalConversationId(currentUid, targetUserId) : activeConversationId;
+
     if (activeConv) {
       apiMessages.sendMessage({
-        sender: currentUsername || 'me',
-        recipient: activeConv.user?.username || 'user',
-        conversationId: activeConversationId,
+        sender: currentUid || currentUsername || 'me',
+        recipient: targetUserId,
+        conversationId: canonicalConvId,
         text: msgText
       });
     }
     setConversations(prev => prev.map(conv => {
-      if (conv.id === activeConversationId) {
+      if (conv.id === activeConversationId || conv.id === canonicalConvId) {
         const newMsg = {
           id: Date.now(),
           sender: 'me',
           text: msgText,
-          translation: `Translation: ${msgText}`,
-          translated: false,
           time: nowTime
         };
         return {
           ...conv,
           lastMessage: msgText,
           lastTime: nowTime,
-          messages: [...conv.messages, newMsg]
+          messages: [...(conv.messages || []), newMsg]
         };
       }
       return conv;
@@ -3081,24 +3091,36 @@ export default function App() {
 
   // Start new conversation with selected user
   const handleStartNewChatWithUser = targetUser => {
+    if (!targetUser) return;
     setIsNewChatModalOpen(false);
-    const existingConv = conversations.find(c => c.user.username.toLowerCase() === targetUser.username.toLowerCase());
+    const currentUid = getUserId();
+    const targetUserId = targetUser.id || targetUser.username;
+    const canonicalConvId = (currentUid && targetUserId) ? getCanonicalConversationId(currentUid, targetUserId) : (targetUser.id || `conv_${targetUser.username}`);
+
+    const existingConv = conversations.find(c => 
+      c.id === canonicalConvId || 
+      (c.user && c.user.username && targetUser.username && c.user.username.toLowerCase() === targetUser.username.toLowerCase()) ||
+      (c.partner_id && targetUser.id && String(c.partner_id) === String(targetUser.id))
+    );
+
     if (existingConv) {
       setActiveConversationId(existingConv.id);
       setActiveTab('messages');
-      showToast(`Conversation with ${targetUser.name} opened`);
+      showToast(loc(`گفتگو با ${targetUser.name || targetUser.username} باز شد`, `Conversation with ${targetUser.name || targetUser.username} opened`));
       return;
     }
-    const newConvId = `chat_${Date.now()}`;
+
     const newConv = {
-      id: newConvId,
+      id: canonicalConvId,
+      partner_id: targetUser.id,
       user: {
+        id: targetUser.id,
         username: targetUser.username,
-        name: targetUser.name,
+        name: targetUser.name || targetUser.username,
         avatar: targetUser.avatar,
-        isVerified: targetUser.isVerified,
+        isVerified: targetUser.isVerified || targetUser.is_verified,
         role: targetUser.role,
-        online: targetUser.online
+        online: targetUser.online || targetUser.isOnline
       },
       lastMessage: '',
       lastTime: 'Just now',
@@ -3106,9 +3128,9 @@ export default function App() {
       messages: []
     };
     setConversations(prev => [newConv, ...prev]);
-    setActiveConversationId(newConvId);
+    setActiveConversationId(canonicalConvId);
     setActiveTab('messages');
-    showToast(`New chat with ${targetUser.name} created`);
+    showToast(loc(`چت جدید با ${targetUser.name || targetUser.username} ایجاد شد`, `New chat with ${targetUser.name || targetUser.username} created`));
   };
 
   // START PRIVATE 1-ON-1 VIDEO CALL WITH A HOST
@@ -6324,13 +6346,16 @@ export default function App() {
           setIsUserProfileModalOpen(false);
           setSelectedUser(null);
         }} user={selectedUser} currentUser={currentUser} isUserRayan={isUserRayan} isSuperAdmin={isUserSuperAdmin} showToast={showToast} loc={loc} onFollowToggle={(targetUser, isFollowed) => {
-          setUsersList(prev => prev.map(u => u.id === targetUser.id ? {
+          setUsersList(prev => prev.map(u => (u.id === targetUser.id || u.username === targetUser.username) ? {
             ...u,
-            isFollowing: isFollowed
+            isFollowing: isFollowed,
+            followers_count: Math.max(0, (u.followers_count || u.followers || 0) + (isFollowed ? 1 : -1))
           } : u));
+          setFollowedUsers(apiProfile.getFollowingList());
         }} onStartMessage={targetUser => {
-          if (typeof setSelectedChatUser === 'function') setSelectedChatUser(targetUser);
-          setActiveTab('chat');
+          setIsUserProfileModalOpen(false);
+          setSelectedUser(null);
+          handleStartNewChatWithUser(targetUser);
         }} onStartCall={(targetUser, callType) => {
           if (typeof setSelectedHostForCall === 'function') setSelectedHostForCall(targetUser);
           if (callType === 'video') {
