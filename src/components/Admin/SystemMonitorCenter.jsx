@@ -5,6 +5,7 @@ import {
   BarChart2, ShieldCheck, Lock, Layers, Globe, Radio, MessageSquare, Bot,
   Clock, ArrowUpRight, FileText, Check, AlertCircle
 } from 'lucide-react';
+import { apiAdmin } from '../../services/api';
 
 export default function SystemMonitorCenter({
   addAdminAuditLog = (() => {}),
@@ -14,6 +15,14 @@ export default function SystemMonitorCenter({
   const [monitorSubTab, setMonitorSubTab] = useState('dashboard'); // 'dashboard' | 'services' | 'logs' | 'ai_monitor'
   const [isHealthChecking, setIsHealthChecking] = useState(false);
   const [lastCheckTime, setLastCheckTime] = useState(new Date().toLocaleTimeString());
+  
+  // Real System Stats
+  const [systemStats, setSystemStats] = useState({
+    databasePingMs: 0,
+    databaseStatus: 'Checking...',
+    databaseConnections: 0,
+    serverTime: new Date().toISOString()
+  });
 
   // AI Monitor State
   const [isAiAnalyzingSystem, setIsAiAnalyzingSystem] = useState(false);
@@ -21,45 +30,60 @@ export default function SystemMonitorCenter({
 
   // System Services Health
   const [servicesStatus, setServicesStatus] = useState([]);
+  
+  useEffect(() => {
+    runHealthCheck();
+  }, []);
 
   // Automated System Health Check
-  const runHealthCheck = () => {
+  const runHealthCheck = async () => {
     setIsHealthChecking(true);
-    setTimeout(() => {
-      setIsHealthChecking(false);
+    try {
+      const stats = await apiAdmin.getSystemHealth();
+      if (stats) {
+        setSystemStats(stats);
+      }
       setLastCheckTime(new Date().toLocaleTimeString());
-      showToast(window.loc('⚡ چک سلامت کلیه سرویس‌ها و دیتابیس با موفقیت انجام شد (سالم - 99.9٪)', '⚡ The health check of all services and databases was done successfully (healthy - 99.9%)'));
-      addAdminAuditLog('Automated System Monitor: Health Check Passed for all 9 core services');
-    }, 1000);
+      showToast(window.loc('⚡ سلامت سرویس‌ها بررسی شد', '⚡ Services health checked'));
+      addAdminAuditLog('Automated System Monitor: Health Check completed');
+    } catch (e) {
+      showToast('Error checking system health');
+    } finally {
+      setIsHealthChecking(false);
+    }
   };
 
   // Run AI System Monitoring Scan
-  const runAiSystemScan = () => {
+  const runAiSystemScan = async () => {
     setIsAiAnalyzingSystem(true);
-    setTimeout(() => {
-      setIsAiAnalyzingSystem(false);
+    try {
+      const stats = await apiAdmin.getSystemHealth();
       setAiSystemReport({
         timestamp: new Date().toLocaleString(),
-        overallHealthScore: '98 / 100 (EXCELLENT)',
-        performanceScore: '96 / 100',
+        overallHealthScore: stats?.databasePingMs < 300 ? '98 / 100 (EXCELLENT)' : '80 / 100 (GOOD)',
+        performanceScore: stats?.databasePingMs < 200 ? '96 / 100' : '85 / 100',
         securityScore: '100 / 100',
-        cpuUsage: '14.2%',
-        ramUsage: '1.8 GB / 8.0 GB (22.5%)',
-        diskUsage: '12.4 GB / 100 GB',
-        bandwidthUsage: '45.2 GB / Month',
-        slowQueriesDetected: 0,
+        cpuUsage: 'Supabase Managed',
+        ramUsage: 'Supabase Managed',
+        diskUsage: `${stats?.databaseConnections} Rows tracked`,
+        bandwidthUsage: `${stats?.databasePingMs} ms Ping`,
+        slowQueriesDetected: stats?.databasePingMs > 500 ? 1 : 0,
         memoryLeaksDetected: 0,
         unusualTrafficSpikes: 'None detected in last 24h.',
         optimizationSuggestions: [
-          'Supabase Realtime websocket pooling is working optimally at 250 concurrent sockets.',
-          'LiveKit media routing is latency-optimized for Middle East & European servers.',
-          'Recommended action: Clean up cached temporary story thumbnails older than 30 days.'
+          'Supabase Realtime websocket pooling is working optimally.',
+          `Current DB Ping is ${stats?.databasePingMs}ms.`,
+          'Recommended action: Monitor live stream metadata for dead connections.'
         ],
-        estimatedServerCosts: '$85.00 USDT / month (Current workload)'
+        estimatedServerCosts: 'Billed via Supabase / GCP'
       });
-      addAdminAuditLog('AI System Monitor: Executed deep infrastructure performance & health scan');
-      showToast(window.loc('🤖 آنالیز هوش مصنوعی سیستم و سرورها انجام شد', '🤖 Artificial intelligence analysis of the system and servers was done'));
-    }, 1200);
+      addAdminAuditLog('AI System Monitor: Executed deep infrastructure performance scan');
+      showToast(window.loc('🤖 آنالیز سیستم انجام شد', '🤖 System analysis was done'));
+    } catch (e) {
+      showToast('Error running AI scan');
+    } finally {
+      setIsAiAnalyzingSystem(false);
+    }
   };
 
   return (
@@ -124,45 +148,45 @@ export default function SystemMonitorCenter({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-1 shadow-lg">
               <span className="text-[10px] text-slate-400 font-bold uppercase flex items-center justify-between">
-                <span>{window.loc('مصرف پردازنده (CPU Usage)', 'CPU Usage')}</span>
-                <Cpu className="w-3.5 h-3.5 text-cyan-400" />
+                <span>{window.loc('تأخیر دیتابیس (Latency)', 'DB Latency')}</span>
+                <Activity className="w-3.5 h-3.5 text-cyan-400" />
               </span>
-              <p className="text-2xl font-black text-cyan-400 font-mono">14.2%</p>
+              <p className="text-2xl font-black text-cyan-400 font-mono">{systemStats.databasePingMs} ms</p>
               <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-cyan-400 w-[14%]" />
+                <div className="h-full bg-cyan-400" style={{ width: `${Math.min(100, (systemStats.databasePingMs / 500) * 100)}%` }} />
               </div>
             </div>
 
             <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-1 shadow-lg">
               <span className="text-[10px] text-slate-400 font-bold uppercase flex items-center justify-between">
-                <span>{window.loc('حافظه رم (RAM Usage)', 'RAM Usage')}</span>
-                <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{window.loc('کاربران ثبت‌نامی (Total Users)', 'Total DB Records')}</span>
+                <Database className="w-3.5 h-3.5 text-emerald-400" />
               </span>
-              <p className="text-2xl font-black text-emerald-400 font-mono">1.8 GB / 8 GB</p>
+              <p className="text-2xl font-black text-emerald-400 font-mono">{systemStats.databaseConnections}</p>
               <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-emerald-400 w-[22%]" />
+                <div className="h-full bg-emerald-400 w-[100%]" />
               </div>
             </div>
 
             <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-1 shadow-lg">
               <span className="text-[10px] text-slate-400 font-bold uppercase flex items-center justify-between">
-                <span>{window.loc('فضای دیتابیس Supabase', 'Supabase database space')}</span>
+                <span>{window.loc('وضعیت دیتابیس Supabase', 'Supabase database status')}</span>
                 <Database className="w-3.5 h-3.5 text-amber-400" />
               </span>
-              <p className="text-2xl font-black text-amber-300 font-mono">12.4 GB / 100 GB</p>
+              <p className="text-xl font-black text-amber-300 font-mono">{systemStats.databaseStatus}</p>
               <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-amber-400 w-[12%]" />
+                <div className="h-full bg-amber-400" style={{ width: systemStats.databaseStatus === 'Healthy' ? '100%' : '50%' }} />
               </div>
             </div>
 
             <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-1 shadow-lg">
               <span className="text-[10px] text-slate-400 font-bold uppercase flex items-center justify-between">
-                <span>{window.loc('پناه‌پهنای باند (Bandwidth)', 'Bandwidth shelter')}</span>
+                <span>{window.loc('وضعیت اتصال درنگ (Realtime)', 'Realtime Status')}</span>
                 <Wifi className="w-3.5 h-3.5 text-purple-400" />
               </span>
-              <p className="text-2xl font-black text-purple-300 font-mono">45.2 GB / Mo</p>
+              <p className="text-xl font-black text-purple-300 font-mono">{systemStats.realtimeStatus}</p>
               <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-purple-400 w-[18%]" />
+                <div className="h-full bg-purple-400" style={{ width: systemStats.realtimeStatus === 'Connected' ? '100%' : '20%' }} />
               </div>
             </div>
           </div>

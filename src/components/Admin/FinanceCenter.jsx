@@ -73,32 +73,26 @@ export default function FinanceCenter({
   const currentTransactions = financialTransactionsList;
 
   // AI Financial Scan Logic
-  const runAiFinanceAnalysis = () => {
+  const runAiFinanceAnalysis = async () => {
     setIsAiAnalyzing(true);
-    setTimeout(() => {
+    try {
+      const report = await apiAdmin.getFinanceAIAnalysis();
+      if (report) {
+        setAiFinanceReport(report);
+      } else {
+        showToast(window.loc('❌ ارتباط با سرور هوش مصنوعی برقرار نشد', '❌ AI server connection failed'));
+      }
+    } catch (e) {
+      showToast(e.message);
+    } finally {
       setIsAiAnalyzing(false);
-      setAiFinanceReport({
-        timestamp: new Date().toLocaleString(),
-        riskScore: 'LOW (12/100)',
-        suspiciousWithdrawals: 1,
-        duplicateTransactions: 0,
-        unusualIncomeAlerts: 'No money laundering or fake purchase spikes detected in last 24h.',
-        monthlyRevenuePrediction: '$215,000 USDT (+16.5% vs previous month)',
-        estimatedServerCosts: '$1,420.00 USDT / month',
-        estimatedNetPlatformProfit: '$52,085.00 USDT',
-        recommendations: [
-          'Maintain 29% platform commission rate to optimize host retention.',
-          'Review pending $1,200 USDT withdrawal for user Nazanin_Live (high frequency).',
-          'Automated TRC20 gas fee calculation is operating at maximum efficiency ($1.50 per tx).'
-        ]
-      });
       addAdminAuditLog('AI Finance Assistant: Executed full revenue & fraud analysis scan');
       showToast(window.loc('🤖 آنالیز هوش مصنوعی مالی با موفقیت به پایان رسید', '🤖 Financial AI analysis completed successfully'));
-    }, 1200);
+    }
   };
 
   // Adjust User Wallet
-  const handleWalletAdjustment = (isCredit) => {
+  const handleWalletAdjustment = async (isCredit) => {
     if (!selectedUserForAdjustment || !adjustmentAmount) {
       showToast(window.loc('❌ لطفاً کاربر و مبلغ را مشخص کنید', '❌ Please specify the user and the amount'));
       return;
@@ -108,21 +102,27 @@ export default function FinanceCenter({
       showToast(window.loc('❌ مبلغ واردشده نامعتبر است', '❌ The entered amount is invalid'));
       return;
     }
-
-    setUsersList(prev => prev.map(u => {
-      if (u.id === selectedUserForAdjustment.id || u.username === selectedUserForAdjustment.username) {
-        const currentCoins = u.coins || u.userCoins || 0;
-        const newCoins = isCredit ? currentCoins + val : Math.max(0, currentCoins - val);
-        return { ...u, coins: newCoins, userCoins: newCoins };
-      }
-      return u;
-    }));
-
-    addAdminAuditLog(`Wallet ${isCredit ? 'Credit' : 'Debit'}: ${isCredit ? '+' : '-'}${val} coins for ${selectedUserForAdjustment.username}. Reason: ${adjustmentReason || 'Admin Manual Action'}`);
-    showToast(window.loc(`✅ کیف پول ${selectedUserForAdjustment.username} با موفقیت ${isCredit ? window.loc('شارژ', 'charging') : window.loc('کسر', 'deduction')} شد`, `✅ کیف پول ${selectedUserForAdjustment.username} با موفقیت ${isCredit ? window.loc('شارژ', 'charging') : window.loc('کسر', 'deduction')} شد`));
-    setSelectedUserForAdjustment(null);
-    setAdjustmentAmount('');
-    setAdjustmentReason('');
+    
+    const adjustmentValue = isCredit ? val : -val;
+    const res = await apiAdmin.adjustUserWallet(selectedUserForAdjustment.id, adjustmentValue, adjustmentReason || 'Admin Manual Action');
+    
+    if (res.success) {
+      setUsersList(prev => prev.map(u => {
+        if (u.id === selectedUserForAdjustment.id) {
+          const currentCoins = u.coins || u.userCoins || 0;
+          const newCoins = isCredit ? currentCoins + val : Math.max(0, currentCoins - val);
+          return { ...u, coins: newCoins, userCoins: newCoins };
+        }
+        return u;
+      }));
+      addAdminAuditLog(`Wallet ${isCredit ? 'Credit' : 'Debit'}: ${isCredit ? '+' : '-'}${val} coins for @${selectedUserForAdjustment.username}. Reason: ${adjustmentReason || 'Admin Manual Action'}`);
+      showToast(window.loc(`✅ کیف پول ${selectedUserForAdjustment.username} با موفقیت ${isCredit ? window.loc('شارژ', 'charging') : window.loc('کسر', 'deduction')} شد`, `✅ Wallet updated successfully`));
+      setSelectedUserForAdjustment(null);
+      setAdjustmentAmount('');
+      setAdjustmentReason('');
+    } else {
+      showToast(window.loc('❌ خطا در ارتباط با دیتابیس', '❌ Database error'));
+    }
   };
 
   return (

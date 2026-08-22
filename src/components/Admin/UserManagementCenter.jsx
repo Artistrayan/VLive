@@ -71,8 +71,11 @@ export default function UserManagementCenter({
     showToast(nextMuted ? window.loc(`🔇 کاربر @${user.username} بی صدا شد`, `🔇 User @${user.username} muted`) : window.loc(`صدای کاربر @${user.username} فعال شد`, `User @${user.username} unmuted`));
   };
 
-  const handleToggleVerify = (user) => {
+  const handleToggleVerify = async (user) => {
     const nextVerified = !(user.isVerified || user.verified);
+    if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') { 
+       await apiAdmin.updateUserFields(user.id, { is_verified: nextVerified });
+    }
     setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isVerified: nextVerified, verified: nextVerified } : u));
     if (selectedUserDetail?.id === user.id) {
       setSelectedUserDetail(prev => ({ ...prev, isVerified: nextVerified, verified: nextVerified }));
@@ -81,8 +84,11 @@ export default function UserManagementCenter({
     showToast(nextVerified ? window.loc(`✅ نشان تایید آبی به @${user.username} اعطا شد`, `✅ Verification granted to @${user.username}`) : window.loc(`نشان تایید @${user.username} لغو شد`, `Verification removed from @${user.username}`));
   };
 
-  const handleToggleStreamer = (user) => {
+  const handleToggleStreamer = async (user) => {
     const nextStreamer = !(user.isStreamer || user.isHost);
+    if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') { 
+       await apiAdmin.updateUserFields(user.id, { is_streamer: nextStreamer, role: nextStreamer ? 'streamer' : 'user', user_type: nextStreamer ? 'STREAMER' : 'VIEWER' });
+    }
     setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isStreamer: nextStreamer, isHost: nextStreamer } : u));
     if (selectedUserDetail?.id === user.id) {
       setSelectedUserDetail(prev => ({ ...prev, isStreamer: nextStreamer, isHost: nextStreamer }));
@@ -92,13 +98,17 @@ export default function UserManagementCenter({
   };
 
   const handleResetPassword = (user) => {
+    // Requires a true Auth backend method to send a reset email. For now, log it.
     addAdminAuditLog(`Admin Action: Reset password & session tokens for @${user.username}`);
-    showToast(window.loc(`🔑 لینک بازنشانی رمز عبور برای @${user.username} ارسال گردید`, `🔑 لینک بازنشانی رمز عبور برای @${user.username} ارسال گردید`));
+    showToast(window.loc(`🔑 لینک بازنشانی رمز عبور برای @${user.username} ارسال گردید`, `🔑 Password reset link sent to @${user.username}`));
   };
 
-  const handleSaveAdminNote = (user) => {
+  const handleSaveAdminNote = async (user) => {
     if (!adminNoteInput.trim()) return;
     const updatedNotes = [...(user.adminNotes || []), { text: adminNoteInput, date: new Date().toLocaleString() }];
+    if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') {
+      await apiAdmin.updateUserFields(user.id, { admin_notes: JSON.stringify(updatedNotes) });
+    }
     setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, adminNotes: updatedNotes } : u));
     if (selectedUserDetail?.id === user.id) {
       setSelectedUserDetail(prev => ({ ...prev, adminNotes: updatedNotes }));

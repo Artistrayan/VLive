@@ -52,76 +52,10 @@ export default function AiAdminCopilot({
   const aiConfidenceScore = 98;
 
   // Suspicious Detections & Alerts List
-  const detectionsList = [
-    {
-      id: 'DET-101',
-      category: 'Suspicious Users',
-      severity: 'Medium',
-      title: window.loc('فعالیت همزمان از ۲ آی‌پی متفاوت', 'Simultaneous activity from 2 different IPs'),
-      description: window.loc('کاربر @spambot99 از کشور آلمان و ایران در فاصله زمانی کمتر از ۵ دقیقه وارد شده است.', 'User @spambot99 from Germany and Iran entered in less than 5 minutes.'),
-      user: '@spambot99',
-      time: window.loc('۱۰ دقیقه پیش', '10 minutes ago'),
-      aiActionProposed: window.loc('توصیه AI: بررسی لاگ نشست‌ها و اجبار کاربر به ورود مجدد (Re-auth)', 'AI recommendation: check the session log and force the user to re-auth')
-    },
-    {
-      id: 'DET-102',
-      category: 'Fake Gifts & Fraud',
-      severity: 'High',
-      title: window.loc('ارسال حجم غیرعادی هدیه در لایو کوتاه', 'Sending an unusual amount of gifts in a short live'),
-      description: window.loc('در لایو #502 تعداد ۱, ۲۰۰ هدیه تاج اژدها در مدت ۳ دقیقه توسط ۱ اکانت ارسال شده است.', 'In Live #502, 1,200 Dragon Crown gifts were sent by 1 account in 3 minutes.'),
-      user: '@royal_user',
-      time: window.loc('۲۵ دقیقه پیش', '25 minutes ago'),
-      aiActionProposed: window.loc('توصیه AI: بازرسی کیف پول خریدار و کسر سکه‌های مشکوک با تایید مدیر', 'AI Recommendation: Inspect buyer\'s wallet and deduct suspicious coins with admin approval')
-    },
-    {
-      id: 'DET-103',
-      category: 'Suspicious Withdrawals',
-      severity: 'High',
-      title: window.loc('درخواست برداشت مکرر TRC20 به آدرس کیف پول جدید', 'Repeat TRC20 withdrawal request to new wallet address'),
-      description: window.loc('استریمر @sahar_m مبلغ $2, 450 USDT را به کیف پول تازه ثبت‌شده درخواست داده است.', 'Streamer @sahar_m has requested $2,450 USDT to newly registered wallet.'),
-      user: '@sahar_m',
-      time: window.loc('۴۰ دقیقه پیش', '40 minutes ago'),
-      aiActionProposed: window.loc('توصیه AI: تطبیق سابقه هویت و تایید دستی توسط مدیر مالی', 'AI Recommendation: Identity history matching and manual approval by CFO')
-    },
-    {
-      id: 'DET-104',
-      category: 'System Performance',
-      severity: 'Low',
-      title: window.loc('افزایش جزیی زمان پاسخگویی API چت', 'Slight increase in chat API response time'),
-      description: window.loc('میانگین پاسخگویی دیتابیس Supabase Realtime در peak load به ۳۸ میلی‌ثانیه رسید.', 'The average responsiveness of Supabase Realtime database reached 38 milliseconds during peak load.'),
-      user: 'System Core',
-      time: window.loc('۱ ساعت پیش', '1 hour ago'),
-      aiActionProposed: window.loc('توصیه AI: فعال‌سازی ایندکس B-Tree روی جدول live_messages', 'AI Recommendation: Enable B-Tree index on live_messages table')
-    }
-  ];
+  const detectionsList = [];
 
   // AI Suggestions
-  const suggestionsList = [
-    {
-      title: window.loc('بهینه‌سازی دیتابیس (Database Optimization)', 'Database Optimization'),
-      impact: window.loc('افزایش سرعت ۲۵٪', '25% speed increase'),
-      category: 'Performance',
-      text: window.loc('افزایش ایندکس روی ستون‌های user_id و status در جداول live_streams و wallets بار پردازشی کوئری‌های پرکاربرد را کاهش می‌دهد.', 'Increasing the index on the user_id and status columns in the live_streams and wallets tables reduces the processing load of frequently used queries.')
-    },
-    {
-      title: window.loc('بهینه‌سازی درآمد پلتفرم (Revenue Optimization)', 'Platform revenue optimization (Revenue Optimization)'),
-      impact: window.loc('افزایش سود ۱۴٪', '14% profit increase'),
-      category: 'Financial',
-      text: window.loc('پیشنهاد می‌شود پلن VIP طلایی با آیکون اختصاصی چت و تخفیف ۱۰٪ در خرید سکه‌ها برای کاربران فعال بالای ۳۰ روز فعال گردد.', 'It is recommended to activate the golden VIP plan with a dedicated chat icon and a 10% discount on the purchase of coins for active users over 30 days.')
-    },
-    {
-      title: window.loc('افزایش ماندگاری کاربران (User Retention)', 'Increasing the durability of users (User Retention)'),
-      impact: window.loc('افزایش ماندگاری ۱۸٪', 'Increase durability by 18%'),
-      category: 'Growth',
-      text: window.loc('ارسال گردونه شانس روزانه (Daily Spin) با دریافت ۱ تا ۵ سکه رایگان موجب افزایش صعودی بازگشت روزانه (DAU) می‌شود.', 'Sending Daily Spin by receiving 1 to 5 free coins will increase daily return (DAU).')
-    },
-    {
-      title: window.loc('کاهش هزینه‌های پهنای باند سرور (Cost Reduction)', 'Reduction of server bandwidth costs (Cost Reduction)'),
-      impact: window.loc('صرفه‌جویی $120/ماه', 'Saving $120/month'),
-      category: 'Server & Cloud',
-      text: window.loc('تنظیم متغیر رزولوشن پیش‌فرض لایو روی 720p 60fps با فشرده‌سازی H.265 ترافیک خروجی سرور LiveKit را تا ۳۰ درصد بهینه‌تر می‌کند.', 'Setting the default live resolution variable to 720p 60fps with H.265 compression optimizes LiveKit server output traffic by 30%.')
-    }
-  ];
+  const suggestionsList = [];
 
   // AI Chat Engine
   const handleSendMessage = (textToSend) => {
@@ -144,17 +78,17 @@ export default function AiAdminCopilot({
       const q = query.toLowerCase();
 
       if (q.includes(window.loc('درآمد', 'income')) || q.includes('revenue') || q.includes(window.loc('کمتر', 'less')) || q.includes(window.loc('مالی', 'finance'))) {
-        aiReply = window.loc(`📊 **تحلیل هوشمند درآمد پلتفرم:**\n\nتراکنش‌های ۳ روز اخیر نشان می‌دهد که حجم کل واریزی‌ها برابر با **$148,200 USDT** بوده است. کسر کمیسیون ۲۹٪ پلتفرم سودی معادل **$42,978 USDT** ایجاد کرده است.\n\nعلت نوسان درآمد روزانه مربوط به تغییر ساعات لایو استریمرهای پرمخاطب در آخر هفته بوده است. هیچ مشکلی در درگاه پرداخت TRC20 مشاهده نمی‌شود.`, `📊 **تحلیل هوشمند درآمد پلتفرم:**\n\nتراکنش‌های ۳ روز اخیر نشان می‌دهد که حجم کل واریزی‌ها برابر با **$148,200 USDT** بوده است. کسر کمیسیون ۲۹٪ پلتفرم سودی معادل **$42,978 USDT** ایجاد کرده است.\n\nعلت نوسان درآمد روزانه مربوط به تغییر ساعات لایو استریمرهای پرمخاطب در آخر هفته بوده است. هیچ مشکلی در درگاه پرداخت TRC20 مشاهده نمی‌شود.`);
+        aiReply = window.loc(`📊 **تحلیل هوشمند درآمد پلتفرم:**\n\nتراکنش‌ها بدون مشکل در حال پردازش هستند.`, `📊 **Revenue Analysis:**\n\nTransactions are processing normally.`);
       } else if (q.includes(window.loc('استریمر', 'Streamer')) || q.includes('streamer') || q.includes(window.loc('بیشترین', 'the most'))) {
-        aiReply = window.loc(`👑 **برترین استریمرهای درآمدزا:**\n\n۱. **@sahar_m** - مجموع دریافت هدایا: $12,450 USDT\n۲. **@nigar_host** - مجموع دریافت هدایا: $8,900 USDT\n۳. **@elnaz_live** - مجموع دریافت هدایا: $6,300 USDT\n\nهر ۳ استریمر دارای تایید هویت کامل (KYC Approved) بوده و وضعیت ریسک آن‌ها سبز (Low Risk) می‌باشد.`, `👑 **برترین استریمرهای درآمدزا:**\n\n۱. **@sahar_m** - مجموع دریافت هدایا: $12,450 USDT\n۲. **@nigar_host** - مجموع دریافت هدایا: $8,900 USDT\n۳. **@elnaz_live** - مجموع دریافت هدایا: $6,300 USDT\n\nهر ۳ استریمر دارای تایید هویت کامل (KYC Approved) بوده و وضعیت ریسک آن‌ها سبز (Low Risk) می‌باشد.`);
+        aiReply = window.loc(`👑 **آمار استریمرها:**\n\nپلتفرم در حال حاضر دارای **${streamersCount}** استریمر فعال است.`, `👑 **Streamer Stats:**\n\nThe platform currently has **${streamersCount}** active streamers.`);
       } else if (q.includes(window.loc('کند', 'slow')) || q.includes(window.loc('صفحات', 'Pages')) || q.includes('slow')) {
-        aiReply = window.loc(`⚡ **تحلیل سرعت و پایش عملکرد (Performance):**\n\nنرخ زمان پاسخگویی (Latency) سیستم:\n• Supabase Auth: 18ms\n• LiveKit Streaming: 15ms\n• Gemini AI Proxy: 110ms\n\nصفحه "لیست پیام‌های پشتیبانی" به علت لود بیش از ۱,۰۰۰ تیکت بدون Pagination ممکن است ۲ ثانیه تاخیر داشته باشد. استفاده از صفحه بندی ۱0 تایی پیشنهاد می‌شود.`, `⚡ **تحلیل سرعت و پایش عملکرد (Performance):**\n\nنرخ زمان پاسخگویی (Latency) سیستم:\n• Supabase Auth: 18ms\n• LiveKit Streaming: 15ms\n• Gemini AI Proxy: 110ms\n\nصفحه "لیست پیام‌های پشتیبانی" به علت لود بیش از ۱,۰۰۰ تیکت بدون Pagination ممکن است ۲ ثانیه تاخیر داشته باشد. استفاده از صفحه بندی ۱0 تایی پیشنهاد می‌شود.`);
+        aiReply = window.loc(`⚡ وضعیت سرور سبز است. تمامی اتصالات دیتابیس بدون وقفه پاسخ می‌دهند.`, `⚡ Server status is green. All database connections are responding without delay.`);
       } else if (q.includes(window.loc('مشکوک', 'suspicious')) || q.includes('suspicious') || q.includes(window.loc('تقلب', 'cheating'))) {
-        aiReply = window.loc(`🚨 **گزارش کاربران و فعالیت‌های مشکوک:**\n\nتعداد کاربران با نشان ریسک زرد/قرمز: **۲ اکانت**\n۱. **@spambot99** (ورود از ۲ آی‌پی متضاد)\n۲. **@unknown_99** (ارسال پیام‌های متوالی در چت لایو)\n\nتوصیه: می‌توانید از بخش مدیریت کاربران این اکانت‌ها را Mute یا Suspend نمایید. (ادمین تصمیم‌گیر نهایی است).`, `🚨 **گزارش کاربران و فعالیت‌های مشکوک:**\n\nتعداد کاربران با نشان ریسک زرد/قرمز: **۲ اکانت**\n۱. **@spambot99** (ورود از ۲ آی‌پی متضاد)\n۲. **@unknown_99** (ارسال پیام‌های متوالی در چت لایو)\n\nتوصیه: می‌توانید از بخش مدیریت کاربران این اکانت‌ها را Mute یا Suspend نمایید. (ادمین تصمیم‌گیر نهایی است).`);
+        aiReply = window.loc(`🚨 **گزارش سیستم:** هیچ گونه فعالیت مشکوک جدیدی در پایگاه داده ثبت نشده است.`, `🚨 **System report:** No new suspicious activity has been recorded in the database.`);
       } else if (q.includes(window.loc('ماندگاری', 'Durability')) || q.includes('retention') || q.includes(window.loc('جذب', 'attraction'))) {
-        aiReply = window.loc(`📈 **راهکارهای افزایش ماندگاری و تعامل:**\n\n۱. **پاداش ورود روزانه (Daily Check-in Coins):** اعطای ۲ سکه رایگان به کاربران متوالی.\n۲. **اعلان‌های هوشمند لایو (Smart Push):** هنگامی که استریمر محبوب کاربر لایو شد، پیام آنی فرستاده شود.\n۳. **VIP Badges:** اعطای آیکون‌های متحرک برای خریداران اشتراک.`, `📈 **راهکارهای افزایش ماندگاری و تعامل:**\n\n۱. **پاداش ورود روزانه (Daily Check-in Coins):** اعطای ۲ سکه رایگان به کاربران متوالی.\n۲. **اعلان‌های هوشمند لایو (Smart Push):** هنگامی که استریمر محبوب کاربر لایو شد، پیام آنی فرستاده شود.\n۳. **VIP Badges:** اعطای آیکون‌های متحرک برای خریداران اشتراک.`);
+        aiReply = window.loc(`📈 فعالیت کاربران با ${onlineUsersCount} کاربر آنلاین در وضعیت مطلوب است.`, `📈 User activity is in a good state with ${onlineUsersCount} online users.`);
       } else if (q.includes(window.loc('گزارش', 'Report')) || q.includes('report') || q.includes(window.loc('هفتگی', 'weekly'))) {
-        aiReply = window.loc(`📜 **خلاصه گزارش هفتگی پلتفرم V.Live:**\n\n• کل کاربران ثبت نام شده: **${totalUsersCount}**\n• استریمرهای فعال: **${streamersCount}**\n• اشتراک‌های VIP فعال: **${vipUsersCount}**\n• نرخ آپتایم سرورها: **99.98%**\n• مجموع تسویه‌حساب‌های موفق: **$105,222 USDT**\n• وضعیت کلی سلامت پلتفرم: **۹۸ از ۱۰۰ (عالی)**`, `📜 **V.Live Weekly Platform Report Summary:**\n\n• Total registered users: **${totalUsersCount}**\n• Active streamers: **${streamersCount}**\n• Active VIP subscriptions: **${vipUsersCount}**\n• Server uptime rate: **99.98%**\n• Successful settlements total: **$105,222 USDT**\n• Overall platform health: **98/100 (Excellent)**`);
+        aiReply = window.loc(`📜 **خلاصه سیستم:**\n\n• کل کاربران ثبت نام شده: **${totalUsersCount}**\n• استریمرهای فعال: **${streamersCount}**\n• اشتراک‌های VIP فعال: **${vipUsersCount}**`, `📜 **System summary:**\n\n• Total registered users: **${totalUsersCount}**\n• Active streamers: **${streamersCount}**\n• Active VIP subscriptions: **${vipUsersCount}**`);
       } else {
         aiReply = window.loc(`🤖 من درخواست شما را تحلیل کردم ("${query}"). همه سرویس‌ها و داده‌های سیستم سالم و در وضعیت سبز قرار دارند. آیا مایلید گزارش کامل مالی یا امنیتی دقیقی تولید کنم؟`, `🤖 من درخواست شما را تحلیل کردم ("${query}"). همه سرویس‌ها و داده‌های سیستم سالم و در وضعیت سبز قرار دارند. آیا مایلید گزارش کامل مالی یا امنیتی دقیقی تولید کنم؟`);
       }
