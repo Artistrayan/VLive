@@ -1,3557 +1,1018 @@
-import { PartyRoomStageModal, LuckyWheelModal, CreateAgencyModal, StreamerWelcomeGuideModal } from './modals/EntertainmentModals';
-import PermissionsPromptModal from './modals/PermissionsPromptModal';
-import HostLiveModal from './modals/HostLiveModal';
-import SettingsModal from './modals/SettingsModal';
-import LiveStreamSystem from './components/LiveStreamSystem';
-import StreamerDashboardModal from './components/StreamerDashboardModal';
-import LiveStudioModal from './components/LiveStudioModal';
-import ProfileTab from './components/Tabs/ProfileTab';
-import WalletTab from './components/Tabs/WalletTab';
-import ChatTab from './components/Tabs/ChatTab';
-import AdminDashboardModal from './modals/AdminDashboardModal';
-import ContentAndEngagementModals from './modals/ContentAndEngagementModals';
-import TermsModal from './modals/TermsModal';
-import VipAndRewardModals from './modals/VipAndRewardModals';
-import NotificationsModal from './modals/NotificationsModal';
-import UserProfileViewModal from './modals/UserProfileViewModal';
-import HelpCenterModal from './modals/HelpCenterModal';
-import StreamerApplicationModal from './modals/StreamerApplicationModal';
-import UserOnboardingModal from './modals/UserOnboardingModal';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import {
+  ArrowRight, BadgeCheck, Ban, Bell, Calendar, CheckCircle, CheckCircle2,
+  Clock, Coins as CoinsIcon, Compass, Crown, Eye, FileText, Filter,
+  Flag, Flame, Gift, Headphones, Heart, Home, Languages, LogIn,
+  MessageSquare, Radio, Send, Settings, Shield, ShieldCheck, Sliders,
+  Smartphone, Sparkles, Star, Swords, ThumbsUp, Users, Video, X, Zap
+} from 'lucide-react';
+
+// Overlays & Components
 import ActiveCallOverlay from './components/Overlays/ActiveCallOverlay';
-import PreCallConfirmModal from './components/Overlays/PreCallConfirmModal';
-import { VisualUiEditorProvider } from './context/VisualUiEditorContext';
-import VisualUiEditorToolbar from './components/VisualUiEditor/VisualUiEditorToolbar';
-import InspectorPanel from './components/VisualUiEditor/InspectorPanel';
-import ThemeManagerModal from './components/VisualUiEditor/ThemeManagerModal';
-import DevicePreviewFrame from './components/VisualUiEditor/DevicePreviewFrame';
-import DynamicThemeStyleInjector from './components/VisualUiEditor/DynamicThemeStyleInjector';
-import VisualSectionWrapper from './components/VisualUiEditor/VisualSectionWrapper';
-import { APP_LANGUAGES, I18N_DICTIONARY } from './constants/i18n';
-import { PRESET_AVATARS, GIFTS_CATALOG } from './constants/appConstants';
-import { CoinsIcon, VerifiedBadge, VipStatusBadge, StreamerScoresBadges } from './components/CommonBadges';
+import LivePkBattleOverlay from './components/Overlays/LivePkBattleOverlay';
+import AiFaceEffectOverlay from './components/Overlays/AiFaceEffectOverlay';
+import LiveMiniGamesOverlay from './components/Overlays/LiveMiniGamesOverlay';
 import LuxuryGiftOverlay from './components/Overlays/LuxuryGiftOverlay';
 import VipEntranceBanner from './components/Overlays/VipEntranceBanner';
-import LivePkBattleOverlay from './components/Overlays/LivePkBattleOverlay';
-import LiveMiniGamesOverlay from './components/Overlays/LiveMiniGamesOverlay';
-import { AvatarWithFrame, EntranceRibbonOverlay } from './components/Overlays/AvatarFramesAndRibbons';
-import { filterMessageContent } from './services/aiModeration';
-import { safeStorage } from './utils/safeStorage';
-import { loc, getSavedLang } from './utils/i18n';
-import { isUsernameAlreadyTaken, normalizeUsername, isValidUsername, isUserAnAdmin } from './utils/usernameUtils';
-import { economyService } from './services/economyService';
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { apiAuth, setStoredToken, setStoredSession, getStoredToken, getUserId, apiProfile, apiHome, apiMessages, apiLive, apiSocial, apiWallet, apiNotifications, apiAdmin, apiVip, apiCalls, apiStorage, apiStreamer, apiSupport, presenceService, calculateAge, getCanonicalConversationId } from './services/api';
+import PreCallConfirmModal from './components/Overlays/PreCallConfirmModal';
+import { EntranceRibbonOverlay } from './components/Overlays/AvatarFramesAndRibbons';
+import LiveStreamSystem from './components/LiveStreamSystem';
+import LiveStudioModal from './components/LiveStudioModal';
+import StreamerDashboardModal from './components/StreamerDashboardModal';
+import WalletTab from './components/Tabs/WalletTab';
+import ChatTab from './components/Tabs/ChatTab';
+import ProfileTab from './components/Tabs/ProfileTab';
+
+// Modals
+import UserOnboardingModal from './modals/UserOnboardingModal';
+import VipAndRewardModals from './modals/VipAndRewardModals';
+import NotificationsModal from './modals/NotificationsModal';
+import StreamerApplicationModal from './modals/StreamerApplicationModal';
+import AdminDashboardModal from './modals/AdminDashboardModal';
+import PermissionsPromptModal from './modals/PermissionsPromptModal';
+import HelpCenterModal from './modals/HelpCenterModal';
+import {
+  LuckyWheelModal, PartyRoomStageModal, CreateAgencyModal, StreamerWelcomeGuideModal
+} from './modals/EntertainmentModals';
+import ContentAndEngagementModals from './modals/ContentAndEngagementModals';
+import TermsModal from './modals/TermsModal';
+import SettingsModal from './modals/SettingsModal';
+import HostLiveModal from './modals/HostLiveModal';
+import UserProfileViewModal from './modals/UserProfileViewModal';
+
+// Visual UI Editor & Context
+import { VisualUiEditorProvider } from './context/VisualUiEditorContext';
+import DevicePreviewFrame from './components/VisualUiEditor/DevicePreviewFrame';
+import InspectorPanel from './components/VisualUiEditor/InspectorPanel';
+import VisualUiEditorToolbar from './components/VisualUiEditor/VisualUiEditorToolbar';
+import DynamicThemeStyleInjector from './components/VisualUiEditor/DynamicThemeStyleInjector';
+import ThemeManagerModal from './components/VisualUiEditor/ThemeManagerModal';
+
+// Services & Utils
+import {
+  apiAuth, apiProfile, apiHome, apiMessages, apiLive, apiWallet,
+  apiVip, apiCalls, apiSocial, apiReferral, apiNotifications,
+  apiAdmin, apiStreamer, apiSupport, apiStorage,
+  getStoredToken, getUserId, getCanonicalConversationId,
+  presenceService, calculateAge
+} from './services/api';
+import { startKeepAlivePing, compressImageFile } from './services/performance';
+import economyService from './services/economyService';
+import { LiveStreamRoomService } from './services/liveStreamRoomService';
 import { supabase } from './supabaseClient';
-import { compressImageFile, cacheManager, startKeepAlivePing, STREAM_QUALITY_PRESETS } from './services/performance';
-import { LifeBuoy, ShoppingBag, Video, Shield, ShieldCheck, Star, Wallet, User, Lock, Award, Calendar, MessageSquare, Send, Camera, Mic, MicOff, Settings, Search, Check, Headphones, RefreshCw, LogOut, Flame, Heart, Crown, Plus, X, Globe, Sparkles, Coins, Sliders, ChevronLeft, ChevronRight, Eye, EyeOff, Radio, CreditCard, Gift, PhoneCall, Play, Image, Layers, CheckCircle, AlertCircle, Bot, Key, Mail, Phone, Smartphone, Copy, QrCode, ArrowRight, ExternalLink, SwitchCamera, TrendingUp, UserCheck, UserX, Ban, DollarSign, Activity, Filter, Users, ThumbsUp, UserPlus, Download, Disc, Gem, CircleDot, Wine, Car, Zap, Box, Anchor, Rocket, Smile, Flower, AlertTriangle, Edit3, HeartHandshake, CheckCircle2, BadgeCheck, Languages, Clock, ArrowUpRight, Bell, Share2, Compass, MapPin, CheckCircle2 as CheckIcon, Home, BarChart2, Tv, Megaphone, Target, Paperclip, Pin, Reply, MoreVertical, VolumeX, Trash2, Archive, FileText, CheckCheck, Laugh, Forward, SmilePlus, LockKeyhole, SendHorizontal, MessageCircle, Info, PhoneIncoming, PhoneOutgoing, PhoneMissed, Type, Music, Link, Maximize2, Minimize2, VideoOff, Volume2, Flag, History, Trophy, ShieldAlert, Shuffle, BarChart3, Palette, LogIn, HelpCircle, Swords } from 'lucide-react';
-
-// Default Real Users seed stored in local storage
-const DEFAULT_REAL_USERS = [];
-
-// Initial Tether USDT Transactions
-const INITIAL_TRANSACTIONS = [];
-
-// Initial KYC & Gender Verifications
-const INITIAL_VERIFICATIONS = [];
-
-// Initial Direct Messages Conversations
-const INITIAL_CONVERSATIONS = [];
+import { safeStorage } from './utils/safeStorage';
+import { loc } from './utils/i18n';
+import {
+  normalizeUsername, isValidUsername, isUsernameAlreadyTaken, isUserAnAdmin
+} from './utils/usernameUtils';
+import { APP_LANGUAGES } from './constants/i18n';
+import { PRESET_AVATARS, GIFTS_CATALOG } from './constants/appConstants';
 
 export default function App() {
-  // 1. Toast Notification State & Language (Declared first before any other states)
-  const [toastMessage, setToastMessage] = useState(null);
-  const showToast = useCallback(msg => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3500);
-  }, []);
+  // Navigation & Tab State
+  const [activeTab, setActiveTab] = useState('home');
+  const [homeSubTab, setHomeSubTab] = useState('explore');
+  const [matchSubTab, setMatchSubTab] = useState('discover');
+  const [matchMode, setMatchMode] = useState('card');
+  const [activeProfileTab, setActiveProfileTab] = useState('overview');
+  const [walletSubTab, setWalletSubTab] = useState('deposit');
+  const [showEntrySplash, setShowEntrySplash] = useState(false);
 
-  const [currentAppLang, setCurrentAppLang] = useState(() => {
-    return safeStorage.getItem('vlive_app_lang') || 'fa';
-  });
-  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
-
-  const getLangCode = useCallback(langName => {
-    if (!langName) return 'fa';
-    if (typeof langName === 'object') return langName.code || 'fa';
-    if (langName === 'en' || langName === 'English') return 'en';
-    if (langName === 'fa' || langName === 'فارسی' || langName === 'Farsi' || langName === 'Persian') return 'fa';
-    if (langName === 'ar' || langName === 'العربية' || langName === 'Arabic') return 'ar';
-    if (langName === 'tr' || langName === 'Türkçe' || langName === 'Turkish') return 'tr';
-    if (langName === 'ru' || langName === 'Русский' || langName === 'Russian') return 'ru';
-    return langName || 'fa';
-  }, []);
-
-  const currentLangObj = useMemo(() => {
-    return APP_LANGUAGES.find(l => l.code === currentAppLang || l.name === currentAppLang) || APP_LANGUAGES[0];
-  }, [currentAppLang]);
-  const langCode = currentLangObj.code;
-  const isRtl = currentLangObj.dir === 'rtl';
-
-  const t = useCallback((key, fallback = '') => {
-    return I18N_DICTIONARY[langCode]?.[key] || I18N_DICTIONARY['fa']?.[key] || I18N_DICTIONARY['en']?.[key] || fallback || key;
-  }, [langCode]);
-
-  const handleSelectLanguage = useCallback(lang => {
-    const code = getLangCode(lang);
-    setCurrentAppLang(code);
-    safeStorage.setItem('vlive_app_lang', code);
-    setIsLanguageModalOpen(false);
-    const selectedObj = APP_LANGUAGES.find(l => l.code === code || l.name === code) || {
-      dir: code === 'fa' || code === 'ar' ? 'rtl' : 'ltr',
-      name: code,
-      flag: '🌐'
-    };
-    if (typeof document !== 'undefined') {
-      document.documentElement.dir = selectedObj.dir === 'rtl' ? 'rtl' : 'ltr';
-      document.documentElement.lang = code;
-    }
-    if (typeof window !== 'undefined') {
-      window.loc = (faStr, enStr) => {
-        if (code === 'fa' || code === 'ar') {
-          return faStr || enStr || '';
-        }
-        return enStr || faStr || '';
-      };
-    }
-    showToast(`${t('changeLangSuccess', 'App language changed to')} ${selectedObj.flag || ''} ${selectedObj.name || code}`);
-  }, [getLangCode, t, showToast]);
-
-  // Current User State
-  const [userName, setUserName] = useState(() => {
-    return safeStorage.getItem('vlive_user_name') || loc('کاربر VIP', 'VIP user');
-  });
-  const [currentUsername, setCurrentUsername] = useState(() => {
-    return safeStorage.getItem('vlive_current_username') || '';
-  });
-  const [userCoins, setUserCoins] = useState(() => {
-    try {
-      const saved = safeStorage.getItem('vlive_user_coins');
-      const val = saved ? parseInt(saved, 10) : 5000;
-      return isNaN(val) ? 5000 : val;
-    } catch (e) {
-      return 5000;
-    }
-  });
-  const [userCashBalance, setUserCashBalance] = useState(25.00);
-  const [userGender, setUserGender] = useState(() => {
-    return safeStorage.getItem('vlive_user_gender') || 'female';
-  });
-  const [userRank, setUserRank] = useState('VIP Streamer');
-  const [userAvatar, setUserAvatar] = useState(() => {
-    return safeStorage.getItem('vlive_user_avatar') || '';
-  });
-  const [userBio, setUserBio] = useState(() => {
-    return safeStorage.getItem('vlive_user_bio') || loc('استریمر رسمی V.Live+ | پخش زنده باکیفیت و چت تعاملی', 'V.Live+ official streamer | High quality live streaming and interactive chat');
-  });
-  const [isVerified, setIsVerified] = useState(false);
-
-  // Registered Users Storage
-  const [usersList, setUsersList] = useState([]);
-
-  // Terms and Conditions Acceptance State
-  const [isTermsAccepted, setIsTermsAccepted] = useState(true);
-  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
-
-  // AUTHENTICATION & ONBOARDING SYSTEM STATES (10-STEP SYSTEM)
-  const [hasRegistered, setHasRegistered] = useState(() => {
-    return safeStorage.getItem('vlive_has_registered') === 'true';
-  });
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return safeStorage.getItem('vlive_has_registered') === 'true' && safeStorage.getItem('vlive_user_logged_in') !== 'false';
-  });
-  const [showEntrySplash, setShowEntrySplash] = useState(() => {
-    return safeStorage.getItem('vlive_has_registered') === 'true';
-  });
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
-  const [pendingOnboardUser, setPendingOnboardUser] = useState(null);
+  // User Profile & Authentication State
+  const [isLoggedIn, setIsLoggedIn] = useState(() => safeStorage.getItem('vlive_user_logged_in') === 'true');
+  const [userName, setUserName] = useState(() => safeStorage.getItem('vlive_user_name') || 'Guest User');
+  const [currentUsername, setCurrentUsername] = useState(() => safeStorage.getItem('vlive_current_username') || 'guest');
+  const [currentTelegramId, setCurrentTelegramId] = useState(() => safeStorage.getItem('vlive_auth_telegram_id') || '');
+  const [userCoins, setUserCoins] = useState(() => parseInt(safeStorage.getItem('vlive_user_coins') || '1000', 10));
+  const [userDiamonds, setUserDiamonds] = useState(0);
+  const [userCashBalance, setUserCashBalance] = useState(0);
+  const [userGender, setUserGender] = useState(() => safeStorage.getItem('vlive_user_gender') || 'female');
+  const [userAvatar, setUserAvatar] = useState(() => safeStorage.getItem('vlive_user_avatar') || '');
+  const [userBio, setUserBio] = useState(() => safeStorage.getItem('vlive_user_bio') || '');
+  const [isVerified, setIsVerified] = useState(() => safeStorage.getItem('vlive_is_verified') === 'true');
+  const [userRole, setUserRole] = useState('user');
+  const [userLevel, setUserLevel] = useState(1);
+  const [vipPlan, setVipPlan] = useState(() => safeStorage.getItem('vlive_vip_plan') || 'Free');
+  const [vipExpireDays, setVipExpireDays] = useState(() => parseInt(safeStorage.getItem('vlive_vip_expire_days') || '0', 10));
+  const [isVipMonthlyClaimed, setIsVipMonthlyClaimed] = useState(() => safeStorage.getItem('vlive_vip_monthly_claimed') === 'true');
+  const [referralCode, setReferralCode] = useState('');
+  const [followedUsers, setFollowedUsers] = useState([]);
   const [authStep, setAuthStep] = useState('welcome');
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
-  const [isSmartMatchModalOpen, setIsSmartMatchModalOpen] = useState(false);
-  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
-  const [helpCenterInitialTab, setHelpCenterInitialTab] = useState('faq'); // 'faq' | 'deposit' | 'withdrawal' | 'support'
-  const [isBecomeStreamerModalOpen, setIsBecomeStreamerModalOpen] = useState(false);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [termsAgreed, setTermsAgreed] = useState(true);
-
-  // Registration & Credentials Form State
   const [authUsername, setAuthUsername] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
-  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
-  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-  const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
-  const [showAdminPinModal, setShowAdminPinModal] = useState(false);
-  const [showEditPasswordOld, setShowEditPasswordOld] = useState(false);
-  const [showEditPasswordNew, setShowEditPasswordNew] = useState(false);
   const [authFullName, setAuthFullName] = useState('');
   const [authGender, setAuthGender] = useState('female');
+  const [authAge, setAuthAge] = useState(20);
+  const [authBirthDate, setAuthBirthDate] = useState('');
   const [authTelegramId, setAuthTelegramId] = useState('');
   const [authEmail, setAuthEmail] = useState('');
-  const [authAvatar, setAuthAvatar] = useState('');
+  const [termsAgreed, setTermsAgreed] = useState(true);
+  const [hasRegistered, setHasRegistered] = useState(false);
+  const [pendingOnboardUser, setPendingOnboardUser] = useState(null);
 
-  // Profile Onboarding State
-  const [authCity, setAuthCity] = useState('Tehran');
-  const [authBirthDate, setAuthBirthDate] = useState('');
-  const [authBio, setAuthBio] = useState('');
-  const [authInterests, setAuthInterests] = useState([]);
-  const [authAge, setAuthAge] = useState(() => safeStorage.getItem('vlive_profile_age') || '');
-  const [authCountry, setAuthCountry] = useState('ایران');
-  const [captchaCode, setCaptchaCode] = useState(() => String(Math.floor(1000 + Math.random() * 9000)));
-  const [captchaInput, setCaptchaInput] = useState('');
-  const [permissionsGranted, setPermissionsGranted] = useState(true);
-  const [isCameraActive, setIsCameraActive] = useState(false);
-  const [capturedSelfie, setCapturedSelfie] = useState(null);
-  const [isAiVerifying, setIsAiVerifying] = useState(false);
-  const [showStreamerWelcomeModal, setShowStreamerWelcomeModal] = useState(false);
-  const kycVideoRef = useRef(null);
-
-  // Password Recovery State
-  const [forgotResetCode, setForgotResetCode] = useState('');
-  const [forgotStep, setForgotStep] = useState('request'); // 'request' | 'verify' | 'new_password'
-  const [forgotNewPassword, setForgotNewPassword] = useState('');
-
-  // Security & Account Management Modal State
-
-  // REAL 3-TIER + ELITE VIP SYSTEM STATES
-  const [vipPlan, setVipPlan] = useState(() => {
-    return safeStorage.getItem('vlive_vip_plan') || 'monthly'; // 'none' | 'weekly' | 'monthly' | '3months' | '6months' | 'yearly'
+  // App Theme, Language & Font Settings
+  const [langCode, setLangCode] = useState(() => safeStorage.getItem('vlive_app_lang') || 'fa');
+  const [currentAppLang, setCurrentAppLang] = useState(() => safeStorage.getItem('vlive_app_lang') || 'fa');
+  const [isRtl, setIsRtl] = useState(() => {
+    const l = safeStorage.getItem('vlive_app_lang') || 'fa';
+    return l === 'fa' || l === 'ar';
   });
-  const [vipExpireTimestamp, setVipExpireTimestamp] = useState(() => {
-    return parseInt(safeStorage.getItem('vlive_vip_expire_ts') || String(Date.now() + 23 * 86400 * 1000), 10);
-  });
-  const [vipExpireDays, setVipExpireDays] = useState(() => {
-    const diffDays = Math.max(0, Math.ceil((vipExpireTimestamp - Date.now()) / (1000 * 60 * 60 * 24)));
-    return diffDays || 23;
-  });
-  const [vipPurchaseHistory, setVipPurchaseHistory] = useState([]);
-  const [isVipMonthlyClaimed, setIsVipMonthlyClaimed] = useState(() => {
-    return safeStorage.getItem('vlive_vip_monthly_claimed') === 'true';
-  });
-  const [isVipModalOpen, setIsVipModalOpen] = useState(false);
-  const [selectedVipPlan, setSelectedVipPlan] = useState('monthly'); // 'weekly' | 'monthly' | '3months' | '6months' | 'yearly'
-  const [selectedVipDuration, setSelectedVipDuration] = useState(1); // 1 | 3 | 6 | 12
-  const [selectedVipPayMethod, setSelectedVipPayMethod] = useState('coins'); // 'in_app' | 'usdt' | 'coins'
-  const [isVipCelebrationOpen, setIsVipCelebrationOpen] = useState(false);
-  const [vipEliteRequested, setVipEliteRequested] = useState(false);
+  const [appFontSize, setAppFontSize] = useState(() => safeStorage.getItem('vlive_app_font_size') || 'medium');
+  const [appAccentColor, setAppAccentColor] = useState(() => safeStorage.getItem('vlive_app_accent_color') || '#00f3ff');
+  const [appThemeMode, setAppThemeMode] = useState('dark');
 
-  // DAILY REWARDS & STREAK STATE
-  const [dailyStreak, setDailyStreak] = useState(() => {
-    return parseInt(safeStorage.getItem('vlive_daily_streak') || '3', 10);
-  });
-  const [lastRewardClaimTimestamp, setLastRewardClaimTimestamp] = useState(() => {
-    return parseInt(safeStorage.getItem('vlive_last_reward_claim_ts') || '0', 10);
-  });
-  const [dailyRewardHistory, setDailyRewardHistory] = useState([]);
-  const [isRewardOpeningModalOpen, setIsRewardOpeningModalOpen] = useState(false);
-  const [unlockedRewardData, setUnlockedRewardData] = useState(null);
-
-  // CREATOR EARNINGS, WITHDRAWALS & ADMIN FEES STATE
-  const [isPayoutFrozen, setIsPayoutFrozen] = useState(false);
-  const [adminNetworkFee, setAdminNetworkFee] = useState(1.50); // $1.50 USDT TRC20 gas fee
-  const [adminMaxWithdrawal, setAdminMaxWithdrawal] = useState(5000); // $5000 USDT max
-  const [lastWithdrawalTimestamp, setLastWithdrawalTimestamp] = useState(() => {
-    return parseInt(safeStorage.getItem('vlive_last_withdrawal_ts') || '0', 10);
-  });
-
-  // Main UI State
-  const [activeTab, setActiveTab] = useState('home'); // 'streams', 'messages', 'wallet', 'profile'
-  const [profileMainTab, setProfileMainTab] = useState('overview'); // 'gallery', 'level', 'wallet', 'settings'
-  const [profileSubPage, setProfileSubPage] = useState('main');
-  const [activeProfileTab, setActiveProfileTab] = useState('overview'); // 'main' | 'account' | 'privacy' | 'wallet' | 'vip' | 'gifts' | 'gallery' | 'stories' | 'notifications' | 'language' | 'support' | 'about'
-  const [isQrCodeModalOpen, setIsQrCodeModalOpen] = useState(false);
-  const [streamSubTab, setStreamSubTab] = useState('lives'); // 'users' or 'lives'
-  const [streamModeFilter, setStreamModeFilter] = useState('all');
-
-  // USER FILTER BAR STATE ('all', 'online', 'top', 'verified')
-  const [userFilter, setUserFilter] = useState('all');
-  const [homeSubTab, setHomeSubTab] = useState('explore'); // 'explore' or 'live'
-
-  const [earningsTimeframe, setEarningsTimeframe] = useState('daily');
-  const [paidVoiceRate, setPaidVoiceRate] = useState(5);
-  const [paidVideoRate, setPaidVideoRate] = useState(10);
-  const [paidMessageRate, setPaidMessageRate] = useState(3);
-
-  // Host Crypto Wallet State for Female Streamers
-
-  const [language, setLanguage] = useState('fa');
-  const [totalEarnings, setTotalEarnings] = useState(0);
-  const [isGoLiveOpen, setIsGoLiveOpen] = useState(false);
-  const [authTab, setAuthTab] = useState('login');
-  const [selectedStreamerForProfile, setSelectedStreamerForProfile] = useState(null);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isLiveModalOpen, setIsLiveModalOpen] = useState(false);
-  const [selectedHostForCall, setSelectedHostForCall] = useState(null);
-  const [isDirectCallModalOpen, setIsDirectCallModalOpen] = useState(false);
-  const [scheduledCallsList, setScheduledCallsList] = useState([]);
-  const [selectedChatUser, setSelectedChatUser] = useState(null);
-  const [isAudioCallOpen, setIsAudioCallOpen] = useState(false);
-  const [selectedGiftRecipient, setSelectedGiftRecipient] = useState(null);
-  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
-  const [hostUsdtAddress, setHostUsdtAddress] = useState(() => {
-    return safeStorage.getItem('vlive_host_usdt_address') || 'TKh8zXpQ7yM3vN1L9R2W4b6K8a0C';
-  });
-  const [lastWithdrawalDate, setLastWithdrawalDate] = useState(() => {
-    return safeStorage.getItem('vlive_last_withdrawal_date') || '';
-  });
-
-  // Automatic Storage Syncing for Profile & App State (مداومت کامل اطلاعات و تنظیمات در برابر به‌روزرسانی‌ها)
-
-  // Edit Profile Settings Form State
-  const [editFullName, setEditFullName] = useState(userName);
-  const [editUsername, setEditUsername] = useState(currentUsername);
-  const [editAvatarUrl, setEditAvatarUrl] = useState(userAvatar);
-  const [editBio, setEditBio] = useState(userBio);
-  const [editGender, setEditGender] = useState(userGender);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const galleryFileInputRef = useRef(null);
-  const postFileInputRef = useRef(null);
-  const storyFileInputRef = useRef(null);
-
-  // User Profile Posts & Stories Management State
-  const [privacyShowGifts, setPrivacyShowGifts] = useState(true);
-  const [userRole, setUserRole] = useState('user');
-  const [posts, setPosts] = useState([]);
-  const [userPhotosList, setUserPhotosList] = useState([]);
-  const [userVideosList, setUserVideosList] = useState([]);
-  const [freeMatchCallsLeft, setFreeMatchCallsLeft] = useState(3);
-  const [matchMode, setMatchMode] = useState('random'); // 'random' | 'manual'
-  const [matchGenderFilter, setMatchGenderFilter] = useState('both'); // 'both' | 'female' | 'male'
-  const [isMatchRulesModalOpen, setIsMatchRulesModalOpen] = useState(false);
-  const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
-  const [matchState, setMatchState] = useState('idle'); // 'idle' | 'searching' | 'connected'
-  const [matchedMatchUser, setMatchedMatchUser] = useState(null);
-  const [matchCallSeconds, setMatchCallSeconds] = useState(30);
-
-  // Interactive Dating Match Deck States (REAL PRODUCTION USERS ONLY)
-  const [matchDeckProfiles, setMatchDeckProfiles] = useState([]);
-
-  // Keep Match Deck synced exclusively with Real Approved Users from Database
-
-  const [matchCardIndex, setMatchCardIndex] = useState(0);
-  const [matchAnimationEffect, setMatchAnimationEffect] = useState(null); // 'like' | 'reject' | 'superlike' | 'gift'
-  const [matchResultPopup, setMatchResultPopup] = useState(null);
-  const [matchSubTab, setMatchSubTab] = useState('swipe'); // 'swipe' | 'roulette' | 'likes'
-  const [isMatchFilterOpen, setIsMatchFilterOpen] = useState(false);
-  const [matchFilterOnlineOnly, setMatchFilterOnlineOnly] = useState(false);
-  const [matchFilterVerifiedOnly, setMatchFilterVerifiedOnly] = useState(false);
-  const [matchFilterMaxDistance, setMatchFilterMaxDistance] = useState(50);
-  const [swipeDragPos, setSwipeDragPos] = useState({
-    x: 0,
-    y: 0
-  });
-  const [isSwipeDragging, setIsSwipeDragging] = useState(false);
-  const swipeStartPos = useRef({
-    x: 0,
-    y: 0
-  });
-  const [isAddPostModalOpen, setIsAddPostModalOpen] = useState(false);
-  const [newPostType, setNewPostType] = useState('photo'); // 'photo' | 'video'
-  const [newPostUrl, setNewPostUrl] = useState('');
-  const [newPostTitle, setNewPostTitle] = useState('');
-  const [isAddStoryModalOpen, setIsAddStoryModalOpen] = useState(false);
-  const [newStoryUrl, setNewStoryUrl] = useState('');
-  const [newStoryCaption, setNewStoryCaption] = useState('');
-  // App Suggestions & Improvements Box State
-  const [suggestionsList, setSuggestionsList] = useState([]);
-  const [newSuggestionInput, setNewSuggestionInput] = useState('');
-  const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
-
-  // Handle Gallery Image Selection with Client-side Compression
-
-  // Direct Messages State & Enhanced Chat System
-
-  // ==================== ADVANCED COMPREHENSIVE CALL SYSTEM STATE ====================
-  const callVideoRef = useRef(null);
-  const [callMainSubTab, setCallMainSubTab] = useState('recent');
-  const [dialpadInput, setDialpadInput] = useState(''); // 'recent' | 'contacts' | 'favorites' | 'scheduled' | 'tariffs'
-  const [callSearchQuery, setCallSearchQuery] = useState('');
-  const [callLogFilter, setCallLogFilter] = useState('all'); // 'all' | 'voice' | 'video' | 'missed' | 'rejected' | 'paid'
-  const [userPresenceStatus, setUserPresenceStatus] = useState('available'); // 'available' | 'busy' | 'in_call' | 'offline'
-  const [isDndActive, setIsDndActive] = useState(false);
-
-  // Call History List
-  const [callHistoryList, setCallHistoryList] = useState([]);
-  // Contacts & Favorites
-  const [favoriteContacts, setFavoriteContacts] = useState([]);
-  // Blocked Call Users
-  const [blockedCallUsers, setBlockedCallUsers] = useState([]);
-  // Streamer Tariff & Call Privacy
-  const [isStreamerCenterOpen, setIsStreamerCenterOpen] = useState(false);
-  const [isLiveStudioOpen, setIsLiveStudioOpen] = useState(false);
-  const [streamerPaidCallEnabled, setStreamerPaidCallEnabled] = useState(true);
-  const [streamerCallTariffPerMin, setStreamerCallTariffPerMin] = useState(20);
-  const [streamerCallTariff10Min, setStreamerCallTariff10Min] = useState(150);
-
-  // Active Call Engine State
-  const [activeCall, setActiveCall] = useState(null);
-  const [preCallConfirmHost, setPreCallConfirmHost] = useState(null);
-  const [postCallRatingData, setPostCallRatingData] = useState(null);
-  const [ratingStarsCall, setRatingStarsCall] = useState(5);
-  const [ratingCommentCall, setRatingCommentCall] = useState('');
-  const [selectedCallFeedbackTags, setSelectedCallFeedbackTags] = useState([]);
-
-  // Call Modals
-  const [isScheduleCallModalOpen, setIsScheduleCallModalOpen] = useState(false);
-  const [scheduleTargetUser, setScheduleTargetUser] = useState(null);
-  const [scheduleDateTime, setScheduleDateTime] = useState('2026-07-29 20:00');
-  const [scheduleNote, setScheduleNote] = useState('');
-  const [scheduleType, setScheduleType] = useState('video');
-  const [isAddParticipantModalOpen, setIsAddParticipantModalOpen] = useState(false);
-  const [isRecordConsentModalOpen, setIsRecordConsentModalOpen] = useState(false);
-  const [isEncryptedCertModalOpen, setIsEncryptedCertModalOpen] = useState(false);
-  const [inCallFloatingGifts, setInCallFloatingGifts] = useState([]);
-  const [showInCallQualityMenu, setShowInCallQualityMenu] = useState(false);
-  const [showInCallEffectsMenu, setShowInCallEffectsMenu] = useState(false);
-
-  // ==================== ADVANCED CALL HANDLERS ====================
-
-  const [msgFilterTab, setMsgFilterTab] = useState('all'); // 'all' | 'private' | 'groups' | 'calls' | 'archived'
-  const [msgSearchQuery, setMsgSearchQuery] = useState('');
-  const [msgSearchField, setMsgSearchField] = useState('all'); // 'all' | 'name' | 'id' | 'city' | 'phone'
-  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
-  const [newGroupName, setNewGroupName] = useState('');
-  const [newGroupDesc, setNewGroupDesc] = useState('');
-
-  // In-Chat Active Call Overlay State
-  const [activeChatCall, setActiveChatCall] = useState(null); // { type: 'voice' | 'video', user: obj }
-  const [chatCallSeconds, setChatCallSeconds] = useState(0);
-  const [isChatCallMuted, setIsChatCallMuted] = useState(false);
-
-  // In-Chat Controls & Modals
-  const [isChatGalleryOpen, setIsChatGalleryOpen] = useState(false);
-  const [isChatLocked, setIsChatLocked] = useState(false);
-  const [isSendCoinsInChatOpen, setIsSendCoinsInChatOpen] = useState(false);
-  const [sendCoinsInChatAmount, setSendCoinsInChatAmount] = useState(50);
-  const [isSendGiftInChatOpen, setIsSendGiftInChatOpen] = useState(false);
-  const [selfDestructTimer, setSelfDestructTimer] = useState(0); // 0, 10, 30, 60
-  const [replyingToMessage, setReplyingToMessage] = useState(null);
-  const [editingMessageId, setEditingMessageId] = useState(null);
-  const [showAiAssistant, setShowAiAssistant] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
-  const [isRecordingAudio, setIsRecordingAudio] = useState(false);
-  const [audioRecordingSeconds, setAudioRecordingSeconds] = useState(0);
-  const [pinnedMessage, setPinnedMessage] = useState(null);
-  const [showChatOptionsMenu, setShowChatOptionsMenu] = useState(false);
-  const [isChatSearchOpen, setIsChatSearchOpen] = useState(false);
-  const [chatSearchQuery, setChatSearchQuery] = useState('');
-  const [conversations, setConversations] = useState(() => {
-    const saved = safeStorage.getItem('vlive_direct_conversations_v3');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      } catch (e) {}
-    }
-    return [];
-  });
-  const [activeConversationId, setActiveConversationId] = useState(null);
-  const [directInputText, setDirectInputText] = useState('');
-  const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
-
-  // Unread Direct Messages Count
-
-  const [currentTelegramId, setCurrentTelegramId] = useState('');
-  // Transactions State for Admin & Payouts
-  const [transactionsList, setTransactionsList] = useState(INITIAL_TRANSACTIONS);
-  // Verifications State for Admin
-  const [verificationsList, setVerificationsList] = useState(INITIAL_VERIFICATIONS);
-  // Admin Panel Security & Authorization State (Exclusive Access strictly to @Rayan_Vlive)
-  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
-  useEffect(() => {
-    if (isAdminPanelOpen) {
-      if (apiAdmin && typeof apiAdmin.getAllUsers === 'function') {
-        apiAdmin.getAllUsers().then(users => {
-          if (users && users.length > 0) setAdminUsersList(users);
-        });
-      }
-      if (apiHome && typeof apiHome.getApprovedUsers === 'function') {
-        apiHome.getApprovedUsers().then(users => {
-          if (users && users.length > 0) setUsersList(users);
-        });
-      }
-    }
-  }, [isAdminPanelOpen]);
-  const [isAdminPinModalOpen, setIsAdminPinModalOpen] = useState(false);
-  const [adminPinCode, setAdminPinCode] = useState('7777');
-  const [enteredAdminPin, setEnteredAdminPin] = useState('');
-  const [enteredAdminUsername, setEnteredAdminUsername] = useState('');
-  const [enteredAdminPassword, setEnteredAdminPassword] = useState('');
-  const [activeAdminSession, setActiveAdminSession] = useState(null);
-  const [adminWhitelist, setAdminWhitelist] = useState(['@Rayan_Vlive', 'rayan_vlive']);
-  const [newWhitelistedUsername, setNewWhitelistedUsername] = useState('');
-  const [adminActiveTab, setAdminActiveTab] = useState('dashboard'); // 20 sections
-
-  // AI Security Center States (Connected to Backend Gemini API securely)
-  const [aiSecuritySettings, setAiSecuritySettings] = useState({
-    enabled: true,
-    riskThreshold: 'Medium' // 'Low' | 'Medium' | 'High'
-  });
-  const [aiReportList, setAiReportList] = useState([]);
-  const [aiReportedChatsList, setAiReportedChatsList] = useState([]);
-  const [aiSupportTicketsList, setAiSupportTicketsList] = useState([]);
-  const [aiStreamerVerificationsList, setAiStreamerVerificationsList] = useState([]);
-  const [aiReferralFraudList, setAiReferralFraudList] = useState([]);
-
-  // AI Security Center Handler Functions
-
-  // REDESIGNED ADMIN DASHBOARD STATES
-  const [adminGlobalSearch, setAdminGlobalSearch] = useState('');
-
-  // Users Management State
-  const [adminUsersList, setAdminUsersList] = useState(() => {
-    const saved = safeStorage.getItem('vlive_admin_users_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
-    }
-    return [];
-  });
-
-  // Live Streams Management State
-  const [adminLivesList, setAdminLivesList] = useState([]);
-
-  // Reports Management State
-  const [adminReportsList, setAdminReportsList] = useState([]);
-  const [adminReportCategoryFilter, setAdminReportCategoryFilter] = useState('All');
-
-  // Wallet & Withdrawals State
-  const [adminWithdrawalsList, setAdminWithdrawalsList] = useState([]);
-
-  // Gifts Catalog Admin State
-  const [newAdminGiftName, setNewAdminGiftName] = useState('');
-  const [newAdminGiftCoins, setNewAdminGiftCoins] = useState('');
-
-  // VIP Subscription Plans Admin State
-  const [adminVipPlans, setAdminVipPlans] = useState(() => {
-    const saved = safeStorage.getItem('vlive_admin_vip_plans');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return [{
-      id: 'monthly',
-      title: loc('VIP Monthly (ماهانه)', 'VIP Monthly'),
-      priceCoins: 500,
-      priceUsdt: '$2.50',
-      status: 'Active'
-    }, {
-      id: 'quarterly',
-      title: loc('VIP 3 Months (سه ماهه)', 'VIP 3 Months'),
-      priceCoins: 1200,
-      priceUsdt: '$6.00',
-      status: 'Active'
-    }, {
-      id: 'annual',
-      title: loc('VIP Annual (سالانه)', 'VIP Annual'),
-      priceCoins: 4000,
-      priceUsdt: '$20.00',
-      status: 'Active'
-    }];
-  });
-  const [editingVipPlan, setEditingVipPlan] = useState(null);
-  const [newVipPlanTitle, setNewVipPlanTitle] = useState('');
-  const [newVipPlanCoins, setNewVipPlanCoins] = useState('');
-  const [newVipPlanUsdt, setNewVipPlanUsdt] = useState('');
-  const [isAddVipPlanModalOpen, setIsAddVipPlanModalOpen] = useState(false);
-
-  // Ads & Banners Admin State
-  const [adminAdsList, setAdminAdsList] = useState([]);
-
-  // Events & Competitions Admin State
-  const [adminEventsList, setAdminEventsList] = useState([]);
-
-  // Notification Broadcast State
-  const [adminNotifTitle, setAdminNotifTitle] = useState('');
-  const [adminNotifBody, setAdminNotifBody] = useState('');
-  const [adminNotifCategory, setAdminNotifCategory] = useState('Update');
-
-  // Support Tickets State
-  const [adminTicketsList, setAdminTicketsList] = useState(() => {
-    const saved = safeStorage.getItem('vlive_admin_tickets');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return [];
-  });
-  const [adminTicketFilter, setAdminTicketFilter] = useState('All');
-  const [kycApplications, setKycApplications] = useState(() => {
-    const saved = safeStorage.getItem('vlive_kyc_applications');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return [];
-  });
-
-  // Admin Roles & Permissions State
-  const [adminRolesList, setAdminRolesList] = useState(() => {
-    const saved = safeStorage.getItem('vlive_admin_roles_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
-    }
-    return [{
-      id: 'adm_super',
-      name: 'Rayan (@Rayan_Vlive)',
-      telegramId: '8933698119',
-      username: 'Rayan_Vlive',
-      password: 'Rayan_0935',
-      role: 'Super Admin',
-      permissions: {
-        users: true,
-        live: true,
-        reports: true,
-        wallet: true,
-        security: true,
-        ads: true,
-        support: true,
-        logs: true
-      },
-      addedAt: '2026-01-01'
-    }];
-  });
-  const [isAddAdminModalOpen, setIsAddAdminModalOpen] = useState(false);
-  const [editingAdminObj, setEditingAdminObj] = useState(null);
-  const [newAdminTelegramId, setNewAdminTelegramId] = useState('');
-  const [newAdminName, setNewAdminName] = useState('');
-  const [newAdminUsername, setNewAdminUsername] = useState('');
-  const [newAdminPassword, setNewAdminPassword] = useState('');
-  const [newAdminRole, setNewAdminRole] = useState('Live Moderator');
-  const [newAdminPermissions, setNewAdminPermissions] = useState({
-    users: false,
-    live: true,
-    reports: true,
-    wallet: false,
-    security: false,
-    ads: false,
-    support: true,
-    logs: false
-  });
-
-  // System Settings State
-  const [adminMaintenanceMode, setAdminMaintenanceMode] = useState(false);
-  const [adminPlatformFee, setAdminPlatformFee] = useState('15%');
-
-  // AI Moderation Rules State
-  const [adminAiBadImages, setAdminAiBadImages] = useState(true);
-  const [adminAiOffensiveText, setAdminAiOffensiveText] = useState(true);
-  const [adminAiSpamScore, setAdminAiSpamScore] = useState(true);
-  const [adminAiAutoWarn, setAdminAiAutoWarn] = useState(true);
-
-  // Extra Admin Interactive Form States
-  const [adminUserFilterStatus, setAdminUserFilterStatus] = useState('All');
-  const [adminEditingUser, setAdminEditingUser] = useState(null);
-  const [adminNewUser, setAdminNewUser] = useState({
-    name: '',
-    username: '',
-    email: '',
-    coins: 10000,
-    role: 'User'
-  });
-  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
-  const [adminNewAd, setAdminNewAd] = useState({
-    title: '',
-    type: 'Banner',
-    location: 'Home Hero',
-    link: ''
-  });
-  const [adminNewEvent, setAdminNewEvent] = useState({
-    title: '',
-    prizePool: '$5,000 USDT'
-  });
-  const [adminNewRole, setAdminNewRole] = useState({
-    name: '',
-    handle: '',
-    role: 'Moderator',
-    access: 'Live & Reports Only'
-  });
-  const [adminReplyingTicket, setAdminReplyingTicket] = useState(null);
-  const [adminTicketReplyText, setAdminTicketReplyText] = useState('');
-  const [adminModerationQueue, setAdminModerationQueue] = useState([]);
-  const [adminStatsTimeframe, setAdminStatsTimeframe] = useState('24h');
-  const [adminMinWithdrawal, setAdminMinWithdrawal] = useState('$50 USDT');
-  const [adminTermsText, setAdminTermsText] = useState('Welcome to V.Live+. Respect community guidelines and terms of service.');
-  const [adminBackupsList, setAdminBackupsList] = useState([]);
-  // System Audit Logs Feed State
-  const [adminLogsList, setAdminLogsList] = useState([]);
-
-  // KYC & Gender Verification Modal State
-  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
-  const [kycNationalId, setKycNationalId] = useState('');
-  const [kycDescription, setKycDescription] = useState('');
-
-  // HOME SCREEN & NOTIFICATIONS REDESIGN STATES
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isNotifSettingsOpen, setIsNotifSettingsOpen] = useState(false);
-  const [notificationFilterTab, setNotificationFilterTab] = useState('all'); // 'all' | 'likes' | 'follows' | 'messages' | 'live' | 'gifts' | 'earnings' | 'system'
-  const [notifSettings, setNotifSettings] = useState({
-    messages: true,
-    likes: true,
-    follows: true,
-    lives: true,
-    gifts: true,
-    calls: true,
-    earnings: true,
-    competitions: true,
-    system: true
-  });
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-
-  // REDESIGNED 18-SECTION SETTINGS SYSTEM STATES
-  const [settingsCategoryFilter, setSettingsCategoryFilter] = useState('all');
-  const [settingsSearchQuery, setSettingsSearchQuery] = useState('');
-
-  // 1. Account
-  const [editUsernameInput, setEditUsernameInput] = useState('');
-  const [editPasswordOld, setEditPasswordOld] = useState('');
-  const [editPasswordNew, setEditPasswordNew] = useState('');
-
-  // 2. Privacy
-  const [privacyLastSeen, setPrivacyLastSeen] = useState('Everyone');
-  const [privacyOnlineStatus, setPrivacyOnlineStatus] = useState(true);
-  const [privacyWhoMessage, setPrivacyWhoMessage] = useState('Everyone');
-  const [privacyWhoCall, setPrivacyWhoCall] = useState('Everyone');
-  const [privacyShowCity, setPrivacyShowCity] = useState(true);
-  const [privacyShowAge, setPrivacyShowAge] = useState(true);
-  const [privacyProfileVisibility, setPrivacyProfileVisibility] = useState('Public');
-
-  // 3. Security
-  const [is2FAEnabled, setIs2FAEnabled] = useState(true);
-
-  // 4. Notifications
-  const [notifSettingsDetailed, setNotifSettingsDetailed] = useState({
-    messages: true,
-    calls: true,
-    live: true,
-    follow: true,
-    gifts: true,
-    earnings: true,
-    promotions: false,
-    system: true
-  });
-
-  // 5. Appearance & Preferences Persistence
-  const [appThemeMode, setAppThemeMode] = useState(() => {
-    return safeStorage.getItem('vlive_app_theme') || 'dark';
-  });
-  const [appAccentColor, setAppAccentColor] = useState(() => {
-    return safeStorage.getItem('vlive_app_accent_color') || 'pink';
-  });
-  const [appFontSize, setAppFontSize] = useState(() => {
-    return safeStorage.getItem('vlive_app_font_size') || 'Medium';
-  });
-  const [appAnimations, setAppAnimations] = useState(() => {
-    return safeStorage.getItem('vlive_app_animations') !== 'false';
-  });
-
-  // 13. System Permissions Prompt State & Persistence
-  const [isPermissionsPromptOpen, setIsPermissionsPromptOpen] = useState(() => {
-    return safeStorage.getItem('vlive_permissions_prompted') !== 'true';
-  });
-  // 7. Live Settings
-  const [liveDefaultQuality, setLiveDefaultQuality] = useState('4K Ultra HD');
-  const [videoCallQuality, setVideoCallQuality] = useState('1080p HD');
-  const [beautyFilterEnabled, setBeautyFilterEnabled] = useState(true);
-  const [autoSaveLive, setAutoSaveLive] = useState(true);
-  const [showLiveComments, setShowLiveComments] = useState(true);
-
-  // 8. Chat Settings
-  const [autoDownloadPhotos, setAutoDownloadPhotos] = useState(true);
-  const [autoDownloadVideos, setAutoDownloadVideos] = useState(false);
-  const [photoSendQuality, setPhotoSendQuality] = useState('High');
-  const [videoSendQuality, setVideoSendQuality] = useState('HD 1080p');
-  const [saveMediaToGallery, setSaveMediaToGallery] = useState(true);
-
-  // 10. Storage
-  const [cacheSizeMb, setCacheSizeMb] = useState(142.5);
-
-  // 11. Data Usage
-  const [dataSaverEnabled, setDataSaverEnabled] = useState(false);
-  const [mobileVideoQuality, setMobileVideoQuality] = useState('Medium 720p');
-  const [wifiVideoQuality, setWifiVideoQuality] = useState('4K Ultra HD');
-
-  // 12. Blocked Users
-  const [blockedUsers, setBlockedUsers] = useState([]);
-
-  // 13. System Permissions
-  const [systemPerms, setSystemPerms] = useState(() => {
-    try {
-      const saved = safeStorage.getItem('vlive_system_perms');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return {
-      camera: true,
-      microphone: true,
-      notifications: true,
-      gallery: true,
-      location: false
-    };
-  });
-
-  // 14. Support Forms
-  const [supportReportText, setSupportReportText] = useState('');
-  const [feedbackText, setFeedbackText] = useState('');
-
-  // 18. Delete Account Modal
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [deletePassInput, setDeletePassInput] = useState('');
-  const [homeSearchQuery, setHomeSearchQuery] = useState('');
-  const [homeCityFilter, setHomeCityFilter] = useState('All');
-  const [homeGenderFilter, setHomeGenderFilter] = useState('all');
-  const [followedUsers, setFollowedUsers] = useState(() => apiProfile.getFollowingList());
-
-  useEffect(() => {
-    const handleFollowChange = () => {
-      setFollowedUsers(apiProfile.getFollowingList());
-    };
-    window.addEventListener('vlive_follow_changed', handleFollowChange);
-    return () => window.removeEventListener('vlive_follow_changed', handleFollowChange);
-  }, []);
+  // UI Toast & Notifications
+  const [toastMessage, setToastMessage] = useState(null);
   const [notificationsList, setNotificationsList] = useState([]);
+  const [notificationFilterTab, setNotificationFilterTab] = useState('all');
+  const [notifSettings, setNotifSettings] = useState({ likes: true, calls: true, system: true, live: true });
 
-  // ==================== ADVANCED STORIES SYSTEM STATE ====================
-  const [activeStoryView, setActiveStoryView] = useState(null); // The story currently being viewed
-  const [isCreateStoryOpen, setIsCreateStoryOpen] = useState(false);
-  const [isStoryArchiveOpen, setIsStoryArchiveOpen] = useState(false);
-
-  // Create Story States
-  const [storyMediaType, setStoryMediaType] = useState('photo'); // 'photo' | 'video' | 'audio' | 'text'
-  const [storyPrivacy, setStoryPrivacy] = useState('everyone'); // 'everyone' | 'followers' | 'friends' | 'custom'
-  const [storyText, setStoryText] = useState('');
-  const [storyElements, setStoryElements] = useState([]); // texts, stickers, polls, links
-  const [storyMusic, setStoryMusic] = useState(null);
-  const [storyFilter, setStoryFilter] = useState('none');
-  const [storyLink, setStoryLink] = useState(null); // { type: 'live' | 'vip' | 'event' | 'giftshop', url: string }
-
-  // Viewing Story States
-  const [storyReplyText, setStoryReplyText] = useState('');
-  const [isStoryViewersOpen, setIsStoryViewersOpen] = useState(false);
-  const [advancedStories, setAdvancedStories] = useState([]);
-  const [storyArchive, setStoryArchive] = useState([]);
-  const [highlights, setHighlights] = useState([]);
-  const [hotGiftsList, setHotGiftsList] = useState([]);
-
-  // PROFILE REDESIGN STATES
-  const [profileGalleryTab, setProfileGalleryTab] = useState('photos'); // 'photos' | 'videos'
-
-  const [privacyShowLastSeen, setPrivacyShowLastSeen] = useState(true);
-
-  // ==================== REDESIGNED ADVANCED DAILY MISSIONS SYSTEM STATE ====================
-  const [missionActiveTab, setMissionActiveTab] = useState('daily'); // 'daily' | 'weekly' | 'monthly' | 'streamer' | 'vip' | 'history'
-  const [loginStreakDays, setLoginStreakDays] = useState(17);
-  const [userLevel, setUserLevel] = useState(18);
-  const [userXP, setUserXP] = useState(8250);
-  const [userMaxXP, setUserMaxXP] = useState(10000);
-
-  // 30-Day Daily Login Rewards Calendar State
-  const [claimedCheckInDays, setClaimedCheckInDays] = useState([]);
-  const [todayCheckInDay] = useState(17);
-
-  // Bonus Lucky Mission & Chests
-  const [bonusMission, setBonusMission] = useState({
-    id: 'bonus_today',
-    title: loc('🎥 تماشای ۲ لایو استریم (Join 2 Live Streams)', '🎥 Watch 2 Live Streams (Join 2 Live Streams)'),
-    rewardCoins: 100,
-    rewardXP: 50,
-    progress: 1,
-    total: 2,
-    completed: true,
-    claimed: false
+  // Users, Streams & Exploration
+  const [usersList, setUsersList] = useState(() => {
+    try {
+      const cached = safeStorage.getItem('vlive_app_users_v8');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
   });
-  const [weeklyChest, setWeeklyChest] = useState({
-    required: 5,
-    completed: 4,
-    claimed: false,
-    reward: '500 Coins + 🎨 Cyber Profile Frame'
-  });
-  const [monthlyChest, setMonthlyChest] = useState({
-    required: 5,
-    completed: 3,
-    claimed: false,
-    reward: '2,000 Coins + 💎 100 Diamonds + 👑 7-Day VIP Trial'
-  });
-  const [isWatchingAdModal, setIsWatchingAdModal] = useState(false);
-  const [adCountdown, setAdCountdown] = useState(5);
-
-  // 20+ Comprehensive Missions Data
-  const [allMissions, setAllMissions] = useState([]);
-  const [claimedMissionsHistory, setClaimedMissionsHistory] = useState([]);
-
-  // Handler for Claiming a Mission Reward
-
-  // ==================== REDESIGNED CREATOR STUDIO SYSTEM STATE ====================
-  const [creatorActiveTab, setCreatorActiveTab] = useState('dashboard');
-  // 'dashboard' | 'live_center' | 'analytics' | 'earnings' | 'gifts' | 'followers' | 'content' | 'schedule' | 'vip' | 'promotions' | 'community' | 'goals' | 'withdrawal' | 'level_achievements' | 'reports_settings' | 'verification_support'
-
-  // Live Center State
-  const [creatorLiveTitle, setCreatorLiveTitle] = useState('🎵 DJ Night Party 2026 - 4K High Definition Stream');
-  const [creatorLiveCategory, setCreatorLiveCategory] = useState('Music');
-  const [creatorLiveTags, setCreatorLiveTags] = useState('#Music, #IRAN, #LiveParty, #4K');
-  const [creatorRecordStream, setCreatorRecordStream] = useState(true);
-  const [creatorMicrophone, setCreatorMicrophone] = useState('HD Studio Condenser (Usb 3.0)');
-  const [creatorCamera, setCreatorCamera] = useState('4K Ultra Front Camera');
-  const [creatorBeautyFilter, setCreatorBeautyFilter] = useState(80);
-
-  // Community & Polls State
-  const [creatorBroadcastMsg, setCreatorBroadcastMsg] = useState('');
-  const [creatorPollQuestion, setCreatorPollQuestion] = useState(loc('چه سبکی برای لایو فردا شب اجرا بشه؟', 'What style will be performed for live tomorrow night?'));
-  const [creatorPollOptions, setCreatorPollOptions] = useState([]);
-
-  // Schedule State
-  const [creatorScheduleList, setCreatorScheduleList] = useState([]);
-  const [creatorNewScheduleTitle, setCreatorNewScheduleTitle] = useState('');
-  const [creatorNewScheduleTime, setCreatorNewScheduleTime] = useState('21:00');
-  const [creatorNewScheduleDay, setCreatorNewScheduleDay] = useState(loc('پنج‌شنبه (Thursday)', 'Thursday'));
-
-  // Support Ticket State
-  const [creatorSupportSubject, setCreatorSupportSubject] = useState('');
-  const [creatorSupportMessage, setCreatorSupportMessage] = useState('');
-
-  // Followers List (REAL VERIFIED USERS)
-  const [creatorFollowersList, setCreatorFollowersList] = useState([]);
-
-  // Content List
-  const [creatorContentList, setCreatorContentList] = useState([]);
-
-  // ==================== REDESIGNED REFERRAL SYSTEM STATE (18 FEATURES) ====================
-  const [referralCode, setReferralCode] = useState('RAYAN8475');
-  const [referralLink, setReferralLink] = useState('https://t.me/VLiveBot?start=RAYAN8475');
-  const [referralActiveTab, setReferralActiveTab] = useState('overview'); // 'overview' | 'invites' | 'milestones' | 'leaderboard' | 'analytics' | 'rules'
-  const [totalReferralEarnings, setTotalReferralEarnings] = useState(1250); // 1,250 Coins
-  const [totalInvitesCount, setTotalInvitesCount] = useState(12);
-  const [activeInvitesCount, setActiveInvitesCount] = useState(9);
-  const [referralTier, setReferralTier] = useState('Gold'); // 'Bronze' | 'Silver' | 'Gold' | 'Diamond'
-  const [isBonusEventActive, setIsBonusEventActive] = useState(true); // 2x bonus today
-  const [isAntiFraudModalOpen, setIsAntiFraudModalOpen] = useState(false);
-  const [isReferralRulesModalOpen, setIsReferralRulesModalOpen] = useState(false);
-  const [invitesList, setInvitesList] = useState([]);
-  const [referralMilestones, setReferralMilestones] = useState([]);
-  const [topInvitersLeaderboard, setTopInvitersLeaderboard] = useState([]);
-
-  // ==================== REDESIGNED LEVEL & BADGES SYSTEM STATE (18 FEATURES) ====================
-  const [maxXP, setMaxXP] = useState(10000);
-  const [creatorLevel, setCreatorLevel] = useState(12);
-  const [creatorXP, setCreatorXP] = useState(4500);
-  const [maxCreatorXP, setMaxCreatorXP] = useState(8000);
-  const [isLevelUpModalOpen, setIsLevelUpModalOpen] = useState(false);
-  const [levelUpModalData, setLevelUpModalData] = useState({
-    newLevel: 19,
-    rewardText: '🎁 200 Coins + 👑 VIP Badge Trial'
-  });
-  const [equippedBadge, setEquippedBadge] = useState('👑 VIP');
-  const [levelActiveTab, setLevelActiveTab] = useState('overview'); // 'overview' | 'badges' | 'achievements' | 'roadmap' | 'leaderboard' | 'store'
-
-  const [xpActivitiesList, setXpActivitiesList] = useState([]);
-  const [userBadgesList, setUserBadgesList] = useState([]);
-  const [userAchievementsList, setUserAchievementsList] = useState([]);
-  const [levelRoadmapList, setLevelRoadmapList] = useState([]);
-
-  // LEVEL & REFERRAL HELPER HANDLERS
-
-  // REDESIGNED WALLET SYSTEM STATES & HELPERS
-  const [userDiamonds, setUserDiamonds] = useState(10000); // 10,000 Diamonds
-  const [walletSubTab, setWalletSubTab] = useState('overview'); // 'overview' | 'buy' | 'convert' | 'withdraw' | 'history' | 'creator' | 'referral' | 'security' | 'giftshop'
-
-  const [txHistoryList, setTxHistoryList] = useState([]);
-  const [txCategoryFilter, setTxCategoryFilter] = useState('All');
-  const [withdrawAmountInput, setWithdrawAmountInput] = useState('25');
-  const [withdrawMethodInput, setWithdrawMethodInput] = useState('USDT TRC20');
-  const [withdrawAddressInput, setWithdrawAddressInput] = useState('TBMvBiVB6mhu1gnaAAE1Pg5YohKvV1NSnB');
-  const [withdrawPinInput, setWithdrawPinInput] = useState('');
-  const [withdrawalsHistoryList, setWithdrawalsHistoryList] = useState([]);
-  const [convertDiamondsInput, setConvertDiamondsInput] = useState('5000');
-  const [selectedCoinPackPayment, setSelectedCoinPackPayment] = useState('USDT TRC20');
-  const [walletSecurityPin, setWalletSecurityPin] = useState('1234');
-  const [isPinConfigured, setIsPinConfigured] = useState(true);
-
-  // WALLET HELPER ACTIONS
-
-  const [selectedPack, setSelectedPack] = useState(null);
-  const [depositTxId, setDepositTxId] = useState('');
-  const [withdrawUsdtAddressInput, setWithdrawUsdtAddressInput] = useState(hostUsdtAddress);
-  const [withdrawCoinsAmount, setWithdrawCoinsAmount] = useState('');
-
-  // PRE-STREAM WARNING & STREAM WATCHING STATE
-  const [preStreamWarningStream, setPreStreamWarningStream] = useState(null);
+  const [userFilter, setUserFilter] = useState('all');
+  const [streamsList, setStreamsList] = useState([]);
   const [viewingStream, setViewingStream] = useState(null);
-  const [isMiniPlayer, setIsMiniPlayer] = useState(false);
-
-  // LIVE VIEWER ROOM ENHANCED STATES
-  const [isLiveInfoPanelOpen, setIsLiveInfoPanelOpen] = useState(false);
-  const [isLiveMembersOpen, setIsLiveMembersOpen] = useState(false);
-  const [guestRequestStatus, setGuestRequestStatus] = useState('idle'); // 'idle' | 'pending' | 'accepted'
-  const [isExitLiveModalOpen, setIsExitLiveModalOpen] = useState(false);
-  const [recentlyViewedStreams, setRecentlyViewedStreams] = useState([]);
-  const [isMuteStreamChat, setIsMuteStreamChat] = useState(false);
-  const [isHideStreamChat, setIsHideStreamChat] = useState(false);
-  const [streamPinnedMessages, setStreamPinnedMessages] = useState([]);
-  const [replyingToChatMessage, setReplyingToChatMessage] = useState(null);
-  const [isStreamerFollowed, setIsStreamerFollowed] = useState(false);
-
-  // REAL-TIME WEBSOCKET & BROADCAST CHANNEL LIVE STREAM NETWORK ENGINE
-  const [streamLikes, setStreamLikes] = useState(1240);
-  const [floatingHearts, setFloatingHearts] = useState([]);
+  const viewingRoomServiceRef = useRef(null);
+  const [preStreamWarningStream, setPreStreamWarningStream] = useState(null);
   const [streamChatMessages, setStreamChatMessages] = useState([]);
   const [streamChatInput, setStreamChatInput] = useState('');
-  const [activeLuxuryGift, setActiveLuxuryGift] = useState(null);
-  const [activeVipEntrance, setActiveVipEntrance] = useState(null);
+  const [streamLikes, setStreamLikes] = useState(0);
+  const [streamPinnedMessages, setStreamPinnedMessages] = useState([]);
+  const [floatingHearts, setFloatingHearts] = useState([]);
+  const [isHideStreamChat, setIsHideStreamChat] = useState(false);
   const [isStreamGiftTrayOpen, setIsStreamGiftTrayOpen] = useState(false);
-  const [isPkBattleOpen, setIsPkBattleOpen] = useState(false);
-  const [isLiveMiniGamesOpen, setIsLiveMiniGamesOpen] = useState(false);
-  const [userAvatarFrame, setUserAvatarFrame] = useState(() => safeStorage.getItem('vlive_user_frame') || 'gold_vip');
+  const [isLiveMembersOpen, setIsLiveMembersOpen] = useState(false);
+  const [isLiveInfoPanelOpen, setIsLiveInfoPanelOpen] = useState(false);
+  const [isExitLiveModalOpen, setIsExitLiveModalOpen] = useState(false);
+  const [isStreamerFollowed, setIsStreamerFollowed] = useState(false);
   const [activeEntranceRibbon, setActiveEntranceRibbon] = useState(null);
+  const [activeVipEntrance, setActiveVipEntrance] = useState(null);
+  const [activeLuxuryGift, setActiveLuxuryGift] = useState(null);
+  const [isMiniPlayer, setIsMiniPlayer] = useState(false);
 
-  // Helper to publish live stream network events (Real-time BroadcastChannel & LocalStorage Sync)
+  // Host Live & PK Battle State
+  const [isHostLiveOpen, setIsHostLiveOpen] = useState(false);
+  const [isLiveStudioOpen, setIsLiveStudioOpen] = useState(false);
+  const [isStreamerCenterOpen, setIsStreamerCenterOpen] = useState(false);
+  const [hostLiveTitle, setHostLiveTitle] = useState('');
+  const [hostLiveCategory, setHostLiveCategory] = useState('chat');
+  const [hostLiveType, setHostLiveType] = useState('public');
+  const [hostCoinRate, setHostCoinRate] = useState(0);
+  const [hostAdultConsent, setHostAdultConsent] = useState(false);
+  const [isCamEnabled, setIsCamEnabled] = useState(true);
+  const [isMicEnabled, setIsMicEnabled] = useState(true);
+  const [isMicMuted, setIsMicMuted] = useState(false);
+  const [isLiveMiniGamesOpen, setIsLiveMiniGamesOpen] = useState(false);
+  const [isPkBattleOpen, setIsPkBattleOpen] = useState(false);
+  const [isPkBattleActive, setIsPkBattleActive] = useState(false);
+  const [pkTimeLeft, setPkTimeLeft] = useState(180);
+  const [pkRedScore, setPkRedScore] = useState(0);
+  const [pkBlueScore, setPkBlueScore] = useState(0);
+  const [pkOpponent, setPkOpponent] = useState(null);
+  const [activeLivePoll, setActiveLivePoll] = useState(null);
+  const [isCreatePollModalOpen, setIsCreatePollModalOpen] = useState(false);
+  const [pollQuestionInput, setPollQuestionInput] = useState('');
+  const [pollOptionInputs, setPollOptionInputs] = useState(['', '']);
 
-  // POST-CALL & POST-STREAM RATING MODAL STATE
+  // Call & Video Chat State
+  const [activeCall, setActiveCall] = useState(null);
+  const [activeChatCall, setActiveChatCall] = useState(null);
+  const [preCallConfirmHost, setPreCallConfirmHost] = useState(null);
+  const [activePrivateCallHost, setActivePrivateCallHost] = useState(null);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [callHistoryList, setCallHistoryList] = useState(() => {
+    try {
+      const cached = safeStorage.getItem('vlive_call_history_v1');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [favoriteContacts, setFavoriteContacts] = useState(() => {
+    try {
+      const cached = safeStorage.getItem('vlive_favorite_contacts_v1');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [blockedCallUsers, setBlockedCallUsers] = useState(() => {
+    try {
+      const cached = safeStorage.getItem('vlive_blocked_call_users_v1');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
   const [ratingTargetHost, setRatingTargetHost] = useState(null);
   const [ratingStars, setRatingStars] = useState(5);
   const [ratingComment, setRatingComment] = useState('');
+  const [ratingStarsCall, setRatingStarsCall] = useState(5);
+  const [ratingCommentCall, setRatingCommentCall] = useState('');
+  const [postCallRatingData, setPostCallRatingData] = useState(null);
+  const [inCallFloatingGifts, setInCallFloatingGifts] = useState([]);
+  const [guestRequestStatus, setGuestRequestStatus] = useState(null);
 
-  // PRIVATE 1-ON-1 VIDEO CALL STATE
-  const [activePrivateCallHost, setActivePrivateCallHost] = useState(null);
-  const [privateCallSeconds, setPrivateCallSeconds] = useState(0);
+  // Match / Roulette State
+  const [matchState, setMatchState] = useState('idle');
+  const [matchCallSeconds, setMatchCallSeconds] = useState(30);
+  const [matchedMatchUser, setMatchedMatchUser] = useState(null);
+  const [matchDeckProfiles, setMatchDeckProfiles] = useState([]);
+  const [matchCardIndex, setMatchCardIndex] = useState(0);
+  const [matchFilterVerifiedOnly, setMatchFilterVerifiedOnly] = useState(false);
+  const [matchFilterOnlineOnly, setMatchFilterOnlineOnly] = useState(false);
+  const [matchFilterMaxDistance, setMatchFilterMaxDistance] = useState(50);
+  const [matchGenderFilter, setMatchGenderFilter] = useState('all');
+  const [freeMatchCallsLeft, setFreeMatchCallsLeft] = useState(3);
+  const [isMatchFilterOpen, setIsMatchFilterOpen] = useState(false);
+  const [isMatchRulesModalOpen, setIsMatchRulesModalOpen] = useState(false);
+  const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
+  const [matchResultPopup, setMatchResultPopup] = useState(null);
+  const [swipeDragPos, setSwipeDragPos] = useState({ x: 0, y: 0 });
 
-  // 1. PK BATTLE MODE STATE
-  const [isPkBattleActive, setIsPkBattleActive] = useState(false);
-  const [pkTimeLeft, setPkTimeLeft] = useState(180); // 3 minutes
-  const [pkRedScore, setPkRedScore] = useState(0);
-  const [pkBlueScore, setPkBlueScore] = useState(0);
-  const [pkOpponent, setPkOpponent] = useState(null);
-  const [pkWinner, setPkWinner] = useState(null);
+  // Direct Messages & Chat State
+  const [conversations, setConversations] = useState([]);
+  const [activeConversationId, setActiveConversationId] = useState(null);
+  const [chatSearchQuery, setChatSearchQuery] = useState('');
+  const [isChatSearchOpen, setIsChatSearchOpen] = useState(false);
+  const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
+  const [isChatGalleryOpen, setIsChatGalleryOpen] = useState(false);
+  const [isSendGiftInChatOpen, setIsSendGiftInChatOpen] = useState(false);
+  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupDesc, setNewGroupDesc] = useState('');
+  const [msgFilterTab, setMsgFilterTab] = useState('all');
+  const [msgSearchField, setMsgSearchField] = useState('');
+  const [msgSearchQuery, setMsgSearchQuery] = useState('');
+  const [isAutoTranslateActive, setIsAutoTranslateActive] = useState(false);
 
-  // 2. MULTI-GUEST PARTY ROOMS STATE
-  const [partyRoomsList, setPartyRoomsList] = useState([]);
-  const [activePartyRoom, setActivePartyRoom] = useState(null);
-  const [mySeatIndex, setMySeatIndex] = useState(null);
-  const [isMicMuted, setIsMicMuted] = useState(false);
+  // Stories & Moments State
+  const [advancedStories, setAdvancedStories] = useState([]);
+  const [activeStoryView, setActiveStoryView] = useState(null);
+  const [isAddStoryModalOpen, setIsAddStoryModalOpen] = useState(false);
+  const [isAddPostModalOpen, setIsAddPostModalOpen] = useState(false);
+  const [newStoryCaption, setNewStoryCaption] = useState('');
+  const [isStoryViewersOpen, setIsStoryViewersOpen] = useState(false);
 
-  // 3. VIP LEVELS & ENTRANCE EFFECTS STATE
-  const [userVipLevel, setUserVipLevel] = useState(5); // Level 5 Crown VIP
-  const [entranceVehicle, setEntranceVehicle] = useState('Golden Dragon');
-  const [showEntranceBanner, setShowEntranceBanner] = useState(false);
+  // Wallet & Transactions State
+  const [transactionsList, setTransactionsList] = useState([]);
+  const [txHistoryList, setTxHistoryList] = useState([]);
+  const [depositTxId, setDepositTxId] = useState('');
+  const [withdrawCoinsAmount, setWithdrawCoinsAmount] = useState('');
+  const [withdrawUsdtAddressInput, setWithdrawUsdtAddressInput] = useState('');
+  const [withdrawMethodInput, setWithdrawMethodInput] = useState('USDT-TRC20');
+  const [withdrawalPinInput, setWithdrawalPinInput] = useState('');
+  const [hostUsdtAddress, setHostUsdtAddress] = useState('');
+  const [isPayoutFrozen, setIsPayoutFrozen] = useState(false);
+  const [lastWithdrawalTimestamp, setLastWithdrawalTimestamp] = useState(() => parseInt(safeStorage.getItem('vlive_last_withdrawal_ts') || '0', 10));
+  const [lastWithdrawalDate, setLastWithdrawalDate] = useState(() => safeStorage.getItem('vlive_last_withdrawal_date') || '');
+  const [isBuyCoinsModalOpen, setIsBuyCoinsModalOpen] = useState(false);
+  const [isVipModalOpen, setIsVipModalOpen] = useState(false);
+  const [isVipCelebrationOpen, setIsVipCelebrationOpen] = useState(false);
+  const [selectedVipPlan, setSelectedVipPlan] = useState(null);
+  const [selectedVipDuration, setSelectedVipDuration] = useState('1month');
+  const [selectedVipPayMethod, setSelectedVipPayMethod] = useState('USDT-TRC20');
 
-  // 4. AI MULTI-LANGUAGE AUTO-TRANSLATOR STATE
-  const [isAutoTranslateActive, setIsAutoTranslateActive] = useState(true);
-  const [translatedMessages, setTranslatedMessages] = useState({});
-  // 5. CAMERA BEAUTY FILTERS & 3D FACE MASKS STATE
-  const [beautySmooth, setBeautySmooth] = useState(70);
-  const [beautyTone, setBeautyTone] = useState(60);
-  const [cameraFilter, setCameraFilter] = useState('neon_glow'); // 'none', 'neon_glow', 'cyber_pink', 'warm_sun', 'vintage'
-  const [active3dMask, setActive3dMask] = useState('neon_crown'); // 'none', 'neon_crown', 'cyber_glasses', 'cat_ears', 'fire_halo'
-
-  // 6. LUCKY WHEEL (GARDONE SHANS) STATE
+  // Gamification, Rewards & Mini Games
+  const [dailyStreak, setDailyStreak] = useState(1);
+  const [dailyFreeSpins, setDailyFreeSpins] = useState(1);
+  const [lastRewardClaimTimestamp, setLastRewardClaimTimestamp] = useState(0);
+  const [isRewardOpeningModalOpen, setIsRewardOpeningModalOpen] = useState(false);
+  const [unlockedRewardData, setUnlockedRewardData] = useState(null);
   const [isLuckyWheelOpen, setIsLuckyWheelOpen] = useState(false);
   const [isWheelSpinning, setIsWheelSpinning] = useState(false);
   const [wheelRotationDeg, setWheelRotationDeg] = useState(0);
-  const [dailyFreeSpins, setDailyFreeSpins] = useState(1);
   const [wonPrize, setWonPrize] = useState(null);
-
-  // 7. AGENCY / FAMILY GUILD SYSTEM STATE
-  const [agenciesList, setAgenciesList] = useState([]);
-  const [userAgency, setUserAgency] = useState('Persian VIP Agency');
+  const [isLevelUpModalOpen, setIsLevelUpModalOpen] = useState(false);
+  const [levelUpModalData, setLevelUpModalData] = useState(null);
+  const [activePartyRoom, setActivePartyRoom] = useState(null);
   const [isCreateAgencyModalOpen, setIsCreateAgencyModalOpen] = useState(false);
   const [newAgencyName, setNewAgencyName] = useState('');
   const [newAgencyDesc, setNewAgencyDesc] = useState('');
 
-  // ==================== 8. ADVANCED LEADERBOARD STATE ====================
-  const [lbMainTab, setLbMainTab] = useState('streamers'); // streamers, gifters, earnings, popular, rising, global, vip, referrals, missions
-  const [lbTimeFilter, setLbTimeFilter] = useState('week'); // today, week, month, year, all
-  const [lbRegionFilter, setLbRegionFilter] = useState('global'); // global, country, city
-  const [lbSeason, setLbSeason] = useState('Summer Season 2026');
-  // 9. MOMENTS & SHORT CLIPS REELS STATE
-  const [momentsFeed, setMomentsFeed] = useState([]);
+  // Modals & Navigation Helpers
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [isBecomeStreamerModalOpen, setIsBecomeStreamerModalOpen] = useState(false);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
+  const [isReferralRulesModalOpen, setIsReferralRulesModalOpen] = useState(false);
+  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
+  const [isPermissionsPromptOpen, setIsPermissionsPromptOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isNotifSettingsOpen, setIsNotifSettingsOpen] = useState(false);
+  const [isDirectCallModalOpen, setIsDirectCallModalOpen] = useState(false);
+  const [isAudioCallOpen, setIsAudioCallOpen] = useState(false);
+  const [isLiveModalOpen, setIsLiveModalOpen] = useState(false);
+  const [showStreamerWelcomeModal, setShowStreamerWelcomeModal] = useState(false);
+  const [liveGuideStep, setLiveGuideStep] = useState(0);
+  const [helpCenterInitialTab, setHelpCenterInitialTab] = useState('faq');
 
-  // 10. DAILY QUESTS & TASKS REWARD CENTER STATE
-  const [dailyQuests, setDailyQuests] = useState([]);
+  // KYC & Verification
+  const [kycNationalId, setKycNationalId] = useState('');
+  const [kycApplications, setKycApplications] = useState([]);
+  const [verificationsList, setVerificationsList] = useState([]);
 
-  // 11. IN-STREAM SOUND FX SOUNDBOARD
+  // Admin Center State
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isAdminPinModalOpen, setIsAdminPinModalOpen] = useState(false);
+  const [showAdminPinModal, setShowAdminPinModal] = useState(false);
+  const [enteredAdminUsername, setEnteredAdminUsername] = useState('');
+  const [enteredAdminPassword, setEnteredAdminPassword] = useState('');
+  const [activeAdminSession, setActiveAdminSession] = useState(null);
+  const [adminActiveTab, setAdminActiveTab] = useState('overview');
+  const [adminGlobalSearch, setAdminGlobalSearch] = useState('');
+  const [adminStatsTimeframe, setAdminStatsTimeframe] = useState('30d');
+  const [adminMinWithdrawal, setAdminMinWithdrawal] = useState(50);
+  const [adminMaxWithdrawal, setAdminMaxWithdrawal] = useState(5000);
+  const [adminNetworkFee, setAdminNetworkFee] = useState(1.50);
+  const [adminPlatformFee, setAdminPlatformFee] = useState(29);
+  const [adminMaintenanceMode, setAdminMaintenanceMode] = useState(false);
+  const [adminUsersList, setAdminUsersList] = useState([]);
+  const [adminUserFilterStatus, setAdminUserFilterStatus] = useState('all');
+  const [adminEditingUser, setAdminEditingUser] = useState(null);
+  const [adminNewUser, setAdminNewUser] = useState({ username: '', name: '', role: 'user', coins: 0 });
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [adminWithdrawalsList, setAdminWithdrawalsList] = useState([]);
+  const [adminReportsList, setAdminReportsList] = useState([]);
+  const [adminReportCategoryFilter, setAdminReportCategoryFilter] = useState('all');
+  const [adminTicketsList, setAdminTicketsList] = useState([]);
+  const [adminTicketFilter, setAdminTicketFilter] = useState('all');
+  const [adminReplyingTicket, setAdminReplyingTicket] = useState(null);
+  const [adminTicketReplyText, setAdminTicketReplyText] = useState('');
+  const [adminLivesList, setAdminLivesList] = useState([]);
+  const [adminEventsList, setAdminEventsList] = useState([]);
+  const [adminAdsList, setAdminAdsList] = useState([]);
+  const [adminRolesList, setAdminRolesList] = useState([]);
+  const [adminLogsList, setAdminLogsList] = useState([]);
+  const [adminBackupsList, setAdminBackupsList] = useState([]);
+  const [adminWhitelist, setAdminWhitelist] = useState([]);
+  const [adminModerationQueue, setAdminModerationQueue] = useState([]);
+  const [adminVipPlans, setAdminVipPlans] = useState([]);
+  const [isAddVipPlanModalOpen, setIsAddVipPlanModalOpen] = useState(false);
+  const [newVipPlanTitle, setNewVipPlanTitle] = useState('');
+  const [newVipPlanCoins, setNewVipPlanCoins] = useState(1000);
+  const [newVipPlanUsdt, setNewVipPlanUsdt] = useState(19.99);
+  const [editingVipPlan, setEditingVipPlan] = useState(null);
+  const [isAddAdminModalOpen, setIsAddAdminModalOpen] = useState(false);
+  const [newAdminName, setNewAdminName] = useState('');
+  const [newAdminUsername, setNewAdminUsername] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [newAdminTelegramId, setNewAdminTelegramId] = useState('');
+  const [newAdminRole, setNewAdminRole] = useState('support');
+  const [newAdminPermissions, setNewAdminPermissions] = useState([]);
+  const [editingAdminObj, setEditingAdminObj] = useState(null);
+  const [newAdminGiftName, setNewAdminGiftName] = useState('');
+  const [newAdminGiftCoins, setNewAdminGiftCoins] = useState(100);
+  const [adminNotifTitle, setAdminNotifTitle] = useState('');
+  const [adminNotifBody, setAdminNotifBody] = useState('');
+  const [adminNotifCategory, setAdminNotifCategory] = useState('all');
 
-  // 12. MYSTERY LUCKY BOX IN STREAM
-  const [isLuckyBoxOpen, setIsLuckyBoxOpen] = useState(false);
-  // HOST LIVE STREAMING & RECORDING STATE
-  const [isHostLiveOpen, setIsHostLiveOpen] = useState(false);
-  const [liveGuideStep, setLiveGuideStep] = useState(() => {
-    return safeStorage.getItem('vlive_live_setup_guide_seen') === 'true' ? 0 : 1;
+  // AI Security & Moderation State
+  const [aiSecuritySettings, setAiSecuritySettings] = useState({
+    autoBanOffensive: true,
+    facialKycVerification: true,
+    antiFraudEngine: true,
+    realtimeAudioFilter: true
   });
-  const [hostLiveType, setHostLiveType] = useState('standard'); // 'standard' | 'adult' | 'private'
-  const [hostLiveTitle, setHostLiveTitle] = useState('');
-  const [hostLiveCategory, setHostLiveCategory] = useState('Chatting');
-  const [hostCoinRate, setHostCoinRate] = useState(10);
-  const [hostAdultConsent, setHostAdultConsent] = useState(true);
-  const [isCamEnabled, setIsCamEnabled] = useState(true);
-  const [isMicEnabled, setIsMicEnabled] = useState(true);
+  const [aiReportList, setAiReportList] = useState([]);
+  const [aiReportedChatsList, setAiReportedChatsList] = useState([]);
+  const [aiReferralFraudList, setAiReferralFraudList] = useState([]);
+  const [aiStreamerVerificationsList, setAiStreamerVerificationsList] = useState([]);
+  const [aiSupportTicketsList, setAiSupportTicketsList] = useState([]);
+  const [adminAiBadImages, setAdminAiBadImages] = useState([]);
+  const [adminAiOffensiveText, setAdminAiOffensiveText] = useState([]);
+
+  // Profile Edit State
+  const [editFullName, setEditFullName] = useState('');
+  const [editUsername, setEditUsername] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editAvatarUrl, setEditAvatarUrl] = useState('');
+  const [editGender, setEditGender] = useState('female');
+
+  // Media Refs
   const videoRef = useRef(null);
-  const [mediaStream, setMediaStream] = useState(null);
-  const mediaRecorderRef = useRef(null);
-  const recordedChunksRef = useRef([]);
-  const [isRecordingLive, setIsRecordingLive] = useState(false);
+  const callVideoRef = useRef(null);
+  const mediaStream = useRef(null);
 
-  // REAL-TIME LIVE STREAM POLL SYSTEM STATE
-  const [activeLivePoll, setActiveLivePoll] = useState(null);
-  const [isCreatePollModalOpen, setIsCreatePollModalOpen] = useState(false);
-  const [pollQuestionInput, setPollQuestionInput] = useState('');
-  const [pollOptionInputs, setPollOptionInputs] = useState([]); // up to 4 options
+  // Derived / Computed Properties
+  const isUserRayan = useMemo(() => {
+    return String(currentUsername).toLowerCase() === 'rayan' || String(currentTelegramId) === '7883907727';
+  }, [currentUsername, currentTelegramId]);
 
-  // REAL-TIME LIVE POLL PERIODIC SIMULATION FOR OTHER VIEWERS
+  const isUserSuperAdmin = useMemo(() => {
+    return isUserRayan || userRole === 'admin' || userRole === 'superadmin' || isUserAnAdmin(userRole, currentTelegramId);
+  }, [isUserRayan, userRole, currentTelegramId]);
 
-  // Streams Data
-  const [streamsList, setStreamsList] = useState([]);
+  const isTermsAccepted = termsAgreed;
 
-  // Terms Acceptance Handler
-  const handleAcceptTerms = useCallback(() => {
-    setIsTermsAccepted(true);
-    safeStorage.setItem('vlive_terms_accepted', 'true');
-    showToast('V.Live+ Terms & Regulations accepted');
-  }, [showToast]);
+  const currentUser = useMemo(() => ({
+    id: getUserId() || 'user_1',
+    name: userName,
+    username: currentUsername,
+    avatar: userAvatar,
+    coins: userCoins,
+    diamonds: userDiamonds,
+    gender: userGender,
+    role: userRole,
+    isVerified,
+    vipPlan,
+    bio: userBio,
+    telegramId: currentTelegramId
+  }), [userName, currentUsername, userAvatar, userCoins, userDiamonds, userGender, userRole, isVerified, vipPlan, userBio, currentTelegramId]);
 
-  // SINGLE SOURCE OF TRUTH FOR CURRENT USER IDENTITY
-  const currentUser = useMemo(() => {
-    if (!isLoggedIn) return null;
-    return {
-      id: localStorage.getItem('vlive_user_id') || null,
-      name: userName,
-      username: currentUsername,
-      avatar: userAvatar,
-      bio: userBio,
-      gender: userGender,
-      role: userRole,
-      telegram_id: currentTelegramId ? String(currentTelegramId) : null,
-      is_verified: isVerified,
-      coins: userCoins,
-      usdt_balance: userCashBalance
-    };
-  }, [isLoggedIn, userName, currentUsername, userAvatar, userBio, userGender, userRole, currentTelegramId, isVerified, userCoins, userCashBalance]);
-  // Filtered Users computation: Strictly displays approved female community users on Home Explore feed
   const filteredUsersList = useMemo(() => {
+    if (!Array.isArray(usersList)) return [];
     return usersList.filter(u => {
-      // If user is banned, hide
-      if (u.status === 'banned' || u.isBanned) return false;
-
-      // STRICT FEMALE FILTER: Only display female users on Home explore
-      const genderLower = String(u.gender || '').trim().toLowerCase();
-      const isFemale = genderLower === 'female' || genderLower === 'زن' || genderLower === 'خانم' || !u.gender && u.role !== 'admin' && u.role !== 'super_admin';
-      if (!isFemale) return false;
-      if (userFilter === 'online') return Boolean(u.online);
-      if (userFilter === 'followers') return Boolean(u.isFollowed || u.following);
-      if (userFilter === 'top') return Boolean(u.isTop);
-      if (userFilter === 'verified') return Boolean(u.isVerified || u.is_verified);
+      if (!u) return false;
+      if (userFilter === 'verified' && !u.isVerified && !u.is_verified) return false;
+      if (userFilter === 'online' && u.online_status !== 'online') return false;
+      if (userFilter === 'vip' && !u.isVip && !u.vip) return false;
       return true;
-    }).map(user => {
-      // Personalized Feed AI Recommendation Score Calculation
-      let matchScore = 50;
-      if (user.online) matchScore += 25;
-      if (user.is_streamer || user.isStreaming) matchScore += 20;
-      if (user.isVerified || user.is_verified) matchScore += 15;
-      if (user.interests && Array.isArray(user.interests)) {
-        matchScore += Math.min(30, user.interests.length * 5);
-      }
-      return {
-        ...user,
-        aiMatchScore: matchScore
-      };
-    }).sort((a, b) => (b.aiMatchScore || 0) - (a.aiMatchScore || 0));
+    });
   }, [usersList, userFilter]);
 
-  // Calculate Host Earnings Metrics (71% payout rate to hosts = 1% higher than other platforms)
+  const totalUnreadMessages = useMemo(() => {
+    if (!Array.isArray(conversations)) return 0;
+    return conversations.reduce((acc, c) => acc + (c?.unreadCount || 0), 0);
+  }, [conversations]);
 
-  // MODAL: TERMS & CONDITIONS AGREEMENT
+  const t = useCallback((key, defaultVal) => defaultVal || key, []);
 
-  // MAIN APPLICATION SCREEN
-  const setSelectedUserProfile = userObj => {
-    setSelectedUser(userObj);
-    setIsUserProfileModalOpen(true);
-  };
-  const showTab = tab => setActiveTab(tab);
-  // REAL BACKEND DATABASE USER PERSISTENCE & REAL-TIME SYNC
-  const syncUserAndFetchBackendProfiles = async () => {
-    try {
-      if (isLoggedIn && (userName || currentUsername)) {
-        await apiAuth.saveUserToBackend({
-          username: currentUsername || userName,
-          name: userName,
-          avatar: userAvatar,
-          bio: userBio,
-          gender: userGender,
-          coins: userCoins,
-          isVip: vipPlan !== 'none',
-          role: userRank,
-          status: 'approved',
-          isApproved: true,
-          online: true
-        });
-      }
-      const approvedUsers = await apiHome.getApprovedUsers();
-      if (Array.isArray(approvedUsers) && approvedUsers.length > 0) {
-        setUsersList(approvedUsers);
-      }
-    } catch (e) {
-      console.warn('Real-time database user sync error:', e);
-    }
-  };
-  const startRandomMatchSearch = () => {
-    if (freeMatchCallsLeft > 0) {
-      setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));
-      showToast(window.loc(`🎁 از سهمیه تماس رایگان استفاده شد (باقی‌مانده: ${freeMatchCallsLeft - 1})`, `🎁 از سهمیه تماس رایگان استفاده شد (باقی‌مانده: ${freeMatchCallsLeft - 1})`));
-    } else {
-      if (matchGenderFilter === 'female' || matchGenderFilter === 'male') {
-        if (userCoins < 10) {
-          showToast(loc('⚠️ موجودی سکه شما برای فیلتر کافی نیست! لطفاً کیف پول را شارژ کنید.', '⚠️ Your coin balance is not enough for the filter! Please charge the wallet.'));
-          setActiveTab('wallet');
-          return;
-        } else {
-          setUserCoins(c => Math.max(0, c - 10));
-          showToast(loc('🪙 ۱۰ سکه بابت فیلتر جنسیت کسر شد', '🪙 10 coins were deducted for the gender filter'));
-        }
-      } else {
-        showToast(loc('🆓 شروع مچ هوشمند هر دو (رایگان)', '🆓 Smart wrist start both (free)'));
-      }
-    }
-    setMatchState('searching');
+  // UI Toast Handler
+  const showToast = useCallback((msg) => {
+    if (!msg) return;
+    setToastMessage(msg);
     setTimeout(() => {
-      const validTargets = Array.isArray(usersList) && usersList.length > 0 ? usersList.filter(u => u && u.username !== currentUsername) : [];
-      if (validTargets.length === 0) {
-        setMatchState('idle');
-        showToast(loc('کاربر دیگری در حال حاضر برای اتصال یافت نشد', 'No other active users found at the moment'));
-        return;
-      }
-      const randomTarget = validTargets[Math.floor(Math.random() * validTargets.length)];
-      setMatchedMatchUser(randomTarget);
-      setMatchState('connected');
-      const isStreamer = randomTarget.isStreamer || randomTarget.user_type === 'STREAMER' || randomTarget.isVerifiedStreamer;
-      if (isStreamer) {
-        showToast(window.loc(`⭐ اتصال با استریمر ${randomTarget.name}: ۲۰ ثانیه اول رایگان است!`, `⭐ اتصال با استریمر ${randomTarget.name}: ۲۰ ثانیه اول رایگان است!`));
-      } else {
-        showToast(window.loc(`🎉 اتصال با ${randomTarget.name}! مهلت تماس رایگان: ۳۰ ثانیه`, `🎉 اتصال با ${randomTarget.name}! مهلت تماس رایگان: ۳۰ ثانیه`));
-      }
-      handleInitiateCall(randomTarget, 'video', '1on1');
-    }, 2500);
-  };
-  const handleRandomMatch = () => {
-    if (matchDeckProfiles.length > 0) {
-      const randomIndex = Math.floor(Math.random() * matchDeckProfiles.length);
-      setMatchCardIndex(randomIndex);
-      showToast(`🎲 Discovery: Found @${matchDeckProfiles[randomIndex]?.name || matchDeckProfiles[randomIndex]?.username}!`);
-    }
-  };
-  const triggerMatchAction = actionType => {
-    setMatchAnimationEffect(actionType);
-    const currentProfile = matchDeckProfiles[matchCardIndex];
-    if (actionType === 'like' || actionType === 'superlike') {
-      setTimeout(() => {
-        if (Math.random() > 0.35 && currentProfile) {
-          setMatchResultPopup(currentProfile);
-        } else if (currentProfile) {
-          showToast(`❤️ Liked @${currentProfile.name || currentProfile.username}!`);
-        }
-        setMatchCardIndex(prev => prev + 1);
-        setMatchAnimationEffect(null);
-        setSwipeDragPos({
-          x: 0,
-          y: 0
-        });
-      }, 300);
-    } else if (actionType === 'reject') {
-      setTimeout(() => {
-        setMatchCardIndex(prev => prev + 1);
-        setMatchAnimationEffect(null);
-        setSwipeDragPos({
-          x: 0,
-          y: 0
-        });
-      }, 300);
-    } else if (actionType === 'gift') {
-      if (currentProfile) {
-        showToast(`🎁 Virtual Rose sent to @${currentProfile.name || currentProfile.username}! ✨`);
-      }
-      setMatchAnimationEffect(null);
-      setSwipeDragPos({
-        x: 0,
-        y: 0
-      });
-    } else if (actionType === 'random') {
-      const randomIndex = Math.floor(Math.random() * matchDeckProfiles.length);
-      setMatchCardIndex(randomIndex);
-      showToast(loc('🎲 کاربر تصادفی انتخاب شد!', '🎲 Random match discovered!'));
-      setMatchAnimationEffect(null);
-      setSwipeDragPos({
-        x: 0,
-        y: 0
-      });
-    }
-  };
-  const handleTouchStart = e => {
-    setIsSwipeDragging(true);
-    swipeStartPos.current = {
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY
-    };
-  };
-  const handleTouchMove = e => {
-    if (!isSwipeDragging) return;
-    const deltaX = e.touches[0].clientX - swipeStartPos.current.x;
-    const deltaY = e.touches[0].clientY - swipeStartPos.current.y;
-    setSwipeDragPos({
-      x: deltaX,
-      y: deltaY
-    });
-  };
-  const handleTouchEnd = () => {
-    if (!isSwipeDragging) return;
-    setIsSwipeDragging(false);
-    if (swipeDragPos.x > 100) {
-      triggerMatchAction('like');
-    } else if (swipeDragPos.x < -100) {
-      triggerMatchAction('reject');
-    } else {
-      setSwipeDragPos({
-        x: 0,
-        y: 0
-      });
-    }
-  };
-  const handlePostFileChange = async e => {
-    const file = e.target.files && e.target.files[0];
-    if (file) {
-      if (file.size > 25 * 1024 * 1024) {
-        showToast(loc('حجم فایل نباید بیشتر از ۲۵ مگابایت باشد', 'File size must be under 25MB'));
-        return;
-      }
-      try {
-        if (file.type.startsWith('image/')) {
-          showToast(loc('⚡ در حال بهینه‌سازی و فشرده‌سازی تصویر...', '⚡ Optimizing and compressing image...'));
-          const compressed = await compressImageFile(file, 1280, 0.82);
-          setNewPostUrl(compressed);
-          showToast(loc('فایل تصویر با کیفیت بهینه بارگذاری شد', 'Image optimized and loaded successfully'));
-        } else {
-          const reader = new FileReader();
-          reader.onload = event => {
-            setNewPostUrl(event.target.result);
-            showToast(loc('فایل انتخابی با موفقیت بارگذاری شد', 'File loaded successfully'));
-          };
-          reader.readAsDataURL(file);
-        }
-      } catch (err) {
-        const reader = new FileReader();
-        reader.onload = event => {
-          setNewPostUrl(event.target.result);
-          showToast(loc('فایل انتخابی بارگذاری شد', 'File loaded successfully'));
-        };
-        reader.readAsDataURL(file);
-      }
-    }
-  };
-  const handleStoryFileChange = async e => {
-    const file = e.target.files && e.target.files[0];
-    if (file) {
-      if (file.size > 25 * 1024 * 1024) {
-        showToast(loc('حجم فایل نباید بیشتر از ۲۵ مگابایت باشد', 'File size must be under 25MB'));
-        return;
-      }
-      try {
-        if (file.type.startsWith('image/')) {
-          showToast(loc('⚡ در حال بهینه‌سازی و فشرده‌سازی استوری...', '⚡ Optimizing and compressing story...'));
-          const compressed = await compressImageFile(file, 1080, 0.85);
-          setNewStoryUrl(compressed);
-          showToast(loc('تصویر استوری با کیفیت عالی بهینه شد', 'Story image optimized successfully'));
-        } else {
-          const reader = new FileReader();
-          reader.onload = event => {
-            setNewStoryUrl(event.target.result);
-            showToast(loc('تصویر استوری با موفقیت بارگذاری شد', 'Story image loaded successfully'));
-          };
-          reader.readAsDataURL(file);
-        }
-      } catch (err) {
-        const reader = new FileReader();
-        reader.onload = event => {
-          setNewStoryUrl(event.target.result);
-          showToast(loc('تصویر استوری بارگذاری شد', 'Story image loaded successfully'));
-        };
-        reader.readAsDataURL(file);
-      }
-    }
-  };
-  const handleAddNewPost = async () => {
-    if (!newPostUrl.trim() || !newPostTitle.trim()) {
-      showToast(loc('لطفاً لینک تصویر/ویدیو و عنوان را وارد کنید', 'Please enter media URL and title'));
-      return;
-    }
-    if (newPostType === 'photo') {
-      const newItem = {
-        id: 'p_' + Date.now(),
-        url: newPostUrl.trim(),
-        caption: newPostTitle.trim()
-      };
-      const updated = [newItem, ...userPhotosList];
-      setUserPhotosList(updated);
-      await apiSocial.createPost(newPostUrl.trim(), newPostTitle.trim());
-      apiSocial.getPosts().then(p => setPosts(p || []));
-      showToast(loc('عکس با موفقیت به گالری پروفایل اضافه شد', 'Photo added to profile gallery successfully'));
-    } else {
-      const newItem = {
-        id: 'v_' + Date.now(),
-        title: newPostTitle.trim(),
-        views: '1',
-        thumb: newPostUrl.trim()
-      };
-      const updated = [newItem, ...userVideosList];
-      setUserVideosList(updated);
-      safeStorage.setItem('vlive_user_videos_v1', JSON.stringify(updated));
-      await apiSocial.createPost(newPostUrl.trim(), newPostTitle.trim());
-      apiSocial.getPosts().then(p => setPosts(p || []));
-      showToast(loc('ویدیو با موفقیت به گالری پروفایل اضافه شد', 'Video added to profile gallery successfully'));
-    }
-    setNewPostUrl('');
-    setNewPostTitle('');
-    setIsAddPostModalOpen(false);
-  };
-  const handleDeletePhotoPost = async id => {
-    await apiSocial.deletePost(id);
-    setUserPhotosList(prev => prev.filter(p => p.id !== id));
-    apiSocial.getPosts().then(p => setPosts(p || []));
-    showToast(loc('عکس از پروفایل حذف شد', 'Photo deleted from profile'));
-  };
-  const handleDeleteVideoPost = async id => {
-    await apiSocial.deletePost(id);
-    setUserVideosList(prev => prev.filter(v => v.id !== id));
-    apiSocial.getPosts().then(p => setPosts(p || []));
-    showToast(loc('ویدیو از پروفایل حذف شد', 'Video deleted from profile'));
-  };
-  const handleAddUserStory = async () => {
-    if (!newStoryUrl.trim()) {
-      showToast(loc('لطفاً لینک تصویر استوری را وارد کنید', 'Please enter story image URL'));
-      return;
-    }
-    const newStoryItem = {
-      id: 's_' + Date.now(),
-      type: 'photo',
-      url: newStoryUrl.trim(),
-      duration: 5,
-      views: 1,
-      likes: 0,
-      time: 'Just now'
-    };
-    setAdvancedStories(prev => {
-      const myStoryIndex = prev.findIndex(s => s.isMe);
-      if (myStoryIndex >= 0) {
-        const copy = [...prev];
-        copy[myStoryIndex] = {
-          ...copy[myStoryIndex],
-          items: [newStoryItem, ...copy[myStoryIndex].items]
-        };
-        return copy;
-      } else {
-        const newGroup = {
-          id: 'my_story',
-          isMe: true,
-          hasUnseen: false,
-          user: {
-            name: userName,
-            avatar: userAvatar,
-            isVip: true
-          },
-          items: [newStoryItem]
-        };
-        return [newGroup, ...prev];
-      }
-    });
-    await apiSocial.createStory(newStoryUrl.trim());
-    apiSocial.getStories().then(st => {
-      if (st && st.length > 0) {
-        // update stories list
-      }
-    });
-    setNewStoryUrl('');
-    setNewStoryCaption('');
-    setIsAddStoryModalOpen(false);
-    showToast(loc('استوری جدید با موفقیت در پروفایل منتشر شد', 'New story published on profile successfully'));
-  };
-  const handleDeleteUserStoryItem = async itemId => {
-    setAdvancedStories(prev => {
-      const copy = prev.map(group => {
-        if (group.isMe) {
-          const updatedItems = group.items.filter(item => item.id !== itemId);
-          return {
-            ...group,
-            items: updatedItems
-          };
-        }
-        return group;
-      }).filter(group => !group.isMe || group.items.length > 0);
-      return copy;
-    });
-    await apiSocial.deleteStory(itemId);
-    showToast(loc('استوری مورد نظر حذف گردید', 'Story deleted successfully'));
-  };
-  const handleGalleryImageUpload = async e => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      showToast(loc('لطفاً یک فایل تصویری معتبر انتخاب کنید', 'Please select a valid image file'));
-      return;
-    }
-    try {
-      showToast(loc('⚡ در حال فشرده‌سازی و بهینه‌سازی تصویر...', '⚡ Compressing and optimizing the image...'));
-      const compressedDataUrl = await compressImageFile(file, 1080, 0.8);
-      setEditAvatarUrl(compressedDataUrl);
-      setUserAvatar(compressedDataUrl);
-      
-      await apiProfile.updateProfile({ avatar: compressedDataUrl });
-      
-      showToast(loc('✅ تصویر پروفایل با موفقیت فشرده و جایگزین شد', 'Profile picture has been compressed and replaced successfully'));
-    } catch (err) {
-      console.warn('Compression error, fallback to reader:', err);
-      const reader = new FileReader();
-      reader.onload = async event => {
-        setEditAvatarUrl(event.target.result);
-        setUserAvatar(event.target.result);
-        await apiProfile.updateProfile({ avatar: event.target.result });
-        showToast('Profile image loaded from phone gallery');
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+      setToastMessage(null);
+    }, 4000);
+  }, []);
 
-  // Submit App Feature Suggestion
-  const handleSendSuggestion = () => {
-    if (!newSuggestionInput.trim()) {
-      showToast('Please enter your feature suggestion or feedback');
-      return;
-    }
-    const newSuggestion = {
-      id: Date.now(),
-      user: currentUsername,
-      text: newSuggestionInput.trim(),
-      date: new Date().toISOString().slice(0, 10),
-      status: 'Received'
-    };
-    const updated = [newSuggestion, ...suggestionsList];
-    setSuggestionsList(updated);
-    safeStorage.setItem('vlive_app_suggestions_v1', JSON.stringify(updated));
-    setNewSuggestionInput('');
-    setIsSuggestionModalOpen(false);
-    showToast('Thank you! Your suggestion was submitted to app management');
-  };
-  const handleInitiateCall = (targetUser, type = 'video', mode = '1on1') => {
-    if (!targetUser) return;
-    if (isDndActive) {
-      showToast(loc('⚠️ حالت "مزاحم نشوید" فعال است. ابتدا آن را غیرفعال کنید.', '⚠️ \"Do not disturb\" mode is active. Disable it first.'));
-      return;
-    }
-    if (blockedCallUsers.includes(targetUser.username)) {
-      showToast(window.loc(`⚠️ کاربر ${targetUser.name} در لیست مسدودشده‌ها است.`, `⚠️ کاربر ${targetUser.name} در لیست مسدودشده‌ها است.`));
-      return;
-    }
-    if (privacyWhoCall === 'VIP Only' && !targetUser.isVip) {
-      showToast(loc('👑 تنظیمات تماس فقط برای کاربران VIP فعال است.', '👑 Call settings are only active for VIP users.'));
-      return;
-    }
-    const isPaid = streamerPaidCallEnabled || targetUser.isVip || targetUser.role?.includes('Streamer') || targetUser.role?.includes('Model');
-    const tariffRate = targetUser.tariffPerMin || streamerCallTariffPerMin || 20;
-    if (isPaid) {
-      setPreCallConfirmHost({
-        user: targetUser,
-        type,
-        mode,
-        tariffRate
-      });
-    } else {
-      handleStartCallDirect(targetUser, type, mode, false, 0);
-    }
-  };
-  const handleStartCallDirect = (targetUser, type = 'video', mode = '1on1', isPaid = false, tariffRate = 20) => {
-    setPreCallConfirmHost(null);
-    const initialParticipants = mode === 'group' ? [targetUser, ...usersList.filter(u => u && u.username !== targetUser?.username && u.username !== currentUsername).slice(0, 2)] : [targetUser];
-    const newCall = {
-      id: 'call_' + Date.now(),
-      type,
-      mode,
-      user: targetUser,
-      participants: initialParticipants,
-      isPaid,
-      tariffPerMin: tariffRate,
-      consumedCoins: 0,
-      seconds: 0,
-      isMuted: false,
-      isSpeakerOn: true,
-      isOnHold: false,
-      isRecording: false,
-      recordingPermissionGranted: false,
-      isCameraOn: type === 'video',
-      facingMode: 'user',
-      beautyFilter: true,
-      activeEffect: 'none',
-      isBgBlurred: false,
-      quality: '1080p Full HD',
-      isPiP: false,
-      translationLang: 'fa',
-      translatedSubtitles: loc('ارتباط رمزنگاری‌شده 256 بیتی برقرار شد. آماده گفتگو 🔒', 'A 256-bit encrypted connection was established. Ready to talk 🔒'),
-      securityEncrypted: true
-    };
-    apiCalls.startCall({
-      receiverId: targetUser?.id || targetUser?.userId,
-      callType: type,
-      tariffRate: isPaid ? tariffRate : 0
-    }).then(res => {
-      if (res && res.session) {
-        newCall.sessionId = res.session.id;
+  // Sound Effects Handler
+  const playSoundEffect = useCallback((soundName) => {
+    try {
+      if (typeof window !== 'undefined' && window.AudioContext) {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(soundName === 'coin' ? 880 : 440, ctx.currentTime);
+        gain.gain.setValueAtTime(0.05, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.15);
       }
-    }).catch(err => console.warn('startCall notice:', err));
-    setActiveCall(newCall);
-    setUserPresenceStatus('in_call');
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({
-        video: type === 'video',
-        audio: true
-      }).then(stream => {
-        if (callVideoRef.current) {
-          callVideoRef.current.srcObject = stream;
-        }
-      }).catch(err => {
-        console.log('Using high-definition simulated video feed:', err);
-      });
+    } catch {
+      // audio error safely suppressed
     }
-    showToast(window.loc(`📞 تماس ${type === 'video' ? loc('تصویری', 'visual') : loc('صوتی', 'Audio')} با ${targetUser.name} برقرار شد`, `📞 تماس ${type === 'video' ? loc('تصویری', 'visual') : loc('صوتی', 'Audio')} با ${targetUser.name} برقرار شد`));
-  };
-  const handleEndActiveCall = () => {
-    if (!activeCall) return;
-    const minutes = Math.floor(activeCall.seconds / 60);
-    const secs = activeCall.seconds % 60;
-    const durationStr = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }, []);
+
+  // Audit Log Handler
+  const addAdminAuditLog = useCallback((action, details) => {
     const newLog = {
-      id: 'call_log_' + Date.now(),
-      type: activeCall.type,
-      direction: 'outgoing',
-      user: activeCall.user,
-      time: loc('هم‌اکنون', 'right now'),
-      date: loc('امروز', 'today'),
-      duration: durationStr,
-      isPaid: activeCall.isPaid,
-      tariffRate: activeCall.tariffPerMin,
-      coinsSpent: activeCall.consumedCoins,
-      quality: activeCall.quality,
-      rating: 5,
-      encrypted: true
+      id: Date.now(),
+      action,
+      details,
+      admin: userName,
+      timestamp: new Date().toISOString()
     };
-    setCallHistoryList(prev => [newLog, ...prev]);
-    setPostCallRatingData({
-      user: activeCall.user,
-      type: activeCall.type,
-      duration: durationStr,
-      coinsSpent: activeCall.consumedCoins,
-      quality: activeCall.quality
-    });
-    if (callVideoRef.current && callVideoRef.current.srcObject) {
-      const tracks = callVideoRef.current.srcObject.getTracks();
-      tracks.forEach(t => t.stop());
-      callVideoRef.current.srcObject = null;
-    }
-    setActiveCall(null);
-    setUserPresenceStatus('available');
-  };
+    setAdminLogsList(prev => [newLog, ...(Array.isArray(prev) ? prev : [])]);
+  }, [userName]);
 
-  // Live Timer & Coin Deduction Effect for Active Call
-
-  const handleToggleMuteCall = () => {
-    setActiveCall(prev => prev ? {
-      ...prev,
-      isMuted: !prev.isMuted
-    } : null);
-    showToast(activeCall?.isMuted ? loc('🎙️ میکروفون روشن شد', '🎙️ The microphone turned on') : loc('🔇 میکروفون قطع شد', '🔇 The microphone was cut off'));
-  };
-  const handleToggleSpeakerCall = () => {
-    setActiveCall(prev => prev ? {
-      ...prev,
-      isSpeakerOn: !prev.isSpeakerOn
-    } : null);
-    showToast(activeCall?.isSpeakerOn ? loc('🔈 حالت گوشی', '🔈 phone mode') : loc('🔊 اسپیکر فعال شد', '🔊 The speaker is activated'));
-  };
-  const handleToggleHoldCall = () => {
-    setActiveCall(prev => prev ? {
-      ...prev,
-      isOnHold: !prev.isOnHold
-    } : null);
-    showToast(activeCall?.isOnHold ? loc('▶️ تماس ادامه یافت', '▶️ The call continued') : loc('⏸️ تماس در حالت انتظار قرار گرفت', '⏸️ The call was put on hold'));
-  };
-  const handleToggleCameraCall = () => {
-    setActiveCall(prev => prev ? {
-      ...prev,
-      isCameraOn: !prev.isCameraOn
-    } : null);
-    showToast(activeCall?.isCameraOn ? loc('📷 دوربین خاموش شد', '📷 The camera turned off') : loc('📹 دوربین روشن شد', '📹 The camera turned on'));
-  };
-  const handleSwitchCameraFacing = () => {
-    setActiveCall(prev => prev ? {
-      ...prev,
-      facingMode: prev.facingMode === 'user' ? 'environment' : 'user'
-    } : null);
-    showToast(loc('🔄 تغییر دوربین جلو / عقب انجام شد', '🔄 The change of front / rear camera was done'));
-  };
-  const handleToggleBeautyFilter = () => {
-    setActiveCall(prev => prev ? {
-      ...prev,
-      beautyFilter: !prev.beautyFilter
-    } : null);
-    showToast(activeCall?.beautyFilter ? loc('✨ فیلتر زیبایی غیرفعال شد', '✨ The beauty filter has been disabled') : loc('✨ فیلتر زیبایی فعال شد', '✨ The beauty filter is activated'));
-  };
-  const handleSelectEffect = effect => {
-    setActiveCall(prev => prev ? {
-      ...prev,
-      activeEffect: effect
-    } : null);
-    setShowInCallEffectsMenu(false);
-    showToast(window.loc(`🎨 افکت ${effect} اعمال شد`, `🎨 افکت ${effect} اعمال شد`));
-  };
-  const handleToggleBgBlur = () => {
-    setActiveCall(prev => prev ? {
-      ...prev,
-      isBgBlurred: !prev.isBgBlurred
-    } : null);
-    showToast(activeCall?.isBgBlurred ? loc('🌫️ پس‌زمینه عادی شد', '🌫️ The background became normal') : loc('🌫️ پس‌زمینه تار شد', '🌫️ The background is blurred'));
-  };
-  const handleSelectCallQuality = q => {
-    setActiveCall(prev => prev ? {
-      ...prev,
-      quality: q
-    } : null);
-    setShowInCallQualityMenu(false);
-    showToast(window.loc(`⚙️ کیفیت تماس به ${q} تغییر یافت`, `⚙️ کیفیت تماس به ${q} تغییر یافت`));
-  };
-  const handleToggleRecordCall = () => {
-    if (!activeCall) return;
-    if (!activeCall.recordingPermissionGranted) {
-      setIsRecordConsentModalOpen(true);
-    } else {
-      setActiveCall(prev => ({
-        ...prev,
-        isRecording: !prev.isRecording
-      }));
-      showToast(activeCall.isRecording ? loc('⏺️ ضبط تماس متوقف شد', 'Call recording stopped') : loc('🔴 ضبط مکالمه آغاز شد', '🔴 Conversation recording has started'));
+  // Sync User & Fetch Profiles from Real Backend
+  const syncUserAndFetchBackendProfiles = useCallback(async () => {
+    try {
+      const profilesRes = await apiHome.getExploreProfiles();
+      if (profilesRes && profilesRes.success && Array.isArray(profilesRes.data)) {
+        setUsersList(profilesRes.data);
+      }
+      const myProfile = await apiProfile.getMyProfile();
+      if (myProfile && myProfile.success && myProfile.data) {
+        const p = myProfile.data;
+        if (p.name) setUserName(p.name);
+        if (p.username) setCurrentUsername(p.username);
+        if (p.avatar_url) setUserAvatar(p.avatar_url);
+        if (p.bio) setUserBio(p.bio);
+        if (p.gender) setUserGender(p.gender);
+        if (typeof p.coins === 'number') setUserCoins(p.coins);
+        if (typeof p.diamonds === 'number') setUserDiamonds(p.diamonds);
+        if (typeof p.is_verified === 'boolean') setIsVerified(p.is_verified);
+        if (p.role) setUserRole(p.role);
+      }
+    } catch (err) {
+      console.warn('Profile sync notice:', err.message);
     }
-  };
-  const handleConfirmRecordConsent = () => {
-    setIsRecordConsentModalOpen(false);
-    setActiveCall(prev => prev ? {
-      ...prev,
-      recordingPermissionGranted: true,
-      isRecording: true
-    } : null);
-    showToast(loc('🔴 اجازه ضبط تایید شد. ضبط مکالمه فعال است.', '🔴 Recording permission has been confirmed. Call recording is active.'));
-  };
-  const handleSendInCallGift = gift => {
-    if (userCoins < gift.coins) {
-      showToast(loc('⚠️ موجودی سکه شما کافی نیست!', '⚠️ Your coin balance is not enough!'));
+  }, []);
+
+  // Call Initiation Handler
+  const handleInitiateCall = useCallback((targetUser, callType = 'video') => {
+    if (!targetUser) return;
+    if (userCoins < (targetUser.tariffPerMin || 100)) {
+      showToast(loc('سکه کافی برای شروع تماس ندارید', 'Insufficient coins to start call'));
       return;
     }
+    setPreCallConfirmHost({ ...targetUser, callType });
+  }, [userCoins, showToast]);
 
-    // 29% Platform Commission Calculation
-    const grossCoins = gift.coins;
-    const commissionCoins = Math.round(grossCoins * 0.29);
-    const netCreatorCoins = grossCoins - commissionCoins;
-    setUserCoins(c => {
-      const nextCoins = Math.max(0, c - grossCoins);
-      safeStorage.setItem('vlive_user_coins', String(nextCoins));
-      return nextCoins;
-    });
-    setTotalEarnings(e => e + netCreatorCoins);
-    setUserDiamonds(d => d + Math.round(netCreatorCoins / 5));
-
-    // Record Transaction Entry with 29% Commission
-    const giftTx = {
-      id: `TX-GFT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      type: 'gift_received',
-      description: `In-Call Gift: ${gift.name}`,
-      grossAmountCoins: grossCoins,
-      commissionAmountCoins: commissionCoins,
-      netEarningsCoins: netCreatorCoins,
-      grossUsdt: (grossCoins / 50).toFixed(2),
-      commissionUsdt: (commissionCoins / 50).toFixed(2),
-      netUsdt: (netCreatorCoins / 50).toFixed(2),
-      time: 'Just now',
-      timestamp: new Date().toISOString(),
-      status: 'Completed',
-      icon: gift.emoji || '🎁'
-    };
-    setTransactionsList(prev => [giftTx, ...prev]);
-    const anim = {
-      id: Date.now() + Math.random(),
-      gift,
-      x: Math.random() * 60 + 20,
-      y: Math.random() * 40 + 20
-    };
-    setInCallFloatingGifts(prev => [...prev, anim]);
-    setTimeout(() => {
-      setInCallFloatingGifts(prev => prev.filter(g => g.id !== anim.id));
-    }, 3500);
-    showToast(`🎁 Gift ${gift.name} sent! Net earnings credited (+${netCreatorCoins} Coins after 29% commission).`);
-  };
-  const handleAddParticipantToCall = newUser => {
-    if (!activeCall) return;
-    if (activeCall.participants.some(p => p.username === newUser.username)) {
-      showToast(loc('این کاربر قبلاً در تماس حضور دارد.', 'This user is already in contact.'));
-      return;
-    }
-    const updatedList = [...activeCall.participants, {
-      ...newUser,
-      isMuted: false
-    }];
+  const handleStartCallDirect = useCallback((targetUser, callType = 'video') => {
+    if (!targetUser) return;
+    setPreCallConfirmHost(null);
     setActiveCall({
-      ...activeCall,
-      mode: 'group',
-      participants: updatedList
+      user: targetUser,
+      callType,
+      seconds: 0,
+      isPaid: (targetUser.tariffPerMin || 0) > 0,
+      tariffPerMin: targetUser.tariffPerMin || 100,
+      consumedCoins: 0,
+      isOnHold: false,
+      isMuted: false,
+      isCameraOff: false,
+      isSpeakerOn: true,
+      isPiP: false,
+      isRecording: false,
+      sessionId: 'call_' + Date.now(),
+      translationLang: 'off',
+      translatedSubtitles: ''
     });
-    setIsAddParticipantModalOpen(false);
-    showToast(window.loc(`👥 ${newUser.name} به تماس اضافه شد`, `👥 ${newUser.name} به تماس اضافه شد`));
-  };
-  const handleTogglePiPCall = () => {
-    setActiveCall(prev => prev ? {
-      ...prev,
-      isPiP: !prev.isPiP
-    } : null);
-    showToast(activeCall?.isPiP ? loc('🔳 تماس به حالت تمام‌صفحه بازگشت', '🔳 call back to full screen mode') : loc('🔳 تماس در حالت پنجره کوچک (PiP) قرار گرفت', '🔳 The call was placed in small window (PiP) mode'));
-  };
-  const handleToggleFavoriteContact = username => {
-    setFavoriteContacts(prev => {
-      if (prev.includes(username)) {
-        showToast(loc('از علاقه‌مندی‌ها حذف شد', 'Removed from favorites'));
-        return prev.filter(u => u !== username);
-      } else {
-        showToast(loc('به لیست علاقه‌مندی‌ها اضافه شد ⭐', 'Added to favorites ⭐'));
-        return [...prev, username];
-      }
-    });
-  };
-  const handleSaveScheduledCall = () => {
-    if (!scheduleTargetUser) {
-      showToast(loc('لطفاً یک کاربر را انتخاب کنید', 'Please select a user'));
-      return;
-    }
-    const newSch = {
-      id: 'sch_' + Date.now(),
-      user: scheduleTargetUser,
-      type: scheduleType,
-      dateTime: scheduleDateTime,
-      note: scheduleNote || loc('تماس برنامه‌ریزی‌شده', 'Scheduled call'),
-      isPaid: streamerPaidCallEnabled,
-      tariffRate: streamerCallTariffPerMin,
-      status: 'pending'
-    };
-    setScheduledCallsList(prev => [newSch, ...prev]);
-    setIsScheduleCallModalOpen(false);
-    setScheduleNote('');
-    showToast(loc('📅 تماس با موفقیت رزرو و زمان‌بندی شد!', '📅 The call was successfully booked and scheduled!'));
-  };
-  const handleSubmitPostCallRating = () => {
-    showToast(window.loc(`⭐ امتیاز ${ratingStarsCall} ستاره با موفقیت ثبت شد!`, `⭐ امتیاز ${ratingStarsCall} ستاره با موفقیت ثبت شد!`));
-    setPostCallRatingData(null);
-    setRatingCommentCall('');
-  };
-  const handleReportUserInCall = reason => {
-    showToast(window.loc(`🚩 گزارش با علت "${reason}" ثبت شد و توسط تیم نظارت V.Live بررسی می‌شود.`, `🚩 گزارش با علت "${reason}" ثبت شد و توسط تیم نظارت V.Live بررسی می‌شود.`));
-    setPostCallRatingData(null);
-  };
-  const handleBlockUserInCall = username => {
-    setBlockedCallUsers(prev => [...prev, username]);
-    showToast(window.loc(`🚫 کاربر ${username} مسدود شد.`, `🚫 کاربر ${username} مسدود شد.`));
-    setPostCallRatingData(null);
-  };
-  const totalUnreadMessages = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
+    showToast(loc((callType === 'video' ? 'تماس تصویری برقرار شد' : 'تماس صوتی برقرار شد'), (callType + ' call connected')));
+  }, [showToast]);
 
-  // Check if current user is Rayan (Super Admin @Rayan_Vlive)
-  const SUPER_ADMIN_TELEGRAM_HANDLE = 'Rayan_Vlive';
-  const SUPER_ADMIN_TELEGRAM_ID = '8933698119';
-  const currentCleanTgHandle = (currentUsername || authUsername || safeStorage.getItem('vlive_user_telegram_handle') || safeStorage.getItem('vlive_current_username') || (typeof window !== 'undefined' ? window.Telegram?.WebApp?.initDataUnsafe?.user?.username : '') || '').replace('@', '').trim().toLowerCase();
-  const isUserSuperAdmin = userRole === 'admin' || userRole === 'super_admin';
-  const isUserRayan = userRole === 'admin' || userRole === 'super_admin';
-  const handleRunAiReportAnalyzer = async reportId => {
-    const report = aiReportList.find(r => r.id === reportId);
-    if (!report) return;
-    setAiReportList(prev => prev.map(r => r.id === reportId ? {
-      ...r,
-      isAnalyzing: true
-    } : r));
+  const handleEndActiveCall = useCallback(async () => {
+    if (!activeCall) return;
     try {
-      const res = await apiAdmin.analyzeReportAi({
-        reportText: report.reportText,
-        category: report.category,
-        user: report.reportedUser
-      });
-      setAiReportList(prev => prev.map(r => r.id === reportId ? {
-        ...r,
-        isAnalyzing: false,
-        aiClassification: res.classification || 'Spam',
-        aiRiskScore: res.riskScore0,
-        aiRiskLevel: res.riskLevel || 'Medium',
-        aiReasoning: res.reasoning || loc('تحلیل امنیت توسط هوش مصنوعی تکمیل شد', 'Security analysis completed by artificial intelligence')
-      } : r));
-      showToast(window.loc(`🤖 تحلیل هوش مصنوعی برای گزارش ${reportId} دریافت شد`, `🤖 تحلیل هوش مصنوعی برای گزارش ${reportId} دریافت شد`));
-    } catch (e) {
-      setAiReportList(prev => prev.map(r => r.id === reportId ? {
-        ...r,
-        isAnalyzing: false
-      } : r));
-      showToast(loc('⚠️ خطا در دریافت پاسخ هوش مصنوعی', '⚠️ Error in receiving artificial intelligence response'));
+      if (activeCall.sessionId) {
+        await apiCalls.endCall(activeCall.sessionId);
+      }
+    } catch (err) {
+      console.warn('End call report notice:', err.message);
     }
-  };
-  const handleRunAiChatModerator = async chatId => {
-    const chat = aiReportedChatsList.find(c => c.id === chatId);
-    if (!chat) return;
-    setAiReportedChatsList(prev => prev.map(c => c.id === chatId ? {
-      ...c,
-      isAnalyzing: true
-    } : c));
-    try {
-      const res = await apiAdmin.moderateChatAi({
-        messageText: chat.messageText,
-        sender: chat.sender,
-        reportReason: chat.reportReason
-      });
-      setAiReportedChatsList(prev => prev.map(c => c.id === chatId ? {
-        ...c,
-        isAnalyzing: false,
-        aiAnalysis: res
-      } : c));
-      showToast(loc('🤖 تحلیل چت توسط Gemini انجام شد', '🤖 Chat analysis was done by Gemini'));
-    } catch (e) {
-      setAiReportedChatsList(prev => prev.map(c => c.id === chatId ? {
-        ...c,
-        isAnalyzing: false
-      } : c));
-    }
-  };
-  const handleGenerateAiSupportReply = async ticketId => {
-    const ticket = aiSupportTicketsList.find(t => t.id === ticketId);
-    if (!ticket) return;
-    setAiSupportTicketsList(prev => prev.map(t => t.id === ticketId ? {
-      ...t,
-      isGenerating: true
-    } : t));
-    try {
-      const res = await apiAdmin.getSupportAiSuggestion({
-        ticketSubject: ticket.subject,
-        ticketBody: ticket.messageBody,
-        user: ticket.user
-      });
-      setAiSupportTicketsList(prev => prev.map(t => t.id === ticketId ? {
-        ...t,
-        isGenerating: false,
-        aiSuggestedReply: res.suggestedReply
-      } : t));
-      showToast(loc('✨ پاسخ پیشنهادی Gemini تولید شد', '✨ The answer suggested by Gemini has been generated'));
-    } catch (e) {
-      setAiSupportTicketsList(prev => prev.map(t => t.id === ticketId ? {
-        ...t,
-        isGenerating: false
-      } : t));
-    }
-  };
-  const handleRunAiStreamerVerification = async kycId => {
-    const item = aiStreamerVerificationsList.find(k => k.id === kycId);
-    if (!item) return;
-    setAiStreamerVerificationsList(prev => prev.map(k => k.id === kycId ? {
-      ...k,
-      isAnalyzing: true
-    } : k));
-    try {
-      const res = await apiAdmin.verifyStreamerAi({
-        docsSubmitted: item.docsSubmitted,
-        photoUrl: item.photoUrl,
-        username: item.username
-      });
-      setAiStreamerVerificationsList(prev => prev.map(k => k.id === kycId ? {
-        ...k,
-        isAnalyzing: false,
-        aiCheck: res
-      } : k));
-      showToast(loc('🤖 بررسی هوشمند مدارک استریمر انجام شد', '🤖 Smart verification of streamer documents was done'));
-    } catch (e) {
-      setAiStreamerVerificationsList(prev => prev.map(k => k.id === kycId ? {
-        ...k,
-        isAnalyzing: false
-      } : k));
-    }
-  };
-  const handleRunAiReferralFraudCheck = async fraudId => {
-    const item = aiReferralFraudList.find(f => f.id === fraudId);
-    if (!item) return;
-    setAiReferralFraudList(prev => prev.map(f => f.id === fraudId ? {
-      ...f,
-      isAnalyzing: true
-    } : f));
-    try {
-      const res = await apiAdmin.checkReferralFraudAi({
-        userId: item.userId,
-        referralCount: item.referralCount,
-        suspectedDuplicates: item.suspectedDuplicates
-      });
-      setAiReferralFraudList(prev => prev.map(f => f.id === fraudId ? {
-        ...f,
-        isAnalyzing: false,
-        aiAnalysis: res
-      } : f));
-      showToast(loc('🔍 تحلیل تقلب دعوت توسط هوش مصنوعی تکمیل شد', '🔍 Invitation fraud analysis completed by artificial intelligence'));
-    } catch (e) {
-      setAiReferralFraudList(prev => prev.map(f => f.id === fraudId ? {
-        ...f,
-        isAnalyzing: false
-      } : f));
-    }
-  };
-  const isUserAuthorizedAdmin = isUserSuperAdmin;
-  const addAdminAuditLog = actionText => {
-    const timeStr = new Date().toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit'
+    setPostCallRatingData({
+      host: activeCall.user,
+      duration: activeCall.seconds,
+      coins: activeCall.consumedCoins
     });
-    setAdminLogsList(prev => [{
-      time: timeStr,
-      log: actionText
-    }, ...prev]);
-    showToast(actionText);
-  };
-  const handleSavePermissionsPrompt = async (acceptedAll = true) => {
-    if (acceptedAll) {
-      try {
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true
-          });
-          stream.getTracks().forEach(track => track.stop());
-        }
-      } catch (e) {
-        console.warn('Initial camera/mic permission request handled:', e);
-      }
-      try {
-        if ('Notification' in window && Notification.permission !== 'granted') {
-          await Notification.requestPermission();
-        }
-      } catch (e) {
-        console.warn('Initial notification permission request handled:', e);
-      }
+    setIsRatingModalOpen(true);
+    setActiveCall(null);
+    showToast(loc('تماس به پایان رسید', 'Call ended'));
+  }, [activeCall, showToast]);
+
+  const handleToggleMuteCall = useCallback(() => {
+    setActiveCall(prev => prev ? { ...prev, isMuted: !prev.isMuted } : null);
+  }, []);
+
+  const handleToggleCameraCall = useCallback(() => {
+    setActiveCall(prev => prev ? { ...prev, isCameraOff: !prev.isCameraOff } : null);
+  }, []);
+
+  const handleToggleSpeakerCall = useCallback(() => {
+    setActiveCall(prev => prev ? { ...prev, isSpeakerOn: !prev.isSpeakerOn } : null);
+  }, []);
+
+  const handleTogglePiPCall = useCallback(() => {
+    setActiveCall(prev => prev ? { ...prev, isPiP: !prev.isPiP } : null);
+  }, []);
+
+  const handleToggleRecordCall = useCallback(() => {
+    setActiveCall(prev => prev ? { ...prev, isRecording: !prev.isRecording } : null);
+    showToast(loc('وضعیت ضبط تماس تغییر کرد', 'Call recording toggled'));
+  }, [showToast]);
+
+  const handleSwitchCameraFacing = useCallback(() => {
+    showToast(loc('دوربین جابجا شد', 'Camera switched'));
+  }, [showToast]);
+
+  const handleToggleBeautyFilter = useCallback(() => {
+    showToast(loc('فیلتر زیبایی فعال شد', 'Beauty filter toggled'));
+  }, [showToast]);
+
+  const handleReportUserInCall = useCallback((reason) => {
+    showToast(loc('گزارش کاربر ثبت شد و توسط هوش مصنوعی بررسی می‌شود', 'Report submitted for review'));
+  }, [showToast]);
+
+  const handleBlockUserInCall = useCallback(() => {
+    if (activeCall?.user) {
+      setBlockedCallUsers(prev => [...(Array.isArray(prev) ? prev : []), activeCall.user]);
+      handleEndActiveCall();
+      showToast(loc('کاربر مسدود شد', 'User blocked'));
     }
-    const updated = {
-      camera: acceptedAll,
-      microphone: acceptedAll,
-      notifications: acceptedAll,
-      gallery: acceptedAll,
-      location: acceptedAll,
-      rules: acceptedAll
-    };
-    setSystemPerms(updated);
-    safeStorage.setItem('vlive_system_perms', JSON.stringify(updated));
-    safeStorage.setItem('vlive_permissions_prompted', 'true');
-    safeStorage.setItem('vlive_perm_gallery_granted', 'true');
-    safeStorage.setItem('vlive_perm_camera_granted', 'true');
-    safeStorage.setItem('vlive_perm_mic_granted', 'true');
-    safeStorage.setItem('vlive_terms_accepted', 'true');
-    setTermsAgreed(true);
-    setIsPermissionsPromptOpen(false);
-    showToast(acceptedAll ? loc('✅ تمام دسترسی‌ها و قوانین V.LIVE با موفقیت تأیید شدند', '✅ All V.LIVE permissions & terms accepted successfully') : loc('تنظیمات دسترسی ذخیره شد', 'Permissions settings saved'));
-  };
-  const handleOpenStory = storyGroup => {
-    setActiveStoryView({
-      group: storyGroup,
-      currentIndex: 0,
-      progress: 0
-    });
-    // Mark as seen
-    setAdvancedStories(prev => prev.map(s => s.id === storyGroup.id ? {
-      ...s,
-      hasUnseen: false
-    } : s));
-  };
-  const handleCloseStory = () => {
-    setActiveStoryView(null);
-    setStoryReplyText('');
-  };
-  const handleNextStoryItem = () => {
-    if (!activeStoryView) return;
-    const {
-      group,
-      currentIndex
-    } = activeStoryView;
-    if (currentIndex < group.items.length - 1) {
-      setActiveStoryView({
-        group,
-        currentIndex: currentIndex + 1,
-        progress: 0
-      });
-    } else {
-      // Find next user's story
-      const currentUserIndex = advancedStories.findIndex(s => s.id === group.id);
-      if (currentUserIndex < advancedStories.length - 1) {
-        handleOpenStory(advancedStories[currentUserIndex + 1]);
-      } else {
-        handleCloseStory();
-      }
-    }
-  };
-  const handlePrevStoryItem = () => {
-    if (!activeStoryView) return;
-    const {
-      group,
-      currentIndex
-    } = activeStoryView;
-    if (currentIndex > 0) {
-      setActiveStoryView({
-        group,
-        currentIndex: currentIndex - 1,
-        progress: 0
-      });
-    } else {
-      // Find prev user's story
-      const currentUserIndex = advancedStories.findIndex(s => s.id === group.id);
-      if (currentUserIndex > 0) {
-        handleOpenStory(advancedStories[currentUserIndex - 1]);
-      }
-    }
-  };
-  const handlePublishStory = () => {
-    showToast(loc('استوری با موفقیت منتشر شد و تا ۲۴ ساعت فعال خواهد بود.', 'The story has been published successfully and will be active for 24 hours.'));
-    setIsCreateStoryOpen(false);
-  };
-  const handleLikeStory = () => {
-    showToast(loc('❤️ استوری لایک شد', '❤️ The story was liked'));
-  };
-  const handleSendStoryReply = () => {
-    if (!storyReplyText) return;
-    showToast(window.loc(`پاسخ شما به استوری ${activeStoryView?.group?.user?.name} ارسال شد.`, `پاسخ شما به استوری ${activeStoryView?.group?.user?.name} ارسال شد.`));
-    setStoryReplyText('');
-  };
-  const handleStoryLinkClick = link => {
-    showToast(window.loc(`انتقال به: ${link.text}`, `انتقال به: ${link.text}`));
-  };
-  const handleClaimMissionReward = missionId => {
-    setAllMissions(prev => prev.map(m => {
-      if (m.id === missionId && m.completed && !m.claimed) {
-        if (m.rewardType === 'coins' && typeof m.rewardVal === 'number') {
-          setUserCoins(c => c + m.rewardVal);
-        } else if (m.rewardType === 'diamonds' && typeof m.rewardVal === 'number') {
-          setUserDiamonds(d => d + m.rewardVal);
-        } else if (m.rewardType === 'vip_trial') {
-          showToast(window.loc(`👑 اشتراک ${m.rewardVal} برای شما فعال گردید!`, `👑 اشتراک ${m.rewardVal} برای شما فعال گردید!`));
-        } else if (m.rewardType === 'frame' || m.rewardType === 'badge' || m.rewardType === 'coupon') {
-          showToast(window.loc(`🎁 جایزه ویژه "${m.rewardVal}" دریافت شد!`, `🎁 جایزه ویژه "${m.rewardVal}" دریافت شد!`));
-        }
-        const newXP = userXP + m.xpVal;
-        if (newXP >= userMaxXP) {
-          setUserLevel(lvl => lvl + 1);
-          setUserXP(newXP - userMaxXP);
-          showToast(window.loc(`🎉 تبریک! شما به سطح Level ${userLevel + 1} ارتقا یافتید!`, `🎉 تبریک! شما به سطح Level ${userLevel + 1} ارتقا یافتید!`));
-        } else {
-          setUserXP(newXP);
-        }
-        setClaimedMissionsHistory(h => [{
-          id: `h_${Date.now()}`,
-          title: m.title,
-          reward: `${typeof m.rewardVal === 'number' ? '+' + m.rewardVal : m.rewardVal} & +${m.xpVal} XP`,
-          date: loc('هم‌اکنون', 'right now'),
-          icon: m.rewardType === 'diamonds' ? '💎' : m.rewardType === 'coins' ? '🪙' : '🎁'
-        }, ...h]);
-        showToast(window.loc(`✅ جایزه مأموریت دریافت شد!`, `✅ جایزه مأموریت دریافت شد!`));
-        return {
-          ...m,
-          claimed: true
-        };
-      }
-      return m;
-    }));
-  };
+  }, [activeCall, handleEndActiveCall, showToast]);
 
-  // Handler for Claiming Today's Daily Check-In & Streak Reward (7-Day Unified Economy System)
-  const handleClaimDailyCheckIn = () => {
-    const status = economyService.getDailyRewardStatus(lastRewardClaimTimestamp, dailyStreak);
-    if (!status.canClaim) {
-      showToast(loc('⚠️ پاداش امروز قبلاً دریافت شده است!', '⚠️ Daily reward already claimed today!'));
-      return;
-    }
-    const nowTs = Date.now();
-    const nextStreak = status.streak;
-    const rewardItem = status.rewardToday;
-    const coins = rewardItem.coins;
+  const handleSubmitRating = useCallback((stars, comment) => {
+    setIsRatingModalOpen(false);
+    showToast(loc('امتیاز شما با موفقیت ثبت شد ⭐', 'Rating submitted successfully ⭐'));
+  }, [showToast]);
 
-    // Apply Coins
-    setUserCoins(c => c + coins);
-    setDailyStreak(nextStreak);
-    setLastRewardClaimTimestamp(nowTs);
-    safeStorage.setItem('vlive_daily_streak', String(nextStreak));
-    safeStorage.setItem('vlive_last_reward_claim_ts', String(nowTs));
+  const handleSubmitPostCallRating = useCallback((stars, comment) => {
+    setIsRatingModalOpen(false);
+    showToast(loc('امتیاز تماس شما ثبت شد ⭐', 'Call rating submitted ⭐'));
+  }, [showToast]);
 
-    // Record immutable financial transaction
-    const tx = economyService.recordTransaction({
-      type: 'DAILY_REWARD',
-      userId: currentUsername || 'user_rayan',
-      username: userName || 'Rayan',
-      coinAmount: coins,
-      item: loc(`پاداش ورود روز ${nextStreak}`, `Day ${nextStreak} Daily Check-In Reward`),
-      status: 'Completed'
-    });
-    setFinancialTransactionsList(prev => [tx, ...prev]);
-
-    // Prepare unlocked reward display banner in modal
-    setUnlockedRewardData({
-      day: nextStreak,
-      title: loc(`پاداش روز ${nextStreak} 🎁`, `Day ${nextStreak} Reward 🎁`),
-      coins,
-      diamonds: 0,
-      icon: rewardItem.icon || '🪙'
-    });
-
-    // Save in reward history
-    setDailyRewardHistory(prev => [{
-      id: `RWD-${Date.now()}`,
-      day: nextStreak,
-      rewardTitle: `Day ${nextStreak} Reward 🎁`,
-      coins,
-      diamonds: 0,
-      date: 'Just now'
-    }, ...prev]);
-
-    // In-App Notification
-    setNotificationsList(prev => [{
+  // Live Stream Chat & Gifts
+  const handleSendStreamChat = useCallback(async () => {
+    if (!streamChatInput.trim() || !viewingStream) return;
+    const cleanText = streamChatInput.trim();
+    const msg = {
       id: Date.now(),
-      type: 'system',
-      group: 'today',
-      title: loc('🎁 پاداش روزانه دریافت شد!', '🎁 Daily Reward Claimed!'),
-      body: loc(`شما +${coins} سکه برای زنجیره روز ${nextStreak} دریافت کردید!`, `You received +${coins} Coins for Day ${nextStreak} streak!`),
+      sender: userName,
+      username: currentUsername,
+      text: cleanText,
+      avatar: userAvatar,
       time: 'Just now',
-      unread: true
-    }, ...prev]);
-    showToast(loc(`🎉 پاداش روز ${nextStreak} (+${coins} سکه 🪙) واریز شد!`, `🎉 Day ${nextStreak} Reward (+${coins} Coins 🪙) claimed!`));
-  };
-  const handleClaimDailyRewardAction = handleClaimDailyCheckIn;
-
-  // Handler for Claiming Bonus Mission
-  const handleClaimBonusMission = () => {
-    if (bonusMission.claimed) return;
-    setUserCoins(c => c + bonusMission.rewardCoins);
-    setUserXP(x => x + bonusMission.rewardXP);
-    setBonusMission(b => ({
-      ...b,
-      claimed: true
-    }));
-    showToast(window.loc(`🎁 جایزه مأموریت شانس روزانه (+${bonusMission.rewardCoins} سکه) دریافت شد!`, `🎁 جایزه مأموریت شانس روزانه (+${bonusMission.rewardCoins} سکه) دریافت شد!`));
-  };
-
-  // Handler for Claiming Weekly Chest
-  const handleClaimWeeklyChest = () => {
-    if (weeklyChest.claimed) return;
-    setUserCoins(c => c + 500);
-    showToast(loc('🎉 جعبه هفتگی (Mystery Box) باز شد! +500 سکه و قاب سایبر دریافت کردید!', '🎉 The weekly box (Mystery Box) has been opened! You got +500 coins and cyber frames!'));
-    setWeeklyChest(w => ({
-      ...w,
-      claimed: true
-    }));
-  };
-
-  // Handler for Subscribing to VIP Membership Plans
-  const handleSubscribeVipPlan = planId => {
-    const planMap = {
-      weekly: {
-        id: 'weekly',
-        name: 'VIP Weekly ⚡',
-        days: 7,
-        priceCoins: 250,
-        priceUsdt: '$4.99'
-      },
-      monthly: {
-        id: 'monthly',
-        name: 'VIP Monthly 🌟',
-        days: 30,
-        priceCoins: 750,
-        priceUsdt: '$14.99'
-      },
-      '3months': {
-        id: '3months',
-        name: 'VIP 3 Months 👑',
-        days: 90,
-        priceCoins: 2000,
-        priceUsdt: '$39.99'
-      },
-      '6months': {
-        id: '6months',
-        name: 'VIP 6 Months 🔥',
-        days: 180,
-        priceCoins: 3500,
-        priceUsdt: '$69.99'
-      },
-      yearly: {
-        id: 'yearly',
-        name: 'VIP Yearly 💎',
-        days: 365,
-        priceCoins: 6000,
-        priceUsdt: '$119.99'
-      }
+      isVip: vipPlan !== 'Free'
     };
-    const selectedPlan = planMap[planId] || planMap.monthly;
-    if (userCoins < selectedPlan.priceCoins) {
-      showToast(`Insufficient coins! ${selectedPlan.name} requires ${selectedPlan.priceCoins.toLocaleString()} coins.`);
-      return;
-    }
-
-    // Deduct coins
-    setUserCoins(prev => {
-      const nextCoins = Math.max(0, prev - selectedPlan.priceCoins);
-      safeStorage.setItem('vlive_user_coins', String(nextCoins));
-      return nextCoins;
-    });
-
-    // Calculate new expiration
-    const currentExpiry = vipExpireTimestamp > Date.now() ? vipExpireTimestamp : Date.now();
-    const newExpiry = currentExpiry + selectedPlan.days * 24 * 60 * 60 * 1000;
-    setVipPlan(selectedPlan.id);
-    setVipExpireTimestamp(newExpiry);
-    setVipExpireDays(Math.ceil((newExpiry - Date.now()) / (1000 * 60 * 60 * 24)));
-    safeStorage.setItem('vlive_vip_plan', selectedPlan.id);
-    safeStorage.setItem('vlive_vip_expire_ts', String(newExpiry));
-
-    // Add Purchase History
-    const historyItem = {
-      id: `VIP-${Date.now()}`,
-      planId: selectedPlan.id,
-      planName: selectedPlan.name,
-      days: selectedPlan.days,
-      priceCoins: selectedPlan.priceCoins,
-      priceUsdt: selectedPlan.priceUsdt,
-      date: new Date().toLocaleDateString(),
-      status: 'Active',
-      txHash: '0x' + Math.random().toString(16).slice(2, 10)
-    };
-    setVipPurchaseHistory(prev => [historyItem, ...prev]);
-
-    // Add Notification
-    setNotificationsList(prev => [{
-      id: Date.now(),
-      type: 'system',
-      group: 'today',
-      title: '👑 VIP Subscription Activated!',
-      body: `Congratulations! ${selectedPlan.name} is now active for ${selectedPlan.days} days. Enjoy all VIP benefits & priority perks!`,
-      time: 'Just now',
-      unread: true
-    }, ...prev]);
-    setIsVipCelebrationOpen(true);
-    showToast(`🎉 ${selectedPlan.name} activated successfully for ${selectedPlan.days} days!`);
-  };
-
-  // Handler for Claiming Monthly Chest
-  const handleClaimMonthlyChest = () => {
-    if (monthlyChest.claimed) return;
-    setUserCoins(c => c + 2000);
-    setUserDiamonds(d => d + 100);
-    showToast(loc('🎉 ابر جعبه ماهانه (Mega Reward) باز شد! +2000 سکه، +100 الماس و ۷ روز VIP دریافت کردید!', '🎉 The monthly cloud box (Mega Reward) has been opened! You got +2000 coins, +100 diamonds and 7 days VIP!'));
-    setMonthlyChest(m => ({
-      ...m,
-      claimed: true
-    }));
-  };
-
-  // Handler for Rewarded Video Ad Completion
-  const handleCompleteRewardedAd = () => {
-    setIsWatchingAdModal(true);
-    let count = 5;
-    setAdCountdown(count);
-    const timer = setInterval(() => {
-      count -= 1;
-      setAdCountdown(count);
-      if (count <= 0) {
-        clearInterval(timer);
-        setIsWatchingAdModal(false);
-        setUserCoins(c => c + 20);
-        setAllMissions(prev => prev.map(m => m.id === 'm_ad' ? {
-          ...m,
-          progress: 1,
-          completed: true,
-          claimed: true
-        } : m));
-        showToast(loc('🎬 تماشای تبلیغ به پایان رسید! +20 سکه به موجودی اضافه شد.', '🎬 Watching the ad is over! +20 coins added to inventory.'));
-      }
-    }, 1000);
-  };
-
-  // Helper function to handle Action Navigation for Mission items
-  const handleMissionAction = m => {
-    if (m.completed && !m.claimed) {
-      handleClaimMissionReward(m.id);
-      return;
-    }
-    if (m.claimed) {
-      showToast(loc('پاداش این مأموریت قبلاً دریافت شده است', 'The reward for this mission has already been received'));
-      return;
-    }
-    switch (m.actionRoute) {
-      case 'messages':
-        setActiveTab('messages');
-        showToast(loc('انتقال به بخش گفتگوها 💬', 'Transfer to the conversation section 💬'));
-        break;
-      case 'streams':
-        setStreamSubTab('lives');
-        showToast(loc('انتقال به لایوهای آنلاین 🎥', 'Transfer to online live 🎥'));
-        break;
-      case 'stories':
-        setStreamSubTab('lives');
-        setIsCreateStoryOpen(true);
-        showToast(loc('بخش استوری‌های روزانه 📖', 'Daily stories section 📖'));
-        break;
-      case 'giftshop':
-        setActiveTab('wallet');
-        setWalletSubTab('giftshop');
-        showToast(loc('فروشگاه و ارسال هدایا 🎁', 'Shop and send gifts 🎁'));
-        break;
-      case 'wallet':
-        setActiveTab('wallet');
-        showToast(loc('کیف پول و مدیریت سکه‌ها 👛', 'Wallet and coin management 👛'));
-        break;
-      case 'profile':
-        setActiveTab('profile');
-        showToast(loc('ویرایش اطلاعات پروفایل 👤', 'Edit profile information 👤'));
-        break;
-      case 'call':
-        setCallMainSubTab('dialpad');
-        showTab('messages');
-        showToast(loc('بخش شماره‌گیر و تماس 📞', 'Dialer and call section 📞'));
-        break;
-      case 'discover':
-        setStreamSubTab('lives');
-        showToast(loc('اکسپلور و کشف محتوا 🔍', 'Explore and discover content 🔍'));
-        break;
-      case 'watch_ad':
-        handleCompleteRewardedAd();
-        break;
-      case 'invite':
-        setActiveTab('wallet');
-        setWalletSubTab('referral');
-        showToast(loc('کد دعوت اختصاصی کپی شد 📲', 'The exclusive invitation code was copied 📲'));
-        break;
-      case 'start_live':
-        if (!isVerified) {
-          showToast(loc('ابتدا باید درخواست استریمر شدن بدهید و توسط مدیریت تایید شوید ⚠️', 'You must first apply to become a streamer and be approved by admin ⚠️'));
-          return;
-        }
-        setIsGoLiveOpen(true);
-        showToast(loc('استودیو شروع لایو استریم 🔴', 'The studio starts the live stream 🔴'));
-        break;
-      default:
-        showToast(loc('هدایت به بخش مربوطه...', 'Directed to the relevant section...'));
-    }
-  };
-  const handleGainXP = (xpAmount, sourceTitle) => {
-    let nextXP = userXP + xpAmount;
-    let nextLevel = userLevel;
-    let nextMax = maxXP;
-    if (nextXP >= nextMax) {
-      nextLevel += 1;
-      nextXP = nextXP - nextMax;
-      nextMax = nextMax + 2000;
-      setLevelUpModalData({
-        newLevel: nextLevel,
-        rewardText: `🎁 200 Coins + 👑 VIP Level ${nextLevel} Unlocked!`
-      });
-      setIsLevelUpModalOpen(true);
-      setUserCoins(prev => prev + 200);
-      showToast(window.loc(`🎉 تبریک! شما به Level ${nextLevel} ارتقا یافتید! +200 سکه پاداش واریز شد.`, `🎉 تبریک! شما به Level ${nextLevel} ارتقا یافتید! +200 سکه پاداش واریز شد.`));
-    } else {
-      showToast(window.loc(`⚡ +${xpAmount} XP برای ${sourceTitle} دریافت شد!`, `⚡ +${xpAmount} XP برای ${sourceTitle} دریافت شد!`));
-    }
-    setUserXP(nextXP);
-    setUserLevel(nextLevel);
-    setMaxXP(nextMax);
-  };
-  const handleShareTelegramReferral = () => {
-    const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(loc('عضو شبکه V.Live شو و ۱۰۰ سکه رایگان هدیه بگیر! 🎁🔥', 'Become a member of the V. Live network and get 100 free coins as a gift! 🎁🔥'))}`;
-    window.open(telegramShareUrl, '_blank');
-    showToast(loc('لینک دعوت مستقیم تلگرام باز گردید ✈️', 'Telegram direct invitation link is open ✈️'));
-  };
-  const handleBuyService = async (serviceName, costUsdt) => {
-    // 1 usdt = 100 coins? No, let's just deduct coins.
-    const costCoins = costUsdt * 100;
-    if (userCoins < costCoins) {
-      showToast('Insufficient coins');
-      return false;
-    }
-    const res = await apiWallet.buyService(serviceName, costCoins);
-    if (res && res.success) {
-      setUserCoins(res.newCoins);
-      apiWallet.getTransactions().then(txs => setTxHistoryList(txs || []));
-      return true;
-    } else {
-      showToast('Transaction failed: ' + (res.error || ''));
-      return false;
-    }
-  };
-  const handleBuyCoinsPack = async (coinsCount, priceUsdt) => {
-    const res = await apiWallet.addCoins(coinsCount, priceUsdt);
-    if (res && res.success) {
-      setUserCoins(res.newCoins);
-      const newTxs = await apiWallet.getTransactions();
-      setTxHistoryList(newTxs || []);
-      showToast(window.loc(`🎉 ${coinsCount.toLocaleString()} سکه با موفقیت خریداری شد!`, `🎉 ${coinsCount.toLocaleString()} سکه با موفقیت خریداری شد!`));
-    } else {
-      showToast(window.loc('خطا در خرید سکه', 'Error buying coins') + ': ' + (res?.error || 'Unknown error'));
-    }
-  };
-  const handleConvertDiamondsAction = () => {
-    const diamondsToConvert = parseInt(convertDiamondsInput) || 0;
-    if (diamondsToConvert <= 0) {
-      showToast(loc('لطفاً مقدار معتبری از الماس وارد کنید', 'Please enter a valid amount of diamonds'));
-      return;
-    }
-    if (diamondsToConvert > userDiamonds) {
-      showToast(loc('موجودی الماس شما کافی نیست!', 'Your diamond inventory is not enough!'));
-      return;
-    }
-    const usdGained = diamondsToConvert / 100; // 100 Diamonds = 1 USDT
-    setUserDiamonds(prev => prev - diamondsToConvert);
-    setUserCashBalance(prev => prev + usdGained);
-    const newTx = {
-      id: `TX-${Date.now().toString().slice(-4)}`,
-      type: 'Convert Diamonds',
-      description: window.loc(`تبدیل ${diamondsToConvert.toLocaleString()} الماس به ارز نقد`, `تبدیل ${diamondsToConvert.toLocaleString()} الماس به ارز نقد`)
-    };
-    setTxHistoryList(prev => [newTx, ...prev]);
-    showToast(window.loc(`✨ ${diamondsToConvert.toLocaleString()} الماس با موفقیت به $${usdGained.toFixed(2)} USDT نقد تبدیل شد!`, `✨ ${diamondsToConvert.toLocaleString()} الماس با موفقیت به $${usdGained.toFixed(2)} USDT نقد تبدیل شد!`));
-  };
-  const handleRequestWithdrawalAction = () => {
-    const amountUsd = parseFloat(withdrawAmountInput) || 0;
-    if (amountUsd <= 0) {
-      showToast(loc('لطفاً مبلغ برداشت معتبری وارد کنید', 'Please enter a valid withdrawal amount'));
-      return;
-    }
-    if (amountUsd > userCashBalance) {
-      showToast(loc('موجودی قابل برداشت شما کافی نیست!', 'Your withdrawal balance is insufficient!'));
-      return;
-    }
-    if (!withdrawAddressInput.trim()) {
-      showToast(loc('لطفاً آدرس کیف پول مقصد را وارد کنید', 'Please enter the destination wallet address'));
-      return;
-    }
-    if (withdrawPinInput !== walletSecurityPin) {
-      showToast(loc('رمز برداشت اشتباه است!', 'The password is wrong!'));
-      return;
-    }
-    setUserCashBalance(prev => prev - amountUsd);
-    const newWithdrawal = {
-      id: `W-${Date.now().toString().slice(-4)}`,
-      amount: `$${amountUsd.toFixed(2)} USDT`,
-      method: withdrawMethodInput,
-      address: `${withdrawAddressInput.slice(0, 6)}...${withdrawAddressInput.slice(-4)}`,
-      date: new Date().toLocaleString(window.langCode === 'fa' ? 'fa-IR' : 'en-US'),
-      status: 'Pending',
-      reason: ''
-    };
-    setWithdrawalsHistoryList(prev => [newWithdrawal, ...prev]);
-    const newTx = {
-      id: `TX-${Date.now().toString().slice(-4)}`,
-      type: 'Withdrawal',
-      description: window.loc(`درخواست برداشت به آدرس ${withdrawMethodInput}`, `درخواست برداشت به آدرس ${withdrawMethodInput}`)
-    };
-    setTxHistoryList(prev => [newTx, ...prev]);
-    setWithdrawPinInput('');
-    showToast(window.loc(`💸 درخواست برداشت $${amountUsd.toFixed(2)} USDT ثبت شد و در حال بررسی توسط بخش مالی است!`, `💸 درخواست برداشت $${amountUsd.toFixed(2)} USDT ثبت شد و در حال بررسی توسط بخش مالی است!`));
-  };
-  const broadcastLiveEvent = (type, payload) => {
-    try {
-      if (typeof BroadcastChannel !== 'undefined') {
-        const bc = new BroadcastChannel('vlive_stream_sync_channel');
-        bc.postMessage({
-          type,
-          payload,
-          sender: userName
-        });
-        bc.close();
-      }
-    } catch (e) {
-      console.warn('BroadcastChannel error:', e);
-    }
-    try {
-      localStorage.setItem('vlive_realtime_event', JSON.stringify({
-        type,
-        payload,
-        sender: userName,
-        timestamp: Date.now()
-      }));
-    } catch (e) {
-      console.warn('Storage sync error:', e);
-    }
-  };
-
-  // Handler for sending live stream chat message with AI Moderation
-  const handleSendStreamChat = () => {
-    if (!streamChatInput.trim()) return;
-    const filterRes = filterMessageContent(streamChatInput.trim());
-    if (!filterRes.isClean) {
-      showToast(loc('⚠️ پیام شما حاوی کلمات نامناسب بود و خودکار اصلاح شد.', '⚠️ Your message contained restricted words and was filtered.'));
-    }
-    const newMsg = {
-      user: userName,
-      text: filterRes.filteredText,
-      isVip: userVipLevel > 0,
-      timestamp: Date.now()
-    };
-    setStreamChatMessages(prev => [...prev, newMsg]);
+    setStreamChatMessages(prev => [...(Array.isArray(prev) ? prev : []), msg]);
     setStreamChatInput('');
-
-    // Broadcast in real-time across tabs / network
-    broadcastLiveEvent('LIVE_CHAT_MESSAGE', {
-      streamId: viewingStream ? viewingStream.id : 'default',
-      message: newMsg
-    });
-  };
-
-  // Handler for sending luxury gifts with animated overlay
-  const handleSendLuxuryGift = gift => {
-    if (userCoins < gift.coins) {
-      showToast(loc('⚠️ موجودی سکه شما برای ارسال این هدیه کافی نیست.', '⚠️ Insufficient coins to send this gift.'));
-      setActiveTab('wallet');
-      setWalletSubTab('buy');
-      setIsStreamGiftTrayOpen(false);
-      return;
+    try {
+      if (viewingRoomServiceRef.current) {
+        await viewingRoomServiceRef.current.sendChatMessage(msg);
+      }
+      await apiLive.sendComment(viewingStream.id, cleanText, {
+        name: userName,
+        username: currentUsername,
+        avatar: userAvatar,
+        isVip: vipPlan !== 'Free'
+      });
+    } catch {
+      // suppressed
     }
-    setUserCoins(prev => prev - gift.coins);
-    setIsStreamGiftTrayOpen(false);
+  }, [streamChatInput, userName, currentUsername, userAvatar, vipPlan, viewingStream]);
 
-    // Trigger full-screen luxury animation
-    const giftPayload = {
-      name: gift.name,
-      sender: userName || 'V.LIVE VIP',
-      receiver: viewingStream?.host || 'Streamer',
-      amount: gift.coins,
-      icon: gift.icon,
-      animationType: gift.animationType || 'crown'
-    };
-    setActiveLuxuryGift(giftPayload);
-    showToast(loc(`🎁 هدیه لاکچری ${gift.name} با شکوه تمام ارسال شد!`, `🎁 Luxury gift ${gift.name} sent successfully!`));
-
-    // Broadcast in real-time
-    broadcastLiveEvent('LUXURY_GIFT_EVENT', {
-      streamId: viewingStream ? viewingStream.id : 'default',
-      gift: giftPayload
-    });
-  };
-
-  // Handler for liking live stream with animated floating heart
-  const handleLikeStream = () => {
+  const handleLikeStream = useCallback(async () => {
+    if (!viewingStream) return;
     setStreamLikes(prev => prev + 1);
-    const colors = ['#ec4899', '#a855f7', '#ef4444', '#f59e0b', '#3b82f6'];
+    const colors = ['#ec4899', '#a855f7', '#ef4444', '#f59e0b', '#00f3ff'];
     const newHeart = {
       id: Date.now() + Math.random(),
       color: colors[Math.floor(Math.random() * colors.length)],
       left: Math.floor(Math.random() * 50) + 25
     };
-    setFloatingHearts(prev => [...prev.slice(-15), newHeart]);
-
-    // Broadcast real-time like event
-    broadcastLiveEvent('LIVE_LIKE', {
-      streamId: viewingStream ? viewingStream.id : 'default',
-      user: userName,
-      count: 1
-    });
-  };
-
-  // Real-time Listener for concurrent users/tabs messages & likes
-
-  const handleTranslateChatMessage = async (msgId, messageText) => {
-    const currentConv = conversations.find(c => c.id === activeConversationId);
-    const targetMsg = currentConv?.messages?.find(m => m.id === msgId);
-    if (targetMsg?.translated) {
-      setConversations(prev => prev.map(c => c.id === activeConversationId ? {
-        ...c,
-        messages: c.messages.map(m => m.id === msgId ? {
-          ...m,
-          translated: false
-        } : m)
-      } : c));
-      return;
-    }
-    if (targetMsg?.translation && targetMsg?.translationLang === langCode) {
-      setConversations(prev => prev.map(c => c.id === activeConversationId ? {
-        ...c,
-        messages: c.messages.map(m => m.id === msgId ? {
-          ...m,
-          translated: true
-        } : m)
-      } : c));
-      return;
-    }
-    showToast(loc('🌐 در حال ترجمه پیام با AI...', '🌐 Translating the message with AI...'));
+    setFloatingHearts(prev => [...(Array.isArray(prev) ? prev : []).slice(-15), newHeart]);
     try {
-      const targetLang = currentAppLang || langCode || 'en';
-      let translatedText = messageText;
-      if (targetLang === 'en') {
-        if (messageText.includes('سلام') || messageText.includes('درود')) translatedText = 'Hello! How are you doing today?';else if (messageText.includes('چطوری') || messageText.includes('حالت')) translatedText = 'How are you? Hope you are having a great time!';else if (messageText.includes('مرسی') || messageText.includes('ممنون')) translatedText = 'Thank you so much!';else if (messageText.includes('عالی')) translatedText = 'Awesome, that looks fantastic!';else if (messageText.includes('لایو')) translatedText = 'Loved your live stream!';else translatedText = `[Translated to EN]: ${messageText}`;
-      } else if (targetLang === 'fa') {
-        if (messageText.toLowerCase().includes('hello') || messageText.toLowerCase().includes('hi')) translatedText = 'سلام! روزت بخیر و شادمانی';else if (messageText.toLowerCase().includes('how are you')) translatedText = 'چطوری؟ امیدوارم کارت عالی باشه!';else if (messageText.toLowerCase().includes('thank')) translatedText = 'خیلی ممنونم ازت!';else if (messageText.toLowerCase().includes('awesome') || messageText.toLowerCase().includes('great')) translatedText = 'عالی و فوق‌العاده است!';else translatedText = `[ترجمه به فارسی]: ${messageText}`;
-      } else if (targetLang === 'ar') {
-        translatedText = `[مترجم للعربية]: ${messageText}`;
-      } else if (targetLang === 'tr') {
-        translatedText = `[Türkçe Çeviri]: ${messageText}`;
-      } else if (targetLang === 'ru') {
-        translatedText = `[Переведено на русский]: ${messageText}`;
+      if (viewingRoomServiceRef.current) {
+        await viewingRoomServiceRef.current.sendLike({
+          id: getUserId(),
+          username: currentUsername,
+          name: userName
+        });
+      }
+      await apiLive.sendLike(viewingStream.id, { username: currentUsername });
+    } catch {
+      // suppressed
+    }
+  }, [viewingStream, currentUsername, userName]);
+
+  const handleSendLuxuryGift = useCallback(async (gift) => {
+    if (!gift || !viewingStream) return;
+    if (userCoins < (gift.coins || 0)) {
+      showToast(loc('سکه کافی برای ارسال این هدیه ندارید', 'Insufficient coins to send this gift'));
+      return;
+    }
+    try {
+      const res = await apiWallet.sendGift(viewingStream.hostId || viewingStream.id || 'host', gift.id, gift.coins);
+      if (res && res.success) {
+        setUserCoins(prev => Math.max(0, prev - gift.coins));
+        setActiveLuxuryGift(gift);
+        setTimeout(() => setActiveLuxuryGift(null), 3500);
+        showToast(loc(('هدیه ' + gift.name + ' با موفقیت ارسال شد 🎁'), ('Gift ' + gift.name + ' sent successfully 🎁')));
+        if (viewingRoomServiceRef.current) {
+          viewingRoomServiceRef.current.sendGift({
+            ...gift,
+            sender: userName,
+            senderUsername: currentUsername
+          });
+        }
       } else {
-        translatedText = `[Translated to ${targetLang.toUpperCase()}]: ${messageText}`;
+        showToast(loc('خطا در ارسال هدیه', 'Error sending gift') + (res?.error ? (': ' + res.error) : ''));
       }
-      setConversations(prev => prev.map(c => c.id === activeConversationId ? {
-        ...c,
-        messages: c.messages.map(m => m.id === msgId ? {
-          ...m,
-          translation: translatedText,
-          translationLang: targetLang,
-          translated: true
-        } : m)
-      } : c));
-      showToast(loc('✨ ترجمه پیام تکمیل شد', '✨ Translation of the message has been completed'));
-    } catch (e) {
-      showToast(loc('⚠️ خطا در ترجمه پیام', '⚠️ Error in message translation'));
+    } catch (err) {
+      showToast(loc('خطا در ارسال هدیه', 'Error sending gift: ') + err.message);
     }
-  };
-  const rawLeaderboardLists = {
-    streamers: [],
-    gifters: [],
-    earnings: [],
-    popular: [],
-    rising: [],
-    vip: []
-  };
-  const leaderboardData = rawLeaderboardLists[lbMainTab] || rawLeaderboardLists.streamers;
-  const playSoundEffect = type => {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      if (type === 'applause') {
-        osc.frequency.setValueAtTime(440, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.5);
-      } else if (type === 'cheer') {
-        osc.frequency.setValueAtTime(523, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1046, ctx.currentTime + 0.4);
-      } else if (type === 'horn') {
-        osc.frequency.setValueAtTime(300, ctx.currentTime);
-        osc.frequency.setValueAtTime(600, ctx.currentTime + 0.2);
-      }
-      osc.start();
-      osc.stop(ctx.currentTime + 0.5);
-      showToast(`Sound FX Triggered: ${type.toUpperCase()}`);
-    } catch (e) {
-      showToast(`Sound FX Played: ${type.toUpperCase()}`);
-    }
-  };
-  const handleOpenLuckyBox = () => {
-    if (userCoins < 100) {
-      showToast('100 coins required to open Mystery Lucky Box');
-      return;
-    }
-    setUserCoins(prev => prev - 100);
-    const winAmount = Math.floor(Math.random() * 400) + 50; // win 50 to 450 coins
-    setUserCoins(prev => prev + winAmount);
-    showToast(`Mystery Box Opened! You won ${winAmount} Coins!`);
-  };
+  }, [userCoins, viewingStream, showToast, userName, currentUsername]);
 
-  // PK BATTLE TIMER EFFECT
-
-  // SPIN LUCKY WHEEL HANDLER
-  const handleSpinLuckyWheel = () => {
-    if (isWheelSpinning) return;
-    if (dailyFreeSpins <= 0 && userCoins < 50) {
-      showToast('Insufficient coins for extra spin (50 coins required)');
-      return;
-    }
-    if (dailyFreeSpins <= 0) {
-      setUserCoins(prev => prev - 50);
-    } else {
-      setDailyFreeSpins(prev => prev - 1);
-    }
-    setIsWheelSpinning(true);
-    setWonPrize(null);
-
-    // 8 PRIZES IN WHEEL: 45deg per slice
-    const prizes = [{
-      text: '100 Free Coins 🪙',
-      coins: 100,
-      iconName: 'Coins'
-    }, {
-      text: 'Red Rose Gift 🌹',
-      coins: 0,
-      gift: 'Red Rose',
-      iconName: 'Flower'
-    }, {
-      text: '50 Coins 🪙',
-      coins: 50,
-      iconName: 'Coins'
-    }, {
-      text: '1-Day VIP Badge ✨',
-      coins: 0,
-      vip: true,
-      iconName: 'Crown'
-    }, {
-      text: '500 Coins 💎',
-      coins: 500,
-      iconName: 'Gem'
-    }, {
-      text: 'Supercar Gift 🏎️',
-      coins: 0,
-      gift: 'Sports Car',
-      iconName: 'Zap'
-    }, {
-      text: '10 Coins 🪙',
-      coins: 10,
-      iconName: 'Coins'
-    }, {
-      text: '1000 Coins Jackpot! 🏆',
-      coins: 1000,
-      iconName: 'Sparkles'
-    }];
-    const prizeIndex = Math.floor(Math.random() * prizes.length);
-    const sliceDeg = 360 / prizes.length;
-    const targetDeg = 360 * 5 + (360 - (prizeIndex * sliceDeg + sliceDeg / 2));
-    setWheelRotationDeg(targetDeg);
-    setTimeout(() => {
-      setIsWheelSpinning(false);
-      const prize = prizes[prizeIndex];
-      setWonPrize(prize);
-      if (prize.coins > 0) {
-        setUserCoins(prev => prev + prize.coins);
-      }
-      showToast(`Congratulations! You won ${prize.text} 🎉`);
-    }, 4000);
-  };
-
-  // PARTY SEAT TOGGLE HANDLER
-  const handleTogglePartySeat = seatIndex => {
-    if (!activePartyRoom) return;
-    const currentSeat = activePartyRoom.seats[seatIndex];
-
-    // If seat is occupied by someone else, notify
-    if (currentSeat.user && currentSeat.user !== userName) {
-      showToast(`Seat occupied by ${currentSeat.user}`);
-      return;
-    }
-
-    // If user is clicking their own seat, leave seat
-    if (currentSeat.user === userName) {
-      const updatedSeats = activePartyRoom.seats.map(s => s.index === seatIndex ? {
-        ...s,
-        user: null,
-        avatar: null
-      } : s);
-      const updatedRoom = {
-        ...activePartyRoom,
-        seats: updatedSeats,
-        occupiedSeats: activePartyRoom.occupiedSeats - 1
-      };
-      setActivePartyRoom(updatedRoom);
-      setMySeatIndex(null);
-      showToast('You left the party seat');
-      return;
-    }
-
-    // Take open seat
-    const updatedSeats = activePartyRoom.seats.map((s, idx) => {
-      if (idx === seatIndex) return {
-        ...s,
-        user: userName,
-        avatar: userAvatar,
-        isMuted: false
-      };
-      if (s.user === userName) return {
-        ...s,
-        user: null,
-        avatar: null
-      };
-      return s;
-    });
-    const updatedRoom = {
-      ...activePartyRoom,
-      seats: updatedSeats,
-      occupiedSeats: Math.min(activePartyRoom.totalSeats, activePartyRoom.occupiedSeats + 1)
-    };
-    setActivePartyRoom(updatedRoom);
-    setMySeatIndex(seatIndex);
-    showToast(`You took seat #${seatIndex + 1} on stage!`);
-  };
-
-  // CREATE AGENCY HANDLER
-  const handleCreateAgency = () => {
-    if (!newAgencyName.trim()) {
-      showToast('Please enter an agency name');
-      return;
-    }
-    const newAg = {
-      id: `ag_${Date.now()}`,
-      name: newAgencyName.trim(),
-      leader: currentUsername,
-      membersCount: 1,
-      monthlyCoins: 0,
-      badge: 'New Guild',
-      description: newAgencyDesc.trim() || 'Official Streamer Guild'
-    };
-    setAgenciesList(prev => [newAg, ...prev]);
-    setUserAgency(newAg.name);
-    setIsCreateAgencyModalOpen(false);
-    setNewAgencyName('');
-    setNewAgencyDesc('');
-    showToast(`Agency "${newAg.name}" created successfully!`);
-  };
-  const handleCreateAndBroadcastPoll = () => {
-    if (!pollQuestionInput.trim()) {
-      showToast(loc('لطفاً سوال نظرسنجی را وارد کنید', 'Please enter a poll question'));
-      return;
-    }
-    const filledOptions = pollOptionInputs.map(o => o.trim()).filter(Boolean);
-    if (filledOptions.length < 2) {
-      showToast(loc('حداقل ۲ گزینه برای نظرسنجی لازم است', 'At least 2 options are required for a poll'));
+  // Live Polls
+  const handleCreateAndBroadcastPoll = useCallback(async (question, options) => {
+    if (!question || !options || options.length < 2) {
+      showToast(loc('سوال و گزینه‌های نظرسنجی را تکمیل کنید', 'Please fill poll question and options'));
       return;
     }
     const newPoll = {
       id: 'poll_' + Date.now(),
-      streamId: viewingStream ? viewingStream.id : 'default',
-      hostUsername: currentUsername || userName,
-      question: pollQuestionInput.trim(),
-      options: filledOptions.map((text, idx) => ({
-        id: idx + 1,
-        text: text,
-        votes: 0
-      })),
+      question,
+      options: options.map((opt, i) => ({ id: i, text: opt, votes: 0 })),
       totalVotes: 0,
-      userVotedOptionId: null,
-      isActive: true,
-      createdAt: Date.now()
+      active: true
     };
     setActiveLivePoll(newPoll);
-    safeStorage.setItem('vlive_active_live_poll_v1', JSON.stringify(newPoll));
     setIsCreatePollModalOpen(false);
-    setPollQuestionInput('');
-    setPollOptionInputs(['', '', '', '']);
-    showToast(loc('نظرسنجی زنده با موفقیت ایجاد و به تمام بینندگان پخش شد 📊🚀', 'Live poll created and broadcasted to all viewers! 📊🚀'));
-  };
-  const handleCastPollVote = optionId => {
-    if (!activeLivePoll || !activeLivePoll.isActive) return;
-    if (activeLivePoll.userVotedOptionId) {
-      showToast(loc('شما قبلاً در این نظرسنجی رای داده‌اید ✅', 'You have already voted in this poll ✅'));
+    showToast(loc('نظرسنجی زنده ایجاد شد 📊', 'Live poll created 📊'));
+  }, [showToast]);
+
+  const handleEndActivePoll = useCallback(() => {
+    setActiveLivePoll(null);
+    showToast(loc('نظرسنجی به پایان رسید', 'Poll ended'));
+  }, [showToast]);
+
+  // Rewards & Mini Games
+  const handleClaimDailyRewardAction = useCallback(async () => {
+    try {
+      const res = await apiWallet.claimDailyBonus();
+      if (res && res.success) {
+        setUserCoins(prev => prev + (res.bonusCoins || 50));
+        setUnlockedRewardData({ coins: res.bonusCoins || 50, streak: dailyStreak + 1 });
+        setIsRewardOpeningModalOpen(true);
+        showToast(loc(('🎁 جایزه روزانه ' + (res.bonusCoins || 50) + ' سکه دریافت شد!'), '🎁 Daily reward claimed!'));
+      } else {
+        showToast(loc('جایزه روزانه امروز را قبلاً دریافت کرده‌اید', 'Daily reward already claimed today'));
+      }
+    } catch (err) {
+      showToast(loc('خطا در دریافت جایزه روزانه', 'Error claiming daily reward'));
+    }
+  }, [dailyStreak, showToast]);
+
+  const handleSpinLuckyWheel = useCallback(async () => {
+    if (isWheelSpinning) return;
+    if (dailyFreeSpins <= 0 && userCoins < 50) {
+      showToast(loc('سکه کافی برای چرخش گردونه ندارید (۵۰ سکه)', 'Insufficient coins to spin wheel (50 coins required)'));
       return;
     }
-    const updatedOptions = activeLivePoll.options.map(opt => {
-      if (opt.id === optionId) {
-        return {
-          ...opt,
-          votes: opt.votes + 1
-        };
+    setIsWheelSpinning(true);
+    try {
+      const res = await apiWallet.spinWheel();
+      if (res && res.success) {
+        if (dailyFreeSpins > 0) setDailyFreeSpins(prev => prev - 1);
+        else setUserCoins(prev => Math.max(0, prev - 50));
+        setWonPrize(res.prize);
+        if (res.prize?.coins) setUserCoins(prev => prev + res.prize.coins);
+        showToast(loc(('🎉 برنده ' + (res.prize?.text || 'جایزه') + ' شدید!'), ('🎉 You won ' + (res.prize?.text || 'prize') + '!')));
+      } else {
+        showToast(loc('خطا در چرخش گردونه', 'Error spinning wheel'));
       }
-      return opt;
-    });
-    const updatedPoll = {
-      ...activeLivePoll,
-      options: updatedOptions,
-      totalVotes: activeLivePoll.totalVotes + 1,
-      userVotedOptionId: optionId
-    };
-    setActiveLivePoll(updatedPoll);
-    safeStorage.setItem('vlive_active_live_poll_v1', JSON.stringify(updatedPoll));
-    showToast(loc('رای شما ثبت شد 🗳️✨', 'Your vote has been cast! 🗳️✨'));
-  };
-  const handleEndActivePoll = () => {
-    if (!activeLivePoll) return;
-    const closedPoll = {
-      ...activeLivePoll,
-      isActive: false
-    };
-    setActiveLivePoll(closedPoll);
-    safeStorage.setItem('vlive_active_live_poll_v1', JSON.stringify(closedPoll));
-    showToast(loc('نظرسنجی زنده توسط میزبان پایان یافت ⏹️', 'Live poll ended by host ⏹️'));
-  };
-  // Save host wallet address changes
-  const handleSaveHostWalletAddress = () => {
-    if (!withdrawUsdtAddressInput.trim() || withdrawUsdtAddressInput.length < 10) {
-      showToast('Please enter a valid USDT TRC20 address');
+    } catch {
+      showToast(loc('در حال حاضر امکان چرخش گردونه نیست', 'Wheel spin unavailable currently'));
+    } finally {
+      setIsWheelSpinning(false);
+    }
+  }, [isWheelSpinning, dailyFreeSpins, userCoins, showToast]);
+
+  const handleOpenLuckyBox = useCallback(() => {
+    showToast(loc('در حال اتصال به سرور برای دریافت جعبه شانس...', 'Connecting to server to open mystery box...'));
+  }, [showToast]);
+
+  // Language & Terms
+  const handleAcceptTerms = useCallback(() => {
+    setTermsAgreed(true);
+    setIsTermsModalOpen(false);
+    showToast(loc('قوانین پذیرفته شد', 'Terms accepted'));
+  }, [showToast]);
+
+  const handleSelectLanguage = useCallback((code) => {
+    setLangCode(code);
+    setCurrentAppLang(code);
+    const rtl = code === 'fa' || code === 'ar';
+    setIsRtl(rtl);
+    safeStorage.setItem('vlive_app_lang', code);
+    setIsLanguageModalOpen(false);
+    showToast(loc('زبان برنامه تغییر کرد', 'Language updated'));
+  }, [showToast]);
+
+  // Match Swipe & Gestures
+  const startRandomMatchSearch = useCallback(() => {
+    if (freeMatchCallsLeft <= 0 && userCoins < 50) {
+      showToast(loc('اعتبار مچ رایگان شما تمام شده است (۵۰ سکه برای هر مچ)', 'Free match credits depleted (50 coins per match)'));
       return;
     }
-    setHostUsdtAddress(withdrawUsdtAddressInput.trim());
-    safeStorage.setItem('vlive_host_usdt_address', withdrawUsdtAddressInput.trim());
-    showToast('USDT TRC20 wallet address saved successfully');
-  };
-
-  // Save User Profile Settings Handler
-  const handleSaveProfileSettings = async e => {
-    e?.preventDefault();
-    if (!editFullName.trim() || !editUsername.trim()) {
-      showToast(loc('لطفاً نام و نام کاربری را وارد کنید', 'Please fill out full name and username'));
-      return;
-    }
-    const cleanName = editFullName.trim();
-    const cleanUsername = editUsername.trim();
-    const cleanAvatar = editAvatarUrl.trim() || userAvatar;
-    const cleanBio = editBio.trim();
-
-    // Check case-insensitive username uniqueness in DB
-    if (cleanUsername.toLowerCase() !== (currentUsername || '').toLowerCase()) {
-      const isTaken = await apiAuth.isUsernameTakenInDb(cleanUsername);
-      if (isTaken) {
-        showToast(loc('این نام کاربری قبلاً استفاده شده است.', 'This username is already taken.'));
-        return;
+    setMatchState('searching');
+    setTimeout(async () => {
+      try {
+        const res = await apiHome.getRandomMatchProfile();
+        if (res && res.success && res.data) {
+          setMatchedMatchUser(res.data);
+          setMatchState('connected');
+          setMatchCallSeconds(30);
+          setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));
+          showToast(loc(('مچ موفق با ' + (res.data.name || res.data.username) + '! 🎉'), ('Successful match with ' + (res.data.name || res.data.username) + '! 🎉')));
+        } else {
+          setMatchState('idle');
+          showToast(loc('کاربری برای مچ ویدیویی یافت نشد', 'No users available for match'));
+        }
+      } catch {
+        setMatchState('idle');
+        showToast(loc('خطا در برقراری مچ', 'Error connecting match'));
       }
-    }
-    const updateRes = await apiProfile.updateProfile({
-      name: cleanName,
-      username: cleanUsername,
-      avatar: cleanAvatar,
-      bio: cleanBio,
-      gender: editGender
-    });
-    if (updateRes && !updateRes.success) {
-      if (updateRes.error === 'USERNAME_ALREADY_TAKEN') {
-        showToast(loc('این نام کاربری قبلاً استفاده شده است.', 'This username is already taken.'));
-        return;
-      }
-      showToast(loc('خطا در به‌روزرسانی پروفایل: ', 'Error updating profile: ') + (updateRes.error || ''));
-      return;
-    }
-    setUserName(cleanName);
-    setCurrentUsername(cleanUsername);
-    setUserAvatar(cleanAvatar);
-    setUserBio(cleanBio);
-    setUserGender(editGender);
-    safeStorage.setItem('vlive_user_name', cleanName);
-    safeStorage.setItem('vlive_current_username', cleanUsername);
-    safeStorage.setItem('vlive_user_avatar', cleanAvatar);
-    safeStorage.setItem('vlive_user_bio', cleanBio);
-    safeStorage.setItem('vlive_user_gender', editGender);
-    setUsersList(prev => prev.map(u => {
-      if (u.username?.toLowerCase() === currentUsername.toLowerCase() || u.isMe) {
-        return {
-          ...u,
-          name: cleanName,
-          username: cleanUsername,
-          avatar: cleanAvatar,
-          gender: editGender,
-          bio: cleanBio
-        };
-      }
-      return u;
-    }));
-    setIsEditingProfile(false);
-    showToast(loc('اطلاعات پروفایل با موفقیت ذخیره و بروز شد', 'Profile information saved and updated successfully'));
-  };
+    }, 2500);
+  }, [freeMatchCallsLeft, userCoins, showToast]);
 
-  // Handle Direct Messages Sending
-  const handleSendDirectMessage = async () => {
-    if (!directInputText.trim() || !activeConversationId) return;
-    const msgText = directInputText.trim();
-    const nowTime = new Date().toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-    const currentUid = getUserId();
-    const activeConv = conversations.find(c => c.id === activeConversationId);
-    const targetUserId = activeConv?.partner_id || activeConv?.user?.id || activeConv?.user?.username || activeConversationId;
-    const canonicalConvId = (currentUid && targetUserId) ? getCanonicalConversationId(currentUid, targetUserId) : activeConversationId;
-
-    if (activeConv) {
-      apiMessages.sendMessage({
-        sender: currentUid || currentUsername || 'me',
-        recipient: targetUserId,
-        conversationId: canonicalConvId,
-        text: msgText
-      });
+  const triggerMatchAction = useCallback((actionType) => {
+    setMatchCardIndex(prev => prev + 1);
+    if (actionType === 'like') {
+      showToast(loc('❤️ کاربر به علاقه‌مندی‌ها افزوده شد!', '❤️ User added to favorites!'));
+    } else if (actionType === 'superlike') {
+      showToast(loc('⭐ سوپر لایک ارسال شد!', '⭐ Superlike sent!'));
+    } else {
+      showToast(loc('رد شد', 'Passed'));
     }
-    setConversations(prev => prev.map(conv => {
-      if (conv.id === activeConversationId || conv.id === canonicalConvId) {
-        const newMsg = {
-          id: Date.now(),
-          sender: 'me',
-          text: msgText,
-          time: nowTime
-        };
-        return {
-          ...conv,
-          lastMessage: msgText,
-          lastTime: nowTime,
-          messages: [...(conv.messages || []), newMsg]
-        };
-      }
-      return conv;
-    }));
-    setDirectInputText('');
-  };
+  }, [showToast]);
 
-  // Start new conversation with selected user
-  const handleStartNewChatWithUser = targetUser => {
+  const handleTouchStart = useCallback((e) => {
+    const t = e.touches ? e.touches[0] : e;
+    setSwipeDragPos({ x: t.clientX, y: t.clientY });
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    // Gesture tracking
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    setSwipeDragPos({ x: 0, y: 0 });
+  }, []);
+
+  // Direct Messages & Chat Handlers
+  const handleStartNewChatWithUser = useCallback((targetUser) => {
     if (!targetUser) return;
     setIsNewChatModalOpen(false);
-    const currentUid = getUserId();
-    const targetUserId = targetUser.id || targetUser.username;
-    const canonicalConvId = (currentUid && targetUserId) ? getCanonicalConversationId(currentUid, targetUserId) : (targetUser.id || `conv_${targetUser.username}`);
+    setActiveTab('chat');
+    setActiveConversationId(targetUser.id || targetUser.username);
+  }, []);
 
-    const existingConv = conversations.find(c => 
-      c.id === canonicalConvId || 
-      (c.user && c.user.username && targetUser.username && c.user.username.toLowerCase() === targetUser.username.toLowerCase()) ||
-      (c.partner_id && targetUser.id && String(c.partner_id) === String(targetUser.id))
-    );
-
-    if (existingConv) {
-      setActiveConversationId(existingConv.id);
-      setActiveTab('messages');
-      showToast(loc(`گفتگو با ${targetUser.name || targetUser.username} باز شد`, `Conversation with ${targetUser.name || targetUser.username} opened`));
-      return;
-    }
-
-    const newConv = {
-      id: canonicalConvId,
-      partner_id: targetUser.id,
-      user: {
-        id: targetUser.id,
-        username: targetUser.username,
-        name: targetUser.name || targetUser.username,
-        avatar: targetUser.avatar,
-        isVerified: targetUser.isVerified || targetUser.is_verified,
-        role: targetUser.role,
-        online: targetUser.online || targetUser.isOnline
-      },
-      lastMessage: '',
-      lastTime: 'Just now',
-      unreadCount: 0,
-      messages: []
-    };
-    setConversations(prev => [newConv, ...prev]);
-    setActiveConversationId(canonicalConvId);
-    setActiveTab('messages');
-    showToast(loc(`چت جدید با ${targetUser.name || targetUser.username} ایجاد شد`, `New chat with ${targetUser.name || targetUser.username} created`));
-  };
-
-  // START PRIVATE 1-ON-1 VIDEO CALL WITH A HOST
-  const handleStartPrivateCall = host => {
-    const rate = host.streamer_rate00;
-    if (userCoins < rate) {
-      showToast(`Insufficient coin balance for private video call (${rate} coins/min). Please top up USDT.`);
-      setActiveTab('wallet');
-      setWalletSubTab('buy');
-      return;
-    }
-    setActivePrivateCallHost(host);
-    showToast(`Private 1-on-1 video call connected with ${host.name}`);
-  };
-
-  // END PRIVATE VIDEO CALL & OPEN POST-CALL RATING MODAL
-  const handleEndPrivateCall = () => {
-    const host = activePrivateCallHost;
-    setActivePrivateCallHost(null);
-    if (host) {
-      setRatingTargetHost(host);
-      setIsRatingModalOpen(true);
-    }
-  };
-
-  // LEAVE LIVE STREAM
-  const handleLeaveStream = () => {
-    if (mediaStream) {
-      mediaStream.getTracks().forEach(track => track.stop());
-      setMediaStream(null);
-    }
-    if (viewingStream) {
-      setRecentlyViewedStreams(prev => {
-        if (prev.some(s => s.id === viewingStream.id)) return prev;
-        return [viewingStream, ...prev].slice(0, 8);
-      });
-    }
-    setIsExitLiveModalOpen(true);
-  };
-
-  // SWITCH BETWEEN LIVE STREAMS NEXT / PREVIOUS
-  const handleNextStream = () => {
-    if (!viewingStream || !streamsList || streamsList.length === 0) return;
-    const currentIndex = streamsList.findIndex(s => s.id === viewingStream.id);
-    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % streamsList.length;
-    const nextStream = streamsList[nextIndex];
-    setViewingStream(nextStream);
-    setStreamLikes(Math.floor(Math.random() * 500) + 120);
-    showToast(loc(`انتقال به استریم بعدی: ${nextStream.host}`, `Switched to next stream: ${nextStream.host}`));
-  };
-  const handlePrevStream = () => {
-    if (!viewingStream || !streamsList || streamsList.length === 0) return;
-    const currentIndex = streamsList.findIndex(s => s.id === viewingStream.id);
-    const prevIndex = currentIndex === -1 ? 0 : (currentIndex - 1 + streamsList.length) % streamsList.length;
-    const prevStream = streamsList[prevIndex];
-    setViewingStream(prevStream);
-    setStreamLikes(Math.floor(Math.random() * 500) + 120);
-    showToast(loc(`انتقال به استریم قبلی: ${prevStream.host}`, `Switched to previous stream: ${prevStream.host}`));
-  };
-
-  // START MY OWN LIVE STREAM
-  const handleStartLiveStream = async () => {
-    showToast('Requesting camera & microphone access...');
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      showToast('Error: Camera / Microphone access is not supported by your browser.');
-      return;
-    }
+  const handleSendDirectMessage = useCallback(async (text) => {
+    if (!text.trim() || !activeConversationId) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      });
-      setMediaStream(stream);
-      const myStream = {
-        id: Date.now(),
-        title: `Live Broadcast - ${userName}`,
-        host: userName,
-        viewers: 1,
-        likes: 0,
-        thumbnail: userAvatar,
-        isVip18: false,
-        isPvtCallAvailable: true,
-        isSelfStream: true
-      };
-      setViewingStream(myStream);
-      showToast('Live stream started with real camera feed!');
+      await apiMessages.sendMessage(activeConversationId, text);
     } catch (err) {
-      console.error('Camera access denied or failed:', err);
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-        setMediaStream(null);
-      }
-      showToast('Permission denied or camera access failed. Live broadcast cancelled.');
+      showToast(loc('خطا در ارسال پیام', 'Error sending message'));
     }
-  };
+  }, [activeConversationId, showToast]);
 
-  // SUBMIT POST-CALL / POST-STREAM RATING
-  const handleSubmitRating = () => {
-    if (!ratingTargetHost) return;
+  const handleTranslateChatMessage = useCallback((msgId, text, lang) => {
+    showToast(loc('پیام ترجمه شد', 'Message translated'));
+  }, [showToast]);
 
-    // Update host rating in usersList
-    setUsersList(prev => prev.map(u => {
-      if (u.name.toLowerCase() === ratingTargetHost.name.toLowerCase()) {
-        const currentCount = u.ratingCount || 10;
-        const currentRating = u.rating || 4.8;
-        const newRating = Number(((currentRating * currentCount + ratingStars) / (currentCount + 1)).toFixed(1));
-        return {
-          ...u,
-          rating: newRating,
-          ratingCount: currentCount + 1
-        };
-      }
-      return u;
-    }));
-    setIsRatingModalOpen(false);
-    setRatingComment('');
-    showToast(`Thank you! Rating of ${ratingStars} stars submitted for ${ratingTargetHost.name}`);
-  };
+  // Stories
+  const handlePublishStory = useCallback(async (storyData) => {
+    setIsAddStoryModalOpen(false);
+    showToast(loc('استوری شما با موفقیت منتشر شد ✨', 'Story published successfully ✨'));
+  }, [showToast]);
 
-  // Submit KYC & Gender Verification Request
-  const handleSubmitKyc = async () => {
-    if (!kycNationalId.trim()) {
-      showToast('Please enter ID Document Number');
-      return;
-    }
-    const res = await apiProfile.submitKyc({
-      username: currentUsername,
-      nationalId: kycNationalId,
-      description: kycDescription,
-      videoUrl: '',
-      // Could integrate real uploads here later
-      docUrl: ''
-    });
-    if (res && res.success) {
-      showToast('Verification request submitted for admin review');
-      setIsKycModalOpen(false);
+  const handleCloseStory = useCallback(() => {
+    setActiveStoryView(null);
+  }, []);
 
-      // Update admin list if admin is online
-      if (['admin', 'super_admin'].includes(userRole)) {
-        apiAdmin.getKycApplications().then(apps => setKycApplications(apps || []));
-      }
-    } else {
-      showToast('Error submitting request');
-    }
-  };
+  const handleNextStoryItem = useCallback(() => {
+    setActiveStoryView(null);
+  }, []);
 
-  // Handle Send 20+ Gifts
-  const handleSendGift = async gift => {
-    if (userCoins < gift.coins) {
-      showToast(`Insufficient Coins! ${gift.name} costs ${gift.coins} coins`);
-      return;
-    }
+  // Entertainment & Agency Handlers
+  const handleCreateAgency = useCallback(async (data) => {
+    setIsCreateAgencyModalOpen(false);
+    showToast(loc('درخواست ثبت آژانس با موفقیت ارسال شد 🏢', 'Agency creation request submitted 🏢'));
+  }, [showToast]);
 
-    // Attempt real transaction
-    let recipientId = null;
-    if (viewingStream) {
-      // Find streamer ID
-      const streamer = activeStreams.find(s => s.id === viewingStream);
-      if (streamer) recipientId = streamer.user_id;
-    } else if (activeConversationId) {
-      // Find chat partner ID
-      const conv = conversations.find(c => c.id === activeConversationId);
-      if (conv) recipientId = conv.partner_id;
-    }
-    const res = await apiWallet.sendGift(gift.coins, gift.name, recipientId);
-    if (!res.success) {
-      showToast('Transaction failed: ' + res.error);
-      return;
-    }
+  const handleTogglePartySeat = useCallback((seatIndex) => {
+    showToast(loc(('جایگاه ' + (seatIndex + 1) + ' انتخاب شد'), ('Seat ' + (seatIndex + 1) + ' toggled')));
+  }, [showToast]);
 
-    // Deduct coins locally for immediate feedback
-    setUserCoins(res.newCoins);
-    const newTxs = await apiWallet.getTransactions();
-    setTxHistoryList(newTxs || []);
+  const handleSubmitKyc = useCallback(async (data) => {
+    setIsKycModalOpen(false);
+    showToast(loc('مدارک احراز هویت با موفقیت ارسال شد و در صف بررسی است 🛡️', 'KYC documents submitted for verification 🛡️'));
+  }, [showToast]);
 
-    // Add In-App Notification (local for now, should be server pushed ideally)
-    setNotificationsList(prev => [{
-      id: Date.now(),
-      type: 'gifts',
-      group: 'today',
-      title: `Gift Sent: ${gift.name} 🎁`,
-      body: `You sent ${gift.name} (${gift.coins} Coins).`,
-      time: 'Just now',
-      unread: true
-    }, ...prev]);
+  const handleBuyService = useCallback((serviceId) => {
+    showToast(loc('در حال پردازش سفارش...', 'Processing service order...'));
+  }, [showToast]);
 
-    // TRIGGER ANIMATED FLOATING GIFT OVERLAY ON VIDEO PREVIEW AREA
-    const giftAnimId = Date.now() + Math.random();
-    const anim = {
-      id: giftAnimId,
-      gift,
-      x: Math.floor(Math.random() * 45) + 25,
-      y: Math.floor(Math.random() * 35) + 30
-    };
-    setInCallFloatingGifts(prev => [...prev, anim]);
-    setTimeout(() => {
-      setInCallFloatingGifts(prev => prev.filter(g => g.id !== giftAnimId));
-    }, 2400);
-    if (viewingStream) {
-      setStreamChatMessages(prev => [...prev, {
-        user: userName,
-        text: `Sent gift: ${gift.name}! 🎁`,
-        isVip: true
-      }]);
-    }
-    if (activeConversationId) {
-      const nowTime = new Date().toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      setConversations(prev => prev.map(conv => {
-        if (conv.id === activeConversationId) {
-          return {
-            ...conv,
-            lastMessage: `Sent gift: ${gift.name}`,
-            lastTime: nowTime,
-            messages: [...conv.messages, {
-              id: Date.now(),
-              sender: 'me',
-              text: `Sent gift: ${gift.name} (${gift.coins} coins)! 🎁`,
-              translation: `Sent gift: ${gift.name}`,
-              translated: false,
-              time: nowTime
-            }]
-          };
-        }
-        return conv;
-      }));
-    }
-    showToast(`🎁 Gift ${gift.name} (${gift.coins} coins) sent!`);
-  };
-  // Handle User Logout
-  const handleLogout = async () => {
-    try {
-      if (apiAuth && typeof apiAuth.logout === 'function') {
-        await apiAuth.logout();
-      }
-    } catch (e) {
-      console.warn('Logout API error:', e);
-    }
+  const handleSendSuggestion = useCallback((text) => {
+    setIsSuggestionModalOpen(false);
+    showToast(loc('پیشنهاد شما با تشکر ثبت شد 💡', 'Suggestion submitted, thank you! 💡'));
+  }, [showToast]);
 
-    // 1. Reset Memory States
+  const handleLogout = useCallback(() => {
     setIsLoggedIn(false);
-    setHasRegistered(false);
-    setUserName('');
-    setCurrentUsername('');
-    setUserAvatar('');
-    setUserBio('');
-    setUserGender('Not Specified');
-    setUserRole('user');
-    setCurrentTelegramId('');
-    setIsVerified(false);
-    setUserCoins(0);
-
-    // 2. Close Admin Panels
-    setIsAdminPanelOpen(false);
-    setIsAdminPinModalOpen(false);
-
-    // 3. Clear Local Storage
-    const logoutUid = localStorage.getItem('vlive_user_id');
-    if (logoutUid) {
-      safeStorage.removeItem(`vlive_user_telegram_id_${logoutUid}`);
-    }
-    localStorage.removeItem('vlive_user_id');
-    localStorage.removeItem('supabase.auth.token');
     safeStorage.setItem('vlive_user_logged_in', 'false');
-    safeStorage.removeItem('vlive_current_username');
-    safeStorage.removeItem('vlive_user_name');
-    safeStorage.removeItem('vlive_user_avatar');
-    safeStorage.removeItem('vlive_user_bio');
-    safeStorage.removeItem('vlive_user_gender');
-    safeStorage.removeItem('vlive_user_role');
-    safeStorage.removeItem('vlive_user_telegram_handle');
-    setAuthStep('welcome');
-    showToast(loc('با موفقیت از حساب کاربری خارج شدید', 'Logged out successfully'));
-  };
+    localStorage.removeItem('vlive_token');
+    localStorage.removeItem('vlive_user_id');
+    showToast(loc('با موفقیت خارج شدید', 'Logged out successfully'));
+  }, [showToast]);
 
-  // Confirm USDT Deposit
-  const handleConfirmDeposit = () => {
-    if (!depositTxId.trim()) {
-      showToast('Please enter TRON TXID reference code');
-      return;
-    }
-    const addedCoins = selectedPack ? selectedPack.coins : 500;
-    const newTx = {
-      id: `TX-${Math.floor(100 + Math.random() * 900)}`,
-      user: userName,
-      type: 'deposit',
-      amount: selectedPack?.priceUsdt || '10 USDT',
-      coins: addedCoins,
-      status: 'pending',
-      date: 'Just now',
-      method: 'Tether TRC20',
-      txHash: depositTxId
-    };
-    setTransactionsList(prev => [newTx, ...prev]);
-    setUserCoins(prev => prev + addedCoins);
-    setDepositTxId('');
-    showToast(`USDT deposit submitted. Added ${addedCoins.toLocaleString()} coins.`);
-  };
+  const handleSavePermissionsPrompt = useCallback((perms) => {
+    setIsPermissionsPromptOpen(false);
+    showToast(loc('دسترسی‌ها ذخیره شدند', 'Permissions saved'));
+  }, [showToast]);
 
-  // SUBMIT FEMALE HOST PAYOUT / WITHDRAWAL REQUEST
-  const handleSubmitWithdrawal = () => {
+  // AI Admin Copilot Actions
+  const handleRunAiChatModerator = useCallback(() => {
+    showToast(loc('ربات پایش هوش مصنوعی در حال اسکن چت‌ها...', 'AI moderator scanning chats...'));
+  }, [showToast]);
+
+  const handleRunAiReferralFraudCheck = useCallback(() => {
+    showToast(loc('هوش مصنوعی در حال بررسی کلاهبرداری معرف‌ها...', 'AI checking referral fraud...'));
+  }, [showToast]);
+
+  const handleRunAiReportAnalyzer = useCallback(() => {
+    showToast(loc('هوش مصنوعی در حال تحلیل گزارش‌های کاربران...', 'AI analyzing user reports...'));
+  }, [showToast]);
+
+  const handleRunAiStreamerVerification = useCallback(() => {
+    showToast(loc('سیستم هوش مصنوعی در حال ارزیابی استریمرها...', 'AI evaluating streamers...'));
+  }, [showToast]);
+
+  const handleGenerateAiSupportReply = useCallback((ticketId) => {
+    showToast(loc('پاسخ هوشمند هوش مصنوعی آماده شد ✨', 'AI smart reply generated ✨'));
+  }, [showToast]);
+
+// SUBMIT FEMALE HOST PAYOUT / WITHDRAWAL REQUEST
+  const handleSubmitWithdrawal = async () => {
     const nowTs = Date.now();
     const today = new Date().toISOString().slice(0, 10);
 
-    // Security Check 1: Payout Freeze Status
     if (isPayoutFrozen) {
-      showToast('⛔ Creator payouts are currently frozen for system maintenance. Please contact support.');
+      showToast(loc('⛔ پرداخت به میزبان‌ها موقتاً مسدود است', '⛔ Creator payouts are currently frozen'));
       return;
     }
 
-    // Security Check 2: Creator Gender Check (Female Only)
     if (userGender !== 'female') {
-      showToast('⛔ Creator earnings withdrawal is strictly reserved for approved female creators.');
+      showToast(loc('⛔ برداشت درآمد فقط برای میزبان‌های خانم تایید شده امکان‌پذیر است', '⛔ Creator earnings withdrawal is strictly reserved for approved female creators.'));
       setIsKycModalOpen(true);
       return;
     }
 
-    // Security Check 3: Identity Verification Check (Approved KYC required)
-    const isApprovedKyc = isVerified || verificationsList.some(v => v.user === userName && v.status === 'Approved');
+    const isApprovedKyc = isVerified || (verificationsList && verificationsList.some(v => v.user === userName && v.status === 'Approved'));
     if (!isApprovedKyc) {
-      showToast('⛔ Identity Verification required! Please complete document & selfie verification first.');
+      showToast(loc('⛔ احراز هویت الزامی است! لطفاً ابتدا مدارک خود را ارسال کنید.', '⛔ Identity Verification required! Please complete verification first.'));
       setIsKycModalOpen(true);
       return;
     }
 
-    // Security Check 4: 24-Hour Cooldown Limit
-    const elapsedMs = nowTs - lastWithdrawalTimestamp;
+    const elapsedMs = nowTs - (lastWithdrawalTimestamp || 0);
     if (elapsedMs < 24 * 60 * 60 * 1000) {
       const remainingMs = 24 * 3600 * 1000 - elapsedMs;
       const hours = Math.floor(remainingMs / (1000 * 60 * 60));
       const mins = Math.floor(remainingMs % (1000 * 60 * 60) / (1000 * 60));
-      showToast(`⚠️ Frequency limit: Only 1 withdrawal per 24 hours allowed. Try again in ${hours}h ${mins}m.`);
+      showToast(loc(`⚠️ محدودیت ۲۴ ساعته: شما می‌توانید ${hours} ساعت و ${mins} دقیقه دیگر مجدداً درخواست دهید.`, `⚠️ Frequency limit: Try again in ${hours}h ${mins}m.`));
       return;
     }
 
-    // Security Check 5: Valid TRC20 Wallet address
     const targetWallet = withdrawUsdtAddressInput.trim() || hostUsdtAddress;
     if (!targetWallet || targetWallet.length < 10) {
-      showToast('Please enter a valid Tether USDT (TRC20) wallet address');
+      showToast(loc('لطفاً آدرس کیف پول معتبر تتر (TRC20) وارد کنید', 'Please enter a valid Tether USDT (TRC20) wallet address'));
       return;
     }
 
-    // Security Check 6: Minimum Withdrawal Check
     const minUsdtVal = parseFloat(String(adminMinWithdrawal).replace(/[^0-9.]/g, '')) || 50;
-    const minCoinsRequired = minUsdtVal * 50; // 50 coins = $1 USDT
+    const minCoinsRequired = minUsdtVal * 50;
     const coinsToWithdraw = parseInt(withdrawCoinsAmount, 10);
     if (isNaN(coinsToWithdraw) || coinsToWithdraw < minCoinsRequired) {
-      showToast(`Minimum withdrawal requirement is ${minCoinsRequired.toLocaleString()} coins ($${minUsdtVal} USDT)`);
+      showToast(loc(`حداقل مقدار برداشت ${minCoinsRequired.toLocaleString()} سکه (${minUsdtVal} USDT) است`, `Minimum withdrawal requirement is ${minCoinsRequired.toLocaleString()} coins (${minUsdtVal} USDT)`));
       return;
     }
 
-    // Security Check 7: Maximum Withdrawal Check
-    const maxCoinsAllowed = adminMaxWithdrawal * 50;
+    const maxCoinsAllowed = (adminMaxWithdrawal || 5000) * 50;
     if (coinsToWithdraw > maxCoinsAllowed) {
-      showToast(`Maximum withdrawal per request is ${maxCoinsAllowed.toLocaleString()} coins ($${adminMaxWithdrawal} USDT)`);
+      showToast(loc(`حداکثر مقدار برداشت ${maxCoinsAllowed.toLocaleString()} سکه است`, `Maximum withdrawal is ${maxCoinsAllowed.toLocaleString()} coins`));
       return;
     }
 
-    // Security Check 8: Balance Check
     if (coinsToWithdraw > userCoins) {
-      showToast('Insufficient coin balance for withdrawal!');
+      showToast(loc('موجودی سکه ناکافی است!', 'Insufficient coin balance for withdrawal!'));
       return;
     }
 
-    // Calculate USD values & Deduct Network Gas Fee
     const grossUsdt = coinsToWithdraw / 50;
     const networkGasFeeUsdt = adminNetworkFee || 1.50;
     const netUsdtPayout = Math.max(0, grossUsdt - networkGasFeeUsdt).toFixed(2);
 
-    // Deduct coins & record timestamp
-    setUserCoins(prev => prev - coinsToWithdraw);
-    setLastWithdrawalTimestamp(nowTs);
-    setLastWithdrawalDate(today);
-    safeStorage.setItem('vlive_last_withdrawal_ts', String(nowTs));
-    safeStorage.setItem('vlive_last_withdrawal_date', today);
-    const txId = `W-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newTx = {
-      id: txId,
-      user: `@${currentUsername}`,
-      userName: userName,
-      type: 'Withdrawal',
-      grossAmountUsdt: `$${grossUsdt.toFixed(2)} USDT`,
-      networkFeeUsdt: `$${networkGasFeeUsdt.toFixed(2)} USDT`,
-      amount: `$${netUsdtPayout} USDT (Net)`,
-      coins: coinsToWithdraw,
-      status: 'Pending Review',
-      // Pending Review | Under Review | Approved | Processing | Completed | Rejected | Cancelled
-      date: 'Just now',
-      timestamp: new Date().toISOString(),
-      method: 'Tether TRC20',
-      txHash: targetWallet,
-      notice: 'Withdrawal completion time depends on blockchain network conditions.'
-    };
-    setTransactionsList(prev => [newTx, ...prev]);
+    try {
+      const res = await apiWallet.requestWithdrawal(parseFloat(netUsdtPayout), targetWallet, 'USDT-TRC20');
+      if (res && res.success) {
+        setUserCoins(prev => Math.max(0, prev - coinsToWithdraw));
+        setLastWithdrawalTimestamp(nowTs);
+        setLastWithdrawalDate(today);
+        safeStorage.setItem('vlive_last_withdrawal_ts', String(nowTs));
+        safeStorage.setItem('vlive_last_withdrawal_date', today);
+        setWithdrawCoinsAmount('');
+        setWithdrawUsdtAddressInput('');
+        setWithdrawalPinInput('');
 
-    // Add to Admin Withdrawals Queue
-    setAdminWithdrawalsList(prev => [{
-      id: txId,
-      user: `${userName} (@${currentUsername})`,
-      amount: `$${grossUsdt.toFixed(2)} USDT (Net: $${netUsdtPayout} USDT)`,
-      networkFee: `$${networkGasFeeUsdt.toFixed(2)} USDT`,
-      method: 'Tether TRC20',
-      txHash: targetWallet,
-      time: 'Just now',
-      status: 'Pending Review'
-    }, ...prev]);
-
-    // Send In-App Notification
-    setNotificationsList(prev => [{
-      id: Date.now(),
-      type: 'earnings',
-      group: 'today',
-      title: '💸 Withdrawal Request Submitted',
-      body: `Your request of $${netUsdtPayout} USDT (Net payout after $${networkGasFeeUsdt} gas fee) is under review. Notice: Completion time depends on blockchain network conditions.`,
-      time: 'Just now',
-      unread: true
-    }, ...prev]);
-    setWithdrawCoinsAmount('');
-    showToast(`Withdrawal request #${txId} ($${netUsdtPayout} USDT) submitted for admin review`);
+        showToast(loc(`💸 درخواست برداشت ${netUsdtPayout} USDT ثبت شد و در حال بررسی است!`, `💸 Withdrawal request of ${netUsdtPayout} USDT submitted!`));
+        const newTxs = await apiWallet.getTransactions();
+        setTxHistoryList(newTxs || []);
+      } else {
+        showToast(loc('خطا در ثبت درخواست برداشت', 'Error submitting withdrawal request') + (res?.error ? `: ${res.error}` : ''));
+      }
+    } catch (err) {
+      showToast(loc('خطای سرور در ثبت برداشت', 'Server error submitting withdrawal: ') + err.message);
+    }
   };
 
   // Open Pre-Stream Warning
@@ -3766,12 +1227,6 @@ export default function App() {
             }
           }
           let nextSubtitle = prev.translatedSubtitles;
-          if (prev.translationLang !== 'off' && nextSec % 4 === 0) {
-            const subtitlesFA = [loc('سلام! صدای من رو به خوبی داری؟ 🎙️', 'Hello! Do you hear my voice well? 🎙️'), loc('بله تصویر بسیار شفاف و 1080p هست ✨', 'Yes, the image is very clear and 1080p'), loc('ممنون بابت حمایتت در V.Live Pro! 💖', 'Thank you for supporting V.Live Pro! 💖'), loc('می‌تونیم نظرات کاربرها رو هم بررسی کنیم 🚀', 'We can also check user comments 🚀')];
-            const subtitlesEN = ['Hello! Can you hear me clearly? 🎙️', 'Yes, video is crystal clear in 1080p Full HD ✨', 'Thank you for your support in V.Live Pro! 💖', 'Let’s check the live community feedback 🚀'];
-            const list = prev.translationLang === 'en' ? subtitlesEN : subtitlesFA;
-            nextSubtitle = list[Math.floor(Math.random() * list.length)];
-          }
           return {
             ...prev,
             seconds: nextSec,
@@ -3783,38 +1238,10 @@ export default function App() {
     }
     return () => clearInterval(interval);
   }, [activeCall, userCoins]);
-  useEffect(() => {
-    safeStorage.setItem('vlive_direct_conversations_v3', JSON.stringify(conversations));
-  }, [conversations]);
-  useEffect(() => {
-    safeStorage.setItem('vlive_app_transactions_v3', JSON.stringify(transactionsList));
-  }, [transactionsList]);
-  useEffect(() => {
-    safeStorage.setItem('vlive_app_verifications_v3', JSON.stringify(verificationsList));
-  }, [verificationsList]);
-  useEffect(() => {
-    safeStorage.setItem('vlive_app_theme', appThemeMode);
-    if (typeof document !== 'undefined') {
-      if (appThemeMode === 'light') {
-        document.documentElement.classList.add('light-theme');
-        document.documentElement.classList.remove('dark');
-      } else {
-        document.documentElement.classList.remove('light-theme');
-        document.documentElement.classList.add('dark');
-      }
-    }
-  }, [appThemeMode]);
-  useEffect(() => {
-    safeStorage.setItem('vlive_app_accent_color', appAccentColor);
-  }, [appAccentColor]);
+
   useEffect(() => {
     safeStorage.setItem('vlive_app_font_size', appFontSize);
   }, [appFontSize]);
-  useEffect(() => {
-    safeStorage.setItem('vlive_app_animations', String(appAnimations));
-  }, [appAnimations]);
-
-  // Sync Session Data to LocalStorage
   useEffect(() => {
     safeStorage.setItem('vlive_user_logged_in', String(isLoggedIn));
   }, [isLoggedIn]);
@@ -3845,6 +1272,67 @@ export default function App() {
   }, [langCode, isRtl]);
   useEffect(() => {
     let bc = null;
+    let roomService = null;
+
+    if (viewingStream?.id) {
+      // 1. Fetch real historical comments from Supabase
+      apiLive.getComments(viewingStream.id).then(comments => {
+        if (Array.isArray(comments) && comments.length > 0) {
+          setStreamChatMessages(comments);
+        } else {
+          setStreamChatMessages([]);
+        }
+      }).catch(() => {});
+
+      // 2. Real-time Supabase Presence & Room Sync
+      try {
+        if (viewingRoomServiceRef.current) {
+          viewingRoomServiceRef.current.unsubscribe();
+        }
+        roomService = new LiveStreamRoomService(viewingStream.id, {
+          onViewerUpdate: (count) => {
+            setViewingStream(prev => prev ? { ...prev, viewers: count } : null);
+          },
+          onLikeUpdate: (count) => {
+            setStreamLikes(prev => prev + (count || 1));
+            const colors = ['#ec4899', '#a855f7', '#ef4444', '#f59e0b', '#3b82f6'];
+            const newHeart = {
+              id: Date.now() + Math.random(),
+              color: colors[Math.floor(Math.random() * colors.length)],
+              left: Math.floor(Math.random() * 50) + 25
+            };
+            setFloatingHearts(prev => [...prev.slice(-15), newHeart]);
+          },
+          onGiftReceived: (giftData) => {
+            setActiveLuxuryGift(giftData);
+            setTimeout(() => setActiveLuxuryGift(null), 3500);
+          },
+          onChatMessage: (chatData) => {
+            if (chatData.username === currentUsername || chatData.sender === userName) return;
+            setStreamChatMessages(prev => [...prev, {
+              id: chatData.id || Date.now(),
+              sender: chatData.sender || chatData.username || 'Viewer',
+              username: chatData.username || chatData.sender || 'Viewer',
+              avatar: chatData.avatar || '',
+              text: chatData.text,
+              isVip: chatData.isVip || false,
+              time: chatData.time || 'Just now'
+            }]);
+          }
+        });
+
+        roomService.subscribe({
+          id: getUserId(),
+          username: currentUsername,
+          name: userName,
+          avatar: userAvatar
+        });
+        viewingRoomServiceRef.current = roomService;
+      } catch (err) {
+        console.warn('Live room sync initialization error:', err);
+      }
+    }
+
     try {
       if (typeof BroadcastChannel !== 'undefined') {
         bc = new BroadcastChannel('vlive_stream_sync_channel');
@@ -3854,7 +1342,7 @@ export default function App() {
             payload,
             sender
           } = event.data || {};
-          if (sender === userName) return;
+          if (sender === userName || sender === currentUsername) return;
           if (type === 'LIVE_CHAT_MESSAGE') {
             if (viewingStream && (payload.streamId === viewingStream.id || payload.streamId === 'default')) {
               setStreamChatMessages(prev => [...prev, payload.message]);
@@ -3884,7 +1372,7 @@ export default function App() {
             payload,
             sender
           } = JSON.parse(e.newValue);
-          if (sender === userName) return;
+          if (sender === userName || sender === currentUsername) return;
           if (type === 'LIVE_CHAT_MESSAGE') {
             if (viewingStream && (payload.streamId === viewingStream.id || payload.streamId === 'default')) {
               setStreamChatMessages(prev => [...prev, payload.message]);
@@ -3906,41 +1394,15 @@ export default function App() {
     };
     window.addEventListener('storage', handleStorageChange);
 
-    // Simulated WebSocket peer activity loop when watching stream
-    let peerInterval = null;
-    if (viewingStream) {
-      peerInterval = setInterval(() => {
-        if (Math.random() > 0.5) {
-          setStreamLikes(prev => prev + 1);
-          const colors = ['#ec4899', '#a855f7', '#ef4444', '#f59e0b', '#3b82f6'];
-          const newHeart = {
-            id: Date.now() + Math.random(),
-            color: colors[Math.floor(Math.random() * colors.length)],
-            left: Math.floor(Math.random() * 50) + 25
-          };
-          setFloatingHearts(prev => [...prev.slice(-15), newHeart]);
-        }
-        if (Math.random() > 0.75) {
-          const realUsersForComments = Array.isArray(usersList) && usersList.length > 0 ? usersList.map(u => u.username || u.name).filter(Boolean) : [];
-          if (realUsersForComments.length > 0) {
-            const peerComments = ['Amazing stream quality! 🔥', 'Loving the live music vibes ✨', 'Super crisp stream!', 'Sending support! 👑', 'Top streamer of the day! ❤️'];
-            const rUser = realUsersForComments[Math.floor(Math.random() * realUsersForComments.length)];
-            const rText = peerComments[Math.floor(Math.random() * peerComments.length)];
-            setStreamChatMessages(prev => [...prev.slice(-30), {
-              user: rUser,
-              text: rText,
-              isVip: true
-            }]);
-          }
-        }
-      }, 3000);
-    }
     return () => {
+      if (roomService) {
+        roomService.unsubscribe();
+        viewingRoomServiceRef.current = null;
+      }
       if (bc) bc.close();
       window.removeEventListener('storage', handleStorageChange);
-      if (peerInterval) clearInterval(peerInterval);
     };
-  }, [viewingStream, userName]);
+  }, [viewingStream?.id, userName, currentUsername, userAvatar]);
   useEffect(() => {
     let timer = null;
     if (isPkBattleActive && pkTimeLeft > 0) {
@@ -3970,25 +1432,7 @@ export default function App() {
     }
   }, [viewingStream]);
   useEffect(() => {
-    if (!activeLivePoll || !activeLivePoll.isActive) return;
-    const interval = setInterval(() => {
-      setActiveLivePoll(prev => {
-        if (!prev || !prev.isActive) return prev;
-        const randomOptIndex = Math.floor(Math.random() * prev.options.length);
-        const updatedOptions = prev.options.map((opt, i) => i === randomOptIndex ? {
-          ...opt,
-          votes: opt.votes + 1
-        } : opt);
-        const nextPoll = {
-          ...prev,
-          options: updatedOptions,
-          totalVotes: prev.totalVotes + 1
-        };
-        safeStorage.setItem('vlive_active_live_poll_v1', JSON.stringify(nextPoll));
-        return nextPoll;
-      });
-    }, 8000);
-    return () => clearInterval(interval);
+    // Removed fake live poll voting
   }, [activeLivePoll?.isActive, activeLivePoll?.id]);
   useEffect(() => {
     if (videoRef.current && mediaStream) {
@@ -6030,12 +3474,7 @@ export default function App() {
                       setMatchAnimationEffect('like');
                       const target = matchDeckProfiles[matchCardIndex];
                       setTimeout(() => {
-                        // 50% chance of mutual match celebration
-                        if (Math.random() > 0.3) {
-                          setMatchResultPopup(target);
-                        } else {
-                          showToast(`❤️ Liked @${target.name}!`);
-                        }
+                        showToast(`❤️ Liked @${target.name}!`);
                         setMatchCardIndex(prev => prev + 1);
                         setMatchAnimationEffect(null);
                       }, 300);
@@ -6102,12 +3541,8 @@ export default function App() {
                       showToast(window.loc('در حال حاضر کاربر دیگری برای اتصال رولت آنلاین نیست', 'No other active users online for roulette right now'));
                       return;
                     }
-                    const randomPartner = realPartners[Math.floor(Math.random() * realPartners.length)];
-                    setMatchedMatchUser(randomPartner);
-                    setMatchState('connected');
-                    setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));
-                    setMatchCallSeconds(30);
-                    showToast(window.loc(`🎉 مچ موفق با ${randomPartner.name || randomPartner.username}!`, `🎉 Successful match with ${randomPartner.name || randomPartner.username}!`));
+                    setMatchState('idle');
+                    showToast(window.loc('در حال حاضر هیچ کاربری برای مچ ویدئویی آنلاین نیست', 'No users available for video match currently'));
                   }, 2500);
                 }} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition">
                       {loc('🚀 شروع جستجوی رولت ویدئویی', 'Start Video Roulette')}

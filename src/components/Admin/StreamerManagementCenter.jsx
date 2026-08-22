@@ -77,10 +77,18 @@ export default function StreamerManagementCenter({
   };
 
   // Handle manual score/level updates by admin
-  const handleSaveStreamerScores = () => {
+  const handleSaveStreamerScores = async () => {
     if (!editingStreamer) return;
     
     const scores = getStreamerScores({ xp: editXp, reputationScore: editReputation, creatorRank: editRank });
+
+    if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') {
+      await apiAdmin.updateUserFields(editingStreamer.id, { 
+        xp: editXp, 
+        reputation_score: editReputation, 
+        creator_rank: editRank 
+      });
+    }
 
     setUsersList(prev => prev.map(u => u.id === editingStreamer.id || u.username === editingStreamer.username ? {
       ...u,

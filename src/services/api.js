@@ -1131,6 +1131,88 @@ export const apiLive = {
       return { success: false };
     }
   },
+
+  async sendComment(streamId, text, userProfile = {}) {
+    const uid = getUserId();
+    if (!streamId || !text) return { success: false };
+    try {
+      const payload = {
+        stream_id: streamId,
+        user_id: uid,
+        sender: userProfile.name || userProfile.username || 'User',
+        username: userProfile.username || 'User',
+        avatar: userProfile.avatar || '',
+        text: text.trim(),
+        is_vip: userProfile.isVip || false,
+        created_at: new Date().toISOString()
+      };
+      
+      const { data } = await supabase.from('live_comments').insert([payload]).select().catch(() => ({ data: null }));
+      
+      const channel = supabase.channel(`stream_room_${streamId}`);
+      await channel.send({
+        type: 'broadcast',
+        event: 'chat',
+        payload: {
+          id: data?.[0]?.id || Date.now(),
+          sender: payload.sender,
+          username: payload.username,
+          avatar: payload.avatar,
+          text: payload.text,
+          isVip: payload.is_vip,
+          time: 'Just now'
+        }
+      });
+      return { success: true, data: data?.[0] };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async sendLike(streamId, userProfile = {}) {
+    const uid = getUserId();
+    if (!streamId) return { success: false };
+    try {
+      const channel = supabase.channel(`stream_room_${streamId}`);
+      await channel.send({
+        type: 'broadcast',
+        event: 'like',
+        payload: {
+          userId: uid,
+          username: userProfile.username || 'User',
+          likeCount: 1,
+          timestamp: Date.now()
+        }
+      });
+      return { success: true };
+    } catch (e) {
+      return { success: false };
+    }
+  },
+
+  async getComments(streamId) {
+    if (!streamId) return [];
+    try {
+      const { data, error } = await supabase
+        .from('live_comments')
+        .select('*')
+        .eq('stream_id', streamId)
+        .order('created_at', { ascending: true })
+        .limit(50);
+      if (error || !data) return [];
+      return data.map(c => ({
+        id: c.id,
+        sender: c.sender || c.username || 'User',
+        username: c.username || c.sender || 'User',
+        avatar: c.avatar || '',
+        text: c.text,
+        isVip: c.is_vip,
+        time: new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }));
+    } catch (e) {
+      return [];
+    }
+  },
 };
 
 // ==========================================
