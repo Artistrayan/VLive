@@ -1298,6 +1298,34 @@ export const apiWallet = {
     }
   },
 
+  async playMiniGame(costCoins, prizeCoins, gameName) {
+    const uid = getUserId();
+    if (!uid) return { success: false, error: 'Unauthorized' };
+    try {
+      const netCoins = (prizeCoins || 0) - (costCoins || 0);
+      const { data: wallet } = await supabase.from('wallets').select('coins').eq('user_id', uid).single();
+      const currentCoins = wallet?.coins || 0;
+      if (currentCoins < costCoins) {
+        return { success: false, error: 'Insufficient coins' };
+      }
+      const newCoins = Math.max(0, currentCoins + netCoins);
+      await supabase.from('wallets').update({ coins: newCoins }).eq('user_id', uid);
+      
+      // Record real transaction
+      await supabase.from('transactions').insert([{
+        user_id: uid,
+        tx_type: netCoins >= 0 ? 'minigame_win' : 'minigame_play',
+        amount_coins: netCoins,
+        amount_usdt: 0,
+        description: `مینی‌گیم زنده: ${gameName} (هزینه: ${costCoins}، جایزه: ${prizeCoins})`
+      }]);
+      
+      return { success: true, newCoins };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
   async sendGift(giftCoins, giftName, recipientId) {
     const uid = getUserId();
     if (!uid) return { success: false, error: 'Unauthorized' };
@@ -2083,6 +2111,47 @@ export const apiStreamer = {
       return { success: !error, data: data?.[0] };
     } catch (e) {
       return { success: false };
+    }
+  },
+
+  async getTopSupporters(userId) {
+    const uid = userId || getUserId();
+    if (!uid) return [];
+    try {
+      // 1. Fetch real received gifts/tips for this streamer
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', uid)
+        .in('tx_type', ['receive_gift', 'call_earnings', 'receive_call_income'])
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error || !data || data.length === 0) return [];
+
+      // 2. Aggregate by sender/supporter description
+      const supporterMap = {};
+      data.forEach(tx => {
+        const supporterName = tx.sender_name || (tx.description ? tx.description.split('از طرف')?.[1]?.trim() : '') || 'کاربر حامی';
+        const coins = Math.abs(tx.amount_coins || 0);
+        if (!supporterMap[supporterName]) {
+          supporterMap[supporterName] = { name: supporterName, coins: 0, avatar: tx.sender_avatar || '' };
+        }
+        supporterMap[supporterName].coins += coins;
+      });
+
+      return Object.values(supporterMap)
+        .sort((a, b) => b.coins - a.coins)
+        .slice(0, 10)
+        .map((sup, index) => ({
+          rank: index + 1,
+          name: sup.name,
+          avatar: sup.avatar,
+          amount: `${sup.coins.toLocaleString()} Coins`,
+          badge: index === 0 ? '🥇 Top Supporter' : index === 1 ? '🥈 Silver Supporter' : index === 2 ? '🥉 Bronze Supporter' : '⭐ Supporter'
+        }));
+    } catch (e) {
+      return [];
     }
   },
 

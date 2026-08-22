@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Gift, Flame, Trophy, Coins, RotateCw, X, Award, CheckCircle2 } from 'lucide-react';
+import { apiWallet } from '../../services/api';
 
 const WHEEL_PRIZES = [
   { id: 1, label: '۵۰ سکه 🪙', coins: 50, color: 'from-amber-400 to-yellow-600', icon: '🪙' },
@@ -38,7 +39,7 @@ export default function LiveMiniGamesOverlay({
   if (!isOpen) return null;
 
   // Spin Lucky Wheel
-  const handleSpinWheel = () => {
+  const handleSpinWheel = async () => {
     if (isSpinning) return;
     const spinCost = 30;
     if (userCoins < spinCost) {
@@ -46,11 +47,10 @@ export default function LiveMiniGamesOverlay({
       return;
     }
 
-    setUserCoins(prev => Math.max(0, prev - spinCost));
     setIsSpinning(true);
     setWonPrize(null);
 
-    // Calculate random prize and rotation
+    // Calculate prize and rotation
     const randomIndex = Math.floor(Math.random() * WHEEL_PRIZES.length);
     const selectedPrize = WHEEL_PRIZES[randomIndex];
     const extraSpins = 5 * 360;
@@ -58,11 +58,19 @@ export default function LiveMiniGamesOverlay({
     
     setRotationAngle(prev => prev + targetAngle);
 
+    // Record real wallet deduction and win via API
+    const res = await apiWallet.playMiniGame(spinCost, selectedPrize.coins, `گردونه شانس (${selectedPrize.label})`);
+
     setTimeout(() => {
       setIsSpinning(false);
       setWonPrize(selectedPrize);
+      if (res.success && res.newCoins !== undefined) {
+        setUserCoins(res.newCoins);
+      } else {
+        setUserCoins(prev => Math.max(0, prev - spinCost + (selectedPrize.coins || 0)));
+      }
+
       if (selectedPrize.coins > 0) {
-        setUserCoins(prev => prev + selectedPrize.coins);
         showToast(`🎉 تبریک! شما برنده ${selectedPrize.label} شدید!`);
         if (onWinPrize) onWinPrize(selectedPrize);
       } else {
@@ -72,18 +80,26 @@ export default function LiveMiniGamesOverlay({
   };
 
   // Open Mystery Box
-  const handleOpenBox = (boxId) => {
+  const handleOpenBox = async (boxId) => {
     const boxCost = 40;
     if (userCoins < boxCost) {
       showToast('موجودی سکه برای بازکردن جعبه شانس کافی نیست (۴۰ سکه) ⚠️');
       return;
     }
 
-    setUserCoins(prev => Math.max(0, prev - boxCost));
+    const targetBox = boxes.find(b => b.id === boxId);
+    if (!targetBox || targetBox.opened) return;
+
+    const res = await apiWallet.playMiniGame(boxCost, targetBox.coins, `جعبه شانس (${targetBox.prize})`);
+    if (res.success && res.newCoins !== undefined) {
+      setUserCoins(res.newCoins);
+    } else {
+      setUserCoins(prev => Math.max(0, prev - boxCost + (targetBox.coins || 0)));
+    }
+
     setBoxes(prev => prev.map(b => {
       if (b.id === boxId && !b.opened) {
         if (b.coins > 0) {
-          setUserCoins(c => c + b.coins);
           showToast(`🎁 جعبه باز شد: شما برنده ${b.prize} شدید!`);
         } else {
           showToast('💨 این جعبه خالی بود!');

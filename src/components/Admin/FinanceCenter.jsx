@@ -651,20 +651,47 @@ export default function FinanceCenter({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
-                  {[
-                    { id: 'JE-1001', dr: window.loc('موجودی بانک ترون', 'Tron Bank balance'), cr: window.loc('درآمد کمیسیون ۲۹٪', '29% commission income'), val: '$1,450.00', desc: window.loc('کمیسیون لایو استریم', 'Live stream commission'), time: '10:15' },
-                    { id: 'JE-1002', dr: window.loc('بدهی استریمرها', 'Debt streamers'), cr: window.loc('موجودی کیف پول استریمر', 'Streamer wallet balance'), val: '$3,550.00', desc: window.loc('سهم ۷۱٪ استریمر', '71% streamer share'), time: '09:40' },
-                    { id: 'JE-1003', dr: window.loc('صندوق VIP', 'VIP box'), cr: window.loc('درآمد اشتراک VIP', 'VIP subscription income'), val: '$299.00', desc: window.loc('خرید اشتراک VIP طلایی', 'Buy golden VIP subscription'), time: '08:12' }
-                  ].map((row, i) => (
-                    <tr key={i} className="hover:bg-slate-850">
-                      <td className="p-2 font-mono font-bold text-amber-300">{row.id}</td>
-                      <td className="p-2 text-emerald-400 font-bold">{row.dr}</td>
-                      <td className="p-2 text-cyan-400 font-bold">{row.cr}</td>
-                      <td className="p-2 font-mono font-bold text-white">{row.val}</td>
-                      <td className="p-2 text-slate-300">{row.desc}</td>
-                      <td className="p-2 text-slate-400 font-mono">{row.time}</td>
+                  {financialTransactionsList.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-6 text-center text-slate-400 font-bold">
+                        {window.loc('هنوز سندی در دفتر روزنامه ثبت نشده است.', 'No journal entries recorded yet.')}
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    financialTransactionsList.slice(0, 50).map((tx, i) => {
+                      const isWithdrawal = tx.type === 'WITHDRAWAL' || tx.tx_type === 'withdraw';
+                      const isGift = tx.type === 'GIFT' || tx.tx_type === 'send_gift' || tx.tx_type === 'receive_gift';
+                      const isVip = tx.type === 'VIP' || tx.tx_type === 'buy_vip';
+
+                      let dr = window.loc('موجودی شبکه TRC20', 'TRC20 Network Balance');
+                      let cr = window.loc('حساب اعتبار کاربر', 'User Credit Account');
+                      if (isWithdrawal) {
+                        dr = window.loc('حساب تسویه استریمرها', 'Streamer Settlement Account');
+                        cr = window.loc('صندوق ارزی خروجی USDT', 'Outgoing USDT Wallet');
+                      } else if (isGift) {
+                        dr = window.loc('موجودی کیف پول کاربر', 'User Wallet Balance');
+                        cr = window.loc('درآمد استریمر + کارمزد ۲۹٪', 'Streamer Income + 29% Fee');
+                      } else if (isVip) {
+                        dr = window.loc('موجودی کیف پول کاربر', 'User Wallet Balance');
+                        cr = window.loc('درآمد اشتراک VIP پلتفرم', 'VIP Subscription Revenue');
+                      }
+
+                      const val = `$${(Number(tx.amount_usdt || tx.amount || (tx.amount_coins ? tx.amount_coins / 100 : 0)) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                      const time = tx.created_at ? new Date(tx.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : (tx.time || '—');
+                      const docId = `JE-${tx.id ? String(tx.id).slice(0, 6).toUpperCase() : (1000 + i)}`;
+
+                      return (
+                        <tr key={tx.id || i} className="hover:bg-slate-850">
+                          <td className="p-2 font-mono font-bold text-amber-300">{docId}</td>
+                          <td className="p-2 text-emerald-400 font-bold">{dr}</td>
+                          <td className="p-2 text-cyan-400 font-bold">{cr}</td>
+                          <td className="p-2 font-mono font-bold text-white">{val}</td>
+                          <td className="p-2 text-slate-300">{tx.description || tx.type || window.loc('تراکنش مالی', 'Financial Transaction')}</td>
+                          <td className="p-2 text-slate-400 font-mono">{time}</td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>

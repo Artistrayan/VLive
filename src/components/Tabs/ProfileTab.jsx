@@ -273,36 +273,22 @@ export default function ProfileTab(props) {
   }, [currentUsername]);
 
   // --- LOCAL POSTS STATE WITH REAL LIKES & COMMENTS ---
-  const [profilePosts, setProfilePosts] = useState([
-    {
-      id: 1,
-      isPinned: true,
-      author: userName || 'Rayan Maleki',
-      username: currentUsername || 'rayan_vlive',
-      avatar: userAvatar || PRESET_AVATARS[0],
-      time: '2 hours ago',
-      content: window.loc('🎬 لایواستریم اختصاصی امشب ساعت ۲۲:۰۰ شروع میشه! منتظر همگی در بخش لایو هستیم 💖✨', '🎬 Exclusive livestream starts tonight at 22:00! We are waiting for everyone in the live section 💖✨'),
-      image: '',
-      likes: 0,
-      comments: 0,
-      shares: 0,
-      liked: false
-    },
-    {
-      id: 2,
-      isPinned: false,
-      author: userName || 'Rayan Maleki',
-      username: currentUsername || 'rayan_vlive',
-      avatar: userAvatar || PRESET_AVATARS[0],
-      time: 'Yesterday',
-      content: window.loc('مرسی از همه دوستانی که دیشب تو روم خصوصی همراهم بودن. هدیه‌های ارزشمندتون ثبت شد! 🎁🔥', 'Thank you to all my friends who were with me in the private room last night. Your valuable gifts have been registered! 🎁🔥'),
-      image: null,
-      likes: 0,
-      comments: 0,
-      shares: 0,
-      liked: false
+  const [profilePosts, setProfilePosts] = useState(() => {
+    try {
+      const stored = safeStorage.getItem(`vlive_user_posts_${currentUsername || 'me'}`);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
     }
-  ]);
+  });
+
+  useEffect(() => {
+    try {
+      safeStorage.setItem(`vlive_user_posts_${currentUsername || 'me'}`, JSON.stringify(profilePosts));
+    } catch {
+      // suppressed
+    }
+  }, [profilePosts, currentUsername]);
 
   // Real total likes calculation across posts + persistent likes
   const userTotalLikes = profilePosts.reduce((sum, post) => sum + (post.likes || 0), 0) + extraLikes;
@@ -385,9 +371,9 @@ export default function ProfileTab(props) {
     const newPost = {
       id: Date.now(),
       isPinned: false,
-      author: userName || 'Rayan Maleki',
-      username: currentUsername || 'rayan_vlive',
-      avatar: userAvatar || PRESET_AVATARS[0],
+      author: userName || props.currentUser?.name || 'User',
+      username: currentUsername || props.currentUser?.username || 'user',
+      avatar: userAvatar || props.currentUser?.avatar || PRESET_AVATARS[0],
       time: 'Just now',
       content: newPostText,
       image: isVid ? null : (newPostImage.trim() || null),
@@ -857,42 +843,49 @@ export default function ProfileTab(props) {
 
               {/* Liked Posts Grid */}
               <div className="space-y-3">
-                {profilePosts.map(post => (
-                  <div key={`liked-${post.id}`} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5 hover:border-pink-500/30 transition">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <img src={post.avatar || PRESET_AVATARS[0]} alt={post.author} className="w-8 h-8 rounded-full object-cover border border-slate-700" />
-                        <div>
-                          <h4 className="font-bold text-white text-xs">{post.author}</h4>
-                          <span className="text-[9.5px] text-slate-400">@{post.username} • {post.time}</span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={async () => {
-                          const nextLiked = !post.liked;
-                          if (nextLiked) {
-                            await apiSocial.likePost(post.id);
-                          } else {
-                            await apiSocial.unlikePost(post.id);
-                          }
-                          setProfilePosts(prev => prev.map(p => p.id === post.id ? { ...p, liked: nextLiked, likes: Math.max(0, p.likes + (nextLiked ? 1 : -1)) } : p));
-                        }}
-                        className={`text-xs font-black flex items-center gap-1 px-2.5 py-1 rounded-full border transition active:scale-95 ${
-                          post.liked ? 'bg-pink-600 text-white border-pink-500' : 'bg-pink-950/60 text-pink-400 border-pink-500/30 hover:bg-pink-900/60'
-                        }`}
-                      >
-                        <Heart className={`w-3.5 h-3.5 ${post.liked ? 'fill-white' : 'fill-pink-400'}`} />
-                        <span>{formatNum(post.likes)}</span>
-                      </button>
-                    </div>
-                    <p className="text-xs text-slate-300 leading-relaxed dir-rtl">{post.content}</p>
-                    {post.image && (
-                      <div className="rounded-xl overflow-hidden aspect-video border border-slate-800 max-h-40">
-                        <img src={post.image} alt="Attachment" className="w-full h-full object-cover" />
-                      </div>
-                    )}
+                {profilePosts.filter(p => p.liked || p.likes > 0).length === 0 ? (
+                  <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-2">
+                    <Heart className="w-8 h-8 text-slate-600 mx-auto" />
+                    <p className="text-xs text-slate-400 font-bold">{window.loc('هنوز پستی را لایک نکرده‌اید', 'No liked posts yet')}</p>
                   </div>
-                ))}
+                ) : (
+                  profilePosts.filter(p => p.liked || p.likes > 0).map(post => (
+                    <div key={`liked-${post.id}`} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5 hover:border-pink-500/30 transition">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <img src={post.avatar || PRESET_AVATARS[0]} alt={post.author} className="w-8 h-8 rounded-full object-cover border border-slate-700" />
+                          <div>
+                            <h4 className="font-bold text-white text-xs">{post.author}</h4>
+                            <span className="text-[9.5px] text-slate-400">@{post.username} • {post.time}</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            const nextLiked = !post.liked;
+                            if (nextLiked) {
+                              await apiSocial.likePost(post.id);
+                            } else {
+                              await apiSocial.unlikePost(post.id);
+                            }
+                            setProfilePosts(prev => prev.map(p => p.id === post.id ? { ...p, liked: nextLiked, likes: Math.max(0, p.likes + (nextLiked ? 1 : -1)) } : p));
+                          }}
+                          className={`text-xs font-black flex items-center gap-1 px-2.5 py-1 rounded-full border transition active:scale-95 ${
+                            post.liked ? 'bg-pink-600 text-white border-pink-500' : 'bg-pink-950/60 text-pink-400 border-pink-500/30 hover:bg-pink-900/60'
+                          }`}
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${post.liked ? 'fill-white' : 'fill-pink-400'}`} />
+                          <span>{formatNum(post.likes)}</span>
+                        </button>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed dir-rtl">{post.content}</p>
+                      {post.image && (
+                        <div className="rounded-xl overflow-hidden aspect-video border border-slate-800 max-h-40">
+                          <img src={post.image} alt="Attachment" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -905,62 +898,75 @@ export default function ProfileTab(props) {
 {/* TAB 1: POSTS FEED */}
         { (activeProfileTab === 'photos' || activeProfileTab === 'videos') && (
           <div className="space-y-4 animate-fadeIn">
-            {/* Posts List */}
-            {profilePosts.map(post => (
-              <div key={post.id} className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <img src={post.avatar} alt={post.author} className="w-10 h-10 rounded-full object-cover border border-purple-500/40" />
-                    <div>
-                      <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
-                        <span>{post.author}</span>
-                        {post.isPinned && (
-                          <span className="bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
-                            📌 Pinned
-                          </span>
-                        )}
-                      </h4>
-                      <span className="text-[10px] text-slate-400">@{post.username} • {post.time}</span>
-                    </div>
-                  </div>
-
-                  <button className="text-slate-500 hover:text-white text-xs font-bold">•••</button>
-                </div>
-
-                <p className="text-xs text-slate-200 leading-relaxed font-medium dir-rtl">{post.content}</p>
-
-                {post.image && (
-                  <div className="rounded-2xl overflow-hidden aspect-video border border-slate-800 bg-slate-950">
-                    <img src={post.image} alt="Post Attachment" className="w-full h-full object-cover" />
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs text-slate-400">
-                  <button
-                    onClick={() => {
-                      setProfilePosts(prev => prev.map(p => p.id === post.id ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p));
-                    }}
-                    className={`flex items-center gap-1.5 font-bold transition ${post.liked ? 'text-pink-500' : 'hover:text-white'}`}
-                  >
-                    <Heart className={`w-4 h-4 ${post.liked ? 'fill-pink-500' : ''}`} />
-                    <span>{post.likes}</span>
-                  </button>
-
-                  <button className="flex items-center gap-1.5 font-bold hover:text-white transition">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>{post.comments} {window.loc('نظر', 'Comments')}</span>
-                  </button>
-
-                  <button 
-                    onClick={() => showToast(window.loc('لینک پست کپی شد 🔗', 'Post link copied!'))}
-                    className="flex items-center gap-1.5 font-bold hover:text-white transition"
-                  >
-                    <Share2 className="w-4 h-4" />
-                    <span>{post.shares}</span>
-                  </button>
-                </div>
+            {profilePosts.length === 0 ? (
+              <div className="p-8 text-center bg-slate-900/80 rounded-3xl border border-dashed border-slate-800 space-y-3">
+                <Camera className="w-10 h-10 text-slate-600 mx-auto" />
+                <h4 className="text-sm font-bold text-white">{window.loc('هنوز پستی منتشر نشده است', 'No posts published yet')}</h4>
+                <p className="text-xs text-slate-400">{window.loc('اولین عکس، ویدیو یا دل‌نوشته خود را با دوستانتان به اشتراک بگذارید.', 'Share your first photo, video or thoughts with your friends.')}</p>
+                <button
+                  onClick={() => setIsCreatePostModalOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-bold shadow-lg shadow-pink-500/25 active:scale-95 transition"
+                >
+                  {window.loc('➕ ایجاد اولین پست', '➕ Create First Post')}
+                </button>
               </div>
-            ))}
+            ) : (
+              profilePosts.map(post => (
+                <div key={post.id} className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <img src={post.avatar} alt={post.author} className="w-10 h-10 rounded-full object-cover border border-purple-500/40" />
+                      <div>
+                        <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                          <span>{post.author}</span>
+                          {post.isPinned && (
+                            <span className="bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                              📌 Pinned
+                            </span>
+                          )}
+                        </h4>
+                        <span className="text-[10px] text-slate-400">@{post.username} • {post.time}</span>
+                      </div>
+                    </div>
+
+                    <button className="text-slate-500 hover:text-white text-xs font-bold">•••</button>
+                  </div>
+
+                  <p className="text-xs text-slate-200 leading-relaxed font-medium dir-rtl">{post.content}</p>
+
+                  {post.image && (
+                    <div className="rounded-2xl overflow-hidden aspect-video border border-slate-800 bg-slate-950">
+                      <img src={post.image} alt="Post Attachment" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs text-slate-400">
+                    <button
+                      onClick={() => {
+                        setProfilePosts(prev => prev.map(p => p.id === post.id ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p));
+                      }}
+                      className={`flex items-center gap-1.5 font-bold transition ${post.liked ? 'text-pink-500' : 'hover:text-white'}`}
+                    >
+                      <Heart className={`w-4 h-4 ${post.liked ? 'fill-pink-500' : ''}`} />
+                      <span>{post.likes}</span>
+                    </button>
+
+                    <button className="flex items-center gap-1.5 font-bold hover:text-white transition">
+                      <MessageSquare className="w-4 h-4" />
+                      <span>{post.comments} {window.loc('نظر', 'Comments')}</span>
+                    </button>
+
+                    <button 
+                      onClick={() => showToast(window.loc('لینک پست کپی شد 🔗', 'Post link copied!'))}
+                      className="flex items-center gap-1.5 font-bold hover:text-white transition"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      <span>{post.shares}</span>
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
 

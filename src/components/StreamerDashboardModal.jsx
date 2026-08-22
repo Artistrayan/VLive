@@ -51,11 +51,7 @@ export default function StreamerDashboardModal({
   const [liveHistory, setLiveHistory] = useState([]);
 
   // Top Supporters State
-  const [topSupporters, setTopSupporters] = useState([
-    { rank: 1, name: 'Sahar_Vip', avatar: '', amount: '45,000 Coins', badge: '🥇 Top Supporter' },
-    { rank: 2, name: 'Ali_K', avatar: '', amount: '28,500 Coins', badge: '🥈 Silver Supporter' },
-    { rank: 3, name: 'Elnaz_M', avatar: '', amount: '18,200 Coins', badge: '🥉 Bronze Supporter' }
-  ]);
+  const [topSupporters, setTopSupporters] = useState([]);
 
   // Payout Form States
   const [withdrawAmountUsdt, setWithdrawAmountUsdt] = useState('50');
@@ -72,13 +68,15 @@ export default function StreamerDashboardModal({
   useEffect(() => {
     if (!isOpen) return;
     const loadProfile = async () => {
-      const dbProfile = await apiStreamer.getStreamerProfile();
+      const dbProfile = await apiStreamer.getStreamerProfile(currentUser?.id);
       if (dbProfile) {
         setStreamerData(prev => ({ ...prev, ...dbProfile }));
       }
+      const supporters = await apiStreamer.getTopSupporters(currentUser?.id);
+      setTopSupporters(supporters || []);
     };
     loadProfile();
-  }, [isOpen]);
+  }, [isOpen, currentUser?.id]);
 
   if (!isOpen) return null;
 
@@ -615,19 +613,27 @@ export default function StreamerDashboardModal({
                     </div>
 
                     <div className="space-y-2">
-                      {topSupporters.map(sup => (
-                        <div key={sup.rank} className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-3">
-                            <span className="w-6 font-black text-amber-400 text-sm">#{sup.rank}</span>
-                            <img src={sup.avatar} alt={sup.name} className="w-9 h-9 rounded-full object-cover border border-amber-400/50" />
-                            <div>
-                              <span className="font-bold text-white block">{sup.name}</span>
-                              <span className="text-[9px] text-amber-300 font-bold">{sup.badge}</span>
-                            </div>
-                          </div>
-                          <span className="font-mono text-amber-400 font-black">{sup.amount}</span>
+                      {topSupporters.length === 0 ? (
+                        <div className="p-6 text-center bg-slate-900/60 rounded-xl border border-dashed border-slate-800 space-y-1">
+                          <Crown className="w-6 h-6 text-slate-600 mx-auto mb-1" />
+                          <p className="text-xs text-slate-400 font-bold">{window.loc('هنوز حامی ثبتی در این بازه زمانی وجود ندارد', 'No supporters recorded in this time frame yet')}</p>
+                          <p className="text-[10px] text-slate-500">{window.loc('هنگامی که کاربران به شما هدیه ارسال کنند، در این جدول رتبه‌بندی خواهند شد.', 'When users send you gifts, they will be ranked in this table.')}</p>
                         </div>
-                      ))}
+                      ) : (
+                        topSupporters.map(sup => (
+                          <div key={sup.rank} className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-3">
+                              <span className="w-6 font-black text-amber-400 text-sm">#{sup.rank}</span>
+                              <img src={sup.avatar} alt={sup.name} className="w-9 h-9 rounded-full object-cover border border-amber-400/50" />
+                              <div>
+                                <span className="font-bold text-white block">{sup.name}</span>
+                                <span className="text-[9px] text-amber-300 font-bold">{sup.badge}</span>
+                              </div>
+                            </div>
+                            <span className="font-mono text-amber-400 font-black">{sup.amount}</span>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
 
