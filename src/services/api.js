@@ -1277,14 +1277,7 @@ export const apiWallet = {
     const uid = getUserId();
     if (!uid) return { success: false, error: 'Unauthorized' };
     
-    // In production, real payment webhook invokes database function.
-    // We record intent and update wallet securely:
-    const idempotencyKey = `idemp_deposit_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    const { data: rpcRes, error: rpcErr } = await supabase.rpc('rpc_convert_coins_to_usdt', {
-      p_coins: 0,
-      p_idempotency_key: idempotencyKey
-    });
-
+    // Deposits in production are validated via server-side payment webhooks.
     const current = await this.getBalance();
     return { success: true, newCoins: current.coins };
   },
@@ -1306,29 +1299,18 @@ export const apiWallet = {
     }
   },
 
-  async playMiniGame(costCoins, prizeCoins, gameName) {
+  async playMiniGame(costCoins, gameName) {
     const uid = getUserId();
     if (!uid) return { success: false, error: 'Unauthorized' };
+    const idempotencyKey = `idemp_game_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     try {
-      const netCoins = (prizeCoins || 0) - (costCoins || 0);
-      const { data: wallet } = await supabase.from('wallets').select('coins').eq('user_id', uid).single();
-      const currentCoins = wallet?.coins || 0;
-      if (currentCoins < costCoins) {
-        return { success: false, error: 'Insufficient coins' };
-      }
-      const newCoins = Math.max(0, currentCoins + netCoins);
-      await supabase.from('wallets').update({ coins: newCoins }).eq('user_id', uid);
-      
-      // Record real transaction
-      await supabase.from('transactions').insert([{
-        user_id: uid,
-        tx_type: netCoins >= 0 ? 'minigame_win' : 'minigame_play',
-        amount_coins: netCoins,
-        amount_usdt: 0,
-        description: `مینی‌گیم زنده: ${gameName} (هزینه: ${costCoins}، جایزه: ${prizeCoins})`
-      }]);
-      
-      return { success: true, newCoins };
+      const { data, error } = await supabase.rpc('rpc_play_minigame', {
+        p_game_name: gameName || 'MiniGame',
+        p_cost_coins: parseInt(costCoins, 10),
+        p_idempotency_key: idempotencyKey
+      });
+      if (error) return { success: false, error: error.message };
+      return data;
     } catch (e) {
       return { success: false, error: e.message };
     }
@@ -1339,13 +1321,12 @@ export const apiWallet = {
     if (!uid) return { success: false, error: 'Unauthorized' };
     
     const idempotencyKey = `idemp_gift_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const giftId = `g_${giftName.toLowerCase().replace(/[^a-z0-9_]/g, '')}`;
     
     try {
       const { data, error } = await supabase.rpc('rpc_send_gift', {
         p_receiver_id: recipientId,
-        p_gift_id: `gift_${giftName.toLowerCase().replace(/\s+/g, '_')}`,
-        p_gift_name: giftName,
-        p_coin_cost: parseInt(giftCoins, 10),
+        p_gift_id: giftId,
         p_idempotency_key: idempotencyKey
       });
 
@@ -1406,7 +1387,7 @@ export const apiWallet = {
 // 8. VIP & SUBSCRIPTION SERVICE
 // ==========================================
 export const apiVip = {
-  async purchasePlan({ plan, durationMonths, priceCoins }) {
+  async purchasePlan({ plan, durationMonths }) {
     const uid = getUserId();
     if (!uid) return { success: false, error: 'Unauthorized' };
     const idempotencyKey = `idemp_vip_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -1414,8 +1395,7 @@ export const apiVip = {
     try {
       const { data, error } = await supabase.rpc('rpc_purchase_vip', {
         p_plan: plan.toLowerCase(),
-        p_duration_months: parseInt(durationMonths, 10),
-        p_coin_cost: parseInt(priceCoins, 10),
+        p_duration_months: parseInt(durationMonths, 10) || 1,
         p_idempotency_key: idempotencyKey
       });
 
@@ -1431,7 +1411,7 @@ export const apiVip = {
 // 9. CALLS SERVICE (Session & Billing)
 // ==========================================
 export const apiCalls = {
-  async startCall({ receiverId, callType = 'video', tariffRate = 20 }) {
+  async startCall({ receiverId, callType = 'video' }) {
     const uid = getUserId();
     if (!uid) return { success: false, error: 'Unauthorized' };
 
@@ -1440,7 +1420,6 @@ export const apiCalls = {
         caller_id: uid,
         receiver_id: receiverId,
         call_type: callType,
-        tariff_rate: tariffRate,
         status: 'active',
         started_at: new Date().toISOString()
       }]).select();
@@ -1452,7 +1431,7 @@ export const apiCalls = {
     }
   },
 
-  async chargeMinute({ sessionId, callerId, receiverId, tariffRate }) {
+  async chargeMinute({ sessionId, callerId, receiverId, callType = 'video' }) {
     const uid = callerId || getUserId();
     if (!uid) return { success: false };
     const idempotencyKey = `idemp_call_${sessionId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -1460,8 +1439,8 @@ export const apiCalls = {
     try {
       const { data, error } = await supabase.rpc('rpc_charge_call_minute', {
         p_session_id: sessionId || 'call_live',
+        p_call_type: callType,
         p_receiver_id: receiverId,
-        p_tariff_rate: parseInt(tariffRate, 10),
         p_idempotency_key: idempotencyKey
       });
 
@@ -1776,31 +1755,15 @@ export const apiAdmin = {
   async adjustUserWallet(userId, amountCoins, reason) {
     if (!(await verifyAdminServerRole())) return { success: false, error: 'Unauthorized' };
     try {
-      // Use RPC if possible, otherwise manual update
       const { data, error } = await supabase.rpc('rpc_admin_adjust_wallet', {
-        p_user_id: userId,
-        p_amount_coins: amountCoins,
-        p_reason: reason
+        p_target_user_id: userId,
+        p_amount_coins: parseInt(amountCoins, 10),
+        p_reason: reason || 'Admin adjustment'
       });
       if (error) {
-        // Fallback to two-step update if RPC fails
-        const { data: wallet } = await supabase.from('wallets').select('coins').eq('user_id', userId).single();
-        if (wallet) {
-          const newCoins = Math.max(0, (wallet.coins || 0) + amountCoins);
-          await supabase.from('wallets').update({ coins: newCoins }).eq('user_id', userId);
-          // Insert manual transaction
-          await supabase.from('transactions').insert([{
-            user_id: userId,
-            tx_type: amountCoins > 0 ? 'deposit' : 'admin_deduct',
-            amount_coins: Math.abs(amountCoins),
-            status: 'Completed',
-            metadata: { reason, is_admin_action: true }
-          }]);
-          return { success: true };
-        }
-        return { success: false };
+        return { success: false, error: error.message };
       }
-      return { success: true };
+      return { success: true, ...data };
     } catch (e) {
       return { success: false, error: e.message };
     }

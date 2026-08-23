@@ -32,24 +32,31 @@ def get_wallet_balance(current_user: User = Depends(get_current_user)):
 
 @router.post("/deposit/stars")
 def deposit_stars(payload: DepositStarsRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    current_user.wallet_stars += payload.stars_amount
+    if payload.stars_amount <= 0:
+        raise HTTPException(status_code=400, detail="Invalid stars amount!")
+    if not payload.telegram_charge_id:
+        raise HTTPException(status_code=400, detail="Missing payment verification charge ID!")
+    
+    # Deposits require official payment gateway verification
     tx = Transaction(
         user_id=current_user.id,
         amount_stars=payload.stars_amount,
         tx_type="DEPOSIT_STARS",
         payment_method="TELEGRAM_STARS",
-        status="COMPLETED"
+        status="PENDING_VERIFICATION"
     )
     db.add(tx)
     db.commit()
-    return {"status": "SUCCESS", "new_stars": current_user.wallet_stars}
+    return {"status": "PENDING_VERIFICATION", "message": "Deposit recorded. Awaiting payment gateway confirmation."}
 
 @router.post("/deposit/crypto")
 def deposit_crypto(payload: DepositCryptoRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    converted_stars = int(payload.usdt_amount * 100)
-    current_user.wallet_stars += converted_stars
-    current_user.wallet_usdt += payload.usdt_amount
+    if payload.usdt_amount <= 0:
+        raise HTTPException(status_code=400, detail="Invalid USDT amount!")
+    if not payload.tx_hash:
+        raise HTTPException(status_code=400, detail="Missing blockchain transaction hash!")
 
+    converted_stars = int(payload.usdt_amount * 100)
     tx = Transaction(
         user_id=current_user.id,
         amount_stars=converted_stars,
@@ -57,18 +64,27 @@ def deposit_crypto(payload: DepositCryptoRequest, current_user: User = Depends(g
         tx_type="DEPOSIT_USDT",
         payment_method=payload.network,
         tx_hash=payload.tx_hash,
-        status="COMPLETED"
+        status="PENDING_VERIFICATION"
     )
     db.add(tx)
     db.commit()
-    return {"status": "SUCCESS", "added_stars": converted_stars, "new_stars": current_user.wallet_stars}
+    return {"status": "PENDING_VERIFICATION", "message": "Crypto deposit submitted for blockchain verification."}
 
 @router.post("/withdraw")
 def withdraw_funds(payload: WithdrawalRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if current_user.wallet_usdt < payload.usdt_amount:
-        raise HTTPException(status_code=400, detail="موجودی ارز دیجیتال کافی نیست!")
+    if payload.usdt_amount <= 0:
+        raise HTTPException(status_code=400, detail="Withdrawal amount must be positive!")
+    if payload.usdt_amount < 50.0:
+        raise HTTPException(status_code=400, detail="Minimum withdrawal amount is $50 USDT!")
+    if not payload.wallet_address or len(payload.wallet_address.strip()) < 10:
+        raise HTTPException(status_code=400, detail="Invalid wallet destination address!")
 
-    current_user.wallet_usdt -= payload.usdt_amount
+    # Lock user row FOR UPDATE to prevent race conditions
+    user_db = db.query(User).filter(User.id == current_user.id).with_for_update().first()
+    if not user_db or user_db.wallet_usdt < payload.usdt_amount:
+        raise HTTPException(status_code=400, detail="Insufficient USDT balance!")
+
+    user_db.wallet_usdt -= payload.usdt_amount
     tx = Transaction(
         user_id=current_user.id,
         amount_usdt=payload.usdt_amount,
@@ -79,4 +95,4 @@ def withdraw_funds(payload: WithdrawalRequest, current_user: User = Depends(get_
     )
     db.add(tx)
     db.commit()
-    return {"status": "PENDING_APPROVAL", "message": "درخواست برداشت ثبت گردید و پس از تایید ادماین واریز می‌شود."}
+    return {"status": "PENDING_APPROVAL", "message": "Withdrawal request submitted for admin review."}
