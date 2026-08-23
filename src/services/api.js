@@ -27,13 +27,7 @@ export const apiStorage = {
 
       if (error) {
         console.warn(`Storage upload to bucket '${bucket}' error:`, error.message);
-        // Fallback: If bucket does not exist, convert file to data URL so app does not break
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve({ success: true, url: reader.result });
-          reader.onerror = () => resolve({ success: false, error: error.message });
-          reader.readAsDataURL(file);
-        });
+        return { success: false, error: error.message };
       }
 
       const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(data.path);

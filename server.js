@@ -60,7 +60,7 @@ async function authenticateRequest(req, bodyData = {}) {
     if (user && !error) {
       // Query database for authentic profile
       const { data: profile } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
         .or(`id.eq.${user.id},telegram_id.eq.${user.user_metadata?.telegram_id || user.id}`)
         .maybeSingle();
@@ -77,24 +77,7 @@ async function authenticateRequest(req, bodyData = {}) {
       return { authenticated: true, user: dbUser, rawAuthUser: user };
     }
   } catch (err) {
-    console.warn('Supabase auth verification note:', err.message);
-  }
-
-  // 2. Validate token against persistent user records in DB
-  try {
-    const users = loadUsersDb();
-    const matchedUser = users.find(u => 
-      String(u.id) === token || 
-      String(u.telegram_id) === token || 
-      (u.username && String(u.username).toLowerCase() === token.toLowerCase()) ||
-      token.includes(String(u.id))
-    );
-
-    if (matchedUser) {
-      return { authenticated: true, user: matchedUser };
-    }
-  } catch (err) {
-    console.warn('Local session token lookup warning:', err.message);
+    console.warn('Supabase auth verification exception:', err.message);
   }
 
   return { authenticated: false, error: 'Unauthorized: Invalid or expired authentication token', status: 401 };
@@ -310,160 +293,18 @@ async function callGeminiBackend(prompt) {
   return null;
 }
 
-// REAL BACKEND DATABASE FOR USER PROFILES
-const DB_FILE = path.join(__dirname, 'users_db.json');
-
-// USER CLASSIFICATION CONSTANTS: REAL_USER, VERIFIED_USER, TEST_USER, DEMO_USER, ADMIN, SUPER_ADMIN
-const DEFAULT_USERS = [
-  {
-    id: 1,
-    username: 'Sahar_Miller',
-    name: 'Sahar Miller',
-    role: 'Viewer',
-    user_type: 'REAL_USER',
-    status: 'approved',
-    isApproved: true,
-    online: true,
-    city: 'Tehran',
-    age: 23,
-    gender: 'female',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-    bio: '☕ Chat & Chill Coffee Time | 4K Live Streamer',
-    coins: 45000,
-    isVerified: true,
-    isVip: true,
-    streamTitle: 'Chat & Chill Coffee Time ☕',
-    viewers: 410,
-    isLive: true,
-    updatedAt: Date.now()
-  },
-  {
-    id: 2,
-    username: 'Sara_Maleki',
-    name: 'Sara Maleki',
-    role: 'VIP Streamer',
-    user_type: 'VERIFIED_USER',
-    status: 'approved',
-    isApproved: true,
-    online: true,
-    city: 'Tehran',
-    age: 22,
-    gender: 'female',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
-    bio: 'استودیو چت VIP و اجرای نئونی 4K',
-    coins: 38200,
-    isVerified: true,
-    isVip: true,
-    streamTitle: 'استودیو چت VIP و اجرای نئونی 4K 💖',
-    viewers: 1420,
-    isLive: true,
-    updatedAt: Date.now()
-  },
-  {
-    id: 3,
-    username: 'Elnaz_Karimi',
-    name: 'Elnaz Karimi',
-    role: 'Online Model',
-    user_type: 'VERIFIED_USER',
-    status: 'approved',
-    isApproved: true,
-    online: true,
-    city: 'Shiraz',
-    age: 24,
-    gender: 'female',
-    avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80',
-    bio: 'گفتگوی خصوصی و پاسخ به سوالات حامیان',
-    coins: 29500,
-    isVerified: true,
-    isVip: true,
-    streamTitle: 'گفتگوی خصوصی و پاسخ به سوالات حامیان 🌊',
-    viewers: 980,
-    isLive: true,
-    updatedAt: Date.now()
-  },
-  {
-    id: 4,
-    username: 'Maryam_Hosseini',
-    name: 'Maryam Hosseini',
-    role: 'Official Host',
-    user_type: 'VERIFIED_USER',
-    status: 'approved',
-    isApproved: true,
-    online: false,
-    city: 'Isfahan',
-    age: 21,
-    gender: 'female',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
-    bio: 'موزیک زنده و رقص چالش 🎵',
-    coins: 18400,
-    isVerified: true,
-    isVip: false,
-    streamTitle: 'موزیک زنده 🎵',
-    viewers: 320,
-    isLive: false,
-    updatedAt: Date.now()
-  },
-  {
-    id: 5,
-    username: 'Rayan_VIP',
-    name: 'Rayan Maleki',
-    role: 'Super Admin',
-    user_type: 'SUPER_ADMIN',
-    status: 'approved',
-    isApproved: true,
-    online: true,
-    city: 'Tehran',
-    age: 25,
-    gender: 'male',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80',
-    bio: 'مدیر ارشد پلتفرم V.Live+',
-    coins: 100000,
-    isVerified: true,
-    isVip: true,
-    streamTitle: 'V.Live Official Lounge',
-    viewers: 2500,
-    isLive: false,
-    updatedAt: Date.now()
-  }
-];
-
-// Permanent Backend Production Filter: Exclude TEST_USER, DEMO_USER, fake or banned accounts
-function getRealApprovedUsers(users) {
-  if (!Array.isArray(users)) return [];
-  return users.filter(u => {
-    if (!u) return false;
-    const isTestOrDemo = u.user_type === 'TEST_USER' || u.user_type === 'DEMO_USER' || u.isTest === true || u.isDemo === true || u.isFake === true;
-    const isBanned = u.status === 'banned' || u.status === 'disabled' || u.isBlocked === true;
-    const isApproved = u.status === 'approved' || u.isApproved !== false;
-    return !isTestOrDemo && !isBanned && isApproved;
-  });
-}
-
-function loadUsersDb() {
+// Helper: Query real approved user profiles from Supabase
+async function getSupabaseProfiles() {
   try {
-    if (fs.existsSync(DB_FILE)) {
-      const content = fs.readFileSync(DB_FILE, 'utf-8');
-      const parsed = JSON.parse(content);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        // Sanitize existing records in DB file
-        const cleaned = getRealApprovedUsers(parsed);
-        if (cleaned.length > 0) return cleaned;
-      }
+    const { data, error } = await supabase.from('profiles').select('*');
+    if (error) {
+      console.error('Error fetching profiles from Supabase:', error.message);
+      return [];
     }
+    return data || [];
   } catch (e) {
-    console.error('Error reading users_db.json:', e);
-  }
-  saveUsersDb(DEFAULT_USERS);
-  return DEFAULT_USERS;
-}
-
-function saveUsersDb(users) {
-  try {
-    // Save only valid real/verified/admin users to persistence DB
-    const sanitized = getRealApprovedUsers(users);
-    fs.writeFileSync(DB_FILE, JSON.stringify(sanitized.length > 0 ? sanitized : DEFAULT_USERS, null, 2), 'utf-8');
-  } catch (e) {
-    console.error('Error writing users_db.json:', e);
+    console.error('Exception fetching profiles from Supabase:', e.message);
+    return [];
   }
 }
 
@@ -491,78 +332,65 @@ const server = http.createServer(async (req, res) => {
 
       res.setHeader('Content-Type', 'application/json');
 
-      // GET /api/users or /api/profiles or /api/users/approved - Get all approved real user profiles
+      // GET /api/users or /api/profiles or /api/users/approved - Get all approved real user profiles from Supabase
       if (reqUrl === '/api/users' || reqUrl === '/api/profiles' || reqUrl === '/api/users/approved') {
-        const users = loadUsersDb();
-        const approvedUsers = getRealApprovedUsers(users);
-        return res.end(JSON.stringify(approvedUsers));
+        const profiles = await getSupabaseProfiles();
+        return res.end(JSON.stringify(profiles));
       }
 
-      // POST /api/users/save or POST /api/users/auth/telegram - Register / Login / Update user profile immediately in database
+      // POST /api/users/save or POST /api/users/auth/telegram - Save or update user profile directly in Supabase
       if (reqUrl === '/api/users/save' || reqUrl === '/api/users/auth/telegram' || reqUrl === '/api/users/profile') {
-        const users = loadUsersDb();
         const inputUser = data.user || data;
         const cleanUsername = inputUser.username || inputUser.currentUsername || 'User_' + Date.now();
         const cleanName = inputUser.name || inputUser.first_name || cleanUsername;
 
-        let existingIndex = users.findIndex(u => u.username?.toLowerCase() === cleanUsername.toLowerCase());
-        let updatedUserRecord = {
-          id: existingIndex >= 0 ? users[existingIndex].id : Date.now(),
+        const profilePayload = {
           username: cleanUsername,
           name: cleanName,
-          role: inputUser.role || (existingIndex >= 0 ? users[existingIndex].role : 'VIP Streamer'),
-          user_type: inputUser.user_type || (existingIndex >= 0 ? users[existingIndex].user_type : 'REAL_USER'),
-          status: 'approved',
-          isApproved: true,
-          online: true,
-          city: inputUser.city || (existingIndex >= 0 ? users[existingIndex].city : 'Tehran'),
-          age: inputUser.age || (existingIndex >= 0 ? users[existingIndex].age : 22),
-          gender: inputUser.gender || (existingIndex >= 0 ? users[existingIndex].gender : 'female'),
-          avatar: inputUser.avatar || inputUser.avatar_url || (existingIndex >= 0 ? users[existingIndex].avatar : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'),
-          bio: inputUser.bio || (existingIndex >= 0 ? users[existingIndex].bio : 'Official V.Live Streamer'),
-          coins: inputUser.coins || inputUser.wallet_stars || (existingIndex >= 0 ? users[existingIndex].coins : 5000),
-          isVerified: inputUser.isVerified !== undefined ? inputUser.isVerified : true,
-          isVip: inputUser.isVip !== undefined ? inputUser.isVip : true,
-          streamTitle: inputUser.streamTitle || (existingIndex >= 0 ? users[existingIndex].streamTitle : `${cleanName} 4K Live Stream 💖`),
-          viewers: existingIndex >= 0 ? users[existingIndex].viewers : 150,
-          isLive: inputUser.isLive !== undefined ? inputUser.isLive : (existingIndex >= 0 ? users[existingIndex].isLive : false),
-          updatedAt: Date.now()
+          role: inputUser.role || 'user',
+          avatar: inputUser.avatar || inputUser.avatar_url || '',
+          bio: inputUser.bio || '',
+          updated_at: new Date().toISOString()
         };
 
-        if (existingIndex >= 0) {
-          users[existingIndex] = updatedUserRecord;
-        } else {
-          users.unshift(updatedUserRecord);
+        if (inputUser.id) {
+          profilePayload.id = inputUser.id;
         }
 
-        saveUsersDb(users);
-        const approvedUsers = getRealApprovedUsers(users);
+        const { data: updatedProfile, error } = await supabase
+          .from('profiles')
+          .upsert([profilePayload])
+          .select()
+          .maybeSingle();
+
+        if (error) {
+          res.statusCode = 500;
+          return res.end(JSON.stringify({ success: false, error: error.message }));
+        }
+
         return res.end(JSON.stringify({
           success: true,
-          user: updatedUserRecord,
-          access_token: 'jwt_token_' + Date.now(),
-          users: approvedUsers
+          user: updatedProfile,
+          access_token: 'jwt_token_' + Date.now()
         }));
       }
 
-      // GET /api/users/search - Search approved real users
+      // GET /api/users/search - Search approved real users in Supabase
       if (reqUrl === '/api/users/search') {
         const fullUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
         const query = (fullUrl.searchParams.get('q') || '').toLowerCase();
-        const gender = fullUrl.searchParams.get('gender') || '';
-        const city = fullUrl.searchParams.get('city') || '';
 
-        const users = loadUsersDb();
-        const approvedUsers = getRealApprovedUsers(users);
+        const { data: searchResults, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .or(`username.ilike.%${query}%,name.ilike.%${query}%`);
 
-        const filtered = approvedUsers.filter(u => {
-          const matchesQuery = !query || u.username.toLowerCase().includes(query) || u.name.toLowerCase().includes(query) || (u.bio && u.bio.toLowerCase().includes(query));
-          const matchesGender = !gender || gender === 'all' || u.gender === gender;
-          const matchesCity = !city || city === 'all' || u.city === city;
-          return matchesQuery && matchesGender && matchesCity;
-        });
+        if (error) {
+          res.statusCode = 500;
+          return res.end(JSON.stringify({ success: false, error: error.message }));
+        }
 
-        return res.end(JSON.stringify(filtered));
+        return res.end(JSON.stringify(searchResults || []));
       }
 
       // LiveKit Secure Token Generation Endpoint (CRITICAL: Authentic signed server JWT)
