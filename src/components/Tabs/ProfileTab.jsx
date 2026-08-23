@@ -1678,12 +1678,6 @@ export default function ProfileTab(props) {
             const stored = JSON.stringify(selectedIds);
             setUserInterests(stored);
             safeStorage.setItem("vlive_profile_interests", stored);
-          } else {
-            // MOCK removed, fetching from DB (handled upstream or later)
-            if (stored) {
-              setUserInterests(stored);
-              safeStorage.setItem("vlive_profile_interests", stored);
-            }
           }
         }}
         userId={getUserId()}

@@ -157,6 +157,8 @@ export default function App() {
   const [activeVipEntrance, setActiveVipEntrance] = useState(null);
   const [activeLuxuryGift, setActiveLuxuryGift] = useState(null);
   const [isMiniPlayer, setIsMiniPlayer] = useState(false);
+  const [showEntranceBanner, setShowEntranceBanner] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
 
   // Host Live & PK Battle State
   const [isHostLiveOpen, setIsHostLiveOpen] = useState(false);
@@ -177,6 +179,7 @@ export default function App() {
   const [pkRedScore, setPkRedScore] = useState(0);
   const [pkBlueScore, setPkBlueScore] = useState(0);
   const [pkOpponent, setPkOpponent] = useState(null);
+  const [pkWinner, setPkWinner] = useState(null);
   const [activeLivePoll, setActiveLivePoll] = useState(null);
   const [isCreatePollModalOpen, setIsCreatePollModalOpen] = useState(false);
   const [pollQuestionInput, setPollQuestionInput] = useState('');
@@ -188,6 +191,8 @@ export default function App() {
   const [preCallConfirmHost, setPreCallConfirmHost] = useState(null);
   const [activePrivateCallHost, setActivePrivateCallHost] = useState(null);
   const [privateCallSeconds, setPrivateCallSeconds] = useState(0);
+  const [isEncryptedCertModalOpen, setIsEncryptedCertModalOpen] = useState(false);
+  const [selectedHostForCall, setSelectedHostForCall] = useState(null);
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [callHistoryList, setCallHistoryList] = useState(() => {
     try {
@@ -235,9 +240,11 @@ export default function App() {
   const [matchGenderFilter, setMatchGenderFilter] = useState('all');
   const [freeMatchCallsLeft, setFreeMatchCallsLeft] = useState(3);
   const [isMatchFilterOpen, setIsMatchFilterOpen] = useState(false);
+  const [isSmartMatchModalOpen, setIsSmartMatchModalOpen] = useState(false);
   const [isMatchRulesModalOpen, setIsMatchRulesModalOpen] = useState(false);
   const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
   const [matchResultPopup, setMatchResultPopup] = useState(null);
+  const [matchAnimationEffect, setMatchAnimationEffect] = useState(null);
   const [swipeDragPos, setSwipeDragPos] = useState({ x: 0, y: 0 });
 
   // Direct Messages & Chat State
@@ -257,6 +264,7 @@ export default function App() {
   const [isAutoTranslateActive, setIsAutoTranslateActive] = useState(false);
 
   // Stories & Moments State
+  const [posts, setPosts] = useState([]);
   const [advancedStories, setAdvancedStories] = useState([]);
   const [activeStoryView, setActiveStoryView] = useState(null);
   const [isAddStoryModalOpen, setIsAddStoryModalOpen] = useState(false);
@@ -296,13 +304,18 @@ export default function App() {
   const [isLevelUpModalOpen, setIsLevelUpModalOpen] = useState(false);
   const [levelUpModalData, setLevelUpModalData] = useState(null);
   const [activePartyRoom, setActivePartyRoom] = useState(null);
+  const [mySeatIndex, setMySeatIndex] = useState(null);
   const [isCreateAgencyModalOpen, setIsCreateAgencyModalOpen] = useState(false);
   const [newAgencyName, setNewAgencyName] = useState('');
   const [newAgencyDesc, setNewAgencyDesc] = useState('');
 
   // Modals & Navigation Helpers
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUserProfile, setSelectedUserProfile] = useState(null);
+  const [selectedGiftRecipient, setSelectedGiftRecipient] = useState(null);
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
+  const [isQrCodeModalOpen, setIsQrCodeModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);

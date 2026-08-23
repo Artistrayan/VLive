@@ -1,4 +1,5 @@
 import React from 'react';
+import { apiLive } from '../services/api';
 import VisualSectionWrapper from '../components/VisualUiEditor/VisualSectionWrapper';
 import { useVisualUiEditor } from '../context/VisualUiEditorContext';
 import { safeStorage } from '../utils/safeStorage';

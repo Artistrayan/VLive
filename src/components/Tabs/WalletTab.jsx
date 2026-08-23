@@ -20,6 +20,7 @@ export default function WalletTab(props) {
     walletSubTab, setWalletSubTab,
     referralCode,
     setIsVipModalOpen, setIsReferralRulesModalOpen,
+    txHistoryList = [], setTxHistoryList = (() => {}),
     showToast, loc, isRtl
   } = props;
 
@@ -95,7 +96,6 @@ export default function WalletTab(props) {
   const setVipExpireDays = props.setVipExpireDays || (() => {});
   const setIsVipCelebrationOpen = props.setIsVipCelebrationOpen || (() => showToast('VIP Celebration!'));
 
-  const txHistoryList = props.txHistoryList || [];
   const [selectedCoinPackPayment, setSelectedCoinPackPayment] = React.useState('USDT');
   const handleBuyCoinsPack = props.handleBuyCoinsPack || ((pack) => showToast(window.loc('خرید بسته کوین با موفقیت انجام شد', 'The purchase of the coin package has been successfully completed')));
   const handleConvertDiamondsAction = props.handleConvertDiamondsAction || (() => showToast(window.loc('تبدیل الماس انجام شد', 'Diamond conversion done')));

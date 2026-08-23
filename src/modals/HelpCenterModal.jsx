@@ -27,6 +27,8 @@ export default function HelpCenterModal({
   adminMinWithdrawal = 50,
   transactionsList = [],
   setTransactionsList = () => {},
+  adminWithdrawalsList = [],
+  setAdminWithdrawalsList = () => {},
   adminTicketsList = [],
   setAdminTicketsList = () => {}
 }) {

@@ -70,6 +70,7 @@ export default function LiveStudioModal({
 
   // Countdown State
   const [countdownNum, setCountdownNum] = useState(3);
+  const [isStartingLive, setIsStartingLive] = useState(false);
 
   // Live Broadcast Real-time States
   const [liveDurationSeconds, setLiveDurationSeconds] = useState(0);
