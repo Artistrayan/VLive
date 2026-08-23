@@ -7,41 +7,44 @@ import {
   ConnectionState
 } from 'livekit-client';
 import { supabase } from '../supabaseClient';
-import { getUserId } from './api';
+import { getStoredToken } from './api';
 
 /**
  * Real LiveKit Backend Token Fetcher
  * CRITICAL RULE: Never generate fake/unsigned JWT on the frontend.
- * Always request authentic signed JWT from the backend server.
+ * Always request authentic signed JWT from the backend server with Authorization token.
  */
 export async function fetchLiveKitToken({ 
   roomName, 
-  identity, 
-  name, 
-  role = 'viewer', 
   metadata = {} 
 }) {
-  const cleanRoom = (roomName || `vlive_room_${Date.now()}`).trim();
-  const cleanIdentity = String(identity || getUserId() || `user_${Date.now()}`).trim();
-  const cleanName = String(name || cleanIdentity || 'User').trim();
+  const cleanRoom = String(roomName || `vlive_room_${Date.now()}`).trim();
 
   try {
+    // Retrieve authentic session token
+    let sessionToken = '';
+    try {
+      const sessionRes = await supabase.auth.getSession();
+      sessionToken = sessionRes?.data?.session?.access_token || getStoredToken() || '';
+    } catch (sErr) {
+      sessionToken = getStoredToken() || '';
+    }
+
     const response = await fetch('/api/livekit/token', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...(sessionToken ? { 'Authorization': `Bearer ${sessionToken}` } : {})
       },
       body: JSON.stringify({
         roomName: cleanRoom,
-        identity: cleanIdentity,
-        name: cleanName,
-        role: role.toLowerCase(),
         metadata
       })
     });
 
     if (!response.ok) {
-      throw new Error(`Server returned status ${response.status}`);
+      const errRes = await response.json().catch(() => ({}));
+      throw new Error(errRes.error || `Server returned HTTP status ${response.status}`);
     }
 
     const data = await response.json();
@@ -54,12 +57,12 @@ export async function fetchLiveKitToken({
       token: data.token,
       roomName: data.roomName || cleanRoom,
       serverUrl: data.serverUrl || 'wss://livekit.vlive.app',
-      identity: data.identity || cleanIdentity,
-      name: data.name || cleanName,
-      role: data.role || role
+      identity: data.identity,
+      name: data.name,
+      role: data.role
     };
   } catch (error) {
-    console.error('LiveKit Token Fetch Error:', error);
+    console.error('LiveKit Token Fetch Error:', error.message);
     return {
       success: false,
       error: error.message || 'Error communicating with LiveKit authentication server',

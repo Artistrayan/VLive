@@ -165,10 +165,7 @@ export default function LiveStreamSystem({
     // Generate secure LiveKit token for authorized broadcaster
     const roomName = `room_${currentUser?.id || 'broadcaster'}_${Date.now()}`;
     const tokenRes = await apiLive.generateLiveKitToken({
-      hostId: currentUser?.id,
-      hostName: currentUser?.name || currentUsername || 'Streamer',
-      roomName: roomName,
-      isBroadcaster: true
+      roomName: roomName
     });
 
     if (!tokenRes.success) {

@@ -476,17 +476,19 @@ export default function LiveStudioModal({
 
     try {
       tokenRes = await apiLive.generateLiveKitToken({
-        hostId: currentUser?.id,
-        hostName: currentUser?.name || currentUsername || 'Verified Broadcaster',
-        roomName: roomName,
-        isBroadcaster: true,
-        role: 'host'
+        roomName: roomName
       });
     } catch (e) {
-      console.warn('LiveKit token request network warning, using direct secure token:', e);
+      console.error('LiveKit token request error:', e);
     }
 
-    const effectiveToken = tokenRes.success && tokenRes.token ? tokenRes.token : `vlive_host_token_${Date.now()}`;
+    if (!tokenRes.success || !tokenRes.token) {
+      showToast(window.loc(`⛔ خطا در احراز هویت لایو‌کیت: ${tokenRes.error || 'دسترسی صادر نشد'}`, `⛔ LiveKit Auth Error: ${tokenRes.error || 'Token access denied'}`));
+      setIsStartingLive(false);
+      return;
+    }
+
+    const effectiveToken = tokenRes.token;
     const effectiveRoom = tokenRes.roomName || roomName;
     const effectiveServerUrl = tokenRes.serverUrl || 'wss://livekit.vlive.app';
 
@@ -495,13 +497,10 @@ export default function LiveStudioModal({
     setLivekitServerUrl(effectiveServerUrl);
     setBroadcasterAuthorized(true);
 
-    // Connect to LiveKit Room via livekitManager if available
+    // Connect to LiveKit Room via livekitManager
     try {
       await livekitManager.connect({
         roomName: effectiveRoom,
-        identity: currentUser?.id || `host_${Date.now()}`,
-        name: currentUser?.name || currentUsername || 'Host',
-        role: 'host',
         token: effectiveToken,
         serverUrl: effectiveServerUrl
       });

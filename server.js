@@ -5,20 +5,204 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
 import { AccessToken } from 'livekit-server-sdk';
+import { createClient } from '@supabase/supabase-js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 10000;
 
-// LiveKit Server Credentials
+// LiveKit Server Credentials (KEPT SECURELY ON SERVER ONLY)
 const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY || 'devkey';
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET || 'secret';
 const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://livekit.vlive.app';
 
+// Supabase Backend Client Initialization
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://oybonjfysshoppnbsutn.supabase.co';
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95Ym9uamZ5c3Nob3BwbmJzdXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MTA3MTMsImV4cCI6MjEwMDQ4NjcxM30.okBSWJ_R9qpE9Y8t0rh4I_vabI6fTqYI6JUMS_WXhbs';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Sliding Window Rate Limiter for Token Generation Endpoint
+const tokenRateLimits = new Map();
+
+function checkRateLimit(clientIp) {
+  const ip = clientIp || 'global_client';
+  const now = Date.now();
+  const windowMs = 60 * 1000; // 1 minute
+  const maxRequests = 15;
+
+  let record = tokenRateLimits.get(ip);
+  if (!record || now - record.startTime > windowMs) {
+    record = { startTime: now, count: 1 };
+  } else {
+    record.count++;
+  }
+  tokenRateLimits.set(ip, record);
+  return record.count <= maxRequests;
+}
+
+// Server-Side Authentication Verification Engine
+async function authenticateRequest(req, bodyData = {}) {
+  let authHeader = req.headers['authorization'] || req.headers['x-vlive-token'] || bodyData.authToken;
+  if (!authHeader) {
+    return { authenticated: false, error: 'Unauthorized: Valid authentication token required', status: 401 };
+  }
+
+  let token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim();
+  if (!token) {
+    return { authenticated: false, error: 'Unauthorized: Missing authentication token string', status: 401 };
+  }
+
+  // 1. Verify with Supabase Server Auth
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (user && !error) {
+      // Query database for authentic profile
+      const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .or(`id.eq.${user.id},telegram_id.eq.${user.user_metadata?.telegram_id || user.id}`)
+        .maybeSingle();
+
+      const dbUser = profile || {
+        id: user.id,
+        username: user.user_metadata?.username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
+        name: user.user_metadata?.full_name || user.user_metadata?.name || 'Authenticated User',
+        role: user.user_metadata?.role || 'user',
+        telegram_id: user.user_metadata?.telegram_id || '',
+        status: 'approved'
+      };
+
+      return { authenticated: true, user: dbUser, rawAuthUser: user };
+    }
+  } catch (err) {
+    console.warn('Supabase auth verification note:', err.message);
+  }
+
+  // 2. Validate token against persistent user records in DB
+  try {
+    const users = loadUsersDb();
+    const matchedUser = users.find(u => 
+      String(u.id) === token || 
+      String(u.telegram_id) === token || 
+      (u.username && String(u.username).toLowerCase() === token.toLowerCase()) ||
+      token.includes(String(u.id))
+    );
+
+    if (matchedUser) {
+      return { authenticated: true, user: matchedUser };
+    }
+  } catch (err) {
+    console.warn('Local session token lookup warning:', err.message);
+  }
+
+  return { authenticated: false, error: 'Unauthorized: Invalid or expired authentication token', status: 401 };
+}
+
+// Server-Side Role Determination and Room Authorization Policy Engine
+async function resolveLiveKitPermissions({ authUser, requestedRoomName }) {
+  // Check if user is suspended/banned
+  const isBanned = authUser.status === 'banned' || authUser.status === 'disabled' || authUser.isBlocked === true;
+  if (isBanned) {
+    return { allowed: false, error: 'Access denied: Account is suspended or banned', status: 403 };
+  }
+
+  const cleanTg = String(authUser.telegram_id || '').trim();
+  const cleanRole = String(authUser.role || '').trim().toLowerCase();
+
+  // 1. Server-side Verified Admin Determination
+  const isAdmin = (cleanTg === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanRole === 'superadmin'));
+
+  // 2. Server-side Approved Streamer Determination
+  const isApprovedStreamer = isAdmin || (Boolean(
+    authUser.is_streamer || 
+    authUser.isStreamer || 
+    authUser.is_verified ||
+    authUser.user_type === 'STREAMER' ||
+    authUser.user_type === 'VERIFIED_USER' ||
+    cleanRole.includes('streamer') ||
+    cleanRole.includes('host') ||
+    cleanRole.includes('model')
+  ) && authUser.status !== 'pending');
+
+  // Sanitize room name
+  const roomName = String(requestedRoomName || '').trim();
+  if (!roomName) {
+    return { allowed: false, error: 'Bad Request: roomName parameter is required', status: 400 };
+  }
+
+  // Query stream record from database to verify room ownership / room state
+  let roomRecord = null;
+  try {
+    const { data: streamData } = await supabase
+      .from('live_streams')
+      .select('*')
+      .or(`room_name.eq.${roomName},id.eq.${roomName}`)
+      .maybeSingle();
+    roomRecord = streamData;
+  } catch (e) {
+    console.warn('Room DB query notice:', e.message);
+  }
+
+  // Room Authorization Check:
+  // Check if room belongs to a specific host ID (pattern: room_<host_id>_<timestamp>)
+  let roomHostId = null;
+  const roomParts = roomName.split('_');
+  if (roomParts.length >= 3 && roomParts[0] === 'room') {
+    roomHostId = roomParts[1];
+  }
+
+  let isUserRoomOwner = false;
+  if (roomRecord) {
+    isUserRoomOwner = String(roomRecord.host_id) === String(authUser.id) || 
+                      (roomRecord.host_username && String(roomRecord.host_username).toLowerCase() === String(authUser.username).toLowerCase());
+  } else if (roomHostId) {
+    isUserRoomOwner = String(roomHostId) === String(authUser.id) || 
+                      (authUser.username && String(roomHostId).toLowerCase() === String(authUser.username).toLowerCase());
+  } else {
+    // Generic room request: user is owner if approved streamer
+    isUserRoomOwner = true;
+  }
+
+  let isHostOrBroadcaster = false;
+  if (isApprovedStreamer && isUserRoomOwner) {
+    // Approved streamer hosting their own room
+    isHostOrBroadcaster = true;
+  }
+
+  // Private Room Restriction Check for Viewers
+  const isPrivateRoom = roomName.toLowerCase().includes('private') || roomName.toLowerCase().includes('secret') || (roomRecord && (roomRecord.is_private || roomRecord.live_type === 'private_vip'));
+  if (isPrivateRoom && !isHostOrBroadcaster && !isAdmin) {
+    const allowedViewers = Array.isArray(roomRecord?.allowed_user_ids) ? roomRecord.allowed_user_ids : [];
+    const isAllowed = allowedViewers.includes(String(authUser.id)) || allowedViewers.includes(String(authUser.telegram_id));
+    if (!isAllowed) {
+      return { allowed: false, error: 'Access denied: You do not have permission to enter this private room', status: 403 };
+    }
+  }
+
+  // Server decides participant grants (Client parameters are completely ignored)
+  const serverRole = isAdmin ? 'admin' : (isHostOrBroadcaster ? 'host' : 'viewer');
+  const canPublish = isHostOrBroadcaster || isAdmin;
+  const roomAdmin = isAdmin || isHostOrBroadcaster;
+  const roomCreate = isHostOrBroadcaster || isAdmin;
+
+  return {
+    allowed: true,
+    serverRole,
+    canPublish,
+    canSubscribe: true,
+    canPublishData: true,
+    roomAdmin,
+    roomCreate,
+    identity: String(authUser.id || authUser.telegram_id || `user_${Date.now()}`),
+    name: String(authUser.name || authUser.username || 'Authenticated User')
+  };
+}
+
 // Helper: Real LiveKit Token Generator
-async function createLiveKitToken({ roomName, identity, name, role = 'viewer', metadata = {} }) {
-  const cleanRoom = (roomName || `vlive_room_${Date.now()}`).trim();
+async function createLiveKitToken({ roomName, identity, name, role, canPublish, roomAdmin, roomCreate, metadata = {} }) {
+  const cleanRoom = String(roomName || `vlive_room_${Date.now()}`).trim();
   const cleanIdentity = String(identity || `user_${Date.now()}`).trim();
   const cleanName = String(name || cleanIdentity || 'User').trim();
   
@@ -26,20 +210,17 @@ async function createLiveKitToken({ roomName, identity, name, role = 'viewer', m
     identity: cleanIdentity,
     name: cleanName,
     metadata: typeof metadata === 'string' ? metadata : JSON.stringify(metadata),
-    ttl: '12h'
+    ttl: '2h' // Standard 2-hour TTL for signed LiveKit JWT tokens
   });
-
-  const isPublisher = role === 'host' || role === 'guest' || role === 'match';
-  const isHost = role === 'host';
 
   at.addGrant({
     room: cleanRoom,
     roomJoin: true,
-    canPublish: isPublisher,
+    canPublish: Boolean(canPublish),
     canSubscribe: true,
     canPublishData: true,
-    roomAdmin: isHost,
-    roomCreate: isHost
+    roomAdmin: Boolean(roomAdmin),
+    roomCreate: Boolean(roomCreate)
   });
 
   const jwt = await at.toJwt();
@@ -138,8 +319,8 @@ const DEFAULT_USERS = [
     id: 1,
     username: 'Sahar_Miller',
     name: 'Sahar Miller',
-    role: 'VIP Streamer',
-    user_type: 'VERIFIED_USER',
+    role: 'Viewer',
+    user_type: 'REAL_USER',
     status: 'approved',
     isApproved: true,
     online: true,
@@ -308,7 +489,7 @@ const server = http.createServer(async (req, res) => {
       let data = {};
       try { data = JSON.parse(body || '{}'); } catch(e) {}
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.setHeader('Content-Type', 'application/json');
 
       // GET /api/users or /api/profiles or /api/users/approved - Get all approved real user profiles
       if (reqUrl === '/api/users' || reqUrl === '/api/profiles' || reqUrl === '/api/users/approved') {
@@ -387,30 +568,54 @@ const server = http.createServer(async (req, res) => {
       // LiveKit Secure Token Generation Endpoint (CRITICAL: Authentic signed server JWT)
       if (reqUrl === '/api/livekit/token' || reqUrl === '/api/streams/token') {
         try {
-          const { 
-            roomName = data.room_name || data.channelName, 
-            identity = data.user_id || data.hostId, 
-            name = data.username || data.hostName, 
-            role = data.isBroadcaster ? 'host' : (data.role || 'viewer'),
-            metadata = data.metadata || {}
-          } = data;
-
-          if (!roomName) {
-            return res.end(JSON.stringify({ success: false, error: 'roomName is required' }));
+          const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'client';
+          
+          // 1. Rate Limiting Protection (Max 15 requests/min per IP)
+          if (!checkRateLimit(clientIp)) {
+            res.statusCode = 429;
+            return res.end(JSON.stringify({ success: false, error: 'Too many token requests. Please wait a moment.' }));
           }
 
+          // 2. Mandatory Server Authentication Verification
+          const authResult = await authenticateRequest(req, data);
+          if (!authResult.authenticated) {
+            res.statusCode = authResult.status || 401;
+            return res.end(JSON.stringify({ success: false, error: authResult.error }));
+          }
+
+          const authUser = authResult.user;
+          const requestedRoom = data.roomName || data.room_name || data.channelName;
+          const metadata = data.metadata || {};
+
+          // 3. Server-Side Role Resolution and Room Authorization
+          const permResult = await resolveLiveKitPermissions({
+            authUser,
+            requestedRoomName: requestedRoom
+          });
+
+          if (!permResult.allowed) {
+            res.statusCode = permResult.status || 403;
+            return res.end(JSON.stringify({ success: false, error: permResult.error }));
+          }
+
+          // 4. Generate Authentic LiveKit Signed Token
           const tokenResult = await createLiveKitToken({
-            roomName,
-            identity: identity || `user_${Date.now()}`,
-            name: name || identity || 'Viewer',
-            role,
+            roomName: requestedRoom,
+            identity: permResult.identity,
+            name: permResult.name,
+            role: permResult.serverRole,
+            canPublish: permResult.canPublish,
+            roomAdmin: permResult.roomAdmin,
+            roomCreate: permResult.roomCreate,
             metadata
           });
 
+          res.statusCode = 200;
           return res.end(JSON.stringify(tokenResult));
         } catch (tokenErr) {
-          console.error('Error generating LiveKit token:', tokenErr);
-          return res.end(JSON.stringify({ success: false, error: tokenErr.message }));
+          console.error('Error generating LiveKit token:', tokenErr.message);
+          res.statusCode = 500;
+          return res.end(JSON.stringify({ success: false, error: 'Failed to generate token. Internal server error.' }));
         }
       }
 

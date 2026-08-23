@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { presenceService } from './presenceService';
 import { calculateAge } from './businessRules';
+import { fetchLiveKitToken } from './livekitService';
 
 export { presenceService, calculateAge };
 
@@ -1020,51 +1021,11 @@ export const apiMessages = {
 // 6. LIVE & STREAMING SERVICE (Real LiveKit Integration)
 // ==========================================
 export const apiLive = {
-  async generateLiveKitToken({ hostId, hostName, roomName, isBroadcaster = true, role, metadata = {} }) {
-    try {
-      const cleanRoom = (roomName || `vlive_room_${Date.now()}`).trim();
-      const cleanIdentity = String(hostId || getUserId() || `user_${Date.now()}`).trim();
-      const cleanName = String(hostName || cleanIdentity || 'User').trim();
-      const assignedRole = role || (isBroadcaster ? 'host' : 'viewer');
-
-      const response = await fetch('/api/livekit/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          roomName: cleanRoom,
-          identity: cleanIdentity,
-          name: cleanName,
-          role: assignedRole,
-          metadata
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`LiveKit server returned HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (!data.success || !data.token) {
-        throw new Error(data.error || 'Failed to generate token from LiveKit backend');
-      }
-
-      return {
-        success: true,
-        token: data.token,
-        roomName: data.roomName || cleanRoom,
-        serverUrl: data.serverUrl || 'wss://livekit.vlive.app',
-        identity: data.identity || cleanIdentity,
-        name: data.name || cleanName,
-        role: data.role || assignedRole
-      };
-    } catch (e) {
-      console.error('apiLive.generateLiveKitToken error:', e);
-      return {
-        success: false,
-        error: e.message || 'LiveKit backend service unavailable',
-        token: null
-      };
-    }
+  async generateLiveKitToken({ roomName, metadata = {} }) {
+    return await fetchLiveKitToken({
+      roomName,
+      metadata
+    });
   },
 
   async getLiveStreams(liveType = 'all') {
