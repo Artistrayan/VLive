@@ -187,6 +187,7 @@ export default function App() {
   const [activeChatCall, setActiveChatCall] = useState(null);
   const [preCallConfirmHost, setPreCallConfirmHost] = useState(null);
   const [activePrivateCallHost, setActivePrivateCallHost] = useState(null);
+  const [privateCallSeconds, setPrivateCallSeconds] = useState(0);
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [callHistoryList, setCallHistoryList] = useState(() => {
     try {
