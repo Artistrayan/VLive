@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
-  ArrowRight, BadgeCheck, Ban, Bell, Calendar, CheckCircle, CheckCircle2,
+  AlertTriangle, ArrowRight, BadgeCheck, Ban, Bell, Calendar, Check, CheckCircle, CheckCircle2,
   Clock, Coins as CoinsIcon, Compass, Crown, Eye, FileText, Filter,
   Flag, Flame, Gift, Headphones, Heart, Home, Languages, LogIn,
   MessageSquare, Radio, Send, Settings, Shield, ShieldCheck, Sliders,
