@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import crypto from 'crypto';
 import { AccessToken } from 'livekit-server-sdk';
 import { createClient } from '@supabase/supabase-js';
 
@@ -12,16 +13,139 @@ const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 10000;
 
-// LiveKit Server Credentials (KEPT SECURELY ON SERVER ONLY)
-const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY || 'devkey';
-const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET || 'secret';
+// LiveKit Server Credentials (KEPT SECURELY ON SERVER ONLY - NO INSECURE FALLBACKS)
+const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY || '';
+const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET || '';
 const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://livekit.vlive.app';
 
 // Supabase Backend Client Initialization
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://oybonjfysshoppnbsutn.supabase.co';
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95Ym9uamZ5c3Nob3BwbmJzdXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MTA3MTMsImV4cCI6MjEwMDQ4NjcxM30.okBSWJ_R9qpE9Y8t0rh4I_vabI6fTqYI6JUMS_WXhbs';
 
+// Telegram Mini App Security Credentials
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || '';
+const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID || '';
+
+// Production Startup Environment Validation (Logs status without leaking secrets)
+function validateEnvironment() {
+  console.log('====================================================');
+  console.log('🚀 V.LIVE PRODUCTION BACKEND ENVIRONMENT VALIDATION 🚀');
+  console.log('====================================================');
+
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.warn('[CONFIG WARNING] Missing Supabase configuration (SUPABASE_URL / SUPABASE_ANON_KEY)');
+  } else {
+    console.log('✓ Supabase DB Client: Configured');
+  }
+
+  if (!LIVEKIT_API_KEY || !LIVEKIT_API_SECRET) {
+    console.warn('[CONFIG WARNING] Missing LiveKit credentials (LIVEKIT_API_KEY / LIVEKIT_API_SECRET). Token requests will return HTTP 503.');
+  } else {
+    console.log('✓ LiveKit Service: Configured');
+  }
+
+  if (!TELEGRAM_BOT_TOKEN) {
+    console.warn('[CONFIG WARNING] Missing TELEGRAM_BOT_TOKEN / BOT_TOKEN. Telegram initData cryptographic validation is pending token configuration.');
+  } else {
+    console.log('✓ Telegram WebApp HMAC Security: Configured');
+  }
+
+  if (!ADMIN_TELEGRAM_ID) {
+    console.warn('[CONFIG WARNING] ADMIN_TELEGRAM_ID is not configured. Server-level admin privilege escalation is disabled.');
+  } else {
+    console.log('✓ Admin Telegram Security: Configured');
+  }
+  console.log('====================================================\n');
+}
+
+validateEnvironment();
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Authorized CORS Origins for Telegram Mini App & Web Client
+const ALLOWED_ORIGINS = [
+  'https://artistrayan.github.io',
+  'https://web.telegram.org',
+  'https://t.me',
+  'capacitor://localhost',
+  'http://localhost',
+  'https://localhost'
+];
+
+function isOriginAllowed(origin) {
+  if (!origin) return false;
+  const lower = origin.toLowerCase().trim();
+  if (ALLOWED_ORIGINS.includes(lower)) return true;
+  if (lower.startsWith('http://localhost:') || lower.startsWith('http://127.0.0.1:')) return true;
+  if (lower.endsWith('.telegram.org') || lower.endsWith('.github.io')) return true;
+  return false;
+}
+
+// Telegram WebApp initData Cryptographic HMAC-SHA256 Verification Engine
+function validateTelegramInitData(initDataString) {
+  if (!initDataString || typeof initDataString !== 'string') {
+    return { valid: false, error: 'Missing Telegram initData string' };
+  }
+
+  if (!TELEGRAM_BOT_TOKEN) {
+    return { valid: false, error: 'Server TELEGRAM_BOT_TOKEN not configured for HMAC verification' };
+  }
+
+  try {
+    const urlParams = new URLSearchParams(initDataString);
+    const hash = urlParams.get('hash');
+    if (!hash) {
+      return { valid: false, error: 'Missing cryptographic hash signature in initData' };
+    }
+
+    urlParams.delete('hash');
+
+    const params = [];
+    for (const [key, value] of urlParams.entries()) {
+      params.push(`${key}=${value}`);
+    }
+    params.sort();
+    const dataCheckString = params.join('\n');
+
+    // Official Telegram WebApp HMAC verification: secret_key = HMAC_SHA256("WebAppData", bot_token)
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(TELEGRAM_BOT_TOKEN).digest();
+    const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+
+    if (calculatedHash.toLowerCase() !== hash.toLowerCase()) {
+      return { valid: false, error: 'Telegram HMAC signature mismatch: Untrusted or forged payload' };
+    }
+
+    // Replay attack prevention: verify auth_date within 24 hours (86400s)
+    const authDate = parseInt(urlParams.get('auth_date') || '0', 10);
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (!authDate || (nowSec - authDate > 86400)) {
+      return { valid: false, error: 'Telegram initData expired (timestamp older than 24 hours)' };
+    }
+
+    const userRaw = urlParams.get('user');
+    let telegramUser = null;
+    if (userRaw) {
+      try {
+        telegramUser = JSON.parse(userRaw);
+      } catch (e) {
+        return { valid: false, error: 'Malformed user JSON in Telegram initData' };
+      }
+    }
+
+    if (!telegramUser || !telegramUser.id) {
+      return { valid: false, error: 'Missing authentic user object in validated initData' };
+    }
+
+    return {
+      valid: true,
+      telegramUser,
+      authDate,
+      queryId: urlParams.get('query_id')
+    };
+  } catch (err) {
+    return { valid: false, error: `Telegram initData verification exception: ${err.message}` };
+  }
+}
 
 // Sliding Window Rate Limiter for Token Generation Endpoint
 const tokenRateLimits = new Map();
@@ -42,45 +166,67 @@ function checkRateLimit(clientIp) {
   return record.count <= maxRequests;
 }
 
-// Server-Side Authentication Verification Engine
+// Multi-layer Server Authentication Verification Engine
 async function authenticateRequest(req, bodyData = {}) {
-  let authHeader = req.headers['authorization'] || req.headers['x-vlive-token'] || bodyData.authToken;
-  if (!authHeader) {
-    return { authenticated: false, error: 'Unauthorized: Valid authentication token required', status: 401 };
-  }
-
-  let token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim();
-  if (!token) {
-    return { authenticated: false, error: 'Unauthorized: Missing authentication token string', status: 401 };
-  }
-
-  // 1. Verify with Supabase Server Auth
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (user && !error) {
-      // Query database for authentic profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .or(`id.eq.${user.id},telegram_id.eq.${user.user_metadata?.telegram_id || user.id}`)
-        .maybeSingle();
-
-      const dbUser = profile || {
-        id: user.id,
-        username: user.user_metadata?.username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
-        name: user.user_metadata?.full_name || user.user_metadata?.name || 'Authenticated User',
-        role: user.user_metadata?.role || 'user',
-        telegram_id: user.user_metadata?.telegram_id || '',
-        status: 'approved'
-      };
-
-      return { authenticated: true, user: dbUser, rawAuthUser: user };
+  // 1. Check for Telegram initData header or payload
+  const tgInitData = req.headers['x-telegram-init-data'] || bodyData.telegramInitData || bodyData.initData;
+  if (tgInitData) {
+    const tgValidation = validateTelegramInitData(tgInitData);
+    if (!tgValidation.valid) {
+      return { authenticated: false, error: `Telegram Authentication Failed: ${tgValidation.error}`, status: 401 };
     }
-  } catch (err) {
-    console.warn('Supabase auth verification exception:', err.message);
+
+    const tgId = String(tgValidation.telegramUser.id);
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('telegram_id', tgId)
+      .maybeSingle();
+
+    const dbUser = profile || {
+      id: `tg_${tgId}`,
+      telegram_id: tgId,
+      username: tgValidation.telegramUser.username || `user_${tgId.slice(-4)}`,
+      name: `${tgValidation.telegramUser.first_name || ''} ${tgValidation.telegramUser.last_name || ''}`.trim() || tgValidation.telegramUser.username || 'Telegram User',
+      role: 'user',
+      status: 'approved'
+    };
+
+    return { authenticated: true, user: dbUser, authType: 'telegram', telegramUser: tgValidation.telegramUser };
   }
 
-  return { authenticated: false, error: 'Unauthorized: Invalid or expired authentication token', status: 401 };
+  // 2. Check for Supabase Bearer Auth Token
+  let authHeader = req.headers['authorization'] || req.headers['x-vlive-token'] || bodyData.authToken;
+  if (authHeader) {
+    let token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim();
+    if (token) {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        if (user && !error) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          const dbUser = profile || {
+            id: user.id,
+            username: user.user_metadata?.username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
+            name: user.user_metadata?.full_name || user.user_metadata?.name || 'Authenticated User',
+            role: user.user_metadata?.role || 'user',
+            telegram_id: user.user_metadata?.telegram_id || '',
+            status: 'approved'
+          };
+
+          return { authenticated: true, user: dbUser, authType: 'supabase', rawAuthUser: user };
+        }
+      } catch (err) {
+        console.warn('Supabase auth verification exception:', err.message);
+      }
+    }
+  }
+
+  return { authenticated: false, error: 'Unauthorized: Valid Supabase session or Telegram initData signature required', status: 401 };
 }
 
 // Server-Side Role Determination and Room Authorization Policy Engine
@@ -94,8 +240,12 @@ async function resolveLiveKitPermissions({ authUser, requestedRoomName }) {
   const cleanTg = String(authUser.telegram_id || '').trim();
   const cleanRole = String(authUser.role || '').trim().toLowerCase();
 
-  // 1. Server-side Verified Admin Determination
-  const isAdmin = (cleanTg === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanRole === 'superadmin'));
+  // 1. Server-side Verified Admin Determination (Requires ADMIN_TELEGRAM_ID match and role)
+  const isAdmin = Boolean(
+    ADMIN_TELEGRAM_ID && 
+    cleanTg === String(ADMIN_TELEGRAM_ID).trim() && 
+    (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanRole === 'superadmin')
+  );
 
   // 2. Server-side Approved Streamer Determination
   const isApprovedStreamer = isAdmin || (Boolean(
@@ -129,7 +279,6 @@ async function resolveLiveKitPermissions({ authUser, requestedRoomName }) {
   }
 
   // Room Authorization Check:
-  // Check if room belongs to a specific host ID (pattern: room_<host_id>_<timestamp>)
   let roomHostId = null;
   const roomParts = roomName.split('_');
   if (roomParts.length >= 3 && roomParts[0] === 'room') {
@@ -144,15 +293,10 @@ async function resolveLiveKitPermissions({ authUser, requestedRoomName }) {
     isUserRoomOwner = String(roomHostId) === String(authUser.id) || 
                       (authUser.username && String(roomHostId).toLowerCase() === String(authUser.username).toLowerCase());
   } else {
-    // Generic room request: user is owner if approved streamer
-    isUserRoomOwner = true;
+    isUserRoomOwner = isApprovedStreamer;
   }
 
-  let isHostOrBroadcaster = false;
-  if (isApprovedStreamer && isUserRoomOwner) {
-    // Approved streamer hosting their own room
-    isHostOrBroadcaster = true;
-  }
+  let isHostOrBroadcaster = (isApprovedStreamer && isUserRoomOwner);
 
   // Private Room Restriction Check for Viewers
   const isPrivateRoom = roomName.toLowerCase().includes('private') || roomName.toLowerCase().includes('secret') || (roomRecord && (roomRecord.is_private || roomRecord.live_type === 'private_vip'));
@@ -185,6 +329,10 @@ async function resolveLiveKitPermissions({ authUser, requestedRoomName }) {
 
 // Helper: Real LiveKit Token Generator
 async function createLiveKitToken({ roomName, identity, name, role, canPublish, roomAdmin, roomCreate, metadata = {} }) {
+  if (!LIVEKIT_API_KEY || !LIVEKIT_API_SECRET) {
+    throw new Error('MISSING_LIVEKIT_CREDENTIALS');
+  }
+
   const cleanRoom = String(roomName || `vlive_room_${Date.now()}`).trim();
   const cleanIdentity = String(identity || `user_${Date.now()}`).trim();
   const cleanName = String(name || cleanIdentity || 'User').trim();
@@ -248,7 +396,7 @@ const MIME_TYPES = {
 async function callGeminiBackend(prompt) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return null; // Fallback to server AI analysis engine if key is not configured in env
+    return null;
   }
 
   try {
@@ -311,10 +459,14 @@ async function getSupabaseProfiles() {
 const server = http.createServer(async (req, res) => {
   let reqUrl = req.url.split('?')[0];
 
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Secure CORS Configuration for Telegram Mini App & Authorized Origins
+  const origin = req.headers['origin'];
+  if (origin && isOriginAllowed(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-vlive-token, x-telegram-init-data');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -322,7 +474,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Handle Backend API Endpoints (Users, Streams, Security, Translation)
+  // Handle Backend API Endpoints
   if (reqUrl.startsWith('/api/')) {
     let body = '';
     req.on('data', chunk => { body += chunk; });
@@ -340,22 +492,25 @@ const server = http.createServer(async (req, res) => {
 
       // POST /api/users/save or POST /api/users/auth/telegram - Save or update user profile directly in Supabase
       if (reqUrl === '/api/users/save' || reqUrl === '/api/users/auth/telegram' || reqUrl === '/api/users/profile') {
+        const authResult = await authenticateRequest(req, data);
+        if (!authResult.authenticated) {
+          res.statusCode = authResult.status || 401;
+          return res.end(JSON.stringify({ success: false, error: authResult.error }));
+        }
+
         const inputUser = data.user || data;
-        const cleanUsername = inputUser.username || inputUser.currentUsername || 'User_' + Date.now();
-        const cleanName = inputUser.name || inputUser.first_name || cleanUsername;
+        const cleanUsername = inputUser.username || inputUser.currentUsername || authResult.user.username;
+        const cleanName = inputUser.name || inputUser.first_name || authResult.user.name || cleanUsername;
 
         const profilePayload = {
+          id: authResult.user.id,
           username: cleanUsername,
           name: cleanName,
-          role: inputUser.role || 'user',
-          avatar: inputUser.avatar || inputUser.avatar_url || '',
-          bio: inputUser.bio || '',
+          role: authResult.user.role || 'user', // Role is preserved from authenticated record
+          avatar: inputUser.avatar || inputUser.avatar_url || authResult.user.avatar || '',
+          bio: inputUser.bio || authResult.user.bio || '',
           updated_at: new Date().toISOString()
         };
-
-        if (inputUser.id) {
-          profilePayload.id = inputUser.id;
-        }
 
         const { data: updatedProfile, error } = await supabase
           .from('profiles')
@@ -370,8 +525,7 @@ const server = http.createServer(async (req, res) => {
 
         return res.end(JSON.stringify({
           success: true,
-          user: updatedProfile,
-          access_token: 'jwt_token_' + Date.now()
+          user: updatedProfile
         }));
       }
 
@@ -396,6 +550,15 @@ const server = http.createServer(async (req, res) => {
       // LiveKit Secure Token Generation Endpoint (CRITICAL: Authentic signed server JWT)
       if (reqUrl === '/api/livekit/token' || reqUrl === '/api/streams/token') {
         try {
+          // 0. Verify LiveKit server credentials configuration
+          if (!LIVEKIT_API_KEY || !LIVEKIT_API_SECRET) {
+            res.statusCode = 503;
+            return res.end(JSON.stringify({
+              success: false,
+              error: 'Live streaming service credentials are not configured on server'
+            }));
+          }
+
           const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'client';
           
           // 1. Rate Limiting Protection (Max 15 requests/min per IP)
@@ -441,6 +604,10 @@ const server = http.createServer(async (req, res) => {
           res.statusCode = 200;
           return res.end(JSON.stringify(tokenResult));
         } catch (tokenErr) {
+          if (tokenErr.message === 'MISSING_LIVEKIT_CREDENTIALS') {
+            res.statusCode = 503;
+            return res.end(JSON.stringify({ success: false, error: 'Live streaming service is not configured' }));
+          }
           console.error('Error generating LiveKit token:', tokenErr.message);
           res.statusCode = 500;
           return res.end(JSON.stringify({ success: false, error: 'Failed to generate token. Internal server error.' }));
@@ -461,28 +628,24 @@ const server = http.createServer(async (req, res) => {
         }));
       }
 
-      // GET /api/streams/active - Get active live streams from approved real users
+      // GET /api/streams/active - Get active live streams directly from Supabase
       if (reqUrl === '/api/streams/active') {
-        const users = loadUsersDb();
-        const approvedUsers = getRealApprovedUsers(users);
-        const streams = approvedUsers.map(u => ({
-          id: u.id,
-          host_username: u.username,
-          host_name: u.name,
-          host_avatar: u.avatar,
-          title: u.streamTitle || `${u.name} Live Broadcast 4K`,
-          stream_key: `live_${u.username.toLowerCase()}`,
-          is_live: u.isLive !== false,
-          viewer_count: u.viewers || 350,
-          active_ar_filter: 'Neon Glow ✨',
-          gender: u.gender,
-          city: u.city,
-          age: u.age,
-          isVip: u.isVip,
-          isVerified: u.isVerified,
-          user_type: u.user_type || 'VERIFIED_USER'
-        }));
-        return res.end(JSON.stringify(streams));
+        try {
+          const { data: activeStreams, error } = await supabase
+            .from('live_streams')
+            .select('*')
+            .eq('status', 'active')
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            res.statusCode = 500;
+            return res.end(JSON.stringify({ success: false, error: error.message }));
+          }
+          return res.end(JSON.stringify(activeStreams || []));
+        } catch (e) {
+          res.statusCode = 500;
+          return res.end(JSON.stringify({ success: false, error: e.message }));
+        }
       }
 
       // Real-time Translation API Endpoint
@@ -496,7 +659,7 @@ Text to translate: "${text}"`;
           return res.end(JSON.stringify({ success: true, source: 'Gemini API', translatedText: geminiResult.translatedText }));
         }
 
-        // Smart offline translation fallback
+        // Smart dictionary translation fallback
         let translated = text;
         const trimmed = text.trim();
         const lower = trimmed.toLowerCase();
@@ -546,7 +709,7 @@ Text to translate: "${text}"`;
         return res.end(JSON.stringify({ success: true, source: 'Server AI Engine', translatedText: translated }));
       }
 
-      // 1. Report Analyzer
+      // 1. Report Analyzer (Admin Security API)
       if (reqUrl === '/api/ai-security/analyze-report') {
         const { reportText = '', category = '', user = '' } = data;
         const prompt = `You are an AI Security Moderator for V.Live+. Analyze this user report:
@@ -753,8 +916,7 @@ Return JSON:
       res.end('V.Live+ Server Error: File not found.');
     } else {
       res.writeHead(200, {
-        'Content-Type': contentType,
-        'Access-Control-Allow-Origin': '*'
+        'Content-Type': contentType
       });
       res.end(content);
     }
@@ -764,4 +926,5 @@ Return JSON:
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`V.Live+ Production Server running on port ${PORT}`);
 });
+
 

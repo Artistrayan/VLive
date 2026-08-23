@@ -21,7 +21,7 @@ export async function fetchLiveKitToken({
   const cleanRoom = String(roomName || `vlive_room_${Date.now()}`).trim();
 
   try {
-    // Retrieve authentic session token
+    // Retrieve authentic session token and Telegram WebApp initData
     let sessionToken = '';
     try {
       const sessionRes = await supabase.auth.getSession();
@@ -30,11 +30,17 @@ export async function fetchLiveKitToken({
       sessionToken = getStoredToken() || '';
     }
 
+    let tgInitData = '';
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initData) {
+      tgInitData = window.Telegram.WebApp.initData;
+    }
+
     const response = await fetch('/api/livekit/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(sessionToken ? { 'Authorization': `Bearer ${sessionToken}` } : {})
+        ...(sessionToken ? { 'Authorization': `Bearer ${sessionToken}` } : {}),
+        ...(tgInitData ? { 'x-telegram-init-data': tgInitData } : {})
       },
       body: JSON.stringify({
         roomName: cleanRoom,
