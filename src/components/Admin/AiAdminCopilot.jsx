@@ -35,12 +35,15 @@ export default function AiAdminCopilot({
   }, [chatMessages, isAiTyping]);
 
   // Dynamic Metrics Calculation from Real Data
-  const totalUsersCount = usersList.length || 150;
-  const onlineUsersCount = usersList.filter(u => u.online).length;
+  const totalUsersCount = usersList.length;
+  const onlineUsersCount = usersList.filter(u => u.online || u.isOnline || u.status === 'Online').length;
   const vipUsersCount = usersList.filter(u => u.isVip || u.is_vip || u.vip).length;
-  const streamersCount = usersList.filter(u => u.isStreamer || u.isHost).length;
+  const streamersCount = usersList.filter(u => u.isStreamer || u.isHost || u.is_streamer).length;
   const bannedCount = usersList.filter(u => u.isBanned).length;
   const pendingWithdrawals = adminWithdrawalsList.filter(w => w.status === 'Pending' || w.status === 'Pending Review');
+  const realTotalRevenue = financialTransactionsList
+    .filter(tx => (tx.status === 'Completed' || tx.status === 'SUCCESS' || tx.status === 'Approved') && (tx.type === 'deposit' || tx.type === 'DEPOSIT' || tx.type === 'COIN_PURCHASE'))
+    .reduce((sum, tx) => sum + (Number(tx.amountUsdt || tx.amount) || 0), 0);
 
   // Calculate scores
   const healthScore = 98;
@@ -112,7 +115,7 @@ export default function AiAdminCopilot({
     setTimeout(() => {
       setIsGeneratingReport(false);
       
-      const realTotalWithdrawals = adminWithdrawalsList.filter(w => w.status === 'Approved').reduce((acc, curr) => acc + (curr.amount || 0), 0);
+      const realTotalWithdrawals = adminWithdrawalsList.filter(w => w.status === 'Approved' || w.status === 'Completed').reduce((acc, curr) => acc + (Number(curr.amountUsdt || curr.amount) || 0), 0);
       const realPendingWithdrawalsCount = adminWithdrawalsList.filter(w => w.status === 'Pending' || w.status === 'Pending Review').length;
       
       let rData = {
@@ -122,8 +125,8 @@ export default function AiAdminCopilot({
         kpis: [
           { label: window.loc('مجموع کاربران', 'Total users'), value: totalUsersCount },
           { label: window.loc('کاربران VIP', 'VIP users'), value: vipUsersCount },
-          { label: window.loc('درآمد کل پلتفرم', 'Total platform revenue'), value: `$${(realTotalWithdrawals * 3.4).toLocaleString()} USDT` },
-          { label: window.loc('سود پلتفرم', 'Platform profit'), value: `$${realTotalWithdrawals.toLocaleString()} USDT` },
+          { label: window.loc('درآمد کل پلتفرم (دپازیت)', 'Total platform revenue'), value: `$${realTotalRevenue.toLocaleString()} USDT` },
+          { label: window.loc('مجموع تسویه‌های تاییدشده', 'Approved Payouts'), value: `$${realTotalWithdrawals.toLocaleString()} USDT` },
           { label: window.loc('تعداد استریمرها', 'Streamers Count'), value: streamersCount }
         ],
         details: [

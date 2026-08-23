@@ -51,17 +51,12 @@ export default function LiveStreamSystem({
   const [newLiveThumbnail, setNewLiveThumbnail] = useState('');
   const [newLiveTags, setNewLiveTags] = useState('#game #chat');
 
-  // Check Streamer Permission (Includes verified streamers, Rayan, and Super Admins)
+  // Check Streamer Permission (Includes verified streamers and verified Admins)
   const isApprovedStreamer = Boolean(
     currentUser?.isStreamer || 
     currentUser?.isVerifiedStreamer || 
     currentUser?.user_type === 'STREAMER' ||
-    currentUser?.role === 'admin' ||
-    currentUser?.role === 'super_admin' ||
-    String(currentUser?.telegram_id || '').trim() === '8933698119' ||
-    currentUser?.username === 'Rayan' ||
-    currentUsername === 'Rayan' ||
-    String(currentUsername || '').toLowerCase() === 'rayan_vlive'
+    ((currentUser?.role === 'admin' || currentUser?.role === 'super_admin') && String(currentUser?.telegram_id || '').trim() === '8933698119')
   );
 
   // Fetch / Sync streams from Supabase on load

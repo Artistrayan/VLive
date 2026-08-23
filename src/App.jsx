@@ -78,23 +78,25 @@ export default function App() {
   const [walletSubTab, setWalletSubTab] = useState('deposit');
   const [showEntrySplash, setShowEntrySplash] = useState(false);
 
-  // User Profile & Authentication State
-  const [isLoggedIn, setIsLoggedIn] = useState(() => safeStorage.getItem('vlive_user_logged_in') === 'true');
-  const [userName, setUserName] = useState(() => safeStorage.getItem('vlive_user_name') || 'Guest User');
-  const [currentUsername, setCurrentUsername] = useState(() => safeStorage.getItem('vlive_current_username') || 'guest');
-  const [currentTelegramId, setCurrentTelegramId] = useState(() => safeStorage.getItem('vlive_auth_telegram_id') || '');
-  const [userCoins, setUserCoins] = useState(() => parseInt(safeStorage.getItem('vlive_user_coins') || '1000', 10));
+  // User Profile & Authentication State (Strict Real Identity - No Mock/Fallback)
+  const [authStatus, setAuthStatus] = useState('loading'); // 'loading' | 'authenticated' | 'unauthenticated' | 'error'
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authUserRecord, setAuthUserRecord] = useState(null);
+  const [userName, setUserName] = useState('Guest User');
+  const [currentUsername, setCurrentUsername] = useState('guest');
+  const [currentTelegramId, setCurrentTelegramId] = useState('');
+  const [userCoins, setUserCoins] = useState(0);
   const [userDiamonds, setUserDiamonds] = useState(0);
   const [userCashBalance, setUserCashBalance] = useState(0);
-  const [userGender, setUserGender] = useState(() => safeStorage.getItem('vlive_user_gender') || 'female');
-  const [userAvatar, setUserAvatar] = useState(() => safeStorage.getItem('vlive_user_avatar') || '');
-  const [userBio, setUserBio] = useState(() => safeStorage.getItem('vlive_user_bio') || '');
-  const [isVerified, setIsVerified] = useState(() => safeStorage.getItem('vlive_is_verified') === 'true');
+  const [userGender, setUserGender] = useState('female');
+  const [userAvatar, setUserAvatar] = useState('');
+  const [userBio, setUserBio] = useState('');
+  const [isVerified, setIsVerified] = useState(false);
   const [userRole, setUserRole] = useState('user');
   const [userLevel, setUserLevel] = useState(1);
-  const [vipPlan, setVipPlan] = useState(() => safeStorage.getItem('vlive_vip_plan') || 'Free');
-  const [vipExpireDays, setVipExpireDays] = useState(() => parseInt(safeStorage.getItem('vlive_vip_expire_days') || '0', 10));
-  const [isVipMonthlyClaimed, setIsVipMonthlyClaimed] = useState(() => safeStorage.getItem('vlive_vip_monthly_claimed') === 'true');
+  const [vipPlan, setVipPlan] = useState('Free');
+  const [vipExpireDays, setVipExpireDays] = useState(0);
+  const [isVipMonthlyClaimed, setIsVipMonthlyClaimed] = useState(false);
   const [referralCode, setReferralCode] = useState('');
   const [followedUsers, setFollowedUsers] = useState([]);
   const [authStep, setAuthStep] = useState('welcome');
@@ -407,30 +409,33 @@ export default function App() {
   const mediaStream = useRef(null);
 
   // Derived / Computed Properties
-  const isUserRayan = useMemo(() => {
-    return String(currentUsername).toLowerCase() === 'rayan' || String(currentTelegramId) === '7883907727';
-  }, [currentUsername, currentTelegramId]);
-
   const isUserSuperAdmin = useMemo(() => {
-    return isUserRayan || userRole === 'admin' || userRole === 'superadmin' || isUserAnAdmin(userRole, currentTelegramId);
-  }, [isUserRayan, userRole, currentTelegramId]);
+    return isUserAnAdmin(userRole, currentTelegramId);
+  }, [userRole, currentTelegramId]);
+
+  const isUserRayan = isUserSuperAdmin;
 
   const isTermsAccepted = termsAgreed;
 
-  const currentUser = useMemo(() => ({
-    id: getUserId() || 'user_1',
-    name: userName,
-    username: currentUsername,
-    avatar: userAvatar,
-    coins: userCoins,
-    diamonds: userDiamonds,
-    gender: userGender,
-    role: userRole,
-    isVerified,
-    vipPlan,
-    bio: userBio,
-    telegramId: currentTelegramId
-  }), [userName, currentUsername, userAvatar, userCoins, userDiamonds, userGender, userRole, isVerified, vipPlan, userBio, currentTelegramId]);
+  const currentUser = useMemo(() => {
+    if (!isLoggedIn) return null;
+    return {
+      id: getUserId() || authUserRecord?.id || '',
+      name: userName,
+      username: currentUsername,
+      avatar: userAvatar,
+      coins: userCoins,
+      diamonds: userDiamonds,
+      gender: userGender,
+      role: userRole,
+      isVerified,
+      vipPlan,
+      bio: userBio,
+      telegramId: currentTelegramId,
+      telegram_id: currentTelegramId,
+      ...authUserRecord
+    };
+  }, [isLoggedIn, userName, currentUsername, userAvatar, userCoins, userDiamonds, userGender, userRole, isVerified, vipPlan, userBio, currentTelegramId, authUserRecord]);
 
   const filteredUsersList = useMemo(() => {
     if (!Array.isArray(usersList)) return [];
@@ -897,13 +902,28 @@ export default function App() {
     showToast(loc('پیشنهاد شما با تشکر ثبت شد 💡', 'Suggestion submitted, thank you! 💡'));
   }, [showToast]);
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback(async () => {
+    await apiAuth.logout();
     setIsLoggedIn(false);
+    setAuthStatus('unauthenticated');
+    setAuthUserRecord(null);
+    setUserRole('user');
+    setCurrentTelegramId('');
+    setUserName('Guest User');
+    setCurrentUsername('guest');
+    setUserCoins(0);
+    setUserDiamonds(0);
+    setUserCashBalance(0);
+    setUserAvatar('');
+    setUserBio('');
+    setIsVerified(false);
+    setIsAdminPanelOpen(false);
+    setIsAdminPinModalOpen(false);
+    setActiveAdminSession(null);
+    setShowEntrySplash(false);
     safeStorage.setItem('vlive_user_logged_in', 'false');
-    localStorage.removeItem('vlive_token');
-    localStorage.removeItem('vlive_user_id');
     showToast(loc('با موفقیت خارج شدید', 'Logged out successfully'));
-  }, [showToast]);
+  }, [loc, showToast]);
 
   const handleSavePermissionsPrompt = useCallback((perms) => {
     setIsPermissionsPromptOpen(false);
@@ -1441,66 +1461,94 @@ export default function App() {
   }, [mediaStream, viewingStream]);
   useEffect(() => {
     async function initAuth() {
+      setAuthStatus('loading');
       try {
         const tgApp = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
         if (tgApp) {
           if (typeof tgApp.ready === 'function') tgApp.ready();
           if (typeof tgApp.expand === 'function') tgApp.expand();
-
-          // Auto detect Telegram user profile if launched inside Telegram
-          const tgUser = tgApp.initDataUnsafe?.user;
-          if (tgUser) {
-            const fullTgName = tgUser.first_name ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() : tgUser.username || 'Telegram User';
-            const tgUsername = tgUser.username || `tg_${tgUser.id}`;
-            const tgPhoto = tgUser.photo_url || userAvatar;
-            const tgIdStr = String(tgUser.id);
-            setUserName(fullTgName);
-            setCurrentUsername(tgUsername);
-            setAuthFullName(fullTgName);
-            setAuthUsername(tgUsername);
-            setAuthTelegramId(tgIdStr);
-            setCurrentTelegramId(tgIdStr);
-            if (tgIdStr === '8933698119') {
-              setUserRole('admin');
-            }
-            if (tgPhoto) setUserAvatar(tgPhoto);
-          }
         }
 
-        // Attempt automatic Telegram login via backend API or session token
-        const initData = window.Telegram?.WebApp?.initData || '';
-        const alreadyLoggedIn = safeStorage.getItem('vlive_user_logged_in') === 'true';
-        if (initData || tgApp?.initDataUnsafe?.user || getStoredToken() || alreadyLoggedIn) {
+        const initData = typeof window !== 'undefined' ? (window.Telegram?.WebApp?.initData || '') : '';
+        const hasTgContext = Boolean(initData || tgApp?.initDataUnsafe?.user);
+
+        if (hasTgContext) {
+          // Attempt authentication with genuine Telegram credentials
           const authRes = await apiAuth.loginWithTelegram(initData);
-          if (authRes && authRes.user) {
+          if (authRes && authRes.success && authRes.user) {
             const u = authRes.user;
-            setUserName(u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : u.name || u.username);
+            const fullTgName = u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : (u.name || u.username);
+            const tgIdStr = u.telegram_id ? String(u.telegram_id) : (tgApp?.initDataUnsafe?.user?.id ? String(tgApp.initDataUnsafe.user.id) : '');
+            const cleanRole = String(u.role || '').toLowerCase();
+            const isVerifiedAdmin = (tgIdStr === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin'));
+            const assignedRole = isVerifiedAdmin ? 'admin' : (u.role || 'user');
+
+            setUserName(fullTgName);
             setCurrentUsername(u.username);
-            if (u.wallet_stars) setUserCoins(u.wallet_stars);
+            setAuthUserRecord(u);
+            setUserRole(assignedRole);
+            setCurrentTelegramId(tgIdStr);
+            setAuthTelegramId(tgIdStr);
+            setAuthFullName(fullTgName);
+            setAuthUsername(u.username);
+            if (u.coins || u.wallet_stars) setUserCoins(u.coins || u.wallet_stars);
             if (u.avatar_url || u.avatar) setUserAvatar(u.avatar_url || u.avatar);
-            if (u.telegram_id) {
-              const tgIdStr = String(u.telegram_id);
-              setCurrentTelegramId(tgIdStr);
-              setAuthTelegramId(tgIdStr);
-              if (tgIdStr === '8933698119') {
-                setUserRole('admin');
-              } else if (u.role) {
-                setUserRole(u.role);
-              }
-            } else if (tgApp?.initDataUnsafe?.user?.id) {
-              const tgIdStr = String(tgApp.initDataUnsafe.user.id);
-              setCurrentTelegramId(tgIdStr);
-              setAuthTelegramId(tgIdStr);
-              if (tgIdStr === '8933698119') {
-                setUserRole('admin');
-              }
-            }
+            setIsVerified(u.is_verified || false);
+            
             safeStorage.setItem('vlive_user_logged_in', 'true');
             setIsLoggedIn(true);
+            setAuthStatus('authenticated');
+            return;
           }
         }
+
+        // If no Telegram initData was passed, check if there is an existing valid session in Supabase
+        const sessionRes = await apiAuth.validateSession();
+        if (sessionRes && sessionRes.success && sessionRes.user) {
+          const u = sessionRes.user;
+          const fullName = u.name || u.username;
+          const tgIdStr = u.telegram_id ? String(u.telegram_id) : '';
+          const cleanRole = String(u.role || '').toLowerCase();
+          const isVerifiedAdmin = (tgIdStr === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin'));
+          const assignedRole = isVerifiedAdmin ? 'admin' : (u.role || 'user');
+
+          setUserName(fullName);
+          setCurrentUsername(u.username);
+          setAuthUserRecord(u);
+          setUserRole(assignedRole);
+          setCurrentTelegramId(tgIdStr);
+          setAuthTelegramId(tgIdStr);
+          setAuthFullName(fullName);
+          setAuthUsername(u.username);
+          if (u.coins) setUserCoins(u.coins);
+          if (u.avatar) setUserAvatar(u.avatar);
+          setIsVerified(u.is_verified || false);
+
+          safeStorage.setItem('vlive_user_logged_in', 'true');
+          setIsLoggedIn(true);
+          setAuthStatus('authenticated');
+          return;
+        }
+
+        // Unauthenticated - No mock users or fake logins
+        setIsLoggedIn(false);
+        setAuthStatus('unauthenticated');
+        setAuthUserRecord(null);
+        setUserRole('user');
+        setCurrentTelegramId('');
+        setUserName('Guest User');
+        setCurrentUsername('guest');
+        setUserCoins(0);
+        setUserAvatar('');
+        safeStorage.setItem('vlive_user_logged_in', 'false');
       } catch (e) {
-        console.log('Telegram WebApp init notice:', e);
+        console.warn('initAuth notice:', e);
+        setIsLoggedIn(false);
+        setAuthStatus('unauthenticated');
+        setAuthUserRecord(null);
+        setUserRole('user');
+        setCurrentTelegramId('');
+        safeStorage.setItem('vlive_user_logged_in', 'false');
       }
     }
     initAuth();
@@ -1539,8 +1587,10 @@ export default function App() {
         setEditGender(profile.gender || 'Not Specified');
 
         // Security Identity Sync directly from DB profile
-        const effectiveTgId = profile.telegram_id ? String(profile.telegram_id) : typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : '';
-        const assignedRole = effectiveTgId === '8933698119' || profile.role === 'admin' || profile.role === 'super_admin' ? 'admin' : profile.role || 'user';
+        const effectiveTgId = profile.telegram_id ? String(profile.telegram_id) : (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : '');
+        const cleanRole = String(profile.role || '').toLowerCase();
+        const isVerifiedAdmin = (effectiveTgId === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin'));
+        const assignedRole = isVerifiedAdmin ? 'admin' : (profile.role || 'user');
         setUserRole(assignedRole);
         if (effectiveTgId) {
           setCurrentTelegramId(effectiveTgId);
@@ -1790,13 +1840,14 @@ export default function App() {
           </div>}
         {/* STEP 2: ULTRA-PREMIUM TELEGRAM MINI APP WELCOME & LOGIN SCREEN */}
         {authStep === 'welcome' && (() => {
-        // Extract real Telegram user or saved session
+        // Extract real Telegram user strictly from WebApp context
         const tgApp = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
         const tgUser = tgApp?.initDataUnsafe?.user;
-        const detectedTgName = tgUser?.first_name ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() : (safeStorage.getItem('vlive_user_name') || 'Rayan');
-        const detectedTgUsername = tgUser?.username || safeStorage.getItem('vlive_current_username') || 'rayan_vip';
-        const detectedTgAvatar = tgUser?.photo_url || safeStorage.getItem('vlive_user_avatar') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
-        const detectedTgId = tgUser?.id ? String(tgUser.id) : (safeStorage.getItem('vlive_auth_telegram_id') || '8933698119');
+        const hasTgSession = Boolean(tgUser?.id || (typeof window !== 'undefined' && window.Telegram?.WebApp?.initData));
+        const detectedTgName = tgUser?.first_name ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() : (tgUser?.username || 'Telegram User');
+        const detectedTgUsername = tgUser?.username || (tgUser?.id ? `tg_${tgUser.id}` : 'unauthenticated');
+        const detectedTgAvatar = tgUser?.photo_url || '';
+        const detectedTgId = tgUser?.id ? String(tgUser.id) : '';
 
         const handleTelegramOneTapAuth = async () => {
           if (!termsAgreed) {
@@ -1808,42 +1859,39 @@ export default function App() {
             window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
           }
           const initData = typeof window !== 'undefined' ? window.Telegram?.WebApp?.initData || '' : '';
-          const customUser = (!initData && !window.Telegram?.WebApp?.initDataUnsafe?.user) ? {
-            id: detectedTgId || '8933698119',
-            username: detectedTgUsername || 'rayan_vip',
-            first_name: detectedTgName || 'Rayan',
-            photo_url: detectedTgAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
-          } : null;
 
-          const authRes = await apiAuth.loginWithTelegram(initData, customUser);
+          const authRes = await apiAuth.loginWithTelegram(initData);
           if (authRes && authRes.success && authRes.user) {
             const u = authRes.user;
-            const finalName = u.first_name || u.name || u.username || 'User';
-            const finalUsername = u.username || `user_${String(u.telegram_id || '9999').slice(-4)}`;
-            const finalAvatar = u.avatar_url || u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
-            const assignedRole = u.role || (String(u.telegram_id) === '8933698119' ? 'admin' : 'user');
+            const finalName = u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : (u.name || u.username || 'User');
+            const finalUsername = u.username || (u.telegram_id ? `user_${String(u.telegram_id).slice(-4)}` : 'user');
+            const finalAvatar = u.avatar_url || u.avatar || '';
+            const cleanRole = String(u.role || '').toLowerCase();
+            const isVerifiedAdmin = (String(u.telegram_id) === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin'));
+            const assignedRole = isVerifiedAdmin ? 'admin' : (u.role || 'user');
+
             setUserName(finalName);
             setCurrentUsername(finalUsername);
+            setAuthUserRecord(u);
             setUserAvatar(finalAvatar);
             setAuthFullName(finalName);
             setAuthUsername(finalUsername);
             setUserRole(assignedRole);
             setCurrentTelegramId(u.telegram_id ? String(u.telegram_id) : '');
+            setAuthTelegramId(u.telegram_id ? String(u.telegram_id) : '');
             setIsVerified(u.is_verified || false);
+            if (u.coins || u.wallet_stars) setUserCoins(u.coins || u.wallet_stars);
 
             setIsLoggedIn(true);
+            setAuthStatus('authenticated');
             setHasRegistered(true);
             setShowEntrySplash(false);
             setActiveTab('home');
             safeStorage.setItem('vlive_user_logged_in', 'true');
             safeStorage.setItem('vlive_has_registered', 'true');
-            safeStorage.setItem('vlive_current_username', finalUsername);
-            safeStorage.setItem('vlive_user_name', finalName);
-            safeStorage.setItem('vlive_user_avatar', finalAvatar);
-            safeStorage.setItem('vlive_auth_telegram_id', u.telegram_id ? String(u.telegram_id) : '');
             showToast(loc(`✨ ورود موفق با تلگرام! خوش آمدید @${finalUsername}`, `✨ Authenticated via Telegram! Welcome @${finalUsername}`));
           } else {
-            showToast(loc('❌ خطا در ورود با تلگرام: ' + (authRes?.error || 'Unknown Error'), '❌ Login Failed: ' + (authRes?.error || 'Unknown Error')));
+            showToast(loc('❌ خطا در احراز هویت: ' + (authRes?.message || authRes?.error || 'جلسه تلگرام یافت نشد'), '❌ Auth Failed: ' + (authRes?.message || authRes?.error || 'Telegram session not detected')));
           }
         };
 
@@ -1873,10 +1921,10 @@ export default function App() {
                 </div>
 
                 {/* Telegram App Badge */}
-                <div className="px-3 py-1.5 rounded-2xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 text-[11px] font-black flex items-center gap-1.5 shadow-md backdrop-blur-xl">
-                  <Send className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Telegram Mini App</span>
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <div className={`px-3 py-1.5 rounded-2xl border text-[11px] font-black flex items-center gap-1.5 shadow-md backdrop-blur-xl ${hasTgSession ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300' : 'bg-amber-500/15 border-amber-500/40 text-amber-300'}`}>
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{hasTgSession ? 'Telegram Mini App' : 'Browser Mode'}</span>
+                  <span className={`w-2 h-2 rounded-full ${hasTgSession ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
                 </div>
               </div>
 
@@ -1918,39 +1966,57 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 3. TELEGRAM USER PROFILE CARD */}
-                <div className="relative p-4 rounded-2xl bg-gradient-to-r from-purple-950/90 via-slate-950 to-cyan-950/90 border border-pink-500/40 shadow-xl space-y-3 group hover:border-pink-500/70 transition">
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <img src={detectedTgAvatar} alt={detectedTgName} className="w-13 h-13 rounded-2xl object-cover ring-2 ring-pink-500/80 shadow-md group-hover:scale-105 transition" />
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-950 shadow animate-pulse" />
+                {/* 3. TELEGRAM USER PROFILE CARD OR SESSION NOTICE */}
+                {hasTgSession ? (
+                  <div className="relative p-4 rounded-2xl bg-gradient-to-r from-purple-950/90 via-slate-950 to-cyan-950/90 border border-pink-500/40 shadow-xl space-y-3 group hover:border-pink-500/70 transition">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        {detectedTgAvatar ? (
+                          <img src={detectedTgAvatar} alt={detectedTgName} className="w-13 h-13 rounded-2xl object-cover ring-2 ring-pink-500/80 shadow-md group-hover:scale-105 transition" />
+                        ) : (
+                          <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-pink-600 to-purple-600 flex items-center justify-center text-white font-bold text-lg ring-2 ring-pink-500/80 shadow-md">
+                            {detectedTgName ? detectedTgName.charAt(0).toUpperCase() : 'U'}
+                          </div>
+                        )}
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-950 shadow animate-pulse" />
+                      </div>
+
+                      <div className="text-left flex-1 min-w-0 space-y-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-black text-white truncate">{detectedTgName}</p>
+                          <BadgeCheck className="w-4 h-4 text-blue-400 shrink-0" title="Telegram Verified Account" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-cyan-300 font-mono font-bold">@{detectedTgUsername}</span>
+                          {detectedTgId && <span className="text-[10px] text-slate-400 font-mono">#{detectedTgId}</span>}
+                        </div>
+                      </div>
+
+                      <div className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-black flex items-center gap-1 shadow">
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        <span>Connected</span>
+                      </div>
                     </div>
 
-                    <div className="text-left flex-1 min-w-0 space-y-0.5">
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-sm font-black text-white truncate">{detectedTgName}</p>
-                        <BadgeCheck className="w-4 h-4 text-blue-400 shrink-0" title="Telegram Verified Account" />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-cyan-300 font-mono font-bold">@{detectedTgUsername}</span>
-                        <span className="text-[10px] text-slate-400 font-mono">#{detectedTgId}</span>
-                      </div>
-                    </div>
-
-                    <div className="px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black flex items-center gap-1 shadow">
-                      <Crown className="w-3 h-3 text-amber-400" />
-                      <span>VIP</span>
+                    <div className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-[11px] font-bold">
+                      <span className="text-slate-400 flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        {loc('احراز هویت تلگرام آماده است', 'Telegram Session Verified')}
+                      </span>
+                      <span className="text-emerald-400 font-mono">Ready to Launch</span>
                     </div>
                   </div>
-
-                  <div className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-[11px] font-bold">
-                    <span className="text-slate-400 flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                      {loc('احراز هویت تلگرام آماده است', 'Telegram initData Verified')}
-                    </span>
-                    <span className="text-emerald-400 font-mono">Ready to Launch</span>
+                ) : (
+                  <div className="relative p-4 rounded-2xl bg-amber-950/30 border border-amber-500/40 shadow-xl space-y-2 text-center">
+                    <AlertTriangle className="w-7 h-7 text-amber-400 mx-auto" />
+                    <p className="text-sm font-black text-white">
+                      {loc('جلسه تلگرام یافت نشد', 'Telegram Session Not Detected')}
+                    </p>
+                    <p className="text-xs text-slate-300 font-medium leading-relaxed">
+                      {loc('لطفاً برنامه را از طریق ربات رسمی تلگرام باز کنید تا هویت شما احراز شود.', 'Please open this app through the official Telegram bot to verify your identity securely.')}
+                    </p>
                   </div>
-                </div>
+                )}
 
                 {/* 4. FEATURE HIGHLIGHT BADGES */}
                 <div className="grid grid-cols-2 gap-2 text-[11px] font-bold">
@@ -1976,23 +2042,42 @@ export default function App() {
                 <div className="space-y-3 pt-1">
                   
                   {/* MAIN BUTTON: CONTINUE WITH TELEGRAM */}
-                  <button onClick={handleTelegramOneTapAuth} className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-cyan-500 via-purple-600 to-pink-500 hover:from-cyan-400 hover:to-pink-400 text-white font-black text-sm shadow-[0_0_35px_rgba(236,72,153,0.5)] active:scale-95 transition-all duration-300 flex items-center justify-between border border-cyan-300/50 group relative overflow-hidden">
-                    <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition duration-500" />
-                    <div className="flex items-center gap-3 relative z-10">
-                      <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition">
-                        <Send className="w-5 h-5 group-hover:translate-x-1 transition" />
+                  {hasTgSession ? (
+                    <button onClick={handleTelegramOneTapAuth} className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-cyan-500 via-purple-600 to-pink-500 hover:from-cyan-400 hover:to-pink-400 text-white font-black text-sm shadow-[0_0_35px_rgba(236,72,153,0.5)] active:scale-95 transition-all duration-300 flex items-center justify-between border border-cyan-300/50 group relative overflow-hidden">
+                      <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition duration-500" />
+                      <div className="flex items-center gap-3 relative z-10">
+                        <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition">
+                          <Send className="w-5 h-5 group-hover:translate-x-1 transition" />
+                        </div>
+                        <div className="text-left">
+                          <span className="block font-black text-sm tracking-wide">
+                            {loc('ورود مستقیم با تلگرام', 'Continue with Telegram')}
+                          </span>
+                          <span className="block text-[10px] text-cyan-100 font-medium opacity-90">
+                            {loc('احراز هویت فوری تلگرام', 'Instant Telegram Mini App Auth')}
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <span className="block font-black text-sm tracking-wide">
-                          {loc('ورود مستقیم با تلگرام', 'Continue with Telegram')}
-                        </span>
-                        <span className="block text-[10px] text-cyan-100 font-medium opacity-90">
-                          {loc('احراز هویت فوری تلگرام', 'Instant Telegram Mini App Auth')}
-                        </span>
+                      <ArrowRight className="w-5 h-5 text-white group-hover:translate-x-1 transition relative z-10" />
+                    </button>
+                  ) : (
+                    <a href="https://t.me/vlive_app_bot" target="_blank" rel="noreferrer" className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-sm shadow-[0_0_35px_rgba(6,182,212,0.5)] active:scale-95 transition-all duration-300 flex items-center justify-between border border-cyan-300/50 group relative overflow-hidden">
+                      <div className="flex items-center gap-3 relative z-10">
+                        <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition">
+                          <Send className="w-5 h-5 group-hover:translate-x-1 transition" />
+                        </div>
+                        <div className="text-left">
+                          <span className="block font-black text-sm tracking-wide">
+                            {loc('باز کردن در تلگرام', 'Open in Telegram Bot')}
+                          </span>
+                          <span className="block text-[10px] text-cyan-100 font-medium opacity-90">
+                            @vlive_app_bot
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-white group-hover:translate-x-1 transition relative z-10" />
-                  </button>
+                      <ArrowRight className="w-5 h-5 text-white group-hover:translate-x-1 transition relative z-10" />
+                    </a>
+                  )}
 
                 </div>
 

@@ -54,7 +54,8 @@ export const PLATFORM_RULES = {
 // 11. ADMIN EXEMPTION CHECKER (ادمین شامل هیچ قانونی و محدودیتی نمیشود)
 export function isAdminExempt(userRole, username, telegramId) {
   const cleanTg = String(telegramId || '').trim();
-  if (cleanTg === '8933698119' && (userRole === PLATFORM_RULES.ROLES.SUPER_ADMIN || userRole === PLATFORM_RULES.ROLES.ADMIN)) {
+  const cleanRole = String(userRole || '').trim().toLowerCase();
+  if (cleanTg === '8933698119' && (cleanRole === PLATFORM_RULES.ROLES.SUPER_ADMIN || cleanRole === PLATFORM_RULES.ROLES.ADMIN)) {
     return true;
   }
   return false;

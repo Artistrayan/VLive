@@ -25,10 +25,10 @@ export default function StreamerManagementCenter({
 
   // Selected streamer for score editing
   const [editingStreamer, setEditingStreamer] = useState(null);
-  const [editXp, setEditXp] = useState(4250);
-  const [editReputation, setEditReputation] = useState(9);
-  const [editRank, setEditRank] = useState(7);
-  const [editReason, setEditReason] = useState(window.loc('تعدیل دستی توسط ادمین ارشد', 'Manual adjustment by senior admin'));
+  const [editXp, setEditXp] = useState(0);
+  const [editReputation, setEditReputation] = useState(10);
+  const [editRank, setEditRank] = useState(1);
+  const [editReason, setEditReason] = useState('');
 
   // Level History Logs State
   const [levelHistoryLogs, setLevelHistoryLogs] = useState([]);
@@ -276,9 +276,10 @@ export default function StreamerManagementCenter({
                     <button
                       onClick={() => {
                         setEditingStreamer(s);
-                        setEditXp(s.xp || 4250);
-                        setEditReputation(s.reputationScore ?? 9);
-                        setEditRank(s.creatorRank ?? 7);
+                        setEditXp(Number(s.xp || 0));
+                        setEditReputation(Number(s.reputationScore ?? 10));
+                        setEditRank(Number(s.creatorRank ?? 1));
+                        setEditReason('');
                       }}
                       className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] shadow"
                     >

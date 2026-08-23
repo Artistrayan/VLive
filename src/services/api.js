@@ -45,7 +45,7 @@ export const apiStorage = {
 };
 
 // ==========================================
-// 2. AUTH SERVICE (Telegram & Session)
+// 2. AUTH SERVICE (Telegram & Real Session)
 // ==========================================
 export const apiAuth = {
   async isUsernameTakenInDb(username, excludeUserId = null) {
@@ -70,6 +70,32 @@ export const apiAuth = {
     } catch (err) {
       console.warn('isUsernameTakenInDb exception', err);
       return false;
+    }
+  },
+
+  async validateSession() {
+    try {
+      const { data: authData, error: authErr } = await supabase.auth.getUser();
+      if (authErr || !authData?.user?.id) {
+        return { success: false, unauthenticated: true };
+      }
+      const { data: profileData, error: profErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+      
+      if (profErr || !profileData) {
+        return { success: false, unauthenticated: true };
+      }
+
+      return {
+        success: true,
+        user: profileData,
+        userId: authData.user.id
+      };
+    } catch (e) {
+      return { success: false, unauthenticated: true, error: e?.message };
     }
   },
 
@@ -99,53 +125,62 @@ export const apiAuth = {
   },
 
   async logout() {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('signOut error:', e);
+    }
     localStorage.removeItem('vlive_user_id');
     localStorage.removeItem('vlive_token');
     localStorage.removeItem('vlive_session');
+    localStorage.removeItem('vlive_user_logged_in');
+    localStorage.removeItem('vlive_auth_telegram_id');
+    localStorage.removeItem('vlive_current_username');
+    localStorage.removeItem('vlive_user_name');
+    localStorage.removeItem('vlive_user_avatar');
+    localStorage.removeItem('vlive_user_gender');
+    localStorage.removeItem('vlive_profile_age');
+    localStorage.removeItem('vlive_user_bio');
+    localStorage.removeItem('vlive_is_verified');
+    localStorage.removeItem('vlive_vip_plan');
     return { success: true };
   },
 
-  async loginWithTelegram(initData, customTgUser = null) {
-    let tgUser = customTgUser;
+  async loginWithTelegram(initData) {
+    let tgUser = null;
     try {
-      if (!tgUser && typeof initData === 'string' && initData) {
+      if (typeof initData === 'string' && initData) {
         const urlParams = new URLSearchParams(initData);
         const userParam = urlParams.get('user');
         if (userParam) {
           tgUser = JSON.parse(decodeURIComponent(userParam));
         }
       }
-      // Fallback 1: Check window.Telegram.WebApp.initDataUnsafe
+      // Check window.Telegram.WebApp.initDataUnsafe
       if (!tgUser && typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user) {
         tgUser = window.Telegram.WebApp.initDataUnsafe.user;
       }
-      // Fallback 2: Check localStorage / session for telegram ID
-      if (!tgUser) {
-        const savedTgId = localStorage.getItem('vlive_auth_telegram_id') || localStorage.getItem('vlive_user_telegram_id') || '8933698119';
-        const savedUsername = localStorage.getItem('vlive_current_username') || 'rayan_vip';
-        const savedName = localStorage.getItem('vlive_user_name') || 'Rayan';
-        tgUser = {
-          id: savedTgId,
-          username: savedUsername,
-          first_name: savedName,
-          photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
-        };
-      }
     } catch (e) {
-      console.warn('Could not parse initData', e);
+      console.warn('Could not parse Telegram initData', e);
     }
     
+    // Strict authentication: If no genuine Telegram user is detected, reject immediately.
+    // Do NOT fallback to mock users or hardcoded IDs.
     if (!tgUser || !tgUser.id) {
-      return { success: false, error: 'Telegram identity is currently NOT connected to the application.' };
+      return { 
+        success: false, 
+        error: 'NO_TELEGRAM_SESSION',
+        unauthenticated: true,
+        message: 'Telegram session not detected. Please launch the app inside Telegram.' 
+      };
     }
 
     const tgId = String(tgUser.id);
     const email = `tg_${tgId}@vlive.app`;
     const password = `tg_secure_password_${tgId}!`;
-    const roleForTgUser = (String(tgId) === '8933698119') ? 'admin' : 'user';
+    const isSuperAdminId = (tgId === '8933698119');
 
-    // 1. Try to sign in with password first
+    // 1. Try to sign in with existing credentials
     try {
       const { data: existingUser } = await supabase.auth.signInWithPassword({
         email,
@@ -154,17 +189,25 @@ export const apiAuth = {
       
       if (existingUser?.user) {
         const userId = existingUser.user.id;
+        
+        // Fetch existing profile to preserve role
+        const { data: existingProf } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+        const finalRole = existingProf?.role || (isSuperAdminId ? 'admin' : 'user');
+
         await supabase.from('profiles').update({ 
           telegram_id: tgId, 
           telegram_username: tgUser.username || '',
-          role: roleForTgUser
+          role: finalRole
         }).eq('id', userId);
         
         const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userId).single();
         localStorage.setItem('vlive_user_id', userId);
+        if (existingUser.session?.access_token) {
+          setStoredToken(existingUser.session.access_token);
+        }
         return { 
           success: true, 
-          user: profileData || { id: userId, telegram_id: tgId, role: roleForTgUser, username: tgUser.username }, 
+          user: profileData || { id: userId, telegram_id: tgId, role: finalRole, username: tgUser.username }, 
           token: existingUser.session?.access_token 
         };
       }
@@ -173,8 +216,9 @@ export const apiAuth = {
     }
 
     // 2. Try to sign up if not existing
-    const name = tgUser.first_name || 'Telegram User';
+    const name = tgUser.first_name ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() : (tgUser.username || 'Telegram User');
     const avatar = tgUser.photo_url || '';
+    const initialRole = isSuperAdminId ? 'admin' : 'user';
     
     let authData = null;
     let authError = null;
@@ -183,7 +227,7 @@ export const apiAuth = {
         email,
         password,
         options: {
-          data: { name, avatar }
+          data: { name, avatar, telegram_id: tgId }
         }
       });
       authData = res.data;
@@ -222,7 +266,7 @@ export const apiAuth = {
           avatar,
           telegram_id: tgId,
           telegram_username: tgUser.username || '',
-          role: roleForTgUser,
+          role: initialRole,
           status: 'approved'
       }], { onConflict: 'id' }).select();
 
@@ -237,6 +281,9 @@ export const apiAuth = {
     await supabase.from('wallets').upsert([{ user_id: userId, coins: 5000, usdt_balance: 0.0 }], { onConflict: 'user_id' });
 
     localStorage.setItem('vlive_user_id', userId);
+    if (authData?.session?.access_token) {
+      setStoredToken(authData.session.access_token);
+    }
     return {
       success: true,
       token: authData?.session?.access_token,
@@ -1719,15 +1766,20 @@ export const apiNotifications = {
 // ==========================================
 async function verifyAdminServerRole() {
   try {
-    const { data: authData } = await supabase.auth.getUser();
-    const userId = authData?.user?.id || getUserId();
-    if (!userId) return false;
-    const { data: profile } = await supabase
+    const { data: authData, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !authData?.user?.id) return false;
+    const userId = authData.user.id;
+    const { data: profile, error: profErr } = await supabase
       .from('profiles')
       .select('role, telegram_id')
       .eq('id', userId)
       .single();
-    if (profile && (profile.role === 'admin' || profile.role === 'super_admin' || String(profile.telegram_id) === '8933698119')) {
+    if (profErr || !profile) return false;
+    
+    // Server-side verification: authenticated user must have role 'admin'/'super_admin' AND matching admin Telegram ID
+    const cleanRole = String(profile.role || '').toLowerCase();
+    const cleanTg = String(profile.telegram_id || '').trim();
+    if ((cleanRole === 'admin' || cleanRole === 'super_admin') && cleanTg === '8933698119') {
       return true;
     }
     return false;

@@ -227,7 +227,7 @@ export default function AdminDashboardModal(props) {
 
               <div className="flex items-center gap-2 pt-2">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const cleanUser = enteredAdminUsername.trim();
                     const cleanPass = enteredAdminPassword.trim();
                     const cleanTg = String(currentTelegramId).trim();
@@ -237,14 +237,19 @@ export default function AdminDashboardModal(props) {
                       return;
                     }
 
+                    // Strict server verification
+                    const isServerAdmin = await apiAdmin.verifyAdminServerRole(cleanTg);
+                    if (!isServerAdmin) {
+                      showToast(window.loc('❌ عدم دسترسی: این شناسه تلگرام در سرور به عنوان ادمین مجاز نیست.', '❌ Access Denied: This Telegram ID is not authorized as admin on the server.'));
+                      return;
+                    }
+
                     // Check matching admin in adminRolesList
                     const matchedAdmin = adminRolesList.find(a => 
                       (String(a.telegramId).trim() === cleanTg || cleanTg === '8933698119') &&
                       (a.username === cleanUser || (cleanUser === 'Rayan_Super_Admin' && cleanPass === 'Rayan_0935')) &&
                       (a.password === cleanPass || cleanPass === 'Rayan_0935')
                     );
-
-                    // Super Admin fallback credential match
 
                     if (matchedAdmin) {
                       setActiveAdminSession(matchedAdmin);

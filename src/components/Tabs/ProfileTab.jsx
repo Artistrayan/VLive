@@ -392,7 +392,8 @@ export default function ProfileTab(props) {
   };
 
   const detectedTgId = props.currentUser?.telegram_id || props.currentTelegramId || (typeof window !== 'undefined' ? window.Telegram?.WebApp?.initDataUnsafe?.user?.id : '') || '';
-  const isAdminUser = (props.currentUser?.role === 'admin' || props.userRole === 'admin' || String(detectedTgId).trim() === '8933698119') && String(detectedTgId).trim() === '8933698119';
+  const userRole = props.currentUser?.role || props.userRole || 'user';
+  const isAdminUser = (userRole === 'admin' || userRole === 'super_admin') && String(detectedTgId).trim() === '8933698119';
 
   return (
     <>

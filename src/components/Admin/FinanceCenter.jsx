@@ -249,40 +249,61 @@ export default function FinanceCenter({
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="font-bold text-white text-sm flex items-center gap-2">
                   <BarChart3 className="w-4 h-4 text-emerald-400" />
-                  <span>{window.loc('نمودار رشد درآمد و سهم پلتفرم (Visual Revenue Breakdown)', 'Chart of revenue growth and platform share (Visual Revenue Breakdown)')}</span>
+                  <span>{window.loc('نمودار تراکنش‌های مالی اخیر (Live Transaction Activity)', 'Live Transaction Activity')}</span>
                 </h3>
-                <span className="text-xs text-slate-400 font-mono">{window.loc('سال ۲۰۲۶', 'Year 2026')}</span>
+                <span className="text-xs text-slate-400 font-mono">{financialTransactionsList.length} {window.loc('تراکنش ثبت‌شده', 'recorded txs')}</span>
               </div>
 
-              {/* Visual Simulated Bar Chart */}
-              <div className="h-44 flex items-end justify-between gap-2 pt-4 px-2">
-                {[
-                  { month: 'Far', rev: 40, comm: 12 },
-                  { month: 'Ord', rev: 55, comm: 16 },
-                  { month: 'Khord', rev: 70, comm: 20 },
-                  { month: 'Tir', rev: 85, comm: 25 },
-                  { month: 'Mordad', rev: 100, comm: 29 },
-                  { month: 'Shah', rev: 90, comm: 26 }
-                ].map((item, idx) => (
-                  <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                    <div className="w-full max-w-[28px] rounded-t-xl bg-slate-800 flex flex-col justify-end overflow-hidden h-full">
-                      <div style={{ height: `${item.rev}%` }} className="w-full bg-gradient-to-t from-emerald-600 to-teal-400 rounded-t-xl relative group">
-                        <div style={{ height: `${item.comm}%` }} className="w-full bg-amber-400/80" />
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-bold">{item.month}</span>
+              {/* Real Distribution by category */}
+              <div className="space-y-3 pt-2">
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[11px] font-bold">
+                    <span className="text-slate-300">{window.loc('خرید سکه و شارژ حساب (Deposits):', 'Deposits & Coins:')}</span>
+                    <span className="text-emerald-400 font-mono">${financialTransactionsList.filter(t => t.type === 'deposit' || t.type === 'DEPOSIT' || t.type === 'COIN_PURCHASE').reduce((acc, curr) => acc + (Number(curr.amountUsdt || curr.amount) || 0), 0).toLocaleString()} USDT</span>
                   </div>
-                ))}
+                  <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                    <div 
+                      className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${totalRevenueUsdt > 0 ? Math.min(100, Math.round((financialTransactionsList.filter(t => t.type === 'deposit' || t.type === 'DEPOSIT' || t.type === 'COIN_PURCHASE').reduce((acc, curr) => acc + (Number(curr.amountUsdt || curr.amount) || 0), 0) / totalRevenueUsdt) * 100)) : 0}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[11px] font-bold">
+                    <span className="text-slate-300">{window.loc('اشتراک‌های ویژه VIP:', 'VIP Subscriptions:')}</span>
+                    <span className="text-amber-400 font-mono">${financialTransactionsList.filter(t => t.type === 'vip' || t.type === 'VIP').reduce((acc, curr) => acc + (Number(curr.amountUsdt || curr.amount) || 0), 0).toLocaleString()} USDT</span>
+                  </div>
+                  <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                    <div 
+                      className="bg-amber-400 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${totalRevenueUsdt > 0 ? Math.min(100, Math.round((financialTransactionsList.filter(t => t.type === 'vip' || t.type === 'VIP').reduce((acc, curr) => acc + (Number(curr.amountUsdt || curr.amount) || 0), 0) / totalRevenueUsdt) * 100)) : 0}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[11px] font-bold">
+                    <span className="text-slate-300">{window.loc('هدایای استریم و مینی‌گیم‌ها:', 'Stream Gifts & Games:')}</span>
+                    <span className="text-pink-400 font-mono">{financialTransactionsList.filter(t => t.type === 'gift' || t.type === 'GIFT' || (t.type || '').includes('minigame')).reduce((acc, curr) => acc + (Number(curr.coins || 0)), 0).toLocaleString()} 🪙</span>
+                  </div>
+                  <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                    <div 
+                      className="bg-pink-500 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${financialTransactionsList.length > 0 ? Math.min(100, Math.round((financialTransactionsList.filter(t => t.type === 'gift' || t.type === 'GIFT').length / financialTransactionsList.length) * 100)) : 0}%` }}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center justify-center gap-6 text-[11px] pt-2 border-t border-slate-800/80">
                 <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
                   <span className="w-3 h-3 rounded-full bg-emerald-500" />
-                  <span>{window.loc('کل درآمد پلتفرم', 'Total platform revenue')}</span>
+                  <span>{window.loc('کل درآمد پلتفرم', 'Total platform revenue')}: ${totalRevenueUsdt.toLocaleString()} USDT</span>
                 </span>
                 <span className="flex items-center gap-1.5 text-amber-300 font-bold">
                   <span className="w-3 h-3 rounded-full bg-amber-400" />
-                  <span>{window.loc('کارمزد پلتفرم (', 'platform fee (')}{adminPlatformFee}{window.loc('٪)', '%)')}</span>
+                  <span>{window.loc('سهم پلتفرم (', 'Platform fee (')}{adminPlatformFee}{window.loc('٪)', '%)')}: ${platformCommissionUsdt.toLocaleString()} USDT</span>
                 </span>
               </div>
             </div>
@@ -296,18 +317,18 @@ export default function FinanceCenter({
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">{window.loc('مجموع دارایی کیف پول‌ها:', 'Total assets of wallets:')}</span>
-                    <span className="font-mono font-bold text-white">$412,000 USDT</span>
+                    <span className="text-slate-400">{window.loc('مجموع موجودی کاربران:', 'Total coins in wallets:')}</span>
+                    <span className="font-mono font-bold text-amber-400">{usersList.reduce((sum, u) => sum + (Number(u.coins || u.userCoins) || 0), 0).toLocaleString()} 🪙</span>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400">{window.loc('کاربران دارای VIP فعال:', 'Users with active VIP:')}</span>
-                    <span className="font-mono font-bold text-amber-300">{window.loc('1,280 نفر', '1,280 people')}</span>
+                    <span className="font-mono font-bold text-amber-300">{usersList.filter(u => u.isVip || u.is_vip || u.vip).length} {window.loc('نفر', 'people')}</span>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">{window.loc('استریمرهای دارای درآمد:', 'Streamers with income:')}</span>
-                    <span className="font-mono font-bold text-pink-400">{window.loc('340 استریمر', '340 streamers')}</span>
+                    <span className="text-slate-400">{window.loc('استریمرهای فعال:', 'Active Streamers:')}</span>
+                    <span className="font-mono font-bold text-pink-400">{usersList.filter(u => u.isStreamer || u.isHost || u.is_streamer).length} {window.loc('استریمر', 'streamers')}</span>
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -340,20 +361,20 @@ export default function FinanceCenter({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                 <span className="text-[10px] text-pink-400 font-bold uppercase">{window.loc('درآمد هدایای استریم', 'Stream gifts income')}</span>
-                <p className="text-xl font-black text-white font-mono">$124,000 USDT</p>
-                <span className="text-[10px] text-slate-400 block">{window.loc('سهم پلتفرم: $', 'Platform contribution: $')}{Math.round(124000 * 0.29).toLocaleString()} USDT</span>
+                <p className="text-xl font-black text-white font-mono">{financialTransactionsList.filter(t => t.type === 'gift' || t.type === 'GIFT').reduce((sum, t) => sum + (Number(t.coins) || 0), 0).toLocaleString()} 🪙</p>
+                <span className="text-[10px] text-slate-400 block">{window.loc('تعداد:', 'Count:')} {financialTransactionsList.filter(t => t.type === 'gift' || t.type === 'GIFT').length} {window.loc('هدیه ثبت شده', 'gifts registered')}</span>
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                 <span className="text-[10px] text-amber-400 font-bold uppercase">{window.loc('درآمد اشتراک‌های VIP', 'Earnings from VIP subscriptions')}</span>
-                <p className="text-xl font-black text-white font-mono">$38,500 USDT</p>
+                <p className="text-xl font-black text-white font-mono">${financialTransactionsList.filter(t => t.type === 'vip' || t.type === 'VIP').reduce((sum, t) => sum + (Number(t.amountUsdt || t.amount) || 0), 0).toLocaleString()} USDT</p>
                 <span className="text-[10px] text-slate-400 block">{window.loc('۱۰۰٪ سود متعلق به پلتفرم', '100% profit belongs to the platform')}</span>
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-cyan-400 font-bold uppercase">{window.loc('درآمد تماس‌های خصوصی', 'Income from private calls')}</span>
-                <p className="text-xl font-black text-white font-mono">$22,000 USDT</p>
-                <span className="text-[10px] text-slate-400 block">{window.loc('سهم پلتفرم: $', 'Platform contribution: $')}{Math.round(22000 * 0.29).toLocaleString()} USDT</span>
+                <span className="text-[10px] text-cyan-400 font-bold uppercase">{window.loc('درآمد کل واریزها (Deposits)', 'Total deposits income')}</span>
+                <p className="text-xl font-black text-white font-mono">${financialTransactionsList.filter(t => t.type === 'deposit' || t.type === 'DEPOSIT' || t.type === 'COIN_PURCHASE').reduce((sum, t) => sum + (Number(t.amountUsdt || t.amount) || 0), 0).toLocaleString()} USDT</p>
+                <span className="text-[10px] text-slate-400 block">{window.loc('سهم پلتفرم: $', 'Platform contribution: $')}{Math.round(totalRevenueUsdt * (Number(adminPlatformFee) || 0) / 100).toLocaleString()} USDT</span>
               </div>
             </div>
           </div>
