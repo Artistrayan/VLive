@@ -819,12 +819,12 @@ export async function getOrCreateConversation(userAId, userBId) {
   const u2 = userAId < userBId ? userBId : userAId;
 
   try {
-    // 1. Check existing
-    const { data: existing, error: findErr } = await supabase
+    // 1. Check existing in either orientation
+    const { data: existing } = await supabase
       .from('conversations')
       .select('id, user1_id, user2_id, created_at')
-      .eq('user1_id', u1)
-      .eq('user2_id', u2)
+      .or(`and(user1_id.eq.${u1},user2_id.eq.${u2}),and(user1_id.eq.${u2},user2_id.eq.${u1})`)
+      .limit(1)
       .maybeSingle();
 
     if (existing && existing.id) {
@@ -836,7 +836,7 @@ export async function getOrCreateConversation(userAId, userBId) {
       .from('conversations')
       .insert([{ user1_id: u1, user2_id: u2 }])
       .select()
-      .single();
+      .maybeSingle();
 
     if (created && created.id) {
       return { success: true, conversation: created };
@@ -846,8 +846,8 @@ export async function getOrCreateConversation(userAId, userBId) {
     const { data: retry } = await supabase
       .from('conversations')
       .select('id, user1_id, user2_id, created_at')
-      .eq('user1_id', u1)
-      .eq('user2_id', u2)
+      .or(`and(user1_id.eq.${u1},user2_id.eq.${u2}),and(user1_id.eq.${u2},user2_id.eq.${u1})`)
+      .limit(1)
       .maybeSingle();
 
     if (retry && retry.id) {
@@ -1003,7 +1003,7 @@ export const apiMessages = {
   },
 
   async sendMessage(param1, param2, param3) {
-    const uid = getUserId();
+    let uid = getUserId();
     let conversationId, text, mediaUrl, recipient;
 
     if (typeof param1 === 'object' && param1 !== null) {
@@ -1018,14 +1018,21 @@ export const apiMessages = {
     }
 
     if (!text && !mediaUrl) return { success: false, error: 'Empty message' };
-    if (!uid) return { success: false, error: 'Unauthorized: Please login to send messages' };
 
     try {
+      if (!uid) {
+        const { data: authData } = await supabase.auth.getUser();
+        if (authData?.user?.id) {
+          uid = authData.user.id;
+          localStorage.setItem('vlive_user_id', uid);
+        }
+      }
+
       const senderUuid = await resolveProfileUuid(uid);
-      const recipientUuid = recipient ? await resolveProfileUuid(recipient) : null;
+      const recipientUuid = recipient ? await resolveProfileUuid(recipient) : (conversationId ? await resolveProfileUuid(conversationId) : null);
       const canonicalId = (senderUuid && recipientUuid) ? getCanonicalConversationId(senderUuid, recipientUuid) : (conversationId || `conv_${Date.now()}`);
 
-      let targetConvId = conversationId;
+      let targetConvId = null;
       if (conversationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(conversationId))) {
         targetConvId = String(conversationId);
       } else if (senderUuid && recipientUuid) {
@@ -1053,6 +1060,8 @@ export const apiMessages = {
 
           if (!error && data?.[0]) {
             dbInsertedRecord = data[0];
+          } else if (error) {
+            console.warn('DB message insert note:', error.message);
           }
         } catch (dbErr) {
           console.warn('DB message insert note:', dbErr.message);
@@ -1062,7 +1071,7 @@ export const apiMessages = {
       const formattedRecord = {
         id: dbInsertedRecord?.id || generatedMsgId,
         conversation_id: targetConvId || canonicalId,
-        sender_id: senderUuid || uid,
+        sender_id: senderUuid || uid || 'me',
         sender: 'me',
         content: messageContent,
         text: messageContent,

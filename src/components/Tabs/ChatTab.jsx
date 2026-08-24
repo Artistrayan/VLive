@@ -146,13 +146,45 @@ export default function ChatTab(props) {
     };
   }, []);
 
+  // Helper to reliably match conversations across various ID formats
+  const isTargetConv = (c, activeId, partnerId, canonicalId) => {
+    if (!c) return false;
+    const cid = String(c.id || '').trim();
+    const aid = String(activeId || '').trim();
+    const pid = String(partnerId || '').trim();
+    const canId = String(canonicalId || '').trim();
+    const pUserId = String(c.partner_id || c.user?.id || '').trim();
+    const pUsername = String(c.user?.username || '').trim();
+
+    if (aid && cid === aid) return true;
+    if (canId && cid === canId) return true;
+    if (aid && (pUserId === aid || pUsername === aid)) return true;
+    if (pid && (pUserId === pid || pUsername === pid || cid === pid)) return true;
+    return false;
+  };
+
   // Compute active conversation safely (never null if activeConversationId is set)
   const currentConv = useMemo(() => {
     if (!activeConversationId) return null;
-    let found = (conversations || []).find(c => String(c.id) === String(activeConversationId));
+    const aid = String(activeConversationId).trim();
+    const currentUid = getUserId() || currentUser?.id || currentUsername || '';
+
+    let found = (conversations || []).find(c => {
+      if (!c) return false;
+      const cid = String(c.id || '').trim();
+      const pid = String(c.partner_id || c.user?.id || '').trim();
+      const pUsername = String(c.user?.username || '').trim();
+      if (cid === aid) return true;
+      if (pid === aid) return true;
+      if (pUsername === aid) return true;
+      const canId = (currentUid && (pid || pUsername)) ? getCanonicalConversationId(currentUid, pid || pUsername) : null;
+      if (canId && cid === canId) return true;
+      return false;
+    });
+
     if (!found) {
       const allUsers = activeUsersList && activeUsersList.length > 0 ? activeUsersList : (propUsersList || []);
-      const targetUser = allUsers.find(u => String(u.id) === String(activeConversationId) || u.username === activeConversationId);
+      const targetUser = allUsers.find(u => String(u.id).trim() === aid || String(u.username).trim() === aid);
       if (targetUser) {
         found = {
           id: activeConversationId,
@@ -178,7 +210,7 @@ export default function ChatTab(props) {
           user: {
             id: activeConversationId,
             username: String(activeConversationId),
-            name: `User ${activeConversationId}`,
+            name: `User ${String(activeConversationId).slice(0, 8)}`,
             avatar: '',
             online: true
           },
@@ -190,7 +222,7 @@ export default function ChatTab(props) {
       }
     }
     return found;
-  }, [conversations, activeConversationId, activeUsersList, propUsersList]);
+  }, [conversations, activeConversationId, activeUsersList, propUsersList, currentUser, currentUsername]);
 
   // Determine VIP status of current user
   const isVipUser = useMemo(() => {
@@ -253,7 +285,7 @@ export default function ChatTab(props) {
     if (!activeConversationId) return;
 
     let isMounted = true;
-    const currentUid = getUserId();
+    const currentUid = getUserId() || currentUser?.id || currentUsername || 'me';
     const partnerId = currentConv?.partner_id || currentConv?.user?.id || (currentConv?.user?.username !== currentUid ? currentConv?.user?.username : null) || activeConversationId;
     const canonicalId = (currentUid && partnerId) ? getCanonicalConversationId(currentUid, partnerId) : activeConversationId;
 
@@ -264,38 +296,44 @@ export default function ChatTab(props) {
           const formatted = msgs.map(m => ({
             id: m.id || `msg_${Date.now()}_${Math.random()}`,
             sender: (m.sender_id === currentUid || m.sender === 'me') ? 'me' : 'them',
+            sender_id: m.sender_id,
             text: m.content || m.message_text || m.text || '',
+            content: m.content || m.message_text || m.text || '',
             mediaUrl: m.media_url || m.mediaUrl || '',
             time: m.created_at ? new Date(m.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Now',
+            created_at: m.created_at,
             raw: m
           }));
 
           setConversations(prev => {
-            const list = Array.isArray(prev) ? prev : [];
-            const exists = list.some(c => String(c.id) === String(activeConversationId) || (canonicalId && String(c.id) === String(canonicalId)));
-            if (exists) {
-              return list.map(c => {
-                if (String(c.id) === String(activeConversationId) || (canonicalId && String(c.id) === String(canonicalId))) {
-                  const existingMsgs = c.messages || [];
-                  const merged = [...formatted];
-                  existingMsgs.forEach(existing => {
-                    const alreadyInDb = merged.some(m => m.id === existing.id || (m.text === existing.text && m.sender === existing.sender));
-                    if (!alreadyInDb) {
-                      merged.push(existing);
-                    }
-                  });
-
-                  return {
-                    ...c,
-                    id: canonicalId || c.id,
-                    messages: merged,
-                    lastMessage: merged[merged.length - 1]?.text || c.lastMessage
-                  };
+            const list = Array.isArray(prev) ? [...prev] : [];
+            const matchIndex = list.findIndex(c => isTargetConv(c, activeConversationId, partnerId, canonicalId));
+            
+            if (matchIndex >= 0) {
+              const existingConv = list[matchIndex];
+              const existingMsgs = existingConv.messages || [];
+              const merged = [...formatted];
+              existingMsgs.forEach(existing => {
+                const alreadyInDb = merged.some(m => m.id === existing.id || (m.text === existing.text && m.sender === existing.sender));
+                if (!alreadyInDb) {
+                  merged.push(existing);
                 }
-                return c;
               });
+
+              list[matchIndex] = {
+                ...existingConv,
+                messages: merged,
+                lastMessage: merged[merged.length - 1]?.text || existingConv.lastMessage
+              };
+              return list;
             } else if (currentConv) {
-              return [{ ...currentConv, id: canonicalId || activeConversationId, messages: formatted, lastMessage: formatted[formatted.length - 1]?.text || '' }, ...list];
+              return [{ 
+                ...currentConv, 
+                id: activeConversationId, 
+                partner_id: partnerId,
+                messages: formatted, 
+                lastMessage: formatted[formatted.length - 1]?.text || '' 
+              }, ...list];
             }
             return list;
           });
@@ -321,28 +359,39 @@ export default function ChatTab(props) {
       const incomingFormatted = {
         id: newMsgRecord.id || `msg_${Date.now()}`,
         sender: 'them',
+        sender_id: newMsgRecord.sender_id,
         text: newMsgRecord.content || newMsgRecord.message_text || newMsgRecord.text || '',
+        content: newMsgRecord.content || newMsgRecord.message_text || newMsgRecord.text || '',
         mediaUrl: newMsgRecord.media_url || newMsgRecord.mediaUrl || '',
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
       };
 
       setConversations(prev => {
-        const list = Array.isArray(prev) ? prev : [];
-        return list.map(c => {
-          if (String(c.id) === String(activeConversationId) || (canonicalId && String(c.id) === String(canonicalId))) {
-            const currentMsgs = c.messages || [];
-            if (currentMsgs.some(m => m.id === incomingFormatted.id || (m.text === incomingFormatted.text && m.sender === 'them'))) {
-              return c;
-            }
-            return {
-              ...c,
-              lastMessage: incomingFormatted.text,
-              lastTime: incomingFormatted.time,
-              messages: [...currentMsgs, incomingFormatted]
-            };
+        const list = Array.isArray(prev) ? [...prev] : [];
+        const matchIndex = list.findIndex(c => isTargetConv(c, activeConversationId, partnerId, canonicalId));
+        if (matchIndex >= 0) {
+          const currentMsgs = list[matchIndex].messages || [];
+          if (currentMsgs.some(m => m.id === incomingFormatted.id || (m.text === incomingFormatted.text && m.sender === 'them'))) {
+            return list;
           }
-          return c;
-        });
+          list[matchIndex] = {
+            ...list[matchIndex],
+            lastMessage: incomingFormatted.text,
+            lastTime: incomingFormatted.time,
+            messages: [...currentMsgs, incomingFormatted]
+          };
+          return list;
+        } else if (currentConv) {
+          return [{
+            ...currentConv,
+            id: activeConversationId,
+            partner_id: partnerId,
+            lastMessage: incomingFormatted.text,
+            lastTime: incomingFormatted.time,
+            messages: [incomingFormatted]
+          }, ...list];
+        }
+        return list;
       });
     };
 
@@ -388,45 +437,48 @@ export default function ChatTab(props) {
     }
 
     const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    const currentUid = getUserId();
+    const currentUid = getUserId() || currentUser?.id || currentUsername || 'me';
     const partnerId = currentConv?.partner_id || currentConv?.user?.id || (currentConv?.user?.username !== currentUid ? currentConv?.user?.username : null) || activeConversationId;
     const canonicalId = (currentUid && partnerId) ? getCanonicalConversationId(currentUid, partnerId) : activeConversationId;
 
     const localMsg = {
-      id: Date.now(),
+      id: `local_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       sender: 'me',
+      sender_id: currentUid,
       text: textToSend,
+      content: textToSend,
       time: nowTime,
+      created_at: new Date().toISOString(),
       timestamp: Date.now()
     };
 
-    // 1. Optimistic UI update
+    // 1. Optimistic UI update - instantly shows on screen!
     setConversations(prev => {
-      const list = Array.isArray(prev) ? prev : [];
-      const exists = list.some(c => String(c.id) === String(activeConversationId) || (canonicalId && String(c.id) === String(canonicalId)));
-      if (exists) {
-        return list.map(c => {
-          if (String(c.id) === String(activeConversationId) || (canonicalId && String(c.id) === String(canonicalId))) {
-            return {
-              ...c,
-              id: canonicalId || c.id,
-              lastMessage: textToSend,
-              lastTime: nowTime,
-              messages: [...(c.messages || []), localMsg]
-            };
-          }
-          return c;
-        });
-      } else if (currentConv) {
-        return [{
-          ...currentConv,
-          id: canonicalId || activeConversationId,
+      const list = Array.isArray(prev) ? [...prev] : [];
+      const matchIndex = list.findIndex(c => isTargetConv(c, activeConversationId, partnerId, canonicalId));
+
+      if (matchIndex >= 0) {
+        const existingConv = list[matchIndex];
+        const updatedMsgs = [...(existingConv.messages || []), localMsg];
+        list[matchIndex] = {
+          ...existingConv,
           lastMessage: textToSend,
           lastTime: nowTime,
+          messages: updatedMsgs
+        };
+        return list;
+      } else {
+        const newConv = {
+          ...(currentConv || {}),
+          id: activeConversationId,
+          partner_id: partnerId,
+          lastMessage: textToSend,
+          lastTime: nowTime,
+          unreadCount: 0,
           messages: [localMsg]
-        }, ...list];
+        };
+        return [newConv, ...list];
       }
-      return list;
     });
 
     setDirectInputText('');
@@ -434,19 +486,29 @@ export default function ChatTab(props) {
     // 2. Real API send to Supabase & Realtime multi-channel broadcast
     try {
       const res = await apiMessages.sendMessage({
-        conversationId: canonicalId || activeConversationId,
+        conversationId: activeConversationId,
         recipient: partnerId,
         text: textToSend
       });
       if (res && res.success) {
-        showToast(window.loc('پیام ارسال شد ✅', 'Message sent ✅'));
+        if (res.data?.id) {
+          setConversations(prev => {
+            const list = Array.isArray(prev) ? [...prev] : [];
+            const matchIndex = list.findIndex(c => isTargetConv(c, activeConversationId, partnerId, canonicalId));
+            if (matchIndex >= 0) {
+              list[matchIndex] = {
+                ...list[matchIndex],
+                messages: (list[matchIndex].messages || []).map(m => m.id === localMsg.id ? { ...m, id: res.data.id } : m)
+              };
+            }
+            return list;
+          });
+        }
       } else {
-        const errorMsg = res?.error || 'خطا در ارسال پیام';
-        showToast(window.loc(errorMsg, errorMsg));
+        console.warn('Direct message send note:', res?.error);
       }
     } catch (err) {
       console.warn('Real direct message send exception:', err);
-      showToast(window.loc('خطا در ارسال پیام', 'Failed to send message'));
     }
   };
 
@@ -1315,7 +1377,7 @@ export default function ChatTab(props) {
                               </button>
 
                               <button 
-                                onClick={handleSendDirectMessage}
+                                onClick={() => handleSendDirectMessage()}
                                 className="p-2.5 rounded-2xl btn-neon-pink shadow-lg hover:scale-105 active:scale-95 transition"
                               >
                                 <Send className="w-4 h-4 text-white" />
