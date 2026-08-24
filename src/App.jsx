@@ -287,7 +287,7 @@ export default function App() {
   const [isBuyCoinsModalOpen, setIsBuyCoinsModalOpen] = useState(false);
   const [isVipModalOpen, setIsVipModalOpen] = useState(false);
   const [isVipCelebrationOpen, setIsVipCelebrationOpen] = useState(false);
-  const [selectedVipPlan, setSelectedVipPlan] = useState(null);
+  const [selectedVipPlan, setSelectedVipPlan] = useState('gold');
   const [selectedVipDuration, setSelectedVipDuration] = useState('1month');
   const [selectedVipPayMethod, setSelectedVipPayMethod] = useState('USDT-TRC20');
 
@@ -441,13 +441,13 @@ export default function App() {
       coins: userCoins,
       diamonds: userDiamonds,
       gender: userGender,
-      role: userRole,
       isVerified,
       vipPlan,
       bio: userBio,
       telegramId: currentTelegramId,
-      telegram_id: currentTelegramId,
-      ...authUserRecord
+      ...authUserRecord,
+      role: userRole,
+      telegram_id: currentTelegramId || authUserRecord?.telegram_id || authUserRecord?.telegramId
     };
   }, [isLoggedIn, userName, currentUsername, userAvatar, userCoins, userDiamonds, userGender, userRole, isVerified, vipPlan, userBio, currentTelegramId, authUserRecord]);
 
@@ -1493,9 +1493,10 @@ export default function App() {
             const u = authRes.user;
             const fullTgName = u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : (u.name || u.username);
             const tgIdStr = u.telegram_id ? String(u.telegram_id) : (tgApp?.initDataUnsafe?.user?.id ? String(tgApp.initDataUnsafe.user.id) : '');
-            const cleanRole = String(u.role || '').toLowerCase();
-            const isVerifiedAdmin = (tgIdStr === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin'));
-            const assignedRole = isVerifiedAdmin ? 'admin' : (u.role || 'user');
+            const cleanRole = String(u.role || (u.user_type ? u.user_type.toLowerCase() : '')).toLowerCase();
+            const cleanUserType = String(u.user_type || '').toUpperCase();
+            const isVerifiedAdmin = (tgIdStr === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN'));
+            const assignedRole = isVerifiedAdmin ? 'admin' : (u.role || (u.user_type ? u.user_type.toLowerCase() : 'user'));
 
             setUserName(fullTgName);
             setCurrentUsername(u.username);
@@ -1521,10 +1522,11 @@ export default function App() {
         if (sessionRes && sessionRes.success && sessionRes.user) {
           const u = sessionRes.user;
           const fullName = u.name || u.username;
-          const tgIdStr = u.telegram_id ? String(u.telegram_id) : '';
-          const cleanRole = String(u.role || '').toLowerCase();
-          const isVerifiedAdmin = (tgIdStr === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin'));
-          const assignedRole = isVerifiedAdmin ? 'admin' : (u.role || 'user');
+          const tgIdStr = u.telegram_id ? String(u.telegram_id) : (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : '');
+          const cleanRole = String(u.role || (u.user_type ? u.user_type.toLowerCase() : '')).toLowerCase();
+          const cleanUserType = String(u.user_type || '').toUpperCase();
+          const isVerifiedAdmin = (tgIdStr === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN'));
+          const assignedRole = isVerifiedAdmin ? 'admin' : (u.role || (u.user_type ? u.user_type.toLowerCase() : 'user'));
 
           setUserName(fullName);
           setCurrentUsername(u.username);
@@ -1601,10 +1603,11 @@ export default function App() {
         setEditGender(profile.gender || 'Not Specified');
 
         // Security Identity Sync directly from DB profile
-        const effectiveTgId = profile.telegram_id ? String(profile.telegram_id) : (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : '');
-        const cleanRole = String(profile.role || '').toLowerCase();
-        const isVerifiedAdmin = (effectiveTgId === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin'));
-        const assignedRole = isVerifiedAdmin ? 'admin' : (profile.role || 'user');
+        const effectiveTgId = profile.telegram_id ? String(profile.telegram_id) : (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : currentTelegramId || '');
+        const cleanRole = String(profile.role || (profile.user_type ? profile.user_type.toLowerCase() : '')).toLowerCase();
+        const cleanUserType = String(profile.user_type || '').toUpperCase();
+        const isVerifiedAdmin = (effectiveTgId === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN'));
+        const assignedRole = isVerifiedAdmin ? 'admin' : (profile.role || (profile.user_type ? profile.user_type.toLowerCase() : 'user'));
         setUserRole(assignedRole);
         if (effectiveTgId) {
           setCurrentTelegramId(effectiveTgId);
@@ -1989,7 +1992,7 @@ export default function App() {
                           <img src={detectedTgAvatar} alt={detectedTgName} className="w-13 h-13 rounded-2xl object-cover ring-2 ring-pink-500/80 shadow-md group-hover:scale-105 transition" />
                         ) : (
                           <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-pink-600 to-purple-600 flex items-center justify-center text-white font-bold text-lg ring-2 ring-pink-500/80 shadow-md">
-                            {detectedTgName ? detectedTgName.charAt(0).toUpperCase() : 'U'}
+                            {detectedTgName && typeof detectedTgName === 'string' ? detectedTgName.charAt(0).toUpperCase() : 'U'}
                           </div>
                         )}
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-950 shadow animate-pulse" />

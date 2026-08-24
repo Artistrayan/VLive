@@ -27,7 +27,7 @@ export default function UserProfileViewModal({
   onBlockUser = (() => {}),
   onAdminAction = (() => {})
 }) {
-  const isAdminUser = currentUser?.role === 'admin' && String(currentUser?.telegram_id || '').trim() === '8933698119';
+  const isAdminUser = isUserAnAdmin(currentUser?.role, currentUser?.telegram_id || currentUser?.telegramId);
 
   // --- STATE FOR INTERACTION ---
   const [isFollowing, setIsFollowing] = useState(false);

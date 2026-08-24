@@ -151,7 +151,7 @@ export default function AdminDashboardModal(props) {
   // STRICT ACCESS CONTROL: Only authorized admin with Telegram User ID 8933698119 and DB role 'admin' can view or interact
   const cleanTgId = String(props.currentUser?.telegram_id || props.currentTelegramId || '').trim();
   const userRole = props.currentUser?.role || props.userRole || 'user';
-  const isAuthorizedAdmin = userRole === 'admin' && cleanTgId === '8933698119';
+  const isAuthorizedAdmin = isUserAnAdmin(userRole, cleanTgId);
 
   if (!isAuthorizedAdmin) {
     return null;
@@ -1778,7 +1778,7 @@ export default function AdminDashboardModal(props) {
                           <div key={admin.id || admin.telegramId} className="p-4 rounded-3xl bg-slate-950 border border-slate-800 hover:border-amber-500/40 transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md">
                             <div className="flex items-center gap-3.5">
                               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-purple-500/20 border border-amber-500/30 flex items-center justify-center text-amber-300 font-black text-sm shrink-0">
-                                {admin.name ? admin.name.substring(0, 2).toUpperCase() : 'AD'}
+                                {admin?.name ? String(admin.name).substring(0, 2).toUpperCase() : 'AD'}
                               </div>
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">

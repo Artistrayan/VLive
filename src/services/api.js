@@ -84,9 +84,21 @@ export const apiAuth = {
         return { success: false, unauthenticated: true };
       }
 
+      const tgFromMeta = authData.user.user_metadata?.telegram_id;
+      const tgFromEmail = authData.user.email?.startsWith('tg_') ? authData.user.email.replace('tg_', '').replace('@vlive.app', '') : '';
+      const effectiveTelegramId = tgFromMeta || tgFromEmail || (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : '');
+      const cleanUserType = String(profileData.user_type || '').toUpperCase();
+      const isAdm = (cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN' || profileData.role === 'admin' || profileData.role === 'super_admin' || effectiveTelegramId === '8933698119');
+      const mappedRole = isAdm ? 'admin' : (profileData.role || (profileData.user_type ? profileData.user_type.toLowerCase() : 'user'));
+
       return {
         success: true,
-        user: profileData,
+        user: {
+          ...profileData,
+          telegram_id: effectiveTelegramId,
+          telegramId: effectiveTelegramId,
+          role: mappedRole
+        },
         userId: authData.user.id
       };
     } catch (e) {
@@ -187,12 +199,11 @@ export const apiAuth = {
         
         // Fetch existing profile to preserve role
         const { data: existingProf } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
-        const finalRole = existingProf?.role || (isSuperAdminId ? 'admin' : 'user');
+        const finalRole = existingProf?.role || (existingProf?.user_type ? existingProf.user_type.toLowerCase() : (isSuperAdminId ? 'admin' : 'user'));
+        const finalUserType = (isSuperAdminId || finalRole === 'admin' || finalRole === 'super_admin' || existingProf?.user_type === 'ADMIN' || existingProf?.user_type === 'SUPER_ADMIN') ? 'ADMIN' : (existingProf?.user_type || 'REAL_USER');
 
         await supabase.from('profiles').update({ 
-          telegram_id: tgId, 
-          telegram_username: tgUser.username || '',
-          role: finalRole
+          user_type: finalUserType
         }).eq('id', userId);
         
         const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userId).single();
@@ -200,9 +211,18 @@ export const apiAuth = {
         if (existingUser.session?.access_token) {
           setStoredToken(existingUser.session.access_token);
         }
+        const effectiveRole = (isSuperAdminId || finalRole === 'admin' || finalRole === 'super_admin' || finalUserType === 'ADMIN' || finalUserType === 'SUPER_ADMIN') ? 'admin' : finalRole;
         return { 
           success: true, 
-          user: profileData || { id: userId, telegram_id: tgId, role: finalRole, username: tgUser.username }, 
+          user: {
+            ...(profileData || {}),
+            id: userId,
+            telegram_id: tgId,
+            telegramId: tgId,
+            role: effectiveRole,
+            user_type: finalUserType,
+            username: profileData?.username || tgUser.username || `user_${String(tgId).slice(-4)}`
+          }, 
           token: existingUser.session?.access_token 
         };
       }
@@ -214,6 +234,7 @@ export const apiAuth = {
     const name = tgUser.first_name ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() : (tgUser.username || 'Telegram User');
     const avatar = tgUser.photo_url || '';
     const initialRole = isSuperAdminId ? 'admin' : 'user';
+    const initialUserType = isSuperAdminId ? 'ADMIN' : 'REAL_USER';
     
     let authData = null;
     let authError = null;
@@ -222,7 +243,7 @@ export const apiAuth = {
         email,
         password,
         options: {
-          data: { name, avatar, telegram_id: tgId }
+          data: { name, avatar, telegram_id: tgId, role: initialRole }
         }
       });
       authData = res.data;
@@ -232,15 +253,25 @@ export const apiAuth = {
       authError = err;
     }
 
-    // 3. If already registered or auth error, fetch profile directly
+    // 3. If already registered or auth error, fetch existing session user
     if (authError || !authData?.user?.id) {
-      const { data: directProfile } = await supabase.from('profiles').select('*').eq('telegram_id', tgId).maybeSingle();
-      if (directProfile) {
-        localStorage.setItem('vlive_user_id', directProfile.id);
-        return {
-          success: true,
-          user: directProfile
-        };
+      const { data: authUserCheck } = await supabase.auth.getUser();
+      if (authUserCheck?.user?.id) {
+        const userId = authUserCheck.user.id;
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+        if (profile) {
+          localStorage.setItem('vlive_user_id', userId);
+          return {
+            success: true,
+            user: {
+              ...profile,
+              id: userId,
+              telegram_id: tgId,
+              telegramId: tgId,
+              role: (isSuperAdminId || profile.user_type === 'ADMIN' || profile.role === 'admin') ? 'admin' : 'user'
+            }
+          };
+        }
       }
       if (authError) {
         return { success: false, error: authError.message };
@@ -250,7 +281,7 @@ export const apiAuth = {
     const userId = authData?.user?.id;
     if (!userId) return { success: false, error: 'User creation failed.' };
 
-    const { data: existingProfile } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    const { data: existingProfile } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
     let profileData = existingProfile;
 
     if (!existingProfile) {
@@ -259,9 +290,7 @@ export const apiAuth = {
           name,
           username: tgUser.username || `user_${String(tgId).slice(-4)}`,
           avatar,
-          telegram_id: tgId,
-          telegram_username: tgUser.username || '',
-          role: initialRole,
+          user_type: initialUserType,
           status: 'approved'
       }], { onConflict: 'id' }).select();
 
@@ -282,7 +311,15 @@ export const apiAuth = {
     return {
       success: true,
       token: authData?.session?.access_token,
-      user: profileData
+      user: {
+        ...(profileData || {}),
+        id: userId,
+        telegram_id: tgId,
+        telegramId: tgId,
+        role: initialRole,
+        user_type: initialUserType,
+        username: profileData?.username || tgUser.username || `user_${String(tgId).slice(-4)}`
+      }
     };
   }
 };
@@ -307,8 +344,18 @@ export const apiProfile = {
       const birthDateVal = profile.birth_date || profile.birthdate || profile.birthday || profile.birthDate;
       const computedAge = birthDateVal ? calculateAge(birthDateVal) : (profile.age || null);
 
+      const tgFromMeta = authData?.user?.user_metadata?.telegram_id;
+      const tgFromEmail = authData?.user?.email?.startsWith('tg_') ? authData.user.email.replace('tg_', '').replace('@vlive.app', '') : '';
+      const effectiveTelegramId = tgFromMeta || tgFromEmail || (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : '');
+      const cleanUserType = String(profile.user_type || '').toUpperCase();
+      const isAdm = (cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN' || profile.role === 'admin' || profile.role === 'super_admin' || effectiveTelegramId === '8933698119');
+      const mappedRole = isAdm ? 'admin' : (profile.role || (profile.user_type ? profile.user_type.toLowerCase() : 'user'));
+
       return {
         ...profile,
+        role: mappedRole,
+        telegram_id: effectiveTelegramId,
+        telegramId: effectiveTelegramId,
         birth_date: birthDateVal || '',
         age: computedAge !== null ? computedAge : profile.age,
         coins: wallet?.coins ?? 0,
@@ -1254,7 +1301,7 @@ export const apiWallet = {
         
       const timeStr = new Date(tx.created_at).toLocaleString();
       return {
-        id: tx.id ? tx.id.slice(0,8).toUpperCase() : 'TX',
+        id: tx?.id ? String(tx.id).slice(0,8).toUpperCase() : 'TX',
         type: tx.tx_type,
         description: tx.description,
         amount: amountStr,
@@ -1364,7 +1411,7 @@ export const apiWallet = {
         .order('created_at', { ascending: false });
       if (error || !data) return [];
       return data.map(p => ({
-        id: p.id ? p.id.slice(0, 8).toUpperCase() : 'PO',
+        id: p?.id ? String(p.id).slice(0, 8).toUpperCase() : 'PO',
         amount: `$${p.amount_usdt} USDT`,
         method: p.payout_method || 'TRC20',
         date: new Date(p.created_at).toLocaleDateString(),
@@ -1705,15 +1752,22 @@ async function verifyAdminServerRole() {
     const userId = authData.user.id;
     const { data: profile, error: profErr } = await supabase
       .from('profiles')
-      .select('role, telegram_id')
+      .select('*')
       .eq('id', userId)
       .single();
     if (profErr || !profile) return false;
     
-    // Server-side verification: authenticated user must have role 'admin'/'super_admin' AND matching admin Telegram ID
+    // Server-side verification: authenticated user must have role 'admin'/'super_admin' or user_type 'ADMIN'/'SUPER_ADMIN' AND matching admin Telegram ID
+    const tgFromMeta = authData.user.user_metadata?.telegram_id;
+    const tgFromEmail = authData.user.email?.startsWith('tg_') ? authData.user.email.replace('tg_', '').replace('@vlive.app', '') : '';
+    const cleanTg = String(profile.telegram_id || tgFromMeta || tgFromEmail || '').trim();
+    const cleanUserType = String(profile.user_type || '').toUpperCase();
     const cleanRole = String(profile.role || '').toLowerCase();
-    const cleanTg = String(profile.telegram_id || '').trim();
-    if ((cleanRole === 'admin' || cleanRole === 'super_admin') && cleanTg === '8933698119') {
+    
+    const isAdmRole = cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN';
+    const isAdmTg = cleanTg === '8933698119';
+    
+    if (isAdmRole && isAdmTg) {
       return true;
     }
     return false;
@@ -1954,7 +2008,7 @@ export const apiAdmin = {
       if (status === 'Approved' && userId) {
         await supabase
           .from('profiles')
-          .update({ is_verified: true, role: 'streamer' })
+          .update({ is_verified: true, user_type: 'STREAMER' })
           .eq('id', userId);
       }
       return { success: !error };

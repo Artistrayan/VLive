@@ -177,18 +177,16 @@ async function authenticateRequest(req, bodyData = {}) {
     }
 
     const tgId = String(tgValidation.telegramUser.id);
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('telegram_id', tgId)
-      .maybeSingle();
-
-    const dbUser = profile || {
+    const isSuperAdminId = (tgId === '8933698119' || tgId === String(ADMIN_TELEGRAM_ID || '').trim());
+    
+    // In Telegram initData auth, user is authentic
+    const dbUser = {
       id: `tg_${tgId}`,
       telegram_id: tgId,
       username: tgValidation.telegramUser.username || `user_${tgId.slice(-4)}`,
       name: `${tgValidation.telegramUser.first_name || ''} ${tgValidation.telegramUser.last_name || ''}`.trim() || tgValidation.telegramUser.username || 'Telegram User',
-      role: 'user',
+      role: isSuperAdminId ? 'admin' : 'user',
+      user_type: isSuperAdminId ? 'ADMIN' : 'REAL_USER',
       status: 'approved'
     };
 
@@ -209,13 +207,21 @@ async function authenticateRequest(req, bodyData = {}) {
             .eq('id', user.id)
             .maybeSingle();
 
-          const dbUser = profile || {
+          const tgFromEmail = (user.email && user.email.startsWith('tg_')) ? user.email.replace('tg_', '').replace('@vlive.app', '') : '';
+          const tgId = String(user.user_metadata?.telegram_id || tgFromEmail || profile?.telegram_id || '').trim();
+          const cleanUserType = String(profile?.user_type || '').toUpperCase();
+          const cleanRole = String(profile?.role || user.user_metadata?.role || (cleanUserType === 'ADMIN' ? 'admin' : 'user')).toLowerCase();
+          const isSuperAdmin = (tgId === '8933698119' || (ADMIN_TELEGRAM_ID && tgId === String(ADMIN_TELEGRAM_ID).trim()));
+
+          const dbUser = {
+            ...(profile || {}),
             id: user.id,
-            username: user.user_metadata?.username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
-            name: user.user_metadata?.full_name || user.user_metadata?.name || 'Authenticated User',
-            role: user.user_metadata?.role || 'user',
-            telegram_id: user.user_metadata?.telegram_id || '',
-            status: 'approved'
+            username: profile?.username || user.user_metadata?.username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
+            name: profile?.name || user.user_metadata?.full_name || user.user_metadata?.name || 'Authenticated User',
+            role: (isSuperAdmin || cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN') ? 'admin' : cleanRole,
+            user_type: (isSuperAdmin || cleanUserType === 'ADMIN') ? 'ADMIN' : (profile?.user_type || 'REAL_USER'),
+            telegram_id: tgId,
+            status: profile?.status || 'approved'
           };
 
           return { authenticated: true, user: dbUser, authType: 'supabase', rawAuthUser: user };
@@ -239,12 +245,13 @@ async function resolveLiveKitPermissions({ authUser, requestedRoomName }) {
 
   const cleanTg = String(authUser.telegram_id || '').trim();
   const cleanRole = String(authUser.role || '').trim().toLowerCase();
+  const cleanUserType = String(authUser.user_type || '').toUpperCase();
+  const isAdmRole = cleanRole === 'admin' || cleanRole === 'super_admin' || cleanRole === 'superadmin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN';
 
   // 1. Server-side Verified Admin Determination (Requires ADMIN_TELEGRAM_ID match and role)
   const isAdmin = Boolean(
-    ADMIN_TELEGRAM_ID && 
-    cleanTg === String(ADMIN_TELEGRAM_ID).trim() && 
-    (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanRole === 'superadmin')
+    (ADMIN_TELEGRAM_ID && cleanTg === String(ADMIN_TELEGRAM_ID).trim() && isAdmRole) ||
+    (!ADMIN_TELEGRAM_ID && cleanTg === '8933698119' && isAdmRole)
   );
 
   // 2. Server-side Approved Streamer Determination

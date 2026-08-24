@@ -298,14 +298,14 @@ export default function VipAndRewardModals(props) {
                         setIsVipMonthlyClaimed(false);
                         setIsVipModalOpen(false);
                         setIsVipCelebrationOpen(true);
-                        showToast(window.loc(`👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت در دیتابیس فعال شد!`, `👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت در دیتابیس فعال شد!`));
+                        showToast(window.loc(`👑 اشتراک ${(selectedVipPlan || 'gold').toUpperCase()} با موفقیت در دیتابیس فعال شد!`, `👑 اشتراک ${(selectedVipPlan || 'gold').toUpperCase()} با موفقیت در دیتابیس فعال شد!`));
                       } else {
                         showToast(window.loc('خطا در فعال‌سازی اشتراک: ', 'Error activating subscription: ') + (res?.error || ''));
                       }
                     }}
                     className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition"
                   >
-                    {window.loc('تایید و فعال‌سازی اشتراک', 'Subscription confirmation and activation')} {selectedVipPlan.toUpperCase()} ({selectedVipDuration} {window.loc('ماهه)', 'month)')}
+                    {window.loc('تایید و فعال‌سازی اشتراک', 'Subscription confirmation and activation')} {(selectedVipPlan || 'gold').toUpperCase()} ({selectedVipDuration} {window.loc('ماهه)', 'month)')}
                   </button>
                 </div>
               </div>

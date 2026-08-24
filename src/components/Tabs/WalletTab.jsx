@@ -2241,7 +2241,7 @@ export default function WalletTab(props) {
                               safeStorage.setItem('vlive_vip_monthly_claimed', 'false');
 
                               setIsVipCelebrationOpen(true);
-                              showToast(window.loc(`👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت در دیتابیس فعال شد!`, `👑 اشتراک ${selectedVipPlan.toUpperCase()} با موفقیت در دیتابیس فعال شد!`));
+                              showToast(window.loc(`👑 اشتراک ${(selectedVipPlan || 'VIP').toUpperCase()} با موفقیت در دیتابیس فعال شد!`, `👑 اشتراک ${(selectedVipPlan || 'VIP').toUpperCase()} با موفقیت در دیتابیس فعال شد!`));
                             } else {
                               showToast(window.loc('خطا در خرید اشتراک VIP: ', 'Error purchasing VIP: ') + (res?.error || ''));
                             }
@@ -2249,7 +2249,7 @@ export default function WalletTab(props) {
                           className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-[0_0_25px_rgba(245,158,11,0.4)] hover:brightness-110 transition active:scale-95 flex items-center justify-center gap-2 animate-pulse"
                         >
                           <Crown className="w-4 h-4 fill-slate-950" />
-                          <span>{window.loc('تایید و فعال‌سازی اشتراک', 'Subscription confirmation and activation')} {selectedVipPlan.toUpperCase()} ({selectedVipDuration} {window.loc('ماهه)', 'month)')}</span>
+                          <span>{window.loc('تایید و فعال‌سازی اشتراک', 'Subscription confirmation and activation')} {(selectedVipPlan || 'VIP').toUpperCase()} ({selectedVipDuration} {window.loc('ماهه)', 'month)')}</span>
                         </button>
                       )}
                     </div>

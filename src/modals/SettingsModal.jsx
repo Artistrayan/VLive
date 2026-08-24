@@ -584,7 +584,7 @@ export default function SettingsModal(props) {
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
                       <div>
                         <p className="font-bold text-white">{window.loc('Accent Color (رنگ اصلی)', 'Accent Color (main color)')}</p>
-                        <span className="text-[10px] text-slate-400">{appAccentColor.toUpperCase()}</span>
+                        <span className="text-[10px] text-slate-400">{String(appAccentColor || 'pink').toUpperCase()}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         {['pink', 'purple', 'cyan', 'amber', 'emerald'].map(c => (

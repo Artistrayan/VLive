@@ -393,7 +393,7 @@ export default function ProfileTab(props) {
 
   const detectedTgId = props.currentUser?.telegram_id || props.currentTelegramId || (typeof window !== 'undefined' ? window.Telegram?.WebApp?.initDataUnsafe?.user?.id : '') || '';
   const userRole = props.currentUser?.role || props.userRole || 'user';
-  const isAdminUser = (userRole === 'admin' || userRole === 'super_admin') && String(detectedTgId).trim() === '8933698119';
+  const isAdminUser = isUserAnAdmin(userRole, detectedTgId);
 
   return (
     <>
@@ -1169,7 +1169,7 @@ export default function ProfileTab(props) {
                 <Crown className="w-8 h-8 text-amber-400 fill-amber-400 animate-pulse" />
                 <div>
                   <h3 className="font-black text-white text-lg">VIP Member Status</h3>
-                  <p className="text-xs text-amber-300 font-semibold">{vipPlan ? `Active Plan: ${vipPlan.toUpperCase()}` : 'Standard VIP Member'}</p>
+                  <p className="text-xs text-amber-300 font-semibold">{vipPlan && typeof vipPlan === 'string' ? `Active Plan: ${vipPlan.toUpperCase()}` : 'Standard VIP Member'}</p>
                 </div>
               </div>
               <button

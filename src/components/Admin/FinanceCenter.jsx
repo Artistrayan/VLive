@@ -699,7 +699,7 @@ export default function FinanceCenter({
 
                       const val = `$${(Number(tx.amount_usdt || tx.amount || (tx.amount_coins ? tx.amount_coins / 100 : 0)) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                       const time = tx.created_at ? new Date(tx.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : (tx.time || '—');
-                      const docId = `JE-${tx.id ? String(tx.id).slice(0, 6).toUpperCase() : (1000 + i)}`;
+                      const docId = `JE-${tx?.id ? String(tx.id).slice(0, 6).toUpperCase() : (1000 + i)}`;
 
                       return (
                         <tr key={tx.id || i} className="hover:bg-slate-850">
