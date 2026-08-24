@@ -763,10 +763,17 @@ export default function App() {
 
   // Realtime Call Signaling Listener
   useEffect(() => {
-    const uid = currentUser?.id || currentUsername;
-    if (!uid) return;
+    const targets = new Set();
+    if (currentUser?.id) targets.add(currentUser.id);
+    if (currentUser?.username) targets.add(currentUser.username);
+    if (currentUser?.telegram_id) targets.add(currentUser.telegram_id);
+    if (currentUsername) targets.add(currentUsername);
 
-    const sigChannel = apiCalls.subscribeToCallSignals(uid, (payload) => {
+    if (targets.size === 0) return;
+
+    const channels = [];
+
+    const handleCallSignal = (payload) => {
       if (!payload) return;
       if (payload.type === 'INCOMING_CALL') {
         setIncomingCall(payload);
@@ -781,12 +788,19 @@ export default function App() {
         setActiveCall(null);
         showToast(loc('تماس به پایان رسید', 'Call ended'));
       }
+    };
+
+    targets.forEach(tid => {
+      const sigChannel = apiCalls.subscribeToCallSignals(tid, handleCallSignal);
+      if (sigChannel) channels.push(sigChannel);
     });
 
     return () => {
-      if (sigChannel) supabase.removeChannel(sigChannel);
+      channels.forEach(ch => {
+        try { supabase.removeChannel(ch); } catch {}
+      });
     };
-  }, [currentUser?.id, currentUsername, loc, showToast]);
+  }, [currentUser?.id, currentUser?.username, currentUser?.telegram_id, currentUsername, loc, showToast]);
 
   // Call Duration & Billing Interval
   useEffect(() => {

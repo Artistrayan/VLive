@@ -213,11 +213,20 @@ export default function ChatTab(props) {
             if (exists) {
               return list.map(c => {
                 if (String(c.id) === String(activeConversationId) || (canonicalId && String(c.id) === String(canonicalId))) {
+                  const existingMsgs = c.messages || [];
+                  const merged = [...formatted];
+                  existingMsgs.forEach(existing => {
+                    const alreadyInDb = merged.some(m => m.id === existing.id || (m.text === existing.text && m.sender === existing.sender));
+                    if (!alreadyInDb) {
+                      merged.push(existing);
+                    }
+                  });
+
                   return {
                     ...c,
                     id: canonicalId || c.id,
-                    messages: formatted,
-                    lastMessage: formatted[formatted.length - 1]?.text || c.lastMessage
+                    messages: merged,
+                    lastMessage: merged[merged.length - 1]?.text || c.lastMessage
                   };
                 }
                 return c;
@@ -236,10 +245,15 @@ export default function ChatTab(props) {
     loadRealMessages();
 
     // 1. Subscribe to realtime incoming messages for active conversation
-    const channel = apiMessages.subscribeToConversation(activeConversationId, (newMsgRecord) => {
+    const channels = [];
+    const convTargets = new Set();
+    if (activeConversationId) convTargets.add(activeConversationId);
+    if (canonicalId) convTargets.add(canonicalId);
+
+    const handleIncomingMessage = (newMsgRecord) => {
       if (!isMounted || !newMsgRecord) return;
-      const isMe = newMsgRecord.sender_id === currentUid;
-      if (isMe) return; // already added optimistically
+      const isMe = (newMsgRecord.sender_id === currentUid || newMsgRecord.sender === 'me');
+      if (isMe) return;
 
       const incomingFormatted = {
         id: newMsgRecord.id || `msg_${Date.now()}`,
@@ -254,7 +268,7 @@ export default function ChatTab(props) {
         return list.map(c => {
           if (String(c.id) === String(activeConversationId) || (canonicalId && String(c.id) === String(canonicalId))) {
             const currentMsgs = c.messages || [];
-            if (currentMsgs.some(m => m.id === incomingFormatted.id || (m.text === incomingFormatted.text && m.sender === 'them' && Math.abs(Date.now() - (m.timestamp || 0)) < 2500))) {
+            if (currentMsgs.some(m => m.id === incomingFormatted.id || (m.text === incomingFormatted.text && m.sender === 'them'))) {
               return c;
             }
             return {
@@ -267,58 +281,32 @@ export default function ChatTab(props) {
           return c;
         });
       });
-    }, partnerId);
+    };
 
-    // 2. Subscribe to current user personal inbox for messages from other users
-    let inboxChannel = null;
-    if (currentUid) {
-      inboxChannel = apiMessages.subscribeToUserInbox(currentUid, (newMsgRecord) => {
-        if (!isMounted || !newMsgRecord) return;
-        if (newMsgRecord.sender_id === currentUid) return;
+    convTargets.forEach(targetId => {
+      const ch = apiMessages.subscribeToConversation(targetId, handleIncomingMessage, partnerId);
+      if (ch) channels.push(ch);
+    });
 
-        const isCurrentChat = (
-          newMsgRecord.sender_id === partnerId ||
-          newMsgRecord.conversation_id === activeConversationId ||
-          newMsgRecord.conversation_id === canonicalId
-        );
+    // 2. Subscribe to current user personal inboxes
+    const userTargets = new Set();
+    if (currentUid) userTargets.add(currentUid);
+    if (currentUser?.id) userTargets.add(currentUser.id);
+    if (currentUser?.username) userTargets.add(currentUser.username);
+    if (currentUser?.telegram_id) userTargets.add(currentUser.telegram_id);
 
-        if (isCurrentChat) {
-          const incomingFormatted = {
-            id: newMsgRecord.id || `msg_${Date.now()}`,
-            sender: 'them',
-            text: newMsgRecord.message_text || newMsgRecord.text || '',
-            mediaUrl: newMsgRecord.media_url || '',
-            time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-          };
-
-          setConversations(prev => {
-            const list = Array.isArray(prev) ? prev : [];
-            return list.map(c => {
-              if (String(c.id) === String(activeConversationId) || (canonicalId && String(c.id) === String(canonicalId))) {
-                const currentMsgs = c.messages || [];
-                if (currentMsgs.some(m => m.id === incomingFormatted.id)) {
-                  return c;
-                }
-                return {
-                  ...c,
-                  lastMessage: incomingFormatted.text,
-                  lastTime: incomingFormatted.time,
-                  messages: [...currentMsgs, incomingFormatted]
-                };
-              }
-              return c;
-            });
-          });
-        }
-      });
-    }
+    userTargets.forEach(uId => {
+      const ch = apiMessages.subscribeToUserInbox(uId, handleIncomingMessage);
+      if (ch) channels.push(ch);
+    });
 
     return () => {
       isMounted = false;
-      if (channel) channel.unsubscribe();
-      if (inboxChannel) inboxChannel.unsubscribe();
+      channels.forEach(ch => {
+        try { supabase.removeChannel(ch); } catch {}
+      });
     };
-  }, [activeConversationId, currentConv]);
+  }, [activeConversationId, currentConv, currentUser]);
 
   // Real message send handler
   const handleSendDirectMessage = async (customText) => {
