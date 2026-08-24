@@ -8,7 +8,7 @@ import {
   CheckCheck, Send, Mic, Image, Paperclip, Smile, Gift, Sparkles, X, ChevronRight,
   Shield, Check, UserPlus, Phone, Camera, User, Users, Archive, VolumeX, ChevronLeft,
   MoreVertical, Lock, AlertTriangle, Ban, Globe, Bot, MapPin, DollarSign, MicOff,
-  UserCheck
+  UserCheck, Crown, Clock
 } from 'lucide-react';
 
 export default function ChatTab(props) {
@@ -16,6 +16,10 @@ export default function ChatTab(props) {
     activeTab,
     currentUser,
     currentUsername,
+    vipPlan,
+    setIsVipModalOpen = (() => {}),
+    userRole,
+    isUserRayan,
     usersList: propUsersList,
     isAutoTranslateActive: propAutoTranslate,
     setIsAutoTranslateActive: propSetAutoTranslate,
@@ -188,6 +192,62 @@ export default function ChatTab(props) {
     return found;
   }, [conversations, activeConversationId, activeUsersList, propUsersList]);
 
+  // Determine VIP status of current user
+  const isVipUser = useMemo(() => {
+    return Boolean(
+      currentUser?.is_vip || 
+      currentUser?.isVip || 
+      vipPlan || 
+      userRole === 'admin' || 
+      userRole === 'super_admin' || 
+      isUserRayan || 
+      currentUsername?.toLowerCase() === 'rayan' ||
+      (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id === 8933698119)
+    );
+  }, [currentUser, vipPlan, userRole, isUserRayan, currentUsername]);
+
+  // Compute 10-message limit and first-reply gating rules
+  const conversationLimitInfo = useMemo(() => {
+    if (!currentConv || currentConv.isGroup || currentConv.type === 'group') {
+      return {
+        mySentCount: 0,
+        receivedReplyCount: 0,
+        hasReceivedReply: true,
+        isWaitingForFirstReply: false,
+        isVipRequired: false,
+        freeRemaining: 10
+      };
+    }
+
+    const currentUid = getUserId() || currentUser?.id || currentUsername || 'me';
+    const msgs = Array.isArray(currentConv.messages) ? currentConv.messages : [];
+    
+    const mySent = msgs.filter(m => m.sender === 'me' || m.sender_id === currentUid);
+    const theirReplies = msgs.filter(m => m.sender === 'them' || (m.sender_id && m.sender_id !== currentUid && m.sender_id !== 'me'));
+    
+    const mySentCount = mySent.length;
+    const receivedReplyCount = theirReplies.length;
+    const hasReceivedReply = receivedReplyCount > 0;
+
+    // Rule 1: Sender sent 1 or more messages, but partner has not replied yet.
+    // If not VIP, they must wait for the partner's reply before continuing the chat.
+    const isWaitingForFirstReply = !isVipUser && mySentCount >= 1 && !hasReceivedReply;
+
+    // Rule 2: After reply received, up to 10 total messages sent by this user are free.
+    // After 10 messages, VIP membership is required.
+    const isVipRequired = !isVipUser && mySentCount >= 10;
+    const freeRemaining = Math.max(0, 10 - mySentCount);
+
+    return {
+      mySentCount,
+      receivedReplyCount,
+      hasReceivedReply,
+      isWaitingForFirstReply,
+      isVipRequired,
+      freeRemaining
+    };
+  }, [currentConv, currentUser, currentUsername, isVipUser]);
+
   // Sync real messages from Supabase when opening a conversation
   useEffect(() => {
     if (!activeConversationId) return;
@@ -315,6 +375,17 @@ export default function ChatTab(props) {
   const handleSendDirectMessage = async (customText) => {
     const textToSend = typeof customText === 'string' ? customText.trim() : directInputText.trim();
     if (!textToSend || !activeConversationId) return;
+
+    if (conversationLimitInfo.isWaitingForFirstReply) {
+      showToast(window.loc('⏳ لطفاً منتظر بمانید تا طرف مقابل به پیام اول شما پاسخ دهد.', '⏳ Please wait for recipient to reply to your first message before continuing.'));
+      return;
+    }
+
+    if (conversationLimitInfo.isVipRequired) {
+      showToast(window.loc('👑 سقف ۱۰ پیام رایگان پایان یافت! برای ارسال پیام‌های نامحدود، عضویت VIP را فعال کنید.', '👑 Free 10-message limit reached! Please upgrade to VIP for unlimited messaging.'));
+      setIsVipModalOpen?.(true);
+      return;
+    }
 
     const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     const currentUid = getUserId();
@@ -641,14 +712,40 @@ export default function ChatTab(props) {
                             </div>
 
                             <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 <h3 className="text-xs font-bold text-white truncate">{currentConv.user.name}</h3>
                                 {currentConv.user.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
+                                {isVipUser && (
+                                  <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-0.5">
+                                    <Crown className="w-2.5 h-2.5 text-amber-400" /> VIP
+                                  </span>
+                                )}
                               </div>
-                              <p className="text-[9px] text-emerald-400 font-bold flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                🟢 Online & Ready
-                              </p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-[9px] text-emerald-400 font-bold flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                  🟢 Online
+                                </p>
+                                {!isVipUser && !currentConv.isGroup && (
+                                  <span className="text-[9px]">
+                                    {conversationLimitInfo.isWaitingForFirstReply ? (
+                                      <span className="text-amber-400 font-bold flex items-center gap-1">
+                                        <Clock className="w-2.5 h-2.5" />
+                                        {window.loc('در انتظار پاسخ اول', 'Waiting for reply')}
+                                      </span>
+                                    ) : conversationLimitInfo.isVipRequired ? (
+                                      <span className="text-pink-400 font-bold flex items-center gap-1">
+                                        <Crown className="w-2.5 h-2.5" />
+                                        {window.loc('نیازمند VIP', 'VIP Required')}
+                                      </span>
+                                    ) : (
+                                      <span className="text-cyan-400 font-medium">
+                                        💬 {window.loc(`${conversationLimitInfo.freeRemaining} پیام رایگان باقی‌مانده`, `${conversationLimitInfo.freeRemaining} Free Left`)}
+                                      </span>
+                                    )}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
 
@@ -1046,7 +1143,53 @@ export default function ChatTab(props) {
                           </div>
                         )}
 
-                        {isRecordingAudio ? (
+                        {conversationLimitInfo.isWaitingForFirstReply ? (
+                          <div className="p-4 border-t border-amber-500/30 bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/80 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-3 z-20 animate-fadeIn">
+                            <div className="flex items-center gap-3 text-right">
+                              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0 shadow-lg">
+                                <Clock className="w-5 h-5 animate-pulse" />
+                              </div>
+                              <div className="space-y-0.5">
+                                <h4 className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                                  <span>{window.loc('در انتظار پاسخ مخاطب به پیام اول', 'Waiting for recipient reply')}</span>
+                                </h4>
+                                <p className="text-[11px] text-slate-300 leading-snug max-w-md">
+                                  {window.loc('پیام اول شما با موفقیت ارسال شد. جهت جلوگیری از اسپم، ادامه گفتگو (تا سقف ۱۰ پیام رایگان) پس از دریافت اولین پاسخ از طرف مخاطب فعال خواهد شد.', 'Your first message has been sent. To prevent spam, continuing the chat (up to 10 free messages) will unlock once the recipient replies.')}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold text-[10px] shrink-0 flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                              <span>{window.loc('منتظر پاسخ مخاطب...', 'Waiting for reply...')}</span>
+                            </div>
+                          </div>
+                        ) : conversationLimitInfo.isVipRequired ? (
+                          <div className="p-4 border-t border-pink-500/40 bg-gradient-to-r from-slate-950 via-purple-950/80 to-pink-950/80 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-3 z-20 animate-fadeIn shadow-2xl">
+                            <div className="flex items-center gap-3 text-right">
+                              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-pink-500 p-0.5 shadow-lg shadow-pink-500/25 shrink-0">
+                                <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center text-amber-400">
+                                  <Crown className="w-5 h-5 animate-bounce" />
+                                </div>
+                              </div>
+                              <div className="space-y-0.5">
+                                <h4 className="text-xs font-black text-white flex items-center gap-1.5">
+                                  <span className="text-amber-400 font-black">{window.loc('سقف ۱۰ پیام رایگان پایان یافت', 'Free 10 messages limit reached')}</span>
+                                  <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-[9px] text-amber-300 font-bold">VIP Required</span>
+                                </h4>
+                                <p className="text-[11px] text-slate-300 leading-snug max-w-md">
+                                  {window.loc('برای ادامه گفتگوی نامحدود و ارسال پیام‌های بیشتر با این کاربر، اشتراک VIP خود را فعال کنید.', 'To continue unlimited messaging with this user, please activate your VIP membership.')}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => setIsVipModalOpen?.(true)}
+                              className="w-full sm:w-auto px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 text-white font-black text-xs shadow-lg shadow-pink-500/30 hover:scale-105 active:scale-95 transition flex items-center justify-center gap-2 shrink-0"
+                            >
+                              <Crown className="w-4 h-4 text-amber-200" />
+                              <span>{window.loc('👑 ارتقا به عضویت VIP', '👑 Upgrade to VIP')}</span>
+                            </button>
+                          </div>
+                        ) : isRecordingAudio ? (
                           <div className="p-3 bg-pink-950/80 border-t border-pink-500/50 flex items-center justify-between text-xs font-bold animate-pulse z-20">
                             <div className="flex items-center gap-2 text-pink-300">
                               <span className="w-3 h-3 rounded-full bg-pink-500 animate-ping" />
@@ -1063,6 +1206,17 @@ export default function ChatTab(props) {
 
                               <button 
                                 onClick={() => {
+                                  if (conversationLimitInfo.isWaitingForFirstReply) {
+                                    showToast(window.loc('⏳ لطفاً منتظر بمانید تا طرف مقابل به پیام اول شما پاسخ دهد.', '⏳ Please wait for recipient to reply to your first message.'));
+                                    setIsRecordingAudio(false);
+                                    return;
+                                  }
+                                  if (conversationLimitInfo.isVipRequired) {
+                                    showToast(window.loc('👑 سقف ۱۰ پیام رایگان پایان یافت! عضویت VIP را فعال کنید.', '👑 Free 10 messages limit reached! Upgrade to VIP.'));
+                                    setIsVipModalOpen?.(true);
+                                    setIsRecordingAudio(false);
+                                    return;
+                                  }
                                   setIsRecordingAudio(false);
                                   const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
                                   setConversations(prev => prev.map(c => {
@@ -1087,62 +1241,86 @@ export default function ChatTab(props) {
                             </div>
                           </div>
                         ) : (
-                          <div className="p-3 border-t border-slate-800/80 bg-slate-900/90 flex items-center gap-2 z-10 flex-wrap sm:flex-nowrap">
-                            <button 
-                              onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowAttachmentMenu(false); setShowAiAssistant(false); }}
-                              className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-pink-400 transition"
-                              title="Emoji"
-                            >
-                              <Smile className="w-4 h-4" />
-                            </button>
+                          <div>
+                            {/* Sub-bar showing remaining free messages or VIP status */}
+                            {!isVipUser && !currentConv.isGroup && (
+                              <div className="px-4 py-1.5 bg-slate-950/95 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
+                                {conversationLimitInfo.mySentCount === 0 ? (
+                                  <span className="text-pink-300 font-medium flex items-center gap-1">
+                                    🎁 {window.loc('پیام اول کاملاً رایگان است. پس از پاسخ طرف مقابل، تا ۱۰ پیام رایگان خواهید داشت.', '1st message is free. After partner replies, you get 10 free messages.')}
+                                  </span>
+                                ) : (
+                                  <span className="text-cyan-300 font-medium flex items-center gap-1">
+                                    💬 {window.loc(`${conversationLimitInfo.freeRemaining} پیام رایگان از ۱۰ پیام باقی‌مانده است.`, `${conversationLimitInfo.freeRemaining} of 10 free messages remaining.`)}
+                                  </span>
+                                )}
+                                <button 
+                                  onClick={() => setIsVipModalOpen?.(true)}
+                                  className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 transition"
+                                >
+                                  <Crown className="w-3 h-3" />
+                                  <span>{window.loc('عضویت VIP', 'VIP Plan')}</span>
+                                </button>
+                              </div>
+                            )}
 
-                            <button 
-                              onClick={() => { setShowAttachmentMenu(!showAttachmentMenu); setShowEmojiPicker(false); setShowAiAssistant(false); }}
-                              className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-purple-400 transition"
-                              title="Attachment"
-                            >
-                              <Paperclip className="w-4 h-4" />
-                            </button>
+                            <div className="p-3 border-t border-slate-800/80 bg-slate-900/90 flex items-center gap-2 z-10 flex-wrap sm:flex-nowrap">
+                              <button 
+                                onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowAttachmentMenu(false); setShowAiAssistant(false); }}
+                                className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-pink-400 transition"
+                                title="Emoji"
+                              >
+                                <Smile className="w-4 h-4" />
+                              </button>
 
-                            <button 
-                              onClick={() => { setShowAiAssistant(!showAiAssistant); setShowEmojiPicker(false); setShowAttachmentMenu(false); }}
-                              className="p-2.5 rounded-xl bg-purple-950 border border-purple-500/40 text-purple-300 hover:bg-purple-600 hover:text-white transition shadow-md"
-                              title="AI Assistant"
-                            >
-                              <Bot className="w-4 h-4" />
-                            </button>
+                              <button 
+                                onClick={() => { setShowAttachmentMenu(!showAttachmentMenu); setShowEmojiPicker(false); setShowAiAssistant(false); }}
+                                className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-purple-400 transition"
+                                title="Attachment"
+                              >
+                                <Paperclip className="w-4 h-4" />
+                              </button>
 
-                            <button 
-                              onClick={() => setIsSendCoinsInChatOpen(true)}
-                              className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500 hover:text-slate-950 transition font-black text-xs hidden sm:flex items-center gap-1"
-                              title="Send Coins"
-                            >
-                              <DollarSign className="w-4 h-4" />
-                            </button>
+                              <button 
+                                onClick={() => { setShowAiAssistant(!showAiAssistant); setShowEmojiPicker(false); setShowAttachmentMenu(false); }}
+                                className="p-2.5 rounded-xl bg-purple-950 border border-purple-500/40 text-purple-300 hover:bg-purple-600 hover:text-white transition shadow-md"
+                                title="AI Assistant"
+                              >
+                                <Bot className="w-4 h-4" />
+                              </button>
 
-                            <input 
-                              type="text"
-                              value={directInputText}
-                              onChange={e => setDirectInputText(e.target.value)}
-                              onKeyDown={e => e.key === 'Enter' && handleSendDirectMessage()}
-                              placeholder={window.loc('Write a message... (تایپ پیام)', 'Write a message...')}
-                              className="flex-1 min-w-[120px] px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500/80 transition"
-                            />
+                              <button 
+                                onClick={() => setIsSendCoinsInChatOpen(true)}
+                                className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500 hover:text-slate-950 transition font-black text-xs hidden sm:flex items-center gap-1"
+                                title="Send Coins"
+                              >
+                                <DollarSign className="w-4 h-4" />
+                              </button>
 
-                            <button 
-                              onClick={() => setIsRecordingAudio(true)}
-                              className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-pink-400 transition"
-                              title="Record Voice"
-                            >
-                              <Mic className="w-4 h-4" />
-                            </button>
+                              <input 
+                                type="text"
+                                value={directInputText}
+                                onChange={e => setDirectInputText(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleSendDirectMessage()}
+                                placeholder={window.loc('Write a message... (تایپ پیام)', 'Write a message...')}
+                                className="flex-1 min-w-[120px] px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500/80 transition"
+                              />
 
-                            <button 
-                              onClick={handleSendDirectMessage}
-                              className="p-2.5 rounded-2xl btn-neon-pink shadow-lg hover:scale-105 active:scale-95 transition"
-                            >
-                              <Send className="w-4 h-4 text-white" />
-                            </button>
+                              <button 
+                                onClick={() => setIsRecordingAudio(true)}
+                                className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-pink-400 transition"
+                                title="Record Voice"
+                              >
+                                <Mic className="w-4 h-4" />
+                              </button>
+
+                              <button 
+                                onClick={handleSendDirectMessage}
+                                className="p-2.5 rounded-2xl btn-neon-pink shadow-lg hover:scale-105 active:scale-95 transition"
+                              >
+                                <Send className="w-4 h-4 text-white" />
+                              </button>
+                            </div>
                           </div>
                         )}
                       </>
