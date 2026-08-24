@@ -200,9 +200,9 @@ export default function ChatTab(props) {
         if (isMounted && Array.isArray(msgs)) {
           const formatted = msgs.map(m => ({
             id: m.id || `msg_${Date.now()}_${Math.random()}`,
-            sender: m.sender_id === currentUid ? 'me' : 'them',
-            text: m.message_text || m.text || '',
-            mediaUrl: m.media_url || '',
+            sender: (m.sender_id === currentUid || m.sender === 'me') ? 'me' : 'them',
+            text: m.content || m.message_text || m.text || '',
+            mediaUrl: m.media_url || m.mediaUrl || '',
             time: m.created_at ? new Date(m.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Now',
             raw: m
           }));
@@ -244,8 +244,8 @@ export default function ChatTab(props) {
       const incomingFormatted = {
         id: newMsgRecord.id || `msg_${Date.now()}`,
         sender: 'them',
-        text: newMsgRecord.message_text || newMsgRecord.text || '',
-        mediaUrl: newMsgRecord.media_url || '',
+        text: newMsgRecord.content || newMsgRecord.message_text || newMsgRecord.text || '',
+        mediaUrl: newMsgRecord.media_url || newMsgRecord.mediaUrl || '',
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
       };
 
@@ -376,11 +376,15 @@ export default function ChatTab(props) {
         recipient: partnerId,
         text: textToSend
       });
-      if (res && res.success !== false) {
+      if (res && res.success) {
         showToast(window.loc('پیام ارسال شد ✅', 'Message sent ✅'));
+      } else {
+        const errorMsg = res?.error || 'خطا در ارسال پیام';
+        showToast(window.loc(errorMsg, errorMsg));
       }
     } catch (err) {
       console.warn('Real direct message send exception:', err);
+      showToast(window.loc('خطا در ارسال پیام', 'Failed to send message'));
     }
   };
 

@@ -9,6 +9,7 @@ import {
 
 // Overlays & Components
 import ActiveCallOverlay from './components/Overlays/ActiveCallOverlay';
+import IncomingCallModal from './components/Overlays/IncomingCallModal';
 import LivePkBattleOverlay from './components/Overlays/LivePkBattleOverlay';
 import AiFaceEffectOverlay from './components/Overlays/AiFaceEffectOverlay';
 import LiveMiniGamesOverlay from './components/Overlays/LiveMiniGamesOverlay';
@@ -59,6 +60,7 @@ import {
 import { startKeepAlivePing, compressImageFile } from './services/performance';
 import economyService from './services/economyService';
 import { LiveStreamRoomService } from './services/liveStreamRoomService';
+import livekitManager from './services/livekitService';
 import { supabase } from './supabaseClient';
 import { safeStorage } from './utils/safeStorage';
 import { loc } from './utils/i18n';
@@ -187,6 +189,7 @@ export default function App() {
 
   // Call & Video Chat State
   const [activeCall, setActiveCall] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(null);
   const [activeChatCall, setActiveChatCall] = useState(null);
   const [preCallConfirmHost, setPreCallConfirmHost] = useState(null);
   const [activePrivateCallHost, setActivePrivateCallHost] = useState(null);
@@ -545,34 +548,144 @@ export default function App() {
     setPreCallConfirmHost({ ...targetUser, callType });
   }, [userCoins, showToast]);
 
-  const handleStartCallDirect = useCallback((targetUser, callType = 'video') => {
+  const handleStartCallDirect = useCallback(async (targetUser, callType = 'video') => {
     if (!targetUser) return;
     setPreCallConfirmHost(null);
-    setActiveCall({
-      user: targetUser,
-      callType,
-      seconds: 0,
-      isPaid: (targetUser.tariffPerMin || 0) > 0,
-      tariffPerMin: targetUser.tariffPerMin || 100,
-      consumedCoins: 0,
-      isOnHold: false,
-      isMuted: false,
-      isCameraOff: false,
-      isSpeakerOn: true,
-      isPiP: false,
-      isRecording: false,
-      sessionId: 'call_' + Date.now(),
-      translationLang: 'off',
-      translatedSubtitles: ''
-    });
-    showToast(loc((callType === 'video' ? 'تماس تصویری برقرار شد' : 'تماس صوتی برقرار شد'), (callType + ' call connected')));
+    try {
+      showToast(loc('در حال برقراری تماس...', 'Calling...'));
+      const res = await apiCalls.initiateCall({
+        receiverId: targetUser.id || targetUser.username,
+        receiverUser: targetUser,
+        callType,
+        tariffPerMin: targetUser.tariffPerMin || 100
+      });
+
+      if (res && res.success) {
+        setActiveCall({
+          user: targetUser,
+          callType,
+          seconds: 0,
+          isPaid: (targetUser.tariffPerMin || 0) > 0,
+          tariffPerMin: targetUser.tariffPerMin || 100,
+          consumedCoins: 0,
+          isOnHold: false,
+          isMuted: false,
+          isCameraOff: false,
+          isSpeakerOn: true,
+          isPiP: false,
+          isRecording: false,
+          sessionId: res.callId || ('call_' + Date.now()),
+          roomName: res.roomName,
+          callerId: res.callerId,
+          receiverId: res.receiverId,
+          translationLang: 'off',
+          translatedSubtitles: ''
+        });
+
+        // Join LiveKit Room
+        try {
+          await livekitManager.joinRoom({
+            roomName: res.roomName,
+            username: currentUsername || 'caller',
+            role: 'host',
+            metadata: { call: true, callType }
+          });
+        } catch (lkErr) {
+          console.warn('LiveKit room join notice:', lkErr.message);
+        }
+
+        showToast(loc((callType === 'video' ? 'تماس تصویری برقرار شد' : 'تماس صوتی برقرار شد'), (callType + ' call connected')));
+      } else {
+        showToast(loc('برقراری تماس ناموفق بود', 'Could not initiate call'));
+      }
+    } catch (err) {
+      console.error('Call initiation error:', err);
+      showToast(err.message || loc('خطا در برقراری تماس', 'Call initiation error'));
+    }
+  }, [currentUsername, showToast]);
+
+  const handleAcceptIncomingCall = useCallback(async (incomingCallObj) => {
+    if (!incomingCallObj) return;
+    try {
+      showToast(loc('در حال اتصال تماس...', 'Connecting call...'));
+      await apiCalls.acceptCall({
+        callId: incomingCallObj.callId,
+        callerId: incomingCallObj.callerId,
+        receiverId: incomingCallObj.receiverId,
+        roomName: incomingCallObj.roomName,
+        callType: incomingCallObj.callType
+      });
+
+      setIncomingCall(null);
+      setActiveCall({
+        user: incomingCallObj.caller || { name: 'Caller', username: 'caller' },
+        callType: incomingCallObj.callType || 'video',
+        seconds: 0,
+        isPaid: false,
+        tariffPerMin: incomingCallObj.tariffPerMin || 100,
+        consumedCoins: 0,
+        isOnHold: false,
+        isMuted: false,
+        isCameraOff: false,
+        isSpeakerOn: true,
+        isPiP: false,
+        isRecording: false,
+        sessionId: incomingCallObj.callId,
+        roomName: incomingCallObj.roomName,
+        callerId: incomingCallObj.callerId,
+        receiverId: incomingCallObj.receiverId,
+        translationLang: 'off',
+        translatedSubtitles: ''
+      });
+
+      // Join LiveKit Room
+      try {
+        await livekitManager.joinRoom({
+          roomName: incomingCallObj.roomName,
+          username: currentUsername || 'receiver',
+          role: 'call_participant',
+          metadata: { call: true, callType: incomingCallObj.callType }
+        });
+      } catch (lkErr) {
+        console.warn('LiveKit join room notice:', lkErr.message);
+      }
+
+      showToast(loc('تماس متصل شد', 'Call connected'));
+    } catch (err) {
+      console.error('Accept call error:', err);
+      showToast(err.message || loc('خطا در قبول تماس', 'Error accepting call'));
+    }
+  }, [currentUsername, showToast]);
+
+  const handleDeclineIncomingCall = useCallback(async (incomingCallObj) => {
+    if (!incomingCallObj) return;
+    try {
+      await apiCalls.rejectCall({
+        callId: incomingCallObj.callId,
+        callerId: incomingCallObj.callerId,
+        receiverId: incomingCallObj.receiverId,
+        reason: 'declined'
+      });
+    } catch (err) {
+      console.warn('Decline call notice:', err.message);
+    }
+    setIncomingCall(null);
+    showToast(loc('تماس رد شد', 'Call declined'));
   }, [showToast]);
 
   const handleEndActiveCall = useCallback(async () => {
     if (!activeCall) return;
     try {
+      livekitManager.disconnect();
       if (activeCall.sessionId) {
-        await apiCalls.endCall(activeCall.sessionId);
+        await apiCalls.endCall({
+          callId: activeCall.sessionId,
+          callerId: activeCall.callerId,
+          receiverId: activeCall.receiverId,
+          partnerId: activeCall.user?.id,
+          roomName: activeCall.roomName,
+          durationSec: activeCall.seconds || 0
+        });
       }
     } catch (err) {
       console.warn('End call report notice:', err.message);
@@ -588,11 +701,21 @@ export default function App() {
   }, [activeCall, showToast]);
 
   const handleToggleMuteCall = useCallback(() => {
-    setActiveCall(prev => prev ? { ...prev, isMuted: !prev.isMuted } : null);
+    setActiveCall(prev => {
+      if (!prev) return null;
+      const nextMuted = !prev.isMuted;
+      livekitManager.toggleAudio(!nextMuted);
+      return { ...prev, isMuted: nextMuted };
+    });
   }, []);
 
   const handleToggleCameraCall = useCallback(() => {
-    setActiveCall(prev => prev ? { ...prev, isCameraOff: !prev.isCameraOff } : null);
+    setActiveCall(prev => {
+      if (!prev) return null;
+      const nextCameraOff = !prev.isCameraOff;
+      livekitManager.toggleVideo(!nextCameraOff);
+      return { ...prev, isCameraOff: nextCameraOff };
+    });
   }, []);
 
   const handleToggleSpeakerCall = useCallback(() => {
@@ -637,6 +760,66 @@ export default function App() {
     setIsRatingModalOpen(false);
     showToast(loc('امتیاز تماس شما ثبت شد ⭐', 'Call rating submitted ⭐'));
   }, [showToast]);
+
+  // Realtime Call Signaling Listener
+  useEffect(() => {
+    const uid = currentUser?.id || currentUsername;
+    if (!uid) return;
+
+    const sigChannel = apiCalls.subscribeToCallSignals(uid, (payload) => {
+      if (!payload) return;
+      if (payload.type === 'INCOMING_CALL') {
+        setIncomingCall(payload);
+      } else if (payload.type === 'CALL_ACCEPTED') {
+        showToast(loc('تماس متصل شد', 'Call connected'));
+      } else if (payload.type === 'CALL_REJECTED') {
+        try { livekitManager.disconnect(); } catch {}
+        setActiveCall(null);
+        showToast(loc('تماس رد شد یا پاسخ داده نشد', 'Call rejected or unanswered'));
+      } else if (payload.type === 'CALL_ENDED') {
+        try { livekitManager.disconnect(); } catch {}
+        setActiveCall(null);
+        showToast(loc('تماس به پایان رسید', 'Call ended'));
+      }
+    });
+
+    return () => {
+      if (sigChannel) supabase.removeChannel(sigChannel);
+    };
+  }, [currentUser?.id, currentUsername, loc, showToast]);
+
+  // Call Duration & Billing Interval
+  useEffect(() => {
+    if (!activeCall) return;
+
+    const timer = setInterval(() => {
+      setActiveCall(prev => {
+        if (!prev) return null;
+        const newSec = (prev.seconds || 0) + 1;
+
+        if (newSec > 0 && newSec % 60 === 0 && prev.isPaid) {
+          apiCalls.chargeMinute({
+            sessionId: prev.sessionId,
+            callerId: prev.callerId,
+            receiverId: prev.receiverId,
+            callType: prev.callType
+          }).then(res => {
+            if (res && res.success) {
+              setUserCoins(c => Math.max(0, c - (prev.tariffPerMin || 100)));
+            }
+          }).catch(() => {});
+        }
+
+        return {
+          ...prev,
+          seconds: newSec,
+          consumedCoins: prev.isPaid ? Math.floor(newSec / 60) * (prev.tariffPerMin || 100) : 0
+        };
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [activeCall?.sessionId]);
 
   // Live Stream Chat & Gifts
   const handleSendStreamChat = useCallback(async () => {
@@ -3936,6 +4119,34 @@ export default function App() {
           setShowStreamerWelcomeModal(false);
           showToast('🚀 فعالیت میزبانی شما فعال شد! خوش آمدید.');
         }} loc={loc} />
+
+      {/* INCOMING CALL MODAL */}
+      <IncomingCallModal
+        incomingCall={incomingCall}
+        isRtl={isRtl}
+        loc={loc}
+        onAccept={handleAcceptIncomingCall}
+        onDecline={handleDeclineIncomingCall}
+      />
+
+      {/* ACTIVE CALL OVERLAY */}
+      <ActiveCallOverlay
+        activeCall={activeCall}
+        isRtl={isRtl}
+        loc={loc}
+        setIsEncryptedCertModalOpen={setIsEncryptedCertModalOpen}
+        handleTogglePiPCall={handleTogglePiPCall}
+        callVideoRef={callVideoRef}
+        inCallFloatingGifts={inCallFloatingGifts}
+        handleToggleMuteCall={handleToggleMuteCall}
+        handleToggleSpeakerCall={handleToggleSpeakerCall}
+        handleToggleCameraCall={handleToggleCameraCall}
+        handleSwitchCameraFacing={handleSwitchCameraFacing}
+        handleToggleBeautyFilter={handleToggleBeautyFilter}
+        setIsSendGiftInChatOpen={setIsSendGiftInChatOpen}
+        handleToggleRecordCall={handleToggleRecordCall}
+        handleEndActiveCall={handleEndActiveCall}
+      />
   
 </div>
       </DevicePreviewFrame>

@@ -351,33 +351,43 @@ export class LiveKitManager {
     this.reconnectAttempts = 0;
     this.emit('connection_state_changed', { state: ConnectionState.Connected, room: this.room });
 
-    // 4. If Broadcaster, Guest, or Match: Publish local video & audio
-    const isPublisher = role === 'host' || role === 'guest' || role === 'match';
+    // 4. If Broadcaster, Guest, Match, or Call Participant: Publish local media tracks
+    const isPublisher = (
+      role === 'host' || 
+      role === 'guest' || 
+      role === 'match' || 
+      role === 'call_participant' || 
+      role === 'caller' || 
+      role === 'receiver' || 
+      role === 'call'
+    );
+
     if (isPublisher) {
-      await this.publishLocalTracks();
+      const isAudioOnly = (metadata?.callType === 'audio' || metadata?.call_type === 'audio' || role === 'audio_call');
+      await this.publishLocalTracks({ withVideo: !isAudioOnly, withAudio: true });
     }
 
     return this.room;
   }
 
   /**
-   * Publish Local Audio & Video Tracks for Broadcaster/Guest/Match
+   * Publish Local Audio & Video Tracks for Broadcaster/Guest/Match/Call
    */
-  async publishLocalTracks() {
+  async publishLocalTracks({ withVideo = true, withAudio = true } = {}) {
     if (!this.room || this.room.state !== ConnectionState.Connected) {
       return;
     }
 
     try {
       const tracks = await createLocalTracks({
-        audio: {
+        audio: withAudio ? {
           echoCancellation: true,
           noiseSuppression: true
-        },
-        video: {
+        } : false,
+        video: withVideo ? {
           facingMode: this.currentFacingMode,
           resolution: VideoPresets.h720.resolution
-        }
+        } : false
       });
 
       for (const track of tracks) {
@@ -396,6 +406,27 @@ export class LiveKitManager {
     } catch (err) {
       console.error('Error creating or publishing local LiveKit tracks:', err);
       this.emit('error', { message: 'Failed to publish media stream to room', error: err });
+    }
+  }
+
+  /**
+   * Helper: Attach Video/Audio Track to an HTML Media Element
+   */
+  attachTrackToElement(track, element) {
+    if (!track || !element) return;
+    try {
+      track.attach(element);
+    } catch (err) {
+      console.warn('Failed to attach LiveKit track to element:', err);
+    }
+  }
+
+  detachTrackFromElement(track, element) {
+    if (!track || !element) return;
+    try {
+      track.detach(element);
+    } catch (err) {
+      console.warn('Failed to detach LiveKit track from element:', err);
     }
   }
 
@@ -540,3 +571,4 @@ export class LiveKitManager {
 
 // Global Singleton Instance
 export const livekitManager = new LiveKitManager();
+export default livekitManager;

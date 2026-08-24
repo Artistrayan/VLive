@@ -787,6 +787,79 @@ export const apiHome = {
 // ==========================================
 // 5. MESSAGES & CHAT SERVICE
 // ==========================================
+// Helper to resolve profile UUID from id, username, or telegram_id
+export async function resolveProfileUuid(identifier) {
+  if (!identifier) return null;
+  const str = String(identifier).trim();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) {
+    return str;
+  }
+  try {
+    const isNumeric = /^\d+$/.test(str);
+    let query = supabase.from('profiles').select('id').limit(1);
+    if (isNumeric) {
+      query = query.or(`username.eq.${str},telegram_id.eq.${str}`);
+    } else {
+      query = query.eq('username', str);
+    }
+    const { data } = await query.maybeSingle();
+    return data?.id || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Find or Create real conversation record between two profiles
+export async function getOrCreateConversation(userAId, userBId) {
+  if (!userAId || !userBId) {
+    return { success: false, error: 'Both user IDs are required' };
+  }
+
+  const u1 = userAId < userBId ? userAId : userBId;
+  const u2 = userAId < userBId ? userBId : userAId;
+
+  try {
+    // 1. Check existing
+    const { data: existing, error: findErr } = await supabase
+      .from('conversations')
+      .select('id, user1_id, user2_id, created_at')
+      .eq('user1_id', u1)
+      .eq('user2_id', u2)
+      .maybeSingle();
+
+    if (existing && existing.id) {
+      return { success: true, conversation: existing };
+    }
+
+    // 2. Insert new
+    const { data: created, error: createErr } = await supabase
+      .from('conversations')
+      .insert([{ user1_id: u1, user2_id: u2 }])
+      .select()
+      .single();
+
+    if (created && created.id) {
+      return { success: true, conversation: created };
+    }
+
+    // Concurrency retry check
+    const { data: retry } = await supabase
+      .from('conversations')
+      .select('id, user1_id, user2_id, created_at')
+      .eq('user1_id', u1)
+      .eq('user2_id', u2)
+      .maybeSingle();
+
+    if (retry && retry.id) {
+      return { success: true, conversation: retry };
+    }
+
+    return { success: false, error: createErr?.message || 'Failed to create conversation' };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
 export function getCanonicalConversationId(u1, u2) {
   if (!u1 && !u2) return 'conv_general';
   if (!u1) return String(u2).trim();
@@ -801,76 +874,64 @@ export const apiMessages = {
     const uid = getUserId();
     if (!uid) return [];
     try {
-      // 1. Fetch conversations from direct_messages table
-      const { data: msgs, error: msgsErr } = await supabase
-        .from('direct_messages')
-        .select('*')
-        .or(`sender_id.eq.${uid},recipient_id.eq.${uid}`)
-        .order('created_at', { ascending: false })
-        .limit(200);
+      const userUuid = await resolveProfileUuid(uid);
+      if (!userUuid) return [];
 
-      const convMap = new Map();
-      const partnerIds = new Set();
+      // 1. Fetch all real conversations for user
+      const { data: convs, error: convsErr } = await supabase
+        .from('conversations')
+        .select('id, user1_id, user2_id, created_at')
+        .or(`user1_id.eq.${userUuid},user2_id.eq.${userUuid}`)
+        .order('created_at', { ascending: false });
 
-      if (!msgsErr && Array.isArray(msgs)) {
-        for (const m of msgs) {
-          const partnerId = m.sender_id === uid ? m.recipient_id : m.sender_id;
-          const otherKey = partnerId || m.conversation_id;
-          if (!otherKey) continue;
-          
-          const canonicalId = partnerId ? getCanonicalConversationId(uid, partnerId) : m.conversation_id;
-          if (partnerId) partnerIds.add(partnerId);
-
-          if (!convMap.has(canonicalId)) {
-            convMap.set(canonicalId, {
-              id: canonicalId,
-              partner_id: partnerId || otherKey,
-              last_message: m.message_text || m.text || '',
-              updated_at: m.created_at,
-              sender_id: m.sender_id,
-              recipient_id: m.recipient_id,
-              is_unread: m.recipient_id === uid && !m.is_read
-            });
-          }
-        }
+      if (convsErr || !Array.isArray(convs) || convs.length === 0) {
+        return [];
       }
 
-      // 2. Fetch profiles for all conversation partners
-      let profilesMap = new Map();
-      if (partnerIds.size > 0) {
-        const idList = Array.from(partnerIds);
-        try {
-          const { data: profs } = await supabase
-            .from('profiles')
-            .select('id, username, name, avatar, is_streamer, is_verified, role, status, updated_at, birth_date, age')
-            .or(`id.in.(${idList.map(id => `"${id}"`).join(',')}),username.in.(${idList.map(id => `"${id}"`).join(',')})`);
-          
-          if (Array.isArray(profs)) {
-            profs.forEach(p => {
-              if (p.id) profilesMap.set(String(p.id), p);
-              if (p.username) profilesMap.set(String(p.username), p);
-            });
-          }
-        } catch (profErr) {
-          console.warn('Profiles fetch for conversations note:', profErr);
-        }
+      const partnerUuids = convs.map(c => c.user1_id === userUuid ? c.user2_id : c.user1_id);
+
+      // 2. Fetch profiles of conversation partners
+      const { data: profs } = await supabase
+        .from('profiles')
+        .select('id, username, name, avatar, is_streamer, is_verified, role, status, updated_at, birth_date, age')
+        .in('id', partnerUuids);
+
+      const profilesMap = new Map();
+      if (Array.isArray(profs)) {
+        profs.forEach(p => profilesMap.set(p.id, p));
       }
 
-      // 3. Hydrate conversation list with real user profile data
-      const hydratedList = [];
-      for (const [cId, conv] of convMap.entries()) {
-        const prof = profilesMap.get(String(conv.partner_id)) || {};
+      // 3. Hydrate with latest message for each conversation
+      const hydratedList = await Promise.all(convs.map(async (conv) => {
+        const partnerId = conv.user1_id === userUuid ? conv.user2_id : conv.user1_id;
+        const prof = profilesMap.get(partnerId) || {};
         const isOnline = presenceService.isUserOnline(prof);
         const birthDateVal = prof.birth_date || prof.birthdate;
         const calculatedAge = birthDateVal ? calculateAge(birthDateVal) : (prof.age || null);
 
-        hydratedList.push({
-          id: cId,
-          partner_id: conv.partner_id,
+        let lastMessageText = '';
+        let lastMessageTime = conv.created_at;
+
+        const { data: lastMsgs } = await supabase
+          .from('messages')
+          .select('id, content, created_at, sender_id')
+          .eq('conversation_id', conv.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (lastMsgs && lastMsgs[0]) {
+          lastMessageText = lastMsgs[0].content || '';
+          lastMessageTime = lastMsgs[0].created_at;
+        }
+
+        return {
+          id: conv.id,
+          conversation_id: conv.id,
+          partner_id: partnerId,
           user: {
-            id: prof.id || conv.partner_id,
-            username: prof.username || conv.partner_id,
-            name: prof.name || prof.username || `User ${String(conv.partner_id).slice(0, 6)}`,
+            id: prof.id || partnerId,
+            username: prof.username || `user_${partnerId.slice(0, 6)}`,
+            name: prof.name || prof.username || `User ${partnerId.slice(0, 6)}`,
             avatar: prof.avatar || '',
             age: calculatedAge !== null ? calculatedAge : prof.age,
             isVerified: prof.is_verified || Boolean(prof.isVerified),
@@ -878,12 +939,12 @@ export const apiMessages = {
             online: isOnline,
             isOnline: isOnline
           },
-          lastMessage: conv.last_message,
-          lastTime: conv.updated_at ? new Date(conv.updated_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Recently',
-          unreadCount: conv.is_unread ? 1 : 0,
+          lastMessage: lastMessageText,
+          lastTime: lastMessageTime ? new Date(lastMessageTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+          unreadCount: 0,
           messages: []
-        });
-      }
+        };
+      }));
 
       return hydratedList;
     } catch (e) {
@@ -895,30 +956,46 @@ export const apiMessages = {
   async getMessages(conversationId, partnerId = null) {
     if (!conversationId && !partnerId) return [];
     const uid = getUserId();
-    const cId = String(conversationId || '');
-    const pId = partnerId ? String(partnerId) : null;
-    const canonicalId = (uid && pId) ? getCanonicalConversationId(uid, pId) : null;
+    if (!uid) return [];
 
     try {
-      let query = supabase.from('direct_messages').select('*');
+      const userUuid = await resolveProfileUuid(uid);
+      let targetConvId = null;
 
-      if (uid && pId) {
-        query = query.or(
-          `conversation_id.eq.${cId},` +
-          `conversation_id.eq.${canonicalId},` +
-          `and(sender_id.eq.${uid},recipient_id.eq.${pId}),` +
-          `and(sender_id.eq.${pId},recipient_id.eq.${uid})`
-        );
-      } else if (cId) {
-        query = query.or(`conversation_id.eq.${cId},conversation_id.eq.${canonicalId || cId}`);
+      if (conversationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(conversationId))) {
+        targetConvId = String(conversationId);
+      } else if (partnerId && userUuid) {
+        const partnerUuid = await resolveProfileUuid(partnerId);
+        if (partnerUuid) {
+          const convRes = await getOrCreateConversation(userUuid, partnerUuid);
+          if (convRes.success && convRes.conversation) {
+            targetConvId = convRes.conversation.id;
+          }
+        }
       }
 
-      const { data, error } = await query.order('created_at', { ascending: true });
+      if (!targetConvId) return [];
+
+      const { data, error } = await supabase
+        .from('messages')
+        .select('id, conversation_id, sender_id, content, created_at')
+        .eq('conversation_id', targetConvId)
+        .order('created_at', { ascending: true });
+
       if (error) {
         console.warn('getMessages query error:', error);
         return [];
       }
-      return data || [];
+
+      return (data || []).map(m => ({
+        id: m.id,
+        conversation_id: m.conversation_id,
+        sender_id: m.sender_id,
+        content: m.content,
+        text: m.content,
+        message_text: m.content,
+        created_at: m.created_at
+      }));
     } catch (e) {
       console.warn('getMessages exception:', e);
       return [];
@@ -941,43 +1018,72 @@ export const apiMessages = {
     }
 
     if (!text && !mediaUrl) return { success: false, error: 'Empty message' };
-
-    const recipientId = String(recipient || '').trim();
-    const canonicalId = (uid && recipientId) ? getCanonicalConversationId(uid, recipientId) : (conversationId || `conv_${Date.now()}`);
-    
-    const messageRecord = {
-      conversation_id: String(canonicalId),
-      sender_id: uid || 'anonymous',
-      recipient_id: recipientId || null,
-      message_text: text,
-      media_url: mediaUrl,
-      created_at: new Date().toISOString()
-    };
+    if (!uid) return { success: false, error: 'Unauthorized: Please login to send messages' };
 
     try {
+      const senderUuid = await resolveProfileUuid(uid);
+      if (!senderUuid) return { success: false, error: 'Sender profile not found' };
+
+      let targetConvId = null;
+      let recipientUuid = null;
+
+      if (recipient) {
+        recipientUuid = await resolveProfileUuid(recipient);
+      }
+
+      if (conversationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(conversationId))) {
+        targetConvId = String(conversationId);
+      }
+
+      if (!targetConvId && recipientUuid) {
+        const convRes = await getOrCreateConversation(senderUuid, recipientUuid);
+        if (!convRes.success || !convRes.conversation) {
+          return { success: false, error: convRes.error || 'Failed to locate or start conversation' };
+        }
+        targetConvId = convRes.conversation.id;
+      }
+
+      if (!targetConvId) {
+        return { success: false, error: 'Invalid conversation target' };
+      }
+
+      const messageContent = text || mediaUrl;
+
+      // Real Supabase Insert
       const { data, error } = await supabase
-        .from('direct_messages')
-        .insert([messageRecord])
+        .from('messages')
+        .insert([{
+          conversation_id: targetConvId,
+          sender_id: senderUuid,
+          content: messageContent
+        }])
         .select();
 
-      const finalRecord = data?.[0] || messageRecord;
-
-      // Broadcast to multiple real-time channels for instant delivery
-      const broadcastChannels = new Set([
-        `direct_chat_${canonicalId}`,
-        'vlive_global_chat_events'
-      ]);
-      if (conversationId && conversationId !== canonicalId) {
-        broadcastChannels.add(`direct_chat_${conversationId}`);
-      }
-      if (recipientId) {
-        broadcastChannels.add(`user_inbox_${recipientId}`);
-      }
-      if (uid) {
-        broadcastChannels.add(`user_inbox_${uid}`);
+      if (error) {
+        return { success: false, error: error.message };
       }
 
-      broadcastChannels.forEach(chName => {
+      const inserted = data?.[0];
+      if (!inserted) {
+        return { success: false, error: 'No message record returned after insert' };
+      }
+
+      const formattedRecord = {
+        id: inserted.id,
+        conversation_id: inserted.conversation_id,
+        sender_id: inserted.sender_id,
+        content: inserted.content,
+        text: inserted.content,
+        message_text: inserted.content,
+        created_at: inserted.created_at
+      };
+
+      // Broadcast to Supabase Realtime Channels for instant delivery
+      const channelsToNotify = [`chat_conv_${targetConvId}`];
+      if (recipientUuid) channelsToNotify.push(`user_inbox_${recipientUuid}`);
+      if (senderUuid) channelsToNotify.push(`user_inbox_${senderUuid}`);
+
+      channelsToNotify.forEach(chName => {
         try {
           const ch = supabase.channel(chName);
           ch.subscribe((status) => {
@@ -985,29 +1091,26 @@ export const apiMessages = {
               ch.send({
                 type: 'broadcast',
                 event: 'new_message',
-                payload: finalRecord
+                payload: formattedRecord
               }).catch(() => {});
             }
           });
         } catch (bErr) {}
       });
 
-      return { success: true, data: finalRecord };
+      return { success: true, data: formattedRecord, conversationId: targetConvId };
     } catch (e) {
-      console.warn('sendMessage exception:', e);
-      return { success: true, data: messageRecord };
+      return { success: false, error: e.message };
     }
   },
 
   subscribeToConversation(conversationId, onNewMessage, partnerId = null) {
-    if ((!conversationId && !partnerId) || typeof onNewMessage !== 'function') return null;
-    const uid = getUserId();
-    const cId = String(conversationId || '');
-    const canonicalId = (uid && partnerId) ? getCanonicalConversationId(uid, partnerId) : cId;
+    if (!conversationId && !partnerId) return null;
+    if (typeof onNewMessage !== 'function') return null;
 
-    const channelName = `direct_chat_${canonicalId || cId}`;
+    const channelName = `chat_conv_${conversationId}`;
     const channel = supabase.channel(channelName);
-    
+
     channel
       .on('broadcast', { event: 'new_message' }, ({ payload }) => {
         onNewMessage(payload);
@@ -1015,17 +1118,20 @@ export const apiMessages = {
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'direct_messages'
+        table: 'messages',
+        filter: conversationId ? `conversation_id=eq.${conversationId}` : undefined
       }, (payload) => {
         const msg = payload.new;
-        if (!msg) return;
-        const matchesConv = msg.conversation_id === canonicalId || msg.conversation_id === cId;
-        const matchesUsers = (partnerId && uid) && (
-          (msg.sender_id === partnerId && msg.recipient_id === uid) ||
-          (msg.sender_id === uid && msg.recipient_id === partnerId)
-        );
-        if (matchesConv || matchesUsers) {
-          onNewMessage(msg);
+        if (msg) {
+          onNewMessage({
+            id: msg.id,
+            conversation_id: msg.conversation_id,
+            sender_id: msg.sender_id,
+            content: msg.content,
+            text: msg.content,
+            message_text: msg.content,
+            created_at: msg.created_at
+          });
         }
       })
       .subscribe();
@@ -1045,11 +1151,19 @@ export const apiMessages = {
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'direct_messages'
+        table: 'messages'
       }, (payload) => {
         const msg = payload.new;
-        if (msg && (msg.recipient_id === uid || msg.sender_id === uid)) {
-          onNewMessage(msg);
+        if (msg) {
+          onNewMessage({
+            id: msg.id,
+            conversation_id: msg.conversation_id,
+            sender_id: msg.sender_id,
+            content: msg.content,
+            text: msg.content,
+            message_text: msg.content,
+            created_at: msg.created_at
+          });
         }
       })
       .subscribe();
@@ -1449,24 +1563,150 @@ export const apiVip = {
 };
 
 // ==========================================
-// 9. CALLS SERVICE (Session & Billing)
+// 9. CALLS SERVICE (Real WebRTC Signaling & Billing)
 // ==========================================
 export const apiCalls = {
-  async startCall({ receiverId, callType = 'video' }) {
+  async initiateCall({ receiverId, receiverUser = null, callType = 'video', tariffPerMin = 100 }) {
     const uid = getUserId();
-    if (!uid) return { success: false, error: 'Unauthorized' };
+    if (!uid) return { success: false, error: 'Unauthorized: Please login to make calls' };
 
     try {
-      const { data, error } = await supabase.from('call_sessions').insert([{
-        caller_id: uid,
-        receiver_id: receiverId,
-        call_type: callType,
-        status: 'active',
-        started_at: new Date().toISOString()
-      }]).select();
+      const callerUuid = await resolveProfileUuid(uid);
+      const receiverUuid = await resolveProfileUuid(receiverId);
 
-      if (error) return { success: false, error: error.message };
-      return { success: true, session: data?.[0] };
+      if (!callerUuid || !receiverUuid) {
+        return { success: false, error: 'Caller or receiver profile not found in database' };
+      }
+
+      // 1. Generate unique room name
+      const roomName = `call_${callerUuid.slice(0, 8)}_${receiverUuid.slice(0, 8)}_${Date.now()}`;
+
+      // 2. Insert call log record in Supabase
+      const { data, error } = await supabase
+        .from('call_logs')
+        .insert([{
+          caller_id: callerUuid,
+          receiver_id: receiverUuid,
+          call_type: callType,
+          status: 'ringing'
+        }])
+        .select();
+
+      if (error) {
+        console.warn('Call log insert error:', error.message);
+      }
+
+      const callLog = data?.[0] || { id: `call_${Date.now()}` };
+
+      // 3. Fetch caller profile for invitation payload
+      const { data: callerProfile } = await supabase
+        .from('profiles')
+        .select('id, username, name, avatar, is_vip, role')
+        .eq('id', callerUuid)
+        .maybeSingle();
+
+      const signalPayload = {
+        type: 'INCOMING_CALL',
+        callId: callLog.id,
+        roomName,
+        callerId: callerUuid,
+        caller: callerProfile || { id: callerUuid, name: uid },
+        receiverId: receiverUuid,
+        callType,
+        tariffPerMin,
+        timestamp: Date.now()
+      };
+
+      // 4. Broadcast signaling invitation to receiver's dedicated real-time channel
+      const sigChannel = supabase.channel(`user_call_signal_${receiverUuid}`);
+      sigChannel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          sigChannel.send({
+            type: 'broadcast',
+            event: 'call_signal',
+            payload: signalPayload
+          }).catch(() => {});
+        }
+      });
+
+      return {
+        success: true,
+        callId: callLog.id,
+        roomName,
+        callerId: callerUuid,
+        receiverId: receiverUuid
+      };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async acceptCall({ callId, callerId, receiverId, roomName, callType }) {
+    try {
+      if (typeof callId === 'number' || (typeof callId === 'string' && /^\d+$/.test(callId))) {
+        await supabase
+          .from('call_logs')
+          .update({ status: 'accepted' })
+          .eq('id', callId);
+      }
+
+      const signalPayload = {
+        type: 'CALL_ACCEPTED',
+        callId,
+        callerId,
+        receiverId,
+        roomName,
+        callType,
+        timestamp: Date.now()
+      };
+
+      const sigChannel = supabase.channel(`user_call_signal_${callerId}`);
+      sigChannel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          sigChannel.send({
+            type: 'broadcast',
+            event: 'call_signal',
+            payload: signalPayload
+          }).catch(() => {});
+        }
+      });
+
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async rejectCall({ callId, callerId, receiverId, reason = 'declined' }) {
+    try {
+      if (typeof callId === 'number' || (typeof callId === 'string' && /^\d+$/.test(callId))) {
+        await supabase
+          .from('call_logs')
+          .update({ status: 'rejected' })
+          .eq('id', callId);
+      }
+
+      const signalPayload = {
+        type: 'CALL_REJECTED',
+        callId,
+        callerId,
+        receiverId,
+        reason,
+        timestamp: Date.now()
+      };
+
+      const sigChannel = supabase.channel(`user_call_signal_${callerId}`);
+      sigChannel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          sigChannel.send({
+            type: 'broadcast',
+            event: 'call_signal',
+            payload: signalPayload
+          }).catch(() => {});
+        }
+      });
+
+      return { success: true };
     } catch (e) {
       return { success: false, error: e.message };
     }
@@ -1492,19 +1732,55 @@ export const apiCalls = {
     }
   },
 
-  async endCall({ sessionId, durationSec = 0, totalCoins = 0 }) {
-    if (!sessionId) return { success: true };
+  async endCall({ callId, callerId, receiverId, partnerId, roomName, durationSec = 0 }) {
     try {
-      await supabase.from('call_sessions').update({
-        status: 'ended',
-        ended_at: new Date().toISOString(),
-        duration_sec: durationSec,
-        total_cost: totalCoins
-      }).eq('id', sessionId);
+      if (typeof callId === 'number' || (typeof callId === 'string' && /^\d+$/.test(callId))) {
+        await supabase
+          .from('call_logs')
+          .update({ status: 'ended' })
+          .eq('id', callId);
+      }
+
+      const targetId = partnerId || receiverId || callerId;
+      if (targetId) {
+        const signalPayload = {
+          type: 'CALL_ENDED',
+          callId,
+          roomName,
+          durationSec,
+          timestamp: Date.now()
+        };
+
+        const sigChannel = supabase.channel(`user_call_signal_${targetId}`);
+        sigChannel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            sigChannel.send({
+              type: 'broadcast',
+              event: 'call_signal',
+              payload: signalPayload
+            }).catch(() => {});
+          }
+        });
+      }
+
       return { success: true };
     } catch (e) {
-      return { success: false };
+      return { success: false, error: e.message };
     }
+  },
+
+  subscribeToCallSignals(userId, onSignal) {
+    if (!userId || typeof onSignal !== 'function') return null;
+    const uid = String(userId);
+    const channel = supabase.channel(`user_call_signal_${uid}`);
+
+    channel
+      .on('broadcast', { event: 'call_signal' }, ({ payload }) => {
+        onSignal(payload);
+      })
+      .subscribe();
+
+    return channel;
   }
 };
 

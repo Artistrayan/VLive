@@ -236,7 +236,7 @@ async function authenticateRequest(req, bodyData = {}) {
 }
 
 // Server-Side Role Determination and Room Authorization Policy Engine
-async function resolveLiveKitPermissions({ authUser, requestedRoomName }) {
+async function resolveLiveKitPermissions({ authUser, requestedRoomName, metadata = {} }) {
   // Check if user is suspended/banned
   const isBanned = authUser.status === 'banned' || authUser.status === 'disabled' || authUser.isBlocked === true;
   if (isBanned) {
@@ -270,6 +270,29 @@ async function resolveLiveKitPermissions({ authUser, requestedRoomName }) {
   const roomName = String(requestedRoomName || '').trim();
   if (!roomName) {
     return { allowed: false, error: 'Bad Request: roomName parameter is required', status: 400 };
+  }
+
+  // 1-to-1 Voice & Video Call Room Handling (e.g. room starts with call_ or metadata type is call)
+  const isDirectCallRoom = (
+    roomName.startsWith('call_') ||
+    metadata?.type === 'call' ||
+    metadata?.room_type === 'call' ||
+    metadata?.call_type === 'audio' ||
+    metadata?.call_type === 'video'
+  );
+
+  if (isDirectCallRoom) {
+    return {
+      allowed: true,
+      serverRole: 'call_participant',
+      canPublish: true,
+      canSubscribe: true,
+      canPublishData: true,
+      roomAdmin: false,
+      roomCreate: true,
+      identity: String(authUser.id || authUser.telegram_id || `user_${Date.now()}`),
+      name: String(authUser.name || authUser.username || 'Call Participant')
+    };
   }
 
   // Query stream record from database to verify room ownership / room state
@@ -588,7 +611,8 @@ const server = http.createServer(async (req, res) => {
           // 3. Server-Side Role Resolution and Room Authorization
           const permResult = await resolveLiveKitPermissions({
             authUser,
-            requestedRoomName: requestedRoom
+            requestedRoomName: requestedRoom,
+            metadata
           });
 
           if (!permResult.allowed) {
