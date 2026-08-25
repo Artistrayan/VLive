@@ -128,7 +128,25 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState(null);
   const [notificationsList, setNotificationsList] = useState([]);
   const [notificationFilterTab, setNotificationFilterTab] = useState('all');
-  const [notifSettings, setNotifSettings] = useState({ likes: true, calls: true, system: true, live: true });
+  const [notifSettings, setNotifSettings] = useState(() => {
+    try {
+      const saved = safeStorage.getItem('vlive_notif_settings');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      messages: true,
+      likes: true,
+      follows: true,
+      lives: true,
+      live: true,
+      gifts: true,
+      calls: true,
+      earnings: true,
+      competitions: true,
+      promotions: true,
+      system: true
+    };
+  });
 
   // Users, Streams & Exploration
   const [usersList, setUsersList] = useState(() => {
@@ -675,30 +693,44 @@ export default function App() {
 
   const handleEndActiveCall = useCallback(async () => {
     if (!activeCall) return;
+    const callUser = activeCall.user || activeCall.host || { name: 'User', username: 'user' };
+    const callDuration = activeCall.seconds || 0;
+    const callCoins = activeCall.consumedCoins || 0;
+    const callSessionId = activeCall.sessionId;
+    const callType = activeCall.type || 'video';
+
     try {
       livekitManager.disconnect();
-      if (activeCall.sessionId) {
+      if (callSessionId) {
         await apiCalls.endCall({
-          callId: activeCall.sessionId,
+          callId: callSessionId,
           callerId: activeCall.callerId,
           receiverId: activeCall.receiverId,
-          partnerId: activeCall.user?.id,
+          partnerId: callUser.id,
           roomName: activeCall.roomName,
-          durationSec: activeCall.seconds || 0
+          durationSec: callDuration
         });
       }
     } catch (err) {
       console.warn('End call report notice:', err.message);
     }
+
     setPostCallRatingData({
-      host: activeCall.user,
-      duration: activeCall.seconds,
-      coins: activeCall.consumedCoins
+      user: callUser,
+      host: callUser,
+      duration: `${callDuration}s`,
+      seconds: callDuration,
+      quality: 'HD 1080p',
+      coins: callCoins,
+      sessionId: callSessionId,
+      callType: callType
     });
+    setRatingStarsCall(5);
+    setRatingCommentCall('');
     setIsRatingModalOpen(true);
     setActiveCall(null);
     showToast(loc('تماس به پایان رسید', 'Call ended'));
-  }, [activeCall, showToast]);
+  }, [activeCall, showToast, loc]);
 
   const handleToggleMuteCall = useCallback(() => {
     setActiveCall(prev => {
@@ -729,37 +761,70 @@ export default function App() {
   const handleToggleRecordCall = useCallback(() => {
     setActiveCall(prev => prev ? { ...prev, isRecording: !prev.isRecording } : null);
     showToast(loc('وضعیت ضبط تماس تغییر کرد', 'Call recording toggled'));
-  }, [showToast]);
+  }, [showToast, loc]);
 
   const handleSwitchCameraFacing = useCallback(() => {
     showToast(loc('دوربین جابجا شد', 'Camera switched'));
-  }, [showToast]);
+  }, [showToast, loc]);
 
   const handleToggleBeautyFilter = useCallback(() => {
     showToast(loc('فیلتر زیبایی فعال شد', 'Beauty filter toggled'));
-  }, [showToast]);
+  }, [showToast, loc]);
 
   const handleReportUserInCall = useCallback((reason) => {
-    showToast(loc('گزارش کاربر ثبت شد و توسط هوش مصنوعی بررسی می‌شود', 'Report submitted for review'));
-  }, [showToast]);
-
-  const handleBlockUserInCall = useCallback(() => {
-    if (activeCall?.user) {
-      setBlockedCallUsers(prev => [...(Array.isArray(prev) ? prev : []), activeCall.user]);
-      handleEndActiveCall();
-      showToast(loc('کاربر مسدود شد', 'User blocked'));
+    const targetUser = postCallRatingData?.user || postCallRatingData?.host || activeCall?.user;
+    if (targetUser) {
+      apiAdmin.createReport({
+        reported_user_id: targetUser.id || targetUser.username,
+        reason: reason || 'Inappropriate content during call',
+        type: 'call_violation',
+        status: 'pending'
+      }).catch(() => {});
     }
-  }, [activeCall, handleEndActiveCall, showToast]);
+    setPostCallRatingData(null);
+    setIsRatingModalOpen(false);
+    showToast(loc('گزارش کاربر ثبت شد و با اولویت بررسی می‌شود ⚠️', 'Report submitted and queued for priority review ⚠️'));
+  }, [postCallRatingData, activeCall, showToast, loc]);
+
+  const handleBlockUserInCall = useCallback((userToBlock) => {
+    const target = userToBlock || postCallRatingData?.user || postCallRatingData?.host || activeCall?.user;
+    if (target) {
+      setBlockedCallUsers(prev => {
+        const next = [...(Array.isArray(prev) ? prev : []), target];
+        safeStorage.setItem('vlive_blocked_call_users_v1', JSON.stringify(next));
+        return next;
+      });
+      showToast(loc('کاربر مسدود شد و به لیست بلاک اضافه گردید 🚫', 'User blocked and added to blocklist 🚫'));
+    }
+    setPostCallRatingData(null);
+    setIsRatingModalOpen(false);
+    if (activeCall) {
+      handleEndActiveCall();
+    }
+  }, [postCallRatingData, activeCall, handleEndActiveCall, showToast, loc]);
 
   const handleSubmitRating = useCallback((stars, comment) => {
     setIsRatingModalOpen(false);
     showToast(loc('امتیاز شما با موفقیت ثبت شد ⭐', 'Rating submitted successfully ⭐'));
-  }, [showToast]);
+  }, [showToast, loc]);
 
-  const handleSubmitPostCallRating = useCallback((stars, comment) => {
+  const handleSubmitPostCallRating = useCallback(() => {
+    const targetUser = postCallRatingData?.user || postCallRatingData?.host;
+    if (targetUser && supabase) {
+      supabase.from('call_reviews').insert({
+        caller_id: getUserId(),
+        host_id: targetUser.id || targetUser.username,
+        rating: ratingStarsCall,
+        comment: ratingCommentCall,
+        created_at: new Date().toISOString()
+      }).catch(() => {});
+    }
+    setPostCallRatingData(null);
     setIsRatingModalOpen(false);
-    showToast(loc('امتیاز تماس شما ثبت شد ⭐', 'Call rating submitted ⭐'));
-  }, [showToast]);
+    setRatingCommentCall('');
+    setRatingStarsCall(5);
+    showToast(loc('امتیاز تماس شما با موفقیت ثبت شد ⭐', 'Call rating submitted successfully ⭐'));
+  }, [postCallRatingData, ratingStarsCall, ratingCommentCall, showToast, loc]);
 
   // Realtime Call Signaling Listener
   useEffect(() => {
@@ -1545,6 +1610,11 @@ export default function App() {
   useEffect(() => {
     safeStorage.setItem('vlive_app_font_size', appFontSize);
   }, [appFontSize]);
+  useEffect(() => {
+    if (notifSettings) {
+      safeStorage.setItem('vlive_notif_settings', JSON.stringify(notifSettings));
+    }
+  }, [notifSettings]);
   useEffect(() => {
     safeStorage.setItem('vlive_user_logged_in', String(isLoggedIn));
   }, [isLoggedIn]);
@@ -2613,7 +2683,7 @@ export default function App() {
       </header>
 
       {/* BODY CONTENT AREA */}
-      <main className="flex-1 p-2 sm:p-4 max-w-4xl mx-auto w-full space-y-4">
+      <main className={`flex-1 max-w-4xl mx-auto w-full ${activeTab === 'messages' ? 'h-[calc(100dvh-125px)] sm:h-[calc(100dvh-135px)] overflow-hidden flex flex-col min-h-0 p-1 sm:p-3' : 'p-2 sm:p-4 space-y-4'}`}>
 
         {/* TAB 1: HOME (EXPLORE & LIVE SUB-TABS) */}
         {activeTab === 'home' && <div className="space-y-3 animate-fadeIn pb-12">
@@ -3183,41 +3253,82 @@ export default function App() {
       <PreCallConfirmModal preCallConfirmHost={preCallConfirmHost} isRtl={isRtl} loc={loc} userCoins={userCoins} setPreCallConfirmHost={setPreCallConfirmHost} handleStartCallDirect={handleStartCallDirect} />
 
       {/* ==================== POST-CALL RATING & FEEDBACK MODAL ==================== */}
-      {postCallRatingData && <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-          <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-pink-500/50 max-w-sm w-full space-y-4 shadow-[0_0_50px_rgba(236,72,153,0.3)] text-center">
+      {postCallRatingData && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+          <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-pink-500/50 max-w-sm w-full space-y-4 shadow-[0_0_50px_rgba(236,72,153,0.3)] text-center relative">
+            <button
+              onClick={() => {
+                setPostCallRatingData(null);
+                setIsRatingModalOpen(false);
+              }}
+              className="absolute top-4 right-4 p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white transition"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
             <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-pink-500 to-purple-600 p-0.5 mx-auto shadow-lg">
-              <img src={postCallRatingData.user?.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={postCallRatingData.user?.name || 'User'} className="w-full h-full object-cover rounded-[22px]" />
+              <img 
+                src={postCallRatingData.user?.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} 
+                alt={postCallRatingData.user?.name || 'User'} 
+                className="w-full h-full object-cover rounded-[22px]" 
+              />
             </div>
 
             <div>
               <h3 className="text-base font-black text-white">{loc('ثبت امتیاز کیفیت تماس با', 'Call quality score registration')} {postCallRatingData.user?.name || 'User'}</h3>
-              <p className="text-xs text-slate-400 mt-1">{loc('مدت زمان:', 'Duration:')} {postCallRatingData.duration} {loc('• کیفیت:', 'Quality:')} {postCallRatingData.quality}</p>
+              <p className="text-xs text-slate-400 mt-1">{loc('مدت زمان:', 'Duration:')} {postCallRatingData.duration} {loc('• کیفیت:', 'Quality:')} {postCallRatingData.quality || 'HD'}</p>
             </div>
 
             {/* Stars Rating */}
             <div className="flex items-center justify-center gap-2">
-              {[1, 2, 3, 4, 5].map(s => <button key={s} onClick={() => setRatingStarsCall(s)} className="p-1 hover:scale-125 transition duration-200 cursor-pointer">
+              {[1, 2, 3, 4, 5].map(s => (
+                <button 
+                  key={s} 
+                  type="button"
+                  onClick={() => setRatingStarsCall(s)} 
+                  className="p-1 hover:scale-125 transition duration-200 cursor-pointer"
+                >
                   <Star className={`w-7 h-7 ${s <= ratingStarsCall ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`} />
-                </button>)}
+                </button>
+              ))}
             </div>
 
             <div className="space-y-2">
-              <input type="text" value={ratingCommentCall} onChange={e => setRatingCommentCall(e.target.value)} placeholder={loc('نظر شما درباره این تماس (اختیاری)...', 'Your opinion about this call (optional)...')} className="w-full bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs text-white outline-none placeholder:text-slate-600" />
+              <input 
+                type="text" 
+                value={ratingCommentCall} 
+                onChange={e => setRatingCommentCall(e.target.value)} 
+                placeholder={loc('نظر شما درباره این تماس (اختیاری)...', 'Your opinion about this call (optional)...')} 
+                className="w-full bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs text-white outline-none placeholder:text-slate-600 focus:border-pink-500 transition" 
+              />
             </div>
 
             <div className="flex items-center gap-2 pt-2">
-              <button onClick={() => handleReportUserInCall(loc('محتوای نامناسب', 'Inappropriate content'))} className="px-3 py-2 rounded-2xl bg-rose-600/20 text-rose-300 border border-rose-500/40 text-xs font-bold flex items-center gap-1">
+              <button 
+                type="button"
+                onClick={() => handleReportUserInCall(loc('محتوای نامناسب در تماس', 'Inappropriate content in call'))} 
+                className="px-3 py-2.5 rounded-2xl bg-rose-600/20 text-rose-300 border border-rose-500/40 text-xs font-bold flex items-center gap-1 hover:bg-rose-600/30 active:scale-95 transition"
+              >
                 <Flag className="w-3.5 h-3.5" /> {loc('گزارش', 'Report')}
               </button>
-              <button onClick={() => handleBlockUserInCall(postCallRatingData.user?.username || '')} className="px-3 py-2 rounded-2xl bg-slate-800 text-slate-300 text-xs font-bold flex items-center gap-1">
-                <Ban className="w-3.5 h-3.5" /> {loc('مسدودسازی', 'blocking')}
+              <button 
+                type="button"
+                onClick={() => handleBlockUserInCall(postCallRatingData.user)} 
+                className="px-3 py-2.5 rounded-2xl bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold flex items-center gap-1 hover:bg-slate-700 active:scale-95 transition"
+              >
+                <Ban className="w-3.5 h-3.5" /> {loc('مسدودسازی', 'Block')}
               </button>
-              <button onClick={handleSubmitPostCallRating} className="flex-1 py-2 rounded-2xl btn-neon-pink text-xs font-black shadow-lg">
-                {loc('ثبت امتیاز', 'Register points')}
+              <button 
+                type="button"
+                onClick={handleSubmitPostCallRating} 
+                className="flex-1 py-2.5 rounded-2xl btn-neon-pink text-xs font-black shadow-lg hover:brightness-110 active:scale-95 transition"
+              >
+                {loc('ثبت امتیاز', 'Submit Rating')}
               </button>
             </div>
           </div>
-        </div>}
+        </div>
+      )}
 
       
       {/* ==================== STORY FULLSCREEN VIEWER MODAL ==================== */}

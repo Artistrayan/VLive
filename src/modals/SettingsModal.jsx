@@ -76,7 +76,13 @@ export default function SettingsModal(props) {
   const [privacyShowAge, setPrivacyShowAge] = React.useState(props.privacyShowAge !== undefined ? props.privacyShowAge : true);
   const [settingsCategoryFilter, setSettingsCategoryFilter] = React.useState(props.settingsCategoryFilter || 'all');
   const [is2FAEnabled, setIs2FAEnabled] = React.useState(props.is2FAEnabled || false);
-  const [notifSettingsDetailed, setNotifSettingsDetailed] = React.useState(props.notifSettingsDetailed || { likes: true, comments: true, gifts: true, lives: true });
+  const [notifSettingsDetailed, setNotifSettingsDetailed] = React.useState(() => {
+    try {
+      const saved = safeStorage.getItem('vlive_notif_settings');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return props.notifSettings || props.notifSettingsDetailed || { messages: true, calls: true, live: true, follow: true, gifts: true, earnings: true, promotions: true, system: true };
+  });
   const [appAccentColor, setAppAccentColor] = React.useState(props.appAccentColor || 'pink');
   const [appFontSize, setAppFontSize] = React.useState(props.appFontSize || 'medium');
   const [appAnimations, setAppAnimations] = React.useState(props.appAnimations !== undefined ? props.appAnimations : true);
@@ -538,10 +544,13 @@ export default function SettingsModal(props) {
                         </div>
                         <input
                           type="checkbox"
-                          checked={notifSettingsDetailed[item.key]}
+                          checked={!!notifSettingsDetailed[item.key]}
                           onChange={e => {
                             const val = e.target.checked;
-                            setNotifSettingsDetailed(prev => ({ ...prev, [item.key]: val }));
+                            const updated = { ...notifSettingsDetailed, [item.key]: val };
+                            setNotifSettingsDetailed(updated);
+                            if (props.setNotifSettings) props.setNotifSettings(updated);
+                            safeStorage.setItem('vlive_notif_settings', JSON.stringify(updated));
                           }}
                           className="accent-amber-500 w-4 h-4 rounded"
                         />

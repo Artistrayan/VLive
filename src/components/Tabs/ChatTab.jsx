@@ -578,108 +578,110 @@ export default function ChatTab(props) {
     <>
         {/* TAB 2: COMPLETE REDESIGNED MESSAGES & DIRECT CHAT SYSTEM */}
         {activeTab === 'messages' && (
-          <div className="space-y-4">
+          <div className="flex-1 h-full flex flex-col min-h-0 overflow-hidden space-y-2">
             {/* 1. HEADER: USER AVATAR, TITLE, SEARCH & CREATION ACTIONS */}
-            <VisualSectionWrapper pageId="messages" sectionId="messages_header" defaultLabel="Chat Header & Filter Tags">
-            <div className="card-3d p-4 rounded-3xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3 flex-wrap backdrop-blur-xl">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <img 
-                    src={userAvatar} 
-                    alt={userName} 
-                    className="w-10 h-10 rounded-2xl object-cover ring-2 ring-pink-500/40 shadow-md" 
-                  />
-                  <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-slate-950 flex items-center justify-center">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                  </span>
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h2 className="text-base font-black text-white tracking-tight flex items-center gap-1.5">
-                      {window.loc('💬 Messages (پیام‌ها)', '💬 Messages')}
-                    </h2>
-                    {totalUnreadMessages > 0 && (
-                      <span className="px-2 py-0.5 rounded-full bg-pink-500 text-white font-black text-[10px] shadow-lg animate-pulse">
-                        {totalUnreadMessages} New
+            <div className={activeConversationId ? "hidden md:block shrink-0" : "block shrink-0"}>
+              <VisualSectionWrapper pageId="messages" sectionId="messages_header" defaultLabel="Chat Header & Filter Tags">
+                <div className="card-3d p-3 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3 flex-wrap backdrop-blur-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <img 
+                        src={userAvatar} 
+                        alt={userName} 
+                        className="w-9 h-9 rounded-xl object-cover ring-2 ring-pink-500/40 shadow-md" 
+                      />
+                      <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-slate-950 flex items-center justify-center">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                       </span>
-                    )}
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h2 className="text-sm font-black text-white tracking-tight flex items-center gap-1.5">
+                          {window.loc('💬 Messages (پیام‌ها)', '💬 Messages')}
+                        </h2>
+                        {totalUnreadMessages > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-pink-500 text-white font-black text-[10px] shadow-lg animate-pulse">
+                            {totalUnreadMessages} New
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-medium">Secure Encrypted Chat & LiveKit Calls</p>
+                    </div>
                   </div>
-                  <p className="text-[10px] text-slate-400 font-medium">Secure Encrypted Chat & LiveKit Calls</p>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsChatSearchOpen(!isChatSearchOpen)}
+                      className={"p-2 rounded-xl border transition " + (isChatSearchOpen ? "bg-pink-500 text-white border-pink-400" : "bg-slate-950 text-slate-300 border-slate-800 hover:border-pink-500/40")}
+                      title="Search Messages"
+                    >
+                      <Search className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      onClick={() => setIsCreateGroupModalOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-purple-600/20 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 hover:bg-purple-600/30 transition shadow-md"
+                    >
+                      <Users className="w-4 h-4 text-purple-400" />
+                      <span className="hidden sm:inline">Create Group</span>
+                    </button>
+
+                    <button
+                      onClick={() => setIsNewChatModalOpen(true)}
+                      className="px-3 py-1.5 rounded-xl btn-neon-pink text-xs font-bold flex items-center gap-1.5 shadow-lg hover:scale-105 transition"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>New Chat</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsChatSearchOpen(!isChatSearchOpen)}
-                  className={"p-2.5 rounded-2xl border transition " + (isChatSearchOpen ? "bg-pink-500 text-white border-pink-400" : "bg-slate-950 text-slate-300 border-slate-800 hover:border-pink-500/40")}
-                  title="Search Messages"
-                >
-                  <Search className="w-4 h-4" />
-                </button>
+                {/* 2. ADVANCED SEARCH BAR (NAME, ID, PHONE, CITY) */}
+                {isChatSearchOpen && (
+                  <div className="card-3d p-2.5 rounded-2xl bg-slate-900 border border-pink-500/30 space-y-2 animate-fadeIn mt-2">
+                    <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+                      <Search className="w-4 h-4 text-pink-400 shrink-0" />
+                      <input 
+                        type="text"
+                        value={msgSearchQuery}
+                        onChange={e => setMsgSearchQuery(e.target.value)}
+                        placeholder="Search by Name, Username ID, City, or Phone..."
+                        className="w-full bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
+                      />
+                      {msgSearchQuery && (
+                        <button onClick={() => setMsgSearchQuery('')} className="text-slate-400 hover:text-white">
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
 
-                <button
-                  onClick={() => setIsCreateGroupModalOpen(true)}
-                  className="px-3 py-2 rounded-2xl bg-purple-600/20 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 hover:bg-purple-600/30 transition shadow-md"
-                >
-                  <Users className="w-4 h-4 text-purple-400" />
-                  <span className="hidden sm:inline">Create Group</span>
-                </button>
-
-                <button
-                  onClick={() => setIsNewChatModalOpen(true)}
-                  className="px-3.5 py-2 rounded-2xl btn-neon-pink text-xs font-bold flex items-center gap-1.5 shadow-lg hover:scale-105 transition"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>New Chat</span>
-                </button>
-              </div>
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px] font-bold text-slate-400">
+                      <span className="text-slate-500 shrink-0">Filter By:</span>
+                      {[
+                        { id: 'all', label: 'All Fields' },
+                        { id: 'name', label: 'Name' },
+                        { id: 'id', label: 'Username ID' },
+                        { id: 'city', label: window.loc('City (شهر)', 'City') },
+                        { id: 'phone', label: 'Phone' }
+                      ].map(f => (
+                        <button
+                          key={f.id}
+                          onClick={() => setMsgSearchField(f.id)}
+                          className={"px-2 py-0.5 rounded-lg shrink-0 transition " + (msgSearchField === f.id ? "bg-pink-600 text-white font-black" : "bg-slate-950 border border-slate-800 hover:text-slate-200")}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </VisualSectionWrapper>
             </div>
 
-            {/* 2. ADVANCED SEARCH BAR (NAME, ID, PHONE, CITY) */}
-            {isChatSearchOpen && (
-              <div className="card-3d p-3 rounded-2xl bg-slate-900 border border-pink-500/30 space-y-2 animate-fadeIn">
-                <div className="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800">
-                  <Search className="w-4 h-4 text-pink-400 shrink-0" />
-                  <input 
-                    type="text"
-                    value={msgSearchQuery}
-                    onChange={e => setMsgSearchQuery(e.target.value)}
-                    placeholder="Search by Name, Username ID, City, or Phone..."
-                    className="w-full bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
-                  />
-                  {msgSearchQuery && (
-                    <button onClick={() => setMsgSearchQuery('')} className="text-slate-400 hover:text-white">
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px] font-bold text-slate-400">
-                  <span className="text-slate-500 shrink-0">Filter By:</span>
-                  {[
-                    { id: 'all', label: 'All Fields' },
-                    { id: 'name', label: 'Name' },
-                    { id: 'id', label: 'Username ID' },
-                    { id: 'city', label: window.loc('City (شهر)', 'City') },
-                    { id: 'phone', label: 'Phone' }
-                  ].map(f => (
-                    <button
-                      key={f.id}
-                      onClick={() => setMsgSearchField(f.id)}
-                      className={"px-2.5 py-1 rounded-lg shrink-0 transition " + (msgSearchField === f.id ? "bg-pink-600 text-white font-black" : "bg-slate-950 border border-slate-800 hover:text-slate-200")}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            </VisualSectionWrapper>
-
             {/* 3. CATEGORY TABS: ALL, PRIVATE, GROUPS, CALLS, ARCHIVED */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs font-bold">
+            <div className={(activeConversationId ? "hidden md:flex" : "flex") + " items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs font-bold shrink-0"}>
               {[
                 { id: 'all', label: 'All', icon: MessageSquare, badge: conversations.length },
                 { id: 'private', label: window.loc('Private (خصوصی)', 'Private'), icon: User, badge: conversations.filter(c => !c.isGroup && !c.archived).length },
@@ -693,11 +695,11 @@ export default function ChatTab(props) {
                   <button
                     key={tab.id}
                     onClick={() => setMsgFilterTab(tab.id)}
-                    className={"px-4 py-2.5 rounded-2xl flex items-center gap-2 shrink-0 transition border " + (isActive ? "bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-400 shadow-lg shadow-pink-500/20" : "bg-slate-900/80 text-slate-400 border-slate-800/80 hover:bg-slate-800 hover:text-slate-200")}
+                    className={"px-3 py-1.5 rounded-xl flex items-center gap-1.5 shrink-0 transition border " + (isActive ? "bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-400 shadow-md" : "bg-slate-900/80 text-slate-400 border-slate-800/80 hover:bg-slate-800 hover:text-slate-200")}
                   >
-                    <IconComponent className="w-4 h-4" />
+                    <IconComponent className="w-3.5 h-3.5" />
                     <span>{tab.label}</span>
-                    <span className={"px-2 py-0.5 rounded-full text-[9px] " + (isActive ? "bg-white/20 text-white font-black" : "bg-slate-950 text-slate-400")}>
+                    <span className={"px-1.5 py-0.2 rounded-full text-[9px] " + (isActive ? "bg-white/20 text-white font-black" : "bg-slate-950 text-slate-400")}>
                       {tab.badge}
                     </span>
                   </button>
@@ -706,7 +708,7 @@ export default function ChatTab(props) {
             </div>
 
             {/* MAIN MESSAGES LAYOUT: SIDEBAR + CHAT THREAD */}
-            <div className="card-3d rounded-3xl border border-slate-800 bg-slate-950/90 overflow-hidden h-[calc(100dvh-180px)] md:h-[620px] flex flex-col md:flex-row shadow-2xl relative">
+            <div className="card-3d rounded-3xl border border-slate-800 bg-slate-950/90 overflow-hidden flex-1 min-h-0 flex flex-col md:flex-row shadow-2xl relative">
               
               {/* CONVERSATIONS LIST SIDEBAR */}
               <div className={"w-full md:w-80 border-r border-slate-800/80 flex flex-col bg-slate-950 " + (activeConversationId ? "hidden md:flex" : "flex")}>
@@ -811,13 +813,13 @@ export default function ChatTab(props) {
               </div>
 
               {/* CHAT THREAD VIEW */}
-              <div className={"flex-1 flex flex-col bg-slate-950/60 relative " + (!activeConversationId ? "hidden md:flex" : "flex")}>
+              <div className={"flex-1 min-h-0 flex flex-col bg-slate-950/60 relative overflow-hidden h-full " + (!activeConversationId ? "hidden md:flex" : "flex")}>
                 {activeConversationId && currentConv ? (
                   (() => {
                     return (
                       <>
                         {/* 1. CHAT THREAD TOP HEADER */}
-                        <div className="p-3.5 border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md flex items-center justify-between gap-2 z-10">
+                        <div className="shrink-0 p-3 sm:p-3.5 border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md flex items-center justify-between gap-2 z-10">
                           <div className="flex items-center gap-3 min-w-0">
                             <button 
                               onClick={() => setActiveConversationId(null)}
@@ -1006,7 +1008,7 @@ export default function ChatTab(props) {
                         )}
 
                         {/* MESSAGES SCROLL AREA */}
-                        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-950/80 custom-scrollbar">
+                        <div className="flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto space-y-3 bg-slate-950/80 overscroll-contain custom-scrollbar">
                           {currentConv.messages.map(msg => {
                             const isMe = msg.sender === 'me';
                             return (

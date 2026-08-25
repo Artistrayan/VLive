@@ -1,4 +1,5 @@
 import React from 'react';
+import { safeStorage } from '../utils/safeStorage';
 import { 
   Bell, X, Check, CheckCheck, Trash2, Settings, PhoneCall, Crown, CheckCircle2,
   Gift, Heart, UserPlus, Video, DollarSign, MessageSquare, AlertCircle, Shield
@@ -327,7 +328,11 @@ export default function NotificationsModal(props) {
                     <p className="text-xs text-slate-300 truncate">{toggle.desc}</p>
                   </div>
                   <button
-                    onClick={() => setNotifSettings(prev => ({ ...prev, [toggle.key]: !prev[toggle.key] }))}
+                    onClick={() => {
+                      const updated = { ...notifSettings, [toggle.key]: !notifSettings[toggle.key] };
+                      setNotifSettings(updated);
+                      safeStorage.setItem('vlive_notif_settings', JSON.stringify(updated));
+                    }}
                     className={`w-11 h-6 rounded-full transition-colors p-0.5 shrink-0 flex items-center ${notifSettings[toggle.key] ? 'bg-pink-600 justify-end' : 'bg-slate-800 justify-start'}`}
                   >
                     <span className="w-5 h-5 rounded-full bg-white shadow-md transform transition-transform" />
@@ -338,6 +343,7 @@ export default function NotificationsModal(props) {
 
             <button
               onClick={() => {
+                safeStorage.setItem('vlive_notif_settings', JSON.stringify(notifSettings));
                 setIsNotifSettingsOpen(false);
                 showToast(window.loc('تنظیمات اعلان‌ها با موفقیت ذخیره شد!', 'Notification settings saved successfully!'));
               }}
