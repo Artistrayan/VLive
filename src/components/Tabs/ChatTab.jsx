@@ -73,6 +73,19 @@ export default function ChatTab(props) {
   const [audioRecordingSeconds] = React.useState(0);
   const [activeUsersList, setActiveUsersList] = useState(propUsersList || []);
   const [newChatSearchQuery, setNewChatSearchQuery] = useState('');
+  
+  const messagesEndRef = React.useRef(null);
+  
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const cv = conversations.find(c => String(c.id) === String(activeConversationId));
+    if (activeConversationId && cv?.messages?.length) {
+      setTimeout(scrollToBottom, 100);
+    }
+  }, [activeConversationId, conversations]);
 
   // Fetch approved registered users if not provided
   useEffect(() => {
@@ -693,7 +706,7 @@ export default function ChatTab(props) {
             </div>
 
             {/* MAIN MESSAGES LAYOUT: SIDEBAR + CHAT THREAD */}
-            <div className="card-3d rounded-3xl border border-slate-800 bg-slate-950/90 overflow-hidden h-[620px] flex flex-col md:flex-row shadow-2xl relative">
+            <div className="card-3d rounded-3xl border border-slate-800 bg-slate-950/90 overflow-hidden h-[calc(100dvh-180px)] md:h-[620px] flex flex-col md:flex-row shadow-2xl relative">
               
               {/* CONVERSATIONS LIST SIDEBAR */}
               <div className={"w-full md:w-80 border-r border-slate-800/80 flex flex-col bg-slate-950 " + (activeConversationId ? "hidden md:flex" : "flex")}>
@@ -1150,7 +1163,7 @@ export default function ChatTab(props) {
                                       🌍
                                     </button>
                                     <button 
-                                      onClick={() => {
+                                      onClick={async () => {
                                         setConversations(prev => prev.map(c => {
                                           if (c.id === activeConversationId) {
                                             return {
@@ -1161,6 +1174,13 @@ export default function ChatTab(props) {
                                           return c;
                                         }));
                                         showToast(window.loc('پیام حذف شد 🗑️', 'The message was deleted 🗑️'));
+                                        if (msg.id && typeof msg.id !== 'string' || !String(msg.id).startsWith('msg_')) {
+                                          apiMessages.deleteMessage(msg.id).then(res => {
+                                            if (res && !res.success) {
+                                              console.warn("Could not delete message on server:", res.error);
+                                            }
+                                          });
+                                        }
                                       }}
                                       className="text-rose-400 hover:text-rose-300 font-bold"
                                       title={window.loc('حذف پیام', 'Delete message')}
@@ -1172,6 +1192,7 @@ export default function ChatTab(props) {
                               </div>
                             );
                           })}
+                          <div ref={messagesEndRef} />
                         </div>
 
                         {/* POPOVERS: AI ASSISTANT, EMOJIS, ATTACHMENTS */}

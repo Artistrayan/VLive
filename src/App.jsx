@@ -1071,9 +1071,66 @@ export default function App() {
     }
   }, [activeConversationId, showToast]);
 
-  const handleTranslateChatMessage = useCallback((msgId, text, lang) => {
-    showToast(loc('پیام ترجمه شد', 'Message translated'));
-  }, [showToast]);
+  const handleTranslateChatMessage = useCallback(async (msgId, text) => {
+    let isAlreadyTranslated = false;
+    setConversations(prev => {
+      let found = false;
+      const list = Array.isArray(prev) ? [...prev] : [];
+      for (let c of list) {
+        if (c.messages) {
+          const mIdx = c.messages.findIndex(m => m.id === msgId);
+          if (mIdx >= 0) {
+            if (c.messages[mIdx].translated) {
+              c.messages[mIdx].translated = false;
+              found = true;
+            } else if (c.messages[mIdx].translation) {
+              c.messages[mIdx].translated = true;
+              found = true;
+            }
+          }
+        }
+      }
+      isAlreadyTranslated = found;
+      return found ? list : prev;
+    });
+
+    if (isAlreadyTranslated) return;
+
+    try {
+      showToast(loc('در حال ترجمه پیام...', 'Translating message...'));
+      const targetLang = currentAppLang === 'fa' ? 'fa' : 'en';
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, targetLang })
+      });
+      const data = await res.json();
+      if (data && data.success && data.translatedText) {
+        setConversations(prev => {
+          const list = Array.isArray(prev) ? [...prev] : [];
+          for (let c of list) {
+            if (c.messages) {
+              const mIdx = c.messages.findIndex(m => m.id === msgId);
+              if (mIdx >= 0) {
+                c.messages[mIdx] = {
+                  ...c.messages[mIdx],
+                  translated: true,
+                  translation: data.translatedText,
+                  translationLang: targetLang
+                };
+              }
+            }
+          }
+          return list;
+        });
+        showToast(loc('پیام ترجمه شد ✅', 'Message translated ✅'));
+      } else {
+        showToast(loc('خطا در ترجمه', 'Translation failed'));
+      }
+    } catch (e) {
+      showToast(loc('خطا در ارتباط', 'Connection error'));
+    }
+  }, [currentAppLang, setConversations, showToast, loc]);
 
   // Stories
   const handlePublishStory = useCallback(async (storyData) => {

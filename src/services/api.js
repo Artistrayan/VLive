@@ -1176,6 +1176,25 @@ export const apiMessages = {
     }
   },
 
+  async deleteMessage(messageId) {
+    if (!messageId) return { success: false, error: 'No message ID' };
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
+      
+      if (error) {
+        console.warn('deleteMessage error:', error.message);
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (e) {
+      console.warn('deleteMessage exception:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
   subscribeToConversation(conversationId, onNewMessage, partnerId = null) {
     if (!conversationId && !partnerId) return null;
     if (typeof onNewMessage !== 'function') return null;
