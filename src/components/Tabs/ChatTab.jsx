@@ -505,10 +505,38 @@ export default function ChatTab(props) {
           });
         }
       } else {
-        console.warn('Direct message send note:', res?.error);
+        console.error('Direct message send note:', res?.error);
+        showToast(window.loc(`خطا در ارسال پیام: ${res?.error || 'خطای نامشخص'}`, `Error sending message: ${res?.error || 'Unknown error'}`));
+        
+        // Revert optimistic update
+        setConversations(prev => {
+          const list = Array.isArray(prev) ? [...prev] : [];
+          const matchIndex = list.findIndex(c => isTargetConv(c, activeConversationId, partnerId, canonicalId));
+          if (matchIndex >= 0) {
+            list[matchIndex] = {
+              ...list[matchIndex],
+              messages: (list[matchIndex].messages || []).filter(m => m.id !== localMsg.id)
+            };
+          }
+          return list;
+        });
       }
     } catch (err) {
-      console.warn('Real direct message send exception:', err);
+      console.error('Real direct message send exception:', err);
+      showToast(window.loc(`خطا در ارسال پیام: ${err.message || 'خطای نامشخص'}`, `Error sending message: ${err.message || 'Unknown error'}`));
+      
+      // Revert optimistic update
+      setConversations(prev => {
+        const list = Array.isArray(prev) ? [...prev] : [];
+        const matchIndex = list.findIndex(c => isTargetConv(c, activeConversationId, partnerId, canonicalId));
+        if (matchIndex >= 0) {
+          list[matchIndex] = {
+            ...list[matchIndex],
+            messages: (list[matchIndex].messages || []).filter(m => m.id !== localMsg.id)
+          };
+        }
+        return list;
+      });
     }
   };
 

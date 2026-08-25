@@ -790,19 +790,19 @@ export const apiHome = {
 // Helper to resolve profile UUID from id, username, or telegram_id
 export async function resolveProfileUuid(identifier) {
   if (!identifier) return null;
-  const str = String(identifier).trim();
+  const str = String(identifier).trim().replace(/^@/, '');
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) {
     return str;
   }
   try {
     const isNumeric = /^\d+$/.test(str);
-    let query = supabase.from('profiles').select('id').limit(1);
+    let query = supabase.from('profiles').select('id, username, username_handle, name, telegram_id');
     if (isNumeric) {
-      query = query.or(`username.eq.${str},telegram_id.eq.${str}`);
+      query = query.or(`telegram_id.eq.${str},username.ilike.${str},username_handle.ilike.${str}`);
     } else {
-      query = query.eq('username', str);
+      query = query.or(`username.ilike.${str},username_handle.ilike.${str},name.ilike.${str}`);
     }
-    const { data } = await query.maybeSingle();
+    const { data } = await query.limit(1).maybeSingle();
     return data?.id || null;
   } catch (e) {
     return null;
@@ -815,44 +815,44 @@ export async function getOrCreateConversation(userAId, userBId) {
     return { success: false, error: 'Both user IDs are required' };
   }
 
-  const u1 = userAId < userBId ? userAId : userBId;
-  const u2 = userAId < userBId ? userBId : userAId;
+  const u1 = userAId;
+  const u2 = userBId;
 
   try {
-    // 1. Check existing in either orientation
-    const { data: existing } = await supabase
+    // 1. Direct check orientation A -> B
+    const { data: conv1 } = await supabase
       .from('conversations')
-      .select('id, user1_id, user2_id, created_at')
-      .or(`and(user1_id.eq.${u1},user2_id.eq.${u2}),and(user1_id.eq.${u2},user2_id.eq.${u1})`)
-      .limit(1)
+      .select('*')
+      .eq('user1_id', u1)
+      .eq('user2_id', u2)
       .maybeSingle();
 
-    if (existing && existing.id) {
-      return { success: true, conversation: existing };
-    }
+    if (conv1?.id) return { success: true, conversation: conv1 };
 
-    // 2. Insert new
+    // 2. Direct check orientation B -> A
+    const { data: conv2 } = await supabase
+      .from('conversations')
+      .select('*')
+      .eq('user1_id', u2)
+      .eq('user2_id', u1)
+      .maybeSingle();
+
+    if (conv2?.id) return { success: true, conversation: conv2 };
+
+    // 3. If neither exists, insert new conversation
     const { data: created, error: createErr } = await supabase
       .from('conversations')
       .insert([{ user1_id: u1, user2_id: u2 }])
       .select()
       .maybeSingle();
 
-    if (created && created.id) {
-      return { success: true, conversation: created };
-    }
+    if (created?.id) return { success: true, conversation: created };
 
-    // Concurrency retry check
-    const { data: retry } = await supabase
-      .from('conversations')
-      .select('id, user1_id, user2_id, created_at')
-      .or(`and(user1_id.eq.${u1},user2_id.eq.${u2}),and(user1_id.eq.${u2},user2_id.eq.${u1})`)
-      .limit(1)
-      .maybeSingle();
-
-    if (retry && retry.id) {
-      return { success: true, conversation: retry };
-    }
+    // 4. Retry check in case of concurrent insert
+    const { data: retry1 } = await supabase.from('conversations').select('*').eq('user1_id', u1).eq('user2_id', u2).maybeSingle();
+    if (retry1?.id) return { success: true, conversation: retry1 };
+    const { data: retry2 } = await supabase.from('conversations').select('*').eq('user1_id', u2).eq('user2_id', u1).maybeSingle();
+    if (retry2?.id) return { success: true, conversation: retry2 };
 
     return { success: false, error: createErr?.message || 'Failed to create conversation' };
   } catch (err) {
@@ -871,24 +871,25 @@ export function getCanonicalConversationId(u1, u2) {
 
 export const apiMessages = {
   async getConversations() {
-    const uid = getUserId();
+    let uid = getUserId();
+    if (!uid) {
+      const { data: authData } = await supabase.auth.getUser();
+      if (authData?.user?.id) uid = authData.user.id;
+    }
     if (!uid) return [];
     try {
       const userUuid = await resolveProfileUuid(uid);
       if (!userUuid) return [];
 
-      // 1. Fetch all real conversations for user
-      const { data: convs, error: convsErr } = await supabase
-        .from('conversations')
-        .select('id, user1_id, user2_id, created_at')
-        .or(`user1_id.eq.${userUuid},user2_id.eq.${userUuid}`)
-        .order('created_at', { ascending: false });
+      // 1. Fetch conversations where user is user1_id or user2_id
+      const { data: convs1 } = await supabase.from('conversations').select('*').eq('user1_id', userUuid);
+      const { data: convs2 } = await supabase.from('conversations').select('*').eq('user2_id', userUuid);
 
-      if (convsErr || !Array.isArray(convs) || convs.length === 0) {
-        return [];
-      }
+      const allConvs = [...(convs1 || []), ...(convs2 || [])];
+      const uniqueConvs = Array.from(new Map(allConvs.map(c => [c.id, c])).values());
+      if (uniqueConvs.length === 0) return [];
 
-      const partnerUuids = convs.map(c => c.user1_id === userUuid ? c.user2_id : c.user1_id);
+      const partnerUuids = uniqueConvs.map(c => c.user1_id === userUuid ? c.user2_id : c.user1_id).filter(Boolean);
 
       // 2. Fetch profiles of conversation partners
       const { data: profs } = await supabase
@@ -902,7 +903,7 @@ export const apiMessages = {
       }
 
       // 3. Hydrate with latest message for each conversation
-      const hydratedList = await Promise.all(convs.map(async (conv) => {
+      const hydratedList = await Promise.all(uniqueConvs.map(async (conv) => {
         const partnerId = conv.user1_id === userUuid ? conv.user2_id : conv.user1_id;
         const prof = profilesMap.get(partnerId) || {};
         const isOnline = presenceService.isUserOnline(prof);
@@ -930,8 +931,8 @@ export const apiMessages = {
           partner_id: partnerId,
           user: {
             id: prof.id || partnerId,
-            username: prof.username || `user_${partnerId.slice(0, 6)}`,
-            name: prof.name || prof.username || `User ${partnerId.slice(0, 6)}`,
+            username: prof.username || `user_${String(partnerId).slice(0, 6)}`,
+            name: prof.name || prof.username || `User ${String(partnerId).slice(0, 6)}`,
             avatar: prof.avatar || '',
             age: calculatedAge !== null ? calculatedAge : prof.age,
             isVerified: prof.is_verified || Boolean(prof.isVerified),
@@ -955,7 +956,11 @@ export const apiMessages = {
 
   async getMessages(conversationId, partnerId = null) {
     if (!conversationId && !partnerId) return [];
-    const uid = getUserId();
+    let uid = getUserId();
+    if (!uid) {
+      const { data: authData } = await supabase.auth.getUser();
+      if (authData?.user?.id) uid = authData.user.id;
+    }
     if (!uid) return [];
 
     try {
@@ -963,9 +968,15 @@ export const apiMessages = {
       let targetConvId = null;
 
       if (conversationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(conversationId))) {
-        targetConvId = String(conversationId);
-      } else if (partnerId && userUuid) {
-        const partnerUuid = await resolveProfileUuid(partnerId);
+        const { data: isConv } = await supabase.from('conversations').select('id').eq('id', conversationId).maybeSingle();
+        if (isConv?.id) {
+          targetConvId = isConv.id;
+        }
+      }
+
+      if (!targetConvId && userUuid) {
+        const otherId = partnerId || conversationId;
+        const partnerUuid = await resolveProfileUuid(otherId);
         if (partnerUuid) {
           const convRes = await getOrCreateConversation(userUuid, partnerUuid);
           if (convRes.success && convRes.conversation) {
@@ -1028,17 +1039,31 @@ export const apiMessages = {
         }
       }
 
-      const senderUuid = await resolveProfileUuid(uid);
-      const recipientUuid = recipient ? await resolveProfileUuid(recipient) : (conversationId ? await resolveProfileUuid(conversationId) : null);
-      const canonicalId = (senderUuid && recipientUuid) ? getCanonicalConversationId(senderUuid, recipientUuid) : (conversationId || `conv_${Date.now()}`);
+      const senderUuid = (await resolveProfileUuid(uid)) || uid;
+      let recipientUuid = recipient ? await resolveProfileUuid(recipient) : null;
+      if (!recipientUuid && conversationId) {
+        recipientUuid = await resolveProfileUuid(conversationId);
+      }
 
       let targetConvId = null;
       if (conversationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(conversationId))) {
-        targetConvId = String(conversationId);
-      } else if (senderUuid && recipientUuid) {
+        const { data: isConv } = await supabase.from('conversations').select('id, user1_id, user2_id').eq('id', conversationId).maybeSingle();
+        if (isConv?.id) {
+          targetConvId = isConv.id;
+          if (!recipientUuid) {
+            recipientUuid = isConv.user1_id === senderUuid ? isConv.user2_id : isConv.user1_id;
+          }
+        } else {
+          recipientUuid = conversationId;
+        }
+      }
+
+      if (!targetConvId && senderUuid && recipientUuid) {
         const convRes = await getOrCreateConversation(senderUuid, recipientUuid);
         if (convRes.success && convRes.conversation) {
           targetConvId = convRes.conversation.id;
+        } else {
+          return { success: false, error: `Failed to create conversation: ${convRes.error}` };
         }
       }
 
@@ -1047,7 +1072,7 @@ export const apiMessages = {
       const nowIso = new Date().toISOString();
 
       let dbInsertedRecord = null;
-      if (targetConvId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetConvId)) && senderUuid) {
+      if (targetConvId && senderUuid) {
         try {
           const { data, error } = await supabase
             .from('messages')
@@ -1061,34 +1086,63 @@ export const apiMessages = {
           if (!error && data?.[0]) {
             dbInsertedRecord = data[0];
           } else if (error) {
-            console.warn('DB message insert note:', error.message);
+            console.error('DB message insert note:', error.message);
+            return { success: false, error: error.message };
           }
         } catch (dbErr) {
-          console.warn('DB message insert note:', dbErr.message);
+          console.error('DB message insert exception:', dbErr.message);
+          return { success: false, error: dbErr.message };
         }
+      } else {
+        return { success: false, error: 'Could not resolve conversation or sender ID' };
       }
 
       const formattedRecord = {
         id: dbInsertedRecord?.id || generatedMsgId,
-        conversation_id: targetConvId || canonicalId,
-        sender_id: senderUuid || uid || 'me',
+        conversation_id: targetConvId || conversationId,
+        sender_id: senderUuid,
         sender: 'me',
         content: messageContent,
         text: messageContent,
         message_text: messageContent,
+        recipient_id: recipientUuid,
         created_at: dbInsertedRecord?.created_at || nowIso,
         timestamp: Date.now()
       };
 
-      // Broadcast to all relevant Realtime Channels
+      // 1. Insert in-app Notification for Recipient
+      if (recipientUuid) {
+        try {
+          const { data: senderProf } = await supabase.from('profiles').select('name, username, avatar').eq('id', senderUuid).maybeSingle();
+          const sName = senderProf?.name || senderProf?.username || 'User';
+          const sAvatar = senderProf?.avatar || '';
+
+          await supabase.from('notifications').insert([{
+            user_id: recipientUuid,
+            type: 'message',
+            title: `💬 پیام جدید از @${senderProf?.username || sName}`,
+            content: messageContent.slice(0, 100),
+            metadata: {
+              conversation_id: targetConvId,
+              sender_id: senderUuid,
+              sender_name: sName,
+              sender_username: senderProf?.username,
+              avatar: sAvatar
+            },
+            is_read: false
+          }]);
+        } catch (notifErr) {
+          console.warn('Notification insert note:', notifErr);
+        }
+      }
+
+      // 2. Multi-channel broadcast in Realtime
       const channelsToBroadcast = new Set();
       if (targetConvId) channelsToBroadcast.add(`chat_conv_${targetConvId}`);
-      if (canonicalId) channelsToBroadcast.add(`chat_conv_${canonicalId}`);
       if (conversationId) channelsToBroadcast.add(`chat_conv_${conversationId}`);
       if (recipientUuid) channelsToBroadcast.add(`user_inbox_${recipientUuid}`);
       if (recipient) channelsToBroadcast.add(`user_inbox_${recipient}`);
-      if (senderUuid) channelsToBroadcast.add(`user_inbox_${senderUuid}`);
-      if (uid) channelsToBroadcast.add(`user_inbox_${uid}`);
+      channelsToBroadcast.add('chat_global_sync');
 
       channelsToBroadcast.forEach(chName => {
         try {
@@ -1100,17 +1154,21 @@ export const apiMessages = {
                 event: 'new_message',
                 payload: formattedRecord
               }).catch(() => {});
+              
+              setTimeout(() => {
+                supabase.removeChannel(ch).catch(() => {});
+              }, 2000);
             }
           });
         } catch (bErr) {
-          console.warn('Realtime broadcast error on channel:', chName, bErr);
+          console.error('Realtime broadcast error on channel:', chName, bErr);
         }
       });
 
       return {
         success: true,
         data: formattedRecord,
-        conversationId: targetConvId || canonicalId
+        conversationId: targetConvId || conversationId
       };
     } catch (e) {
       console.warn('sendMessage exception:', e);
@@ -2035,18 +2093,101 @@ export const apiReferral = {
 // ==========================================
 export const apiNotifications = {
   async getNotifications() {
-    const uid = getUserId();
+    let uid = getUserId();
+    if (!uid) {
+      const { data: authData } = await supabase.auth.getUser();
+      if (authData?.user?.id) uid = authData.user.id;
+    }
     if (!uid) return [];
     try {
+      const userUuid = (await resolveProfileUuid(uid)) || uid;
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', uid)
+        .eq('user_id', userUuid)
         .order('created_at', { ascending: false });
-      return error ? [] : data;
+
+      if (error) {
+        console.warn('getNotifications query note:', error.message);
+        return [];
+      }
+
+      return (data || []).map(n => ({
+        id: n.id,
+        type: n.type || 'message',
+        title: n.title || 'اعلان جدید',
+        desc: n.content || n.message || n.desc || '',
+        content: n.content || n.message || '',
+        time: n.created_at ? new Date(n.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) : 'Now',
+        timeGroup: 'Today',
+        unread: n.is_read !== true && n.read !== true && n.unread !== false,
+        sender: n.metadata?.sender_name || n.metadata?.sender_username || n.sender || '',
+        avatar: n.metadata?.avatar || n.avatar || '',
+        actionType: n.metadata?.action_type || '',
+        raw: n
+      }));
     } catch (e) {
+      console.warn('getNotifications exception:', e);
       return [];
     }
+  },
+
+  async createNotification(targetUserId, notifData) {
+    if (!targetUserId) return { success: false };
+    try {
+      const targetUuid = (await resolveProfileUuid(targetUserId)) || targetUserId;
+      const record = {
+        user_id: targetUuid,
+        type: notifData.type || 'message',
+        title: notifData.title || 'اعلان جدید',
+        content: notifData.content || notifData.desc || notifData.text || '',
+        metadata: {
+          sender_id: notifData.senderId,
+          sender_username: notifData.senderUsername,
+          sender_name: notifData.senderName,
+          avatar: notifData.avatar,
+          conversation_id: notifData.conversationId,
+          action_type: notifData.actionType
+        },
+        is_read: false
+      };
+
+      const { data, error } = await supabase
+        .from('notifications')
+        .insert([record])
+        .select()
+        .maybeSingle();
+
+      return { success: !error, data };
+    } catch (e) {
+      console.warn('createNotification exception:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
+  async markAsRead(notificationId) {
+    if (!notificationId) return;
+    try {
+      await supabase.from('notifications').update({ is_read: true }).eq('id', notificationId);
+    } catch {}
+  },
+
+  async markAllAsRead() {
+    let uid = getUserId();
+    if (!uid) return;
+    try {
+      const userUuid = (await resolveProfileUuid(uid)) || uid;
+      await supabase.from('notifications').update({ is_read: true }).eq('user_id', userUuid);
+    } catch {}
+  },
+
+  async clearAll() {
+    let uid = getUserId();
+    if (!uid) return;
+    try {
+      const userUuid = (await resolveProfileUuid(uid)) || uid;
+      await supabase.from('notifications').delete().eq('user_id', userUuid);
+    } catch {}
   }
 };
 
