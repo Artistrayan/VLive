@@ -1857,9 +1857,29 @@ export default function App() {
     // Fetch Notifications from API
     apiNotifications.getNotifications().then(notifs => {
       if (notifs) {
-        console.log('API Notifications Loaded:', notifs.length);
+        setNotificationsList(notifs);
       }
     }).catch(err => console.warn('Notifications fetch notice:', err));
+    
+    // Subscribe to real-time notifications
+    const uid = getUserId();
+    let notifChannel = null;
+    if (uid) {
+      notifChannel = apiNotifications.subscribeToNotifications(uid, (newNotif) => {
+        setNotificationsList(prev => [newNotif, ...prev]);
+      });
+    }
+    
+    return () => {
+      if (notifChannel) {
+        try {
+          // It's safer to just let it exist or import supabase to remove it.
+          // But since we can't easily import supabase here without adding import, 
+          // notifChannel.unsubscribe() is valid for a realtime channel.
+          notifChannel.unsubscribe();
+        } catch (e) {}
+      }
+    };
   }, [isLoggedIn]);
 
   // Realtime Presence & Online Status Tracking

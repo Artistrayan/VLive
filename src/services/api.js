@@ -2092,6 +2092,31 @@ export const apiReferral = {
 // 11. NOTIFICATIONS SERVICE
 // ==========================================
 export const apiNotifications = {
+  subscribeToNotifications(userId, onNewNotification) {
+    if (!userId || typeof onNewNotification !== 'function') return null;
+    const channel = supabase.channel(`user_notifications_${userId}`);
+    channel
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`
+      }, (payload) => {
+        if (payload.new) {
+          onNewNotification({
+            id: payload.new.id,
+            type: payload.new.type || 'message',
+            title: payload.new.title || 'اعلان جدید',
+            content: payload.new.content || '',
+            metadata: payload.new.metadata || {},
+            time: new Date(payload.new.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            unread: !payload.new.is_read
+          });
+        }
+      })
+      .subscribe();
+    return channel;
+  },
   async getNotifications() {
     let uid = getUserId();
     if (!uid) {

@@ -368,26 +368,44 @@ export default function ChatTab(props) {
 
       setConversations(prev => {
         const list = Array.isArray(prev) ? [...prev] : [];
-        const matchIndex = list.findIndex(c => isTargetConv(c, activeConversationId, partnerId, canonicalId));
+        const incomingConvId = newMsgRecord.conversation_id;
+        const incomingPartnerId = newMsgRecord.sender_id;
+        
+        let matchIndex = list.findIndex(c => String(c.id) === String(incomingConvId));
+        if (matchIndex === -1 && incomingPartnerId) {
+          matchIndex = list.findIndex(c => String(c.user?.id) === String(incomingPartnerId));
+        }
+
         if (matchIndex >= 0) {
           const currentMsgs = list[matchIndex].messages || [];
           if (currentMsgs.some(m => m.id === incomingFormatted.id || (m.text === incomingFormatted.text && m.sender === 'them'))) {
             return list;
           }
+          
+          const isActive = String(list[matchIndex].id) === String(activeConversationId);
           list[matchIndex] = {
             ...list[matchIndex],
             lastMessage: incomingFormatted.text,
             lastTime: incomingFormatted.time,
+            unreadCount: isActive ? 0 : ((list[matchIndex].unreadCount || 0) + 1),
             messages: [...currentMsgs, incomingFormatted]
           };
+          
+          // Move to top
+          const updatedConv = list[matchIndex];
+          list.splice(matchIndex, 1);
+          list.unshift(updatedConv);
+          
           return list;
-        } else if (currentConv) {
+        } else if (currentConv && isTargetConv(currentConv, incomingConvId, incomingPartnerId, null)) {
+          // Fallback if currentConv matches but isn't in list yet
           return [{
             ...currentConv,
-            id: activeConversationId,
-            partner_id: partnerId,
+            id: incomingConvId || activeConversationId,
+            partner_id: incomingPartnerId || partnerId,
             lastMessage: incomingFormatted.text,
             lastTime: incomingFormatted.time,
+            unreadCount: (String(incomingConvId) === String(activeConversationId)) ? 0 : 1,
             messages: [incomingFormatted]
           }, ...list];
         }
