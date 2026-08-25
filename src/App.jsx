@@ -1933,26 +1933,39 @@ export default function App() {
       }
     }).catch(err => console.warn('Notifications fetch notice:', err));
     
-    // Subscribe to real-time notifications
+    // Subscribe to real-time notifications for all user identifier variants
+    const targetIds = new Set();
     const uid = getUserId();
-    let notifChannel = null;
-    if (uid) {
-      notifChannel = apiNotifications.subscribeToNotifications(uid, (newNotif) => {
-        setNotificationsList(prev => [newNotif, ...prev]);
+    if (uid) targetIds.add(uid);
+    if (currentUser?.id) targetIds.add(currentUser.id);
+    if (currentUser?.username) targetIds.add(currentUser.username);
+    if (currentUsername) targetIds.add(currentUsername);
+    if (currentTelegramId) targetIds.add(String(currentTelegramId));
+
+    const activeNotifChannels = [];
+    const onReceiveNotif = (newNotif) => {
+      if (!newNotif) return;
+      setNotificationsList(prev => {
+        if (prev.some(x => x.id === newNotif.id)) return prev;
+        return [newNotif, ...prev];
       });
-    }
-    
-    return () => {
-      if (notifChannel) {
-        try {
-          // It's safer to just let it exist or import supabase to remove it.
-          // But since we can't easily import supabase here without adding import, 
-          // notifChannel.unsubscribe() is valid for a realtime channel.
-          notifChannel.unsubscribe();
-        } catch (e) {}
+      // Toast notification popup for user
+      if (newNotif.title) {
+        showToast(`${newNotif.title}: ${newNotif.desc || newNotif.content || ''}`);
       }
     };
-  }, [isLoggedIn]);
+
+    targetIds.forEach(tid => {
+      const ch = apiNotifications.subscribeToNotifications(tid, onReceiveNotif);
+      if (ch) activeNotifChannels.push(ch);
+    });
+    
+    return () => {
+      activeNotifChannels.forEach(ch => {
+        try { ch.unsubscribe(); } catch (e) {}
+      });
+    };
+  }, [isLoggedIn, currentUser?.id, currentUser?.username, currentUsername, currentTelegramId, showToast]);
 
   // Realtime Presence & Online Status Tracking
   useEffect(() => {

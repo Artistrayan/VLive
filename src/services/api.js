@@ -2190,7 +2190,28 @@ export const apiNotifications = {
   subscribeToNotifications(userId, onNewNotification) {
     if (!userId || typeof onNewNotification !== 'function') return null;
     const uid = String(userId);
-    const channel = supabase.channel(`user_notifs_sync_${uid}_${Date.now()}`);
+    const channelName = `user_notifs_${uid}`;
+    const channel = supabase.channel(channelName, {
+      config: { broadcast: { ack: true, self: true } }
+    });
+
+    const handlePayload = (payloadItem) => {
+      if (!payloadItem) return;
+      onNewNotification({
+        id: payloadItem.id || `notif_${Date.now()}`,
+        type: payloadItem.type || 'message',
+        title: payloadItem.title || 'اعلان جدید',
+        desc: payloadItem.content || payloadItem.desc || payloadItem.message || '',
+        content: payloadItem.content || payloadItem.desc || payloadItem.message || '',
+        metadata: payloadItem.metadata || {},
+        time: payloadItem.created_at ? new Date(payloadItem.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
+        timeGroup: 'Today',
+        unread: !payloadItem.is_read,
+        sender: payloadItem.metadata?.sender_name || payloadItem.metadata?.sender_username || payloadItem.sender || '',
+        avatar: payloadItem.metadata?.avatar || payloadItem.avatar || '',
+        actionType: payloadItem.metadata?.action_type || payloadItem.actionType || ''
+      });
+    };
 
     resolveProfileUuid(userId).then(userUuid => {
       const targetUuid = userUuid || userId;
@@ -2202,24 +2223,11 @@ export const apiNotifications = {
           table: 'notifications'
         }, (payload) => {
           if (payload.new && (payload.new.user_id === targetUuid || payload.new.user_id === uid)) {
-            onNewNotification({
-              id: payload.new.id,
-              type: payload.new.type || 'message',
-              title: payload.new.title || 'اعلان جدید',
-              desc: payload.new.content || '',
-              content: payload.new.content || '',
-              metadata: payload.new.metadata || {},
-              time: new Date(payload.new.created_at || Date.now()).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
-              timeGroup: 'Today',
-              unread: !payload.new.is_read,
-              sender: payload.new.metadata?.sender_name || payload.new.metadata?.sender_username || '',
-              avatar: payload.new.metadata?.avatar || '',
-              actionType: payload.new.metadata?.action_type || ''
-            });
+            handlePayload(payload.new);
           }
         })
         .on('broadcast', { event: 'new_notification' }, ({ payload }) => {
-          if (payload) onNewNotification(payload);
+          if (payload) handlePayload(payload);
         })
         .subscribe();
     }).catch(() => {
@@ -2230,24 +2238,11 @@ export const apiNotifications = {
           table: 'notifications'
         }, (payload) => {
           if (payload.new && payload.new.user_id === uid) {
-            onNewNotification({
-              id: payload.new.id,
-              type: payload.new.type || 'message',
-              title: payload.new.title || 'اعلان جدید',
-              desc: payload.new.content || '',
-              content: payload.new.content || '',
-              metadata: payload.new.metadata || {},
-              time: new Date(payload.new.created_at || Date.now()).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
-              timeGroup: 'Today',
-              unread: !payload.new.is_read,
-              sender: payload.new.metadata?.sender_name || payload.new.metadata?.sender_username || '',
-              avatar: payload.new.metadata?.avatar || '',
-              actionType: payload.new.metadata?.action_type || ''
-            });
+            handlePayload(payload.new);
           }
         })
         .on('broadcast', { event: 'new_notification' }, ({ payload }) => {
-          if (payload) onNewNotification(payload);
+          if (payload) handlePayload(payload);
         })
         .subscribe();
     });
@@ -2366,14 +2361,19 @@ export const apiNotifications = {
         actionType: record.metadata.action_type || ''
       };
 
-      const targetsToNotify = new Set([targetUserId, targetUuid]);
+      const targetsToNotify = new Set([String(targetUserId)]);
+      if (targetUuid) targetsToNotify.add(String(targetUuid));
+      if (notifData.senderUsername) targetsToNotify.add(String(notifData.senderUsername));
+
       targetsToNotify.forEach(tid => {
         try {
-          const ch = supabase.channel(`user_notifs_sync_${tid}`);
+          const ch = supabase.channel(`user_notifs_${tid}`, {
+            config: { broadcast: { ack: true, self: true } }
+          });
           ch.subscribe((status) => {
             if (status === 'SUBSCRIBED') {
               ch.send({ type: 'broadcast', event: 'new_notification', payload: notifObj }).catch(() => {});
-              setTimeout(() => { try { supabase.removeChannel(ch); } catch {} }, 2000);
+              setTimeout(() => { try { supabase.removeChannel(ch); } catch {} }, 4000);
             }
           });
         } catch {}

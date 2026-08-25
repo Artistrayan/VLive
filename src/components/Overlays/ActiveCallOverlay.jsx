@@ -35,9 +35,11 @@ export default function ActiveCallOverlay({
       }
     };
 
-    const onLocalTracks = ({ videoTrack, audioTrack }) => {
+    const onLocalTracks = ({ videoTrack, audioTrack, stream }) => {
       if (videoTrack && localVideoRef.current) {
         livekitManager.attachTrackToElement(videoTrack, localVideoRef.current);
+      } else if (stream && localVideoRef.current) {
+        livekitManager.attachTrackToElement(stream, localVideoRef.current);
       }
     };
 
@@ -45,8 +47,12 @@ export default function ActiveCallOverlay({
     livekitManager.on('local_tracks_published', onLocalTracks);
 
     // If local video already exists
-    if (livekitManager.localVideoTrack && localVideoRef.current) {
-      livekitManager.attachTrackToElement(livekitManager.localVideoTrack, localVideoRef.current);
+    if (localVideoRef.current) {
+      if (livekitManager.localVideoTrack) {
+        livekitManager.attachTrackToElement(livekitManager.localVideoTrack, localVideoRef.current);
+      } else if (livekitManager.localMediaStream) {
+        livekitManager.attachTrackToElement(livekitManager.localMediaStream, localVideoRef.current);
+      }
     }
 
     return () => {
