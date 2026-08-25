@@ -757,6 +757,7 @@ export default function ChatTab(props) {
 
                     return filteredConvs.map(conv => {
                       const isSelected = activeConversationId === conv.id;
+                      const cUser = conv.user || {};
                       return (
                         <button
                           key={conv.id}
@@ -767,8 +768,8 @@ export default function ChatTab(props) {
                           className={"w-full p-3 rounded-2xl flex items-center gap-3 transition text-left border relative group " + (isSelected ? "bg-gradient-to-r from-pink-500/20 via-purple-500/10 to-transparent border-pink-500/50 shadow-md" : "bg-slate-900/40 border-slate-800/60 hover:bg-slate-900 hover:border-slate-700")}
                         >
                           <div className="relative shrink-0">
-                            <img src={conv.user.avatar} alt={conv.user.name} className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-700" />
-                            {conv.user.online && !conv.isGroup && (
+                            <img src={cUser.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={cUser.name || 'User'} className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-700" />
+                            {cUser.online && !conv.isGroup && (
                               <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
                             )}
                             {conv.isGroup && (
@@ -781,8 +782,8 @@ export default function ChatTab(props) {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs font-bold text-white truncate flex items-center gap-1">
-                                {conv.user.name}
-                                {conv.user.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
+                                {cUser.name || 'User'}
+                                {cUser.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
                                 {conv.pinned && <Pin className="w-3 h-3 text-amber-400 shrink-0 fill-amber-400" />}
                               </span>
                               <span className="text-[9px] text-slate-500 font-mono shrink-0">{conv.lastTime}</span>
@@ -826,16 +827,16 @@ export default function ChatTab(props) {
                             </button>
 
                             <div className="relative shrink-0">
-                              <img src={currentConv.user.avatar} alt={currentConv.user.name} className="w-10 h-10 rounded-2xl object-cover ring-2 ring-pink-500/30" />
-                              {currentConv.user.online && (
+                              <img src={currentConv?.user?.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={currentConv?.user?.name || 'User'} className="w-10 h-10 rounded-2xl object-cover ring-2 ring-pink-500/30" />
+                              {currentConv?.user?.online && (
                                 <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
                               )}
                             </div>
 
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <h3 className="text-xs font-bold text-white truncate">{currentConv.user.name}</h3>
-                                {currentConv.user.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
+                                <h3 className="text-xs font-bold text-white truncate">{currentConv?.user?.name || 'User'}</h3>
+                                {currentConv?.user?.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
                                 {isVipUser && (
                                   <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-0.5">
                                     <Crown className="w-2.5 h-2.5 text-amber-400" /> VIP
@@ -847,7 +848,7 @@ export default function ChatTab(props) {
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                                   🟢 Online
                                 </p>
-                                {!isVipUser && !currentConv.isGroup && (
+                                {!isVipUser && !currentConv?.isGroup && (
                                   <span className="text-[9px]">
                                     {conversationLimitInfo.isWaitingForFirstReply ? (
                                       <span className="text-amber-400 font-bold flex items-center gap-1">
@@ -874,8 +875,8 @@ export default function ChatTab(props) {
                           <div className="flex items-center gap-1.5 shrink-0">
                             <button
                               onClick={() => {
-                                handleInitiateCall(currentConv.user, 'voice', '1on1');
-                                showToast("Initiating Voice Call with " + currentConv.user.name + "...");
+                                handleInitiateCall(currentConv?.user, 'voice', '1on1');
+                                showToast("Initiating Voice Call with " + (currentConv?.user?.name || 'User') + "...");
                               }}
                               className="p-2 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-slate-950 font-bold transition shadow-md"
                               title="Voice Call"
@@ -885,8 +886,8 @@ export default function ChatTab(props) {
 
                             <button
                               onClick={() => {
-                                handleInitiateCall(currentConv.user, 'video', '1on1');
-                                showToast("Initiating 4K Video Call with " + currentConv.user.name + "...");
+                                handleInitiateCall(currentConv?.user, 'video', '1on1');
+                                showToast("Initiating 4K Video Call with " + (currentConv?.user?.name || 'User') + "...");
                               }}
                               className="p-2 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-600 hover:text-white font-bold transition shadow-md"
                               title="Video Call"
@@ -1547,13 +1548,13 @@ export default function ChatTab(props) {
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                     Live LiveKit {activeChatCall.type === 'video' ? '4K Video' : 'HD Voice'} Call Active
                   </span>
-                  <h3 className="text-2xl font-black">{activeChatCall.user.name}</h3>
+                  <h3 className="text-2xl font-black">{activeChatCall?.user?.name || 'User'}</h3>
                   <p className="text-sm text-slate-400 font-mono">Duration: {Math.floor(chatCallSeconds / 60).toString().padStart(2, '0')}:{(chatCallSeconds % 60).toString().padStart(2, '0')}</p>
                 </div>
 
                 <div className="relative my-auto flex flex-col items-center">
                   <div className="w-32 h-32 rounded-full ring-4 ring-pink-500/50 shadow-[0_0_50px_rgba(236,72,153,0.5)] overflow-hidden animate-pulse">
-                    <img src={activeChatCall.user.avatar} alt={activeChatCall.user.name} className="w-full h-full object-cover" />
+                    <img src={activeChatCall?.user?.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={activeChatCall?.user?.name || 'User'} className="w-full h-full object-cover" />
                   </div>
                 </div>
 

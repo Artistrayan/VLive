@@ -2942,16 +2942,16 @@ export default function App() {
                   clientY: e.clientY
                 }]
               })} onTouchEnd={handleTouchEnd} onMouseUp={handleTouchEnd} onMouseLeave={handleTouchEnd}>
-                    <img src={matchDeckProfiles[matchCardIndex].avatar} alt={matchDeckProfiles[matchCardIndex].name} className="absolute inset-0 w-full h-full object-cover filter brightness-95" />
+                    <img src={matchDeckProfiles[matchCardIndex]?.avatar || ''} alt={matchDeckProfiles[matchCardIndex]?.name || 'Match'} className="absolute inset-0 w-full h-full object-cover filter brightness-95" />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 
                     <div className="relative z-20 p-3.5 space-y-1">
                       <h3 className="text-xl font-black text-white flex items-center gap-1.5">
-                        <span>{matchDeckProfiles[matchCardIndex].name}</span>
-                        <span className="text-sm text-pink-400 font-bold">({matchDeckProfiles[matchCardIndex].age})</span>
+                        <span>{matchDeckProfiles[matchCardIndex]?.name}</span>
+                        <span className="text-sm text-pink-400 font-bold">({matchDeckProfiles[matchCardIndex]?.age})</span>
                         <BadgeCheck className="w-4 h-4 text-cyan-400" />
                       </h3>
-                      <p className="text-xs text-slate-300 font-medium">📍 {matchDeckProfiles[matchCardIndex].city} • Online Streamer</p>
+                      <p className="text-xs text-slate-300 font-medium">📍 {matchDeckProfiles[matchCardIndex]?.city} • Online Streamer</p>
 
                       <div className="flex items-center gap-2 pt-3">
                         <button onClick={() => triggerMatchAction('reject')} className="flex-1 py-2 rounded-2xl bg-rose-600/80 hover:bg-rose-600 text-white font-black text-xs transition">
@@ -3034,7 +3034,7 @@ export default function App() {
       </nav>
 
       {/* MODAL: REDESIGNED NOTIFICATIONS SYSTEM */}
-      <NotificationsModal isNotificationsOpen={isNotificationsOpen} setIsNotificationsOpen={setIsNotificationsOpen} isNotifSettingsOpen={isNotifSettingsOpen} setIsNotifSettingsOpen={setIsNotifSettingsOpen} isRtl={isRtl} notificationsList={notificationsList} setNotificationsList={setNotificationsList} notificationFilterTab={notificationFilterTab} setNotificationFilterTab={setNotificationFilterTab} notifSettings={notifSettings} setNotifSettings={setNotifSettings} setActiveChatCall={setActiveChatCall} setIsSettingsModalOpen={setIsSettingsModalOpen} showToast={showToast} />
+      <NotificationsModal isNotificationsOpen={isNotificationsOpen} setIsNotificationsOpen={setIsNotificationsOpen} isNotifSettingsOpen={isNotifSettingsOpen} setIsNotifSettingsOpen={setIsNotifSettingsOpen} isRtl={isRtl} notificationsList={notificationsList} setNotificationsList={setNotificationsList} notificationFilterTab={notificationFilterTab} setNotificationFilterTab={setNotificationFilterTab} notifSettings={notifSettings} setNotifSettings={setNotifSettings} setActiveChatCall={setActiveChatCall} setIsSettingsModalOpen={setIsSettingsModalOpen} showToast={showToast} onSwitchMainTab={(tab) => setActiveMainTab(tab)} />
       {/* MODAL: 18-SECTION SETTINGS MODAL */}
       <SettingsModal currentUser={currentUser} userRole={userRole} handleLogout={handleLogout} isSettingsModalOpen={isSettingsModalOpen} setIsSettingsModalOpen={setIsSettingsModalOpen} currentAppLang={currentAppLang} setCurrentAppLang={setCurrentAppLang} handleSelectLanguage={handleSelectLanguage} APP_LANGUAGES={APP_LANGUAGES} setIsLanguageModalOpen={setIsLanguageModalOpen} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} currentUsername={currentUsername} authUsername={authUsername} authEmail={authEmail} currentTelegramId={currentTelegramId} userGender={userGender} isVerified={isVerified} verificationsList={verificationsList} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} isRtl={isRtl} notifSettings={notifSettings} setNotifSettings={setNotifSettings} appThemeMode={appThemeMode} setAppThemeMode={setAppThemeMode} setIsKycModalOpen={setIsKycModalOpen} setIsSuggestionModalOpen={setIsSuggestionModalOpen} setIsTermsModalOpen={setIsTermsModalOpen} setIsVipModalOpen={setIsVipModalOpen} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} showToast={showToast} loc={loc} />
 
@@ -3173,11 +3173,11 @@ export default function App() {
       {postCallRatingData && <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-pink-500/50 max-w-sm w-full space-y-4 shadow-[0_0_50px_rgba(236,72,153,0.3)] text-center">
             <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-pink-500 to-purple-600 p-0.5 mx-auto shadow-lg">
-              <img src={postCallRatingData.user.avatar} alt={postCallRatingData.user.name} className="w-full h-full object-cover rounded-[22px]" />
+              <img src={postCallRatingData.user?.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={postCallRatingData.user?.name || 'User'} className="w-full h-full object-cover rounded-[22px]" />
             </div>
 
             <div>
-              <h3 className="text-base font-black text-white">{loc('ثبت امتیاز کیفیت تماس با', 'Call quality score registration')} {postCallRatingData.user.name}</h3>
+              <h3 className="text-base font-black text-white">{loc('ثبت امتیاز کیفیت تماس با', 'Call quality score registration')} {postCallRatingData.user?.name || 'User'}</h3>
               <p className="text-xs text-slate-400 mt-1">{loc('مدت زمان:', 'Duration:')} {postCallRatingData.duration} {loc('• کیفیت:', 'Quality:')} {postCallRatingData.quality}</p>
             </div>
 
@@ -3196,7 +3196,7 @@ export default function App() {
               <button onClick={() => handleReportUserInCall(loc('محتوای نامناسب', 'Inappropriate content'))} className="px-3 py-2 rounded-2xl bg-rose-600/20 text-rose-300 border border-rose-500/40 text-xs font-bold flex items-center gap-1">
                 <Flag className="w-3.5 h-3.5" /> {loc('گزارش', 'Report')}
               </button>
-              <button onClick={() => handleBlockUserInCall(postCallRatingData.user.username)} className="px-3 py-2 rounded-2xl bg-slate-800 text-slate-300 text-xs font-bold flex items-center gap-1">
+              <button onClick={() => handleBlockUserInCall(postCallRatingData.user?.username || '')} className="px-3 py-2 rounded-2xl bg-slate-800 text-slate-300 text-xs font-bold flex items-center gap-1">
                 <Ban className="w-3.5 h-3.5" /> {loc('مسدودسازی', 'blocking')}
               </button>
               <button onClick={handleSubmitPostCallRating} className="flex-1 py-2 rounded-2xl btn-neon-pink text-xs font-black shadow-lg">
@@ -3208,12 +3208,12 @@ export default function App() {
 
       
       {/* ==================== STORY FULLSCREEN VIEWER MODAL ==================== */}
-      {activeStoryView && <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-between p-3 sm:p-5 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+      {activeStoryView && activeStoryView.group && <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-between p-3 sm:p-5 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
           {/* Top Progress & User Info Header */}
           <div className="w-full max-w-md space-y-3 relative z-20">
             {/* Story Progress Bars */}
             <div className="flex gap-1.5 w-full">
-              {activeStoryView.group.items.map((item, idx) => <div key={item.id} className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
+              {(activeStoryView.group.items || []).map((item, idx) => <div key={item.id} className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-pink-500 to-purple-400 transition-all duration-75" style={{
                   width: idx < activeStoryView.currentIndex ? '100%' : idx === activeStoryView.currentIndex ? `${activeStoryView.progress}%` : '0%'
                 }} />
@@ -3223,14 +3223,14 @@ export default function App() {
             {/* User Bar */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img src={activeStoryView.group.user.avatar} alt={activeStoryView.group.user.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-pink-500" />
+                <img src={activeStoryView.group.user?.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={activeStoryView.group.user?.name || 'User'} className="w-10 h-10 rounded-full object-cover ring-2 ring-pink-500" />
                 <div>
                   <h4 className="text-xs font-black text-white flex items-center gap-1.5">
-                    {activeStoryView.group.user.name}
-                    {activeStoryView.group.user.isVip && <Crown className="w-3.5 h-3.5 text-amber-400" />}
+                    {activeStoryView.group.user?.name || 'User'}
+                    {activeStoryView.group.user?.isVip && <Crown className="w-3.5 h-3.5 text-amber-400" />}
                   </h4>
                   <span className="text-[10px] text-slate-300 font-mono">
-                    {activeStoryView.group.items[activeStoryView.currentIndex]?.time || loc('هم‌اکنون', 'right now')}
+                    {activeStoryView.group.items?.[activeStoryView.currentIndex]?.time || loc('هم‌اکنون', 'right now')}
                   </span>
                 </div>
               </div>
@@ -3798,7 +3798,7 @@ export default function App() {
                 {matchCardIndex < matchDeckProfiles.length && matchDeckProfiles[matchCardIndex] ? <div className="relative flex-1 min-h-[380px] sm:min-h-[440px] rounded-3xl overflow-hidden bg-slate-950 border border-pink-500/30 shadow-2xl group flex flex-col justify-end">
                     
                     {/* Background Blur & Photo */}
-                    <img src={matchDeckProfiles[matchCardIndex].avatar} alt={matchDeckProfiles[matchCardIndex].name} className="absolute inset-0 w-full h-full object-cover filter brightness-90 group-hover:scale-105 transition duration-700" />
+                    <img src={matchDeckProfiles[matchCardIndex]?.avatar || ''} alt={matchDeckProfiles[matchCardIndex]?.name || 'Match'} className="absolute inset-0 w-full h-full object-cover filter brightness-90 group-hover:scale-105 transition duration-700" />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 
                     {/* Top Badges */}

@@ -147,7 +147,11 @@ export default function NotificationsModal(props) {
               {['Today', 'Yesterday', 'Earlier'].map(group => {
                 const groupItems = notificationsList.filter(n => {
                   const matchGroup = (n.timeGroup || 'Today') === group;
-                  const matchFilter = notificationFilterTab === 'all' || n.type === notificationFilterTab;
+                  const matchFilter = 
+                    notificationFilterTab === 'all' || 
+                    n.type === notificationFilterTab ||
+                    (notificationFilterTab === 'call' && (n.type === 'incoming_call' || n.type === 'missed_call' || n.type === 'call_back' || n.type === 'call')) ||
+                    (notificationFilterTab === 'message' && (n.type === 'chat' || n.type === 'new_message' || n.type === 'message'));
                   return matchGroup && matchFilter;
                 });
 
@@ -165,9 +169,14 @@ export default function NotificationsModal(props) {
                         if (item.type === 'gift') {
                           IconComp = Gift;
                           iconBg = 'bg-amber-500/10 text-amber-400 border-amber-500/30';
-                        } else if (item.type === 'call') {
+                        } else if (item.type === 'call' || item.type === 'incoming_call' || item.type === 'missed_call' || item.type === 'call_back') {
                           IconComp = PhoneCall;
-                          iconBg = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+                          iconBg = item.type === 'missed_call' || item.title?.includes('دست رفته')
+                            ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+                        } else if (item.type === 'message' || item.type === 'chat' || item.type === 'new_message') {
+                          IconComp = MessageSquare;
+                          iconBg = 'bg-pink-500/10 text-pink-400 border-pink-500/30';
                         } else if (item.type === 'vip') {
                           IconComp = Crown;
                           iconBg = 'bg-purple-500/10 text-purple-400 border-purple-500/30';
@@ -181,6 +190,10 @@ export default function NotificationsModal(props) {
                             key={item.id}
                             onClick={() => {
                               setNotificationsList(prev => prev.map(n => n.id === item.id ? { ...n, unread: false } : n));
+                              if (item.type === 'message' || item.type === 'chat' || item.actionType === 'open_chat') {
+                                setIsNotificationsOpen(false);
+                                if (props.onSwitchMainTab) props.onSwitchMainTab('messages');
+                              }
                             }}
                             className={`p-3.5 rounded-2xl border transition relative group cursor-pointer ${
                               item.unread
@@ -203,17 +216,17 @@ export default function NotificationsModal(props) {
                                 <p className="text-xs text-slate-300 leading-relaxed">{item.desc}</p>
 
                                 {/* Action Buttons Inside Cards */}
-                                {item.actionType === 'call_back' && (
+                                {(item.actionType === 'call_back' || item.type === 'call' || item.type === 'incoming_call') && (
                                   <div className="pt-1.5 flex items-center gap-2">
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setActiveChatCall({
-                                          type: item.title.includes('Video') ? 'video' : 'voice',
-                                          user: { name: item.sender || window.loc('سارا', 'Sarah'), avatar: item.avatar }
+                                          type: item.title.includes('Video') || item.title.includes('تصویری') ? 'video' : 'voice',
+                                          user: { name: item.sender || window.loc('کاربر', 'User'), avatar: item.avatar }
                                         });
                                         setIsNotificationsOpen(false);
-                                        showToast(window.loc(`تماس با @${item.sender || window.loc('کاربر', 'user')}...`, `تماس با @${item.sender || window.loc('کاربر', 'user')}...`));
+                                        showToast(window.loc(`تماس با ${item.sender || window.loc('کاربر', 'User')}...`, `Call with ${item.sender || window.loc('User', 'User')}...`));
                                       }}
                                       className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5"
                                     >
@@ -257,7 +270,12 @@ export default function NotificationsModal(props) {
               })}
 
               {/* EMPTY STATE */}
-              {notificationsList.filter(n => notificationFilterTab === 'all' || n.type === notificationFilterTab).length === 0 && (
+              {notificationsList.filter(n => 
+                notificationFilterTab === 'all' || 
+                n.type === notificationFilterTab ||
+                (notificationFilterTab === 'call' && (n.type === 'incoming_call' || n.type === 'missed_call' || n.type === 'call_back' || n.type === 'call')) ||
+                (notificationFilterTab === 'message' && (n.type === 'chat' || n.type === 'new_message' || n.type === 'message'))
+              ).length === 0 && (
                 <div className="py-12 text-center space-y-3 bg-slate-950/80 rounded-3xl border border-slate-800">
                   <Bell className="w-10 h-10 text-slate-600 mx-auto animate-bounce" />
                   <p className="text-xs text-slate-300 font-bold">{window.loc('هیچ اعلانی در این دسته‌بندی یافت نشد', 'No announcements were found in this category')}</p>

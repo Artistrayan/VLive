@@ -1117,20 +1117,18 @@ export const apiMessages = {
           const sName = senderProf?.name || senderProf?.username || 'User';
           const sAvatar = senderProf?.avatar || '';
 
-          await supabase.from('notifications').insert([{
-            user_id: recipientUuid,
+          apiNotifications.createNotification({
+            targetUserId: recipientUuid,
             type: 'message',
-            title: `💬 پیام جدید از @${senderProf?.username || sName}`,
+            title: `💬 پیام جدید از ${sName}`,
             content: messageContent.slice(0, 100),
-            metadata: {
-              conversation_id: targetConvId,
-              sender_id: senderUuid,
-              sender_name: sName,
-              sender_username: senderProf?.username,
-              avatar: sAvatar
-            },
-            is_read: false
-          }]);
+            senderId: senderUuid,
+            senderName: sName,
+            senderUsername: senderProf?.username,
+            avatar: sAvatar,
+            conversationId: targetConvId,
+            actionType: 'open_chat'
+          }).catch(() => {});
         } catch (notifErr) {
           console.warn('Notification insert note:', notifErr);
         }
@@ -1699,23 +1697,27 @@ export const apiCalls = {
       const effectiveCallerId = callerUuid || uid;
       const effectiveReceiverId = receiverUuid || receiverId;
 
-      // 1. Generate unique room name
+      // 1. Generate unique room name and session ID
       const roomName = `call_${String(effectiveCallerId).slice(0, 8)}_${String(effectiveReceiverId).slice(0, 8)}_${Date.now()}`;
-      const callLogId = `call_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const callSessionId = `call_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
-      // 2. Attempt call log insert in Supabase if valid UUID
+      // 2. Real call session insert in Supabase call_sessions table
       if (callerUuid && receiverUuid) {
         try {
+          const dbCallType = callType === 'voice' ? 'audio' : (callType || 'video');
           await supabase
-            .from('call_logs')
+            .from('call_sessions')
             .insert([{
+              session_id: callSessionId,
               caller_id: callerUuid,
               receiver_id: receiverUuid,
-              call_type: callType,
-              status: 'ringing'
+              call_type: dbCallType,
+              status: 'ringing',
+              room_name: roomName,
+              tariff_per_min: tariffPerMin
             }]);
-        } catch (clErr) {
-          console.warn('Call log DB note:', clErr.message);
+        } catch (csErr) {
+          console.warn('Call session DB note:', csErr.message);
         }
       }
 
@@ -1732,7 +1734,7 @@ export const apiCalls = {
 
       const signalPayload = {
         type: 'INCOMING_CALL',
-        callId: callLogId,
+        callId: callSessionId,
         roomName,
         callerId: effectiveCallerId,
         caller: callerProfile || receiverUser || { id: effectiveCallerId, name: uid },
@@ -1752,7 +1754,7 @@ export const apiCalls = {
         sendCallSignal(tid, signalPayload);
       });
 
-      // 5. Also trigger in-app notification to receiver
+      // 5. Trigger in-app notification to receiver
       if (receiverUuid || receiverId) {
         apiNotifications.createNotification({
           targetUserId: receiverUuid || receiverId,
@@ -1769,7 +1771,7 @@ export const apiCalls = {
 
       return {
         success: true,
-        callId: callLogId,
+        callId: callSessionId,
         roomName,
         callerId: effectiveCallerId,
         receiverId: effectiveReceiverId
@@ -1782,6 +1784,20 @@ export const apiCalls = {
 
   async acceptCall({ callId, callerId, receiverId, roomName, callType }) {
     try {
+      if (callId) {
+        try {
+          await supabase
+            .from('call_sessions')
+            .update({
+              status: 'accepted',
+              started_at: new Date().toISOString()
+            })
+            .eq('session_id', callId);
+        } catch (dbErr) {
+          console.warn('acceptCall DB note:', dbErr.message);
+        }
+      }
+
       const signalPayload = {
         type: 'CALL_ACCEPTED',
         callId,
@@ -1809,6 +1825,20 @@ export const apiCalls = {
 
   async rejectCall({ callId, callerId, receiverId, reason = 'declined' }) {
     try {
+      if (callId) {
+        try {
+          await supabase
+            .from('call_sessions')
+            .update({
+              status: 'rejected',
+              ended_at: new Date().toISOString()
+            })
+            .eq('session_id', callId);
+        } catch (dbErr) {
+          console.warn('rejectCall DB note:', dbErr.message);
+        }
+      }
+
       const signalPayload = {
         type: 'CALL_REJECTED',
         callId,
@@ -1826,6 +1856,32 @@ export const apiCalls = {
       targets.forEach(tid => {
         sendCallSignal(tid, signalPayload);
       });
+
+      // Send missed call notification to receiver
+      const missedTarget = receiverId || callerId;
+      if (missedTarget) {
+        let callerName = 'کاربر';
+        let callerAvatar = '';
+        if (callerId) {
+          try {
+            const { data: cProf } = await supabase.from('profiles').select('name, username, avatar').eq('id', callerId).maybeSingle();
+            if (cProf) {
+              callerName = cProf.name || (cProf.username ? `@${cProf.username}` : 'کاربر');
+              callerAvatar = cProf.avatar || '';
+            }
+          } catch {}
+        }
+        apiNotifications.createNotification({
+          targetUserId: missedTarget,
+          type: 'call',
+          title: '📞 تماس از دست رفته',
+          content: `تماس از دست رفته از طرف ${callerName}`,
+          senderId: callerId,
+          senderName: callerName,
+          avatar: callerAvatar,
+          actionType: 'call_back'
+        }).catch(() => {});
+      }
 
       return { success: true };
     } catch (e) {
@@ -1855,6 +1911,21 @@ export const apiCalls = {
 
   async endCall({ callId, callerId, receiverId, partnerId, roomName, durationSec = 0 }) {
     try {
+      if (callId) {
+        try {
+          await supabase
+            .from('call_sessions')
+            .update({
+              status: 'ended',
+              ended_at: new Date().toISOString(),
+              duration_sec: durationSec
+            })
+            .eq('session_id', callId);
+        } catch (dbErr) {
+          console.warn('endCall DB note:', dbErr.message);
+        }
+      }
+
       const targetId = partnerId || receiverId || callerId;
       if (targetId) {
         const signalPayload = {
@@ -2118,29 +2189,72 @@ export const apiReferral = {
 export const apiNotifications = {
   subscribeToNotifications(userId, onNewNotification) {
     if (!userId || typeof onNewNotification !== 'function') return null;
-    const channel = supabase.channel(`user_notifications_${userId}`);
-    channel
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${userId}`
-      }, (payload) => {
-        if (payload.new) {
-          onNewNotification({
-            id: payload.new.id,
-            type: payload.new.type || 'message',
-            title: payload.new.title || 'اعلان جدید',
-            content: payload.new.content || '',
-            metadata: payload.new.metadata || {},
-            time: new Date(payload.new.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-            unread: !payload.new.is_read
-          });
-        }
-      })
-      .subscribe();
+    const uid = String(userId);
+    const channel = supabase.channel(`user_notifs_sync_${uid}_${Date.now()}`);
+
+    resolveProfileUuid(userId).then(userUuid => {
+      const targetUuid = userUuid || userId;
+
+      channel
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications'
+        }, (payload) => {
+          if (payload.new && (payload.new.user_id === targetUuid || payload.new.user_id === uid)) {
+            onNewNotification({
+              id: payload.new.id,
+              type: payload.new.type || 'message',
+              title: payload.new.title || 'اعلان جدید',
+              desc: payload.new.content || '',
+              content: payload.new.content || '',
+              metadata: payload.new.metadata || {},
+              time: new Date(payload.new.created_at || Date.now()).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
+              timeGroup: 'Today',
+              unread: !payload.new.is_read,
+              sender: payload.new.metadata?.sender_name || payload.new.metadata?.sender_username || '',
+              avatar: payload.new.metadata?.avatar || '',
+              actionType: payload.new.metadata?.action_type || ''
+            });
+          }
+        })
+        .on('broadcast', { event: 'new_notification' }, ({ payload }) => {
+          if (payload) onNewNotification(payload);
+        })
+        .subscribe();
+    }).catch(() => {
+      channel
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications'
+        }, (payload) => {
+          if (payload.new && payload.new.user_id === uid) {
+            onNewNotification({
+              id: payload.new.id,
+              type: payload.new.type || 'message',
+              title: payload.new.title || 'اعلان جدید',
+              desc: payload.new.content || '',
+              content: payload.new.content || '',
+              metadata: payload.new.metadata || {},
+              time: new Date(payload.new.created_at || Date.now()).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
+              timeGroup: 'Today',
+              unread: !payload.new.is_read,
+              sender: payload.new.metadata?.sender_name || payload.new.metadata?.sender_username || '',
+              avatar: payload.new.metadata?.avatar || '',
+              actionType: payload.new.metadata?.action_type || ''
+            });
+          }
+        })
+        .on('broadcast', { event: 'new_notification' }, ({ payload }) => {
+          if (payload) onNewNotification(payload);
+        })
+        .subscribe();
+    });
+
     return channel;
   },
+
   async getNotifications() {
     let uid = getUserId();
     if (!uid) {
@@ -2150,10 +2264,11 @@ export const apiNotifications = {
     if (!uid) return [];
     try {
       const userUuid = (await resolveProfileUuid(uid)) || uid;
+      
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', userUuid)
+        .or(`user_id.eq.${userUuid},user_id.eq.${uid}`)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -2167,7 +2282,7 @@ export const apiNotifications = {
         title: n.title || 'اعلان جدید',
         desc: n.content || n.message || n.desc || '',
         content: n.content || n.message || '',
-        time: n.created_at ? new Date(n.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) : 'Now',
+        time: n.created_at ? new Date(n.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) : 'هم‌اکنون',
         timeGroup: 'Today',
         unread: n.is_read !== true && n.read !== true && n.unread !== false,
         sender: n.metadata?.sender_name || n.metadata?.sender_username || n.sender || '',
@@ -2181,7 +2296,16 @@ export const apiNotifications = {
     }
   },
 
-  async createNotification(targetUserId, notifData) {
+  async createNotification(param1, param2) {
+    let targetUserId, notifData;
+    if (typeof param1 === 'object' && param1 !== null && !param2) {
+      targetUserId = param1.targetUserId || param1.user_id || param1.target_user_id;
+      notifData = param1;
+    } else {
+      targetUserId = param1;
+      notifData = param2 || {};
+    }
+
     if (!targetUserId) return { success: false };
     try {
       const targetUuid = (await resolveProfileUuid(targetUserId)) || targetUserId;
@@ -2191,12 +2315,12 @@ export const apiNotifications = {
         title: notifData.title || 'اعلان جدید',
         content: notifData.content || notifData.desc || notifData.text || '',
         metadata: {
-          sender_id: notifData.senderId,
-          sender_username: notifData.senderUsername,
-          sender_name: notifData.senderName,
+          sender_id: notifData.senderId || notifData.sender_id,
+          sender_username: notifData.senderUsername || notifData.sender_username,
+          sender_name: notifData.senderName || notifData.sender_name,
           avatar: notifData.avatar,
-          conversation_id: notifData.conversationId,
-          action_type: notifData.actionType
+          conversation_id: notifData.conversationId || notifData.conversation_id,
+          action_type: notifData.actionType || notifData.action_type
         },
         is_read: false
       };
@@ -2206,6 +2330,34 @@ export const apiNotifications = {
         .insert([record])
         .select()
         .maybeSingle();
+
+      const notifObj = {
+        id: data?.id || `notif_${Date.now()}`,
+        type: record.type,
+        title: record.title,
+        desc: record.content,
+        content: record.content,
+        metadata: record.metadata,
+        time: new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
+        timeGroup: 'Today',
+        unread: true,
+        sender: record.metadata.sender_name || record.metadata.sender_username || '',
+        avatar: record.metadata.avatar || '',
+        actionType: record.metadata.action_type || ''
+      };
+
+      const targetsToNotify = new Set([targetUserId, targetUuid]);
+      targetsToNotify.forEach(tid => {
+        try {
+          const ch = supabase.channel(`user_notifs_sync_${tid}`);
+          ch.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              ch.send({ type: 'broadcast', event: 'new_notification', payload: notifObj }).catch(() => {});
+              setTimeout(() => { try { supabase.removeChannel(ch); } catch {} }, 2000);
+            }
+          });
+        } catch {}
+      });
 
       return { success: !error, data };
     } catch (e) {
