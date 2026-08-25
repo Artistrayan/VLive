@@ -763,39 +763,54 @@ export default function App() {
 
   // Realtime Call Signaling Listener
   useEffect(() => {
-    const targets = new Set();
-    if (currentUser?.id) targets.add(currentUser.id);
-    if (currentUser?.username) targets.add(currentUser.username);
-    if (currentUser?.telegram_id) targets.add(currentUser.telegram_id);
-    if (currentUsername) targets.add(currentUsername);
-
-    if (targets.size === 0) return;
-
+    let isMounted = true;
     const channels = [];
 
-    const handleCallSignal = (payload) => {
-      if (!payload) return;
-      if (payload.type === 'INCOMING_CALL') {
-        setIncomingCall(payload);
-      } else if (payload.type === 'CALL_ACCEPTED') {
-        showToast(loc('تماس متصل شد', 'Call connected'));
-      } else if (payload.type === 'CALL_REJECTED') {
-        try { livekitManager.disconnect(); } catch {}
-        setActiveCall(null);
-        showToast(loc('تماس رد شد یا پاسخ داده نشد', 'Call rejected or unanswered'));
-      } else if (payload.type === 'CALL_ENDED') {
-        try { livekitManager.disconnect(); } catch {}
-        setActiveCall(null);
-        showToast(loc('تماس به پایان رسید', 'Call ended'));
+    const setupCallSignals = async () => {
+      const targets = new Set();
+      if (currentUser?.id) targets.add(currentUser.id);
+      if (currentUser?.username) targets.add(currentUser.username);
+      if (currentUser?.telegram_id) targets.add(currentUser.telegram_id);
+      if (currentUsername) targets.add(currentUsername);
+
+      const uid = getUserId();
+      if (uid) {
+        targets.add(uid);
+        try {
+          const uUuid = await resolveProfileUuid(uid);
+          if (uUuid) targets.add(uUuid);
+        } catch {}
       }
+
+      if (!isMounted || targets.size === 0) return;
+
+      const handleCallSignal = (payload) => {
+        if (!payload) return;
+        if (payload.type === 'INCOMING_CALL') {
+          setIncomingCall(payload);
+        } else if (payload.type === 'CALL_ACCEPTED') {
+          showToast(loc('تماس متصل شد', 'Call connected'));
+        } else if (payload.type === 'CALL_REJECTED') {
+          try { livekitManager.disconnect(); } catch {}
+          setActiveCall(null);
+          showToast(loc('تماس رد شد یا پاسخ داده نشد', 'Call rejected or unanswered'));
+        } else if (payload.type === 'CALL_ENDED') {
+          try { livekitManager.disconnect(); } catch {}
+          setActiveCall(null);
+          showToast(loc('تماس به پایان رسید', 'Call ended'));
+        }
+      };
+
+      targets.forEach(tid => {
+        const sigChannel = apiCalls.subscribeToCallSignals(tid, handleCallSignal);
+        if (sigChannel) channels.push(sigChannel);
+      });
     };
 
-    targets.forEach(tid => {
-      const sigChannel = apiCalls.subscribeToCallSignals(tid, handleCallSignal);
-      if (sigChannel) channels.push(sigChannel);
-    });
+    setupCallSignals();
 
     return () => {
+      isMounted = false;
       channels.forEach(ch => {
         try { supabase.removeChannel(ch); } catch {}
       });

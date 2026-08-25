@@ -1656,6 +1656,33 @@ export const apiVip = {
 // ==========================================
 // 9. CALLS SERVICE (Real WebRTC Signaling & Billing)
 // ==========================================
+function sendCallSignal(targetId, signalPayload) {
+  if (!targetId) return;
+  try {
+    const channelName = `user_call_signal_${targetId}`;
+    const sigChannel = supabase.channel(channelName, {
+      config: { broadcast: { ack: true, self: true } }
+    });
+    sigChannel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        sigChannel.send({
+          type: 'broadcast',
+          event: 'call_signal',
+          payload: signalPayload
+        }).then(() => {
+          setTimeout(() => {
+            try { supabase.removeChannel(sigChannel); } catch {}
+          }, 4000);
+        }).catch(err => {
+          console.warn('Signal send catch:', err);
+        });
+      }
+    });
+  } catch (err) {
+    console.warn('sendCallSignal error:', err);
+  }
+}
+
 export const apiCalls = {
   async initiateCall({ receiverId, receiverUser = null, callType = 'video', tariffPerMin = 100 }) {
     const uid = getUserId();
@@ -1712,24 +1739,29 @@ export const apiCalls = {
       };
 
       // 4. Broadcast signaling invitation to all receiver channel variants
-      const receiverChannels = new Set();
-      if (receiverUuid) receiverChannels.add(`user_call_signal_${receiverUuid}`);
-      if (receiverId) receiverChannels.add(`user_call_signal_${receiverId}`);
+      const receiverTargets = new Set();
+      if (receiverUuid) receiverTargets.add(receiverUuid);
+      if (receiverId) receiverTargets.add(receiverId);
+      if (receiverUser?.username) receiverTargets.add(receiverUser.username);
 
-      receiverChannels.forEach(chName => {
-        try {
-          const sigChannel = supabase.channel(chName);
-          sigChannel.subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-              sigChannel.send({
-                type: 'broadcast',
-                event: 'call_signal',
-                payload: signalPayload
-              }).catch(() => {});
-            }
-          });
-        } catch (bErr) {}
+      receiverTargets.forEach(tid => {
+        sendCallSignal(tid, signalPayload);
       });
+
+      // 5. Also trigger in-app notification to receiver
+      if (receiverUuid || receiverId) {
+        apiNotifications.createNotification({
+          targetUserId: receiverUuid || receiverId,
+          type: 'incoming_call',
+          title: callType === 'video' ? '📹 تماس تصویری ورودی' : '📞 تماس صوتی ورودی',
+          content: `${callerProfile?.name || callerProfile?.username || 'کاربر'} در حال تماس با شماست`,
+          senderId: effectiveCallerId,
+          senderName: callerProfile?.name || 'کاربر',
+          senderUsername: callerProfile?.username || '',
+          avatar: callerProfile?.avatar || '',
+          actionType: 'open_call'
+        }).catch(() => {});
+      }
 
       return {
         success: true,
@@ -1762,18 +1794,7 @@ export const apiCalls = {
       if (callerUuid) targets.add(callerUuid);
 
       targets.forEach(tid => {
-        try {
-          const sigChannel = supabase.channel(`user_call_signal_${tid}`);
-          sigChannel.subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-              sigChannel.send({
-                type: 'broadcast',
-                event: 'call_signal',
-                payload: signalPayload
-              }).catch(() => {});
-            }
-          });
-        } catch (bErr) {}
+        sendCallSignal(tid, signalPayload);
       });
 
       return { success: true };
@@ -1799,18 +1820,7 @@ export const apiCalls = {
       if (callerUuid) targets.add(callerUuid);
 
       targets.forEach(tid => {
-        try {
-          const sigChannel = supabase.channel(`user_call_signal_${tid}`);
-          sigChannel.subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-              sigChannel.send({
-                type: 'broadcast',
-                event: 'call_signal',
-                payload: signalPayload
-              }).catch(() => {});
-            }
-          });
-        } catch (bErr) {}
+        sendCallSignal(tid, signalPayload);
       });
 
       return { success: true };
@@ -1857,18 +1867,7 @@ export const apiCalls = {
         if (resolved) targets.add(resolved);
 
         targets.forEach(tid => {
-          try {
-            const sigChannel = supabase.channel(`user_call_signal_${tid}`);
-            sigChannel.subscribe((status) => {
-              if (status === 'SUBSCRIBED') {
-                sigChannel.send({
-                  type: 'broadcast',
-                  event: 'call_signal',
-                  payload: signalPayload
-                }).catch(() => {});
-              }
-            });
-          } catch (bErr) {}
+          sendCallSignal(tid, signalPayload);
         });
       }
 
@@ -1881,7 +1880,9 @@ export const apiCalls = {
   subscribeToCallSignals(userId, onSignal) {
     if (!userId || typeof onSignal !== 'function') return null;
     const uid = String(userId);
-    const channel = supabase.channel(`user_call_signal_${uid}`);
+    const channel = supabase.channel(`user_call_signal_${uid}`, {
+      config: { broadcast: { ack: true, self: true } }
+    });
 
     channel
       .on('broadcast', { event: 'call_signal' }, ({ payload }) => {
