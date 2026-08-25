@@ -2325,11 +2325,31 @@ export const apiNotifications = {
         is_read: false
       };
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('notifications')
         .insert([record])
         .select()
         .maybeSingle();
+
+      if (error) {
+        console.warn('createNotification DB primary insert note:', error.message);
+        // Fallback for older schema without title/metadata columns
+        const fallbackRecord = {
+          user_id: targetUuid,
+          type: record.type,
+          content: `${record.title}: ${record.content}`,
+          is_read: false
+        };
+        const fbRes = await supabase
+          .from('notifications')
+          .insert([fallbackRecord])
+          .select()
+          .maybeSingle();
+        if (fbRes.data) {
+          data = fbRes.data;
+          error = null;
+        }
+      }
 
       const notifObj = {
         id: data?.id || `notif_${Date.now()}`,
