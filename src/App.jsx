@@ -54,7 +54,7 @@ import {
   apiAuth, apiProfile, apiHome, apiMessages, apiLive, apiWallet,
   apiVip, apiCalls, apiSocial, apiReferral, apiNotifications,
   apiAdmin, apiStreamer, apiSupport, apiStorage,
-  getStoredToken, getUserId, getCanonicalConversationId,
+  getStoredToken, getUserId, getCanonicalConversationId, resolveProfileUuid,
   presenceService, calculateAge
 } from './services/api';
 import { startKeepAlivePing, compressImageFile } from './services/performance';

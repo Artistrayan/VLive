@@ -1665,17 +1665,21 @@ function sendCallSignal(targetId, signalPayload) {
     });
     sigChannel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
-        sigChannel.send({
-          type: 'broadcast',
-          event: 'call_signal',
-          payload: signalPayload
-        }).then(() => {
-          setTimeout(() => {
-            try { supabase.removeChannel(sigChannel); } catch {}
-          }, 4000);
-        }).catch(err => {
-          console.warn('Signal send catch:', err);
-        });
+        try {
+          const res = sigChannel.send({
+            type: 'broadcast',
+            event: 'call_signal',
+            payload: signalPayload
+          });
+          if (res && typeof res.then === 'function') {
+            res.catch(err => console.warn('Signal send promise error:', err));
+          }
+        } catch (sendErr) {
+          console.warn('Signal send throw:', sendErr);
+        }
+        setTimeout(() => {
+          try { supabase.removeChannel(sigChannel); } catch {}
+        }, 4000);
       }
     });
   } catch (err) {
