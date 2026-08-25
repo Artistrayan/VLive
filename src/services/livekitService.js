@@ -94,16 +94,39 @@ export class LiveKitManager {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.listeners = new Set();
+    this.eventListeners = new Map();
     this.remoteParticipants = new Map();
   }
 
-  // Subscribe to LiveKit events
+  // Subscribe to all LiveKit events
   subscribe(listener) {
+    if (typeof listener !== 'function') return () => {};
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
 
+  // Event listener pattern (on / off)
+  on(event, callback) {
+    if (!event || typeof callback !== 'function') return () => {};
+    if (!this.eventListeners) this.eventListeners = new Map();
+    if (!this.eventListeners.has(event)) {
+      this.eventListeners.set(event, new Set());
+    }
+    this.eventListeners.get(event).add(callback);
+    return () => this.off(event, callback);
+  }
+
+  off(event, callback) {
+    if (!this.eventListeners || !this.eventListeners.has(event)) return;
+    if (callback) {
+      this.eventListeners.get(event).delete(callback);
+    } else {
+      this.eventListeners.delete(event);
+    }
+  }
+
   emit(event, data) {
+    // 1. Notify general listeners (event, data)
     this.listeners.forEach(fn => {
       try {
         fn(event, data);
@@ -111,6 +134,17 @@ export class LiveKitManager {
         console.warn('Listener error in LiveKitManager:', e);
       }
     });
+
+    // 2. Notify event-specific listeners (data)
+    if (this.eventListeners && this.eventListeners.has(event)) {
+      this.eventListeners.get(event).forEach(fn => {
+        try {
+          fn(data);
+        } catch (e) {
+          console.warn(`Event listener error in LiveKitManager for '${event}':`, e);
+        }
+      });
+    }
   }
 
   /**
