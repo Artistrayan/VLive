@@ -1665,8 +1665,13 @@ export default function App() {
   useEffect(() => {
     if (notifSettings) {
       safeStorage.setItem('vlive_notif_settings', JSON.stringify(notifSettings));
+      if (isLoggedIn) {
+        supabase.auth.updateUser({
+          data: { notifSettings }
+        }).catch(() => {});
+      }
     }
-  }, [notifSettings]);
+  }, [notifSettings, isLoggedIn]);
   useEffect(() => {
     safeStorage.setItem('vlive_user_logged_in', String(isLoggedIn));
   }, [isLoggedIn]);

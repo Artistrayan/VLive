@@ -1797,71 +1797,50 @@ export const apiCalls = {
       const roomName = `call_${String(effectiveCallerId).slice(0, 8)}_${String(effectiveReceiverId).slice(0, 8)}_${Date.now()}`;
       const dbCallType = (callType === 'voice' || callType === 'audio') ? 'audio' : 'video';
 
-      // 2. Real INSERT into public.call_logs table in Supabase
+      // 2. Real INSERT into messages to persist call log
       let callLogId = null;
       try {
-        const { data: logRecord, error: logError } = await supabase
-          .from('call_logs')
-          .insert([{
-            caller_id: callerUuid,
-            receiver_id: receiverUuid,
-            call_type: dbCallType,
-            status: 'initiated',
-            duration_seconds: 0,
-            created_at: new Date().toISOString()
-          }])
-          .select()
-          .single();
-
-        if (logError) {
-          console.warn('Direct call_logs insert note:', logError.message);
-          // Sync with server.js backend logger as fallback
-          try {
-            const token = getStoredToken();
-            const srvRes = await fetch('/api/calls/log', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-              },
-              body: JSON.stringify({
-                action: 'initiate',
-                callerId: callerUuid,
-                receiverId: receiverUuid,
-                callType: dbCallType,
-                status: 'initiated'
-              })
-            });
-            const srvData = await srvRes.json().catch(() => ({}));
-            if (srvData?.callLog?.id) callLogId = srvData.callLog.id;
-          } catch (srvErr) {
-            console.warn('Backend call logger fallback note:', srvErr.message);
+        const callerUuid = await resolveProfileUuid(effectiveCallerId);
+        const receiverUuid = await resolveProfileUuid(effectiveReceiverId);
+        
+        let targetConvId = null;
+        if (callerUuid && receiverUuid) {
+          const convRes = await getOrCreateConversation(callerUuid, receiverUuid);
+          if (convRes.success && convRes.conversation) {
+            targetConvId = convRes.conversation.id;
           }
-        } else if (logRecord) {
-          callLogId = logRecord.id;
         }
-      } catch (insertEx) {
-        console.warn('call_logs insert exception:', insertEx.message);
+        
+        if (targetConvId) {
+          const callLogContent = JSON.stringify({
+            actionType: 'CALL_LOG',
+            status: 'initiated',
+            callType: dbCallType,
+            duration: 0,
+            tariff: tariffPerMin || 100
+          });
+          
+          const { data: msgData, error: msgError } = await supabase
+            .from('messages')
+            .insert([{
+              conversation_id: targetConvId,
+              sender_id: callerUuid,
+              content: callLogContent
+            }])
+            .select()
+            .single();
+            
+          if (!msgError && msgData) {
+            callLogId = msgData.id;
+          } else if (msgError) {
+             console.warn('Call log message insert error:', msgError.message);
+          }
+        }
+      } catch (ex) {
+        console.warn('call_logs message creation exception:', ex.message);
       }
 
       const callSessionId = callLogId || `call_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-
-      // 3. Real call session insert in call_sessions table for active billing sync
-      try {
-        await supabase
-          .from('call_sessions')
-          .insert([{
-            session_id: callSessionId,
-            caller_id: callerUuid,
-            receiver_id: receiverUuid,
-            call_type: dbCallType,
-            status: 'ringing',
-            room_name: roomName,
-            tariff_per_min: tariffPerMin
-          }]);
-      } catch (csErr) {
-        console.warn('Call session DB note:', csErr.message);
-      }
 
       // 4. Fetch caller profile for invitation payload
       let callerProfile = null;
@@ -1931,41 +1910,17 @@ export const apiCalls = {
     try {
       const dbCallType = (callType === 'voice' || callType === 'audio') ? 'audio' : 'video';
 
-      // 1. Update call_logs status to 'accepted'
-      if (callId) {
+      // 1. Update call message status to 'accepted'
+      if (callId && !String(callId).startsWith('call_')) {
         try {
-          await supabase
-            .from('call_logs')
-            .update({ status: 'accepted' })
-            .eq('id', callId);
+          const { data: existingMsg } = await supabase.from('messages').select('content').eq('id', callId).maybeSingle();
+          if (existingMsg?.content) {
+             let payload = JSON.parse(existingMsg.content);
+             payload.status = 'accepted';
+             await supabase.from('messages').update({ content: JSON.stringify(payload) }).eq('id', callId);
+          }
         } catch (clErr) {
-          console.warn('acceptCall call_logs update note:', clErr.message);
-          try {
-            const token = getStoredToken();
-            await fetch('/api/calls/log', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-              },
-              body: JSON.stringify({ action: 'update', callId, status: 'accepted' })
-            });
-          } catch {}
-        }
-      }
-
-      // 2. Update call_sessions table if present
-      if (callId) {
-        try {
-          await supabase
-            .from('call_sessions')
-            .update({
-              status: 'accepted',
-              started_at: new Date().toISOString()
-            })
-            .eq('session_id', callId);
-        } catch (dbErr) {
-          console.warn('acceptCall DB note:', dbErr.message);
+          console.warn('acceptCall message update note:', clErr.message);
         }
       }
 
@@ -1998,41 +1953,17 @@ export const apiCalls = {
     try {
       const finalStatus = reason === 'busy' ? 'busy' : (reason === 'missed' ? 'missed' : 'rejected');
 
-      // 1. Update call_logs status
-      if (callId) {
+      // 1. Update call message status
+      if (callId && !String(callId).startsWith('call_')) {
         try {
-          await supabase
-            .from('call_logs')
-            .update({ status: finalStatus })
-            .eq('id', callId);
+          const { data: existingMsg } = await supabase.from('messages').select('content').eq('id', callId).maybeSingle();
+          if (existingMsg?.content) {
+             let payload = JSON.parse(existingMsg.content);
+             payload.status = finalStatus;
+             await supabase.from('messages').update({ content: JSON.stringify(payload) }).eq('id', callId);
+          }
         } catch (clErr) {
-          console.warn('rejectCall call_logs update note:', clErr.message);
-          try {
-            const token = getStoredToken();
-            await fetch('/api/calls/log', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-              },
-              body: JSON.stringify({ action: 'update', callId, status: finalStatus })
-            });
-          } catch {}
-        }
-      }
-
-      // 2. Update call_sessions
-      if (callId) {
-        try {
-          await supabase
-            .from('call_sessions')
-            .update({
-              status: finalStatus,
-              ended_at: new Date().toISOString()
-            })
-            .eq('session_id', callId);
-        } catch (dbErr) {
-          console.warn('rejectCall DB note:', dbErr.message);
+          console.warn('rejectCall message update note:', clErr.message);
         }
       }
 
@@ -2110,45 +2041,18 @@ export const apiCalls = {
     try {
       const cleanDuration = Math.max(0, parseInt(durationSec, 10) || 0);
 
-      // 1. Update call_logs status to 'ended' and duration_seconds
-      if (callId) {
+      // 1. Update call message status and duration
+      if (callId && !String(callId).startsWith('call_')) {
         try {
-          await supabase
-            .from('call_logs')
-            .update({
-              status: 'ended',
-              duration_seconds: cleanDuration
-            })
-            .eq('id', callId);
+          const { data: existingMsg } = await supabase.from('messages').select('content').eq('id', callId).maybeSingle();
+          if (existingMsg?.content) {
+             let payload = JSON.parse(existingMsg.content);
+             payload.status = 'ended';
+             payload.duration = cleanDuration;
+             await supabase.from('messages').update({ content: JSON.stringify(payload) }).eq('id', callId);
+          }
         } catch (clErr) {
-          console.warn('endCall call_logs update note:', clErr.message);
-          try {
-            const token = getStoredToken();
-            await fetch('/api/calls/log', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-              },
-              body: JSON.stringify({ action: 'update', callId, status: 'ended', durationSec: cleanDuration })
-            });
-          } catch {}
-        }
-      }
-
-      // 2. Update call_sessions
-      if (callId) {
-        try {
-          await supabase
-            .from('call_sessions')
-            .update({
-              status: 'ended',
-              ended_at: new Date().toISOString(),
-              duration_sec: cleanDuration
-            })
-            .eq('session_id', callId);
-        } catch (dbErr) {
-          console.warn('endCall DB note:', dbErr.message);
+          console.warn('endCall message update note:', clErr.message);
         }
       }
 
@@ -2186,19 +2090,15 @@ export const apiCalls = {
       if (!userUuid) return [];
 
       const { data, error } = await supabase
-        .from('call_logs')
+        .from('messages')
         .select(`
           id,
-          caller_id,
-          receiver_id,
-          call_type,
-          duration_seconds,
-          status,
+          content,
+          sender_id,
           created_at,
-          caller:profiles!call_logs_caller_id_fkey(id, username, name, avatar),
-          receiver:profiles!call_logs_receiver_id_fkey(id, username, name, avatar)
+          conversation:conversations(user1_id, user2_id)
         `)
-        .or(`caller_id.eq.${userUuid},receiver_id.eq.${userUuid}`)
+        .like('content', '%"CALL_LOG"%')
         .order('created_at', { ascending: false })
         .limit(limit);
 
@@ -2206,7 +2106,34 @@ export const apiCalls = {
         console.warn('getCallLogs query note:', error.message);
         return [];
       }
-      return data || [];
+      
+      const parsedLogs = [];
+      for (const m of data || []) {
+        try {
+          const payload = JSON.parse(m.content);
+          if (payload.actionType === 'CALL_LOG') {
+            const partnerId = (m.conversation?.user1_id === userUuid) ? m.conversation?.user2_id : m.conversation?.user1_id;
+            const receiverId = (m.sender_id === userUuid) ? partnerId : userUuid;
+            
+            // Resolve profiles for UI
+            const { data: callerProf } = await supabase.from('profiles').select('id, username, name, avatar').eq('id', m.sender_id).maybeSingle();
+            const { data: receiverProf } = await supabase.from('profiles').select('id, username, name, avatar').eq('id', receiverId).maybeSingle();
+            
+            parsedLogs.push({
+              id: m.id,
+              caller_id: m.sender_id,
+              receiver_id: receiverId,
+              call_type: payload.callType || 'video',
+              duration_seconds: payload.duration || 0,
+              status: payload.status || 'ended',
+              created_at: m.created_at,
+              caller: callerProf,
+              receiver: receiverProf
+            });
+          }
+        } catch (e) {}
+      }
+      return parsedLogs;
     } catch (e) {
       console.warn('getCallLogs error:', e.message);
       return [];
@@ -2680,31 +2607,43 @@ export const apiNotifications = {
     try {
       const userUuid = (await resolveProfileUuid(uid)) || uid;
       
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .or(`user_id.eq.${userUuid},user_id.eq.${uid}`)
-        .order('created_at', { ascending: false });
+      let dbData = [];
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .or(`user_id.eq.${userUuid},user_id.eq.${uid}`)
+          .order('created_at', { ascending: false });
+        if (!error && data) dbData = data;
+      } catch (e) {}
 
-      if (error) {
-        console.warn('getNotifications query note:', error.message);
-        return [];
+      let cached = [];
+      try {
+        cached = JSON.parse(safeStorage.getItem('vlive_user_notifs_v1') || '[]');
+      } catch (e) {}
+
+      // Merge avoiding duplicates
+      const merged = [...cached];
+      for (const d of dbData) {
+        if (!merged.find(m => m.id === d.id)) {
+           merged.push({
+            id: d.id,
+            type: d.type || 'message',
+            title: d.title || 'اعلان جدید',
+            desc: d.content || d.message || d.desc || '',
+            content: d.content || d.message || '',
+            time: d.created_at ? new Date(d.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) : 'هم‌اکنون',
+            timeGroup: 'Today',
+            unread: d.is_read !== true && d.read !== true && d.unread !== false,
+            sender: d.metadata?.sender_name || d.metadata?.sender_username || d.sender || '',
+            avatar: d.metadata?.avatar || d.avatar || '',
+            actionType: d.metadata?.action_type || '',
+            raw: d
+          });
+        }
       }
-
-      return (data || []).map(n => ({
-        id: n.id,
-        type: n.type || 'message',
-        title: n.title || 'اعلان جدید',
-        desc: n.content || n.message || n.desc || '',
-        content: n.content || n.message || '',
-        time: n.created_at ? new Date(n.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) : 'هم‌اکنون',
-        timeGroup: 'Today',
-        unread: n.is_read !== true && n.read !== true && n.unread !== false,
-        sender: n.metadata?.sender_name || n.metadata?.sender_username || n.sender || '',
-        avatar: n.metadata?.avatar || n.avatar || '',
-        actionType: n.metadata?.action_type || '',
-        raw: n
-      }));
+      
+      return merged;
     } catch (e) {
       console.warn('getNotifications exception:', e);
       return [];
@@ -2781,6 +2720,12 @@ export const apiNotifications = {
         actionType: record.metadata.action_type || ''
       };
 
+      try {
+        const cached = JSON.parse(safeStorage.getItem('vlive_user_notifs_v1') || '[]');
+        const next = [notifObj, ...(Array.isArray(cached) ? cached : [])].slice(0, 100);
+        safeStorage.setItem('vlive_user_notifs_v1', JSON.stringify(next));
+      } catch (cacheErr) {}
+
       const targetsToNotify = new Set([String(targetUserId)]);
       if (targetUuid) targetsToNotify.add(String(targetUuid));
       if (notifData.senderUsername) targetsToNotify.add(String(notifData.senderUsername));
@@ -2818,8 +2763,13 @@ export const apiNotifications = {
     if (!uid) return;
     try {
       const userUuid = (await resolveProfileUuid(uid)) || uid;
-      await supabase.from('notifications').update({ is_read: true }).eq('user_id', userUuid);
+      await supabase.from('notifications').update({ is_read: true }).eq('user_id', userUuid).catch(() => {});
     } catch {}
+    try {
+      const cached = JSON.parse(safeStorage.getItem('vlive_user_notifs_v1') || '[]');
+      cached.forEach(c => c.unread = false);
+      safeStorage.setItem('vlive_user_notifs_v1', JSON.stringify(cached));
+    } catch (e) {}
   },
 
   async clearAll() {
@@ -2827,8 +2777,11 @@ export const apiNotifications = {
     if (!uid) return;
     try {
       const userUuid = (await resolveProfileUuid(uid)) || uid;
-      await supabase.from('notifications').delete().eq('user_id', userUuid);
+      await supabase.from('notifications').delete().eq('user_id', userUuid).catch(() => {});
     } catch {}
+    try {
+      safeStorage.setItem('vlive_user_notifs_v1', '[]');
+    } catch (e) {}
   }
 };
 
