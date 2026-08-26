@@ -189,32 +189,38 @@ export class LiveKitManager {
   /**
    * Request Camera & Microphone Hardware Access
    */
-  async requestMediaStream(facingMode = 'user', withAudio = true) {
+  async requestMediaStream(facingMode = 'user', withAudio = true, withVideo = true) {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('WebRTC/MediaDevices is not supported by your browser or device.');
     }
 
     this.currentFacingMode = facingMode;
 
-    const videoConstraints = {
+    const videoConstraints = withVideo ? {
       facingMode: { ideal: facingMode },
       width: { ideal: 1280 },
       height: { ideal: 720 }
-    };
+    } : false;
+
+    const audioConstraints = withAudio ? {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true
+    } : false;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: videoConstraints,
-        audio: withAudio ? { echoCancellation: true, noiseSuppression: true } : false
+        audio: audioConstraints
       });
       this.localMediaStream = stream;
       return stream;
     } catch (err) {
-      // Fallback with basic constraints
+      // Fallback with basic constraints if resolution was unsupported
       try {
         const fallbackStream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: withAudio
+          video: withVideo ? true : false,
+          audio: audioConstraints
         });
         this.localMediaStream = fallbackStream;
         return fallbackStream;
@@ -381,12 +387,19 @@ export class LiveKitManager {
       role === 'receiver' || 
       role === 'call'
     );
-    const isAudioOnly = (metadata?.callType === 'audio' || metadata?.call_type === 'audio' || role === 'audio_call');
+    const isAudioOnly = (
+      metadata?.callType === 'audio' || 
+      metadata?.call_type === 'audio' || 
+      metadata?.callType === 'voice' || 
+      metadata?.call_type === 'voice' || 
+      role === 'audio_call' ||
+      role === 'voice'
+    );
 
     // 1. Always request local media stream for publishers (Camera / Microphone)
     if (isPublisher) {
       try {
-        await this.requestMediaStream(this.currentFacingMode, true);
+        await this.requestMediaStream(this.currentFacingMode, true, !isAudioOnly);
       } catch (mediaErr) {
         console.warn('Media hardware access notice:', mediaErr.message);
       }

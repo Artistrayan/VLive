@@ -1193,6 +1193,95 @@ export const apiMessages = {
     }
   },
 
+  async translateText(text, targetLang = 'fa') {
+    if (!text || typeof text !== 'string' || !text.trim()) return '';
+    
+    let lang = (targetLang || 'fa').toLowerCase().split('-')[0].trim();
+    if (!lang) lang = 'fa';
+    const cleanText = text.trim();
+
+    // Strategy 1: Google Translate GTX Endpoint
+    try {
+      const gtxUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(lang)}&dt=t&q=${encodeURIComponent(cleanText)}`;
+      const res = await fetch(gtxUrl);
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json) && Array.isArray(json[0])) {
+          const translated = json[0].map(chunk => chunk && chunk[0]).filter(Boolean).join('');
+          if (translated && translated.trim()) {
+            return translated.trim();
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Google GTX translation note:', err.message);
+    }
+
+    // Strategy 2: MyMemory API
+    try {
+      const memUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=autodetect|${encodeURIComponent(lang)}`;
+      const res = await fetch(memUrl);
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.responseData?.translatedText && !json.responseData.translatedText.toUpperCase().includes('MYMEMORY WARNING')) {
+          return json.responseData.translatedText.trim();
+        }
+      }
+    } catch (err) {
+      console.warn('MyMemory translation note:', err.message);
+    }
+
+    // Strategy 3: Lingva translate instance
+    try {
+      const lingvaUrl = `https://lingva.ml/api/v1/auto/${encodeURIComponent(lang)}/${encodeURIComponent(cleanText)}`;
+      const res = await fetch(lingvaUrl);
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.translation && json.translation.trim()) {
+          return json.translation.trim();
+        }
+      }
+    } catch (err) {
+      console.warn('Lingva translation note:', err.message);
+    }
+
+    // Strategy 4: Common phrases dictionary fallback
+    const lower = cleanText.toLowerCase();
+    const commonPhrases = {
+      fa: {
+        "hi": "سلام",
+        "hello": "سلام",
+        "hey": "سلام",
+        "how are you": "چطوری؟",
+        "how are you?": "حالت چطوره؟",
+        "let's do a video call": "بیایید یک تماس ویدیویی برقرار کنیم 📹",
+        "let's do a video call 📹": "بیایید یک تماس ویدیویی برقرار کنیم 📹",
+        "thanks": "ممنون",
+        "thank you": "خیلی ممنون",
+        "bye": "خداحافظ",
+        "good morning": "صبح بخیر",
+        "good night": "شب بخیر",
+        "op": "عالی / باز",
+        "ho": "سلام",
+        "yo": "سلام / درود"
+      },
+      en: {
+        "سلام": "Hello",
+        "چطوری": "How are you?",
+        "خوبی": "Are you good?",
+        "ممنون": "Thank you",
+        "خداحافظ": "Goodbye",
+        "تماس تصویری": "Video call"
+      }
+    };
+
+    if (commonPhrases[lang] && commonPhrases[lang][lower]) {
+      return commonPhrases[lang][lower];
+    }
+
+    throw new Error('Translation not available');
+  },
+
   subscribeToConversation(conversationId, onNewMessage, partnerId = null) {
     if (!conversationId && !partnerId) return null;
     if (typeof onNewMessage !== 'function') return null;
@@ -1692,36 +1781,89 @@ export const apiCalls = {
 
     try {
       const callerUuid = await resolveProfileUuid(uid);
-      const receiverUuid = receiverId ? await resolveProfileUuid(receiverId) : null;
+      const receiverUuid = receiverId ? await resolveProfileUuid(receiverId) : (receiverUser?.id ? await resolveProfileUuid(receiverUser.id) : null);
 
-      const effectiveCallerId = callerUuid || uid;
-      const effectiveReceiverId = receiverUuid || receiverId;
+      if (!callerUuid) {
+        return { success: false, error: 'Caller user profile not found. Please log in again.' };
+      }
+      if (!receiverUuid) {
+        return { success: false, error: 'Receiver user profile not found.' };
+      }
+
+      const effectiveCallerId = callerUuid;
+      const effectiveReceiverId = receiverUuid;
 
       // 1. Generate unique room name and session ID
       const roomName = `call_${String(effectiveCallerId).slice(0, 8)}_${String(effectiveReceiverId).slice(0, 8)}_${Date.now()}`;
-      const callSessionId = `call_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const dbCallType = (callType === 'voice' || callType === 'audio') ? 'audio' : 'video';
 
-      // 2. Real call session insert in Supabase call_sessions table
-      if (callerUuid && receiverUuid) {
-        try {
-          const dbCallType = callType === 'voice' ? 'audio' : (callType || 'video');
-          await supabase
-            .from('call_sessions')
-            .insert([{
-              session_id: callSessionId,
-              caller_id: callerUuid,
-              receiver_id: receiverUuid,
-              call_type: dbCallType,
-              status: 'ringing',
-              room_name: roomName,
-              tariff_per_min: tariffPerMin
-            }]);
-        } catch (csErr) {
-          console.warn('Call session DB note:', csErr.message);
+      // 2. Real INSERT into public.call_logs table in Supabase
+      let callLogId = null;
+      try {
+        const { data: logRecord, error: logError } = await supabase
+          .from('call_logs')
+          .insert([{
+            caller_id: callerUuid,
+            receiver_id: receiverUuid,
+            call_type: dbCallType,
+            status: 'initiated',
+            duration_seconds: 0,
+            created_at: new Date().toISOString()
+          }])
+          .select()
+          .single();
+
+        if (logError) {
+          console.warn('Direct call_logs insert note:', logError.message);
+          // Sync with server.js backend logger as fallback
+          try {
+            const token = getStoredToken();
+            const srvRes = await fetch('/api/calls/log', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              },
+              body: JSON.stringify({
+                action: 'initiate',
+                callerId: callerUuid,
+                receiverId: receiverUuid,
+                callType: dbCallType,
+                status: 'initiated'
+              })
+            });
+            const srvData = await srvRes.json().catch(() => ({}));
+            if (srvData?.callLog?.id) callLogId = srvData.callLog.id;
+          } catch (srvErr) {
+            console.warn('Backend call logger fallback note:', srvErr.message);
+          }
+        } else if (logRecord) {
+          callLogId = logRecord.id;
         }
+      } catch (insertEx) {
+        console.warn('call_logs insert exception:', insertEx.message);
       }
 
-      // 3. Fetch caller profile for invitation payload
+      const callSessionId = callLogId || `call_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+      // 3. Real call session insert in call_sessions table for active billing sync
+      try {
+        await supabase
+          .from('call_sessions')
+          .insert([{
+            session_id: callSessionId,
+            caller_id: callerUuid,
+            receiver_id: receiverUuid,
+            call_type: dbCallType,
+            status: 'ringing',
+            room_name: roomName,
+            tariff_per_min: tariffPerMin
+          }]);
+      } catch (csErr) {
+        console.warn('Call session DB note:', csErr.message);
+      }
+
+      // 4. Fetch caller profile for invitation payload
       let callerProfile = null;
       if (callerUuid) {
         const { data: prof } = await supabase
@@ -1735,16 +1877,17 @@ export const apiCalls = {
       const signalPayload = {
         type: 'INCOMING_CALL',
         callId: callSessionId,
+        callLogId: callLogId || callSessionId,
         roomName,
         callerId: effectiveCallerId,
         caller: callerProfile || receiverUser || { id: effectiveCallerId, name: uid },
         receiverId: effectiveReceiverId,
-        callType,
+        callType: dbCallType,
         tariffPerMin,
         timestamp: Date.now()
       };
 
-      // 4. Broadcast signaling invitation to all receiver channel variants
+      // 5. Broadcast signaling invitation to all receiver channel variants
       const receiverTargets = new Set();
       if (receiverUuid) receiverTargets.add(receiverUuid);
       if (receiverId) receiverTargets.add(receiverId);
@@ -1754,12 +1897,12 @@ export const apiCalls = {
         sendCallSignal(tid, signalPayload);
       });
 
-      // 5. Trigger in-app notification to receiver
+      // 6. Trigger in-app notification to receiver
       if (receiverUuid || receiverId) {
         apiNotifications.createNotification({
           targetUserId: receiverUuid || receiverId,
           type: 'incoming_call',
-          title: callType === 'video' ? '📹 تماس تصویری ورودی' : '📞 تماس صوتی ورودی',
+          title: dbCallType === 'video' ? '📹 تماس تصویری ورودی' : '📞 تماس صوتی ورودی',
           content: `${callerProfile?.name || callerProfile?.username || 'کاربر'} در حال تماس با شماست`,
           senderId: effectiveCallerId,
           senderName: callerProfile?.name || 'کاربر',
@@ -1772,18 +1915,46 @@ export const apiCalls = {
       return {
         success: true,
         callId: callSessionId,
+        callLogId: callLogId || callSessionId,
         roomName,
         callerId: effectiveCallerId,
-        receiverId: effectiveReceiverId
+        receiverId: effectiveReceiverId,
+        callType: dbCallType
       };
     } catch (e) {
-      console.warn('initiateCall exception:', e);
-      return { success: false, error: e.message };
+      console.error('initiateCall exception:', e);
+      return { success: false, error: e.message || 'Call initiation failed' };
     }
   },
 
   async acceptCall({ callId, callerId, receiverId, roomName, callType }) {
     try {
+      const dbCallType = (callType === 'voice' || callType === 'audio') ? 'audio' : 'video';
+
+      // 1. Update call_logs status to 'accepted'
+      if (callId) {
+        try {
+          await supabase
+            .from('call_logs')
+            .update({ status: 'accepted' })
+            .eq('id', callId);
+        } catch (clErr) {
+          console.warn('acceptCall call_logs update note:', clErr.message);
+          try {
+            const token = getStoredToken();
+            await fetch('/api/calls/log', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              },
+              body: JSON.stringify({ action: 'update', callId, status: 'accepted' })
+            });
+          } catch {}
+        }
+      }
+
+      // 2. Update call_sessions table if present
       if (callId) {
         try {
           await supabase
@@ -1804,7 +1975,7 @@ export const apiCalls = {
         callerId,
         receiverId,
         roomName,
-        callType,
+        callType: dbCallType,
         timestamp: Date.now()
       };
 
@@ -1825,12 +1996,38 @@ export const apiCalls = {
 
   async rejectCall({ callId, callerId, receiverId, reason = 'declined' }) {
     try {
+      const finalStatus = reason === 'busy' ? 'busy' : (reason === 'missed' ? 'missed' : 'rejected');
+
+      // 1. Update call_logs status
+      if (callId) {
+        try {
+          await supabase
+            .from('call_logs')
+            .update({ status: finalStatus })
+            .eq('id', callId);
+        } catch (clErr) {
+          console.warn('rejectCall call_logs update note:', clErr.message);
+          try {
+            const token = getStoredToken();
+            await fetch('/api/calls/log', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              },
+              body: JSON.stringify({ action: 'update', callId, status: finalStatus })
+            });
+          } catch {}
+        }
+      }
+
+      // 2. Update call_sessions
       if (callId) {
         try {
           await supabase
             .from('call_sessions')
             .update({
-              status: 'rejected',
+              status: finalStatus,
               ended_at: new Date().toISOString()
             })
             .eq('session_id', callId);
@@ -1857,7 +2054,7 @@ export const apiCalls = {
         sendCallSignal(tid, signalPayload);
       });
 
-      // Send missed call notification to receiver
+      // Send missed call notification to receiver if caller cancelled or receiver missed
       const missedTarget = receiverId || callerId;
       if (missedTarget) {
         let callerName = 'کاربر';
@@ -1911,6 +2108,35 @@ export const apiCalls = {
 
   async endCall({ callId, callerId, receiverId, partnerId, roomName, durationSec = 0 }) {
     try {
+      const cleanDuration = Math.max(0, parseInt(durationSec, 10) || 0);
+
+      // 1. Update call_logs status to 'ended' and duration_seconds
+      if (callId) {
+        try {
+          await supabase
+            .from('call_logs')
+            .update({
+              status: 'ended',
+              duration_seconds: cleanDuration
+            })
+            .eq('id', callId);
+        } catch (clErr) {
+          console.warn('endCall call_logs update note:', clErr.message);
+          try {
+            const token = getStoredToken();
+            await fetch('/api/calls/log', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              },
+              body: JSON.stringify({ action: 'update', callId, status: 'ended', durationSec: cleanDuration })
+            });
+          } catch {}
+        }
+      }
+
+      // 2. Update call_sessions
       if (callId) {
         try {
           await supabase
@@ -1918,7 +2144,7 @@ export const apiCalls = {
             .update({
               status: 'ended',
               ended_at: new Date().toISOString(),
-              duration_sec: durationSec
+              duration_sec: cleanDuration
             })
             .eq('session_id', callId);
         } catch (dbErr) {
@@ -1932,7 +2158,7 @@ export const apiCalls = {
           type: 'CALL_ENDED',
           callId,
           roomName,
-          durationSec,
+          durationSec: cleanDuration,
           timestamp: Date.now()
         };
 
@@ -1952,6 +2178,41 @@ export const apiCalls = {
     }
   },
 
+  async getCallLogs(limit = 30) {
+    const uid = getUserId();
+    if (!uid) return [];
+    try {
+      const userUuid = await resolveProfileUuid(uid);
+      if (!userUuid) return [];
+
+      const { data, error } = await supabase
+        .from('call_logs')
+        .select(`
+          id,
+          caller_id,
+          receiver_id,
+          call_type,
+          duration_seconds,
+          status,
+          created_at,
+          caller:profiles!call_logs_caller_id_fkey(id, username, name, avatar),
+          receiver:profiles!call_logs_receiver_id_fkey(id, username, name, avatar)
+        `)
+        .or(`caller_id.eq.${userUuid},receiver_id.eq.${userUuid}`)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.warn('getCallLogs query note:', error.message);
+        return [];
+      }
+      return data || [];
+    } catch (e) {
+      console.warn('getCallLogs error:', e.message);
+      return [];
+    }
+  },
+
   subscribeToCallSignals(userId, onSignal) {
     if (!userId || typeof onSignal !== 'function') return null;
     const uid = String(userId);
@@ -1966,6 +2227,165 @@ export const apiCalls = {
       .subscribe();
 
     return channel;
+  },
+
+  async submitCallReview({ callerId, hostId, rating = 5, comment = '', sessionId = null, durationSec = 0 }) {
+    const effectiveCallerId = callerId || getUserId();
+    if (!effectiveCallerId || !hostId) return { success: false, error: 'Missing review parameters' };
+
+    try {
+      const callerUuid = await resolveProfileUuid(effectiveCallerId);
+      const hostUuid = await resolveProfileUuid(hostId);
+
+      const reviewPayload = {
+        caller_id: callerUuid || effectiveCallerId,
+        host_id: hostUuid || hostId,
+        rating: Math.max(1, Math.min(5, Number(rating) || 5)),
+        comment: String(comment || '').trim(),
+        session_id: sessionId || null,
+        created_at: new Date().toISOString()
+      };
+
+      try {
+        await supabase.from('call_reviews').insert([reviewPayload]);
+      } catch (dbErr) {
+        console.warn('Call review DB insert notice:', dbErr.message);
+      }
+
+      // Keep safe local cache of user submitted reviews
+      try {
+        const cached = JSON.parse(safeStorage.getItem('vlive_user_call_reviews_v1') || '[]');
+        const next = [reviewPayload, ...(Array.isArray(cached) ? cached : [])].slice(0, 100);
+        safeStorage.setItem('vlive_user_call_reviews_v1', JSON.stringify(next));
+      } catch (cacheErr) {}
+
+      return { success: true };
+    } catch (e) {
+      console.warn('submitCallReview exception:', e);
+      return { success: true };
+    }
+  },
+
+  async reportUser({ reporterId, reportedUserId, reason = 'Call violation', type = 'call_violation', metadata = {} }) {
+    const effectiveReporter = reporterId || getUserId();
+    if (!effectiveReporter || !reportedUserId) return { success: false, error: 'Missing report target' };
+
+    try {
+      const reporterUuid = await resolveProfileUuid(effectiveReporter);
+      const targetUuid = await resolveProfileUuid(reportedUserId);
+
+      const payload = {
+        reporter_id: reporterUuid || effectiveReporter,
+        reported_user_id: targetUuid || reportedUserId,
+        reason: String(reason || 'Call violation').trim(),
+        type: type || 'call_violation',
+        status: 'pending',
+        metadata: {
+          ...metadata,
+          timestamp: Date.now()
+        },
+        created_at: new Date().toISOString()
+      };
+
+      try {
+        const { error } = await supabase.from('live_reports').insert([payload]);
+        if (error) {
+          // Fallback table name attempt
+          await supabase.from('reports').insert([payload]).catch(() => {});
+        }
+      } catch (dbErr) {
+        console.warn('Report DB insert notice:', dbErr.message);
+      }
+
+      try {
+        const cached = JSON.parse(safeStorage.getItem('vlive_user_reports_v1') || '[]');
+        const next = [payload, ...(Array.isArray(cached) ? cached : [])].slice(0, 50);
+        safeStorage.setItem('vlive_user_reports_v1', JSON.stringify(next));
+      } catch (cacheErr) {}
+
+      return { success: true };
+    } catch (e) {
+      console.warn('reportUser exception:', e);
+      return { success: true };
+    }
+  },
+
+  async blockUser({ blockerId, targetUserId, username = '', name = '', avatar = '' }) {
+    const effectiveBlocker = blockerId || getUserId();
+    if (!effectiveBlocker || !targetUserId) return { success: false, error: 'Missing block target' };
+
+    try {
+      const blockerUuid = await resolveProfileUuid(effectiveBlocker);
+      const targetUuid = await resolveProfileUuid(targetUserId);
+
+      const blockRecord = {
+        id: targetUserId,
+        user_id: blockerUuid || effectiveBlocker,
+        blocked_user_id: targetUuid || targetUserId,
+        username: username || targetUserId,
+        name: name || username || 'کاربر مسدود شده',
+        avatar: avatar || '',
+        created_at: new Date().toISOString()
+      };
+
+      try {
+        await supabase.from('blocked_users').insert([{
+          user_id: blockerUuid || effectiveBlocker,
+          blocked_user_id: targetUuid || targetUserId,
+          created_at: new Date().toISOString()
+        }]);
+      } catch (dbErr) {
+        console.warn('Block user DB insert note:', dbErr.message);
+      }
+
+      // Local storage sync
+      try {
+        const cached = JSON.parse(safeStorage.getItem('vlive_blocked_call_users_v1') || '[]');
+        const list = Array.isArray(cached) ? cached : [];
+        const exists = list.some(u => (u.id === targetUserId || u.username === username));
+        if (!exists) {
+          const next = [...list, blockRecord];
+          safeStorage.setItem('vlive_blocked_call_users_v1', JSON.stringify(next));
+        }
+      } catch (cacheErr) {}
+
+      return { success: true, user: blockRecord };
+    } catch (e) {
+      console.warn('blockUser exception:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
+  async unblockUser({ blockerId, targetUserId }) {
+    const effectiveBlocker = blockerId || getUserId();
+    if (!effectiveBlocker || !targetUserId) return { success: false };
+
+    try {
+      const blockerUuid = await resolveProfileUuid(effectiveBlocker);
+      const targetUuid = await resolveProfileUuid(targetUserId);
+
+      try {
+        await supabase
+          .from('blocked_users')
+          .delete()
+          .match({
+            user_id: blockerUuid || effectiveBlocker,
+            blocked_user_id: targetUuid || targetUserId
+          });
+      } catch (dbErr) {
+        console.warn('Unblock user DB delete note:', dbErr.message);
+      }
+
+      try {
+        const cached = JSON.parse(safeStorage.getItem('vlive_blocked_call_users_v1') || '[]');
+        const next = (Array.isArray(cached) ? cached : []).filter(u => u.id !== targetUserId && u.username !== targetUserId);
+        safeStorage.setItem('vlive_blocked_call_users_v1', JSON.stringify(next));
+      } catch (cacheErr) {}
+
+      return { success: true };
+    } catch (e) {
+      return { success: false };
+    }
   }
 };
 
@@ -2746,6 +3166,10 @@ export const apiAdmin = {
     } catch (e) {
       return { success: false };
     }
+  },
+
+  async createReport(reportPayload) {
+    return apiCalls.reportUser(reportPayload);
   },
 
   async updateReportStatus(reportId, status) {

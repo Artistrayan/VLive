@@ -1,7 +1,7 @@
 import { APP_LANGUAGES as DEFAULT_APP_LANGUAGES } from '../constants/i18n';
 import React from 'react';
 import { safeStorage } from '../utils/safeStorage';
-import { apiAuth } from '../services/api';
+import { apiAuth, apiCalls } from '../services/api';
 import { isUsernameAlreadyTaken, normalizeUsername, isValidUsername } from '../utils/usernameUtils';
 import { 
   Settings, X, Search, User, ShieldCheck, Bell, Lock, Globe, Palette,
@@ -111,6 +111,12 @@ export default function SettingsModal(props) {
   const [dataSaverEnabled, setDataSaverEnabled] = React.useState(props.dataSaverEnabled || false);
   const [mobileVideoQuality, setMobileVideoQuality] = React.useState(props.mobileVideoQuality || 'auto');
   const [blockedUsers, setBlockedUsers] = React.useState(props.blockedUsers || []);
+
+  React.useEffect(() => {
+    if (Array.isArray(props.blockedUsers)) {
+      setBlockedUsers(props.blockedUsers);
+    }
+  }, [props.blockedUsers]);
   const [systemPerms, setSystemPerms] = React.useState(props.systemPerms || { camera: true, mic: true, location: true, notifs: true });
   const [feedbackText, setFeedbackText] = React.useState(props.feedbackText || '');
   const setIsLoggedIn = props.setIsLoggedIn || (() => {});
@@ -948,9 +954,16 @@ export default function SettingsModal(props) {
                             <span className="text-[10px] text-slate-400 font-mono">@{user.username}</span>
                           </div>
                           <button
-                            onClick={() => {
-                              setBlockedUsers(prev => prev.filter(u => u.id !== user.id));
-                              showToast(`Unblocked @${user.username}`);
+                            onClick={async () => {
+                              const targetId = user.id || user.username;
+                              try {
+                                await apiCalls.unblockUser({ targetUserId: targetId });
+                              } catch (e) {}
+                              setBlockedUsers(prev => prev.filter(u => u.id !== user.id && u.username !== user.username));
+                              if (typeof props.setBlockedUsers === 'function') {
+                                props.setBlockedUsers(prev => (Array.isArray(prev) ? prev : []).filter(u => u.id !== user.id && u.username !== user.username));
+                              }
+                              showToast(`کاربر @${user.username || user.name} از لیست مسدودی خارج شد ✅`);
                             }}
                             className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-[10px]"
                           >

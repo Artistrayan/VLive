@@ -559,29 +559,38 @@ export default function App() {
   // Call Initiation Handler
   const handleInitiateCall = useCallback((targetUser, callType = 'video') => {
     if (!targetUser) return;
-    if (userCoins < (targetUser.tariffPerMin || 100)) {
+    const requiredCoins = targetUser.tariffPerMin || 100;
+    if (userCoins < requiredCoins) {
       showToast(loc('سکه کافی برای شروع تماس ندارید', 'Insufficient coins to start call'));
       return;
     }
-    setPreCallConfirmHost({ ...targetUser, callType });
-  }, [userCoins, showToast]);
+    const normalizedCallType = (callType === 'voice' || callType === 'audio') ? 'audio' : 'video';
+    setPreCallConfirmHost({
+      user: targetUser,
+      type: normalizedCallType,
+      callType: normalizedCallType,
+      tariffRate: requiredCoins,
+      ...targetUser
+    });
+  }, [userCoins, showToast, loc]);
 
   const handleStartCallDirect = useCallback(async (targetUser, callType = 'video') => {
     if (!targetUser) return;
     setPreCallConfirmHost(null);
     try {
       showToast(loc('در حال برقراری تماس...', 'Calling...'));
+      const normalizedCallType = (callType === 'voice' || callType === 'audio') ? 'audio' : 'video';
       const res = await apiCalls.initiateCall({
         receiverId: targetUser.id || targetUser.username,
         receiverUser: targetUser,
-        callType,
+        callType: normalizedCallType,
         tariffPerMin: targetUser.tariffPerMin || 100
       });
 
       if (res && res.success) {
         setActiveCall({
           user: targetUser,
-          callType,
+          callType: normalizedCallType,
           seconds: 0,
           isPaid: (targetUser.tariffPerMin || 0) > 0,
           tariffPerMin: targetUser.tariffPerMin || 100,
@@ -593,6 +602,7 @@ export default function App() {
           isPiP: false,
           isRecording: false,
           sessionId: res.callId || ('call_' + Date.now()),
+          callLogId: res.callLogId || res.callId,
           roomName: res.roomName,
           callerId: res.callerId,
           receiverId: res.receiverId,
@@ -605,39 +615,40 @@ export default function App() {
           await livekitManager.joinRoom({
             roomName: res.roomName,
             username: currentUsername || 'caller',
-            role: 'host',
-            metadata: { call: true, callType }
+            role: 'call_participant',
+            metadata: { type: 'call', callType: normalizedCallType }
           });
         } catch (lkErr) {
           console.warn('LiveKit room join notice:', lkErr.message);
         }
 
-        showToast(loc((callType === 'video' ? 'تماس تصویری برقرار شد' : 'تماس صوتی برقرار شد'), (callType + ' call connected')));
+        showToast(loc((normalizedCallType === 'video' ? 'تماس تصویری برقرار شد' : 'تماس صوتی برقرار شد'), (normalizedCallType + ' call connected')));
       } else {
-        showToast(loc('برقراری تماس ناموفق بود', 'Could not initiate call'));
+        showToast(res?.error || loc('برقراری تماس ناموفق بود', 'Could not initiate call'));
       }
     } catch (err) {
       console.error('Call initiation error:', err);
       showToast(err.message || loc('خطا در برقراری تماس', 'Call initiation error'));
     }
-  }, [currentUsername, showToast]);
+  }, [currentUsername, showToast, loc]);
 
   const handleAcceptIncomingCall = useCallback(async (incomingCallObj) => {
     if (!incomingCallObj) return;
     try {
       showToast(loc('در حال اتصال تماس...', 'Connecting call...'));
+      const normalizedCallType = (incomingCallObj.callType === 'voice' || incomingCallObj.callType === 'audio') ? 'audio' : 'video';
       await apiCalls.acceptCall({
-        callId: incomingCallObj.callId,
+        callId: incomingCallObj.callLogId || incomingCallObj.callId,
         callerId: incomingCallObj.callerId,
         receiverId: incomingCallObj.receiverId,
         roomName: incomingCallObj.roomName,
-        callType: incomingCallObj.callType
+        callType: normalizedCallType
       });
 
       setIncomingCall(null);
       setActiveCall({
         user: incomingCallObj.caller || { name: 'Caller', username: 'caller' },
-        callType: incomingCallObj.callType || 'video',
+        callType: normalizedCallType,
         seconds: 0,
         isPaid: false,
         tariffPerMin: incomingCallObj.tariffPerMin || 100,
@@ -649,6 +660,7 @@ export default function App() {
         isPiP: false,
         isRecording: false,
         sessionId: incomingCallObj.callId,
+        callLogId: incomingCallObj.callLogId || incomingCallObj.callId,
         roomName: incomingCallObj.roomName,
         callerId: incomingCallObj.callerId,
         receiverId: incomingCallObj.receiverId,
@@ -662,7 +674,7 @@ export default function App() {
           roomName: incomingCallObj.roomName,
           username: currentUsername || 'receiver',
           role: 'call_participant',
-          metadata: { call: true, callType: incomingCallObj.callType }
+          metadata: { type: 'call', callType: normalizedCallType }
         });
       } catch (lkErr) {
         console.warn('LiveKit join room notice:', lkErr.message);
@@ -673,13 +685,13 @@ export default function App() {
       console.error('Accept call error:', err);
       showToast(err.message || loc('خطا در قبول تماس', 'Error accepting call'));
     }
-  }, [currentUsername, showToast]);
+  }, [currentUsername, showToast, loc]);
 
   const handleDeclineIncomingCall = useCallback(async (incomingCallObj) => {
     if (!incomingCallObj) return;
     try {
       await apiCalls.rejectCall({
-        callId: incomingCallObj.callId,
+        callId: incomingCallObj.callLogId || incomingCallObj.callId,
         callerId: incomingCallObj.callerId,
         receiverId: incomingCallObj.receiverId,
         reason: 'declined'
@@ -689,15 +701,15 @@ export default function App() {
     }
     setIncomingCall(null);
     showToast(loc('تماس رد شد', 'Call declined'));
-  }, [showToast]);
+  }, [showToast, loc]);
 
   const handleEndActiveCall = useCallback(async () => {
     if (!activeCall) return;
     const callUser = activeCall.user || activeCall.host || { name: 'User', username: 'user' };
     const callDuration = activeCall.seconds || 0;
     const callCoins = activeCall.consumedCoins || 0;
-    const callSessionId = activeCall.sessionId;
-    const callType = activeCall.type || 'video';
+    const callSessionId = activeCall.callLogId || activeCall.sessionId;
+    const callType = activeCall.callType || activeCall.type || 'video';
 
     try {
       livekitManager.disconnect();
@@ -771,35 +783,65 @@ export default function App() {
     showToast(loc('فیلتر زیبایی فعال شد', 'Beauty filter toggled'));
   }, [showToast, loc]);
 
-  const handleReportUserInCall = useCallback((reason) => {
+  const handleReportUserInCall = useCallback(async (reason) => {
     const targetUser = postCallRatingData?.user || postCallRatingData?.host || activeCall?.user;
-    if (targetUser) {
-      apiAdmin.createReport({
-        reported_user_id: targetUser.id || targetUser.username,
-        reason: reason || 'Inappropriate content during call',
-        type: 'call_violation',
-        status: 'pending'
-      }).catch(() => {});
+    try {
+      if (targetUser) {
+        await apiCalls.reportUser({
+          reportedUserId: targetUser.id || targetUser.username,
+          reason: reason || 'محتوای نامناسب در تماس تصویری',
+          type: 'call_violation',
+          metadata: {
+            host: targetUser.username || targetUser.name,
+            duration: postCallRatingData?.duration,
+            callType: postCallRatingData?.callType
+          }
+        });
+      }
+      showToast(loc('گزارش کاربر ثبت شد و با اولویت بررسی می‌شود ⚠️', 'Report submitted and queued for priority review ⚠️'));
+    } catch (err) {
+      console.warn('Report error:', err);
+    } finally {
+      setPostCallRatingData(null);
+      setIsRatingModalOpen(false);
     }
-    setPostCallRatingData(null);
-    setIsRatingModalOpen(false);
-    showToast(loc('گزارش کاربر ثبت شد و با اولویت بررسی می‌شود ⚠️', 'Report submitted and queued for priority review ⚠️'));
   }, [postCallRatingData, activeCall, showToast, loc]);
 
-  const handleBlockUserInCall = useCallback((userToBlock) => {
+  const handleBlockUserInCall = useCallback(async (userToBlock) => {
     const target = userToBlock || postCallRatingData?.user || postCallRatingData?.host || activeCall?.user;
-    if (target) {
-      setBlockedCallUsers(prev => {
-        const next = [...(Array.isArray(prev) ? prev : []), target];
-        safeStorage.setItem('vlive_blocked_call_users_v1', JSON.stringify(next));
-        return next;
-      });
-      showToast(loc('کاربر مسدود شد و به لیست بلاک اضافه گردید 🚫', 'User blocked and added to blocklist 🚫'));
-    }
-    setPostCallRatingData(null);
-    setIsRatingModalOpen(false);
-    if (activeCall) {
-      handleEndActiveCall();
+    try {
+      if (target) {
+        const targetId = target.id || target.username;
+        await apiCalls.blockUser({
+          targetUserId: targetId,
+          username: target.username || '',
+          name: target.name || target.username || 'کاربر مسدود شده',
+          avatar: target.avatar || ''
+        });
+        setBlockedCallUsers(prev => {
+          const list = Array.isArray(prev) ? prev : [];
+          if (list.some(u => u.id === targetId || u.username === target.username)) {
+            return list;
+          }
+          const next = [...list, {
+            id: targetId,
+            username: target.username || targetId,
+            name: target.name || target.username || 'کاربر مسدود شده',
+            avatar: target.avatar || ''
+          }];
+          safeStorage.setItem('vlive_blocked_call_users_v1', JSON.stringify(next));
+          return next;
+        });
+        showToast(loc('کاربر مسدود شد و به لیست بلاک اضافه گردید 🚫', 'User blocked and added to blocklist 🚫'));
+      }
+    } catch (err) {
+      console.warn('Block error:', err);
+    } finally {
+      setPostCallRatingData(null);
+      setIsRatingModalOpen(false);
+      if (activeCall) {
+        handleEndActiveCall();
+      }
     }
   }, [postCallRatingData, activeCall, handleEndActiveCall, showToast, loc]);
 
@@ -808,22 +850,28 @@ export default function App() {
     showToast(loc('امتیاز شما با موفقیت ثبت شد ⭐', 'Rating submitted successfully ⭐'));
   }, [showToast, loc]);
 
-  const handleSubmitPostCallRating = useCallback(() => {
+  const handleSubmitPostCallRating = useCallback(async () => {
     const targetUser = postCallRatingData?.user || postCallRatingData?.host;
-    if (targetUser && supabase) {
-      supabase.from('call_reviews').insert({
-        caller_id: getUserId(),
-        host_id: targetUser.id || targetUser.username,
-        rating: ratingStarsCall,
-        comment: ratingCommentCall,
-        created_at: new Date().toISOString()
-      }).catch(() => {});
+    try {
+      if (targetUser) {
+        await apiCalls.submitCallReview({
+          callerId: getUserId(),
+          hostId: targetUser.id || targetUser.username,
+          rating: ratingStarsCall,
+          comment: ratingCommentCall,
+          sessionId: postCallRatingData?.sessionId,
+          durationSec: postCallRatingData?.seconds || 0
+        });
+      }
+      showToast(loc('امتیاز تماس شما با موفقیت ثبت شد ⭐', 'Call rating submitted successfully ⭐'));
+    } catch (err) {
+      console.warn('Submit rating error:', err);
+    } finally {
+      setPostCallRatingData(null);
+      setIsRatingModalOpen(false);
+      setRatingCommentCall('');
+      setRatingStarsCall(5);
     }
-    setPostCallRatingData(null);
-    setIsRatingModalOpen(false);
-    setRatingCommentCall('');
-    setRatingStarsCall(5);
-    showToast(loc('امتیاز تماس شما با موفقیت ثبت شد ⭐', 'Call rating submitted successfully ⭐'));
   }, [postCallRatingData, ratingStarsCall, ratingCommentCall, showToast, loc]);
 
   // Realtime Call Signaling Listener
@@ -1152,55 +1200,58 @@ export default function App() {
   }, [activeConversationId, showToast]);
 
   const handleTranslateChatMessage = useCallback(async (msgId, text) => {
-    let isAlreadyTranslated = false;
+    let isToggledOff = false;
     setConversations(prev => {
       let found = false;
-      const list = Array.isArray(prev) ? [...prev] : [];
-      for (let c of list) {
-        if (c.messages) {
-          const mIdx = c.messages.findIndex(m => m.id === msgId);
-          if (mIdx >= 0) {
-            if (c.messages[mIdx].translated) {
-              c.messages[mIdx].translated = false;
-              found = true;
-            } else if (c.messages[mIdx].translation) {
-              c.messages[mIdx].translated = true;
-              found = true;
-            }
+      const list = Array.isArray(prev) ? prev.map(c => {
+        if (!c.messages) return c;
+        const targetMsg = c.messages.find(m => m.id === msgId);
+        if (targetMsg) {
+          if (targetMsg.translated) {
+            found = true;
+            return {
+              ...c,
+              messages: c.messages.map(m => m.id === msgId ? { ...m, translated: false } : m)
+            };
+          } else if (targetMsg.translation) {
+            found = true;
+            return {
+              ...c,
+              messages: c.messages.map(m => m.id === msgId ? { ...m, translated: true } : m)
+            };
           }
         }
-      }
-      isAlreadyTranslated = found;
+        return c;
+      }) : [];
+      isToggledOff = found;
       return found ? list : prev;
     });
 
-    if (isAlreadyTranslated) return;
+    if (isToggledOff) return;
 
     try {
       showToast(loc('در حال ترجمه پیام...', 'Translating message...'));
-      const targetLang = currentAppLang === 'fa' ? 'fa' : 'en';
-      const res = await fetch('/api/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, targetLang })
-      });
-      const data = await res.json();
-      if (data && data.success && data.translatedText) {
+      const targetLang = currentAppLang || 'fa';
+      const translatedText = await apiMessages.translateText(text, targetLang);
+      
+      if (translatedText) {
         setConversations(prev => {
-          const list = Array.isArray(prev) ? [...prev] : [];
-          for (let c of list) {
-            if (c.messages) {
-              const mIdx = c.messages.findIndex(m => m.id === msgId);
-              if (mIdx >= 0) {
-                c.messages[mIdx] = {
-                  ...c.messages[mIdx],
+          const list = Array.isArray(prev) ? prev.map(c => {
+            if (!c.messages) return c;
+            const hasTarget = c.messages.some(m => m.id === msgId);
+            if (hasTarget) {
+              return {
+                ...c,
+                messages: c.messages.map(m => m.id === msgId ? {
+                  ...m,
                   translated: true,
-                  translation: data.translatedText,
+                  translation: translatedText,
                   translationLang: targetLang
-                };
-              }
+                } : m)
+              };
             }
-          }
+            return c;
+          }) : [];
           return list;
         });
         showToast(loc('پیام ترجمه شد ✅', 'Message translated ✅'));
@@ -1208,7 +1259,8 @@ export default function App() {
         showToast(loc('خطا در ترجمه', 'Translation failed'));
       }
     } catch (e) {
-      showToast(loc('خطا در ارتباط', 'Connection error'));
+      console.warn('Translation error:', e);
+      showToast(loc('خطا در ارتباط با سرور ترجمه', 'Translation service error'));
     }
   }, [currentAppLang, setConversations, showToast, loc]);
 
@@ -2515,7 +2567,7 @@ export default function App() {
       <DynamicThemeStyleInjector />
       <VisualUiEditorToolbar activeTab={activeTab} setActiveTab={setActiveTab} setIsAdminPanelOpen={setIsAdminPanelOpen} />
       <DevicePreviewFrame>
-        <div className={`cyber-container min-h-screen text-slate-100 flex flex-col relative pb-20 ${isRtl ? 'dir-rtl' : 'dir-ltr'}`}>
+        <div className={`cyber-container ${activeTab === 'messages' ? 'h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col pb-16 sm:pb-20' : 'min-h-screen pb-20 flex flex-col'} text-slate-100 relative ${isRtl ? 'dir-rtl' : 'dir-ltr'}`}>
       {/* Toast Notification Banner */}
       {toastMessage && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border border-pink-500 text-pink-300 px-6 py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-3">
           <Sparkles className="w-5 h-5 text-pink-400 animate-pulse" />
@@ -2623,7 +2675,7 @@ export default function App() {
         </div>}
 
       {/* HEADER NAVBAR - COMPACT SLEEK REDESIGN */}
-      <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/80 px-3 sm:px-4 py-2 shadow-md w-full overflow-hidden">
+      <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/80 px-3 sm:px-4 py-2 shadow-md w-full shrink-0">
         <div className="flex items-center justify-between max-w-7xl mx-auto w-full gap-2">
           
           {/* Left: User Profile & Coins + Streamer Camera Button */}
@@ -2683,7 +2735,7 @@ export default function App() {
       </header>
 
       {/* BODY CONTENT AREA */}
-      <main className={`flex-1 max-w-4xl mx-auto w-full ${activeTab === 'messages' ? 'h-[calc(100dvh-125px)] sm:h-[calc(100dvh-135px)] overflow-hidden flex flex-col min-h-0 p-1 sm:p-3' : 'p-2 sm:p-4 space-y-4'}`}>
+      <main className={`flex-1 max-w-4xl mx-auto w-full flex flex-col min-h-0 ${activeTab === 'messages' ? 'h-full overflow-hidden p-1 sm:p-2' : 'p-2 sm:p-4 space-y-4'}`}>
 
         {/* TAB 1: HOME (EXPLORE & LIVE SUB-TABS) */}
         {activeTab === 'home' && <div className="space-y-3 animate-fadeIn pb-12">
@@ -3119,7 +3171,7 @@ export default function App() {
       {/* MODAL: REDESIGNED NOTIFICATIONS SYSTEM */}
       <NotificationsModal isNotificationsOpen={isNotificationsOpen} setIsNotificationsOpen={setIsNotificationsOpen} isNotifSettingsOpen={isNotifSettingsOpen} setIsNotifSettingsOpen={setIsNotifSettingsOpen} isRtl={isRtl} notificationsList={notificationsList} setNotificationsList={setNotificationsList} notificationFilterTab={notificationFilterTab} setNotificationFilterTab={setNotificationFilterTab} notifSettings={notifSettings} setNotifSettings={setNotifSettings} setActiveChatCall={setActiveChatCall} setIsSettingsModalOpen={setIsSettingsModalOpen} showToast={showToast} onSwitchMainTab={(tab) => setActiveMainTab(tab)} />
       {/* MODAL: 18-SECTION SETTINGS MODAL */}
-      <SettingsModal currentUser={currentUser} userRole={userRole} handleLogout={handleLogout} isSettingsModalOpen={isSettingsModalOpen} setIsSettingsModalOpen={setIsSettingsModalOpen} currentAppLang={currentAppLang} setCurrentAppLang={setCurrentAppLang} handleSelectLanguage={handleSelectLanguage} APP_LANGUAGES={APP_LANGUAGES} setIsLanguageModalOpen={setIsLanguageModalOpen} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} currentUsername={currentUsername} authUsername={authUsername} authEmail={authEmail} currentTelegramId={currentTelegramId} userGender={userGender} isVerified={isVerified} verificationsList={verificationsList} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} isRtl={isRtl} notifSettings={notifSettings} setNotifSettings={setNotifSettings} appThemeMode={appThemeMode} setAppThemeMode={setAppThemeMode} setIsKycModalOpen={setIsKycModalOpen} setIsSuggestionModalOpen={setIsSuggestionModalOpen} setIsTermsModalOpen={setIsTermsModalOpen} setIsVipModalOpen={setIsVipModalOpen} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} showToast={showToast} loc={loc} />
+      <SettingsModal currentUser={currentUser} userRole={userRole} handleLogout={handleLogout} isSettingsModalOpen={isSettingsModalOpen} setIsSettingsModalOpen={setIsSettingsModalOpen} currentAppLang={currentAppLang} setCurrentAppLang={setCurrentAppLang} handleSelectLanguage={handleSelectLanguage} APP_LANGUAGES={APP_LANGUAGES} setIsLanguageModalOpen={setIsLanguageModalOpen} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} currentUsername={currentUsername} authUsername={authUsername} authEmail={authEmail} currentTelegramId={currentTelegramId} userGender={userGender} isVerified={isVerified} verificationsList={verificationsList} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} blockedUsers={blockedCallUsers} setBlockedUsers={setBlockedCallUsers} isRtl={isRtl} notifSettings={notifSettings} setNotifSettings={setNotifSettings} appThemeMode={appThemeMode} setAppThemeMode={setAppThemeMode} setIsKycModalOpen={setIsKycModalOpen} setIsSuggestionModalOpen={setIsSuggestionModalOpen} setIsTermsModalOpen={setIsTermsModalOpen} setIsVipModalOpen={setIsVipModalOpen} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} showToast={showToast} loc={loc} />
 
       {/* MODAL: VIP & REWARD SYSTEM MODALS */}
       <VipAndRewardModals isLevelUpModalOpen={isLevelUpModalOpen} setIsLevelUpModalOpen={setIsLevelUpModalOpen} isRtl={isRtl} userLevel={userLevel} levelUpModalData={levelUpModalData} isReferralRulesModalOpen={isReferralRulesModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} isVipModalOpen={isVipModalOpen} setIsVipModalOpen={setIsVipModalOpen} selectedVipPlan={selectedVipPlan} setSelectedVipPlan={setSelectedVipPlan} selectedVipDuration={selectedVipDuration} setSelectedVipDuration={setSelectedVipDuration} selectedVipPayMethod={selectedVipPayMethod} setSelectedVipPayMethod={setSelectedVipPayMethod} userCoins={userCoins} setUserCoins={setUserCoins} setVipPlan={setVipPlan} setVipExpireDays={setVipExpireDays} setIsVipMonthlyClaimed={setIsVipMonthlyClaimed} isVipCelebrationOpen={isVipCelebrationOpen} setIsVipCelebrationOpen={setIsVipCelebrationOpen} vipPlan={vipPlan} vipExpireDays={vipExpireDays} showToast={showToast} />
@@ -4001,9 +4053,8 @@ export default function App() {
                         {/* Video Call */}
                         <button onClick={() => {
                       const target = matchDeckProfiles[matchCardIndex];
-                      handleInitiateCall(target, 'video', '1on1');
                       setIsMatchModalOpen(false);
-                      showToast(`📹 Calling ${target.name}...`);
+                      handleInitiateCall(target, 'video');
                     }} className="py-3 rounded-2xl bg-slate-900/90 border border-slate-700 text-cyan-400 hover:bg-cyan-500/20 font-bold flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition" title="Video Call">
                           <span className="text-lg">📹</span>
                           <span className="text-[9px]">Video</span>
@@ -4307,12 +4358,9 @@ export default function App() {
           setSelectedUser(null);
           handleStartNewChatWithUser(targetUser);
         }} onStartCall={(targetUser, callType) => {
-          if (typeof setSelectedHostForCall === 'function') setSelectedHostForCall(targetUser);
-          if (callType === 'video') {
-            setIsDirectCallModalOpen(true);
-          } else {
-            if (typeof setIsAudioCallOpen === 'function') setIsAudioCallOpen(true);
-          }
+          setIsUserProfileModalOpen(false);
+          setSelectedUser(null);
+          handleInitiateCall(targetUser, callType || 'video');
         }} onSendGift={targetUser => {
           if (typeof setSelectedGiftRecipient === 'function') setSelectedGiftRecipient(targetUser);
           if (typeof setIsGiftModalOpen === 'function') setIsGiftModalOpen(true);

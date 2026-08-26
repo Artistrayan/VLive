@@ -645,6 +645,77 @@ const server = http.createServer(async (req, res) => {
         }
       }
 
+      // POST /api/calls/log - Real Call Logging & State Synchronization
+      if (reqUrl === '/api/calls/log') {
+        try {
+          const authResult = await authenticateRequest(req, data);
+          if (!authResult.authenticated) {
+            res.statusCode = authResult.status || 401;
+            return res.end(JSON.stringify({ success: false, error: authResult.error }));
+          }
+
+          const authUser = authResult.user;
+          const { action, callId, callerId, receiverId, callType, status, durationSec } = data;
+
+          if (action === 'initiate') {
+            const rawCallerId = callerId || authUser.id;
+            const dbCallType = (callType === 'voice' || callType === 'audio') ? 'audio' : 'video';
+            const { data: insertedRecord, error: insertError } = await supabase
+              .from('call_logs')
+              .insert([{
+                caller_id: rawCallerId,
+                receiver_id: receiverId,
+                call_type: dbCallType,
+                status: status || 'initiated',
+                duration_seconds: 0,
+                created_at: new Date().toISOString()
+              }])
+              .select()
+              .single();
+
+            if (insertError) {
+              console.error('Server /api/calls/log insert error:', insertError.message);
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ success: false, error: insertError.message }));
+            }
+
+            res.statusCode = 200;
+            return res.end(JSON.stringify({ success: true, callLog: insertedRecord }));
+          } else if (action === 'update' || action === 'status' || action === 'end') {
+            if (!callId) {
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ success: false, error: 'callId is required for update' }));
+            }
+            const updatePayload = {};
+            if (status) updatePayload.status = status;
+            if (typeof durationSec === 'number') updatePayload.duration_seconds = durationSec;
+
+            const { data: updatedRecord, error: updateError } = await supabase
+              .from('call_logs')
+              .update(updatePayload)
+              .eq('id', callId)
+              .select()
+              .maybeSingle();
+
+            if (updateError) {
+              console.error('Server /api/calls/log update error:', updateError.message);
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ success: false, error: updateError.message }));
+            }
+
+            res.statusCode = 200;
+            return res.end(JSON.stringify({ success: true, callLog: updatedRecord }));
+          }
+
+          res.statusCode = 400;
+          return res.end(JSON.stringify({ success: false, error: 'Invalid call log action' }));
+        } catch (callLogErr) {
+          console.error('Server /api/calls/log exception:', callLogErr.message);
+          res.statusCode = 500;
+          return res.end(JSON.stringify({ success: false, error: callLogErr.message }));
+        }
+      }
+
       // LiveKit Server Configuration Endpoint
       if (reqUrl === '/api/livekit/config') {
         return res.end(JSON.stringify({

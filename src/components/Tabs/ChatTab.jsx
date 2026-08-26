@@ -36,7 +36,6 @@ export default function ChatTab(props) {
     conversations, setConversations,
     activeConversationId, setActiveConversationId,
     isChatSearchOpen, setIsChatSearchOpen,
-    activeChatCall, setActiveChatCall,
     userCoins: propUserCoins, setUserCoins: propSetUserCoins,
     showToast = (() => {}), loc = ((a, b) => b || a), isRtl
   } = props;
@@ -58,10 +57,8 @@ export default function ChatTab(props) {
   const [showChatOptionsMenu, setShowChatOptionsMenu] = React.useState(false);
   const [isChatLocked, setIsChatLocked] = React.useState(false);
   const [isRecordingAudio, setIsRecordingAudio] = React.useState(false);
-  const [chatCallSeconds, setChatCallSeconds] = React.useState(45);
-  const [isChatCallMuted, setIsChatCallMuted] = React.useState(false);
 
-  const handleInitiateCall = props.handleInitiateCall || ((type) => showToast(`Starting ${type} call...`));
+  const handleInitiateCall = props.handleInitiateCall || ((target, type) => showToast(`Starting ${type} call...`));
   const [pinnedMessage, setPinnedMessage] = React.useState(props.pinnedMessage || null);
   const t = props.t || ((key) => key);
   const langCode = props.langCode || 'fa';
@@ -877,8 +874,7 @@ export default function ChatTab(props) {
                           <div className="flex items-center gap-1.5 shrink-0">
                             <button
                               onClick={() => {
-                                handleInitiateCall(currentConv?.user, 'voice', '1on1');
-                                showToast("Initiating Voice Call with " + (currentConv?.user?.name || 'User') + "...");
+                                handleInitiateCall(currentConv?.user, 'audio');
                               }}
                               className="p-2 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-slate-950 font-bold transition shadow-md"
                               title="Voice Call"
@@ -888,8 +884,7 @@ export default function ChatTab(props) {
 
                             <button
                               onClick={() => {
-                                handleInitiateCall(currentConv?.user, 'video', '1on1');
-                                showToast("Initiating 4K Video Call with " + (currentConv?.user?.name || 'User') + "...");
+                                handleInitiateCall(currentConv?.user, 'video');
                               }}
                               className="p-2 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-600 hover:text-white font-bold transition shadow-md"
                               title="Video Call"
@@ -1541,46 +1536,6 @@ export default function ChatTab(props) {
                 )}
               </div>
             </div>
-
-            {/* IN-CHAT ACTIVE CALL OVERLAY MODAL */}
-            {activeChatCall && (
-              <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-2xl flex flex-col items-center justify-between p-8 text-white animate-fadeIn">
-                <div className="text-center space-y-2 mt-8">
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-xs border border-emerald-500/30 flex items-center gap-1.5 justify-center mx-auto w-fit">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                    Live LiveKit {activeChatCall.type === 'video' ? '4K Video' : 'HD Voice'} Call Active
-                  </span>
-                  <h3 className="text-2xl font-black">{activeChatCall?.user?.name || 'User'}</h3>
-                  <p className="text-sm text-slate-400 font-mono">Duration: {Math.floor(chatCallSeconds / 60).toString().padStart(2, '0')}:{(chatCallSeconds % 60).toString().padStart(2, '0')}</p>
-                </div>
-
-                <div className="relative my-auto flex flex-col items-center">
-                  <div className="w-32 h-32 rounded-full ring-4 ring-pink-500/50 shadow-[0_0_50px_rgba(236,72,153,0.5)] overflow-hidden animate-pulse">
-                    <img src={activeChatCall?.user?.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={activeChatCall?.user?.name || 'User'} className="w-full h-full object-cover" />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 mb-8">
-                  <button 
-                    onClick={() => setIsChatCallMuted(!isChatCallMuted)}
-                    className={"p-4 rounded-full border transition " + (isChatCallMuted ? "bg-rose-600 text-white border-rose-500" : "bg-slate-900 text-slate-200 border-slate-700")}
-                  >
-                    {isChatCallMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-                  </button>
-
-                  <button 
-                    onClick={() => {
-                      setActiveChatCall(null);
-                      showToast('Call ended');
-                    }}
-                    className="p-5 rounded-full bg-rose-600 text-white shadow-2xl hover:scale-110 active:scale-95 transition ring-4 ring-rose-500/40"
-                    title="End Call"
-                  >
-                    <Phone className="w-8 h-8 rotate-[135deg]" />
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* IN-CHAT SEND COINS MODAL */}
             {isSendCoinsInChatOpen && (
