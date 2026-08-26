@@ -2721,14 +2721,19 @@ export const apiNotifications = {
       };
 
       try {
-        const cached = JSON.parse(safeStorage.getItem('vlive_user_notifs_v1') || '[]');
-        const next = [notifObj, ...(Array.isArray(cached) ? cached : [])].slice(0, 100);
-        safeStorage.setItem('vlive_user_notifs_v1', JSON.stringify(next));
+        const currentUid = getUserId();
+        if (currentUid) {
+          const currentUserUuid = await resolveProfileUuid(currentUid).catch(()=>null) || currentUid;
+          if (String(targetUserId) === String(currentUid) || String(targetUuid) === String(currentUserUuid)) {
+            const cached = JSON.parse(safeStorage.getItem('vlive_user_notifs_v1') || '[]');
+            const next = [notifObj, ...(Array.isArray(cached) ? cached : [])].slice(0, 100);
+            safeStorage.setItem('vlive_user_notifs_v1', JSON.stringify(next));
+          }
+        }
       } catch (cacheErr) {}
 
       const targetsToNotify = new Set([String(targetUserId)]);
       if (targetUuid) targetsToNotify.add(String(targetUuid));
-      if (notifData.senderUsername) targetsToNotify.add(String(notifData.senderUsername));
 
       targetsToNotify.forEach(tid => {
         try {
