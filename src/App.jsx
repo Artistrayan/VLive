@@ -346,6 +346,8 @@ export default function App() {
   const [isReferralRulesModalOpen, setIsReferralRulesModalOpen] = useState(false);
   const [isKycModalOpen, setIsKycModalOpen] = useState(false);
   const [isPermissionsPromptOpen, setIsPermissionsPromptOpen] = useState(false);
+  const [permissionsRequestedType, setPermissionsRequestedType] = useState('all'); // 'all' | 'camera_mic' | 'camera' | 'microphone' | 'notifications'
+  const [pendingPermissionAction, setPendingPermissionAction] = useState(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isNotifSettingsOpen, setIsNotifSettingsOpen] = useState(false);
@@ -559,6 +561,16 @@ export default function App() {
   // Call Initiation Handler
   const handleInitiateCall = useCallback((targetUser, callType = 'video') => {
     if (!targetUser) return;
+    const isCamMicGranted = safeStorage.getItem('vlive_permissions_granted') === 'true' || 
+      (safeStorage.getItem('vlive_camera_permission_granted') === 'true' && safeStorage.getItem('vlive_mic_permission_granted') === 'true');
+    
+    if (!isCamMicGranted) {
+      setPermissionsRequestedType('camera_mic');
+      setPendingPermissionAction(() => () => handleInitiateCall(targetUser, callType));
+      setIsPermissionsPromptOpen(true);
+      return;
+    }
+
     const requiredCoins = targetUser.tariffPerMin || 100;
     const normalizedCallType = (callType === 'voice' || callType === 'audio') ? 'audio' : 'video';
     setPreCallConfirmHost({
@@ -572,6 +584,17 @@ export default function App() {
 
   const handleStartCallDirect = useCallback(async (targetUser, callType = 'video') => {
     if (!targetUser) return;
+
+    const isCamMicGranted = safeStorage.getItem('vlive_permissions_granted') === 'true' || 
+      (safeStorage.getItem('vlive_camera_permission_granted') === 'true' && safeStorage.getItem('vlive_mic_permission_granted') === 'true');
+    
+    if (!isCamMicGranted) {
+      setPermissionsRequestedType('camera_mic');
+      setPendingPermissionAction(() => () => handleStartCallDirect(targetUser, callType));
+      setIsPermissionsPromptOpen(true);
+      return;
+    }
+
     const requiredCoins = targetUser.tariffPerMin || 100;
     if (!isUserSuperAdmin && userCoins < requiredCoins) {
       showToast(loc('سکه کافی برای شروع تماس ندارید', 'Insufficient coins to start call'));
@@ -655,6 +678,17 @@ export default function App() {
 
   const handleAcceptIncomingCall = useCallback(async (incomingCallObj) => {
     if (!incomingCallObj) return;
+
+    const isCamMicGranted = safeStorage.getItem('vlive_permissions_granted') === 'true' || 
+      (safeStorage.getItem('vlive_camera_permission_granted') === 'true' && safeStorage.getItem('vlive_mic_permission_granted') === 'true');
+    
+    if (!isCamMicGranted) {
+      setPermissionsRequestedType('camera_mic');
+      setPendingPermissionAction(() => () => handleAcceptIncomingCall(incomingCallObj));
+      setIsPermissionsPromptOpen(true);
+      return;
+    }
+
     try {
       showToast(loc('در حال اتصال تماس...', 'Connecting call...'));
       const normalizedCallType = (incomingCallObj.callType === 'voice' || incomingCallObj.callType === 'audio') ? 'audio' : 'video';
@@ -1396,8 +1430,42 @@ export default function App() {
 
   const handleSavePermissionsPrompt = useCallback((perms) => {
     setIsPermissionsPromptOpen(false);
-    showToast(loc('دسترسی‌ها ذخیره شدند', 'Permissions saved'));
-  }, [showToast]);
+
+    if (perms === true || (perms && typeof perms === 'object' && perms.camera && perms.microphone)) {
+      safeStorage.setItem('vlive_permissions_granted', 'true');
+      safeStorage.setItem('vlive_camera_permission_granted', 'true');
+      safeStorage.setItem('vlive_mic_permission_granted', 'true');
+      if (perms?.notifications) {
+        safeStorage.setItem('vlive_notif_permission_granted', 'true');
+      }
+      showToast(loc('دسترسی‌های سخت‌افزار با موفقیت تایید و ذخیره شدند ✅', 'Hardware permissions successfully granted & saved ✅'));
+
+      // If there was a pending user action (e.g. start call, open live studio), execute it now
+      if (typeof pendingPermissionAction === 'function') {
+        const action = pendingPermissionAction;
+        setPendingPermissionAction(null);
+        action();
+      }
+    } else if (perms && typeof perms === 'object') {
+      if (perms.camera) safeStorage.setItem('vlive_camera_permission_granted', 'true');
+      if (perms.microphone) safeStorage.setItem('vlive_mic_permission_granted', 'true');
+      if (perms.notifications) safeStorage.setItem('vlive_notif_permission_granted', 'true');
+      if (perms.camera && perms.microphone) {
+        safeStorage.setItem('vlive_permissions_granted', 'true');
+      }
+      showToast(loc('تنظیمات دسترسی با موفقیت ذخیره شد', 'Permission settings saved successfully'));
+
+      if ((perms.camera || perms.microphone) && typeof pendingPermissionAction === 'function') {
+        const action = pendingPermissionAction;
+        setPendingPermissionAction(null);
+        action();
+      }
+    } else {
+      // Basic / Declined access
+      showToast(loc('ورود با دسترسی پایه. هنگام استفاده از لایو و تماس مجدداً سوال خواهد شد.', 'Entered with basic access. Prompt will appear when using live or calls.'));
+      setPendingPermissionAction(null);
+    }
+  }, [showToast, loc, pendingPermissionAction]);
 
   // AI Admin Copilot Actions
   const handleRunAiChatModerator = useCallback(() => {
@@ -2156,6 +2224,15 @@ export default function App() {
       if (ch) activeNotifChannels.push(ch);
     });
     
+    // Check if first-time system permissions have already been granted or prompted
+    const isPermGranted = safeStorage.getItem('vlive_permissions_granted');
+    const isPermDeclined = safeStorage.getItem('vlive_permissions_prompted_once');
+    if (isPermGranted !== 'true' && isPermDeclined !== 'true') {
+      safeStorage.setItem('vlive_permissions_prompted_once', 'true');
+      setPermissionsRequestedType('all');
+      setIsPermissionsPromptOpen(true);
+    }
+
     return () => {
       activeNotifChannels.forEach(ch => {
         try { ch.unsubscribe(); } catch (e) {}
@@ -2916,11 +2993,7 @@ export default function App() {
                       <div className="p-1.5 flex items-center gap-1 bg-slate-950 border-t border-slate-900">
                         <button onClick={e => {
                       e.stopPropagation();
-                      setActiveCall({
-                        user,
-                        isVideo: true,
-                        isIncoming: false
-                      });
+                      handleInitiateCall(user, 'video');
                     }} className="flex-1 py-1 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400 flex items-center justify-center hover:bg-pink-500 hover:text-white transition" title="Video Call">
                           <Video className="w-3.5 h-3.5" />
                         </button>
@@ -4414,7 +4487,14 @@ export default function App() {
         }} adminNetworkFee={adminNetworkFee} adminMinWithdrawal={adminMinWithdrawal} transactionsList={transactionsList} setTransactionsList={setTransactionsList} adminTicketsList={adminTicketsList} setAdminTicketsList={setAdminTicketsList} />}
 
       {/* FIRST TIME SYSTEM PERMISSIONS & TERMS MODAL */}
-      <PermissionsPromptModal isOpen={isPermissionsPromptOpen} onAcceptAll={() => handleSavePermissionsPrompt(true)} onAcceptBasic={() => handleSavePermissionsPrompt(false)} loc={loc} isRtl={isRtl} />
+      <PermissionsPromptModal 
+        isOpen={isPermissionsPromptOpen} 
+        requestedPermissionType={permissionsRequestedType}
+        onAcceptAll={(perms) => handleSavePermissionsPrompt(perms)} 
+        onAcceptBasic={() => handleSavePermissionsPrompt(false)} 
+        loc={loc} 
+        isRtl={isRtl} 
+      />
 
       {/* VIEW OTHER USER PROFILE MODAL */}
       <UserProfileViewModal isOpen={isUserProfileModalOpen} onClose={() => {

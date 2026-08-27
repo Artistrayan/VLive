@@ -1,16 +1,73 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  ShieldCheck, Camera, Mic, Bell, Image, FileText, CheckCircle2, Check 
+  ShieldCheck, Camera, Mic, Bell, Image, FileText, CheckCircle2, Check, X, AlertTriangle, RefreshCw
 } from 'lucide-react';
 
 export default function PermissionsPromptModal({
   isOpen,
   onAcceptAll,
   onAcceptBasic,
+  requestedPermissionType = 'all', // 'all' | 'camera_mic' | 'camera' | 'microphone' | 'notifications'
   loc,
   isRtl
 }) {
+  const [isProcessing, setIsProcessing] = useState(false);
+
   if (!isOpen) return null;
+
+  const handleGrantHardwarePermissions = async () => {
+    setIsProcessing(true);
+    let cameraGranted = false;
+    let micGranted = false;
+    let notifsGranted = false;
+
+    // 1. Request Camera & Mic from browser/OS hardware
+    if (requestedPermissionType === 'all' || requestedPermissionType === 'camera_mic' || requestedPermissionType === 'camera' || requestedPermissionType === 'microphone') {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const constraints = {
+            video: requestedPermissionType === 'microphone' ? false : { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: requestedPermissionType === 'camera' ? false : true
+          };
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          if (stream) {
+            cameraGranted = true;
+            micGranted = true;
+            // Stop tracks immediately after granting so hardware LED turns off
+            stream.getTracks().forEach(t => t.stop());
+          }
+        }
+      } catch (err) {
+        console.warn('Hardware permission request notice:', err);
+      }
+    }
+
+    // 2. Request Notifications from browser/OS
+    if (requestedPermissionType === 'all' || requestedPermissionType === 'notifications') {
+      try {
+        if (typeof window !== 'undefined' && 'Notification' in window && typeof Notification.requestPermission === 'function') {
+          const notifRes = await Notification.requestPermission();
+          if (notifRes === 'granted') {
+            notifsGranted = true;
+          }
+        }
+      } catch (err) {
+        console.warn('Notification permission request notice:', err);
+      }
+    }
+
+    setIsProcessing(false);
+    if (typeof onAcceptAll === 'function') {
+      onAcceptAll({
+        camera: cameraGranted,
+        microphone: micGranted,
+        notifications: notifsGranted,
+        requestedType: requestedPermissionType
+      });
+    }
+  };
+
+  const isGranular = requestedPermissionType !== 'all';
 
   return (
     <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-2xl flex items-center justify-center p-4 animate-fadeIn overflow-y-auto" dir={isRtl ? "rtl" : "ltr"}>
@@ -25,7 +82,9 @@ export default function PermissionsPromptModal({
           </div>
           <div>
             <h3 className="font-black text-sm text-white">
-              {loc('دسترسی‌های سیستم و قوانین V.LIVE', 'System Permissions & Terms')}
+              {isGranular 
+                ? loc('مجوز دسترسی به قابلیت‌های برنامه', 'App Feature Permission Request')
+                : loc('دسترسی‌های سیستم و قوانین V.LIVE', 'System Permissions & Terms')}
             </h3>
             <p className="text-[11px] text-slate-400 mt-0.5">
               {loc('جهت استفاده از لایواستریم، تماس مستقیم و اعلان‌ها', 'For live streaming, direct calls & notifications')}
@@ -35,100 +94,122 @@ export default function PermissionsPromptModal({
 
         {/* Permissions List */}
         <div className="space-y-2 text-xs text-slate-300">
-          {/* 1. Camera */}
-          <div className="p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
-                <Camera className="w-4 h-4" />
+          {/* 1. Camera (Show if all or camera/camera_mic) */}
+          {(requestedPermissionType === 'all' || requestedPermissionType === 'camera_mic' || requestedPermissionType === 'camera') && (
+            <div className="p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
+                  <Camera className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-white text-[11px]">{loc('دسترسی به دوربین (جلو و عقب)', 'Camera Access (Front & Rear)')}</h4>
+                  <p className="text-[10px] text-slate-400">{loc('پخش زنده HD/4K و تماس تصویری دوطرفه', 'HD/4K live broadcast & video calls')}</p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold text-white text-[11px]">{loc('دسترسی به دوربین', 'Camera Access')}</h4>
-                <p className="text-[10px] text-slate-400">{loc('پخش زنده HD/4K و تماس تصویری', 'HD/4K live & video calls')}</p>
-              </div>
+              <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
+                {loc('الزامی', 'Required')}
+              </span>
             </div>
-            <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
-              {loc('الزامی', 'Required')}
-            </span>
-          </div>
+          )}
 
-          {/* 2. Microphone */}
-          <div className="p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-pink-500/10 text-pink-400 border border-pink-500/20 shrink-0">
-                <Mic className="w-4 h-4" />
+          {/* 2. Microphone (Show if all or microphone/camera_mic) */}
+          {(requestedPermissionType === 'all' || requestedPermissionType === 'camera_mic' || requestedPermissionType === 'microphone') && (
+            <div className="p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-pink-500/10 text-pink-400 border border-pink-500/20 shrink-0">
+                  <Mic className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-white text-[11px]">{loc('دسترسی به میکروفون', 'Microphone Access')}</h4>
+                  <p className="text-[10px] text-slate-400">{loc('صدای شفاف استریم و مکالمات صوتی', 'Clear voice chat & live audio')}</p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold text-white text-[11px]">{loc('دسترسی به میکروفون', 'Microphone Access')}</h4>
-                <p className="text-[10px] text-slate-400">{loc('صدای شفاف استریم و مکالمات', 'Clear voice chat & live audio')}</p>
-              </div>
+              <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
+                {loc('الزامی', 'Required')}
+              </span>
             </div>
-            <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
-              {loc('الزامی', 'Required')}
-            </span>
-          </div>
+          )}
 
-          {/* 3. Notifications */}
-          <div className="p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 shrink-0">
-                <Bell className="w-4 h-4" />
+          {/* 3. Notifications (Show if all or notifications) */}
+          {(requestedPermissionType === 'all' || requestedPermissionType === 'notifications') && (
+            <div className="p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 shrink-0">
+                  <Bell className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-white text-[11px]">{loc('اعلان‌ها و رویدادها', 'Notifications & Alerts')}</h4>
+                  <p className="text-[10px] text-slate-400">{loc('اطلاع از شروع لایو، تماس و پیام‌های جدید', 'Alerts for calls, live streams & chats')}</p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold text-white text-[11px]">{loc('اعلان‌ها', 'Notifications')}</h4>
-                <p className="text-[10px] text-slate-400">{loc('اطلاع از لایوها و پیام‌های جدید', 'Alerts for live streams & messages')}</p>
-              </div>
+              <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
+                {loc('توصیه‌شده', 'Recommended')}
+              </span>
             </div>
-            <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
-              {loc('توصیه‌شده', 'Recommended')}
-            </span>
-          </div>
+          )}
 
-          {/* 4. Gallery / Storage */}
-          <div className="p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
-                <Image className="w-4 h-4" />
+          {/* 4. Gallery / Storage (Only in full initial onboarding) */}
+          {requestedPermissionType === 'all' && (
+            <div className="p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
+                  <Image className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-white text-[11px]">{loc('گالری و رسانه', 'Media & Storage')}</h4>
+                  <p className="text-[10px] text-slate-400">{loc('آپلود تصویر پروفایل و عکس در چت', 'Upload avatar & chat photos')}</p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold text-white text-[11px]">{loc('گالری و رسانه', 'Media & Storage')}</h4>
-                <p className="text-[10px] text-slate-400">{loc('آپلود تصویر پروفایل و عکس در چت', 'Upload avatar & chat photos')}</p>
-              </div>
+              <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
+                {loc('اختیاری', 'Optional')}
+              </span>
             </div>
-            <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
-              {loc('اختیاری', 'Optional')}
-            </span>
-          </div>
+          )}
 
-          {/* 5. Rules */}
-          <div className="p-2.5 rounded-xl bg-slate-950/90 border border-amber-500/30 flex items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
-                <FileText className="w-4 h-4" />
+          {/* 5. Rules (Only in full initial onboarding) */}
+          {requestedPermissionType === 'all' && (
+            <div className="p-2.5 rounded-xl bg-slate-950/90 border border-amber-500/30 flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-amber-300 text-[11px]">{loc('قوانین و شرایط استفاده', 'Terms & Platform Rules')}</h4>
+                  <p className="text-[10px] text-slate-400">{loc('احترام متقابل و رعایت قوانین استریم', 'Community guidelines & respect')}</p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold text-amber-300 text-[11px]">{loc('قوانین و شرایط استفاده', 'Terms & Platform Rules')}</h4>
-                <p className="text-[10px] text-slate-400">{loc('احترام متقابل و رعایت قوانین استریم', 'Community guidelines & respect')}</p>
-              </div>
+              <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
             </div>
-            <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
-          </div>
+          )}
         </div>
 
         {/* Actions */}
         <div className="space-y-2 pt-1">
           <button
-            onClick={onAcceptAll}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 via-purple-600 to-pink-500 text-white font-black text-xs shadow-lg shadow-cyan-500/20 active:scale-95 transition flex items-center justify-center gap-1.5"
+            onClick={handleGrantHardwarePermissions}
+            disabled={isProcessing}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 via-purple-600 to-pink-500 text-white font-black text-xs shadow-lg shadow-cyan-500/20 active:scale-95 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
-            <Check className="w-4 h-4 font-black" />
-            <span>{loc('تایید قوانین و اعطای کامل دسترسی‌ها', 'Accept Rules & Grant All Permissions')}</span>
+            {isProcessing ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Check className="w-4 h-4 font-black" />
+            )}
+            <span>
+              {isGranular
+                ? loc('اعطای مجوز و شروع', 'Grant Permission & Start')
+                : loc('تایید قوانین و اعطای کامل دسترسی‌ها', 'Accept Rules & Grant All Permissions')}
+            </span>
           </button>
           
           <button
             onClick={onAcceptBasic}
+            disabled={isProcessing}
             className="w-full py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-white font-bold text-[11px] transition"
           >
-            {loc('ذخیره و ورود با دسترسی پایه', 'Save & Enter with Basic Access')}
+            {isGranular
+              ? loc('انصراف و بستن', 'Cancel & Dismiss')
+              : loc('ذخیره و ورود با دسترسی پایه', 'Save & Enter with Basic Access')}
           </button>
         </div>
 
@@ -136,3 +217,4 @@ export default function PermissionsPromptModal({
     </div>
   );
 }
+
