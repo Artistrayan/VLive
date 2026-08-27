@@ -611,7 +611,27 @@ export default function App() {
           translatedSubtitles: ''
         });
 
-        // Join LiveKit Room
+        // 1. Initialize Direct WebRTC PeerConnection
+        try {
+          const targetPeerId = targetUser.id || targetUser.username;
+          await livekitManager.startWebRtcCall({
+            targetUserId: targetPeerId,
+            isVideo: normalizedCallType === 'video',
+            isCaller: true,
+            onSignalSend: (sig) => {
+              apiCalls.sendCallSignal(targetPeerId, {
+                ...sig,
+                callerId: res.callerId || currentUser?.id || currentUsername,
+                receiverId: res.receiverId || targetPeerId,
+                callId: res.callId || res.callLogId
+              });
+            }
+          });
+        } catch (rtcErr) {
+          console.warn('WebRTC P2P start notice:', rtcErr.message);
+        }
+
+        // 2. Join LiveKit Room if configured
         try {
           await livekitManager.joinRoom({
             roomName: res.roomName,
@@ -631,7 +651,7 @@ export default function App() {
       console.error('Call initiation error:', err);
       showToast(err.message || loc('خطا در برقراری تماس', 'Call initiation error'));
     }
-  }, [currentUsername, showToast, loc, userCoins, isUserSuperAdmin]);
+  }, [currentUsername, currentUser?.id, showToast, loc, userCoins, isUserSuperAdmin]);
 
   const handleAcceptIncomingCall = useCallback(async (incomingCallObj) => {
     if (!incomingCallObj) return;
@@ -669,7 +689,27 @@ export default function App() {
         translatedSubtitles: ''
       });
 
-      // Join LiveKit Room
+      // 1. Initialize Direct WebRTC PeerConnection as receiver
+      try {
+        const callerPeerId = incomingCallObj.callerId;
+        await livekitManager.startWebRtcCall({
+          targetUserId: callerPeerId,
+          isVideo: normalizedCallType === 'video',
+          isCaller: false,
+          onSignalSend: (sig) => {
+            apiCalls.sendCallSignal(callerPeerId, {
+              ...sig,
+              callerId: incomingCallObj.callerId,
+              receiverId: incomingCallObj.receiverId || currentUser?.id || currentUsername,
+              callId: incomingCallObj.callId || incomingCallObj.callLogId
+            });
+          }
+        });
+      } catch (rtcErr) {
+        console.warn('WebRTC receiver start notice:', rtcErr.message);
+      }
+
+      // 2. Join LiveKit Room if configured
       try {
         await livekitManager.joinRoom({
           roomName: incomingCallObj.roomName,
@@ -904,6 +944,17 @@ export default function App() {
           setIncomingCall(payload);
         } else if (payload.type === 'CALL_ACCEPTED') {
           showToast(loc('تماس متصل شد', 'Call connected'));
+        } else if (payload.type === 'WEBRTC_OFFER' || payload.type === 'WEBRTC_ANSWER' || payload.type === 'WEBRTC_ICE') {
+          livekitManager.handleWebRtcSignal(payload, (sig) => {
+            const targetPeer = payload.callerId || payload.targetUserId || activeCall?.user?.id;
+            if (targetPeer) {
+              apiCalls.sendCallSignal(targetPeer, {
+                ...sig,
+                callerId: currentUser?.id || currentUsername,
+                receiverId: targetPeer
+              });
+            }
+          });
         } else if (payload.type === 'CALL_REJECTED') {
           try { livekitManager.disconnect(); } catch {}
           setActiveCall(null);
@@ -3151,7 +3202,7 @@ export default function App() {
           </div>}
 
         {/* TAB 2: MESSAGES & CHAT TAB */}
-        <ChatTab currentUser={currentUser} currentUsername={currentUsername} vipPlan={vipPlan} setIsVipModalOpen={setIsVipModalOpen} userRole={userRole} isUserRayan={isUserRayan} activeTab={activeTab} usersList={usersList} txHistoryList={txHistoryList} userAvatar={userAvatar} userName={userName} totalUnreadMessages={totalUnreadMessages} msgSearchQuery={msgSearchQuery} setMsgSearchQuery={setMsgSearchQuery} msgSearchField={msgSearchField} setMsgSearchField={setMsgSearchField} msgFilterTab={msgFilterTab} setMsgFilterTab={setMsgFilterTab} isCreateGroupModalOpen={isCreateGroupModalOpen} setIsCreateGroupModalOpen={setIsCreateGroupModalOpen} newGroupName={newGroupName} setNewGroupName={setNewGroupName} newGroupDesc={newGroupDesc} setNewGroupDesc={setNewGroupDesc} isNewChatModalOpen={isNewChatModalOpen} setIsNewChatModalOpen={setIsNewChatModalOpen} isChatGalleryOpen={isChatGalleryOpen} setIsChatGalleryOpen={setIsChatGalleryOpen} isSendGiftInChatOpen={isSendGiftInChatOpen} setIsSendGiftInChatOpen={setIsSendGiftInChatOpen} conversations={conversations} setConversations={setConversations} activeConversationId={activeConversationId} setActiveConversationId={setActiveConversationId} chatSearchQuery={chatSearchQuery} setChatSearchQuery={setChatSearchQuery} isChatSearchOpen={isChatSearchOpen} setIsChatSearchOpen={setIsChatSearchOpen} activeChatCall={activeChatCall} setActiveChatCall={setActiveChatCall} isAutoTranslateActive={isAutoTranslateActive} setIsAutoTranslateActive={setIsAutoTranslateActive} handleTranslateChatMessage={handleTranslateChatMessage} handleSendDirectMessage={handleSendDirectMessage} userCoins={userCoins} setUserCoins={setUserCoins} langCode={currentAppLang} t={t} showToast={showToast} loc={loc} isRtl={isRtl} />
+        <ChatTab currentUser={currentUser} currentUsername={currentUsername} vipPlan={vipPlan} setIsVipModalOpen={setIsVipModalOpen} userRole={userRole} isUserRayan={isUserRayan} activeTab={activeTab} usersList={usersList} txHistoryList={txHistoryList} userAvatar={userAvatar} userName={userName} totalUnreadMessages={totalUnreadMessages} msgSearchQuery={msgSearchQuery} setMsgSearchQuery={setMsgSearchQuery} msgSearchField={msgSearchField} setMsgSearchField={setMsgSearchField} msgFilterTab={msgFilterTab} setMsgFilterTab={setMsgFilterTab} isCreateGroupModalOpen={isCreateGroupModalOpen} setIsCreateGroupModalOpen={setIsCreateGroupModalOpen} newGroupName={newGroupName} setNewGroupName={setNewGroupName} newGroupDesc={newGroupDesc} setNewGroupDesc={setNewGroupDesc} isNewChatModalOpen={isNewChatModalOpen} setIsNewChatModalOpen={setIsNewChatModalOpen} isChatGalleryOpen={isChatGalleryOpen} setIsChatGalleryOpen={setIsChatGalleryOpen} isSendGiftInChatOpen={isSendGiftInChatOpen} setIsSendGiftInChatOpen={setIsSendGiftInChatOpen} conversations={conversations} setConversations={setConversations} activeConversationId={activeConversationId} setActiveConversationId={setActiveConversationId} chatSearchQuery={chatSearchQuery} setChatSearchQuery={setChatSearchQuery} isChatSearchOpen={isChatSearchOpen} setIsChatSearchOpen={setIsChatSearchOpen} activeChatCall={activeChatCall} setActiveChatCall={setActiveChatCall} isAutoTranslateActive={isAutoTranslateActive} setIsAutoTranslateActive={setIsAutoTranslateActive} handleTranslateChatMessage={handleTranslateChatMessage} handleSendDirectMessage={handleSendDirectMessage} handleInitiateCall={handleInitiateCall} userCoins={userCoins} setUserCoins={setUserCoins} langCode={currentAppLang} t={t} showToast={showToast} loc={loc} isRtl={isRtl} />
         {/* TAB 3: WALLET & EARNINGS TAB */}
         <WalletTab handleBuyService={handleBuyService} activeTab={activeTab} txHistoryList={txHistoryList} userCoins={userCoins} setUserCoins={setUserCoins} userDiamonds={userDiamonds} setUserDiamonds={setUserDiamonds} userCashBalance={userCashBalance} setUserCashBalance={setUserCashBalance} walletSubTab={walletSubTab} setWalletSubTab={setWalletSubTab} referralCode={referralCode} setIsVipModalOpen={setIsVipModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} showToast={showToast} isVerified={isVerified} isUserSuperAdmin={isUserSuperAdmin} loc={loc} isRtl={isRtl} />
         {/* TAB 4: PROFILE TAB */}

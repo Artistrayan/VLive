@@ -1775,6 +1775,9 @@ function sendCallSignal(targetId, signalPayload) {
 }
 
 export const apiCalls = {
+  sendCallSignal(targetId, signalPayload) {
+    return sendCallSignal(targetId, signalPayload);
+  },
   async initiateCall({ receiverId, receiverUser = null, callType = 'video', tariffPerMin = 100 }) {
     const uid = getUserId();
     if (!uid) return { success: false, error: 'Unauthorized: Please login to make calls' };

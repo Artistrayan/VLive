@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Crown, Coins, Lock, Maximize2, Minimize2, Globe, Mic, MicOff, Volume2, VolumeX, Video, VideoOff, SwitchCamera, Sparkles, Gift, Disc, PhoneCall } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Crown, Coins, Lock, Maximize2, Minimize2, Globe, Mic, MicOff, Volume2, VolumeX, Video, VideoOff, SwitchCamera, Sparkles, Gift, Disc, PhoneCall, VolumeCheck } from 'lucide-react';
 import { livekitManager } from '../../services/livekitService';
 
 export default function ActiveCallOverlay({
@@ -22,31 +22,73 @@ export default function ActiveCallOverlay({
   const remoteVideoRef = useRef(null);
   const remoteAudioRef = useRef(null);
   const localVideoRef = useRef(null);
+  const [audioAutoplayBlocked, setAudioAutoplayBlocked] = useState(false);
 
-  // Attach LiveKit media tracks whenever available
+  // Attach WebRTC & LiveKit media tracks whenever available
   useEffect(() => {
     if (!activeCall) return;
 
-    const onTrackSubscribed = ({ track, kind }) => {
+    const bindRemoteMedia = (streamOrTrack) => {
+      if (!streamOrTrack) return;
+      if (remoteVideoRef.current) {
+        livekitManager.attachTrackToElement(streamOrTrack, remoteVideoRef.current);
+      }
+      if (remoteAudioRef.current) {
+        livekitManager.attachTrackToElement(streamOrTrack, remoteAudioRef.current);
+        remoteAudioRef.current.volume = activeCall.isSpeakerOn !== false ? 1.0 : 0.4;
+        remoteAudioRef.current.muted = false;
+        remoteAudioRef.current.play().then(() => {
+          setAudioAutoplayBlocked(false);
+        }).catch(err => {
+          console.warn('Audio autoplay notice:', err.message);
+          setAudioAutoplayBlocked(true);
+        });
+      }
+    };
+
+    const onTrackSubscribed = ({ track, kind, stream }) => {
       if (kind === 'video' && remoteVideoRef.current) {
         livekitManager.attachTrackToElement(track, remoteVideoRef.current);
       } else if (kind === 'audio' && remoteAudioRef.current) {
         livekitManager.attachTrackToElement(track, remoteAudioRef.current);
+        remoteAudioRef.current.volume = activeCall.isSpeakerOn !== false ? 1.0 : 0.4;
+        remoteAudioRef.current.muted = false;
+        remoteAudioRef.current.play().then(() => {
+          setAudioAutoplayBlocked(false);
+        }).catch(() => setAudioAutoplayBlocked(true));
+      } else if (stream) {
+        bindRemoteMedia(stream);
+      }
+    };
+
+    const onRemoteStreamReady = ({ stream, track, kind }) => {
+      if (stream) {
+        bindRemoteMedia(stream);
+      } else if (track) {
+        onTrackSubscribed({ track, kind });
       }
     };
 
     const onLocalTracks = ({ videoTrack, audioTrack, stream }) => {
-      if (videoTrack && localVideoRef.current) {
-        livekitManager.attachTrackToElement(videoTrack, localVideoRef.current);
-      } else if (stream && localVideoRef.current) {
-        livekitManager.attachTrackToElement(stream, localVideoRef.current);
+      if (localVideoRef.current) {
+        if (videoTrack) {
+          livekitManager.attachTrackToElement(videoTrack, localVideoRef.current);
+        } else if (stream) {
+          livekitManager.attachTrackToElement(stream, localVideoRef.current);
+        }
       }
     };
 
     livekitManager.on('track_subscribed', onTrackSubscribed);
+    livekitManager.on('remote_stream_ready', onRemoteStreamReady);
     livekitManager.on('local_tracks_published', onLocalTracks);
 
-    // If local video already exists
+    // Initial check: bind existing remote stream if already present
+    if (livekitManager.remoteMediaStream) {
+      bindRemoteMedia(livekitManager.remoteMediaStream);
+    }
+
+    // Initial check: bind existing local stream if already present
     if (localVideoRef.current) {
       if (livekitManager.localVideoTrack) {
         livekitManager.attachTrackToElement(livekitManager.localVideoTrack, localVideoRef.current);
@@ -57,9 +99,28 @@ export default function ActiveCallOverlay({
 
     return () => {
       livekitManager.off('track_subscribed', onTrackSubscribed);
+      livekitManager.off('remote_stream_ready', onRemoteStreamReady);
       livekitManager.off('local_tracks_published', onLocalTracks);
     };
   }, [activeCall]);
+
+  // Adjust audio volume when speaker mode toggles
+  useEffect(() => {
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.volume = activeCall?.isSpeakerOn !== false ? 1.0 : 0.4;
+      remoteAudioRef.current.muted = false;
+    }
+  }, [activeCall?.isSpeakerOn]);
+
+  const handleUserTapToUnmute = () => {
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.muted = false;
+      remoteAudioRef.current.volume = 1.0;
+      remoteAudioRef.current.play().then(() => {
+        setAudioAutoplayBlocked(false);
+      }).catch(() => {});
+    }
+  };
 
   if (!activeCall) return null;
 
@@ -68,9 +129,32 @@ export default function ActiveCallOverlay({
   const partnerAvatar = activeCall.user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
 
   return (
-    <div className={activeCall.isPiP ? "fixed bottom-20 right-4 z-50 w-80 h-52 rounded-3xl bg-slate-950 border-2 border-pink-500 shadow-[0_0_40px_rgba(236,72,153,0.6)] overflow-hidden animate-fadeIn flex flex-col dir-rtl" : "fixed inset-0 z-50 bg-slate-950 flex flex-col dir-rtl"}>
-      {/* Hidden audio element for remote stream */}
-      <audio ref={remoteAudioRef} autoPlay playsInline />
+    <div 
+      onClick={handleUserTapToUnmute}
+      className={activeCall.isPiP ? "fixed bottom-20 right-4 z-50 w-80 h-52 rounded-3xl bg-slate-950 border-2 border-pink-500 shadow-[0_0_40px_rgba(236,72,153,0.6)] overflow-hidden animate-fadeIn flex flex-col dir-rtl" : "fixed inset-0 z-50 bg-slate-950 flex flex-col dir-rtl"}
+    >
+      {/* Real audio element for remote stream */}
+      <audio 
+        ref={remoteAudioRef} 
+        autoPlay 
+        playsInline 
+      />
+
+      {/* Audio Autoplay Unblocker Banner if browser restricted auto audio */}
+      {audioAutoplayBlocked && (
+        <div 
+          onClick={(e) => { e.stopPropagation(); handleUserTapToUnmute(); }}
+          className="absolute top-16 left-4 right-4 z-40 p-2.5 rounded-2xl bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-between shadow-2xl animate-bounce cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <Volume2 className="w-4 h-4" />
+            <span>{loc('برای شنیدن صدای طرف مقابل اینجا ضربه بزنید 🔊', 'Tap here to enable remote audio 🔊')}</span>
+          </div>
+          <span className="px-2 py-0.5 rounded-lg bg-slate-950 text-amber-300 text-[10px]">
+            {loc('فعال‌سازی', 'Enable')}
+          </span>
+        </div>
+      )}
 
       {/* TOP HEADER STATUS BAR */}
       <div className="absolute top-0 left-0 right-0 z-30 p-3 bg-gradient-to-b from-slate-950/90 to-transparent flex items-center justify-between gap-2 backdrop-blur-sm">
@@ -102,7 +186,7 @@ export default function ActiveCallOverlay({
         {/* Security & PiP Controls */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsEncryptedCertModalOpen(true)}
+            onClick={(e) => { e.stopPropagation(); setIsEncryptedCertModalOpen(true); }}
             className="px-2.5 py-1 rounded-xl bg-slate-900/80 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold flex items-center gap-1"
             title={loc('مشاهده گواهی امنیت 256 بیتی', 'View 256-bit security certificate')}
           >
@@ -110,7 +194,7 @@ export default function ActiveCallOverlay({
             <span className="hidden sm:inline">E2E Encrypted</span>
           </button>
           <button
-            onClick={handleTogglePiPCall}
+            onClick={(e) => { e.stopPropagation(); handleTogglePiPCall(); }}
             className="p-2 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-200 hover:text-white transition"
             title={activeCall.isPiP ? loc('تمام‌صفحه', 'full page') : loc('پنجره کوچک (PiP)', 'small window (PiP)')}
           >
@@ -137,7 +221,10 @@ export default function ActiveCallOverlay({
                 autoPlay
                 playsInline
                 muted
-                className={`w-full h-full object-cover ${activeCall.isCameraOff ? 'hidden' : ''}`}
+                style={{
+                  filter: activeCall.beautyFilter ? 'brightness(1.08) contrast(1.05) saturate(1.15)' : 'none'
+                }}
+                className={`w-full h-full object-cover scale-x-[-1] ${activeCall.isCameraOff ? 'hidden' : ''}`}
               />
               {activeCall.isCameraOff && (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-[10px] text-slate-400 font-bold">
@@ -198,7 +285,7 @@ export default function ActiveCallOverlay({
         <div className="flex items-center justify-around gap-2 flex-wrap">
           {/* Mute Button */}
           <button
-            onClick={handleToggleMuteCall}
+            onClick={(e) => { e.stopPropagation(); handleToggleMuteCall(); }}
             className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isMuted ? 'bg-rose-600 text-white border-rose-500' : 'bg-slate-900 text-slate-200 border-slate-700 hover:border-pink-500/50'}`}
             title="Mute/Unmute"
           >
@@ -206,16 +293,16 @@ export default function ActiveCallOverlay({
           </button>
           {/* Speaker Button */}
           <button
-            onClick={handleToggleSpeakerCall}
-            className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isSpeakerOn ? 'bg-cyan-600 text-white border-cyan-500' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
+            onClick={(e) => { e.stopPropagation(); handleToggleSpeakerCall(); }}
+            className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isSpeakerOn !== false ? 'bg-cyan-600 text-white border-cyan-500' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
             title="Speaker"
           >
-            {activeCall.isSpeakerOn ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            {activeCall.isSpeakerOn !== false ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
           </button>
           {/* Camera Switch */}
           {isVideo && (
             <button
-              onClick={handleToggleCameraCall}
+              onClick={(e) => { e.stopPropagation(); handleToggleCameraCall(); }}
               className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isCameraOff ? 'bg-rose-600 text-white border-rose-500' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
               title="Turn Camera On/Off"
             >
@@ -225,7 +312,7 @@ export default function ActiveCallOverlay({
           {/* Switch Facing Camera */}
           {isVideo && (
             <button
-              onClick={handleSwitchCameraFacing}
+              onClick={(e) => { e.stopPropagation(); handleSwitchCameraFacing(); }}
               className="p-3.5 rounded-2xl bg-slate-900 text-slate-200 border border-slate-700 hover:border-pink-500/50 transition shadow-lg"
               title={loc('تغییر دوربین جلو / عقب', 'Change front / rear camera')}
             >
@@ -234,7 +321,7 @@ export default function ActiveCallOverlay({
           )}
           {/* Beauty Filter */}
           <button
-            onClick={handleToggleBeautyFilter}
+            onClick={(e) => { e.stopPropagation(); handleToggleBeautyFilter(); }}
             className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.beautyFilter ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
             title={loc('فیلتر زیبایی', 'beauty filter')}
           >
@@ -242,7 +329,7 @@ export default function ActiveCallOverlay({
           </button>
           {/* In-Call Gift Shop Button */}
           <button
-            onClick={() => setIsSendGiftInChatOpen(true)}
+            onClick={(e) => { e.stopPropagation(); setIsSendGiftInChatOpen(true); }}
             className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/50 text-amber-300 hover:text-white transition shadow-lg"
             title={loc('ارسال هدیه وسط تماس', 'Send a gift in the middle of a call')}
           >
@@ -250,7 +337,7 @@ export default function ActiveCallOverlay({
           </button>
           {/* Record Call Button */}
           <button
-            onClick={handleToggleRecordCall}
+            onClick={(e) => { e.stopPropagation(); handleToggleRecordCall(); }}
             className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isRecording ? 'bg-rose-600 text-white border-rose-500 animate-pulse' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
             title={loc('ضبط مکالمه', 'Record the conversation')}
           >
@@ -258,7 +345,7 @@ export default function ActiveCallOverlay({
           </button>
           {/* End Call Button */}
           <button
-            onClick={handleEndActiveCall}
+            onClick={(e) => { e.stopPropagation(); handleEndActiveCall(); }}
             className="p-4 rounded-3xl bg-rose-600 text-white shadow-[0_0_30px_rgba(225,29,72,0.8)] hover:bg-rose-700 active:scale-95 transition"
             title={loc('پایان تماس', 'end call')}
           >

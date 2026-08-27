@@ -87,6 +87,12 @@ export class LiveKitManager {
     this.localVideoTrack = null;
     this.localAudioTrack = null;
     this.localMediaStream = null;
+    this.remoteMediaStream = null;
+    this.peerConnection = null;
+    this.iceCandidatesQueue = [];
+    this.isCaller = false;
+    this.currentCallTargetId = null;
+    this.onSignalSendCallback = null;
     this.connectionState = ConnectionState.Disconnected;
     this.currentRole = 'viewer'; // 'host' | 'viewer' | 'guest' | 'match'
     this.currentRoomName = null;
@@ -284,7 +290,22 @@ export class LiveKitManager {
 
       if (newVideoTrack) {
         this.localMediaStream.addTrack(newVideoTrack);
+
+        // Replace track on WebRTC PeerConnection if active
+        if (this.peerConnection) {
+          const senders = this.peerConnection.getSenders();
+          const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+          if (videoSender) {
+            videoSender.replaceTrack(newVideoTrack).catch(e => console.warn('replaceTrack error:', e));
+          }
+        }
+
         this.emit('camera_switched', { facingMode: targetFacing, stream: this.localMediaStream });
+        this.emit('local_tracks_published', {
+          videoTrack: newVideoTrack,
+          audioTrack: this.localMediaStream.getAudioTracks()[0],
+          stream: this.localMediaStream
+        });
       }
     }
   }
@@ -305,6 +326,13 @@ export class LiveKitManager {
         t.enabled = enabled;
       });
     }
+    if (this.peerConnection) {
+      this.peerConnection.getSenders().forEach(s => {
+        if (s.track && s.track.kind === 'video') {
+          s.track.enabled = enabled;
+        }
+      });
+    }
     this.emit('camera_toggled', { enabled });
   }
 
@@ -322,6 +350,13 @@ export class LiveKitManager {
     if (this.localMediaStream) {
       this.localMediaStream.getAudioTracks().forEach(t => {
         t.enabled = enabled;
+      });
+    }
+    if (this.peerConnection) {
+      this.peerConnection.getSenders().forEach(s => {
+        if (s.track && s.track.kind === 'audio') {
+          s.track.enabled = enabled;
+        }
       });
     }
     this.emit('microphone_toggled', { enabled });
@@ -497,6 +532,225 @@ export class LiveKitManager {
   }
 
   /**
+   * Initialize Peer-to-Peer WebRTC Call (Direct Audio & Video between users)
+   */
+  async startWebRtcCall({ targetUserId, isVideo = true, isCaller = true, onSignalSend }) {
+    this.cleanupWebRtc();
+    this.currentCallTargetId = targetUserId;
+    this.isCaller = isCaller;
+    this.onSignalSendCallback = onSignalSend;
+
+    // 1. Acquire Local Camera / Microphone Hardware Stream
+    try {
+      await this.requestMediaStream(this.currentFacingMode, true, isVideo);
+    } catch (err) {
+      console.warn('Hardware media stream request note:', err.message);
+    }
+
+    // 2. Initialize RTCPeerConnection with high-availability STUN servers
+    const rtcConfig = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+        { urls: 'stun:global.stun.twilio.com:3478' }
+      ]
+    };
+
+    const pc = new RTCPeerConnection(rtcConfig);
+    this.peerConnection = pc;
+
+    // Add local tracks to peer connection
+    if (this.localMediaStream) {
+      this.localMediaStream.getTracks().forEach(track => {
+        try {
+          pc.addTrack(track, this.localMediaStream);
+        } catch (e) {
+          console.warn('Error adding track to WebRTC PC:', e);
+        }
+      });
+    }
+
+    // Emit local media stream ready
+    if (this.localMediaStream) {
+      const vTrack = this.localMediaStream.getVideoTracks()[0];
+      const aTrack = this.localMediaStream.getAudioTracks()[0];
+      this.emit('local_tracks_published', {
+        videoTrack: vTrack,
+        audioTrack: aTrack,
+        stream: this.localMediaStream
+      });
+    }
+
+    // Handle remote tracks arriving from peer
+    pc.ontrack = (event) => {
+      let rStream = event.streams && event.streams[0];
+      if (!rStream) {
+        if (!this.remoteMediaStream) {
+          this.remoteMediaStream = new MediaStream();
+        }
+        if (event.track) {
+          this.remoteMediaStream.addTrack(event.track);
+        }
+        rStream = this.remoteMediaStream;
+      } else {
+        this.remoteMediaStream = rStream;
+      }
+
+      const track = event.track;
+      const kind = track?.kind || (track instanceof MediaStreamTrack ? track.kind : 'video');
+
+      this.emit('track_subscribed', {
+        track: track,
+        kind: kind,
+        stream: this.remoteMediaStream
+      });
+
+      this.emit('remote_stream_ready', {
+        stream: this.remoteMediaStream,
+        track: track,
+        kind: kind
+      });
+    };
+
+    // Handle ICE Candidate transmission
+    pc.onicecandidate = (event) => {
+      if (event.candidate && typeof this.onSignalSendCallback === 'function') {
+        this.onSignalSendCallback({
+          type: 'WEBRTC_ICE',
+          candidate: event.candidate,
+          targetUserId: this.currentCallTargetId
+        });
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      this.emit('webrtc_connection_state', { state: pc.connectionState });
+      if (pc.connectionState === 'connected') {
+        this.connectionState = ConnectionState.Connected;
+        this.emit('connected', { mode: 'webrtc_p2p' });
+      } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+        this.emit('disconnected', { mode: 'webrtc_p2p' });
+      }
+    };
+
+    // If this peer is the caller, create and send SDP Offer
+    if (isCaller) {
+      try {
+        const offer = await pc.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: isVideo
+        });
+        await pc.setLocalDescription(offer);
+
+        if (typeof this.onSignalSendCallback === 'function') {
+          this.onSignalSendCallback({
+            type: 'WEBRTC_OFFER',
+            offer: offer,
+            isVideo: isVideo,
+            targetUserId: this.currentCallTargetId
+          });
+        }
+      } catch (offErr) {
+        console.error('Error creating WebRTC Offer:', offErr);
+      }
+    }
+
+    return pc;
+  }
+
+  /**
+   * Handle Inbound WebRTC Signaling (Offer, Answer, ICE Candidate)
+   */
+  async handleWebRtcSignal(signal, onSignalSend = null) {
+    if (!signal) return;
+    if (onSignalSend) this.onSignalSendCallback = onSignalSend;
+
+    const pc = this.peerConnection;
+    if (!pc) {
+      // If we received an offer and PC is not created yet, initialize as receiver
+      if (signal.type === 'WEBRTC_OFFER') {
+        await this.startWebRtcCall({
+          targetUserId: signal.callerId || this.currentCallTargetId,
+          isVideo: signal.isVideo !== false,
+          isCaller: false,
+          onSignalSend: this.onSignalSendCallback
+        });
+        return this.handleWebRtcSignal(signal, onSignalSend);
+      }
+      return;
+    }
+
+    try {
+      if (signal.type === 'WEBRTC_OFFER' && signal.offer) {
+        await pc.setRemoteDescription(new RTCSessionDescription(signal.offer));
+
+        // Process any queued ICE candidates
+        while (this.iceCandidatesQueue.length > 0) {
+          const cand = this.iceCandidatesQueue.shift();
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(cand));
+          } catch (e) {}
+        }
+
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        if (typeof this.onSignalSendCallback === 'function') {
+          this.onSignalSendCallback({
+            type: 'WEBRTC_ANSWER',
+            answer: answer,
+            targetUserId: this.currentCallTargetId
+          });
+        }
+      } else if (signal.type === 'WEBRTC_ANSWER' && signal.answer) {
+        if (pc.signalingState !== 'stable') {
+          await pc.setRemoteDescription(new RTCSessionDescription(signal.answer));
+
+          // Process any queued ICE candidates
+          while (this.iceCandidatesQueue.length > 0) {
+            const cand = this.iceCandidatesQueue.shift();
+            try {
+              await pc.addIceCandidate(new RTCIceCandidate(cand));
+            } catch (e) {}
+          }
+        }
+      } else if (signal.type === 'WEBRTC_ICE' && signal.candidate) {
+        if (pc.remoteDescription && pc.remoteDescription.type) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+          } catch (iceErr) {
+            console.warn('Error adding ICE candidate:', iceErr);
+          }
+        } else {
+          this.iceCandidatesQueue.push(signal.candidate);
+        }
+      }
+    } catch (sigErr) {
+      console.error('Error handling WebRTC Signal:', sigErr);
+    }
+  }
+
+  /**
+   * Clean up WebRTC Peer Connection
+   */
+  cleanupWebRtc() {
+    if (this.peerConnection) {
+      try {
+        this.peerConnection.ontrack = null;
+        this.peerConnection.onicecandidate = null;
+        this.peerConnection.onconnectionstatechange = null;
+        this.peerConnection.close();
+      } catch (e) {}
+      this.peerConnection = null;
+    }
+    this.iceCandidatesQueue = [];
+    this.remoteMediaStream = null;
+  }
+
+  /**
    * Helper: Attach Video/Audio Track to an HTML Media Element
    */
   attachTrackToElement(track, element) {
@@ -513,21 +767,31 @@ export class LiveKitManager {
         if (!element.srcObject || !(element.srcObject instanceof MediaStream)) {
           element.srcObject = new MediaStream([track]);
         } else {
-          element.srcObject.addTrack(track);
+          const existingTracks = element.srcObject.getTracks();
+          if (!existingTracks.some(t => t.id === track.id)) {
+            element.srcObject.addTrack(track);
+          }
         }
+        element.play().catch(() => {});
+      } else if (track.stream && track.stream instanceof MediaStream) {
+        element.srcObject = track.stream;
         element.play().catch(() => {});
       }
     } catch (err) {
-      console.warn('Failed to attach LiveKit track to element:', err);
+      console.warn('Failed to attach track to element:', err);
     }
   }
 
   detachTrackFromElement(track, element) {
     if (!track || !element) return;
     try {
-      track.detach(element);
+      if (typeof track.detach === 'function') {
+        track.detach(element);
+      } else if (element.srcObject) {
+        element.srcObject = null;
+      }
     } catch (err) {
-      console.warn('Failed to detach LiveKit track from element:', err);
+      console.warn('Failed to detach track from element:', err);
     }
   }
 
@@ -556,10 +820,12 @@ export class LiveKitManager {
         this.emit('reconnected', { room: this.room });
       })
       .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
-        this.emit('track_subscribed', { track, publication, participant });
+        const kind = track?.kind || publication?.kind || 'video';
+        this.emit('track_subscribed', { track, publication, participant, kind });
       })
       .on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
-        this.emit('track_unsubscribed', { track, publication, participant });
+        const kind = track?.kind || publication?.kind || 'video';
+        this.emit('track_unsubscribed', { track, publication, participant, kind });
       })
       .on(RoomEvent.TrackMuted, (publication, participant) => {
         this.emit('track_muted', { publication, participant });
@@ -681,6 +947,8 @@ export class LiveKitManager {
       } catch (e) {}
       this.room = null;
     }
+
+    this.cleanupWebRtc();
 
     this.connectionState = ConnectionState.Disconnected;
     this.remoteParticipants.clear();
