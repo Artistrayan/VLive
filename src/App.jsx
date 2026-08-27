@@ -560,10 +560,6 @@ export default function App() {
   const handleInitiateCall = useCallback((targetUser, callType = 'video') => {
     if (!targetUser) return;
     const requiredCoins = targetUser.tariffPerMin || 100;
-    if (userCoins < requiredCoins) {
-      showToast(loc('سکه کافی برای شروع تماس ندارید', 'Insufficient coins to start call'));
-      return;
-    }
     const normalizedCallType = (callType === 'voice' || callType === 'audio') ? 'audio' : 'video';
     setPreCallConfirmHost({
       user: targetUser,
@@ -576,6 +572,11 @@ export default function App() {
 
   const handleStartCallDirect = useCallback(async (targetUser, callType = 'video') => {
     if (!targetUser) return;
+    const requiredCoins = targetUser.tariffPerMin || 100;
+    if (userCoins < requiredCoins) {
+      showToast(loc('سکه کافی برای شروع تماس ندارید', 'Insufficient coins to start call'));
+      return;
+    }
     setPreCallConfirmHost(null);
     try {
       showToast(loc('در حال برقراری تماس...', 'Calling...'));
@@ -1185,9 +1186,26 @@ export default function App() {
   // Direct Messages & Chat Handlers
   const handleStartNewChatWithUser = useCallback((targetUser) => {
     if (!targetUser) return;
+    const targetId = targetUser.id || targetUser.username;
+    
+    setConversations(prev => {
+      const list = Array.isArray(prev) ? prev : [];
+      const exists = list.some(c => String(c.partner_id) === String(targetId) || String(c.user?.id) === String(targetId) || String(c.user?.username) === String(targetId));
+      if (!exists) {
+        return [{
+          id: targetId,
+          partner_id: targetId,
+          user: targetUser,
+          isNew: true,
+          messages: []
+        }, ...list];
+      }
+      return list;
+    });
+
     setIsNewChatModalOpen(false);
-    setActiveTab('chat');
-    setActiveConversationId(targetUser.id || targetUser.username);
+    setActiveTab('messages');
+    setActiveConversationId(targetId);
   }, []);
 
   const handleSendDirectMessage = useCallback(async (text) => {

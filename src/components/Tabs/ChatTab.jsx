@@ -303,17 +303,21 @@ export default function ChatTab(props) {
       try {
         const msgs = await apiMessages.getMessages(activeConversationId, partnerId);
         if (isMounted && Array.isArray(msgs)) {
-          const formatted = msgs.map(m => ({
-            id: m.id || `msg_${Date.now()}_${Math.random()}`,
-            sender: (m.sender_id === currentUid || m.sender === 'me') ? 'me' : 'them',
-            sender_id: m.sender_id,
-            text: m.content || m.message_text || m.text || '',
-            content: m.content || m.message_text || m.text || '',
-            mediaUrl: m.media_url || m.mediaUrl || '',
-            time: m.created_at ? new Date(m.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Now',
-            created_at: m.created_at,
-            raw: m
-          }));
+          const formatted = msgs.map(m => {
+            const senderUser = activeUsersList?.find(u => String(u.id) === String(m.sender_id) || String(u.username) === String(m.sender_id));
+            return {
+              id: m.id || `msg_${Date.now()}_${Math.random()}`,
+              sender: (m.sender_id === currentUid || m.sender === 'me') ? 'me' : 'them',
+              senderName: senderUser ? (senderUser.name || senderUser.username) : m.sender_name,
+              sender_id: m.sender_id,
+              text: m.content || m.message_text || m.text || '',
+              content: m.content || m.message_text || m.text || '',
+              mediaUrl: m.media_url || m.mediaUrl || '',
+              time: m.created_at ? new Date(m.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Now',
+              created_at: m.created_at,
+              raw: m
+            };
+          });
 
           setConversations(prev => {
             const list = Array.isArray(prev) ? [...prev] : [];
@@ -322,7 +326,13 @@ export default function ChatTab(props) {
             if (matchIndex >= 0) {
               const existingConv = list[matchIndex];
               const existingMsgs = existingConv.messages || [];
-              const merged = [...formatted];
+              const merged = formatted.map(m => {
+                const existing = existingMsgs.find(ex => ex.id === m.id || (ex.text === m.text && ex.sender === m.sender));
+                if (existing) {
+                  return { ...m, translated: existing.translated, translation: existing.translation, translationLang: existing.translationLang };
+                }
+                return m;
+              });
               existingMsgs.forEach(existing => {
                 const alreadyInDb = merged.some(m => m.id === existing.id || (m.text === existing.text && m.sender === existing.sender));
                 if (!alreadyInDb) {
@@ -366,9 +376,12 @@ export default function ChatTab(props) {
       const isMe = (newMsgRecord.sender_id === currentUid || newMsgRecord.sender === 'me');
       if (isMe) return;
 
+      const senderUser = activeUsersList?.find(u => String(u.id) === String(newMsgRecord.sender_id) || String(u.username) === String(newMsgRecord.sender_id));
+
       const incomingFormatted = {
         id: newMsgRecord.id || `msg_${Date.now()}`,
         sender: 'them',
+        senderName: senderUser ? (senderUser.name || senderUser.username) : newMsgRecord.sender_name,
         sender_id: newMsgRecord.sender_id,
         text: newMsgRecord.content || newMsgRecord.message_text || newMsgRecord.text || '',
         content: newMsgRecord.content || newMsgRecord.message_text || newMsgRecord.text || '',
@@ -1011,9 +1024,11 @@ export default function ChatTab(props) {
                                 key={msg.id} 
                                 className={"flex flex-col " + (isMe ? "items-end" : "items-start") + " group transition"}
                               >
-                                {msg.senderName && !isMe && (
+                                {msg.senderName && !isMe ? (
                                   <span className="text-[9px] font-bold text-purple-400 mb-0.5 px-1">{msg.senderName}</span>
-                                )}
+                                ) : (!isMe && (
+                                  <span className="text-[9px] font-bold text-purple-400 mb-0.5 px-1">{currentConv.user?.name || currentConv.user?.username || currentConv.name || 'User'}</span>
+                                ))}
 
                                 <div className="relative group max-w-[82%]">
                                   <div 
