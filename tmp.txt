@@ -1,0 +1,16 @@
+                            const monthlyCost = basePrices[selectedVipPlan] || 500;
+                            const totalBaseCoins = monthlyCost * selectedVipDuration;
+                            const finalCoinsCost = Math.round(totalBaseCoins * (discountMultipliers[selectedVipDuration] || 1.0));
+
+                            if (selectedVipPayMethod === 'coins') {
+                              if (userCoins < finalCoinsCost) {
+                                showToast(window.loc(`موجودی سکه کافی نیست! هزینه: ${finalCoinsCost} سکه`, `موجودی سکه کافی نیست! هزینه: ${finalCoinsCost} سکه`));
+                                return;
+                              }
+                            }
+
+                            const res = await apiVip.purchasePlan({
+                              plan: selectedVipPlan,
+                              durationMonths: selectedVipDuration,
+                              priceCoins: finalCoinsCost
+                            });

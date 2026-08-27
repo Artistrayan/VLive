@@ -194,6 +194,10 @@ export default function NotificationsModal(props) {
                               if (item.type === 'message' || item.type === 'chat' || item.actionType === 'open_chat') {
                                 setIsNotificationsOpen(false);
                                 if (props.onSwitchMainTab) props.onSwitchMainTab('messages');
+                                if (props.onOpenChat) {
+                                  const targetId = item.raw?.metadata?.sender_id || item.raw?.metadata?.sender_username || item.raw?.metadata?.conversation_id;
+                                  if (targetId) props.onOpenChat(targetId);
+                                }
                               }
                             }}
                             className={`p-3.5 rounded-2xl border transition relative group cursor-pointer ${

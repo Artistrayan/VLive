@@ -21,7 +21,7 @@ export default function WalletTab(props) {
     referralCode,
     setIsVipModalOpen, setIsReferralRulesModalOpen,
     txHistoryList = [], setTxHistoryList = (() => {}),
-    showToast, loc, isRtl
+    showToast, loc, isRtl, isUserSuperAdmin
   } = props;
 
   const [localConvertDiamondsInput, setLocalConvertDiamondsInput] = React.useState('');

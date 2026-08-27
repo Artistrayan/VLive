@@ -573,7 +573,7 @@ export default function App() {
   const handleStartCallDirect = useCallback(async (targetUser, callType = 'video') => {
     if (!targetUser) return;
     const requiredCoins = targetUser.tariffPerMin || 100;
-    if (userCoins < requiredCoins) {
+    if (!isUserSuperAdmin && userCoins < requiredCoins) {
       showToast(loc('سکه کافی برای شروع تماس ندارید', 'Insufficient coins to start call'));
       return;
     }
@@ -631,7 +631,7 @@ export default function App() {
       console.error('Call initiation error:', err);
       showToast(err.message || loc('خطا در برقراری تماس', 'Call initiation error'));
     }
-  }, [currentUsername, showToast, loc]);
+  }, [currentUsername, showToast, loc, userCoins, isUserSuperAdmin]);
 
   const handleAcceptIncomingCall = useCallback(async (incomingCallObj) => {
     if (!incomingCallObj) return;
@@ -940,7 +940,7 @@ export default function App() {
         if (!prev) return null;
         const newSec = (prev.seconds || 0) + 1;
 
-        if (newSec > 0 && newSec % 60 === 0 && prev.isPaid) {
+        if (!isUserSuperAdmin && newSec > 0 && newSec % 60 === 0 && prev.isPaid) {
           apiCalls.chargeMinute({
             sessionId: prev.sessionId,
             callerId: prev.callerId,
@@ -962,7 +962,7 @@ export default function App() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [activeCall?.sessionId]);
+  }, [activeCall?.sessionId, isUserSuperAdmin]);
 
   // Live Stream Chat & Gifts
   const handleSendStreamChat = useCallback(async () => {
@@ -1020,7 +1020,7 @@ export default function App() {
 
   const handleSendLuxuryGift = useCallback(async (gift) => {
     if (!gift || !viewingStream) return;
-    if (userCoins < (gift.coins || 0)) {
+    if (!isUserSuperAdmin && userCoins < (gift.coins || 0)) {
       showToast(loc('سکه کافی برای ارسال این هدیه ندارید', 'Insufficient coins to send this gift'));
       return;
     }
@@ -1044,7 +1044,7 @@ export default function App() {
     } catch (err) {
       showToast(loc('خطا در ارسال هدیه', 'Error sending gift: ') + err.message);
     }
-  }, [userCoins, viewingStream, showToast, userName, currentUsername]);
+  }, [userCoins, viewingStream, showToast, userName, currentUsername, isUserSuperAdmin]);
 
   // Live Polls
   const handleCreateAndBroadcastPoll = useCallback(async (question, options) => {
@@ -1088,7 +1088,7 @@ export default function App() {
 
   const handleSpinLuckyWheel = useCallback(async () => {
     if (isWheelSpinning) return;
-    if (dailyFreeSpins <= 0 && userCoins < 50) {
+    if (!isUserSuperAdmin && dailyFreeSpins <= 0 && userCoins < 50) {
       showToast(loc('سکه کافی برای چرخش گردونه ندارید (۵۰ سکه)', 'Insufficient coins to spin wheel (50 coins required)'));
       return;
     }
@@ -1109,7 +1109,7 @@ export default function App() {
     } finally {
       setIsWheelSpinning(false);
     }
-  }, [isWheelSpinning, dailyFreeSpins, userCoins, showToast]);
+  }, [isWheelSpinning, dailyFreeSpins, userCoins, showToast, isUserSuperAdmin]);
 
   const handleOpenLuckyBox = useCallback(() => {
     showToast(loc('در حال اتصال به سرور برای دریافت جعبه شانس...', 'Connecting to server to open mystery box...'));
@@ -1134,7 +1134,7 @@ export default function App() {
 
   // Match Swipe & Gestures
   const startRandomMatchSearch = useCallback(() => {
-    if (freeMatchCallsLeft <= 0 && userCoins < 50) {
+    if (!isUserSuperAdmin && freeMatchCallsLeft <= 0 && userCoins < 50) {
       showToast(loc('اعتبار مچ رایگان شما تمام شده است (۵۰ سکه برای هر مچ)', 'Free match credits depleted (50 coins per match)'));
       return;
     }
@@ -1157,7 +1157,7 @@ export default function App() {
         showToast(loc('خطا در برقراری مچ', 'Error connecting match'));
       }
     }, 2500);
-  }, [freeMatchCallsLeft, userCoins, showToast]);
+  }, [freeMatchCallsLeft, userCoins, showToast, isUserSuperAdmin]);
 
   const triggerMatchAction = useCallback((actionType) => {
     setMatchCardIndex(prev => prev + 1);
@@ -1455,7 +1455,7 @@ export default function App() {
 
   // Open Pre-Stream Warning
   const handleTryEnterStream = stream => {
-    if (stream.isVip18 && userCoins < stream.entryFee) {
+    if (!isUserSuperAdmin && stream.isVip18 && userCoins < stream.entryFee) {
       showToast(`Joining this VIP +18 stream requires ${stream.entryFee} entry coins.`);
       return;
     }
@@ -1641,7 +1641,7 @@ export default function App() {
           if (!prev) return null;
           const nextSec = prev.seconds + 1;
           let nextCoins = prev.consumedCoins;
-          if (prev.isPaid && nextSec % 60 === 0 && nextSec > 0) {
+          if (!isUserSuperAdmin && prev.isPaid && nextSec % 60 === 0 && nextSec > 0) {
             if (userCoins >= prev.tariffPerMin) {
               apiCalls.chargeMinute({
                 sessionId: prev.sessionId,
@@ -1675,7 +1675,7 @@ export default function App() {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [activeCall, userCoins]);
+  }, [activeCall, userCoins, isUserSuperAdmin]);
 
   useEffect(() => {
     safeStorage.setItem('vlive_app_font_size', appFontSize);
@@ -3153,7 +3153,7 @@ export default function App() {
         {/* TAB 2: MESSAGES & CHAT TAB */}
         <ChatTab currentUser={currentUser} currentUsername={currentUsername} vipPlan={vipPlan} setIsVipModalOpen={setIsVipModalOpen} userRole={userRole} isUserRayan={isUserRayan} activeTab={activeTab} usersList={usersList} txHistoryList={txHistoryList} userAvatar={userAvatar} userName={userName} totalUnreadMessages={totalUnreadMessages} msgSearchQuery={msgSearchQuery} setMsgSearchQuery={setMsgSearchQuery} msgSearchField={msgSearchField} setMsgSearchField={setMsgSearchField} msgFilterTab={msgFilterTab} setMsgFilterTab={setMsgFilterTab} isCreateGroupModalOpen={isCreateGroupModalOpen} setIsCreateGroupModalOpen={setIsCreateGroupModalOpen} newGroupName={newGroupName} setNewGroupName={setNewGroupName} newGroupDesc={newGroupDesc} setNewGroupDesc={setNewGroupDesc} isNewChatModalOpen={isNewChatModalOpen} setIsNewChatModalOpen={setIsNewChatModalOpen} isChatGalleryOpen={isChatGalleryOpen} setIsChatGalleryOpen={setIsChatGalleryOpen} isSendGiftInChatOpen={isSendGiftInChatOpen} setIsSendGiftInChatOpen={setIsSendGiftInChatOpen} conversations={conversations} setConversations={setConversations} activeConversationId={activeConversationId} setActiveConversationId={setActiveConversationId} chatSearchQuery={chatSearchQuery} setChatSearchQuery={setChatSearchQuery} isChatSearchOpen={isChatSearchOpen} setIsChatSearchOpen={setIsChatSearchOpen} activeChatCall={activeChatCall} setActiveChatCall={setActiveChatCall} isAutoTranslateActive={isAutoTranslateActive} setIsAutoTranslateActive={setIsAutoTranslateActive} handleTranslateChatMessage={handleTranslateChatMessage} handleSendDirectMessage={handleSendDirectMessage} userCoins={userCoins} setUserCoins={setUserCoins} langCode={currentAppLang} t={t} showToast={showToast} loc={loc} isRtl={isRtl} />
         {/* TAB 3: WALLET & EARNINGS TAB */}
-        <WalletTab handleBuyService={handleBuyService} activeTab={activeTab} txHistoryList={txHistoryList} userCoins={userCoins} setUserCoins={setUserCoins} userDiamonds={userDiamonds} setUserDiamonds={setUserDiamonds} userCashBalance={userCashBalance} setUserCashBalance={setUserCashBalance} walletSubTab={walletSubTab} setWalletSubTab={setWalletSubTab} referralCode={referralCode} setIsVipModalOpen={setIsVipModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} showToast={showToast} isVerified={isVerified} loc={loc} isRtl={isRtl} />
+        <WalletTab handleBuyService={handleBuyService} activeTab={activeTab} txHistoryList={txHistoryList} userCoins={userCoins} setUserCoins={setUserCoins} userDiamonds={userDiamonds} setUserDiamonds={setUserDiamonds} userCashBalance={userCashBalance} setUserCashBalance={setUserCashBalance} walletSubTab={walletSubTab} setWalletSubTab={setWalletSubTab} referralCode={referralCode} setIsVipModalOpen={setIsVipModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} showToast={showToast} isVerified={isVerified} isUserSuperAdmin={isUserSuperAdmin} loc={loc} isRtl={isRtl} />
         {/* TAB 4: PROFILE TAB */}
         <ProfileTab currentUser={currentUser} userRole={userRole} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsSettingsModalOpen={setIsSettingsModalOpen} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={isVerified || userRole === 'admin' || isUserRayan} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} />
         </main>
@@ -3192,7 +3192,7 @@ export default function App() {
       </nav>
 
       {/* MODAL: REDESIGNED NOTIFICATIONS SYSTEM */}
-      <NotificationsModal isNotificationsOpen={isNotificationsOpen} setIsNotificationsOpen={setIsNotificationsOpen} isNotifSettingsOpen={isNotifSettingsOpen} setIsNotifSettingsOpen={setIsNotifSettingsOpen} isRtl={isRtl} notificationsList={notificationsList} setNotificationsList={setNotificationsList} notificationFilterTab={notificationFilterTab} setNotificationFilterTab={setNotificationFilterTab} notifSettings={notifSettings} setNotifSettings={setNotifSettings} setActiveChatCall={setActiveChatCall} setIsSettingsModalOpen={setIsSettingsModalOpen} showToast={showToast} onSwitchMainTab={(tab) => setActiveMainTab(tab)} />
+      <NotificationsModal isNotificationsOpen={isNotificationsOpen} setIsNotificationsOpen={setIsNotificationsOpen} isNotifSettingsOpen={isNotifSettingsOpen} setIsNotifSettingsOpen={setIsNotifSettingsOpen} isRtl={isRtl} notificationsList={notificationsList} setNotificationsList={setNotificationsList} notificationFilterTab={notificationFilterTab} setNotificationFilterTab={setNotificationFilterTab} notifSettings={notifSettings} setNotifSettings={setNotifSettings} setActiveChatCall={setActiveChatCall} setIsSettingsModalOpen={setIsSettingsModalOpen} showToast={showToast} onSwitchMainTab={(tab) => setActiveTab(tab)} onOpenChat={(targetId) => { if (targetId) handleStartNewChatWithUser({ id: targetId }); }} />
       {/* MODAL: 18-SECTION SETTINGS MODAL */}
       <SettingsModal currentUser={currentUser} userRole={userRole} handleLogout={handleLogout} isSettingsModalOpen={isSettingsModalOpen} setIsSettingsModalOpen={setIsSettingsModalOpen} currentAppLang={currentAppLang} setCurrentAppLang={setCurrentAppLang} handleSelectLanguage={handleSelectLanguage} APP_LANGUAGES={APP_LANGUAGES} setIsLanguageModalOpen={setIsLanguageModalOpen} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} currentUsername={currentUsername} authUsername={authUsername} authEmail={authEmail} currentTelegramId={currentTelegramId} userGender={userGender} isVerified={isVerified} verificationsList={verificationsList} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} blockedUsers={blockedCallUsers} setBlockedUsers={setBlockedCallUsers} isRtl={isRtl} notifSettings={notifSettings} setNotifSettings={setNotifSettings} appThemeMode={appThemeMode} setAppThemeMode={setAppThemeMode} setIsKycModalOpen={setIsKycModalOpen} setIsSuggestionModalOpen={setIsSuggestionModalOpen} setIsTermsModalOpen={setIsTermsModalOpen} setIsVipModalOpen={setIsVipModalOpen} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} showToast={showToast} loc={loc} />
 

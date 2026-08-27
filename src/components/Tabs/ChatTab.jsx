@@ -67,9 +67,22 @@ export default function ChatTab(props) {
   const [directInputText, setDirectInputText] = React.useState('');
   const [showEmojiPicker, setShowEmojiPicker] = React.useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = React.useState(false);
-  const [audioRecordingSeconds] = React.useState(0);
+  const [audioRecordingSeconds, setAudioRecordingSeconds] = React.useState(0);
   const [activeUsersList, setActiveUsersList] = useState(propUsersList || []);
   const [newChatSearchQuery, setNewChatSearchQuery] = useState('');
+  
+  React.useEffect(() => {
+    let interval;
+    if (isRecordingAudio) {
+      setAudioRecordingSeconds(0);
+      interval = setInterval(() => {
+        setAudioRecordingSeconds(s => s + 1);
+      }, 1000);
+    } else {
+      setAudioRecordingSeconds(0);
+    }
+    return () => clearInterval(interval);
+  }, [isRecordingAudio]);
   
   const messagesEndRef = React.useRef(null);
   
@@ -239,7 +252,7 @@ export default function ChatTab(props) {
     return Boolean(
       currentUser?.is_vip || 
       currentUser?.isVip || 
-      vipPlan || 
+      (vipPlan && vipPlan !== 'Free') || 
       userRole === 'admin' || 
       userRole === 'super_admin' || 
       isUserRayan || 
@@ -1582,7 +1595,7 @@ export default function ChatTab(props) {
 
                   <button
                     onClick={() => {
-                      if (userCoins < sendCoinsInChatAmount) {
+                      if (!isUserRayan && userCoins < sendCoinsInChatAmount) {
                         showToast('Insufficient coins balance!');
                         setIsDepositModalOpen(true);
                         return;
@@ -1640,7 +1653,7 @@ export default function ChatTab(props) {
                       <button
                         key={i}
                         onClick={() => {
-                          if (userCoins < g.coins) {
+                          if (!isUserRayan && userCoins < g.coins) {
                             showToast('Insufficient coin balance!');
                             setIsDepositModalOpen(true);
                             return;
