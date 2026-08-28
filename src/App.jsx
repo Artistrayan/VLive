@@ -2373,7 +2373,7 @@ export default function App() {
       </div>;
   }
 
-  // REAL AUTHENTICATION & ONBOARDING SYSTEM (10-STEP SYSTEM)
+  // REAL AUTHENTICATION & ONBOARDING SYSTEM
   if (!isLoggedIn) {
     return <div className="cyber-container min-h-screen text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden dir-ltr bg-slate-950">
         {toastMessage && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border border-pink-500 text-pink-300 px-6 py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-3 animate-fadeIn">
@@ -2381,63 +2381,14 @@ export default function App() {
             <span className="text-sm font-semibold">{toastMessage}</span>
           </div>}
 
-        {/* STEP 1: SPLASH SCREEN (لوگو، بررسی اتصال، بررسی نسخه) */}
-        {authStep === 'splash' && <div className="w-full max-w-md card-3d p-8 border border-pink-500/40 bg-slate-900/90 backdrop-blur-xl rounded-3xl space-y-6 text-center shadow-[0_0_60px_rgba(236,72,153,0.25)] animate-fadeIn">
-            {/* Animated Glow Logo */}
-            <div className="relative w-24 h-24 mx-auto">
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-400 blur-xl opacity-75 animate-pulse" />
-              <div className="relative w-full h-full rounded-3xl bg-slate-950 border border-pink-500/50 p-0.5 flex items-center justify-center shadow-2xl">
-                <Video className="w-12 h-12 text-pink-400" />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-400 tracking-tight">
-                V.LIVE Platform
-              </h1>
-              <p className="text-xs text-slate-400 font-medium">4K Ultra HD Broadcast & VIP Chat System</p>
-            </div>
-
-            {/* Diagnostic Connection Checks */}
-            <div className="p-4 rounded-2xl bg-slate-950/90 border border-slate-800 text-left space-y-2.5 font-mono text-[11px]">
-              <div className="flex items-center justify-between text-emerald-400">
-                <span className="flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5" />
-                  Edge Server Node:
-                </span>
-                <span className="font-bold">Tehran / Frankfurt (12ms)</span>
-              </div>
-
-              <div className="flex items-center justify-between text-cyan-400">
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  Security Protocol:
-                </span>
-                <span className="font-bold">256-Bit SSL Active</span>
-              </div>
-
-              <div className="flex items-center justify-between text-purple-300">
-                <span className="flex items-center gap-1.5">
-                  <Smartphone className="w-3.5 h-3.5" />
-                  App Version Audit:
-                </span>
-                <span className="font-bold">v4.2.0 (Latest Release)</span>
-              </div>
-            </div>
-
-            <button onClick={() => setAuthStep('welcome')} className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-black text-xs shadow-xl hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2">
-              <span>Continue to Welcome Screen</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>}
-        {/* STEP 2: ULTRA-PREMIUM TELEGRAM MINI APP WELCOME & LOGIN SCREEN */}
-        {authStep === 'welcome' && (() => {
+        {/* ULTRA-PREMIUM TELEGRAM MINI APP WELCOME & LOGIN SCREEN */}
+        {(() => {
         // Extract real Telegram user strictly from WebApp context
         const tgApp = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
         const tgUser = tgApp?.initDataUnsafe?.user;
         const hasTgSession = Boolean(tgUser?.id || (typeof window !== 'undefined' && window.Telegram?.WebApp?.initData));
         const detectedTgName = tgUser?.first_name ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() : (tgUser?.username || 'Telegram User');
-        const detectedTgUsername = tgUser?.username || (tgUser?.id ? `tg_${tgUser.id}` : 'unauthenticated');
+        const detectedTgUsername = tgUser?.username || (tgUser?.id ? `tg_${tgUser.id}` : 'user');
         const detectedTgAvatar = tgUser?.photo_url || '';
         const detectedTgId = tgUser?.id ? String(tgUser.id) : '';
 
@@ -2487,200 +2438,127 @@ export default function App() {
           }
         };
 
-        return <div className="relative w-full max-w-md mx-auto space-y-5 my-auto py-4 px-1 animate-fadeIn dir-ltr">
+        return <div className="relative w-full max-w-md mx-auto space-y-4 my-auto py-2 px-1 animate-fadeIn dir-ltr">
               
-              {/* Dynamic Animated Background Glows & Particles */}
-              <div className="absolute -top-20 -left-20 w-56 h-56 rounded-full bg-gradient-to-br from-pink-500/30 via-purple-600/30 to-transparent blur-3xl pointer-events-none animate-pulse" />
-              <div className="absolute -bottom-20 -right-20 w-56 h-56 rounded-full bg-gradient-to-tl from-cyan-500/30 via-blue-600/30 to-transparent blur-3xl pointer-events-none animate-pulse" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+              {/* Subtle Ambient Glows */}
+              <div className="absolute -top-16 -left-16 w-52 h-52 rounded-full bg-gradient-to-br from-pink-500/20 via-purple-600/20 to-transparent blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-16 -right-16 w-52 h-52 rounded-full bg-gradient-to-tl from-cyan-500/20 via-blue-600/20 to-transparent blur-3xl pointer-events-none" />
 
-              {/* 1. TOP UTILITY BAR: LANGUAGE SELECTOR & TELEGRAM MINI APP STATUS */}
-              <div className="flex items-center justify-between px-2">
-                
-                {/* Language Switcher Pill */}
-                <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl shadow-lg">
-                  <button onClick={() => handleSelectLanguage('fa')} className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${currentAppLang === 'fa' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/30' : 'text-slate-400 hover:text-white'}`}>
+              {/* 1. TOP BAR: LANGUAGE SELECTOR & TELEGRAM STATUS */}
+              <div className="flex items-center justify-between px-1">
+                {/* Language Switcher */}
+                <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl shadow-md">
+                  <button onClick={() => handleSelectLanguage('fa')} className={`px-3 py-1 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${currentAppLang === 'fa' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}>
                     <span>🇮🇷</span>
                     <span>{loc('فارسی', 'Farsi')}</span>
                   </button>
-                  <button onClick={() => handleSelectLanguage('en')} className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${currentAppLang === 'en' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/30' : 'text-slate-400 hover:text-white'}`}>
+                  <button onClick={() => handleSelectLanguage('en')} className={`px-3 py-1 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${currentAppLang === 'en' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}>
                     <span>🇺🇸</span>
                     <span>English</span>
                   </button>
-                  <button onClick={() => setIsLanguageModalOpen(true)} className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800/80 hover:bg-purple-600/40 text-cyan-300 hover:text-white transition flex items-center gap-1 border border-slate-700/60" title={loc('همه زبان‌ها', 'All Languages')}>
+                  <button onClick={() => setIsLanguageModalOpen(true)} className="px-2 py-1 rounded-xl text-xs font-bold bg-slate-800/80 hover:bg-purple-600/40 text-cyan-300 hover:text-white transition flex items-center gap-1 border border-slate-700/60" title={loc('همه زبان‌ها', 'All Languages')}>
                     <Languages className="w-3.5 h-3.5 text-cyan-400" />
                   </button>
                 </div>
 
                 {/* Telegram App Badge */}
-                <div className={`px-3 py-1.5 rounded-2xl border text-[11px] font-black flex items-center gap-1.5 shadow-md backdrop-blur-xl ${hasTgSession ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300' : 'bg-amber-500/15 border-amber-500/40 text-amber-300'}`}>
+                <div className={`px-3 py-1 rounded-2xl border text-[11px] font-bold flex items-center gap-1.5 shadow-sm backdrop-blur-xl ${hasTgSession ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'}`}>
                   <Send className="w-3.5 h-3.5" />
-                  <span>{hasTgSession ? 'Telegram Mini App' : 'Browser Mode'}</span>
+                  <span>{hasTgSession ? 'Telegram' : 'Browser'}</span>
                   <span className={`w-2 h-2 rounded-full ${hasTgSession ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
                 </div>
               </div>
 
-              {/* 2. MAIN GLASS CARD */}
-              <div className="relative card-3d p-6 sm:p-7 rounded-3xl bg-slate-900/90 border border-pink-500/30 backdrop-blur-2xl shadow-[0_0_80px_rgba(236,72,153,0.25)] space-y-6 overflow-hidden">
+              {/* 2. MAIN CARD */}
+              <div className="relative card-3d p-6 sm:p-7 rounded-3xl bg-slate-900/90 border border-pink-500/30 backdrop-blur-2xl shadow-[0_0_60px_rgba(236,72,153,0.2)] space-y-5 overflow-hidden">
                 
-                {/* Animated Logo & Shimmer Branding */}
-                <div className="relative text-center space-y-3.5">
-                  
-                  {/* Glowing 3D Emblem with Orbiting Rings */}
-                  <div className="relative w-24 h-24 mx-auto group">
-                    <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-pink-500 via-purple-600 via-cyan-400 to-amber-400 blur-xl opacity-80 animate-pulse group-hover:scale-110 transition duration-700" />
-                    <div className="relative w-full h-full rounded-3xl bg-slate-950 border-2 border-pink-500/60 p-1 flex items-center justify-center shadow-2xl overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-tr from-purple-900/40 via-pink-900/20 to-cyan-900/40 animate-spin" style={{
-                    animationDuration: '12s'
-                  }} />
-                      <div className="relative z-10 w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center shadow-inner">
-                        <Video className="w-9 h-9 text-pink-400 animate-pulse" />
+                {/* Logo & Slogan */}
+                <div className="text-center space-y-3">
+                  <div className="relative w-20 h-20 mx-auto">
+                    <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 blur-xl opacity-75 animate-pulse" />
+                    <div className="relative w-full h-full rounded-3xl bg-slate-950 border-2 border-pink-500/60 p-1 flex items-center justify-center shadow-xl">
+                      <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center shadow-inner">
+                        <Video className="w-8 h-8 text-pink-400" />
                       </div>
-                    </div>
-                    
-                    {/* Live Indicator Dot */}
-                    <div className="absolute -top-1 -right-1 px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-black text-[9px] border-2 border-slate-950 shadow-lg animate-bounce">
-                      LIVE
                     </div>
                   </div>
 
-                  {/* Title & Slogan */}
                   <div className="space-y-1">
-                    <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 via-cyan-300 to-amber-300 tracking-tight flex items-center justify-center gap-2">
-                      <span>V.LIVE Mini App</span>
-                      <Sparkles className="w-5 h-5 text-amber-400 animate-spin" style={{
-                    animationDuration: '6s'
-                  }} />
+                    <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300 tracking-tight flex items-center justify-center gap-1.5">
+                      <span>V.LIVE</span>
+                      <Sparkles className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
                     </h1>
-                    <p className="text-xs text-slate-300 font-bold leading-relaxed max-w-xs mx-auto">
-                      {loc('پلتفرم فوق‌پیشرفته پخش زنده 4K، چت ویدئویی و استریم تلگرام', 'Ultra-Premium 4K Live Broadcast & Telegram Video Matching')}
+                    <p className="text-xs text-slate-300 font-medium max-w-xs mx-auto">
+                      {loc('پلتفرم اختصاصی پخش زنده و چت تصویری', 'Live Streaming & Video Platform')}
                     </p>
                   </div>
                 </div>
 
-                {/* 3. TELEGRAM USER PROFILE CARD OR SESSION NOTICE */}
+                {/* 3. USER PROFILE (IF INSIDE TELEGRAM) */}
                 {hasTgSession ? (
-                  <div className="relative p-4 rounded-2xl bg-gradient-to-r from-purple-950/90 via-slate-950 to-cyan-950/90 border border-pink-500/40 shadow-xl space-y-3 group hover:border-pink-500/70 transition">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
+                  <div className="relative p-3.5 rounded-2xl bg-slate-950/80 border border-pink-500/30 shadow-md flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative shrink-0">
                         {detectedTgAvatar ? (
-                          <img src={detectedTgAvatar} alt={detectedTgName} className="w-13 h-13 rounded-2xl object-cover ring-2 ring-pink-500/80 shadow-md group-hover:scale-105 transition" />
+                          <img src={detectedTgAvatar} alt={detectedTgName} className="w-12 h-12 rounded-2xl object-cover ring-2 ring-pink-500/60 shadow" />
                         ) : (
-                          <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-pink-600 to-purple-600 flex items-center justify-center text-white font-bold text-lg ring-2 ring-pink-500/80 shadow-md">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-600 to-purple-600 flex items-center justify-center text-white font-bold text-base ring-2 ring-pink-500/60 shadow">
                             {detectedTgName && typeof detectedTgName === 'string' ? detectedTgName.charAt(0).toUpperCase() : 'U'}
                           </div>
                         )}
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-950 shadow animate-pulse" />
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-950 shadow" />
                       </div>
 
-                      <div className="text-left flex-1 min-w-0 space-y-0.5">
-                        <div className="flex items-center gap-1.5">
+                      <div className="text-left min-w-0">
+                        <div className="flex items-center gap-1">
                           <p className="text-sm font-black text-white truncate">{detectedTgName}</p>
-                          <BadgeCheck className="w-4 h-4 text-blue-400 shrink-0" title="Telegram Verified Account" />
+                          <BadgeCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-cyan-300 font-mono font-bold">@{detectedTgUsername}</span>
-                          {detectedTgId && <span className="text-[10px] text-slate-400 font-mono">#{detectedTgId}</span>}
-                        </div>
-                      </div>
-
-                      <div className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-black flex items-center gap-1 shadow">
-                        <Check className="w-3 h-3 text-emerald-400" />
-                        <span>Connected</span>
+                        <p className="text-xs text-cyan-300 font-mono">@{detectedTgUsername}</p>
                       </div>
                     </div>
 
-                    <div className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-[11px] font-bold">
-                      <span className="text-slate-400 flex items-center gap-1">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                        {loc('احراز هویت تلگرام آماده است', 'Telegram Session Verified')}
-                      </span>
-                      <span className="text-emerald-400 font-mono">Ready to Launch</span>
+                    <div className="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold flex items-center gap-1 shrink-0">
+                      <Check className="w-3 h-3 text-emerald-400" />
+                      <span>{loc('تایید شده', 'Connected')}</span>
                     </div>
                   </div>
                 ) : (
-                  <div className="relative p-4 rounded-2xl bg-amber-950/30 border border-amber-500/40 shadow-xl space-y-2 text-center">
-                    <AlertTriangle className="w-7 h-7 text-amber-400 mx-auto" />
-                    <p className="text-sm font-black text-white">
-                      {loc('جلسه تلگرام یافت نشد', 'Telegram Session Not Detected')}
-                    </p>
-                    <p className="text-xs text-slate-300 font-medium leading-relaxed">
-                      {loc('لطفاً برنامه را از طریق ربات رسمی تلگرام باز کنید تا هویت شما احراز شود.', 'Please open this app through the official Telegram bot to verify your identity securely.')}
+                  <div className="p-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/40 text-center space-y-1.5">
+                    <div className="flex items-center justify-center gap-1.5 text-amber-300 font-bold text-xs">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>{loc('لطفاً از طریق ربات تلگرام باز کنید', 'Please open via Telegram Bot')}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300">
+                      {loc('جهت ورود خودکار، برنامه را در تلگرام اجرا کنید.', 'To login automatically, run this inside Telegram.')}
                     </p>
                   </div>
                 )}
 
-                {/* 4. FEATURE HIGHLIGHT BADGES */}
-                <div className="grid grid-cols-2 gap-2 text-[11px] font-bold">
-                  <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-slate-200 flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>{loc('ورود تک لمسی بدون رمز', '1-Tap Fast Auth')}</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-slate-200 flex items-center gap-2">
-                    <Flame className="w-4 h-4 text-pink-400 shrink-0" />
-                    <span>{loc('چت ویدئویی 30 ثانیه‌ای', '30s Video Roulette')}</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-slate-200 flex items-center gap-2">
-                    <Star className="w-4 h-4 text-cyan-400 shrink-0" />
-                    <span>{loc('کیف پول و سکه VIP', 'Stars & Coins Wallet')}</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-slate-200 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0" />
-                    <span>{loc('امنیت 256 بیت SSL', 'SSL Encrypted')}</span>
-                  </div>
-                </div>
-
-                {/* 5. PRIMARY BUTTONS & ACTION FLOWS */}
-                <div className="space-y-3 pt-1">
-                  
-                  {/* MAIN BUTTON: CONTINUE WITH TELEGRAM */}
+                {/* 4. MAIN ACTION BUTTON */}
+                <div className="pt-1">
                   {hasTgSession ? (
-                    <button onClick={handleTelegramOneTapAuth} className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-cyan-500 via-purple-600 to-pink-500 hover:from-cyan-400 hover:to-pink-400 text-white font-black text-sm shadow-[0_0_35px_rgba(236,72,153,0.5)] active:scale-95 transition-all duration-300 flex items-center justify-between border border-cyan-300/50 group relative overflow-hidden">
-                      <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition duration-500" />
-                      <div className="flex items-center gap-3 relative z-10">
-                        <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition">
-                          <Send className="w-5 h-5 group-hover:translate-x-1 transition" />
-                        </div>
-                        <div className="text-left">
-                          <span className="block font-black text-sm tracking-wide">
-                            {loc('ورود مستقیم با تلگرام', 'Continue with Telegram')}
-                          </span>
-                          <span className="block text-[10px] text-cyan-100 font-medium opacity-90">
-                            {loc('احراز هویت فوری تلگرام', 'Instant Telegram Mini App Auth')}
-                          </span>
-                        </div>
-                      </div>
-                      <ArrowRight className="w-5 h-5 text-white group-hover:translate-x-1 transition relative z-10" />
+                    <button onClick={handleTelegramOneTapAuth} className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-cyan-500 via-purple-600 to-pink-500 hover:from-cyan-400 hover:to-pink-400 text-white font-black text-sm shadow-[0_0_30px_rgba(236,72,153,0.4)] active:scale-95 transition-all flex items-center justify-center gap-2 border border-cyan-300/40">
+                      <Send className="w-4 h-4" />
+                      <span>{loc('ورود با تلگرام', 'Continue with Telegram')}</span>
+                      <ArrowRight className="w-4 h-4 ml-1" />
                     </button>
                   ) : (
-                    <a href="https://t.me/vlive_app_bot" target="_blank" rel="noreferrer" className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-sm shadow-[0_0_35px_rgba(6,182,212,0.5)] active:scale-95 transition-all duration-300 flex items-center justify-between border border-cyan-300/50 group relative overflow-hidden">
-                      <div className="flex items-center gap-3 relative z-10">
-                        <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition">
-                          <Send className="w-5 h-5 group-hover:translate-x-1 transition" />
-                        </div>
-                        <div className="text-left">
-                          <span className="block font-black text-sm tracking-wide">
-                            {loc('باز کردن در تلگرام', 'Open in Telegram Bot')}
-                          </span>
-                          <span className="block text-[10px] text-cyan-100 font-medium opacity-90">
-                            @vlive_app_bot
-                          </span>
-                        </div>
-                      </div>
-                      <ArrowRight className="w-5 h-5 text-white group-hover:translate-x-1 transition relative z-10" />
+                    <a href="https://t.me/vlive_app_bot" target="_blank" rel="noreferrer" className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-sm shadow-[0_0_30px_rgba(6,182,212,0.4)] active:scale-95 transition-all flex items-center justify-center gap-2 border border-cyan-300/40">
+                      <Send className="w-4 h-4" />
+                      <span>{loc('باز کردن در تلگرام (@vlive_app_bot)', 'Open in Telegram (@vlive_app_bot)')}</span>
                     </a>
                   )}
-
                 </div>
 
-                {/* 6. TERMS & PRIVACY POLICY CHECKBOX */}
-                <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800/90 space-y-2">
-                  <label className="flex items-start gap-2.5 cursor-pointer text-xs">
-                    <input type="checkbox" checked={termsAgreed} onChange={e => setTermsAgreed(e.target.checked)} className="mt-0.5 w-4.5 h-4.5 accent-pink-500 rounded cursor-pointer" />
-                    <span className="text-[11px] text-slate-300 leading-relaxed font-medium">
-                      {loc('من شرایط استفاده از خدمات و قوانین حریم خصوصی V.Live را می‌پذیرم.', 'I accept V.Live Terms of Service & Privacy Policy.')}{' '}
-                      <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-pink-400 hover:text-pink-300 font-black underline inline-block">
-                        {loc('مطالعه قوانین', 'Read Terms')}
+                {/* 5. TERMS AGREEMENT CHECKBOX */}
+                <div className="pt-1 text-center">
+                  <label className="inline-flex items-center gap-2 cursor-pointer text-xs text-slate-400 hover:text-slate-300">
+                    <input type="checkbox" checked={termsAgreed} onChange={e => setTermsAgreed(e.target.checked)} className="w-4 h-4 accent-pink-500 rounded cursor-pointer" />
+                    <span className="text-[11px]">
+                      {loc('پذیرش', 'I accept the')}{' '}
+                      <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-pink-400 hover:text-pink-300 font-bold underline">
+                        {loc('قوانین و شرایط استفاده', 'Terms of Service')}
                       </button>
                     </span>
                   </label>
@@ -2688,10 +2566,9 @@ export default function App() {
 
               </div>
 
-              {/* FOOTER DIAGNOSTIC INFO */}
-              <div className="text-center space-y-1 text-[10px] text-slate-500 font-mono">
-                <p>🟢 Telegram Mini App Protocol v4.2 • SSL Secured</p>
-                <p>© 2026 V.Live Platform. All Rights Reserved.</p>
+              {/* FOOTER */}
+              <div className="text-center text-[10px] text-slate-500 font-mono pt-1">
+                © 2026 V.LIVE Platform
               </div>
 
             </div>;
@@ -2800,10 +2677,6 @@ export default function App() {
 
                 <ArrowRight className="w-5 h-5 text-cyan-200 group-hover:translate-x-1 transition duration-300" />
               </button>
-
-              <p className="text-[11px] text-slate-400 font-medium dir-rtl">
-                {loc('برای ورود مستقیم به صفحه اصلی (Home) کلیک کنید', 'Click to enter directly to the main page (Home).')}
-              </p>
             </div>
 
           </div>
