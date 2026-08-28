@@ -892,27 +892,31 @@ export const apiMessages = {
       const partnerUuids = uniqueConvs.map(c => c.user1_id === userUuid ? c.user2_id : c.user1_id).filter(Boolean);
 
       // 2. Fetch profiles of conversation partners
+      // 2. Fetch profiles of conversation partners
       const { data: profs } = await supabase
         .from('profiles')
-        .select('id, username, name, avatar, is_streamer, is_verified, role, status, updated_at, birth_date, age')
-        .in('id', partnerUuids);
+        .select('id, username, name, avatar, is_streamer, is_verified, role, status, updated_at, birth_date, age, telegram_id');
 
       const profilesMap = new Map();
       if (Array.isArray(profs)) {
-        profs.forEach(p => profilesMap.set(p.id, p));
+        profs.forEach(p => {
+          if (p.id) profilesMap.set(String(p.id).trim(), p);
+          if (p.username) profilesMap.set(String(p.username).trim().toLowerCase(), p);
+          if (p.telegram_id) profilesMap.set(String(p.telegram_id).trim(), p);
+        });
       }
 
       // 3. Hydrate with latest message for each conversation
       const hydratedList = await Promise.all(uniqueConvs.map(async (conv) => {
         const partnerId = conv.user1_id === userUuid ? conv.user2_id : conv.user1_id;
-        const prof = profilesMap.get(partnerId) || {};
+        const pKey = String(partnerId || '').trim();
+        const prof = profilesMap.get(pKey) || profilesMap.get(pKey.toLowerCase()) || {};
         const isOnline = presenceService.isUserOnline(prof);
         const birthDateVal = prof.birth_date || prof.birthdate;
         const calculatedAge = birthDateVal ? calculateAge(birthDateVal) : (prof.age || null);
 
         let lastMessageText = '';
         let lastMessageTime = conv.created_at;
-
         const { data: lastMsgs } = await supabase
           .from('messages')
           .select('id, content, created_at, sender_id')
@@ -925,20 +929,24 @@ export const apiMessages = {
           lastMessageTime = lastMsgs[0].created_at;
         }
 
+        const resolvedUsername = prof.username || (prof.name ? prof.name.toLowerCase().replace(/\s+/g, '_') : (partnerId ? String(partnerId) : ''));
+        const resolvedName = prof.name || prof.username || resolvedUsername || 'Member';
+
         return {
           id: conv.id,
           conversation_id: conv.id,
-          partner_id: partnerId,
+          partner_id: prof.id || partnerId,
           user: {
             id: prof.id || partnerId,
-            username: prof.username || `user_${String(partnerId).slice(0, 6)}`,
-            name: prof.name || prof.username || `User ${String(partnerId).slice(0, 6)}`,
+            username: resolvedUsername,
+            name: resolvedName,
             avatar: prof.avatar || '',
             age: calculatedAge !== null ? calculatedAge : prof.age,
             isVerified: prof.is_verified || Boolean(prof.isVerified),
             isStreamer: prof.is_streamer || Boolean(prof.isStreamer),
             online: isOnline,
-            isOnline: isOnline
+            isOnline: isOnline,
+            role: prof.role || 'Member'
           },
           lastMessage: lastMessageText,
           lastTime: lastMessageTime ? new Date(lastMessageTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Recently',
@@ -946,7 +954,6 @@ export const apiMessages = {
           messages: []
         };
       }));
-
       return hydratedList;
     } catch (e) {
       console.warn('getConversations exception:', e);

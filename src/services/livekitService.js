@@ -202,16 +202,20 @@ export class LiveKitManager {
 
     this.currentFacingMode = facingMode;
 
+    // High quality 720p @ 30fps video constraints with fallback support
     const videoConstraints = withVideo ? {
       facingMode: { ideal: facingMode },
-      width: { ideal: 1280 },
-      height: { ideal: 720 }
+      width: { ideal: 1280, min: 640 },
+      height: { ideal: 720, min: 360 },
+      frameRate: { ideal: 30, min: 20, max: 30 }
     } : false;
 
     const audioConstraints = withAudio ? {
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true
+      echoCancellation: { ideal: true },
+      noiseSuppression: { ideal: true },
+      autoGainControl: { ideal: true },
+      sampleRate: { ideal: 48000 },
+      channelCount: { ideal: 1 }
     } : false;
 
     try {
@@ -451,16 +455,19 @@ export class LiveKitManager {
           adaptiveStream: true,
           dynacast: true,
           videoCaptureDefaults: {
-            resolution: VideoPresets.h720.resolution
+            resolution: VideoPresets.h720.resolution,
+            facingMode: this.currentFacingMode
           },
           publishDefaults: {
             simulcast: true,
-            videoCodec: 'h264'
+            videoCodec: 'vp8',
+            videoEncoding: VideoPresets.h720.encoding,
+            backupCodec: true,
+            audioPreset: { maxBitrate: 32000 }
           }
         });
 
         this._setupRoomEventListeners();
-
         this.connectionState = ConnectionState.Connecting;
         this.emit('connection_state_changed', { state: ConnectionState.Connecting });
 
@@ -503,7 +510,8 @@ export class LiveKitManager {
       const tracks = await createLocalTracks({
         audio: withAudio ? {
           echoCancellation: true,
-          noiseSuppression: true
+          noiseSuppression: true,
+          autoGainControl: true
         } : false,
         video: withVideo ? {
           facingMode: this.currentFacingMode,
@@ -514,10 +522,17 @@ export class LiveKitManager {
       for (const track of tracks) {
         if (track.kind === Track.Kind.Video) {
           this.localVideoTrack = track;
+          await this.room.localParticipant.publishTrack(track, {
+            simulcast: true,
+            videoEncoding: VideoPresets.h720.encoding,
+            videoCodec: 'vp8'
+          });
         } else if (track.kind === Track.Kind.Audio) {
           this.localAudioTrack = track;
+          await this.room.localParticipant.publishTrack(track, {
+            audioPreset: { maxBitrate: 32000 }
+          });
         }
-        await this.room.localParticipant.publishTrack(track);
       }
 
       this.emit('local_tracks_published', {
@@ -529,6 +544,31 @@ export class LiveKitManager {
       console.error('Error creating or publishing local LiveKit tracks:', err);
       this.emit('error', { message: 'Failed to publish media stream to room', error: err });
     }
+  }
+
+  /**
+   * Helper to boost SDP bandwidth and quality for WebRTC
+   */
+  _enhanceSdpBandwidth(sdp, isVideo = true) {
+    if (!sdp || typeof sdp !== 'string') return sdp;
+    const lines = sdp.split('\r\n');
+    const enhanced = [];
+    for (const line of lines) {
+      enhanced.push(line);
+      if (isVideo && line.startsWith('m=video')) {
+        enhanced.push('b=AS:2000'); // 2 Mbps for video
+        enhanced.push('b=TIAS:2000000');
+      } else if (line.startsWith('m=audio')) {
+        enhanced.push('b=AS:64'); // 64 kbps for audio
+        enhanced.push('b=TIAS:64000');
+      }
+      if (line.startsWith('a=fmtp:') && line.includes('opus')) {
+        if (!line.includes('stereo=')) {
+          enhanced[enhanced.length - 1] = line + ';stereo=1;sprop-stereo=1;maxaveragebitrate=64000;useinbandfec=1';
+        }
+      }
+    }
+    return enhanced.join('\r\n');
   }
 
   /**
@@ -556,17 +596,31 @@ export class LiveKitManager {
         { urls: 'stun:stun3.l.google.com:19302' },
         { urls: 'stun:stun4.l.google.com:19302' },
         { urls: 'stun:global.stun.twilio.com:3478' }
-      ]
+      ],
+      iceCandidatePoolSize: 10
     };
 
     const pc = new RTCPeerConnection(rtcConfig);
     this.peerConnection = pc;
 
-    // Add local tracks to peer connection
+    // Add local tracks to peer connection and configure sender bitrates
     if (this.localMediaStream) {
       this.localMediaStream.getTracks().forEach(track => {
         try {
-          pc.addTrack(track, this.localMediaStream);
+          const sender = pc.addTrack(track, this.localMediaStream);
+          if (track.kind === 'video') {
+            try {
+              const params = sender.getParameters();
+              if (!params.encodings || params.encodings.length === 0) {
+                params.encodings = [{}];
+              }
+              params.encodings[0].maxBitrate = 1800000; // 1.8 Mbps
+              params.encodings[0].maxFramerate = 30;
+              params.encodings[0].scaleResolutionDownBy = 1.0;
+              params.degradationPreference = 'maintain-framerate';
+              sender.setParameters(params).catch(() => {});
+            } catch (paramErr) {}
+          }
         } catch (e) {
           console.warn('Error adding track to WebRTC PC:', e);
         }
@@ -592,7 +646,10 @@ export class LiveKitManager {
           this.remoteMediaStream = new MediaStream();
         }
         if (event.track) {
-          this.remoteMediaStream.addTrack(event.track);
+          const existing = this.remoteMediaStream.getTracks().find(t => t.id === event.track.id);
+          if (!existing) {
+            this.remoteMediaStream.addTrack(event.track);
+          }
         }
         rStream = this.remoteMediaStream;
       } else {
@@ -639,12 +696,13 @@ export class LiveKitManager {
     // If this peer is the caller, create and send SDP Offer
     if (isCaller) {
       try {
-        const offer = await pc.createOffer({
+        const rawOffer = await pc.createOffer({
           offerToReceiveAudio: true,
           offerToReceiveVideo: isVideo
         });
+        const boostedSdp = this._enhanceSdpBandwidth(rawOffer.sdp, isVideo);
+        const offer = { type: rawOffer.type, sdp: boostedSdp };
         await pc.setLocalDescription(offer);
-
         if (typeof this.onSignalSendCallback === 'function') {
           this.onSignalSendCallback({
             type: 'WEBRTC_OFFER',
@@ -695,7 +753,10 @@ export class LiveKitManager {
           } catch (e) {}
         }
 
-        const answer = await pc.createAnswer();
+        const rawAnswer = await pc.createAnswer();
+        const isVideo = signal.isVideo !== false;
+        const boostedSdp = this._enhanceSdpBandwidth(rawAnswer.sdp, isVideo);
+        const answer = { type: rawAnswer.type, sdp: boostedSdp };
         await pc.setLocalDescription(answer);
 
         if (typeof this.onSignalSendCallback === 'function') {
@@ -759,14 +820,33 @@ export class LiveKitManager {
       if (typeof track.attach === 'function') {
         track.attach(element);
       } else if (typeof MediaStream !== 'undefined' && track instanceof MediaStream) {
-        element.srcObject = track;
-        element.play().catch(() => {});
+        if (element.srcObject !== track) {
+          element.srcObject = track;
+        }
+        if (element.paused) {
+          element.play().catch(() => {});
+        }
       } else if (typeof MediaStreamTrack !== 'undefined' && track instanceof MediaStreamTrack) {
-        element.srcObject = new MediaStream([track]);
-        element.play().catch(() => {});
+        if (!element.srcObject || !(element.srcObject instanceof MediaStream)) {
+          element.srcObject = new MediaStream([track]);
+        } else {
+          const stream = element.srcObject;
+          const currentTracks = stream.getTracks();
+          if (!currentTracks.some(t => t.id === track.id)) {
+            currentTracks.filter(t => t.kind === track.kind).forEach(t => stream.removeTrack(t));
+            stream.addTrack(track);
+          }
+        }
+        if (element.paused) {
+          element.play().catch(() => {});
+        }
       } else if (track.stream && track.stream instanceof MediaStream) {
-        element.srcObject = track.stream;
-        element.play().catch(() => {});
+        if (element.srcObject !== track.stream) {
+          element.srcObject = track.stream;
+        }
+        if (element.paused) {
+          element.play().catch(() => {});
+        }
       }
     } catch (err) {
       console.warn('Failed to attach track to element:', err);
@@ -889,6 +969,22 @@ export class LiveKitManager {
         await this.localAudioTrack.mute();
       }
     }
+
+    if (this.localMediaStream) {
+      this.localMediaStream.getAudioTracks().forEach(t => {
+        t.enabled = enabled;
+      });
+    }
+
+    if (this.peerConnection) {
+      this.peerConnection.getSenders().forEach(s => {
+        if (s.track && s.track.kind === 'audio') {
+          s.track.enabled = enabled;
+        }
+      });
+    }
+
+    this.emit('microphone_toggled', { enabled });
   }
 
   async toggleVideo(enabled) {
@@ -911,6 +1007,22 @@ export class LiveKitManager {
         await this.localVideoTrack.mute();
       }
     }
+
+    if (this.localMediaStream) {
+      this.localMediaStream.getVideoTracks().forEach(t => {
+        t.enabled = enabled;
+      });
+    }
+
+    if (this.peerConnection) {
+      this.peerConnection.getSenders().forEach(s => {
+        if (s.track && s.track.kind === 'video') {
+          s.track.enabled = enabled;
+        }
+      });
+    }
+
+    this.emit('camera_toggled', { enabled });
   }
 
   /**

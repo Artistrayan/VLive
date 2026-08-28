@@ -24,18 +24,21 @@ export default function ActiveCallOverlay({
   const localVideoRef = useRef(null);
   const [audioAutoplayBlocked, setAudioAutoplayBlocked] = useState(false);
 
+  const callId = activeCall?.sessionId || activeCall?.callLogId || activeCall?.callId || activeCall?.roomName;
+  const isVideo = activeCall ? (activeCall.callType === 'video' || activeCall.type === 'video') : false;
+
   // Attach WebRTC & LiveKit media tracks whenever available
   useEffect(() => {
-    if (!activeCall) return;
+    if (!callId) return;
 
     const bindRemoteMedia = (streamOrTrack) => {
       if (!streamOrTrack) return;
-      if (remoteVideoRef.current) {
+      if (remoteVideoRef.current && isVideo) {
         livekitManager.attachTrackToElement(streamOrTrack, remoteVideoRef.current);
       }
       if (remoteAudioRef.current) {
         livekitManager.attachTrackToElement(streamOrTrack, remoteAudioRef.current);
-        remoteAudioRef.current.volume = activeCall.isSpeakerOn !== false ? 1.0 : 0.4;
+        remoteAudioRef.current.volume = 1.0;
         remoteAudioRef.current.muted = false;
         remoteAudioRef.current.play().then(() => {
           setAudioAutoplayBlocked(false);
@@ -47,11 +50,11 @@ export default function ActiveCallOverlay({
     };
 
     const onTrackSubscribed = ({ track, kind, stream }) => {
-      if (kind === 'video' && remoteVideoRef.current) {
+      if (kind === 'video' && remoteVideoRef.current && isVideo) {
         livekitManager.attachTrackToElement(track, remoteVideoRef.current);
       } else if (kind === 'audio' && remoteAudioRef.current) {
         livekitManager.attachTrackToElement(track, remoteAudioRef.current);
-        remoteAudioRef.current.volume = activeCall.isSpeakerOn !== false ? 1.0 : 0.4;
+        remoteAudioRef.current.volume = 1.0;
         remoteAudioRef.current.muted = false;
         remoteAudioRef.current.play().then(() => {
           setAudioAutoplayBlocked(false);
@@ -70,7 +73,7 @@ export default function ActiveCallOverlay({
     };
 
     const onLocalTracks = ({ videoTrack, audioTrack, stream }) => {
-      if (localVideoRef.current) {
+      if (localVideoRef.current && isVideo) {
         if (videoTrack) {
           livekitManager.attachTrackToElement(videoTrack, localVideoRef.current);
         } else if (stream) {
@@ -89,7 +92,7 @@ export default function ActiveCallOverlay({
     }
 
     // Initial check: bind existing local stream if already present
-    if (localVideoRef.current) {
+    if (localVideoRef.current && isVideo) {
       if (livekitManager.localVideoTrack) {
         livekitManager.attachTrackToElement(livekitManager.localVideoTrack, localVideoRef.current);
       } else if (livekitManager.localMediaStream) {
@@ -102,7 +105,7 @@ export default function ActiveCallOverlay({
       livekitManager.off('remote_stream_ready', onRemoteStreamReady);
       livekitManager.off('local_tracks_published', onLocalTracks);
     };
-  }, [activeCall]);
+  }, [callId, isVideo]);
 
   // Adjust audio volume when speaker mode toggles
   useEffect(() => {
@@ -124,7 +127,6 @@ export default function ActiveCallOverlay({
 
   if (!activeCall) return null;
 
-  const isVideo = activeCall.callType === 'video' || activeCall.type === 'video';
   const partnerName = activeCall.user?.name || activeCall.user?.username || loc('کاربر', 'User');
   const partnerAvatar = activeCall.user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
 

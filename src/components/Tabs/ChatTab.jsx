@@ -118,26 +118,41 @@ export default function ChatTab(props) {
         setConversations(prev => {
           const currentList = Array.isArray(prev) ? [...prev] : [];
           realConvs.forEach(rc => {
+            const rcUser = rc.user || {};
             const partner = rc.profiles || {};
             const convId = rc.id || rc.conversation_id;
-            const isOnline = presenceService.isUserOnline(partner);
-            if (!currentList.some(m => String(m.id) === String(convId))) {
-              currentList.push({
-                id: convId,
-                partner_id: partner.id || rc.partner_id || rc.recipient_id,
-                user: {
-                  id: partner.id || rc.partner_id || rc.recipient_id,
-                  username: partner.username || rc.recipient_id || 'User',
-                  name: partner.name || partner.username || 'User',
-                  avatar: partner.avatar || '',
-                  online: isOnline,
-                  isOnline: isOnline
-                },
-                lastMessage: rc.last_message || '',
-                lastTime: rc.updated_at ? new Date(rc.updated_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Recently',
-                unreadCount: 0,
-                messages: []
-              });
+            const partnerId = rc.partner_id || rcUser.id || partner.id || rc.recipient_id;
+            const isOnline = rcUser.online !== undefined ? rcUser.online : presenceService.isUserOnline(partner);
+            
+            const existingIdx = currentList.findIndex(m => String(m.id) === String(convId));
+            const convItem = {
+              id: convId,
+              partner_id: partnerId,
+              user: {
+                id: partnerId,
+                username: rcUser.username || partner.username || (partnerId ? String(partnerId) : ''),
+                name: rcUser.name || partner.name || partner.username || rcUser.username || 'Member',
+                avatar: rcUser.avatar || partner.avatar || '',
+                online: isOnline,
+                isOnline: isOnline,
+                isVerified: rcUser.isVerified || partner.is_verified || false,
+                isStreamer: rcUser.isStreamer || partner.is_streamer || false,
+                role: rcUser.role || partner.role || 'Member'
+              },
+              lastMessage: rc.lastMessage || rc.last_message || '',
+              lastTime: rc.lastTime || (rc.updated_at ? new Date(rc.updated_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Recently'),
+              unreadCount: rc.unreadCount || 0,
+              messages: rc.messages || []
+            };
+
+            if (existingIdx >= 0) {
+              currentList[existingIdx] = {
+                ...currentList[existingIdx],
+                ...convItem,
+                messages: currentList[existingIdx].messages?.length ? currentList[existingIdx].messages : convItem.messages
+              };
+            } else {
+              currentList.push(convItem);
             }
           });
           return currentList;
@@ -164,8 +179,8 @@ export default function ChatTab(props) {
     });
 
     return () => { 
-      isMounted = false; 
-      unsubscribePresence();
+       isMounted = false; 
+       unsubscribePresence();
     };
   }, []);
 
@@ -178,7 +193,6 @@ export default function ChatTab(props) {
     const canId = String(canonicalId || '').trim();
     const pUserId = String(c.partner_id || c.user?.id || '').trim();
     const pUsername = String(c.user?.username || '').trim();
-
     if (aid && cid === aid) return true;
     if (canId && cid === canId) return true;
     if (aid && (pUserId === aid || pUsername === aid)) return true;
@@ -191,7 +205,6 @@ export default function ChatTab(props) {
     if (!activeConversationId) return null;
     const aid = String(activeConversationId).trim();
     const currentUid = getUserId() || currentUser?.id || currentUsername || '';
-
     let found = (conversations || []).find(c => {
       if (!c) return false;
       const cid = String(c.id || '').trim();
@@ -207,17 +220,18 @@ export default function ChatTab(props) {
 
     if (!found) {
       const allUsers = activeUsersList && activeUsersList.length > 0 ? activeUsersList : (propUsersList || []);
-      const targetUser = allUsers.find(u => String(u.id).trim() === aid || String(u.username).trim() === aid);
+      const targetUser = allUsers.find(u => String(u.id).trim() === aid || String(u.username).trim().toLowerCase() === aid.toLowerCase());
       if (targetUser) {
         found = {
           id: activeConversationId,
           partner_id: targetUser.id,
           user: {
             id: targetUser.id,
-            username: targetUser.username,
-            name: targetUser.name || targetUser.username,
+            username: targetUser.username || String(targetUser.id),
+            name: targetUser.name || targetUser.username || 'Member',
             avatar: targetUser.avatar || '',
             isVerified: targetUser.isVerified || targetUser.is_verified || false,
+            isStreamer: targetUser.isStreamer || targetUser.is_streamer || false,
             online: targetUser.online || targetUser.isOnline || true,
             role: targetUser.role || 'Member'
           },
@@ -233,9 +247,10 @@ export default function ChatTab(props) {
           user: {
             id: activeConversationId,
             username: String(activeConversationId),
-            name: `User ${String(activeConversationId).slice(0, 8)}`,
+            name: String(activeConversationId).length > 20 ? `Member ${String(activeConversationId).slice(0, 6)}` : String(activeConversationId),
             avatar: '',
-            online: true
+            online: true,
+            role: 'Member'
           },
           lastMessage: '',
           lastTime: 'Just now',
