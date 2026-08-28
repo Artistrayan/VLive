@@ -48,7 +48,7 @@ export default function ProfileTab(props) {
      setIsLanguageModalOpen = (() => {}), handleSelectLanguage = (() => {}), setIsQrCodeModalOpen = (() => {}),
     setWalletSubTab = (() => {}), setIsLoggedIn = (() => {}), setAuthStep = (() => {}),
     showToast = (() => {}), loc = ((a, b) => b || a),
-    isVerified = true,
+    isVerified = false,
     setIsAdminPanelOpen,
     setAdminActiveTab,
     setIsStreamerCenterOpen,

@@ -1717,9 +1717,9 @@ export default function App() {
         age: u.age || '',
         city: u.city,
         avatar: u.avatar || '',
-        isVerified: u.isVerified !== false || u.is_verified === true,
-        isVip: u.isVip !== false,
-        user_type: u.user_type || 'VERIFIED_USER',
+        isVerified: Boolean(u.isVerified || u.is_verified || u.verified),
+        isVip: Boolean(u.isVip || u.is_vip || u.vip),
+        user_type: u.user_type || 'USER',
         distance: `${(idx + 1) * 2} km`,
         interests: u.interests || ['🎥 4K Live', '💖 VIP Chat', '☕ Coffee', '✨ Verified']
       }));
@@ -2856,7 +2856,7 @@ export default function App() {
                         <div className="absolute bottom-1.5 left-2 right-2 pointer-events-none">
                           <h4 className="text-xs font-black text-white drop-shadow-md truncate flex items-center gap-1">
                             <span className="truncate">{user.name}{user.age ? `, ${user.age}` : ''}</span>
-                            <BadgeCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0 inline-block" />
+                            {Boolean(user.isVerified || user.is_verified || user.verified) && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0 inline-block" />}
                           </h4>
                           <p className="text-[9px] text-pink-300 font-bold drop-shadow-md truncate">📍 {user.city} • Lv.{user.level}</p>
                         </div>
@@ -3016,9 +3016,11 @@ export default function App() {
                     setIsUserProfileModalOpen(true);
                   }} className="absolute top-1/2 -right-5 -translate-y-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-purple-500 shadow-[0_0_15px_#ec4899] cursor-pointer hover:scale-130 transition duration-300 z-30 group" title={matchDeckProfiles[1]?.name || ''}>
                       <img src={matchDeckProfiles[1]?.avatar || ''} alt="Candidate" className="w-full h-full rounded-full object-cover border border-slate-950" />
-                      <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-cyan-400 border border-slate-950 flex items-center justify-center text-[7px] text-slate-950 font-black">
-                        ✔
-                      </div>
+                      {Boolean(matchDeckProfiles[1]?.isVerified || matchDeckProfiles[1]?.is_verified || matchDeckProfiles[1]?.verified) && (
+                        <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-cyan-400 border border-slate-950 flex items-center justify-center text-[7px] text-slate-950 font-black">
+                          ✔
+                        </div>
+                      )}
                     </div>
 
                     {/* Orbit Candidate 3 (Bottom) */}
@@ -3040,9 +3042,11 @@ export default function App() {
                     setIsUserProfileModalOpen(true);
                   }} className="absolute top-1/2 -left-5 -translate-y-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-cyan-400 to-blue-500 shadow-[0_0_15px_#22d3ee] cursor-pointer hover:scale-130 transition duration-300 z-30 group" title={matchDeckProfiles[3]?.name || ''}>
                       <img src={matchDeckProfiles[3]?.avatar || ''} alt="Candidate" className="w-full h-full rounded-full object-cover border border-slate-950" />
-                      <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-cyan-400 border border-slate-950 flex items-center justify-center text-[7px] text-slate-950 font-black">
-                        ✔
-                      </div>
+                      {Boolean(matchDeckProfiles[3]?.isVerified || matchDeckProfiles[3]?.is_verified || matchDeckProfiles[3]?.verified) && (
+                        <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-cyan-400 border border-slate-950 flex items-center justify-center text-[7px] text-slate-950 font-black">
+                          ✔
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -3104,7 +3108,7 @@ export default function App() {
                       <h3 className="text-xl font-black text-white flex items-center gap-1.5">
                         <span>{matchDeckProfiles[matchCardIndex]?.name}</span>
                         <span className="text-sm text-pink-400 font-bold">({matchDeckProfiles[matchCardIndex]?.age})</span>
-                        <BadgeCheck className="w-4 h-4 text-cyan-400" />
+                        {Boolean(matchDeckProfiles[matchCardIndex]?.isVerified || matchDeckProfiles[matchCardIndex]?.is_verified || matchDeckProfiles[matchCardIndex]?.verified) && <BadgeCheck className="w-4 h-4 text-cyan-400" />}
                       </h3>
                       <p className="text-xs text-slate-300 font-medium">📍 {matchDeckProfiles[matchCardIndex]?.city} • Online Streamer</p>
 
@@ -3152,7 +3156,7 @@ export default function App() {
         {/* TAB 3: WALLET & EARNINGS TAB */}
         <WalletTab handleBuyService={handleBuyService} activeTab={activeTab} txHistoryList={txHistoryList} userCoins={userCoins} setUserCoins={setUserCoins} userDiamonds={userDiamonds} setUserDiamonds={setUserDiamonds} userCashBalance={userCashBalance} setUserCashBalance={setUserCashBalance} walletSubTab={walletSubTab} setWalletSubTab={setWalletSubTab} referralCode={referralCode} setIsVipModalOpen={setIsVipModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} showToast={showToast} isVerified={isVerified} isUserSuperAdmin={isUserSuperAdmin} loc={loc} isRtl={isRtl} />
         {/* TAB 4: PROFILE TAB */}
-        <ProfileTab currentUser={currentUser} userRole={userRole} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsSettingsModalOpen={setIsSettingsModalOpen} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={isVerified || userRole === 'admin' || isUserRayan} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} />
+        <ProfileTab currentUser={currentUser} userRole={userRole} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsSettingsModalOpen={setIsSettingsModalOpen} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={Boolean(isVerified)} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} />
         </main>
       <nav className="fixed bottom-0 w-full max-w-[800px] z-40 bg-slate-900/95 backdrop-blur-2xl border-t border-slate-800/80 p-2 sm:px-6 flex justify-between items-center shadow-[0_-5px_30px_rgba(0,0,0,0.5)]">
         
@@ -4403,11 +4407,19 @@ export default function App() {
             } : u));
             if (typeof addAdminAuditLog === 'function') addAdminAuditLog('Admin Ban', `Toggled ban for ${data.username}`);
           } else if (actionType === 'verify') {
-            setUsersList(prev => prev.map(u => u.id === data.userId || u.username === data.username ? {
+            const nextVerified = Boolean(data.isVerified);
+            if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') {
+              apiAdmin.updateUserFields(data.userId || data.username, { is_verified: nextVerified });
+            }
+            setUsersList(prev => prev.map(u => (u.id === data.userId || u.username === data.username) ? {
               ...u,
-              isVerified: data.isVerified,
-              verified: data.isVerified
+              isVerified: nextVerified,
+              verified: nextVerified,
+              is_verified: nextVerified
             } : u));
+            if (data.username === currentUsername || data.userId === currentUser?.id) {
+              setIsVerified(nextVerified);
+            }
             if (typeof addAdminAuditLog === 'function') addAdminAuditLog('Admin Verify', `Toggled verify for ${data.username}`);
           } else if (actionType === 'streamer') {
             setUsersList(prev => prev.map(u => u.id === data.userId || u.username === data.username ? {

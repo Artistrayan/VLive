@@ -1747,7 +1747,7 @@ export default function ChatTab(props) {
                           username: "group_" + Date.now(),
                           name: newGroupName,
                           avatar: '',
-                          isVerified: true,
+                          isVerified: false,
                           role: 'Group Admin',
                           online: true
                         },
