@@ -1013,6 +1013,18 @@ export const apiMessages = {
     }
   },
 
+  async deleteConversation(conversationId) {
+    if (!conversationId) return { success: false };
+    try {
+      await supabase.from('messages').delete().eq('conversation_id', conversationId);
+      const { error } = await supabase.from('conversations').delete().eq('id', conversationId);
+      return { success: !error };
+    } catch (e) {
+      console.warn('deleteConversation exception:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
   async sendMessage(param1, param2, param3) {
     let uid = getUserId();
     let conversationId, text, mediaUrl, recipient;

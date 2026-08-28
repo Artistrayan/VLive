@@ -784,51 +784,72 @@ export default function ChatTab(props) {
                       const isSelected = activeConversationId === conv.id;
                       const cUser = conv.user || {};
                       return (
-                        <button
-                          key={conv.id}
-                          onClick={() => {
-                            setActiveConversationId(conv.id);
-                            setConversations(prev => prev.map(c => c.id === conv.id ? { ...c, unreadCount: 0 } : c));
-                          }}
-                          className={"w-full p-3 rounded-2xl flex items-center gap-3 transition text-left border relative group " + (isSelected ? "bg-gradient-to-r from-pink-500/20 via-purple-500/10 to-transparent border-pink-500/50 shadow-md" : "bg-slate-900/40 border-slate-800/60 hover:bg-slate-900 hover:border-slate-700")}
-                        >
-                          <div className="relative shrink-0">
-                            <img src={cUser.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={cUser.name || 'User'} className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-700" />
-                            {cUser.online && !conv.isGroup && (
-                              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
-                            )}
-                            {conv.isGroup && (
-                              <span className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-purple-600 text-white ring-2 ring-slate-950">
-                                <Users className="w-2.5 h-2.5" />
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-bold text-white truncate flex items-center gap-1">
-                                {cUser.name || 'User'}
-                                {cUser.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
-                                {conv.pinned && <Pin className="w-3 h-3 text-amber-400 shrink-0 fill-amber-400" />}
-                              </span>
-                              <span className="text-[9px] text-slate-500 font-mono shrink-0">{conv.lastTime}</span>
-                            </div>
-
-                            <div className="flex items-center justify-between text-[11px]">
-                              <p className="text-slate-400 truncate flex-1 pr-2">
-                                {conv.lastMessage || window.loc('گفتگو ایجاد شد', 'Conversation created')}
-                              </p>
-
-                              {conv.unreadCount > 0 ? (
-                                <span className="px-1.5 py-0.5 rounded-full bg-pink-500 text-slate-950 font-black text-[9px] shrink-0 shadow-sm">
-                                  {conv.unreadCount}
+                        <div key={conv.id} className="relative group">
+                          <button
+                            onClick={() => {
+                              setActiveConversationId(conv.id);
+                              setConversations(prev => prev.map(c => c.id === conv.id ? { ...c, unreadCount: 0 } : c));
+                            }}
+                            className={"w-full p-3 rounded-2xl flex items-center gap-3 transition text-left border " + (isSelected ? "bg-gradient-to-r from-pink-500/20 via-purple-500/10 to-transparent border-pink-500/50 shadow-md" : "bg-slate-900/40 border-slate-800/60 hover:bg-slate-900 hover:border-slate-700")}
+                          >
+                            <div className="relative shrink-0">
+                              <img src={cUser.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={cUser.name || cUser.username || 'User'} className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-700" />
+                              {cUser.online && !conv.isGroup && (
+                                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
+                              )}
+                              {conv.isGroup && (
+                                <span className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-purple-600 text-white ring-2 ring-slate-950">
+                                  <Users className="w-2.5 h-2.5" />
                                 </span>
-                              ) : conv.muted ? (
-                                <VolumeX className="w-3 h-3 text-slate-600 shrink-0" />
-                              ) : null}
+                              )}
                             </div>
-                          </div>
-                        </button>
+
+                            <div className="flex-1 min-w-0 pr-6">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-bold text-white truncate flex items-center gap-1">
+                                  {cUser.name || cUser.username || 'User'}
+                                  {cUser.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
+                                  {conv.pinned && <Pin className="w-3 h-3 text-amber-400 shrink-0 fill-amber-400" />}
+                                </span>
+                                <span className="text-[9px] text-slate-500 font-mono shrink-0">{conv.lastTime}</span>
+                              </div>
+
+                              <div className="flex items-center justify-between text-[11px]">
+                                <p className="text-slate-400 truncate flex-1 pr-2">
+                                  {conv.lastMessage || window.loc('گفتگو ایجاد شد', 'Conversation created')}
+                                </p>
+
+                                {conv.unreadCount > 0 ? (
+                                  <span className="px-1.5 py-0.5 rounded-full bg-pink-500 text-slate-950 font-black text-[9px] shrink-0 shadow-sm">
+                                    {conv.unreadCount}
+                                  </span>
+                                ) : conv.muted ? (
+                                  <VolumeX className="w-3 h-3 text-slate-600 shrink-0" />
+                                ) : null}
+                              </div>
+                            </div>
+                          </button>
+                          
+                          <button 
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (window.confirm(window.loc('آیا از حذف این گفتگو اطمینان دارید؟', 'Are you sure you want to delete this conversation?'))) {
+                                const res = await apiChats.deleteConversation(conv.id);
+                                if (res.success) {
+                                  setConversations(prev => prev.filter(c => c.id !== conv.id));
+                                  if (activeConversationId === conv.id) setActiveConversationId(null);
+                                  showToast(window.loc('گفتگو حذف شد', 'Conversation deleted'));
+                                } else {
+                                  showToast(window.loc('خطا در حذف گفتگو', 'Failed to delete conversation'));
+                                }
+                              }
+                            }}
+                            className="absolute top-1/2 -translate-y-1/2 right-2 p-1.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition opacity-0 group-hover:opacity-100"
+                            title={window.loc('حذف گفتگو', 'Delete conversation')}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       );
                     });
                   })()}
@@ -852,7 +873,7 @@ export default function ChatTab(props) {
                             </button>
 
                             <div className="relative shrink-0">
-                              <img src={currentConv?.user?.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={currentConv?.user?.name || 'User'} className="w-10 h-10 rounded-2xl object-cover ring-2 ring-pink-500/30" />
+                              <img src={currentConv?.user?.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={currentConv?.user?.name || currentConv?.user?.username || 'User'} className="w-10 h-10 rounded-2xl object-cover ring-2 ring-pink-500/30" />
                               {currentConv?.user?.online && (
                                 <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
                               )}
@@ -860,7 +881,7 @@ export default function ChatTab(props) {
 
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <h3 className="text-xs font-bold text-white truncate">{currentConv?.user?.name || 'User'}</h3>
+                                <h3 className="text-xs font-bold text-white truncate">{currentConv?.user?.name || currentConv?.user?.username || 'User'}</h3>
                                 {currentConv?.user?.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
                                 {isVipUser && (
                                   <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-0.5">

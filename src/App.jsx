@@ -2723,12 +2723,11 @@ export default function App() {
               <Gift className="w-3.5 h-3.5" />
             </button>
 
-            <button onClick={() => setActiveTab('messages')} className="relative p-1.5 rounded-full bg-slate-900 border border-slate-800 text-cyan-400 hover:text-cyan-300 transition" title="Messages">
-              <MessageSquare className="w-3.5 h-3.5" />
-              {totalUnreadMessages > 0 && <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-pink-500 text-white text-[8px] flex items-center justify-center font-bold">{totalUnreadMessages}</span>}
-            </button>
-
-            <button onClick={() => setIsNotificationsOpen(true)} className="relative p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition" title="Notifications">
+            <button onClick={() => {
+              setIsNotificationsOpen(true);
+              apiNotifications.markAllAsRead();
+              setNotificationsList(prev => prev.map(n => ({ ...n, unread: false })));
+            }} className="relative p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition" title="Notifications">
               <Bell className="w-3.5 h-3.5" />
               {notificationsList.some(n => n.unread) && <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-pink-500" />}
             </button>
