@@ -221,6 +221,19 @@ export default function App() {
   useEffect(() => {
     activeCallRef.current = activeCall;
   }, [activeCall]);
+
+  useEffect(() => {
+    if (!incomingCall) return;
+    const timer = setTimeout(() => {
+      setIncomingCall(prev => {
+        if (prev && (prev.callId === incomingCall.callId || prev.sessionId === incomingCall.sessionId)) {
+          return null;
+        }
+        return prev;
+      });
+    }, 20500);
+    return () => clearTimeout(timer);
+  }, [incomingCall]);
   const [activeChatCall, setActiveChatCall] = useState(null);
   const [preCallConfirmHost, setPreCallConfirmHost] = useState(null);
   const [activePrivateCallHost, setActivePrivateCallHost] = useState(null);
@@ -762,20 +775,24 @@ export default function App() {
     }
   }, [currentUsername, showToast, loc]);
 
-  const handleDeclineIncomingCall = useCallback(async (incomingCallObj) => {
+  const handleDeclineIncomingCall = useCallback(async (incomingCallObj, reason = 'declined') => {
     if (!incomingCallObj) return;
     try {
       await apiCalls.rejectCall({
         callId: incomingCallObj.callLogId || incomingCallObj.callId,
         callerId: incomingCallObj.callerId,
         receiverId: incomingCallObj.receiverId,
-        reason: 'declined'
+        reason: reason === 'timeout' ? 'missed' : 'declined'
       });
     } catch (err) {
       console.warn('Decline call notice:', err.message);
     }
     setIncomingCall(null);
-    showToast(loc('تماس رد شد', 'Call declined'));
+    if (reason === 'timeout') {
+      showToast(loc('مهلت ۲۰ ثانیه‌ای پاسخ به تماس به پایان رسید', '20s call answer time expired'));
+    } else {
+      showToast(loc('تماس رد شد', 'Call declined'));
+    }
   }, [showToast, loc]);
 
   const handleEndActiveCall = useCallback(async () => {

@@ -2000,6 +2000,9 @@ export const apiCalls = {
       if (callerId) targets.add(callerId);
       const callerUuid = await resolveProfileUuid(callerId);
       if (callerUuid) targets.add(callerUuid);
+      if (receiverId) targets.add(receiverId);
+      const receiverUuid = await resolveProfileUuid(receiverId);
+      if (receiverUuid) targets.add(receiverUuid);
 
       targets.forEach(tid => {
         sendCallSignal(tid, signalPayload);

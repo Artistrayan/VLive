@@ -1,5 +1,5 @@
-import React from 'react';
-import { Phone, PhoneOff, Video, Mic, ShieldCheck, Sparkles, Coins } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Phone, PhoneOff, Video, Mic, ShieldCheck, Sparkles, Coins, Clock } from 'lucide-react';
 
 export default function IncomingCallModal({
   incomingCall,
@@ -8,6 +8,28 @@ export default function IncomingCallModal({
   onAccept,
   onDecline
 }) {
+  const [timeLeft, setTimeLeft] = useState(20);
+
+  useEffect(() => {
+    if (!incomingCall) return;
+    setTimeLeft(20);
+
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          if (typeof onDecline === 'function') {
+            onDecline(incomingCall, 'timeout');
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [incomingCall, onDecline]);
+
   if (!incomingCall) return null;
 
   const isVideo = incomingCall.callType === 'video' || incomingCall.call_type === 'video';
@@ -15,6 +37,7 @@ export default function IncomingCallModal({
   const callerName = caller.name || caller.username || loc('کاربر ناشناس', 'Anonymous User');
   const callerAvatar = caller.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
   const tariff = incomingCall.tariffPerMin || incomingCall.tariff_per_min || 100;
+  const progressPercent = ((20 - timeLeft) / 20) * 100;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl animate-fadeIn dir-rtl">
@@ -24,11 +47,18 @@ export default function IncomingCallModal({
         <div className="w-[300px] h-[300px] rounded-full bg-cyan-500/10 blur-2xl animate-ping" />
       </div>
 
-      <div className="relative w-full max-w-sm bg-slate-900/95 border-2 border-pink-500/40 rounded-3xl p-6 shadow-[0_0_60px_rgba(236,72,153,0.3)] flex flex-col items-center text-center space-y-5">
-        {/* Security Badge */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>{loc('تماس رمزنگاری‌شده E2E', 'E2E Encrypted Call')}</span>
+      <div className="relative w-full max-w-sm bg-slate-900/95 border-2 border-pink-500/40 rounded-3xl p-6 shadow-[0_0_60px_rgba(236,72,153,0.3)] flex flex-col items-center text-center space-y-4">
+        {/* Security & Timer Badges */}
+        <div className="flex items-center justify-between w-full">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>{loc('تماس رمزنگاری‌شده E2E', 'E2E Encrypted Call')}</span>
+          </div>
+
+          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-400 text-[11px] font-mono font-bold">
+            <Clock className="w-3 h-3 animate-spin" />
+            <span>{timeLeft}s</span>
+          </div>
         </div>
 
         {/* Caller Avatar with Pulsing Ring */}
@@ -55,6 +85,19 @@ export default function IncomingCallModal({
           </p>
         </div>
 
+        {/* 20s Progress Bar */}
+        <div className="w-full bg-slate-800/80 border border-slate-700/60 p-2.5 rounded-2xl space-y-1.5">
+          <div className="w-full bg-slate-700/50 h-1.5 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-pink-500 to-cyan-400 transition-all duration-1000 ease-linear rounded-full"
+              style={{ width: `${100 - progressPercent}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-slate-400 font-mono">
+            {loc('انقضای خودکار درخواست تا', 'Auto expires in')} {timeLeft} {loc('ثانیه', 'seconds')}
+          </p>
+        </div>
+
         {/* Tariff Badge */}
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-800/80 border border-slate-700 text-amber-400 text-xs font-bold font-mono">
           <Coins className="w-3.5 h-3.5" />
@@ -62,10 +105,10 @@ export default function IncomingCallModal({
         </div>
 
         {/* Action Buttons: Accept & Decline */}
-        <div className="w-full pt-4 flex items-center justify-around gap-6">
+        <div className="w-full pt-2 flex items-center justify-around gap-4">
           {/* Decline Button */}
           <button
-            onClick={() => onDecline(incomingCall)}
+            onClick={() => onDecline(incomingCall, 'declined')}
             className="flex-1 py-3.5 px-4 rounded-2xl bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-300 hover:text-white font-black text-sm flex items-center justify-center gap-2 transition active:scale-95 shadow-lg group"
           >
             <PhoneOff className="w-5 h-5 text-rose-400 group-hover:text-white" />
