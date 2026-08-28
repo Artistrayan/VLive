@@ -1131,8 +1131,20 @@ export default function ProfileTab(props) {
 
                 <button
                   onClick={() => {
-                    const isAdmin = Boolean(userRole === 'admin' || isUserRayan || currentUsername?.toLowerCase() === 'rayan' || currentUser?.role === 'admin' || currentUser?.role === 'super_admin');
-                    const canGoLive = Boolean(isVerified || isAdmin || currentUser?.isStreamer || currentUser?.is_streamer);
+                    const isAdmin = Boolean(
+                      userRole === 'admin' ||
+                      userRole === 'super_admin' ||
+                      isUserRayan ||
+                      isUserSuperAdmin ||
+                      currentUsername?.toLowerCase() === 'rayan' ||
+                      currentUser?.role === 'admin' ||
+                      currentUser?.role === 'super_admin' ||
+                      currentUser?.isUserRayan ||
+                      currentUser?.isUserSuperAdmin ||
+                      String(currentUser?.username || '').toLowerCase() === 'rayan' ||
+                      String(currentUser?.telegram_id || '').trim() === '8933698119'
+                    );
+                    const canGoLive = Boolean(isVerified || isAdmin || currentUser?.isStreamer || currentUser?.is_streamer || currentUser?.user_type === 'STREAMER');
                     if (!canGoLive) {
                       showToast(window.loc('اجرای لایو زنده فقط بعد از تایید توسط ادمین امکان‌پذیر است. لطفاً ابتدا فرم درخواست استریمر را ارسال کنید ⚠️', 'Live streaming is only available after admin approval. Please submit a streamer request first ⚠️'));
                       return;

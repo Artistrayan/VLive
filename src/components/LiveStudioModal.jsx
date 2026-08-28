@@ -19,6 +19,10 @@ export default function LiveStudioModal({
   onClose,
   currentUser,
   currentUsername,
+  userRole,
+  isUserRayan,
+  isUserSuperAdmin,
+  isVerified,
   userCoins,
   setUserCoins,
   streamsList,
@@ -445,16 +449,22 @@ export default function LiveStudioModal({
   // Start Live Broadcast flow
   const handleInitiateStart = () => {
     const isUserAdmin = Boolean(
+      userRole === 'admin' ||
+      userRole === 'super_admin' ||
+      isUserRayan ||
+      isUserSuperAdmin ||
       currentUser?.role === 'admin' || 
       currentUser?.role === 'super_admin' || 
       currentUser?.isUserRayan || 
       currentUser?.isUserSuperAdmin ||
       String(currentUser?.username || '').toLowerCase() === 'rayan' ||
-      String(currentUsername || '').toLowerCase() === 'rayan'
+      String(currentUsername || '').toLowerCase() === 'rayan' ||
+      String(currentUser?.telegram_id || '').trim() === '8933698119'
     );
 
     const isApprovedStreamer = Boolean(
       isUserAdmin || 
+      isVerified ||
       currentUser?.isStreamer || 
       currentUser?.isVerifiedStreamer || 
       currentUser?.is_streamer ||

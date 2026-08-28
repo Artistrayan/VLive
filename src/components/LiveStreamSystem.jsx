@@ -9,6 +9,10 @@ import { apiLive, apiAdmin } from '../services/api';
 export default function LiveStreamSystem({
   currentUser,
   currentUsername,
+  userRole,
+  isUserRayan,
+  isUserSuperAdmin,
+  isVerified,
   userCoins,
   setUserCoins,
   vipPlan,
@@ -22,6 +26,7 @@ export default function LiveStreamSystem({
   handleInitiateCall,
   addAdminAuditLog,
   setAdminReportsList,
+  setIsHostLiveOpen,
   setIsLiveStudioOpen
 }) {
   // Category & Subtab Switchers
@@ -53,16 +58,22 @@ export default function LiveStreamSystem({
 
   // Check Streamer Permission (Includes verified streamers and verified Admins)
   const isUserAdmin = Boolean(
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    isUserRayan ||
+    isUserSuperAdmin ||
     currentUser?.role === 'admin' || 
     currentUser?.role === 'super_admin' || 
     currentUser?.isUserRayan || 
     currentUser?.isUserSuperAdmin ||
     String(currentUser?.username || '').toLowerCase() === 'rayan' ||
-    String(currentUsername || '').toLowerCase() === 'rayan'
+    String(currentUsername || '').toLowerCase() === 'rayan' ||
+    String(currentUser?.telegram_id || '').trim() === '8933698119'
   );
 
   const isApprovedStreamer = Boolean(
     isUserAdmin || 
+    isVerified ||
     currentUser?.isStreamer || 
     currentUser?.isVerifiedStreamer || 
     currentUser?.is_streamer ||
@@ -274,7 +285,9 @@ export default function LiveStreamSystem({
                 showToast(window.loc('اجرای لایو زنده فقط بعد از تایید توسط ادمین امکان‌پذیر است. لطفاً ابتدا فرم درخواست استریمر را ارسال کنید ⚠️', 'Live streaming is only available after admin approval. Please submit a streamer request first ⚠️'));
                 return;
               }
-              if (setIsLiveStudioOpen) {
+              if (setIsHostLiveOpen) {
+                setIsHostLiveOpen(true);
+              } else if (setIsLiveStudioOpen) {
                 setIsLiveStudioOpen(true);
               } else {
                 setIsStartLiveModalOpen(true);
