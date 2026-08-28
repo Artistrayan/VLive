@@ -52,11 +52,22 @@ export default function LiveStreamSystem({
   const [newLiveTags, setNewLiveTags] = useState('#game #chat');
 
   // Check Streamer Permission (Includes verified streamers and verified Admins)
+  const isUserAdmin = Boolean(
+    currentUser?.role === 'admin' || 
+    currentUser?.role === 'super_admin' || 
+    currentUser?.isUserRayan || 
+    currentUser?.isUserSuperAdmin ||
+    String(currentUser?.username || '').toLowerCase() === 'rayan' ||
+    String(currentUsername || '').toLowerCase() === 'rayan'
+  );
+
   const isApprovedStreamer = Boolean(
+    isUserAdmin || 
     currentUser?.isStreamer || 
     currentUser?.isVerifiedStreamer || 
-    currentUser?.user_type === 'STREAMER' ||
-    ((currentUser?.role === 'admin' || currentUser?.role === 'super_admin') && String(currentUser?.telegram_id || '').trim() === '8933698119')
+    currentUser?.is_streamer ||
+    currentUser?.isVerified ||
+    currentUser?.user_type === 'STREAMER'
   );
 
   // Fetch / Sync streams from Supabase on load
@@ -257,21 +268,23 @@ export default function LiveStreamSystem({
             </div>
           </div>
 
-          {isApprovedStreamer && (
-            <button
-              onClick={() => {
-                if (setIsLiveStudioOpen) {
-                  setIsLiveStudioOpen(true);
-                } else {
-                  setIsStartLiveModalOpen(true);
-                }
-              }}
-              className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 hover:opacity-95 text-white font-black text-xs shadow-lg shadow-pink-500/30 flex items-center gap-1.5 hover:scale-102 active:scale-95 transition"
-            >
-              <Video className="w-4 h-4 animate-pulse" />
-              <span>{window.loc('ورود به Live Studio 🎥', 'Login to Live Studio 🎥')}</span>
-            </button>
-          )}
+          <button
+            onClick={() => {
+              if (!isApprovedStreamer) {
+                showToast(window.loc('اجرای لایو زنده فقط بعد از تایید توسط ادمین امکان‌پذیر است. لطفاً ابتدا فرم درخواست استریمر را ارسال کنید ⚠️', 'Live streaming is only available after admin approval. Please submit a streamer request first ⚠️'));
+                return;
+              }
+              if (setIsLiveStudioOpen) {
+                setIsLiveStudioOpen(true);
+              } else {
+                setIsStartLiveModalOpen(true);
+              }
+            }}
+            className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 hover:opacity-95 text-white font-black text-xs shadow-lg shadow-pink-500/30 flex items-center gap-1.5 hover:scale-102 active:scale-95 transition"
+          >
+            <Video className="w-4 h-4 animate-pulse" />
+            <span>{window.loc('ورود به Live Studio 🎥', 'Login to Live Studio 🎥')}</span>
+          </button>
         </div>
 
         {/* MAIN TYPE TOGGLE (Standard Live vs Adult Live 18+) */}

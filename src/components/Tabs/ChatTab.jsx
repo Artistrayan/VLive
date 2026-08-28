@@ -130,8 +130,8 @@ export default function ChatTab(props) {
               partner_id: partnerId,
               user: {
                 id: partnerId,
-                username: rcUser.username || partner.username || (partnerId ? String(partnerId) : ''),
-                name: rcUser.name || partner.name || partner.username || rcUser.username || 'Member',
+                username: rcUser.username || partner.username || partner.username_handle || '',
+                name: rcUser.name || partner.name || (rcUser.username ? `@${String(rcUser.username).replace(/^@/, '')}` : 'User'),
                 avatar: rcUser.avatar || partner.avatar || '',
                 online: isOnline,
                 isOnline: isOnline,
@@ -326,6 +326,51 @@ export default function ChatTab(props) {
     const currentUid = getUserId() || currentUser?.id || currentUsername || 'me';
     const partnerId = currentConv?.partner_id || currentConv?.user?.id || (currentConv?.user?.username !== currentUid ? currentConv?.user?.username : null) || activeConversationId;
     const canonicalId = (currentUid && partnerId) ? getCanonicalConversationId(currentUid, partnerId) : activeConversationId;
+
+    // Fetch real partner profile details from Supabase profiles table
+    const resolvePartnerProfile = async () => {
+      try {
+        const pid = String(partnerId || activeConversationId).trim();
+        let query = supabase.from('profiles').select('id, username, username_handle, name, avatar, is_streamer, is_verified, role, status, updated_at, birth_date, age, telegram_id');
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pid)) {
+          query = query.eq('id', pid);
+        } else if (/^\d+$/.test(pid)) {
+          query = query.or(`telegram_id.eq.${pid},id.eq.${pid}`);
+        } else {
+          query = query.or(`username.ilike.${pid},username_handle.ilike.${pid},id.eq.${pid}`);
+        }
+        const { data: profData } = await query.limit(1).maybeSingle();
+        if (isMounted && profData) {
+          const rName = formatUserDisplayName(profData, profData.id);
+          const rUsername = formatUserUsername(profData, profData.id);
+          setConversations(prev => {
+            if (!Array.isArray(prev)) return prev;
+            return prev.map(c => {
+              if (String(c.id) === String(activeConversationId) || String(c.partner_id) === String(profData.id) || String(c.user?.id) === String(profData.id)) {
+                return {
+                  ...c,
+                  partner_id: profData.id,
+                  user: {
+                    ...c.user,
+                    id: profData.id,
+                    name: rName,
+                    username: rUsername,
+                    avatar: profData.avatar || c.user?.avatar || '',
+                    isVerified: profData.is_verified || Boolean(c.user?.isVerified),
+                    isStreamer: profData.is_streamer || Boolean(c.user?.isStreamer),
+                    role: profData.role || c.user?.role || 'Member'
+                  }
+                };
+              }
+              return c;
+            });
+          });
+        }
+      } catch (e) {
+        console.warn('Partner profile fetch notice:', e);
+      }
+    };
+    resolvePartnerProfile();
 
     const loadRealMessages = async () => {
       try {
@@ -804,6 +849,11 @@ export default function ChatTab(props) {
                     return filteredConvs.map(conv => {
                       const isSelected = activeConversationId === conv.id;
                       const cUser = conv.user || {};
+                      const cName = cUser.name || '';
+                      const cUsername = cUser.username ? String(cUser.username).replace(/^@/, '') : '';
+                      const cDisplayMain = cName && !cName.startsWith('@') ? cName : (cUsername ? `@${cUsername}` : (cName || 'User'));
+                      const cShowSub = cUsername && cDisplayMain.toLowerCase().replace(/^@/, '') !== cUsername.toLowerCase();
+
                       return (
                         <div key={conv.id} className="relative group">
                           <button
@@ -814,7 +864,7 @@ export default function ChatTab(props) {
                             className={"w-full p-3 rounded-2xl flex items-center gap-3 transition text-left border " + (isSelected ? "bg-gradient-to-r from-pink-500/20 via-purple-500/10 to-transparent border-pink-500/50 shadow-md" : "bg-slate-900/40 border-slate-800/60 hover:bg-slate-900 hover:border-slate-700")}
                           >
                             <div className="relative shrink-0">
-                              <img src={cUser.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={cUser.name || cUser.username || 'User'} className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-700" />
+                              <img src={cUser.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={cDisplayMain} className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-700" />
                               {cUser.online && !conv.isGroup && (
                                 <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
                               )}
@@ -828,9 +878,9 @@ export default function ChatTab(props) {
                             <div className="flex-1 min-w-0 pr-6">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-xs font-bold text-white truncate flex items-center gap-1.5">
-                                  {cUser.name || 'User'}
-                                  {cUser.username && (
-                                    <span className="text-[10px] text-pink-400/90 font-mono font-normal">@{cUser.username.replace(/^@/, '')}</span>
+                                  {cDisplayMain}
+                                  {cShowSub && (
+                                    <span className="text-[10px] text-pink-400/90 font-mono font-normal">@{cUsername}</span>
                                   )}
                                   {cUser.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
                                   {conv.pinned && <Pin className="w-3 h-3 text-amber-400 shrink-0 fill-amber-400" />}
@@ -906,10 +956,20 @@ export default function ChatTab(props) {
 
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <h3 className="text-xs font-bold text-white truncate">{currentConv?.user?.name || 'User'}</h3>
-                                {currentConv?.user?.username && (
-                                  <span className="text-[10px] text-pink-400 font-mono font-normal">@{currentConv.user.username.replace(/^@/, '')}</span>
-                                )}
+                                {(() => {
+                                  const pName = currentConv?.user?.name || '';
+                                  const pUsername = currentConv?.user?.username ? String(currentConv.user.username).replace(/^@/, '') : '';
+                                  const pDisplay = pName && !pName.startsWith('@') ? pName : (pUsername ? `@${pUsername}` : (pName || 'User'));
+                                  const pShowSub = pUsername && pDisplay.toLowerCase().replace(/^@/, '') !== pUsername.toLowerCase();
+                                  return (
+                                    <>
+                                      <h3 className="text-xs font-bold text-white truncate">{pDisplay}</h3>
+                                      {pShowSub && (
+                                        <span className="text-[10px] text-pink-400 font-mono font-normal">@{pUsername}</span>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                                 {currentConv?.user?.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
                                 {isVipUser && (
                                   <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-0.5">
@@ -1087,15 +1147,25 @@ export default function ChatTab(props) {
                                 className={"flex flex-col " + (isMe ? "items-end" : "items-start") + " group transition"}
                               >
                                 {!isMe && (
-                                  <div className="flex items-center gap-1 mb-1 px-1">
-                                    <span className="text-[10px] font-bold text-purple-400">
-                                      {msg.senderName || msg.sender_name || currentConv.user?.name || 'User'}
-                                    </span>
-                                    {(msg.senderUsername || currentConv.user?.username) && (
-                                      <span className="text-[9px] text-slate-500 font-mono">
-                                        @{String(msg.senderUsername || currentConv.user?.username).replace(/^@/, '')}
-                                      </span>
-                                    )}
+                                  <div className="flex items-center gap-1.5 mb-1 px-1">
+                                    {(() => {
+                                      const sName = msg.senderName || msg.sender_name || currentConv.user?.name || '';
+                                      const sUser = String(msg.senderUsername || msg.sender_username || currentConv.user?.username || '').replace(/^@/, '');
+                                      const sDisplay = sName && !sName.startsWith('@') ? sName : (sUser ? `@${sUser}` : (sName || 'User'));
+                                      const sShowUser = sUser && sDisplay.toLowerCase().replace(/^@/, '') !== sUser.toLowerCase();
+                                      return (
+                                        <>
+                                          <span className="text-[10px] font-bold text-purple-400">
+                                            {sDisplay}
+                                          </span>
+                                          {sShowUser && (
+                                            <span className="text-[9px] text-pink-400/90 font-mono">
+                                              @{sUser}
+                                            </span>
+                                          )}
+                                        </>
+                                      );
+                                    })()}
                                   </div>
                                 )}
 

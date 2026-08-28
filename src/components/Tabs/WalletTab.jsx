@@ -21,8 +21,27 @@ export default function WalletTab(props) {
     referralCode,
     setIsVipModalOpen, setIsReferralRulesModalOpen,
     txHistoryList = [], setTxHistoryList = (() => {}),
-    showToast, loc, isRtl, isUserSuperAdmin
+    showToast, loc, isRtl, isUserSuperAdmin,
+    currentUser, userRole, currentUsername, isUserRayan, isVerified
   } = props;
+
+  const isStreamerUser = Boolean(
+    isVerified ||
+    isUserSuperAdmin ||
+    isUserRayan ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    currentUser?.isStreamer ||
+    currentUser?.is_streamer ||
+    currentUser?.isVerified ||
+    String(currentUsername || '').toLowerCase() === 'rayan'
+  );
+
+  React.useEffect(() => {
+    if (!isStreamerUser && (walletSubTab === 'withdraw' || walletSubTab === 'convert' || walletSubTab === 'creator')) {
+      setWalletSubTab('buy');
+    }
+  }, [isStreamerUser, walletSubTab, setWalletSubTab]);
 
   const [localConvertDiamondsInput, setLocalConvertDiamondsInput] = React.useState('');
   const convertDiamondsInput = props.convertDiamondsInput !== undefined ? props.convertDiamondsInput : localConvertDiamondsInput;
@@ -179,7 +198,7 @@ export default function WalletTab(props) {
               </div>
 
               {/* 3 GLASSMORPHISM NEON BALANCE CARDS */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <div className={`grid grid-cols-1 ${isStreamerUser ? 'sm:grid-cols-3' : 'max-w-md mx-auto'} gap-3 pt-2`}>
                 
                 {/* 🪙 COINS CARD (GOLD THEME) */}
                 <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-950/80 via-amber-900/40 to-slate-950 border border-amber-500/50 shadow-[0_0_25px_rgba(245,158,11,0.2)] flex flex-col justify-between space-y-3">
@@ -195,58 +214,62 @@ export default function WalletTab(props) {
                   </div>
                   <button 
                     onClick={() => setWalletSubTab('buy')}
-                    className="w-full py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md"
+                    className="w-full py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md font-bold"
                   >
                     {window.loc('➕ Buy Coins (خرید سکه)', '➕ Buy Coins')}
                   </button>
                 </div>
 
-                {/* 💎 DIAMONDS CARD (BLUE THEME) */}
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-950/80 via-blue-900/40 to-slate-950 border border-cyan-500/50 shadow-[0_0_25px_rgba(6,182,212,0.2)] flex flex-col justify-between space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-cyan-400" /> {window.loc('💎 Diamonds (الماس)', '💎 Diamonds')}
-                    </span>
-                    <span className="text-xs bg-cyan-500/25 text-cyan-200 border border-cyan-400/40 font-bold px-2 py-0.5 rounded-full border border-cyan-500/30">{window.loc('درآمد استریمر', 'Streamer income')}</span>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-black text-white font-mono">{userDiamonds.toLocaleString()}</p>
-                    <span className="text-xs text-slate-200 block mt-0.5">{window.loc('ارزش تبدیل نقد: ≈ $', 'Cash conversion value: ≈ $')}{(userDiamonds / 100).toFixed(2)} USDT</span>
-                  </div>
-                  <button 
-                    onClick={() => setWalletSubTab('convert')}
-                    className="w-full py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs transition shadow-md"
-                  >
-                    {window.loc('🔄 Convert (تبدیل درآمد)', '🔄 Convert')}
-                  </button>
-                </div>
+                {isStreamerUser && (
+                  <>
+                    {/* 💎 DIAMONDS CARD (BLUE THEME) */}
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-950/80 via-blue-900/40 to-slate-950 border border-cyan-500/50 shadow-[0_0_25px_rgba(6,182,212,0.2)] flex flex-col justify-between space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                          <Sparkles className="w-4 h-4 text-cyan-400" /> {window.loc('💎 Diamonds (الماس)', '💎 Diamonds')}
+                        </span>
+                        <span className="text-xs bg-cyan-500/25 text-cyan-200 border border-cyan-400/40 font-bold px-2 py-0.5 rounded-full border border-cyan-500/30">{window.loc('درآمد استریمر', 'Streamer income')}</span>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-black text-white font-mono">{userDiamonds.toLocaleString()}</p>
+                        <span className="text-xs text-slate-200 block mt-0.5">{window.loc('ارزش تبدیل نقد: ≈ $', 'Cash conversion value: ≈ $')}{(userDiamonds / 100).toFixed(2)} USDT</span>
+                      </div>
+                      <button 
+                        onClick={() => setWalletSubTab('convert')}
+                        className="w-full py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs transition shadow-md"
+                      >
+                        {window.loc('🔄 Convert (تبدیل درآمد)', '🔄 Convert')}
+                      </button>
+                    </div>
 
-                {/* 💵 CASH BALANCE CARD (GREEN THEME) */}
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-950/80 via-teal-900/40 to-slate-950 border border-emerald-500/50 shadow-[0_0_25px_rgba(16,185,129,0.2)] flex flex-col justify-between space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                      <DollarSign className="w-4 h-4 text-emerald-400" /> {window.loc('💵 Cash Balance (موجودی نقد)', '💵 Cash Balance')}
-                    </span>
-                    <span className="text-xs bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">{window.loc('قابل برداشت', 'removable')}</span>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-black text-emerald-400 font-mono">${userCashBalance.toFixed(2)} <span className="text-xs font-bold text-slate-300">USDT</span></p>
-                    <span className="text-xs text-slate-200 block mt-0.5">{window.loc('آماده واریز مستقیم به TRC20', 'Ready to direct deposit to TRC20')}</span>
-                  </div>
-                  <button 
-                    onClick={() => setWalletSubTab('withdraw')}
-                    className="w-full py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-md"
-                  >
-                    {window.loc('💸 Withdraw (برداشت وجه)', '💸 Withdraw')}
-                  </button>
-                </div>
+                    {/* 💵 CASH BALANCE CARD (GREEN THEME) */}
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-950/80 via-teal-900/40 to-slate-950 border border-emerald-500/50 shadow-[0_0_25px_rgba(16,185,129,0.2)] flex flex-col justify-between space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                          <DollarSign className="w-4 h-4 text-emerald-400" /> {window.loc('💵 Cash Balance (موجودی نقد)', '💵 Cash Balance')}
+                        </span>
+                        <span className="text-xs bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">{window.loc('قابل برداشت', 'removable')}</span>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-black text-emerald-400 font-mono">${userCashBalance.toFixed(2)} <span className="text-xs font-bold text-slate-300">USDT</span></p>
+                        <span className="text-xs text-slate-200 block mt-0.5">{window.loc('آماده واریز مستقیم به TRC20', 'Ready to direct deposit to TRC20')}</span>
+                      </div>
+                      <button 
+                        onClick={() => setWalletSubTab('withdraw')}
+                        className="w-full py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-md"
+                      >
+                        {window.loc('💸 Withdraw (برداشت وجه)', '💸 Withdraw')}
+                      </button>
+                    </div>
+                  </>
+                )}
 
               </div>
             </div>
             </VisualSectionWrapper>
 
-            {/* 2. FOUR MAIN BIG ACTION BUTTONS */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            {/* 2. MAIN BIG ACTION BUTTONS */}
+            <div className={`grid grid-cols-2 ${isStreamerUser ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3 text-xs`}>
               <button
                 onClick={() => setWalletSubTab('buy')}
                 className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'buy' ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-amber-500/50'}`}
@@ -269,16 +292,18 @@ export default function WalletTab(props) {
                 <span className="text-xs text-slate-200">{window.loc('ارسال هدیه به استریمرها', 'Send gifts to streamers')}</span>
               </button>
 
-              <button
-                onClick={() => setWalletSubTab('withdraw')}
-                className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'withdraw' ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-emerald-500/50'}`}
-              >
-                <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition">
-                  <ArrowUpRight className="w-6 h-6" />
-                </div>
-                <span className="font-black text-sm">💸 Withdraw</span>
-                <span className="text-xs text-slate-200">{window.loc('تسویه و برداشت درآمد به TRC20', 'Settlement and withdrawal of income to TRC20')}</span>
-              </button>
+              {isStreamerUser && (
+                <button
+                  onClick={() => setWalletSubTab('withdraw')}
+                  className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'withdraw' ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-emerald-500/50'}`}
+                >
+                  <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition">
+                    <ArrowUpRight className="w-6 h-6" />
+                  </div>
+                  <span className="font-black text-sm">💸 Withdraw</span>
+                  <span className="text-xs text-slate-200">{window.loc('تسویه و برداشت درآمد به TRC20', 'Settlement and withdrawal of income to TRC20')}</span>
+                </button>
+              )}
 
               <button
                 onClick={() => setWalletSubTab('history')}
@@ -297,15 +322,17 @@ export default function WalletTab(props) {
               {[
                 { id: 'overview', label: window.loc('💰 Balance (نمای کلی)', '💰 Balance (Overview)') },
                 { id: 'buy', label: window.loc('🪙 Buy Coins (خرید سکه)', '🪙 Buy Coins') },
-                { id: 'convert', label: window.loc('💎 Convert (تبدیل درآمد)', '💎 Convert') },
-                { id: 'withdraw', label: window.loc('💸 Withdraw (برداشت)', '💸 Withdraw') },
+                { id: 'convert', label: window.loc('💎 Convert (تبدیل درآمد)', '💎 Convert'), streamerOnly: true },
+                { id: 'withdraw', label: window.loc('💸 Withdraw (برداشت)', '💸 Withdraw'), streamerOnly: true },
                 { id: 'history', label: window.loc('📜 Transactions (تاریخچه)', '📜 Transactions (History)') },
-                { id: 'creator', label: window.loc('🏆 Creator Earnings (درآمد)', '🏆 Creator Earnings') },
+                { id: 'creator', label: window.loc('🏆 Creator Earnings (درآمد)', '🏆 Creator Earnings'), streamerOnly: true },
                 { id: 'referral', label: window.loc('👥 Referral (دعوت دوستان)', '👥 Referral') },
                 { id: 'vip', label: window.loc('👑 VIP Premium (اشتراک VIP)', '👑 VIP Premium (VIP membership)') },
-                { id: 'security', label: window.loc('🔒 Security (امنیت و برداشت)', '🔒 Security') },
+                { id: 'security', label: window.loc('🔒 Security (امنیت)', '🔒 Security') },
                 { id: 'giftshop', label: window.loc('🎁 Gift Shop (فروشگاه)', '🎁 Gift Shop') }
-              ].map(tab => (
+              ]
+              .filter(tab => !tab.streamerOnly || isStreamerUser)
+              .map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setWalletSubTab(tab.id)}
@@ -513,7 +540,7 @@ export default function WalletTab(props) {
             )}
 
             {/* SUB-TAB 3: CONVERT DIAMONDS */}
-            {walletSubTab === 'convert' && (
+            {walletSubTab === 'convert' && isStreamerUser && (
               <div className="space-y-4 text-xs">
                 <div className="p-5 rounded-3xl bg-slate-950 border border-cyan-500/40 space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -573,7 +600,7 @@ export default function WalletTab(props) {
             )}
 
             {/* SUB-TAB 4: WITHDRAW */}
-            {walletSubTab === 'withdraw' && (
+            {walletSubTab === 'withdraw' && isStreamerUser && (
               <div className="space-y-5 text-xs">
                 
                 {/* WITHDRAWAL FORM */}
@@ -717,7 +744,7 @@ export default function WalletTab(props) {
             )}
 
             {/* SUB-TAB 6: REDESIGNED ULTIMATE CREATOR STUDIO (20 FEATURES) */}
-            {walletSubTab === 'creator' && (
+            {walletSubTab === 'creator' && isStreamerUser && (
               <div className="space-y-6 animate-fadeIn text-xs" dir={isRtl ? "rtl" : "ltr"}>
                 
                 {/* 1. TOP HEADER & VERIFICATION BADGE BANNER */}

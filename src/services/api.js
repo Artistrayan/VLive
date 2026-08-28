@@ -860,72 +860,66 @@ export async function getOrCreateConversation(userAId, userBId) {
   }
 }
 
-// Helper to format clean display name (not raw numeric Telegram IDs or UUIDs)
+// Helper to format clean display name (shows real name or username handle)
 export function formatUserDisplayName(prof, fallbackId) {
   if (!prof && !fallbackId) return 'کاربر';
+  const usernameHandle = prof?.username_handle && typeof prof.username_handle === 'string' ? prof.username_handle.trim().replace(/^@/, '') : '';
+  const username = prof?.username && typeof prof.username === 'string' ? prof.username.trim().replace(/^@/, '') : '';
   const name = prof?.name && typeof prof.name === 'string' ? prof.name.trim() : '';
-  const usernameHandle = prof?.username_handle && typeof prof.username_handle === 'string' ? prof.username_handle.trim() : '';
-  const username = prof?.username && typeof prof.username === 'string' ? prof.username.trim() : '';
   const telegramId = prof?.telegram_id ? String(prof.telegram_id).trim() : '';
 
-  // 1. Valid non-UUID and non-numeric name
-  if (name && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(name) && !/^\d{5,}$/.test(name)) {
+  // 1. Real custom display name (if not UUID or raw number)
+  if (name && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(name) && !/^\d{6,}$/.test(name)) {
     return name;
   }
 
   // 2. Custom username handle
-  if (usernameHandle && !/^\d{5,}$/.test(usernameHandle)) {
-    return usernameHandle.replace(/^@/, '');
+  if (usernameHandle && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(usernameHandle)) {
+    return usernameHandle;
   }
 
-  // 3. Custom username (if not pure long number)
-  if (username && !/^\d{5,}$/.test(username) && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(username)) {
-    return username.replace(/^@/, '');
+  // 3. Custom username
+  if (username && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(username)) {
+    return username;
   }
 
-  // 4. If name exists even if numeric/fallback
-  if (name) return name;
-
-  // 5. Telegram ID friendly label
-  if (telegramId) {
-    return `کاربر ${telegramId.slice(-4)}`;
-  }
-
-  // 6. Fallback ID friendly label
+  // 4. Fallback ID if passed as username/name string
   if (fallbackId) {
-    const fid = String(fallbackId).trim();
-    if (/^\d{5,}$/.test(fid)) {
-      return `کاربر ${fid.slice(-4)}`;
+    const fid = String(fallbackId).trim().replace(/^@/, '');
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(fid) && !/^\d{6,}$/.test(fid)) {
+      return fid;
     }
-    if (/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(fid)) {
-      return `کاربر ${fid.slice(0, 5)}`;
-    }
-    return fid;
   }
+
+  if (name) return name;
+  if (username) return username;
+  if (usernameHandle) return usernameHandle;
+  if (telegramId) return `user_${telegramId.slice(-4)}`;
 
   return 'کاربر';
 }
 
 // Helper to format clean username handle
 export function formatUserUsername(prof, fallbackId) {
-  if (!prof && !fallbackId) return 'user';
-  const usernameHandle = prof?.username_handle && typeof prof.username_handle === 'string' ? prof.username_handle.trim() : '';
-  const username = prof?.username && typeof prof.username === 'string' ? prof.username.trim() : '';
-  const name = prof?.name && typeof prof.name === 'string' ? prof.name.trim() : '';
+  if (!prof && !fallbackId) return '';
+  const usernameHandle = prof?.username_handle && typeof prof.username_handle === 'string' ? prof.username_handle.trim().replace(/^@/, '') : '';
+  const username = prof?.username && typeof prof.username === 'string' ? prof.username.trim().replace(/^@/, '') : '';
   const telegramId = prof?.telegram_id ? String(prof.telegram_id).trim() : '';
 
-  if (usernameHandle) return usernameHandle.replace(/^@/, '');
-  if (username && !/^\d{5,}$/.test(username)) return username.replace(/^@/, '');
-  if (name && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(name)) return name.toLowerCase().replace(/\s+/g, '_');
-  if (username) return username.replace(/^@/, '');
-  if (telegramId) return `user_${telegramId.slice(-4)}`;
+  if (usernameHandle && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(usernameHandle)) return usernameHandle;
+  if (username && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(username)) return username;
+
   if (fallbackId) {
-    const fid = String(fallbackId).trim();
-    if (/^\d{5,}$/.test(fid)) return `user_${fid.slice(-4)}`;
-    if (/^[0-9a-f]{8}/i.test(fid)) return `user_${fid.slice(0, 5)}`;
-    return fid;
+    const fid = String(fallbackId).trim().replace(/^@/, '');
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(fid) && !/^\d{6,}$/.test(fid)) {
+      return fid;
+    }
   }
-  return 'user';
+
+  if (username) return username;
+  if (usernameHandle) return usernameHandle;
+  if (telegramId) return `user_${telegramId.slice(-4)}`;
+  return '';
 }
 
 // Persistent "Delete For Me" helpers (stores deleted messages / conversations per user)

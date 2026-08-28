@@ -1131,8 +1131,10 @@ export default function ProfileTab(props) {
 
                 <button
                   onClick={() => {
-                    if (!isVerified) {
-                      showToast(window.loc('ابتدا باید درخواست استریمر شدن بدهید و توسط مدیریت تایید شوید ⚠️', 'You must first apply to become a streamer and be approved by admin ⚠️'));
+                    const isAdmin = Boolean(userRole === 'admin' || isUserRayan || currentUsername?.toLowerCase() === 'rayan' || currentUser?.role === 'admin' || currentUser?.role === 'super_admin');
+                    const canGoLive = Boolean(isVerified || isAdmin || currentUser?.isStreamer || currentUser?.is_streamer);
+                    if (!canGoLive) {
+                      showToast(window.loc('اجرای لایو زنده فقط بعد از تایید توسط ادمین امکان‌پذیر است. لطفاً ابتدا فرم درخواست استریمر را ارسال کنید ⚠️', 'Live streaming is only available after admin approval. Please submit a streamer request first ⚠️'));
                       return;
                     }
                     if (setIsHostLiveOpen) setIsHostLiveOpen(true);

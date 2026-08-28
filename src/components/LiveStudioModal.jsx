@@ -444,6 +444,29 @@ export default function LiveStudioModal({
 
   // Start Live Broadcast flow
   const handleInitiateStart = () => {
+    const isUserAdmin = Boolean(
+      currentUser?.role === 'admin' || 
+      currentUser?.role === 'super_admin' || 
+      currentUser?.isUserRayan || 
+      currentUser?.isUserSuperAdmin ||
+      String(currentUser?.username || '').toLowerCase() === 'rayan' ||
+      String(currentUsername || '').toLowerCase() === 'rayan'
+    );
+
+    const isApprovedStreamer = Boolean(
+      isUserAdmin || 
+      currentUser?.isStreamer || 
+      currentUser?.isVerifiedStreamer || 
+      currentUser?.is_streamer ||
+      currentUser?.isVerified ||
+      currentUser?.user_type === 'STREAMER'
+    );
+
+    if (!isApprovedStreamer) {
+      showToast(window.loc('اجرای لایو زنده فقط بعد از تایید توسط ادمین امکان‌پذیر است. لطفاً ابتدا فرم درخواست استریمر را ارسال کنید ⚠️', 'Live streaming is only available after admin approval. Please submit a streamer request first ⚠️'));
+      return;
+    }
+
     if (!liveTitle.trim()) {
       showToast(window.loc('⚠️ لطفاً عنوان لایواستریم را وارد نمایید', '⚠️ Please enter the title of the live stream'));
       return;
