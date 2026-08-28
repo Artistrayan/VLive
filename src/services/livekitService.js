@@ -759,19 +759,10 @@ export class LiveKitManager {
       if (typeof track.attach === 'function') {
         track.attach(element);
       } else if (typeof MediaStream !== 'undefined' && track instanceof MediaStream) {
-        if (element.srcObject !== track) {
-          element.srcObject = track;
-          element.play().catch(() => {});
-        }
+        element.srcObject = track;
+        element.play().catch(() => {});
       } else if (typeof MediaStreamTrack !== 'undefined' && track instanceof MediaStreamTrack) {
-        if (!element.srcObject || !(element.srcObject instanceof MediaStream)) {
-          element.srcObject = new MediaStream([track]);
-        } else {
-          const existingTracks = element.srcObject.getTracks();
-          if (!existingTracks.some(t => t.id === track.id)) {
-            element.srcObject.addTrack(track);
-          }
-        }
+        element.srcObject = new MediaStream([track]);
         element.play().catch(() => {});
       } else if (track.stream && track.stream instanceof MediaStream) {
         element.srcObject = track.stream;

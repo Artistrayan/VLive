@@ -377,15 +377,11 @@ export default function AdminDashboardModal(props) {
                 {[
                   { id: 'dashboard', label: window.loc('📊 داشبورد', '📊 Dashboard') },
                   { id: 'finance', label: window.loc('💵 مرکز امور مالی', '💵 Finance Center') },
-                  { id: 'economy', label: window.loc('🏦 اقتصاد و قیمت‌گذاری', '🏦 Economy & Pricing') },
                   { id: 'users', label: window.loc('👥 کاربران', '👥 Users') },
                   { id: 'live', label: window.loc('🎥 لایوها', '🎥 Live Streams') },
                   { id: 'reports', label: window.loc('💬 گزارش‌ها', '💬 Reports') },
-                  { id: 'wallet', label: window.loc('💰 کیف پول', '💰 Wallet') },
                   { id: 'gifts', label: window.loc('🎁 هدایا', '🎁 Gifts') },
                   { id: 'vip', label: window.loc('👑 VIP اشتراک', '👑 VIP Club') },
-                  { id: 'ads', label: window.loc('📢 تبلیغات', '📢 Ads & Banners') },
-                  { id: 'events', label: window.loc('🏆 مسابقات', '🏆 Events') },
                   { id: 'notifications', label: window.loc('🔔 اعلان‌ها', '🔔 Notifications') },
                   { id: 'moderation', label: window.loc('🛡 محتوا', '🛡 Moderation') },
                   { id: 'statistics', label: window.loc('📈 آمار', '📈 Statistics') },
@@ -396,9 +392,7 @@ export default function AdminDashboardModal(props) {
                   { id: 'settings', label: window.loc('⚙️ تنظیمات', '⚙️ Settings') },
                   { id: 'aicopilot', label: window.loc('✨ کوپایلوت', '✨ AI Copilot') },
                   { id: 'aimod', label: window.loc('🤖 هوش مصنوعی', '🤖 AI Mod') },
-                  { id: 'aisecurity', label: window.loc('🛡 امنیت AI', '🛡 AI Security') },
-                  { id: 'backup', label: window.loc('💾 بکاپ', '💾 Backups') },
-                  { id: 'logs', label: window.loc('📜 لاگ‌ها', '📜 System Logs') }
+                  { id: 'aisecurity', label: window.loc('🛡 امنیت AI', '🛡 AI Security') }
                 ].map(tab => {
                   const isActive = adminActiveTab === tab.id;
                   return (
@@ -1057,53 +1051,7 @@ export default function AdminDashboardModal(props) {
               )}
 
               {/* 8. ADVERTISEMENTS */}
-              {adminActiveTab === 'ads' && (
-                <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">{window.loc('۸. مدیریت تبلیغات و بنرها (Advertisements)', '8. Management of advertisements and banners (Advertisements)')}</h3>
-                  <div className="space-y-2">
-                    {adminAdsList.map(ad => (
-                      <div key={ad.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                        <div>
-                          <p className="font-bold text-white">{ad.title}</p>
-                          <span className="text-[10px] text-slate-400 block">{ad.type} {window.loc('• مکان:', 'Location:')} {ad.location} • {ad.clicks.toLocaleString()} {window.loc('کلیک', 'click')}</span>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setAdminAdsList(prev => prev.map(a => a.id === ad.id ? { ...a, status: a.status === 'Active' ? 'Paused' : 'Active' } : a));
-                            addAdminAuditLog(window.loc(`وضعیت کمپین تبلیغاتی "${ad.title}" تغییر کرد`, `وضعیت کمپین تبلیغاتی "${ad.title}" تغییر کرد`));
-                          }}
-                          className={`px-3 py-1 rounded-xl text-white font-bold text-[10px] ${ad.status === 'Active' ? 'bg-emerald-600' : 'bg-slate-700'}`}
-                        >
-                          {ad.status === 'Active' ? window.loc('فعال (Active)', 'Active') : window.loc('متوقف شده', 'stopped')}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
-              {/* 9. EVENTS */}
-              {adminActiveTab === 'events' && (
-                <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">{window.loc('۹. مدیریت مسابقات و رویدادها (Events)', '9. Management of competitions and events (Events)')}</h3>
-                  <div className="space-y-2">
-                    {adminEventsList.map(ev => (
-                      <div key={ev.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                        <div>
-                          <p className="font-bold text-white">{ev.title}</p>
-                          <span className="text-[10px] text-amber-400 block font-mono">{window.loc('مجموع جوایز:', 'Total prizes:')} {ev.prizePool} • {ev.participants} {window.loc('شرکت‌کننده', 'Participant')}</span>
-                        </div>
-                        <button
-                          onClick={() => addAdminAuditLog(window.loc(`جدول رتبه‌بندی رویداد ${ev.title} مشاهده شد`, `جدول رتبه‌بندی رویداد ${ev.title} مشاهده شد`))}
-                          className="px-3 py-1 rounded-xl bg-amber-500 text-slate-950 font-bold text-[10px]"
-                        >
-                          {window.loc('رتبه‌بندی و جوایز', 'Ratings and awards')}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* 10. NOTIFICATIONS BROADCAST */}
               {adminActiveTab === 'notifications' && (
@@ -2433,52 +2381,6 @@ export default function AdminDashboardModal(props) {
                   </div>
                 </div>
               )}
-
-              {/* 19. BACKUP & RESTORE */}
-              {adminActiveTab === 'backup' && (
-                <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">{window.loc('۱۹. تهیه نسخه پشتیبان و بازیابی (Backup & Restore)', '19. Backup & Restore')}</h3>
-                  <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
-                    <div className="flex justify-between items-center">
-                      <p className="font-bold text-cyan-300">{window.loc('لیست نسخه‌های پشتیبان ثبت‌شده', 'List of registered backups')}</p>
-                      <button
-                        onClick={() => {
-                          const newB = { id: `BK-${Date.now()}`, size: '49.8 MB', date: new Date().toLocaleString() };
-                          setAdminBackupsList(prev => [newB, ...prev]);
-                          addAdminAuditLog(window.loc(`نسخه پشتیبان جدید ${newB.id} با موفقیت ایجاد گردید`, `نسخه پشتیبان جدید ${newB.id} با موفقیت ایجاد گردید`));
-                        }}
-                        className="px-4 py-2 rounded-xl bg-cyan-600 text-white font-bold"
-                      >
-                        {window.loc('+ بکاپ‌گیری فوری', '+ Instant backup')}
-                      </button>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      {adminBackupsList.map(b => (
-                        <div key={b.id} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center text-[11px]">
-                          <span>{b.id} {window.loc('• حجم:', 'Volume:')} {b.size} {window.loc('• تاریخ:', 'Date:')} {b.date}</span>
-                          <button
-                            onClick={() => addAdminAuditLog(window.loc(`دیتابیس از روی فایل ${b.id} بازیابی گردید`, `دیتابیس از روی فایل ${b.id} بازیابی گردید`))}
-                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold"
-                          >
-                            {window.loc('بازیابی اطلاعات', 'data recovery')}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 20. SYSTEM MONITOR CENTER & AUDIT LOGS */}
-              {adminActiveTab === 'logs' && (
-                <SystemMonitorCenter
-                  addAdminAuditLog={addAdminAuditLog}
-                  showToast={showToast}
-                  loc={loc}
-                />
-              )}
-
             </div>
           </div>
         </div>

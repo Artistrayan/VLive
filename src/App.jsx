@@ -644,8 +644,8 @@ export default function App() {
             onSignalSend: (sig) => {
               apiCalls.sendCallSignal(targetPeerId, {
                 ...sig,
-                callerId: res.callerId || currentUser?.id || currentUsername,
-                receiverId: res.receiverId || targetPeerId,
+                senderId: currentUser?.id || currentUsername,
+                targetUserId: targetPeerId,
                 callId: res.callId || res.callLogId
               });
             }
@@ -721,8 +721,8 @@ export default function App() {
           onSignalSend: (sig) => {
             apiCalls.sendCallSignal(callerPeerId, {
               ...sig,
-              callerId: incomingCallObj.callerId,
-              receiverId: incomingCallObj.receiverId || currentUser?.id || currentUsername,
+              senderId: currentUser?.id || currentUsername,
+              targetUserId: callerPeerId,
               callId: incomingCallObj.callId || incomingCallObj.callLogId
             });
           }
@@ -956,12 +956,12 @@ export default function App() {
           showToast(loc('تماس متصل شد', 'Call connected'));
         } else if (payload.type === 'WEBRTC_OFFER' || payload.type === 'WEBRTC_ANSWER' || payload.type === 'WEBRTC_ICE') {
           livekitManager.handleWebRtcSignal(payload, (sig) => {
-            const targetPeer = payload.callerId || payload.targetUserId || activeCall?.user?.id;
+            const targetPeer = payload.senderId || payload.callerId || activeCall?.user?.id;
             if (targetPeer) {
               apiCalls.sendCallSignal(targetPeer, {
                 ...sig,
-                callerId: currentUser?.id || currentUsername,
-                receiverId: targetPeer
+                senderId: currentUser?.id || currentUsername,
+                targetUserId: targetPeer
               });
             }
           });

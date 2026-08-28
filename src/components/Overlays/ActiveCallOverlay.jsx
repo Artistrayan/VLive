@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Crown, Coins, Lock, Maximize2, Minimize2, Globe, Mic, MicOff, Volume2, VolumeX, Video, VideoOff, SwitchCamera, Sparkles, Gift, Disc, PhoneCall, VolumeCheck } from 'lucide-react';
+import { Crown, Coins, Lock, Maximize2, Minimize2, Globe, Mic, MicOff, Volume2, VolumeX, Video, VideoOff, SwitchCamera, Sparkles, Gift, Disc, PhoneCall } from 'lucide-react';
 import { livekitManager } from '../../services/livekitService';
 
 export default function ActiveCallOverlay({
