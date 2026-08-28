@@ -791,14 +791,17 @@ export default function App() {
     setActiveCall(prev => prev ? { ...prev, isPiP: !prev.isPiP } : null);
   }, []);
 
-  const handleToggleRecordCall = useCallback(() => {
-    setActiveCall(prev => prev ? { ...prev, isRecording: !prev.isRecording } : null);
-    showToast(loc('وضعیت ضبط تماس تغییر کرد', 'Call recording toggled'));
-  }, [showToast, loc]);
-
-  const handleSwitchCameraFacing = useCallback(() => {
-    showToast(loc('دوربین جابجا شد', 'Camera switched'));
-  }, [showToast, loc]);
+  const handleSwitchCameraFacing = useCallback(async () => {
+    try {
+      const res = await livekitManager.switchCamera();
+      const nextFacing = res?.facingMode || (activeCall?.facingMode === 'environment' ? 'user' : 'environment');
+      setActiveCall(prev => prev ? { ...prev, facingMode: nextFacing } : null);
+      showToast(nextFacing === 'environment' ? loc('دوربین پشت فعال شد 🔄', 'Rear camera active 🔄') : loc('دوربین جلو فعال شد 🔄', 'Front camera active 🔄'));
+    } catch (err) {
+      console.warn('Switch camera facing error:', err);
+      showToast(loc('خطا در تغییر دوربین', 'Failed to switch camera'));
+    }
+  }, [activeCall, showToast, loc]);
 
   const handleToggleBeautyFilter = useCallback(() => {
     showToast(loc('فیلتر زیبایی فعال شد', 'Beauty filter toggled'));
@@ -3280,7 +3283,7 @@ export default function App() {
         })()}
       
       {/* ==================== ACTIVE CALL OVERLAY & PIP FLOATING CARD ==================== */}
-      <ActiveCallOverlay activeCall={activeCall} isRtl={isRtl} loc={loc} setIsEncryptedCertModalOpen={setIsEncryptedCertModalOpen} handleTogglePiPCall={handleTogglePiPCall} callVideoRef={callVideoRef} inCallFloatingGifts={inCallFloatingGifts} handleToggleMuteCall={handleToggleMuteCall} handleToggleSpeakerCall={handleToggleSpeakerCall} handleToggleCameraCall={handleToggleCameraCall} handleSwitchCameraFacing={handleSwitchCameraFacing} handleToggleBeautyFilter={handleToggleBeautyFilter} setIsSendGiftInChatOpen={setIsSendGiftInChatOpen} handleToggleRecordCall={handleToggleRecordCall} handleEndActiveCall={handleEndActiveCall} />
+      <ActiveCallOverlay activeCall={activeCall} isRtl={isRtl} loc={loc} setIsEncryptedCertModalOpen={setIsEncryptedCertModalOpen} handleTogglePiPCall={handleTogglePiPCall} callVideoRef={callVideoRef} inCallFloatingGifts={inCallFloatingGifts} handleToggleMuteCall={handleToggleMuteCall} handleToggleSpeakerCall={handleToggleSpeakerCall} handleToggleCameraCall={handleToggleCameraCall} handleSwitchCameraFacing={handleSwitchCameraFacing} handleToggleBeautyFilter={handleToggleBeautyFilter} setIsSendGiftInChatOpen={setIsSendGiftInChatOpen} handleEndActiveCall={handleEndActiveCall} />
 
       {/* ==================== PRE-CALL PAID TARIFF CONFIRMATION MODAL ==================== */}
       <PreCallConfirmModal preCallConfirmHost={preCallConfirmHost} isRtl={isRtl} loc={loc} userCoins={userCoins} setPreCallConfirmHost={setPreCallConfirmHost} handleStartCallDirect={handleStartCallDirect} />
@@ -4418,7 +4421,6 @@ export default function App() {
         handleSwitchCameraFacing={handleSwitchCameraFacing}
         handleToggleBeautyFilter={handleToggleBeautyFilter}
         setIsSendGiftInChatOpen={setIsSendGiftInChatOpen}
-        handleToggleRecordCall={handleToggleRecordCall}
         handleEndActiveCall={handleEndActiveCall}
       />
   

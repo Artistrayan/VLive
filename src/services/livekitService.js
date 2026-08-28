@@ -272,46 +272,79 @@ export class LiveKitManager {
 
     if (this.room && this.room.localParticipant && this.localVideoTrack) {
       try {
-        // LiveKit Room local track restart with next facing mode
         await this.localVideoTrack.restartTrack({
           facingMode: targetFacing,
           resolution: VideoPresets.h720.resolution
         });
         this.emit('camera_switched', { facingMode: targetFacing });
-        return;
+        return { facingMode: targetFacing };
       } catch (e) {
         console.warn('LiveKit localVideoTrack restartTrack failed, reacquiring stream:', e);
       }
     }
 
-    // Direct MediaStream replacement
+    // Direct MediaStream replacement for WebRTC
     if (this.localMediaStream) {
-      const oldVideoTracks = this.localMediaStream.getVideoTracks();
-      oldVideoTracks.forEach(t => t.stop());
+      try {
+        const oldVideoTracks = this.localMediaStream.getVideoTracks();
+        oldVideoTracks.forEach(t => {
+          try { t.stop(); } catch(e) {}
+          try { this.localMediaStream.removeTrack(t); } catch(e) {}
+        });
 
-      const newStream = await this.requestMediaStream(targetFacing, false);
-      const newVideoTrack = newStream.getVideoTracks()[0];
-
-      if (newVideoTrack) {
-        this.localMediaStream.addTrack(newVideoTrack);
-
-        // Replace track on WebRTC PeerConnection if active
-        if (this.peerConnection) {
-          const senders = this.peerConnection.getSenders();
-          const videoSender = senders.find(s => s.track && s.track.kind === 'video');
-          if (videoSender) {
-            videoSender.replaceTrack(newVideoTrack).catch(e => console.warn('replaceTrack error:', e));
-          }
+        let newStream;
+        try {
+          newStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: targetFacing },
+              width: { ideal: 1280, min: 640 },
+              height: { ideal: 720, min: 360 },
+              frameRate: { ideal: 30, min: 20, max: 30 }
+            }
+          });
+        } catch (strictErr) {
+          newStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: targetFacing }
+          });
         }
 
-        this.emit('camera_switched', { facingMode: targetFacing, stream: this.localMediaStream });
-        this.emit('local_tracks_published', {
-          videoTrack: newVideoTrack,
-          audioTrack: this.localMediaStream.getAudioTracks()[0],
-          stream: this.localMediaStream
-        });
+        const newVideoTrack = newStream.getVideoTracks()[0];
+        if (newVideoTrack) {
+          this.localMediaStream.addTrack(newVideoTrack);
+
+          // Replace track on WebRTC PeerConnection if active
+          if (this.peerConnection) {
+            const senders = this.peerConnection.getSenders();
+            const videoSender = senders.find(s => s.track && s.track.kind === 'video') || senders.find(s => !s.track || s.track?.kind === 'video');
+            if (videoSender) {
+              await videoSender.replaceTrack(newVideoTrack);
+              try {
+                const params = videoSender.getParameters();
+                if (!params.encodings || params.encodings.length === 0) {
+                  params.encodings = [{}];
+                }
+                params.encodings[0].maxBitrate = 1800000;
+                params.encodings[0].maxFramerate = 30;
+                params.degradationPreference = 'maintain-framerate';
+                videoSender.setParameters(params).catch(() => {});
+              } catch (paramErr) {}
+            }
+          }
+
+          this.emit('camera_switched', { facingMode: targetFacing, stream: this.localMediaStream, track: newVideoTrack });
+          this.emit('local_tracks_published', {
+            videoTrack: newVideoTrack,
+            audioTrack: this.localMediaStream.getAudioTracks()[0],
+            stream: this.localMediaStream
+          });
+          return { facingMode: targetFacing, track: newVideoTrack, stream: this.localMediaStream };
+        }
+      } catch (err) {
+        console.error('Failed to switch camera device:', err);
+        throw err;
       }
     }
+    return { facingMode: targetFacing };
   }
 
   /**

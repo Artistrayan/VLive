@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Crown, Coins, Lock, Maximize2, Minimize2, Globe, Mic, MicOff, Volume2, VolumeX, Video, VideoOff, SwitchCamera, Sparkles, Gift, Disc, PhoneCall } from 'lucide-react';
+import { Crown, Coins, Lock, Maximize2, Minimize2, Globe, Mic, MicOff, Volume2, VolumeX, Video, VideoOff, SwitchCamera, Sparkles, Gift, PhoneCall } from 'lucide-react';
 import { livekitManager } from '../../services/livekitService';
 
 export default function ActiveCallOverlay({
@@ -16,7 +16,6 @@ export default function ActiveCallOverlay({
   handleSwitchCameraFacing,
   handleToggleBeautyFilter,
   setIsSendGiftInChatOpen,
-  handleToggleRecordCall,
   handleEndActiveCall
 }) {
   const remoteVideoRef = useRef(null);
@@ -166,15 +165,11 @@ export default function ActiveCallOverlay({
         <div className="flex items-center gap-2.5">
           <div className="relative">
             <img src={partnerAvatar} alt={partnerName} className="w-10 h-10 rounded-2xl object-cover ring-2 ring-pink-500/60 shadow-lg" />
-            {activeCall.isRecording && (
-              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-rose-600 animate-ping ring-2 ring-slate-950" />
-            )}
           </div>
           <div>
             <div className="flex items-center gap-1.5">
               <h3 className="text-xs sm:text-sm font-black text-white">{partnerName}</h3>
               {activeCall.user?.isVip && <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />}
-              {activeCall.isRecording && <span className="px-1.5 py-0.2 rounded bg-rose-600 text-white text-[9px] font-mono animate-pulse">REC</span>}
             </div>
             <div className="flex items-center gap-2 text-[10px] text-emerald-400 font-mono">
               <span>{isVideo ? loc('📹 ویدیو HD زنده', '📹 Live HD video') : loc('📞 صوتی کریستالی', '📞 Crystal audio')}</span>
@@ -230,7 +225,7 @@ export default function ActiveCallOverlay({
                 style={{
                   filter: activeCall.beautyFilter ? 'brightness(1.08) contrast(1.05) saturate(1.15)' : 'none'
                 }}
-                className={`w-full h-full object-cover scale-x-[-1] ${activeCall.isCameraOff ? 'hidden' : ''}`}
+                className={`w-full h-full object-cover ${activeCall.facingMode === 'environment' ? '' : 'scale-x-[-1]'} ${activeCall.isCameraOff ? 'hidden' : ''}`}
               />
               {activeCall.isCameraOff && (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-[10px] text-slate-400 font-bold">
@@ -340,14 +335,6 @@ export default function ActiveCallOverlay({
             title={loc('ارسال هدیه وسط تماس', 'Send a gift in the middle of a call')}
           >
             <Gift className="w-5 h-5" />
-          </button>
-          {/* Record Call Button */}
-          <button
-            onClick={(e) => { e.stopPropagation(); handleToggleRecordCall(); }}
-            className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isRecording ? 'bg-rose-600 text-white border-rose-500 animate-pulse' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
-            title={loc('ضبط مکالمه', 'Record the conversation')}
-          >
-            <Disc className="w-5 h-5 text-rose-400" />
           </button>
           {/* End Call Button */}
           <button
