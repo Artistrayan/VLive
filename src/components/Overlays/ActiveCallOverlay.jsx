@@ -212,6 +212,7 @@ export default function ActiveCallOverlay({
               ref={remoteVideoRef}
               autoPlay
               playsInline
+              muted
               className="w-full h-full object-cover bg-slate-950"
             />
             {/* Local Video Picture-in-Picture Preview */}

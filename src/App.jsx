@@ -654,18 +654,6 @@ export default function App() {
           console.warn('WebRTC P2P start notice:', rtcErr.message);
         }
 
-        // 2. Join LiveKit Room if configured
-        try {
-          await livekitManager.joinRoom({
-            roomName: res.roomName,
-            username: currentUsername || 'caller',
-            role: 'call_participant',
-            metadata: { type: 'call', callType: normalizedCallType }
-          });
-        } catch (lkErr) {
-          console.warn('LiveKit room join notice:', lkErr.message);
-        }
-
         showToast(loc((normalizedCallType === 'video' ? 'تماس تصویری برقرار شد' : 'تماس صوتی برقرار شد'), (normalizedCallType + ' call connected')));
       } else {
         showToast(res?.error || loc('برقراری تماس ناموفق بود', 'Could not initiate call'));
@@ -741,18 +729,6 @@ export default function App() {
         });
       } catch (rtcErr) {
         console.warn('WebRTC receiver start notice:', rtcErr.message);
-      }
-
-      // 2. Join LiveKit Room if configured
-      try {
-        await livekitManager.joinRoom({
-          roomName: incomingCallObj.roomName,
-          username: currentUsername || 'receiver',
-          role: 'call_participant',
-          metadata: { type: 'call', callType: normalizedCallType }
-        });
-      } catch (lkErr) {
-        console.warn('LiveKit join room notice:', lkErr.message);
       }
 
       showToast(loc('تماس متصل شد', 'Call connected'));

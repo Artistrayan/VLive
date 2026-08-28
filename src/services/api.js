@@ -1743,30 +1743,43 @@ export const apiVip = {
 // ==========================================
 // 9. CALLS SERVICE (Real WebRTC Signaling & Billing)
 // ==========================================
+const activeSignalChannels = new Map();
+
 function sendCallSignal(targetId, signalPayload) {
   if (!targetId) return;
   try {
     const channelName = `user_call_signal_${targetId}`;
+    
+    // Send using existing channel if it's already created
+    if (activeSignalChannels.has(channelName)) {
+      const channel = activeSignalChannels.get(channelName);
+      if (channel.state === 'joined') {
+        channel.send({
+          type: 'broadcast',
+          event: 'call_signal',
+          payload: signalPayload
+        }).catch(err => console.warn('Signal send promise error:', err));
+        return;
+      }
+    }
+
     const sigChannel = supabase.channel(channelName, {
       config: { broadcast: { ack: true, self: true } }
     });
+    
+    activeSignalChannels.set(channelName, sigChannel);
+
     sigChannel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         try {
-          const res = sigChannel.send({
+          sigChannel.send({
             type: 'broadcast',
             event: 'call_signal',
             payload: signalPayload
-          });
-          if (res && typeof res.then === 'function') {
-            res.catch(err => console.warn('Signal send promise error:', err));
-          }
+          }).catch(err => console.warn('Signal send promise error:', err));
         } catch (sendErr) {
           console.warn('Signal send throw:', sendErr);
         }
-        setTimeout(() => {
-          try { supabase.removeChannel(sigChannel); } catch {}
-        }, 4000);
       }
     });
   } catch (err) {
