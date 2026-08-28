@@ -841,22 +841,32 @@ export default function App() {
       if (!prev) return null;
       const nextMuted = !prev.isMuted;
       livekitManager.toggleAudio(!nextMuted);
+      livekitManager.toggleMicrophone(!nextMuted);
+      showToast(nextMuted ? loc('میکروفون شما قطع شد 🔇', 'Your microphone is muted 🔇') : loc('میکروفون شما فعال شد 🎙️', 'Your microphone is on 🎙️'));
       return { ...prev, isMuted: nextMuted };
     });
-  }, []);
+  }, [showToast, loc]);
 
   const handleToggleCameraCall = useCallback(() => {
     setActiveCall(prev => {
       if (!prev) return null;
       const nextCameraOff = !prev.isCameraOff;
       livekitManager.toggleVideo(!nextCameraOff);
+      livekitManager.toggleCamera(!nextCameraOff);
+      showToast(nextCameraOff ? loc('دوربین شما خاموش شد 📷', 'Your camera is off 📷') : loc('دوربین شما روشن شد 📹', 'Your camera is on 📹'));
       return { ...prev, isCameraOff: nextCameraOff };
     });
-  }, []);
+  }, [showToast, loc]);
 
   const handleToggleSpeakerCall = useCallback(() => {
-    setActiveCall(prev => prev ? { ...prev, isSpeakerOn: !prev.isSpeakerOn } : null);
-  }, []);
+    setActiveCall(prev => {
+      if (!prev) return null;
+      const nextSpeakerOn = prev.isSpeakerOn === false;
+      livekitManager.toggleIncomingAudio(nextSpeakerOn);
+      showToast(nextSpeakerOn ? loc('صدای ورودی (اسپیکر) فعال شد 🔊', 'Incoming speaker audio enabled 🔊') : loc('صدای ورودی (اسپیکر) قطع شد 🔇', 'Incoming speaker audio muted 🔇'));
+      return { ...prev, isSpeakerOn: nextSpeakerOn };
+    });
+  }, [showToast, loc]);
 
   const handleTogglePiPCall = useCallback(() => {
     setActiveCall(prev => prev ? { ...prev, isPiP: !prev.isPiP } : null);

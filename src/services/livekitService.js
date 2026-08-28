@@ -1019,6 +1019,37 @@ export class LiveKitManager {
     this.emit('microphone_toggled', { enabled });
   }
 
+  /**
+   * Toggle Incoming Audio (Speaker / Mute incoming sound)
+   */
+  toggleIncomingAudio(enabled) {
+    if (this.remoteMediaStream) {
+      this.remoteMediaStream.getAudioTracks().forEach(t => {
+        t.enabled = enabled;
+      });
+    }
+    if (this.room && this.room.remoteParticipants) {
+      this.room.remoteParticipants.forEach(participant => {
+        if (participant.audioTracks) {
+          participant.audioTracks.forEach(pub => {
+            if (pub.track) {
+              if (enabled) {
+                pub.track.unmute?.();
+              } else {
+                pub.track.mute?.();
+              }
+            }
+          });
+        }
+      });
+    }
+    this.emit('speaker_toggled', { enabled });
+  }
+
+  toggleSpeaker(enabled) {
+    return this.toggleIncomingAudio(enabled);
+  }
+
   async toggleVideo(enabled) {
     if (this.room && this.room.localParticipant) {
       try {

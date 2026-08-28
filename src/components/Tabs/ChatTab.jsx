@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { VerifiedBadge } from '../CommonBadges';
 import { supabase } from '../../supabaseClient';
-import { apiMessages, apiHome, getUserId, presenceService, calculateAge, getCanonicalConversationId } from '../../services/api';
+import { apiMessages, apiHome, getUserId, presenceService, calculateAge, getCanonicalConversationId, formatUserDisplayName, formatUserUsername } from '../../services/api';
 import { 
   Search, Plus, Filter, MessageSquare, PhoneCall, Video, Pin, BellOff, Trash2, 
   CheckCheck, Send, Mic, Image, Paperclip, Smile, Gift, Sparkles, X, ChevronRight,
@@ -220,15 +220,15 @@ export default function ChatTab(props) {
 
     if (!found) {
       const allUsers = activeUsersList && activeUsersList.length > 0 ? activeUsersList : (propUsersList || []);
-      const targetUser = allUsers.find(u => String(u.id).trim() === aid || String(u.username).trim().toLowerCase() === aid.toLowerCase());
+      const targetUser = allUsers.find(u => String(u.id).trim() === aid || String(u.username).trim().toLowerCase() === aid.toLowerCase() || String(u.telegram_id || '').trim() === aid);
       if (targetUser) {
         found = {
           id: activeConversationId,
           partner_id: targetUser.id,
           user: {
             id: targetUser.id,
-            username: targetUser.username || String(targetUser.id),
-            name: targetUser.name || targetUser.username || 'Member',
+            username: formatUserUsername(targetUser, targetUser.id),
+            name: formatUserDisplayName(targetUser, targetUser.id),
             avatar: targetUser.avatar || '',
             isVerified: targetUser.isVerified || targetUser.is_verified || false,
             isStreamer: targetUser.isStreamer || targetUser.is_streamer || false,
@@ -246,8 +246,8 @@ export default function ChatTab(props) {
           partner_id: activeConversationId,
           user: {
             id: activeConversationId,
-            username: String(activeConversationId),
-            name: String(activeConversationId).length > 20 ? `Member ${String(activeConversationId).slice(0, 6)}` : String(activeConversationId),
+            username: formatUserUsername(null, activeConversationId),
+            name: formatUserDisplayName(null, activeConversationId),
             avatar: '',
             online: true,
             role: 'Member'
@@ -332,11 +332,17 @@ export default function ChatTab(props) {
         const msgs = await apiMessages.getMessages(activeConversationId, partnerId);
         if (isMounted && Array.isArray(msgs)) {
           const formatted = msgs.map(m => {
-            const senderUser = activeUsersList?.find(u => String(u.id) === String(m.sender_id) || String(u.username) === String(m.sender_id));
+            const senderUser = activeUsersList?.find(u => String(u.id) === String(m.sender_id) || String(u.username) === String(m.sender_id) || String(u.telegram_id || '') === String(m.sender_id));
+            const sName = m.sender_name || m.senderName || (senderUser ? formatUserDisplayName(senderUser, m.sender_id) : formatUserDisplayName(null, m.sender_id));
+            const sUsername = m.sender_username || m.senderUsername || (senderUser ? formatUserUsername(senderUser, m.sender_id) : formatUserUsername(null, m.sender_id));
             return {
               id: m.id || `msg_${Date.now()}_${Math.random()}`,
               sender: (m.sender_id === currentUid || m.sender === 'me') ? 'me' : 'them',
-              senderName: senderUser ? (senderUser.name || senderUser.username) : m.sender_name,
+              senderName: sName,
+              sender_name: sName,
+              senderUsername: sUsername,
+              sender_username: sUsername,
+              senderAvatar: m.sender_avatar || senderUser?.avatar || '',
               sender_id: m.sender_id,
               text: m.content || m.message_text || m.text || '',
               content: m.content || m.message_text || m.text || '',
@@ -821,8 +827,11 @@ export default function ChatTab(props) {
 
                             <div className="flex-1 min-w-0 pr-6">
                               <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs font-bold text-white truncate flex items-center gap-1">
-                                  {cUser.name || cUser.username || 'User'}
+                                <span className="text-xs font-bold text-white truncate flex items-center gap-1.5">
+                                  {cUser.name || 'User'}
+                                  {cUser.username && (
+                                    <span className="text-[10px] text-pink-400/90 font-mono font-normal">@{cUser.username.replace(/^@/, '')}</span>
+                                  )}
                                   {cUser.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
                                   {conv.pinned && <Pin className="w-3 h-3 text-amber-400 shrink-0 fill-amber-400" />}
                                 </span>
@@ -848,19 +857,20 @@ export default function ChatTab(props) {
                           <button 
                             onClick={async (e) => {
                               e.stopPropagation();
-                              if (window.confirm(window.loc('آیا از حذف این گفتگو اطمینان دارید؟', 'Are you sure you want to delete this conversation?'))) {
-                                const res = await apiChats.deleteConversation(conv.id);
-                                if (res.success) {
+                              if (window.confirm(window.loc('آیا از حذف این گفتگو برای خود اطمینان دارید؟', 'Are you sure you want to delete this conversation for yourself?'))) {
+                                const currentUid = getUserId() || currentUser?.id;
+                                const res = await apiMessages.deleteConversation(conv.id, currentUid);
+                                if (res && res.success) {
                                   setConversations(prev => prev.filter(c => c.id !== conv.id));
                                   if (activeConversationId === conv.id) setActiveConversationId(null);
-                                  showToast(window.loc('گفتگو حذف شد', 'Conversation deleted'));
+                                  showToast(window.loc('گفتگو برای شما حذف شد 🗑️', 'Conversation deleted for you 🗑️'));
                                 } else {
                                   showToast(window.loc('خطا در حذف گفتگو', 'Failed to delete conversation'));
                                 }
                               }
                             }}
                             className="absolute top-1/2 -translate-y-1/2 right-2 p-1.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition opacity-0 group-hover:opacity-100"
-                            title={window.loc('حذف گفتگو', 'Delete conversation')}
+                            title={window.loc('حذف گفتگو برای من', 'Delete conversation for me')}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -896,7 +906,10 @@ export default function ChatTab(props) {
 
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <h3 className="text-xs font-bold text-white truncate">{currentConv?.user?.name || currentConv?.user?.username || 'User'}</h3>
+                                <h3 className="text-xs font-bold text-white truncate">{currentConv?.user?.name || 'User'}</h3>
+                                {currentConv?.user?.username && (
+                                  <span className="text-[10px] text-pink-400 font-mono font-normal">@{currentConv.user.username.replace(/^@/, '')}</span>
+                                )}
                                 {currentConv?.user?.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
                                 {isVipUser && (
                                   <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-0.5">
@@ -1073,11 +1086,18 @@ export default function ChatTab(props) {
                                 key={msg.id} 
                                 className={"flex flex-col " + (isMe ? "items-end" : "items-start") + " group transition"}
                               >
-                                {msg.senderName && !isMe ? (
-                                  <span className="text-[9px] font-bold text-purple-400 mb-0.5 px-1">{msg.senderName}</span>
-                                ) : (!isMe && (
-                                  <span className="text-[9px] font-bold text-purple-400 mb-0.5 px-1">{currentConv.user?.name || currentConv.user?.username || currentConv.name || 'User'}</span>
-                                ))}
+                                {!isMe && (
+                                  <div className="flex items-center gap-1 mb-1 px-1">
+                                    <span className="text-[10px] font-bold text-purple-400">
+                                      {msg.senderName || msg.sender_name || currentConv.user?.name || 'User'}
+                                    </span>
+                                    {(msg.senderUsername || currentConv.user?.username) && (
+                                      <span className="text-[9px] text-slate-500 font-mono">
+                                        @{String(msg.senderUsername || currentConv.user?.username).replace(/^@/, '')}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
 
                                 <div className="relative group max-w-[82%]">
                                   <div 
@@ -1226,26 +1246,22 @@ export default function ChatTab(props) {
                                     </button>
                                     <button 
                                       onClick={async () => {
+                                        const msgIdToDelete = msg.id;
                                         setConversations(prev => prev.map(c => {
-                                          if (c.id === activeConversationId) {
+                                          if (c.id === activeConversationId || String(c.id) === String(activeConversationId)) {
                                             return {
                                               ...c,
-                                              messages: c.messages.filter(m => m.id !== msg.id)
+                                              messages: (c.messages || []).filter(m => m.id !== msgIdToDelete)
                                             };
                                           }
                                           return c;
                                         }));
-                                        showToast(window.loc('پیام حذف شد 🗑️', 'The message was deleted 🗑️'));
-                                        if (msg.id && typeof msg.id !== 'string' || !String(msg.id).startsWith('msg_')) {
-                                          apiMessages.deleteMessage(msg.id).then(res => {
-                                            if (res && !res.success) {
-                                              console.warn("Could not delete message on server:", res.error);
-                                            }
-                                          });
-                                        }
+                                        showToast(window.loc('پیام برای شما حذف شد 🗑️', 'Message deleted for you 🗑️'));
+                                        const currentUid = getUserId() || currentUser?.id;
+                                        await apiMessages.deleteMessage(msgIdToDelete, currentUid);
                                       }}
-                                      className="text-rose-400 hover:text-rose-300 font-bold"
-                                      title={window.loc('حذف پیام', 'Delete message')}
+                                      className="text-rose-400 hover:text-rose-300 font-bold p-0.5"
+                                      title={window.loc('حذف برای من', 'Delete for me')}
                                     >
                                       🗑️
                                     </button>

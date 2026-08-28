@@ -860,6 +860,125 @@ export async function getOrCreateConversation(userAId, userBId) {
   }
 }
 
+// Helper to format clean display name (not raw numeric Telegram IDs or UUIDs)
+export function formatUserDisplayName(prof, fallbackId) {
+  if (!prof && !fallbackId) return 'کاربر';
+  const name = prof?.name && typeof prof.name === 'string' ? prof.name.trim() : '';
+  const usernameHandle = prof?.username_handle && typeof prof.username_handle === 'string' ? prof.username_handle.trim() : '';
+  const username = prof?.username && typeof prof.username === 'string' ? prof.username.trim() : '';
+  const telegramId = prof?.telegram_id ? String(prof.telegram_id).trim() : '';
+
+  // 1. Valid non-UUID and non-numeric name
+  if (name && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(name) && !/^\d{5,}$/.test(name)) {
+    return name;
+  }
+
+  // 2. Custom username handle
+  if (usernameHandle && !/^\d{5,}$/.test(usernameHandle)) {
+    return usernameHandle.replace(/^@/, '');
+  }
+
+  // 3. Custom username (if not pure long number)
+  if (username && !/^\d{5,}$/.test(username) && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(username)) {
+    return username.replace(/^@/, '');
+  }
+
+  // 4. If name exists even if numeric/fallback
+  if (name) return name;
+
+  // 5. Telegram ID friendly label
+  if (telegramId) {
+    return `کاربر ${telegramId.slice(-4)}`;
+  }
+
+  // 6. Fallback ID friendly label
+  if (fallbackId) {
+    const fid = String(fallbackId).trim();
+    if (/^\d{5,}$/.test(fid)) {
+      return `کاربر ${fid.slice(-4)}`;
+    }
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(fid)) {
+      return `کاربر ${fid.slice(0, 5)}`;
+    }
+    return fid;
+  }
+
+  return 'کاربر';
+}
+
+// Helper to format clean username handle
+export function formatUserUsername(prof, fallbackId) {
+  if (!prof && !fallbackId) return 'user';
+  const usernameHandle = prof?.username_handle && typeof prof.username_handle === 'string' ? prof.username_handle.trim() : '';
+  const username = prof?.username && typeof prof.username === 'string' ? prof.username.trim() : '';
+  const name = prof?.name && typeof prof.name === 'string' ? prof.name.trim() : '';
+  const telegramId = prof?.telegram_id ? String(prof.telegram_id).trim() : '';
+
+  if (usernameHandle) return usernameHandle.replace(/^@/, '');
+  if (username && !/^\d{5,}$/.test(username)) return username.replace(/^@/, '');
+  if (name && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(name)) return name.toLowerCase().replace(/\s+/g, '_');
+  if (username) return username.replace(/^@/, '');
+  if (telegramId) return `user_${telegramId.slice(-4)}`;
+  if (fallbackId) {
+    const fid = String(fallbackId).trim();
+    if (/^\d{5,}$/.test(fid)) return `user_${fid.slice(-4)}`;
+    if (/^[0-9a-f]{8}/i.test(fid)) return `user_${fid.slice(0, 5)}`;
+    return fid;
+  }
+  return 'user';
+}
+
+// Persistent "Delete For Me" helpers (stores deleted messages / conversations per user)
+export function getDeletedMessageIdsForUser(userUuidOrId) {
+  if (!userUuidOrId) return new Set();
+  try {
+    const key = `vlive_deleted_msgs_${userUuidOrId}`;
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        return new Set(arr.map(String));
+      }
+    }
+  } catch (e) {}
+  return new Set();
+}
+
+export function addDeletedMessageIdForUser(userUuidOrId, messageId) {
+  if (!userUuidOrId || !messageId) return;
+  try {
+    const key = `vlive_deleted_msgs_${userUuidOrId}`;
+    const current = getDeletedMessageIdsForUser(userUuidOrId);
+    current.add(String(messageId));
+    localStorage.setItem(key, JSON.stringify(Array.from(current)));
+  } catch (e) {}
+}
+
+export function getDeletedConversationIdsForUser(userUuidOrId) {
+  if (!userUuidOrId) return new Set();
+  try {
+    const key = `vlive_deleted_convs_${userUuidOrId}`;
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        return new Set(arr.map(String));
+      }
+    }
+  } catch (e) {}
+  return new Set();
+}
+
+export function addDeletedConversationIdForUser(userUuidOrId, conversationId) {
+  if (!userUuidOrId || !conversationId) return;
+  try {
+    const key = `vlive_deleted_convs_${userUuidOrId}`;
+    const current = getDeletedConversationIdsForUser(userUuidOrId);
+    current.add(String(conversationId));
+    localStorage.setItem(key, JSON.stringify(Array.from(current)));
+  } catch (e) {}
+}
+
 export function getCanonicalConversationId(u1, u2) {
   if (!u1 && !u2) return 'conv_general';
   if (!u1) return String(u2).trim();
@@ -881,27 +1000,31 @@ export const apiMessages = {
       const userUuid = await resolveProfileUuid(uid);
       if (!userUuid) return [];
 
+      const deletedConvSet = getDeletedConversationIdsForUser(userUuid);
+      const deletedConvSetUid = getDeletedConversationIdsForUser(uid);
+      const deletedMsgSet = getDeletedMessageIdsForUser(userUuid);
+      const deletedMsgSetUid = getDeletedMessageIdsForUser(uid);
+
       // 1. Fetch conversations where user is user1_id or user2_id
       const { data: convs1 } = await supabase.from('conversations').select('*').eq('user1_id', userUuid);
       const { data: convs2 } = await supabase.from('conversations').select('*').eq('user2_id', userUuid);
 
       const allConvs = [...(convs1 || []), ...(convs2 || [])];
-      const uniqueConvs = Array.from(new Map(allConvs.map(c => [c.id, c])).values());
+      const uniqueConvs = Array.from(new Map(allConvs.map(c => [c.id, c])).values())
+        .filter(c => !deletedConvSet.has(String(c.id)) && !deletedConvSetUid.has(String(c.id)));
       if (uniqueConvs.length === 0) return [];
 
-      const partnerUuids = uniqueConvs.map(c => c.user1_id === userUuid ? c.user2_id : c.user1_id).filter(Boolean);
-
-      // 2. Fetch profiles of conversation partners
       // 2. Fetch profiles of conversation partners
       const { data: profs } = await supabase
         .from('profiles')
-        .select('id, username, name, avatar, is_streamer, is_verified, role, status, updated_at, birth_date, age, telegram_id');
+        .select('id, username, username_handle, name, avatar, is_streamer, is_verified, role, status, updated_at, birth_date, age, telegram_id');
 
       const profilesMap = new Map();
       if (Array.isArray(profs)) {
         profs.forEach(p => {
           if (p.id) profilesMap.set(String(p.id).trim(), p);
           if (p.username) profilesMap.set(String(p.username).trim().toLowerCase(), p);
+          if (p.username_handle) profilesMap.set(String(p.username_handle).trim().toLowerCase(), p);
           if (p.telegram_id) profilesMap.set(String(p.telegram_id).trim(), p);
         });
       }
@@ -922,15 +1045,18 @@ export const apiMessages = {
           .select('id, content, created_at, sender_id')
           .eq('conversation_id', conv.id)
           .order('created_at', { ascending: false })
-          .limit(1);
+          .limit(10);
 
-        if (lastMsgs && lastMsgs[0]) {
-          lastMessageText = lastMsgs[0].content || '';
-          lastMessageTime = lastMsgs[0].created_at;
+        if (Array.isArray(lastMsgs)) {
+          const visibleMsg = lastMsgs.find(m => !deletedMsgSet.has(String(m.id)) && !deletedMsgSetUid.has(String(m.id)));
+          if (visibleMsg) {
+            lastMessageText = visibleMsg.content || '';
+            lastMessageTime = visibleMsg.created_at;
+          }
         }
 
-        const resolvedUsername = prof.username || (prof.name ? prof.name.toLowerCase().replace(/\s+/g, '_') : (partnerId ? String(partnerId) : ''));
-        const resolvedName = prof.name || prof.username || resolvedUsername || 'Member';
+        const resolvedName = formatUserDisplayName(prof, partnerId);
+        const resolvedUsername = formatUserUsername(prof, partnerId);
 
         return {
           id: conv.id,
@@ -971,7 +1097,9 @@ export const apiMessages = {
     if (!uid) return [];
 
     try {
-      const userUuid = await resolveProfileUuid(uid);
+      const userUuid = (await resolveProfileUuid(uid)) || uid;
+      const deletedMsgSet = getDeletedMessageIdsForUser(userUuid);
+      const deletedMsgSetUid = getDeletedMessageIdsForUser(uid);
       let targetConvId = null;
 
       if (conversationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(conversationId))) {
@@ -1005,27 +1133,74 @@ export const apiMessages = {
         return [];
       }
 
-      return (data || []).map(m => ({
-        id: m.id,
-        conversation_id: m.conversation_id,
-        sender_id: m.sender_id,
-        content: m.content,
-        text: m.content,
-        message_text: m.content,
-        created_at: m.created_at
-      }));
+      // Filter out messages deleted for this user (Delete for me)
+      const rawMessages = (data || []).filter(m => !deletedMsgSet.has(String(m.id)) && !deletedMsgSetUid.has(String(m.id)));
+
+      // Collect distinct sender_ids to hydrate sender display names, handles and avatars
+      const senderIds = Array.from(new Set(rawMessages.map(m => m.sender_id).filter(Boolean)));
+      let senderProfilesMap = new Map();
+
+      if (senderIds.length > 0) {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, username, username_handle, name, avatar, telegram_id, role, is_verified, is_streamer')
+          .in('id', senderIds);
+
+        if (Array.isArray(profs)) {
+          profs.forEach(p => {
+            if (p.id) senderProfilesMap.set(String(p.id).trim(), p);
+            if (p.username) senderProfilesMap.set(String(p.username).trim().toLowerCase(), p);
+            if (p.username_handle) senderProfilesMap.set(String(p.username_handle).trim().toLowerCase(), p);
+            if (p.telegram_id) senderProfilesMap.set(String(p.telegram_id).trim(), p);
+          });
+        }
+      }
+
+      return rawMessages.map(m => {
+        const pKey = String(m.sender_id || '').trim();
+        const p = senderProfilesMap.get(pKey) || senderProfilesMap.get(pKey.toLowerCase()) || {};
+        const isSenderMe = (m.sender_id === userUuid || m.sender_id === uid);
+        const sName = formatUserDisplayName(p, m.sender_id);
+        const sUsername = formatUserUsername(p, m.sender_id);
+
+        return {
+          id: m.id,
+          conversation_id: m.conversation_id,
+          sender_id: m.sender_id,
+          sender: isSenderMe ? 'me' : 'them',
+          sender_name: sName,
+          senderName: sName,
+          sender_username: sUsername,
+          senderUsername: sUsername,
+          sender_avatar: p.avatar || '',
+          content: m.content,
+          text: m.content,
+          message_text: m.content,
+          created_at: m.created_at
+        };
+      });
     } catch (e) {
       console.warn('getMessages exception:', e);
       return [];
     }
   },
 
-  async deleteConversation(conversationId) {
+  async deleteConversation(conversationId, forUserId = null) {
     if (!conversationId) return { success: false };
     try {
-      await supabase.from('messages').delete().eq('conversation_id', conversationId);
-      const { error } = await supabase.from('conversations').delete().eq('id', conversationId);
-      return { success: !error };
+      let uid = forUserId || getUserId();
+      if (!uid) {
+        const { data: authData } = await supabase.auth.getUser();
+        if (authData?.user?.id) uid = authData.user.id;
+      }
+      const userUuid = uid ? ((await resolveProfileUuid(uid)) || uid) : uid;
+
+      // Delete for requester only (Delete for me)
+      if (userUuid) {
+        addDeletedConversationIdForUser(userUuid, conversationId);
+        addDeletedConversationIdForUser(uid, conversationId);
+      }
+      return { success: true };
     } catch (e) {
       console.warn('deleteConversation exception:', e);
       return { success: false, error: e.message };
@@ -1193,17 +1368,20 @@ export const apiMessages = {
     }
   },
 
-  async deleteMessage(messageId) {
+  async deleteMessage(messageId, forUserId = null) {
     if (!messageId) return { success: false, error: 'No message ID' };
     try {
-      const { error } = await supabase
-        .from('messages')
-        .delete()
-        .eq('id', messageId);
-      
-      if (error) {
-        console.warn('deleteMessage error:', error.message);
-        return { success: false, error: error.message };
+      let uid = forUserId || getUserId();
+      if (!uid) {
+        const { data: authData } = await supabase.auth.getUser();
+        if (authData?.user?.id) uid = authData.user.id;
+      }
+      const userUuid = uid ? ((await resolveProfileUuid(uid)) || uid) : uid;
+
+      // Delete for requester only (Delete for me)
+      if (userUuid) {
+        addDeletedMessageIdForUser(userUuid, messageId);
+        addDeletedMessageIdForUser(uid, messageId);
       }
       return { success: true };
     } catch (e) {
@@ -3310,3 +3488,5 @@ export const apiSupport = {
     }
   }
 };
+
+export const apiChats = apiMessages;

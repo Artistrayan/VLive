@@ -37,14 +37,17 @@ export default function ActiveCallOverlay({
       }
       if (remoteAudioRef.current) {
         livekitManager.attachTrackToElement(streamOrTrack, remoteAudioRef.current);
-        remoteAudioRef.current.volume = 1.0;
-        remoteAudioRef.current.muted = false;
-        remoteAudioRef.current.play().then(() => {
-          setAudioAutoplayBlocked(false);
-        }).catch(err => {
-          console.warn('Audio autoplay notice:', err.message);
-          setAudioAutoplayBlocked(true);
-        });
+        const isSpeakerEnabled = activeCall?.isSpeakerOn !== false;
+        remoteAudioRef.current.volume = isSpeakerEnabled ? 1.0 : 0.0;
+        remoteAudioRef.current.muted = !isSpeakerEnabled;
+        if (isSpeakerEnabled) {
+          remoteAudioRef.current.play().then(() => {
+            setAudioAutoplayBlocked(false);
+          }).catch(err => {
+            console.warn('Audio autoplay notice:', err.message);
+            setAudioAutoplayBlocked(true);
+          });
+        }
       }
     };
 
@@ -62,11 +65,14 @@ export default function ActiveCallOverlay({
         livekitManager.attachTrackToElement(track, remoteVideoRef.current);
       } else if (kind === 'audio' && remoteAudioRef.current) {
         livekitManager.attachTrackToElement(track, remoteAudioRef.current);
-        remoteAudioRef.current.volume = 1.0;
-        remoteAudioRef.current.muted = false;
-        remoteAudioRef.current.play().then(() => {
-          setAudioAutoplayBlocked(false);
-        }).catch(() => setAudioAutoplayBlocked(true));
+        const isSpeakerEnabled = activeCall?.isSpeakerOn !== false;
+        remoteAudioRef.current.volume = isSpeakerEnabled ? 1.0 : 0.0;
+        remoteAudioRef.current.muted = !isSpeakerEnabled;
+        if (isSpeakerEnabled) {
+          remoteAudioRef.current.play().then(() => {
+            setAudioAutoplayBlocked(false);
+          }).catch(() => setAudioAutoplayBlocked(true));
+        }
       }
     };
 
@@ -109,21 +115,36 @@ export default function ActiveCallOverlay({
     };
   }, [callId, isVideo]);
 
-  // Adjust audio volume when speaker mode toggles
+  // Adjust audio volume & hardware tracks when speaker/incoming audio mode toggles
   useEffect(() => {
+    const isAudioActive = activeCall?.isSpeakerOn !== false;
     if (remoteAudioRef.current) {
-      remoteAudioRef.current.volume = activeCall?.isSpeakerOn !== false ? 1.0 : 0.4;
-      remoteAudioRef.current.muted = false;
+      remoteAudioRef.current.muted = !isAudioActive;
+      remoteAudioRef.current.volume = isAudioActive ? 1.0 : 0.0;
+      if (isAudioActive) {
+        remoteAudioRef.current.play().then(() => {
+          setAudioAutoplayBlocked(false);
+        }).catch(() => {});
+      } else {
+        remoteAudioRef.current.pause();
+      }
     }
+    // Also toggle remote media tracks on WebRTC / LiveKit
+    try {
+      livekitManager.toggleIncomingAudio(isAudioActive);
+    } catch (e) {}
   }, [activeCall?.isSpeakerOn]);
 
   const handleUserTapToUnmute = () => {
     if (remoteAudioRef.current) {
-      remoteAudioRef.current.muted = false;
-      remoteAudioRef.current.volume = 1.0;
-      remoteAudioRef.current.play().then(() => {
-        setAudioAutoplayBlocked(false);
-      }).catch(() => {});
+      const isAudioActive = activeCall?.isSpeakerOn !== false;
+      if (isAudioActive) {
+        remoteAudioRef.current.muted = false;
+        remoteAudioRef.current.volume = 1.0;
+        remoteAudioRef.current.play().then(() => {
+          setAudioAutoplayBlocked(false);
+        }).catch(() => {});
+      }
     }
   };
 
@@ -284,28 +305,28 @@ export default function ActiveCallOverlay({
       <div className="z-30 p-4 bg-slate-950/95 border-t border-slate-800/80 backdrop-blur-xl flex flex-col gap-3">
         {/* Control Buttons Row */}
         <div className="flex items-center justify-around gap-2 flex-wrap">
-          {/* Mute Button */}
+          {/* Mute Mic Button */}
           <button
             onClick={(e) => { e.stopPropagation(); handleToggleMuteCall(); }}
-            className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isMuted ? 'bg-rose-600 text-white border-rose-500' : 'bg-slate-900 text-slate-200 border-slate-700 hover:border-pink-500/50'}`}
-            title="Mute/Unmute"
+            className={`p-3.5 rounded-2xl border transition active:scale-95 shadow-lg ${activeCall.isMuted ? 'bg-rose-600 text-white border-rose-500 shadow-rose-600/30' : 'bg-slate-900/90 text-slate-200 border-slate-700 hover:border-pink-500/50'}`}
+            title={activeCall.isMuted ? loc('وصل میکروفون 🎙️', 'Unmute microphone 🎙️') : loc('قطع میکروفون (بی‌صدا) 🔇', 'Mute microphone 🔇')}
           >
             {activeCall.isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </button>
-          {/* Speaker Button */}
+          {/* Speaker / Incoming Audio Button */}
           <button
             onClick={(e) => { e.stopPropagation(); handleToggleSpeakerCall(); }}
-            className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isSpeakerOn !== false ? 'bg-cyan-600 text-white border-cyan-500' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
-            title="Speaker"
+            className={`p-3.5 rounded-2xl border transition active:scale-95 shadow-lg ${activeCall.isSpeakerOn === false ? 'bg-rose-600 text-white border-rose-500 shadow-rose-600/30' : 'bg-cyan-600 text-white border-cyan-500 shadow-cyan-600/30'}`}
+            title={activeCall.isSpeakerOn === false ? loc('وصل صدای ورودی (اسپیکر) 🔊', 'Unmute incoming audio 🔊') : loc('قطع صدای ورودی (اسپیکر) 🔇', 'Mute incoming audio 🔇')}
           >
-            {activeCall.isSpeakerOn !== false ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            {activeCall.isSpeakerOn === false ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
           </button>
           {/* Camera Switch */}
           {isVideo && (
             <button
               onClick={(e) => { e.stopPropagation(); handleToggleCameraCall(); }}
-              className={`p-3.5 rounded-2xl border transition shadow-lg ${activeCall.isCameraOff ? 'bg-rose-600 text-white border-rose-500' : 'bg-slate-900 text-slate-200 border-slate-700'}`}
-              title="Turn Camera On/Off"
+              className={`p-3.5 rounded-2xl border transition active:scale-95 shadow-lg ${activeCall.isCameraOff ? 'bg-rose-600 text-white border-rose-500 shadow-rose-600/30' : 'bg-slate-900/90 text-slate-200 border-slate-700 hover:border-pink-500/50'}`}
+              title={activeCall.isCameraOff ? loc('روشن کردن دوربین 📹', 'Turn camera on 📹') : loc('خاموش کردن دوربین 📷', 'Turn camera off 📷')}
             >
               {activeCall.isCameraOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
             </button>
