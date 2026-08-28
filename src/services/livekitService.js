@@ -547,37 +547,13 @@ export class LiveKitManager {
   }
 
   /**
-   * Helper to boost SDP bandwidth and quality for WebRTC
-   */
-  _enhanceSdpBandwidth(sdp, isVideo = true) {
-    if (!sdp || typeof sdp !== 'string') return sdp;
-    const lines = sdp.split('\r\n');
-    const enhanced = [];
-    for (const line of lines) {
-      enhanced.push(line);
-      if (isVideo && line.startsWith('m=video')) {
-        enhanced.push('b=AS:2000'); // 2 Mbps for video
-        enhanced.push('b=TIAS:2000000');
-      } else if (line.startsWith('m=audio')) {
-        enhanced.push('b=AS:64'); // 64 kbps for audio
-        enhanced.push('b=TIAS:64000');
-      }
-      if (line.startsWith('a=fmtp:') && line.includes('opus')) {
-        if (!line.includes('stereo=')) {
-          enhanced[enhanced.length - 1] = line + ';stereo=1;sprop-stereo=1;maxaveragebitrate=64000;useinbandfec=1';
-        }
-      }
-    }
-    return enhanced.join('\r\n');
-  }
-
-  /**
    * Initialize Peer-to-Peer WebRTC Call (Direct Audio & Video between users)
    */
   async startWebRtcCall({ targetUserId, isVideo = true, isCaller = true, onSignalSend }) {
     this.cleanupWebRtc();
     this.currentCallTargetId = targetUserId;
     this.isCaller = isCaller;
+    this.isVideoCall = isVideo;
     this.onSignalSendCallback = onSignalSend;
 
     // 1. Acquire Local Camera / Microphone Hardware Stream
@@ -627,7 +603,7 @@ export class LiveKitManager {
       });
     }
 
-    // Emit local media stream ready
+    // Emit local media stream ready for immediate local preview
     if (this.localMediaStream) {
       const vTrack = this.localMediaStream.getVideoTracks()[0];
       const aTrack = this.localMediaStream.getAudioTracks()[0];
@@ -693,30 +669,84 @@ export class LiveKitManager {
       }
     };
 
-    // If this peer is the caller, create and send SDP Offer
-    if (isCaller) {
-      try {
-        const rawOffer = await pc.createOffer({
-          offerToReceiveAudio: true,
-          offerToReceiveVideo: isVideo
-        });
-        const boostedSdp = this._enhanceSdpBandwidth(rawOffer.sdp, isVideo);
-        const offer = { type: rawOffer.type, sdp: boostedSdp };
-        await pc.setLocalDescription(offer);
-        if (typeof this.onSignalSendCallback === 'function') {
-          this.onSignalSendCallback({
-            type: 'WEBRTC_OFFER',
-            offer: offer,
-            isVideo: isVideo,
-            targetUserId: this.currentCallTargetId
-          });
-        }
-      } catch (offErr) {
-        console.error('Error creating WebRTC Offer:', offErr);
-      }
+    // If receiver and an offer was received while pending, process it now
+    if (!isCaller && this.pendingOffer) {
+      const offerToProcess = this.pendingOffer;
+      this.pendingOffer = null;
+      await this._processWebRtcOffer(offerToProcess);
+    } else if (isCaller) {
+      await this.sendWebRtcOffer();
     }
 
     return pc;
+  }
+
+  /**
+   * Helper to create and send WebRTC SDP offer
+   */
+  async sendWebRtcOffer() {
+    const pc = this.peerConnection;
+    if (!pc) return;
+    try {
+      const offer = await pc.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: this.isVideoCall !== false
+      });
+      await pc.setLocalDescription(offer);
+      if (typeof this.onSignalSendCallback === 'function') {
+        this.onSignalSendCallback({
+          type: 'WEBRTC_OFFER',
+          offer: offer,
+          isVideo: this.isVideoCall !== false,
+          targetUserId: this.currentCallTargetId
+        });
+      }
+    } catch (err) {
+      console.error('sendWebRtcOffer error:', err);
+    }
+  }
+
+  /**
+   * Called when peer accepts call to guarantee handshake negotiation
+   */
+  async onPeerAcceptedCall() {
+    if (this.isCaller && this.peerConnection) {
+      if (this.peerConnection.signalingState === 'stable' || this.peerConnection.signalingState === 'have-local-offer') {
+        await this.sendWebRtcOffer();
+      }
+    }
+  }
+
+  /**
+   * Internal helper to process WebRTC Offer and generate Answer
+   */
+  async _processWebRtcOffer(offer) {
+    const pc = this.peerConnection;
+    if (!pc || !offer) return;
+    try {
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+      // Process any queued ICE candidates
+      while (this.iceCandidatesQueue.length > 0) {
+        const cand = this.iceCandidatesQueue.shift();
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(cand));
+        } catch (e) {}
+      }
+
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      if (typeof this.onSignalSendCallback === 'function') {
+        this.onSignalSendCallback({
+          type: 'WEBRTC_ANSWER',
+          answer: answer,
+          targetUserId: this.currentCallTargetId
+        });
+      }
+    } catch (err) {
+      console.error('Error processing WebRTC offer:', err);
+    }
   }
 
   /**
@@ -728,44 +758,18 @@ export class LiveKitManager {
 
     const pc = this.peerConnection;
     if (!pc) {
-      // If we received an offer and PC is not created yet, initialize as receiver
-      if (signal.type === 'WEBRTC_OFFER') {
-        await this.startWebRtcCall({
-          targetUserId: signal.callerId || this.currentCallTargetId,
-          isVideo: signal.isVideo !== false,
-          isCaller: false,
-          onSignalSend: this.onSignalSendCallback
-        });
-        return this.handleWebRtcSignal(signal, onSignalSend);
+      // If we received an offer before peer connection was created, cache it
+      if (signal.type === 'WEBRTC_OFFER' && signal.offer) {
+        this.pendingOffer = signal.offer;
+      } else if (signal.type === 'WEBRTC_ICE' && signal.candidate) {
+        this.iceCandidatesQueue.push(signal.candidate);
       }
       return;
     }
 
     try {
       if (signal.type === 'WEBRTC_OFFER' && signal.offer) {
-        await pc.setRemoteDescription(new RTCSessionDescription(signal.offer));
-
-        // Process any queued ICE candidates
-        while (this.iceCandidatesQueue.length > 0) {
-          const cand = this.iceCandidatesQueue.shift();
-          try {
-            await pc.addIceCandidate(new RTCIceCandidate(cand));
-          } catch (e) {}
-        }
-
-        const rawAnswer = await pc.createAnswer();
-        const isVideo = signal.isVideo !== false;
-        const boostedSdp = this._enhanceSdpBandwidth(rawAnswer.sdp, isVideo);
-        const answer = { type: rawAnswer.type, sdp: boostedSdp };
-        await pc.setLocalDescription(answer);
-
-        if (typeof this.onSignalSendCallback === 'function') {
-          this.onSignalSendCallback({
-            type: 'WEBRTC_ANSWER',
-            answer: answer,
-            targetUserId: this.currentCallTargetId
-          });
-        }
+        await this._processWebRtcOffer(signal.offer);
       } else if (signal.type === 'WEBRTC_ANSWER' && signal.answer) {
         if (pc.signalingState !== 'stable') {
           await pc.setRemoteDescription(new RTCSessionDescription(signal.answer));
@@ -808,45 +812,40 @@ export class LiveKitManager {
       this.peerConnection = null;
     }
     this.iceCandidatesQueue = [];
+    this.pendingOffer = null;
     this.remoteMediaStream = null;
   }
 
   /**
    * Helper: Attach Video/Audio Track to an HTML Media Element
    */
-  attachTrackToElement(track, element) {
-    if (!track || !element) return;
+  attachTrackToElement(trackOrStream, element) {
+    if (!trackOrStream || !element) return;
     try {
-      if (typeof track.attach === 'function') {
-        track.attach(element);
-      } else if (typeof MediaStream !== 'undefined' && track instanceof MediaStream) {
-        if (element.srcObject !== track) {
-          element.srcObject = track;
+      if (typeof trackOrStream.attach === 'function') {
+        trackOrStream.attach(element);
+        return;
+      }
+      
+      let mediaStream = null;
+      if (typeof MediaStream !== 'undefined' && trackOrStream instanceof MediaStream) {
+        mediaStream = trackOrStream;
+      } else if (typeof MediaStreamTrack !== 'undefined' && trackOrStream instanceof MediaStreamTrack) {
+        mediaStream = new MediaStream([trackOrStream]);
+      } else if (trackOrStream.stream && trackOrStream.stream instanceof MediaStream) {
+        mediaStream = trackOrStream.stream;
+      } else if (trackOrStream.mediaStream && trackOrStream.mediaStream instanceof MediaStream) {
+        mediaStream = trackOrStream.mediaStream;
+      }
+
+      if (mediaStream) {
+        if (element.srcObject !== mediaStream) {
+          element.srcObject = mediaStream;
         }
-        if (element.paused) {
+        element.onloadedmetadata = () => {
           element.play().catch(() => {});
-        }
-      } else if (typeof MediaStreamTrack !== 'undefined' && track instanceof MediaStreamTrack) {
-        if (!element.srcObject || !(element.srcObject instanceof MediaStream)) {
-          element.srcObject = new MediaStream([track]);
-        } else {
-          const stream = element.srcObject;
-          const currentTracks = stream.getTracks();
-          if (!currentTracks.some(t => t.id === track.id)) {
-            currentTracks.filter(t => t.kind === track.kind).forEach(t => stream.removeTrack(t));
-            stream.addTrack(track);
-          }
-        }
-        if (element.paused) {
-          element.play().catch(() => {});
-        }
-      } else if (track.stream && track.stream instanceof MediaStream) {
-        if (element.srcObject !== track.stream) {
-          element.srcObject = track.stream;
-        }
-        if (element.paused) {
-          element.play().catch(() => {});
-        }
+        };
+        element.play().catch(() => {});
       }
     } catch (err) {
       console.warn('Failed to attach track to element:', err);

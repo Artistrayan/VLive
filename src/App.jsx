@@ -561,16 +561,6 @@ export default function App() {
   // Call Initiation Handler
   const handleInitiateCall = useCallback((targetUser, callType = 'video') => {
     if (!targetUser) return;
-    const isCamMicGranted = safeStorage.getItem('vlive_permissions_granted') === 'true' || 
-      (safeStorage.getItem('vlive_camera_permission_granted') === 'true' && safeStorage.getItem('vlive_mic_permission_granted') === 'true');
-    
-    if (!isCamMicGranted) {
-      setPermissionsRequestedType('camera_mic');
-      setPendingPermissionAction(() => () => handleInitiateCall(targetUser, callType));
-      setIsPermissionsPromptOpen(true);
-      return;
-    }
-
     const requiredCoins = targetUser.tariffPerMin || 100;
     const normalizedCallType = (callType === 'voice' || callType === 'audio') ? 'audio' : 'video';
     setPreCallConfirmHost({
@@ -584,16 +574,6 @@ export default function App() {
 
   const handleStartCallDirect = useCallback(async (targetUser, callType = 'video') => {
     if (!targetUser) return;
-
-    const isCamMicGranted = safeStorage.getItem('vlive_permissions_granted') === 'true' || 
-      (safeStorage.getItem('vlive_camera_permission_granted') === 'true' && safeStorage.getItem('vlive_mic_permission_granted') === 'true');
-    
-    if (!isCamMicGranted) {
-      setPermissionsRequestedType('camera_mic');
-      setPendingPermissionAction(() => () => handleStartCallDirect(targetUser, callType));
-      setIsPermissionsPromptOpen(true);
-      return;
-    }
 
     const requiredCoins = targetUser.tariffPerMin || 100;
     if (!isUserSuperAdmin && userCoins < requiredCoins) {
@@ -666,16 +646,6 @@ export default function App() {
 
   const handleAcceptIncomingCall = useCallback(async (incomingCallObj) => {
     if (!incomingCallObj) return;
-
-    const isCamMicGranted = safeStorage.getItem('vlive_permissions_granted') === 'true' || 
-      (safeStorage.getItem('vlive_camera_permission_granted') === 'true' && safeStorage.getItem('vlive_mic_permission_granted') === 'true');
-    
-    if (!isCamMicGranted) {
-      setPermissionsRequestedType('camera_mic');
-      setPendingPermissionAction(() => () => handleAcceptIncomingCall(incomingCallObj));
-      setIsPermissionsPromptOpen(true);
-      return;
-    }
 
     try {
       showToast(loc('در حال اتصال تماس...', 'Connecting call...'));
@@ -951,9 +921,12 @@ export default function App() {
       const handleCallSignal = (payload) => {
         if (!payload) return;
         if (payload.type === 'INCOMING_CALL') {
+          // Discard expired/stale signals (> 45s) or if already in a call
+          if (payload.timestamp && (Date.now() - Number(payload.timestamp)) > 45000) return;
           setIncomingCall(payload);
         } else if (payload.type === 'CALL_ACCEPTED') {
           showToast(loc('تماس متصل شد', 'Call connected'));
+          livekitManager.onPeerAcceptedCall();
         } else if (payload.type === 'WEBRTC_OFFER' || payload.type === 'WEBRTC_ANSWER' || payload.type === 'WEBRTC_ICE') {
           livekitManager.handleWebRtcSignal(payload, (sig) => {
             const targetPeer = payload.senderId || payload.callerId || activeCall?.user?.id;
@@ -967,10 +940,12 @@ export default function App() {
           });
         } else if (payload.type === 'CALL_REJECTED') {
           try { livekitManager.disconnect(); } catch {}
+          setIncomingCall(null);
           setActiveCall(null);
           showToast(loc('تماس رد شد یا پاسخ داده نشد', 'Call rejected or unanswered'));
         } else if (payload.type === 'CALL_ENDED') {
           try { livekitManager.disconnect(); } catch {}
+          setIncomingCall(null);
           setActiveCall(null);
           showToast(loc('تماس به پایان رسید', 'Call ended'));
         }

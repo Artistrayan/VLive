@@ -1,5 +1,6 @@
 import React from 'react';
 import { safeStorage } from '../utils/safeStorage';
+import { apiNotifications } from '../services/api';
 import { 
   Bell, X, Check, CheckCheck, Trash2, Settings, PhoneCall, Crown, CheckCircle2,
   Gift, Heart, UserPlus, Video, DollarSign, MessageSquare, AlertCircle, Shield
@@ -120,6 +121,7 @@ export default function NotificationsModal(props) {
               <div className="flex items-center gap-1.5 justify-end">
                 <button
                   onClick={() => {
+                    apiNotifications.markAllAsRead();
                     setNotificationsList(prev => prev.map(n => ({ ...n, unread: false })));
                     showToast(window.loc('همه اعلان‌ها خوانده شدند!', 'All notices have been read!'));
                   }}
@@ -131,6 +133,7 @@ export default function NotificationsModal(props) {
                 </button>
                 <button
                   onClick={() => {
+                    apiNotifications.clearAll();
                     setNotificationsList([]);
                     showToast(window.loc('تاریخچه اعلان‌ها پاکسازی شد', 'Notification history cleared'));
                   }}
@@ -190,6 +193,9 @@ export default function NotificationsModal(props) {
                           <div
                             key={item.id}
                             onClick={() => {
+                              if (item.unread) {
+                                apiNotifications.markAsRead(item.id);
+                              }
                               setNotificationsList(prev => prev.map(n => n.id === item.id ? { ...n, unread: false } : n));
                               if (item.type === 'message' || item.type === 'chat' || item.actionType === 'open_chat') {
                                 setIsNotificationsOpen(false);

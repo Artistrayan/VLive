@@ -1911,21 +1911,6 @@ export const apiCalls = {
         sendCallSignal(tid, signalPayload);
       });
 
-      // 6. Trigger in-app notification to receiver
-      if (receiverUuid || receiverId) {
-        apiNotifications.createNotification({
-          targetUserId: receiverUuid || receiverId,
-          type: 'incoming_call',
-          title: dbCallType === 'video' ? '📹 تماس تصویری ورودی' : '📞 تماس صوتی ورودی',
-          content: `${callerProfile?.name || callerProfile?.username || 'کاربر'} در حال تماس با شماست`,
-          senderId: effectiveCallerId,
-          senderName: callerProfile?.name || 'کاربر',
-          senderUsername: callerProfile?.username || '',
-          avatar: callerProfile?.avatar || '',
-          actionType: 'open_call'
-        }).catch(() => {});
-      }
-
       return {
         success: true,
         callId: callSessionId,
@@ -2657,9 +2642,12 @@ export const apiNotifications = {
         cached = JSON.parse(safeStorage.getItem('vlive_user_notifs_v1') || '[]');
       } catch (e) {}
 
-      // Merge avoiding duplicates
+      // Merge avoiding duplicates and filter out transient incoming calls
       const merged = [...cached];
       for (const d of dbData) {
+        if (d.type === 'incoming_call' || d.metadata?.action_type === 'open_call') {
+          continue; // Skip transient incoming call rings
+        }
         if (!merged.find(m => m.id === d.id)) {
            merged.push({
             id: d.id,
@@ -2678,7 +2666,7 @@ export const apiNotifications = {
         }
       }
       
-      return merged;
+      return merged.filter(m => m.type !== 'incoming_call' && m.actionType !== 'open_call');
     } catch (e) {
       console.warn('getNotifications exception:', e);
       return [];
@@ -2796,14 +2784,23 @@ export const apiNotifications = {
     try {
       await supabase.from('notifications').update({ is_read: true }).eq('id', notificationId);
     } catch {}
+    try {
+      const cached = JSON.parse(safeStorage.getItem('vlive_user_notifs_v1') || '[]');
+      const updated = cached.map(c => c.id === notificationId ? { ...c, unread: false } : c);
+      safeStorage.setItem('vlive_user_notifs_v1', JSON.stringify(updated));
+    } catch (e) {}
   },
 
   async markAllAsRead() {
     let uid = getUserId();
+    if (!uid) {
+      const { data: authData } = await supabase.auth.getUser();
+      if (authData?.user?.id) uid = authData.user.id;
+    }
     if (!uid) return;
     try {
       const userUuid = (await resolveProfileUuid(uid)) || uid;
-      await supabase.from('notifications').update({ is_read: true }).eq('user_id', userUuid).catch(() => {});
+      await supabase.from('notifications').update({ is_read: true }).or(`user_id.eq.${userUuid},user_id.eq.${uid}`).catch(() => {});
     } catch {}
     try {
       const cached = JSON.parse(safeStorage.getItem('vlive_user_notifs_v1') || '[]');

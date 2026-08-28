@@ -49,8 +49,17 @@ export default function ActiveCallOverlay({
       }
     };
 
+    const bindLocalMedia = (streamOrTrack) => {
+      if (!streamOrTrack) return;
+      if (localVideoRef.current && isVideo) {
+        livekitManager.attachTrackToElement(streamOrTrack, localVideoRef.current);
+      }
+    };
+
     const onTrackSubscribed = ({ track, kind, stream }) => {
-      if (kind === 'video' && remoteVideoRef.current && isVideo) {
+      if (stream) {
+        bindRemoteMedia(stream);
+      } else if (kind === 'video' && remoteVideoRef.current && isVideo) {
         livekitManager.attachTrackToElement(track, remoteVideoRef.current);
       } else if (kind === 'audio' && remoteAudioRef.current) {
         livekitManager.attachTrackToElement(track, remoteAudioRef.current);
@@ -59,8 +68,6 @@ export default function ActiveCallOverlay({
         remoteAudioRef.current.play().then(() => {
           setAudioAutoplayBlocked(false);
         }).catch(() => setAudioAutoplayBlocked(true));
-      } else if (stream) {
-        bindRemoteMedia(stream);
       }
     };
 
@@ -73,12 +80,10 @@ export default function ActiveCallOverlay({
     };
 
     const onLocalTracks = ({ videoTrack, audioTrack, stream }) => {
-      if (localVideoRef.current && isVideo) {
-        if (videoTrack) {
-          livekitManager.attachTrackToElement(videoTrack, localVideoRef.current);
-        } else if (stream) {
-          livekitManager.attachTrackToElement(stream, localVideoRef.current);
-        }
+      if (stream) {
+        bindLocalMedia(stream);
+      } else if (videoTrack) {
+        bindLocalMedia(videoTrack);
       }
     };
 
@@ -92,12 +97,10 @@ export default function ActiveCallOverlay({
     }
 
     // Initial check: bind existing local stream if already present
-    if (localVideoRef.current && isVideo) {
-      if (livekitManager.localVideoTrack) {
-        livekitManager.attachTrackToElement(livekitManager.localVideoTrack, localVideoRef.current);
-      } else if (livekitManager.localMediaStream) {
-        livekitManager.attachTrackToElement(livekitManager.localMediaStream, localVideoRef.current);
-      }
+    if (livekitManager.localMediaStream) {
+      bindLocalMedia(livekitManager.localMediaStream);
+    } else if (livekitManager.localVideoTrack) {
+      bindLocalMedia(livekitManager.localVideoTrack);
     }
 
     return () => {
