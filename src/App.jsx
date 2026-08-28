@@ -2395,46 +2395,53 @@ export default function App() {
         const handleTelegramOneTapAuth = async () => {
           if (!termsAgreed) {
             setTermsAgreed(true);
+            showToast(loc('⚠️ لطفا قوانین را تایید کنید و دوباره کلیک کنید.', '⚠️ Please accept the terms and click again.'));
+            return;
           }
 
-          // Trigger Haptic Feedback
-          if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
-          }
-          const initData = typeof window !== 'undefined' ? window.Telegram?.WebApp?.initData || '' : '';
+          try {
+            // Trigger Haptic Feedback
+            if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
+              window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+            }
+            const initData = typeof window !== 'undefined' ? window.Telegram?.WebApp?.initData || '' : '';
 
-          const authRes = await apiAuth.loginWithTelegram(initData);
-          if (authRes && authRes.success && authRes.user) {
-            const u = authRes.user;
-            const finalName = u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : (u.name || u.username || 'User');
-            const finalUsername = u.username || (u.telegram_id ? `user_${String(u.telegram_id).slice(-4)}` : 'user');
-            const finalAvatar = u.avatar_url || u.avatar || '';
-            const cleanRole = String(u.role || '').toLowerCase();
-            const isVerifiedAdmin = (String(u.telegram_id) === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin'));
-            const assignedRole = isVerifiedAdmin ? 'admin' : (u.role || 'user');
+            const authRes = await apiAuth.loginWithTelegram(initData);
+            if (authRes && authRes.success && authRes.user) {
+              const u = authRes.user;
+              const finalName = u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : (u.name || u.username || 'User');
+              const finalUsername = u.username || (u.telegram_id ? `user_${String(u.telegram_id).slice(-4)}` : 'user');
+              const finalAvatar = u.avatar_url || u.avatar || '';
+              const cleanRole = String(u.role || '').toLowerCase();
+              const isVerifiedAdmin = (String(u.telegram_id) === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin'));
+              const assignedRole = isVerifiedAdmin ? 'admin' : (u.role || 'user');
 
-            setUserName(finalName);
-            setCurrentUsername(finalUsername);
-            setAuthUserRecord(u);
-            setUserAvatar(finalAvatar);
-            setAuthFullName(finalName);
-            setAuthUsername(finalUsername);
-            setUserRole(assignedRole);
-            setCurrentTelegramId(u.telegram_id ? String(u.telegram_id) : '');
-            setAuthTelegramId(u.telegram_id ? String(u.telegram_id) : '');
-            setIsVerified(u.is_verified || false);
-            if (u.coins || u.wallet_stars) setUserCoins(u.coins || u.wallet_stars);
+              setUserName(finalName);
+              setCurrentUsername(finalUsername);
+              setAuthUserRecord(u);
+              setUserAvatar(finalAvatar);
+              setAuthFullName(finalName);
+              setAuthUsername(finalUsername);
+              setUserRole(assignedRole);
+              setCurrentTelegramId(u.telegram_id ? String(u.telegram_id) : '');
+              setAuthTelegramId(u.telegram_id ? String(u.telegram_id) : '');
+              setIsVerified(u.is_verified || false);
+              if (u.coins || u.wallet_stars) setUserCoins(u.coins || u.wallet_stars);
 
-            setIsLoggedIn(true);
-            setAuthStatus('authenticated');
-            setHasRegistered(true);
-            setShowEntrySplash(false);
-            setActiveTab('home');
-            safeStorage.setItem('vlive_user_logged_in', 'true');
-            safeStorage.setItem('vlive_has_registered', 'true');
-            showToast(loc(`✨ ورود موفق با تلگرام! خوش آمدید @${finalUsername}`, `✨ Authenticated via Telegram! Welcome @${finalUsername}`));
-          } else {
-            showToast(loc('❌ خطا در احراز هویت: ' + (authRes?.message || authRes?.error || 'جلسه تلگرام یافت نشد'), '❌ Auth Failed: ' + (authRes?.message || authRes?.error || 'Telegram session not detected')));
+              setIsLoggedIn(true);
+              setAuthStatus('authenticated');
+              setHasRegistered(true);
+              setShowEntrySplash(false);
+              setActiveTab('home');
+              safeStorage.setItem('vlive_user_logged_in', 'true');
+              safeStorage.setItem('vlive_has_registered', 'true');
+              showToast(loc(`✨ ورود موفق با تلگرام! خوش آمدید @${finalUsername}`, `✨ Authenticated via Telegram! Welcome @${finalUsername}`));
+            } else {
+              showToast(loc('❌ خطا در احراز هویت: ' + (authRes?.message || authRes?.error || 'جلسه تلگرام یافت نشد'), '❌ Auth Failed: ' + (authRes?.message || authRes?.error || 'Telegram session not detected')));
+            }
+          } catch (error) {
+            console.error('Login Error:', error);
+            showToast(loc('❌ خطای غیرمنتظره در ورود: ' + error.message, '❌ Unexpected login error: ' + error.message));
           }
         };
 
