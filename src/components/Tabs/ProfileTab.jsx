@@ -36,6 +36,8 @@ const formatNum = (num) => {
 export default function ProfileTab(props) {
   const {
     activeTab,
+    currentUser,
+    userRole,
     userAvatar, setUserAvatar,
     userName, setUserName,
     userBio, setUserBio,
@@ -45,7 +47,7 @@ export default function ProfileTab(props) {
     isUserRayan, userLevel = 24, vipPlan,
     PRESET_AVATARS = [], compressImageFile,
     setIsEditProfileModalOpen = (() => {}), setIsVipModalOpen = (() => {}),
-     setIsLanguageModalOpen = (() => {}), handleSelectLanguage = (() => {}), setIsQrCodeModalOpen = (() => {}),
+    setIsLanguageModalOpen = (() => {}), handleSelectLanguage = (() => {}), setIsQrCodeModalOpen = (() => {}),
     setWalletSubTab = (() => {}), setIsLoggedIn = (() => {}), setAuthStep = (() => {}),
     showToast = (() => {}), loc = ((a, b) => b || a),
     isVerified = false,
@@ -60,6 +62,17 @@ export default function ProfileTab(props) {
     adminReportsList = [],
     addAdminAuditLog = (() => {})
   } = props;
+
+  const isStreamerUser = Boolean(
+    isVerified ||
+    isUserRayan ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    currentUser?.isStreamer ||
+    currentUser?.is_streamer ||
+    currentUser?.isVerified ||
+    currentUser?.isHost
+  );
 
   // if (activeTab !== 'profile') return null;
 
@@ -393,8 +406,8 @@ export default function ProfileTab(props) {
   };
 
   const detectedTgId = props.currentUser?.telegram_id || props.currentTelegramId || (typeof window !== 'undefined' ? window.Telegram?.WebApp?.initDataUnsafe?.user?.id : '') || '';
-  const userRole = props.currentUser?.role || props.userRole || 'user';
-  const isAdminUser = isUserAnAdmin(userRole, detectedTgId);
+  const effectiveUserRole = userRole || props.currentUser?.role || 'user';
+  const isAdminUser = isUserAnAdmin(effectiveUserRole, detectedTgId);
 
   return (
     <>
