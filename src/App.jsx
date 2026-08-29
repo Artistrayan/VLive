@@ -2867,7 +2867,13 @@ export default function App() {
                     setIsUserProfileModalOpen(true);
                   }}>
                         <div className="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-orange-500 shadow-md group-hover:scale-105 transition">
-                          <img src={user.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={user.name} className="w-full h-full object-cover rounded-full border border-slate-950" />
+                          {user.avatar ? (
+                            <img src={user.avatar} alt={user.name} className="w-full h-full object-cover rounded-full border border-slate-950" />
+                          ) : (
+                            <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-white border border-slate-950">
+                              {(user.name || user.username || 'U').charAt(0).toUpperCase()}
+                            </div>
+                          )}
                           {user.online && <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border border-slate-950" />}
                         </div>
                         <span className="text-[9px] font-bold text-slate-200 max-w-[50px] truncate">{user.name}</span>
@@ -2905,7 +2911,13 @@ export default function App() {
                       setIsUserProfileModalOpen(true);
                     }
                   }}>
-                        <img src={user.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={user.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                        {user.avatar ? (
+                          <img src={user.avatar} alt={user.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                        ) : (
+                          <div className="w-full h-full bg-slate-900 flex items-center justify-center text-sm font-bold text-slate-500 group-hover:scale-105 transition duration-500">
+                            {(user.name || user.username || 'U').charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none" />
                         
                         {/* Top Left: Online Dot */}
@@ -3401,11 +3413,17 @@ export default function App() {
             </button>
 
             <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-pink-500 to-purple-600 p-0.5 mx-auto shadow-lg">
-              <img 
-                src={postCallRatingData.user?.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} 
-                alt={postCallRatingData.user?.name || 'User'} 
-                className="w-full h-full object-cover rounded-[22px]" 
-              />
+              {postCallRatingData.user?.avatar ? (
+                <img 
+                  src={postCallRatingData.user.avatar} 
+                  alt={postCallRatingData.user?.name || 'User'} 
+                  className="w-full h-full object-cover rounded-[22px]" 
+                />
+              ) : (
+                <div className="w-full h-full rounded-[22px] bg-slate-800 flex items-center justify-center text-lg font-bold text-white">
+                  {(postCallRatingData.user?.name || postCallRatingData.user?.username || 'U').charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
 
             <div>
@@ -3481,7 +3499,13 @@ export default function App() {
             {/* User Bar */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img src={activeStoryView.group.user?.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={activeStoryView.group.user?.name || 'User'} className="w-10 h-10 rounded-full object-cover ring-2 ring-pink-500" />
+                {activeStoryView.group.user?.avatar ? (
+                  <img src={activeStoryView.group.user.avatar} alt={activeStoryView.group.user?.name || 'User'} className="w-10 h-10 rounded-full object-cover ring-2 ring-pink-500" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-white ring-2 ring-pink-500">
+                    {(activeStoryView.group.user?.name || activeStoryView.group.user?.username || 'U').charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div>
                   <h4 className="text-xs font-black text-white flex items-center gap-1.5">
                     {activeStoryView.group.user?.name || 'User'}
@@ -3539,11 +3563,17 @@ export default function App() {
               />
             ) : (
               <div className="relative w-full h-full flex items-center justify-center bg-slate-950">
-                <img
-                  src={viewingStream.thumbnail || viewingStream.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='700' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='1'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Cpolygon points='10 8 16 12 10 16 10 8' fill='%23ec4899'/%3E%3C/svg%3E`}
-                  alt={viewingStream.title}
-                  className="w-full h-full object-cover filter brightness-75 scale-105 transition-transform duration-1000"
-                />
+                {viewingStream.thumbnail || viewingStream.avatar ? (
+                  <img
+                    src={viewingStream.thumbnail || viewingStream.avatar}
+                    alt={viewingStream.title}
+                    className="w-full h-full object-cover filter brightness-75 scale-105 transition-transform duration-1000"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-slate-950 flex items-center justify-center text-slate-600 font-bold text-sm">
+                    {loc('پخش زنده صوتی/تصویری', 'Live Audio/Video Stream')}
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/60 pointer-events-none" />
                 {/* Live Stream Status Visualizer */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 pointer-events-none">

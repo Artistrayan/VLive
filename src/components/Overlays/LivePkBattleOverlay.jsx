@@ -8,7 +8,7 @@ export default function LivePkBattleOverlay({
   isOpen,
   onClose,
   streamerA = { name: 'شما (میزبان)', avatar: '', score: 3200 },
-  streamerB = { name: 'سارا لایو 🌟', avatar: '', score: 2900 },
+  streamerB = { name: 'رقیب آنلاین', avatar: '', score: 2900 },
   onSendGiftToPk,
   userCoins = 0,
   isHost = false

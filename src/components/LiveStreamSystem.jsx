@@ -467,11 +467,17 @@ export default function LiveStreamSystem({
                   >
                     {/* THUMBNAIL CONTAINER */}
                     <div className="aspect-[3/4] relative overflow-hidden bg-slate-950">
-                      <img
-                        src={stream.thumbnail || stream.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='400' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='1.5'%3E%3Cpolygon points='23 7 16 12 23 17 23 7'/%3E%3Crect x='1' y='5' width='15' height='14' rx='2' ry='2'/%3E%3C/svg%3E`}
-                        alt={stream.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                      />
+                      {stream.thumbnail || stream.avatar ? (
+                        <img
+                          src={stream.thumbnail || stream.avatar}
+                          alt={stream.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-900 text-slate-600 font-bold text-xs">
+                          {window.loc('بدون تصویر', 'No Image')}
+                        </div>
+                      )}
 
                       {/* DARK GRADIENT OVERLAY */}
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
@@ -510,11 +516,17 @@ export default function LiveStreamSystem({
                         </h4>
 
                         <div className="flex items-center gap-1.5 pt-0.5">
-                          <img
-                            src={stream.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`}
-                            alt={stream.host}
-                            className="w-4 h-4 rounded-full object-cover border border-white/40"
-                          />
+                          {stream.avatar ? (
+                            <img
+                              src={stream.avatar}
+                              alt={stream.host}
+                              className="w-4 h-4 rounded-full object-cover border border-white/40"
+                            />
+                          ) : (
+                            <div className="w-4 h-4 rounded-full bg-slate-800 flex items-center justify-center text-[8px] font-bold text-white">
+                              {stream.host ? stream.host.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                          )}
                           <span className="text-[10px] font-bold text-slate-300 truncate">
                             {stream.host}
                           </span>

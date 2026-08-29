@@ -1815,7 +1815,7 @@ export default function AdminDashboardModal(props) {
                   <h3 className="font-bold text-white text-sm">{window.loc('۱۶. امنیت سیستم و لاگ ورود مدیران (Security)', '16. System security and administrator login log (Security)')}</h3>
                   <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 font-mono text-[10px]">
                     <p className="text-slate-300">{window.loc('• 12:15 - ورود مدیر ارشد رایان از IP: 185.220.101.4 (تهران)', '• 12:15 - Arrival of senior manager Rayan from IP: 185.220.101.4 (Tehran)')}</p>
-                    <p className="text-slate-300">{window.loc('• 10:40 - ورود مدیر سارا از IP: 91.108.4.12 (لندن)', '• 10:40 - Admin Sarah login from IP: 91.108.4.12 (London)')}</p>
+                    <p className="text-emerald-400">{window.loc('• سیستم امنیتی مانیتورینگ متصل و فعال', '• Monitoring security system connected and active')}</p>
                   </div>
                 </div>
               )}

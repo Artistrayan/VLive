@@ -239,8 +239,18 @@ export default function LiveStudioModal({
   // Camera Lifecycle & Device Switch Effect
   useEffect(() => {
     if (isOpen) {
+      setStudioPhase('PRE_LIVE');
+      setCountdownNum(3);
+      setIsStartingLive(false);
+      setLiveDurationSeconds(0);
+      setViewerCount(1);
+      setLikeCount(0);
+      setGiftCoinsEarned(0);
+      setFollowersGained(0);
+      setActiveStreamRecord(null);
       initCameraAndStream();
     } else {
+      setStudioPhase('PRE_LIVE');
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(track => track.stop());
         mediaStreamRef.current = null;
@@ -258,6 +268,11 @@ export default function LiveStudioModal({
       }
     };
   }, [isOpen]);
+
+  const handleCloseStudio = () => {
+    setStudioPhase('PRE_LIVE');
+    if (onClose) onClose();
+  };
 
   // Switch between front and back camera seamlessly without re-requesting mic/full permissions
   const toggleCameraFacing = async () => {
@@ -699,7 +714,7 @@ export default function LiveStudioModal({
             </div>
 
             <button 
-              onClick={onClose}
+              onClick={handleCloseStudio}
               className="w-9 h-9 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold transition"
             >
               ✕
@@ -1658,7 +1673,7 @@ export default function LiveStudioModal({
             </div>
 
             <button
-              onClick={onClose}
+              onClick={handleCloseStudio}
               className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 text-white font-black text-xs shadow-xl hover:scale-102 active:scale-95 transition"
             >
               {window.loc('بازگشت به برنامه (Close Studio)', 'Return to the program (Close Studio)')}

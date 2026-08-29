@@ -13,15 +13,19 @@ export default function PreCallConfirmModal({
 
   const target = preCallConfirmHost.user || preCallConfirmHost;
   const targetName = target?.name || target?.username || 'User';
-  const targetAvatar = target?.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`;
+  const targetAvatar = target?.avatar || '';
   const callType = preCallConfirmHost.type || preCallConfirmHost.callType || 'video';
   const tariffRate = preCallConfirmHost.tariffRate || target?.tariffPerMin || 100;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
       <div className="card-3d p-6 rounded-3xl bg-slate-900 border border-amber-500/50 max-w-sm w-full space-y-4 shadow-[0_0_50px_rgba(245,158,11,0.25)] text-center">
-        <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-500 to-yellow-400 p-0.5 mx-auto shadow-lg">
-          <img src={targetAvatar} alt={targetName} className="w-full h-full object-cover rounded-[22px]" />
+        <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-500 to-yellow-400 p-0.5 mx-auto shadow-lg flex items-center justify-center overflow-hidden bg-slate-800">
+          {targetAvatar ? (
+            <img src={targetAvatar} alt={targetName} className="w-full h-full object-cover rounded-[22px]" />
+          ) : (
+            <span className="text-xl font-black text-white">{targetName.charAt(0).toUpperCase()}</span>
+          )}
         </div>
 
         <div>

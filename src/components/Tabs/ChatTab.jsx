@@ -864,7 +864,13 @@ export default function ChatTab(props) {
                             className={"w-full p-3 rounded-2xl flex items-center gap-3 transition text-left border " + (isSelected ? "bg-gradient-to-r from-pink-500/20 via-purple-500/10 to-transparent border-pink-500/50 shadow-md" : "bg-slate-900/40 border-slate-800/60 hover:bg-slate-900 hover:border-slate-700")}
                           >
                             <div className="relative shrink-0">
-                              <img src={cUser.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={cDisplayMain} className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-700" />
+                              {cUser.avatar ? (
+                                <img src={cUser.avatar} alt={cDisplayMain} className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-700" />
+                              ) : (
+                                <div className="w-11 h-11 rounded-2xl bg-slate-800 flex items-center justify-center text-xs font-bold text-white ring-1 ring-slate-700">
+                                  {cDisplayMain.charAt(0).toUpperCase()}
+                                </div>
+                              )}
                               {cUser.online && !conv.isGroup && (
                                 <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
                               )}
@@ -948,7 +954,13 @@ export default function ChatTab(props) {
                             </button>
 
                             <div className="relative shrink-0">
-                              <img src={currentConv?.user?.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={currentConv?.user?.name || currentConv?.user?.username || 'User'} className="w-10 h-10 rounded-2xl object-cover ring-2 ring-pink-500/30" />
+                              {currentConv?.user?.avatar ? (
+                                <img src={currentConv.user.avatar} alt={currentConv?.user?.name || 'User'} className="w-10 h-10 rounded-2xl object-cover ring-2 ring-pink-500/30" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-2xl bg-slate-800 flex items-center justify-center text-xs font-bold text-white ring-2 ring-pink-500/30">
+                                  {(currentConv?.user?.name || currentConv?.user?.username || 'U').charAt(0).toUpperCase()}
+                                </div>
+                              )}
                               {currentConv?.user?.online && (
                                 <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
                               )}
@@ -1669,7 +1681,13 @@ export default function ChatTab(props) {
                               className="p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800/80 hover:border-pink-500/50 flex items-center gap-2.5 transition text-right group"
                             >
                               <div className="relative shrink-0">
-                                <img src={u.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} alt={u.name} className="w-9 h-9 rounded-xl object-cover ring-1 ring-slate-800 group-hover:ring-pink-500 transition" />
+                                {u.avatar ? (
+                                  <img src={u.avatar} alt={u.name} className="w-9 h-9 rounded-xl object-cover ring-1 ring-slate-800 group-hover:ring-pink-500 transition" />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center text-xs font-bold text-white ring-1 ring-slate-800 group-hover:ring-pink-500 transition">
+                                    {(u.name || u.username || 'U').charAt(0).toUpperCase()}
+                                  </div>
+                                )}
                                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
                               </div>
                               <div className="min-w-0 flex-1">
@@ -2007,11 +2025,17 @@ export default function ChatTab(props) {
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="relative shrink-0">
-                              <img 
-                                src={targetUser.avatar || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M20 21a8 8 0 1 0-16 0'/%3E%3C/svg%3E`} 
-                                alt={targetUser.name} 
-                                className="w-10 h-10 rounded-2xl object-cover ring-1 ring-slate-800 group-hover:ring-pink-500 transition" 
-                              />
+                              {targetUser.avatar ? (
+                                <img 
+                                  src={targetUser.avatar} 
+                                  alt={targetUser.name} 
+                                  className="w-10 h-10 rounded-2xl object-cover ring-1 ring-slate-800 group-hover:ring-pink-500 transition" 
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-2xl bg-slate-800 flex items-center justify-center text-xs font-bold text-white ring-1 ring-slate-800 group-hover:ring-pink-500 transition">
+                                  {(targetUser.name || targetUser.username || 'U').charAt(0).toUpperCase()}
+                                </div>
+                              )}
                               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
                             </div>
                             <div className="min-w-0">
