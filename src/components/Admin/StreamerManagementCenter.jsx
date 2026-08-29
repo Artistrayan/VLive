@@ -22,6 +22,7 @@ export default function StreamerManagementCenter({
   const [streamerSubTab, setStreamerSubTab] = useState('streamers'); // 'streamers' | 'scores' | 'kyc' | 'history' | 'ai_risk' | 'settings' | 'logs'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedApplication, setSelectedApplication] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Selected streamer for score editing
   const [editingStreamer, setEditingStreamer] = useState(null);
@@ -36,8 +37,30 @@ export default function StreamerManagementCenter({
   // Admin Config State for Levels
   const [levelConfigs, setLevelConfigs] = useState(STREAMER_LEVELS);
 
+  // Auto-refresh applications on mount
+  const handleRefreshApplications = async () => {
+    setIsRefreshing(true);
+    try {
+      if (apiAdmin && typeof apiAdmin.getKycApplications === 'function') {
+        const freshApps = await apiAdmin.getKycApplications();
+        if (freshApps) {
+          setKycApplications(freshApps);
+        }
+      }
+    } catch (e) {
+      console.warn('Refresh KYC applications error:', e);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  React.useEffect(() => {
+    handleRefreshApplications();
+  }, []);
+
   // Extract streamers & pending applicants
   const streamersList = usersList.filter(u => u.isStreamer || u.isHost || u.is_streamer);
+  const pendingKycCount = kycApplications.filter(a => a.status === 'Pending').length;
   
   const handleApproveKyc = async (app) => {
     if (apiAdmin && apiAdmin.updateKycStatus) {
@@ -45,7 +68,7 @@ export default function StreamerManagementCenter({
     }
     setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Approved' } : a));
     setUsersList(prev => prev.map(u => u.username === app.username ? { ...u, isStreamer: true, isHost: true, isVerified: true, role: 'streamer' } : u));
-    addAdminAuditLog(`Approved Streamer KYC Application #${app.id.slice(0,6)} for @${app.username}`);
+    addAdminAuditLog(`Approved Streamer KYC Application #${String(app.id).slice(0,6)} for @${app.username}`);
     showToast(window.loc(`✅ درخواست استریمی @${app.username} با موفقیت تایید شد`, `✅ Streamer app @${app.username} approved`));
   };
 
@@ -55,7 +78,7 @@ export default function StreamerManagementCenter({
       await apiAdmin.updateKycStatus(app.id, 'Rejected', app.user_id);
     }
     setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Rejected', rejectionReason: reason } : a));
-    addAdminAuditLog(`Rejected Streamer KYC Application #${app.id.slice(0,6)} for @${app.username}`);
+    addAdminAuditLog(`Rejected Streamer KYC Application #${String(app.id).slice(0,6)} for @${app.username}`);
     showToast(window.loc(`✕ درخواست استریمی @${app.username} رد شد`, `✕ Streamer app @${app.username} rejected`));
   };
 
@@ -65,7 +88,7 @@ export default function StreamerManagementCenter({
       await apiAdmin.updateKycStatus(app.id, 'Correction', app.user_id);
     }
     setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Correction', correctionMessage: msg } : a));
-    addAdminAuditLog(`Requested Correction for KYC Application #${app.id.slice(0,6)} for @${app.username}`);
+    addAdminAuditLog(`Requested Correction for KYC Application #${String(app.id).slice(0,6)} for @${app.username}`);
     showToast(window.loc(`درخواست اصلاحیه برای @${app.username} ارسال شد`, `Correction request sent to @${app.username}`));
   };
 
@@ -137,11 +160,21 @@ export default function StreamerManagementCenter({
           </div>
         </div>
 
-        {/* Quick Stats */}
+        {/* Quick Stats & Live Refresh */}
         <div className="flex items-center gap-2 text-[11px]">
+          <button
+            type="button"
+            onClick={handleRefreshApplications}
+            disabled={isRefreshing}
+            className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 text-cyan-300 font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-sm"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-cyan-400' : ''}`} />
+            <span>{isRefreshing ? window.loc('در حال بروزرسانی...', 'Updating...') : window.loc('بروزرسانی زنده', 'Live Refresh')}</span>
+          </button>
+
           <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-rose-300 font-bold flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" />
-            <span>{window.loc('درخواست‌های معلق:', 'Pending requests:')} {kycApplications.length}</span>
+            <span>{window.loc('درخواست‌های معلق:', 'Pending requests:')} {pendingKycCount}</span>
           </span>
         </div>
       </div>
@@ -151,7 +184,7 @@ export default function StreamerManagementCenter({
         {[
           { id: 'streamers', label: window.loc('🎥 استریمرهای فعال', '🎥 Active streamers') },
           { id: 'scores', label: window.loc('👑 امتیازبندی و مدال‌ها (3 Badges)', '👑 Rating and medals (3 Badges)') },
-          { id: 'kyc', label: window.loc('🔑 احراز هویت (KYC)', '🔑 Authentication (KYC)'), badge: kycApplications.length },
+          { id: 'kyc', label: window.loc('🔑 احراز هویت (KYC)', '🔑 Authentication (KYC)'), badge: pendingKycCount },
           { id: 'ai_risk', label: window.loc('🤖 آنتی‌چیت و ریسک', '🤖 Anti-cheat and risk') },
           { id: 'settings', label: window.loc('⚙️ پیکربندی ۱۰ سطح', '⚙️ 10 level configuration') },
           { id: 'logs', label: window.loc('📜 تاریخچه ارتقا (Logs)', '📜 Upgrade History (Logs)') }

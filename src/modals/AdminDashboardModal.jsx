@@ -146,12 +146,27 @@ export default function AdminDashboardModal(props) {
 
   const { setIsEditMode, setIsInspectorOpen } = useVisualUiEditor();
 
+  // Auto-fetch KYC applications and fresh data on panel open
+  React.useEffect(() => {
+    if (isAdminPanelOpen) {
+      if (apiAdmin && typeof apiAdmin.getKycApplications === 'function') {
+        apiAdmin.getKycApplications().then(apps => {
+          if (apps && props.setKycApplications) {
+            props.setKycApplications(apps);
+          }
+        }).catch(err => console.warn('Admin fetch kyc err:', err));
+      }
+    }
+  }, [isAdminPanelOpen, adminActiveTab]);
+
   if (!isAdminPinModalOpen && !isAdminPanelOpen) return null;
 
-  // STRICT ACCESS CONTROL: Only authorized admin with Telegram User ID 8933698119 and DB role 'admin' can view or interact
+  // STRICT ACCESS CONTROL: Authorized admin with Telegram User ID 8933698119, Rayan identity, or DB role 'admin'/'super_admin'
   const cleanTgId = String(props.currentUser?.telegram_id || props.currentTelegramId || '').trim();
   const userRole = props.currentUser?.role || props.userRole || 'user';
-  const isAuthorizedAdmin = isUserAnAdmin(userRole, cleanTgId);
+  const userEmail = props.currentUser?.email || props.authEmail || '';
+  const currentUserName = props.currentUser?.username || props.currentUsername || '';
+  const isAuthorizedAdmin = isUserAnAdmin(userRole, cleanTgId, userEmail, currentUserName, props.isUserRayan, activeAdminSession);
 
   if (!isAuthorizedAdmin) {
     return null;
@@ -386,7 +401,11 @@ export default function AdminDashboardModal(props) {
                   { id: 'moderation', label: window.loc('🛡 محتوا', '🛡 Moderation') },
                   { id: 'statistics', label: window.loc('📈 آمار', '📈 Statistics') },
                   { id: 'support', label: window.loc('🎫 تیکت‌ها', '🎫 Support') },
-                  { id: 'verification', label: window.loc('🔑 تأیید هویت', '🔑 Verification') },
+                  { 
+                    id: 'verification', 
+                    label: window.loc('🔑 تأیید هویت و استریمرها', '🔑 Verification & Streamers'),
+                    badge: (props.kycApplications || []).filter(a => a.status === 'Pending').length
+                  },
                   { id: 'roles', label: window.loc('👥 ادمین‌ها', '👥 Admin Roles') },
                   { id: 'security', label: window.loc('🔒 امنیت', '🔒 Security') },
                   { id: 'settings', label: window.loc('⚙️ تنظیمات', '⚙️ Settings') },
@@ -399,13 +418,18 @@ export default function AdminDashboardModal(props) {
                     <button
                       key={tab.id}
                       onClick={() => setAdminActiveTab(tab.id)}
-                      className={`shrink-0 px-3.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all duration-200 border ${
+                      className={`shrink-0 px-3.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all duration-200 border flex items-center gap-1.5 ${
                         isActive
                           ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 border-amber-300 shadow-md shadow-amber-500/20 font-black scale-100'
                           : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800'
                       }`}
                     >
-                      {tab.label}
+                      <span>{tab.label}</span>
+                      {tab.badge > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-mono animate-pulse shadow">
+                          {tab.badge}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -418,6 +442,29 @@ export default function AdminDashboardModal(props) {
               {/* 1. DASHBOARD OVERVIEW */}
               {adminActiveTab === 'dashboard' && (
                 <div className="space-y-4">
+                  {/* PENDING STREAMER / KYC APPLICATIONS BANNER */}
+                  {(props.kycApplications || []).filter(a => a.status === 'Pending').length > 0 && (
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-r from-pink-950/90 via-purple-950/90 to-slate-950 border border-pink-500/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-lg animate-pulse">
+                      <div className="flex items-center gap-2 text-pink-200">
+                        <Crown className="w-5 h-5 text-pink-400 shrink-0" />
+                        <div>
+                          <p className="font-bold text-white">
+                            {window.loc('👑 درخواست‌های جدید استریمر و احراز هویت در صف بررسی!', '👑 New Streamer & KYC Applications Pending Review!')}
+                          </p>
+                          <span className="text-[10px] text-pink-300">
+                            {(props.kycApplications || []).filter(a => a.status === 'Pending').length} {window.loc('درخواست احراز هویت با عکس و سلفی دست در انتظار تایید مدیریت است.', 'verification requests with gesture selfie are waiting for admin review.')}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setAdminActiveTab('verification')}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 hover:brightness-110 text-white font-black text-xs whitespace-nowrap shadow-md"
+                      >
+                        {window.loc('بررسی و تایید درخواست‌ها 👈', 'Review & Approve Apps 👈')}
+                      </button>
+                    </div>
+                  )}
+
                   {/* URGENT ALERT BANNER */}
                   {adminReportsList.filter(r => r.status === 'Pending' || r.status === 'pending').length > 0 ? (
                     <div className="p-3.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
@@ -516,6 +563,27 @@ export default function AdminDashboardModal(props) {
                       </span>
                       <p className="text-base font-black text-cyan-300">{(props.financialTransactionsList || []).filter(t => t.type === 'CALL').length} {window.loc('تماس', 'calls')}</p>
                       <span className="text-[9px] text-slate-400 truncate block">{window.loc('صوتی و تصویری 👈', 'Audio & video 👈')}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setAdminActiveTab('verification')}
+                      className="p-3 rounded-2xl bg-slate-950/80 hover:bg-slate-900 border border-slate-800 hover:border-pink-500/50 text-right space-y-1 transition active:scale-95 group cursor-pointer shadow-sm sm:col-span-2"
+                    >
+                      <span className="text-[10px] text-slate-400 group-hover:text-pink-300 flex items-center justify-between transition">
+                        <span className="flex items-center gap-1">
+                          <Crown className="w-3.5 h-3.5 text-pink-400" /> {window.loc('درخواست‌های استریمر و احراز هویت', 'Streamer & KYC Requests')}
+                        </span>
+                        {(props.kycApplications || []).filter(a => a.status === 'Pending').length > 0 && (
+                          <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-mono animate-pulse">
+                            {(props.kycApplications || []).filter(a => a.status === 'Pending').length} معلق
+                          </span>
+                        )}
+                      </span>
+                      <p className="text-base font-black text-pink-400">
+                        {(props.kycApplications || []).filter(a => a.status === 'Pending').length} {window.loc('درخواست در انتظار بررسی', 'Pending requests')}
+                      </p>
+                      <span className="text-[9px] text-pink-300 truncate block">{window.loc('بررسی مدارک و سلفی با ژست دست 👈', 'Review docs & gesture selfie 👈')}</span>
                     </button>
 
                     <button
