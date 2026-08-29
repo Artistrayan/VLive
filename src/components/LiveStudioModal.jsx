@@ -549,11 +549,11 @@ export default function LiveStudioModal({
         createdStream = res.data;
       }
       if (setStreamsList) setStreamsList(prev => [createdStream, ...prev]);
-      if (setViewingStream) setViewingStream(createdStream);
+      if (setViewingStream) setViewingStream(null);
     } catch (err) {
       console.warn('createLiveStream catch:', err);
       if (setStreamsList) setStreamsList(prev => [newStreamObj, ...prev]);
-      if (setViewingStream) setViewingStream(newStreamObj);
+      if (setViewingStream) setViewingStream(null);
     }
 
     setActiveStreamRecord(createdStream);
@@ -633,8 +633,9 @@ export default function LiveStudioModal({
     } catch (e) {
       console.warn('Error closing LiveKit room:', e);
     }
-    showToast(window.loc('⏹️ پخش زنده پایان یافت.', '⏹️ The live broadcast has ended.'));
-    if (onClose) onClose();
+    if (setViewingStream) setViewingStream(null);
+    setStudioPhase('SUMMARY');
+    showToast(window.loc('⏹️ پخش زنده پایان یافت. خلاصه عملکرد تولید شد.', '⏹️ The live broadcast has ended. A performance summary was generated.'));
   };
 
   // Chat message send with AI Moderation
