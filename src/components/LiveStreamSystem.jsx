@@ -281,14 +281,10 @@ export default function LiveStreamSystem({
 
           <button
             onClick={() => {
-              if (!isApprovedStreamer) {
-                showToast(window.loc('اجرای لایو زنده فقط بعد از تایید توسط ادمین امکان‌پذیر است. لطفاً ابتدا فرم درخواست استریمر را ارسال کنید ⚠️', 'Live streaming is only available after admin approval. Please submit a streamer request first ⚠️'));
-                return;
-              }
-              if (setIsHostLiveOpen) {
-                setIsHostLiveOpen(true);
-              } else if (setIsLiveStudioOpen) {
+              if (setIsLiveStudioOpen) {
                 setIsLiveStudioOpen(true);
+              } else if (setIsHostLiveOpen) {
+                setIsHostLiveOpen(true);
               } else {
                 setIsStartLiveModalOpen(true);
               }

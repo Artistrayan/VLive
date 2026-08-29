@@ -2788,11 +2788,11 @@ export default function App() {
               </button>
             </div>
 
-            {/* Camera Go-Live Icon Button (Opens Live Setup Modal with Adult 18+ & Streamer Studio) */}
-            {(isVerified || isUserSuperAdmin || isUserRayan || userRole === 'admin' || currentUsername?.toLowerCase() === 'rayan') && <button onClick={() => setIsHostLiveOpen(true)} className="ml-1 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 border border-pink-400/80 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-300 relative shrink-0 shadow-[0_0_15px_rgba(236,72,153,0.7)] group" title={loc('اجرا و شروع لایواستریم', 'Start Live & Adult Broadcast')}>
+            {/* Camera Go-Live Icon Button (Opens Live Studio with Camera Preview) */}
+            <button onClick={() => setIsLiveStudioOpen(true)} className="ml-1 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 border border-pink-400/80 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-300 relative shrink-0 shadow-[0_0_15px_rgba(236,72,153,0.7)] group" title={loc('اجرا و شروع لایواستریم 🎥', 'Start Live Studio Broadcast 🎥')}>
                 <Video className="w-4 h-4 text-white animate-pulse" />
                 <span className="absolute -top-1 -right-1 bg-lime-400 text-slate-950 text-[8px] font-black w-3.5 h-3.5 flex items-center justify-center rounded-full border border-slate-950 shadow-md">+</span>
-              </button>}
+              </button>
           </div>
 
           {/* Center App Title */}

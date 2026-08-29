@@ -53,6 +53,7 @@ export default function ProfileTab(props) {
     setAdminActiveTab,
     setIsStreamerCenterOpen,
     setIsHostLiveOpen = (() => {}),
+    setIsLiveStudioOpen = (() => {}),
     authAvatar = '', authFullName = '', authCity = 'Tehran', userRank = 'VIP Streamer',
     authBio = '', dailyStreak = 5,
     usersList = [], setUsersList = (() => {}),
@@ -1131,29 +1132,15 @@ export default function ProfileTab(props) {
 
                 <button
                   onClick={() => {
-                    const isAdmin = Boolean(
-                      userRole === 'admin' ||
-                      userRole === 'super_admin' ||
-                      isUserRayan ||
-                      isUserSuperAdmin ||
-                      currentUsername?.toLowerCase() === 'rayan' ||
-                      currentUser?.role === 'admin' ||
-                      currentUser?.role === 'super_admin' ||
-                      currentUser?.isUserRayan ||
-                      currentUser?.isUserSuperAdmin ||
-                      String(currentUser?.username || '').toLowerCase() === 'rayan' ||
-                      String(currentUser?.telegram_id || '').trim() === '8933698119'
-                    );
-                    const canGoLive = Boolean(isVerified || isAdmin || currentUser?.isStreamer || currentUser?.is_streamer || currentUser?.user_type === 'STREAMER');
-                    if (!canGoLive) {
-                      showToast(window.loc('اجرای لایو زنده فقط بعد از تایید توسط ادمین امکان‌پذیر است. لطفاً ابتدا فرم درخواست استریمر را ارسال کنید ⚠️', 'Live streaming is only available after admin approval. Please submit a streamer request first ⚠️'));
-                      return;
+                    if (setIsLiveStudioOpen) {
+                      setIsLiveStudioOpen(true);
+                    } else if (setIsHostLiveOpen) {
+                      setIsHostLiveOpen(true);
                     }
-                    if (setIsHostLiveOpen) setIsHostLiveOpen(true);
                   }}
                   className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold"
                 >
-                  {window.loc('شروع لایو جدید', 'Go Live')}
+                  {window.loc('شروع لایو جدید 🎥', 'Go Live 🎥')}
                 </button>
               </div>
 
