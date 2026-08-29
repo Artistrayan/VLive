@@ -237,26 +237,6 @@ export default function LiveStreamSystem({
     setViewingStream(newStreamObj);
     setIsStartLiveModalOpen(false);
     showToast(window.loc(`🎥 پخش زنده ${newLiveType === 'adult' ? window.loc('۱۸+', '18+') : window.loc('استاندارد', 'Standard')} شما با موفقیت شروع شد!`, `🎥 پخش زنده ${newLiveType === 'adult' ? window.loc('۱۸+', '18+') : window.loc('استاندارد', 'Standard')} شما با موفقیت شروع شد!`));
-
-    // AI Check Run Simulation on Stream Initiation
-    const aiCheck = await apiAdmin.analyzeLiveStreamAi(newStreamObj);
-    if (aiCheck.flagged) {
-      const reportPayload = {
-        id: `ai_report_${Date.now()}`,
-        stream_id: streamId,
-        stream_title: streamPayload.title,
-        streamer_name: streamPayload.host,
-        reason: aiCheck.reason,
-        ai_detected: true,
-        status: 'pending',
-        created_at: new Date().toISOString()
-      };
-      await apiLive.reportLiveStream(reportPayload);
-      if (setAdminReportsList) {
-        setAdminReportsList(prev => [reportPayload, ...prev]);
-      }
-      addAdminAuditLog?.(window.loc(`🤖 هشدار AI: گزارش مشکوک در لایواستریم ${streamPayload.title} ثبت و به ادمین ارسال گردید.`, `🤖 هشدار AI: گزارش مشکوک در لایواستریم ${streamPayload.title} ثبت و به ادمین ارسال گردید.`));
-    }
   };
 
   return (

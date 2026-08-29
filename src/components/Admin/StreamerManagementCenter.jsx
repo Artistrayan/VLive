@@ -458,38 +458,10 @@ export default function StreamerManagementCenter({
               {window.loc('شناسایی هوشمند بینندگان فیک، هدیه‌های مشکوک، اسپم فالوور و تبانی. هشدارهای هوش مصنوعی نیازمند تصمیم نهایی ادمین می‌باشند.', 'Intelligent detection of fake viewers, suspicious gifts, follower spam and collusion. Artificial intelligence alerts require the final decision of the admin.')}
             </p>
 
-            {/* Simulated Alerts */}
+            {/* Simulated Alerts Removed */}
             <div className="space-y-2">
-              <div className="p-3 rounded-2xl bg-rose-950/40 border border-rose-500/40 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-rose-400 animate-bounce" />
-                  <div>
-                    <h4 className="font-bold text-rose-300 text-xs">{window.loc('هشدار رشد غیرطبیعی: @Elnaz_Live', 'Abnormal growth alert: @Elnaz_Live')}</h4>
-                    <p className="text-[10px] text-slate-300">{window.loc('افزایش ۶۰۰٪ بینندگان لایو در ۳ دقیقه بدون لینک معرف خروجی.', '600% increase in live viewers in 3 minutes without outgoing referral link.')}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => showToast(window.loc('🔒 حساب @Elnaz_Live تحت نظارت موقت قرار گرفت', '🔒 @Elnaz_Live account was placed under temporary supervision'))}
-                  className="px-3 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-[10px]"
-                >
-                  {window.loc('بررسی و جریمه XP', 'Check and XP penalty')}
-                </button>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-amber-950/40 border border-amber-500/40 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShieldAlert className="w-5 h-5 text-amber-400" />
-                  <div>
-                    <h4 className="font-bold text-amber-300 text-xs">{window.loc('احتمال هدیه سفارشی فیک: @Rayan_Streamer', 'Possibility of Custom Gift Fic: @Rayan_Streamer')}</h4>
-                    <p className="text-[10px] text-slate-300">{window.loc('دریافت ۴۰ هزار سکه از ۳ اکانت تازه ساخت در کمتر از ۱۰ دقیقه.', 'Receive 40,000 coins from 3 newly created accounts in less than 10 minutes.')}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => showToast(window.loc('✅ بررسی هدیه‌ها تایید گردید', '✅ The review of gifts has been confirmed'))}
-                  className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-[10px]"
-                >
-                  {window.loc('تایید دستی', 'Manual confirmation')}
-                </button>
+              <div className="p-4 rounded-2xl bg-slate-950/40 border border-slate-800 text-center text-slate-500 text-xs">
+                {window.loc('هیچ هشدار آنومالی و تقلب فعالی یافت نشد.', 'No active anomaly or cheat alerts found.')}
               </div>
             </div>
           </div>

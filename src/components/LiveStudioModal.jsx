@@ -619,18 +619,6 @@ export default function LiveStudioModal({
     setStudioPhase('LIVE');
     setIsStartingLive(false);
     showToast(window.loc(`🎥 پخش زنده استودیو با موفقیت شروع شد!`, `🎥 Live broadcast started successfully!`));
-
-    // AI Protection Check
-    try {
-      const aiCheck = await apiAdmin.analyzeLiveStreamAi(newStreamObj);
-      if (aiCheck && aiCheck.flagged) {
-        setAiMonitorStatus('FLAGGED');
-        setAiNoticeMsg(aiCheck.reason);
-        addAdminAuditLog?.(window.loc(`🤖 هشدار AI استودیو: لایو ${liveTitle} نیاز به بررسی ادمین دارد.`, `🤖 هشدار AI استودیو: لایو ${liveTitle} نیاز به بررسی ادمین دارد.`));
-      }
-    } catch (aiErr) {
-      console.warn('AI stream check warning:', aiErr);
-    }
   };
 
   // End Live Stream cleanly via LiveKit & Supabase
