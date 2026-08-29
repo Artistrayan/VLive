@@ -38,6 +38,10 @@ export default function ProfileTab(props) {
     activeTab,
     currentUser,
     userRole,
+    userGender = 'female',
+    setUserGender = (() => {}),
+    setIsBecomeStreamerModalOpen = (() => {}),
+    setIsKycModalOpen = (() => {}),
     userAvatar, setUserAvatar,
     userName, setUserName,
     userBio, setUserBio,
@@ -186,6 +190,7 @@ export default function ProfileTab(props) {
   const [editForm, setEditForm] = useState({
     name: userName || authFullName || 'User',
     bio: userBio || authBio || '',
+    gender: userGender || currentUser?.gender || safeStorage.getItem('vlive_user_gender') || 'male',
     city: userCity,
     birth_date: userBirthDate,
     age: userAge,
@@ -199,6 +204,29 @@ export default function ProfileTab(props) {
     avatar: userAvatar || authAvatar || PRESET_AVATARS[0],
     cover: coverPhoto
   });
+
+  useEffect(() => {
+    if (isEditModalOpen) {
+      setEditForm(prev => ({
+        ...prev,
+        name: userName || prev.name,
+        bio: userBio || prev.bio,
+        gender: userGender || currentUser?.gender || safeStorage.getItem('vlive_user_gender') || 'male',
+        city: userCity || prev.city,
+        birth_date: userBirthDate || prev.birth_date,
+        age: userAge || prev.age,
+        occupation: userOccupation || prev.occupation,
+        education: userEducation || prev.education,
+        relationship: userRelationship || prev.relationship,
+        interests: userInterests || prev.interests,
+        languages: userLanguages || prev.languages,
+        instagram: instagramLink || prev.instagram,
+        telegram: telegramLink || prev.telegram,
+        avatar: userAvatar || prev.avatar,
+        cover: coverPhoto || prev.cover
+      }));
+    }
+  }, [isEditModalOpen, userName, userBio, userGender, userCity, userBirthDate, userAge, userOccupation, userEducation, userRelationship, userInterests, userLanguages, instagramLink, telegramLink, userAvatar, coverPhoto]);
 
   // --- IMAGE UPLOAD HANDLERS ---
   const handleAvatarFileUpload = async (e) => {
@@ -349,6 +377,17 @@ export default function ProfileTab(props) {
     safeStorage.setItem('vlive_profile_languages', editForm.languages);
     safeStorage.setItem('vlive_profile_ig', editForm.instagram);
     safeStorage.setItem('vlive_profile_tg', editForm.telegram);
+    safeStorage.setItem('vlive_user_gender', editForm.gender);
+
+    const prevGender = userGender;
+    if (setUserGender) setUserGender(editForm.gender);
+
+    // If changing to female, trigger streamer verification modal
+    if (editForm.gender === 'female' && prevGender !== 'female') {
+      if (typeof setIsBecomeStreamerModalOpen === 'function') {
+        setIsBecomeStreamerModalOpen(true);
+      }
+    }
 
     // Immediate DB sync via apiProfile.syncProfileState
     try {
@@ -356,6 +395,7 @@ export default function ProfileTab(props) {
         name: editForm.name,
         bio: editForm.bio,
         avatar: editForm.avatar,
+        gender: editForm.gender,
         city: editForm.city,
         birth_date: editForm.birth_date || undefined,
         age: Number(editForm.age) || undefined,
@@ -997,6 +1037,21 @@ export default function ProfileTab(props) {
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                   <span className="text-slate-400 flex items-center gap-1.5 font-bold">
                     <User className="w-3.5 h-3.5 text-pink-400" />
+                    <span>{window.loc('جنسیت کاربر', 'User Gender')}</span>
+                  </span>
+                  <p className="text-white font-black text-sm flex items-center gap-2">
+                    <span>{userGender === 'female' ? window.loc('زن (Female) 👩', 'Female 👩') : window.loc('مرد (Male) 👨', 'Male 👨')}</span>
+                    {userGender === 'female' && (
+                      <span className="text-[10px] bg-pink-500/20 text-pink-400 px-2 py-0.5 rounded-full border border-pink-500/30">
+                        {window.loc('واجد شرایط استریم ✨', 'Stream Eligible ✨')}
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                  <span className="text-slate-400 flex items-center gap-1.5 font-bold">
+                    <User className="w-3.5 h-3.5 text-pink-400" />
                     <span>{window.loc('سن و تاریخ تولد', 'Age & Birthday')}</span>
                   </span>
                   <p className="text-white font-black text-sm">{userAge ? `${userAge} ${window.loc('سال', 'years old')}` : window.loc('ثبت نشده (ویرایش نمایید)', 'Not specified (Edit profile)')}</p>
@@ -1557,6 +1612,63 @@ export default function ProfileTab(props) {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Gender Selection & Streamer Rules */}
+              <div className="space-y-2.5 p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-pink-400" />
+                    <span>{window.loc('تعیین جنسیت (Gender)', 'Gender Selection')}</span>
+                  </label>
+                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                    editForm.gender === 'female'
+                      ? 'bg-pink-500/10 text-pink-400 border-pink-500/30'
+                      : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                  }`}>
+                    {editForm.gender === 'female' ? window.loc('👩 خانم (واجد شرایط استریم)', '👩 Female (Stream Eligible)') : window.loc('👨 آقا', '👨 Male')}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditForm(prev => ({ ...prev, gender: 'female' }));
+                      if (typeof setIsBecomeStreamerModalOpen === 'function') {
+                        setIsBecomeStreamerModalOpen(true);
+                      }
+                    }}
+                    className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-bold text-xs transition ${
+                      editForm.gender === 'female'
+                        ? 'bg-gradient-to-r from-pink-600/30 to-purple-600/30 border-pink-500 text-pink-300 shadow-md ring-1 ring-pink-500/50'
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span>👩</span>
+                    <span>{window.loc('زن (Female)', 'Female')}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditForm(prev => ({ ...prev, gender: 'male' }))}
+                    className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-bold text-xs transition ${
+                      editForm.gender === 'male'
+                        ? 'bg-gradient-to-r from-blue-600/30 to-cyan-600/30 border-blue-500 text-blue-300 shadow-md ring-1 ring-blue-500/50'
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span>👨</span>
+                    <span>{window.loc('مرد (Male)', 'Male')}</span>
+                  </button>
+                </div>
+
+                {editForm.gender === 'female' && (
+                  <div className="p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/20 text-[11px] text-pink-300 flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 text-pink-400 shrink-0 mt-0.5" />
+                    <span>{window.loc('حساب‌های بانوان امکان تایید نشان استریمری، آغاز لایواستریم و دریافت الماس و درآمد را دارند.', 'Female accounts are eligible for official Streamer verification, host broadcasting, and creator rewards.')}</span>
+                  </div>
+                )}
               </div>
 
               {/* City, Birthdate & Age */}

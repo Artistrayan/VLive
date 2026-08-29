@@ -440,6 +440,7 @@ export const apiProfile = {
     if (updates.name) localStorage.setItem('vlive_user_name', updates.name);
     if (updates.bio) localStorage.setItem('vlive_user_bio', updates.bio);
     if (updates.avatar) localStorage.setItem('vlive_user_avatar', updates.avatar);
+    if (updates.gender) localStorage.setItem('vlive_user_gender', updates.gender);
     if (updates.city) localStorage.setItem('vlive_profile_city', updates.city);
     if (updates.birth_date) localStorage.setItem('vlive_profile_birthdate', updates.birth_date);
     if (updates.age) localStorage.setItem('vlive_profile_age', String(updates.age));
