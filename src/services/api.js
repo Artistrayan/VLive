@@ -463,16 +463,66 @@ export const apiProfile = {
   async submitKyc(data) {
     const uid = getUserId();
     if (!uid) return { success: false };
+    
+    // Combine fields into description for Streamer Applications and KYC
+    let finalDescription = data.description || '';
+    if (typeof data === 'object') {
+      finalDescription = JSON.stringify({
+        description: data.description || '',
+        streamCategory: data.streamCategory || '',
+        streamTopic: data.streamTopic || '',
+        camTested: data.camTested || false,
+        micTested: data.micTested || false,
+        wantToBeStreamer: data.wantToBeStreamer || false,
+        selfiePhoto: data.selfiePhoto || '',
+        idCardPhoto: data.idCardPhoto || data.avatar || '',
+        avatar: data.avatar || '',
+        name: data.name || data.username || '',
+        verificationType: data.verificationType || '',
+        requestedPose: data.requestedPose || '',
+        aiConfidence: data.aiConfidence || ''
+      });
+    }
+
     const { error } = await supabase.from('kyc_applications').insert([{
       user_id: uid,
       username: data.username,
       national_id: data.nationalId,
-      description: data.description,
+      description: finalDescription,
       status: 'Pending',
-      video_demo_url: data.videoUrl || '',
+      video_demo_url: data.videoUrl || data.videoDemoUrl || '',
       doc_url: data.docUrl || ''
     }]);
     return { success: !error };
+  },
+
+  async getMyKycApplications() {
+    const uid = getUserId();
+    if (!uid) return [];
+    try {
+      const { data, error } = await supabase.from('kyc_applications').select('*').eq('user_id', uid).order('created_at', { ascending: false });
+      if (error || !data) return [];
+      
+      return data.map(app => {
+        let parsed = {};
+        try {
+           parsed = JSON.parse(app.description || '{}');
+        } catch(e) {}
+        
+        return {
+          id: app.id,
+          username: app.username,
+          status: app.status,
+          description: parsed.description || app.description,
+          streamCategory: parsed.streamCategory || '',
+          streamTopic: parsed.streamTopic || '',
+          correctionMessage: app.correctionMessage || '',
+          rejectionReason: app.rejectionReason || ''
+        };
+      });
+    } catch (e) {
+      return [];
+    }
   },
 
   // ==================== REAL FOLLOW / UNFOLLOW SYSTEM ====================

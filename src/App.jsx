@@ -2227,6 +2227,10 @@ export default function App() {
       apiAdmin.getKycApplications().then(apps => {
         if (apps) setKycApplications(apps);
       });
+    } else if (apiProfile && typeof apiProfile.getMyKycApplications === 'function') {
+      apiProfile.getMyKycApplications().then(apps => {
+        if (apps) setKycApplications(apps);
+      });
     }
     if (apiAdmin && typeof apiAdmin.getAllUsers === 'function') {
       apiAdmin.getAllUsers().then(users => {
@@ -2660,6 +2664,15 @@ export default function App() {
         <TermsModal isTermsModalOpen={isTermsModalOpen} setIsTermsModalOpen={setIsTermsModalOpen} />
       </div>;
   }
+  const isStreamerUser = Boolean(
+    isVerified ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    currentUser?.isStreamer ||
+    currentUser?.is_streamer ||
+    currentUser?.isHost
+  );
+
   return <VisualUiEditorProvider isSuperAdmin={isUserSuperAdmin} showToast={showToast}>
       <DynamicThemeStyleInjector />
       <VisualUiEditorToolbar activeTab={activeTab} setActiveTab={setActiveTab} setIsAdminPanelOpen={setIsAdminPanelOpen} />
@@ -2789,10 +2802,12 @@ export default function App() {
             </div>
 
             {/* Camera Go-Live Icon Button (Opens Live Studio with Camera Preview) */}
-            <button onClick={() => setIsLiveStudioOpen(true)} className="ml-1 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 border border-pink-400/80 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-300 relative shrink-0 shadow-[0_0_15px_rgba(236,72,153,0.7)] group" title={loc('اجرا و شروع لایواستریم 🎥', 'Start Live Studio Broadcast 🎥')}>
+            {isStreamerUser && (
+              <button onClick={() => setIsLiveStudioOpen(true)} className="ml-1 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 border border-pink-400/80 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-300 relative shrink-0 shadow-[0_0_15px_rgba(236,72,153,0.7)] group" title={loc('اجرا و شروع لایواستریم 🎥', 'Start Live Studio Broadcast 🎥')}>
                 <Video className="w-4 h-4 text-white animate-pulse" />
                 <span className="absolute -top-1 -right-1 bg-lime-400 text-slate-950 text-[8px] font-black w-3.5 h-3.5 flex items-center justify-center rounded-full border border-slate-950 shadow-md">+</span>
               </button>
+            )}
           </div>
 
           {/* Center App Title */}
@@ -3258,17 +3273,13 @@ export default function App() {
           <Headphones className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition duration-300" />
         </button>
 
-        {/* 5. Request Streamer & Star Badge (Star ⭐) */}
-        <button onClick={() => setIsBecomeStreamerModalOpen(true)} className="flex flex-col items-center gap-1 p-2 rounded-2xl text-amber-400 hover:text-amber-300 active:scale-95 transition-all duration-300 group" title={loc('نشان ستاره و درخواست استریمر', 'Star Badge & Streamer Request')}>
-          <Star className="w-5 h-5 text-amber-400 fill-amber-400/40 group-hover:fill-amber-400 transition duration-300" />
-        </button>
-
       </nav>
 
       {/* MODAL: REDESIGNED NOTIFICATIONS SYSTEM */}
       <NotificationsModal isNotificationsOpen={isNotificationsOpen} setIsNotificationsOpen={setIsNotificationsOpen} isNotifSettingsOpen={isNotifSettingsOpen} setIsNotifSettingsOpen={setIsNotifSettingsOpen} isRtl={isRtl} notificationsList={notificationsList} setNotificationsList={setNotificationsList} notificationFilterTab={notificationFilterTab} setNotificationFilterTab={setNotificationFilterTab} notifSettings={notifSettings} setNotifSettings={setNotifSettings} setActiveChatCall={setActiveChatCall} setIsSettingsModalOpen={setIsSettingsModalOpen} showToast={showToast} onSwitchMainTab={(tab) => setActiveTab(tab)} onOpenChat={(targetId) => { if (targetId) handleStartNewChatWithUser({ id: targetId }); }} />
+
       {/* MODAL: 18-SECTION SETTINGS MODAL */}
-      <SettingsModal currentUser={currentUser} userRole={userRole} handleLogout={handleLogout} isSettingsModalOpen={isSettingsModalOpen} setIsSettingsModalOpen={setIsSettingsModalOpen} currentAppLang={currentAppLang} setCurrentAppLang={setCurrentAppLang} handleSelectLanguage={handleSelectLanguage} APP_LANGUAGES={APP_LANGUAGES} setIsLanguageModalOpen={setIsLanguageModalOpen} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} currentUsername={currentUsername} authUsername={authUsername} authEmail={authEmail} currentTelegramId={currentTelegramId} userGender={userGender} isVerified={isVerified} verificationsList={verificationsList} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} blockedUsers={blockedCallUsers} setBlockedUsers={setBlockedCallUsers} isRtl={isRtl} notifSettings={notifSettings} setNotifSettings={setNotifSettings} appThemeMode={appThemeMode} setAppThemeMode={setAppThemeMode} setIsKycModalOpen={setIsKycModalOpen} setIsSuggestionModalOpen={setIsSuggestionModalOpen} setIsTermsModalOpen={setIsTermsModalOpen} setIsVipModalOpen={setIsVipModalOpen} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} showToast={showToast} loc={loc} />
+      <SettingsModal currentUser={currentUser} userRole={userRole} handleLogout={handleLogout} isSettingsModalOpen={isSettingsModalOpen} setIsSettingsModalOpen={setIsSettingsModalOpen} currentAppLang={currentAppLang} setCurrentAppLang={setCurrentAppLang} handleSelectLanguage={handleSelectLanguage} APP_LANGUAGES={APP_LANGUAGES} setIsLanguageModalOpen={setIsLanguageModalOpen} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} currentUsername={currentUsername} authUsername={authUsername} authEmail={authEmail} currentTelegramId={currentTelegramId} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} isVerified={isVerified} verificationsList={verificationsList} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} blockedUsers={blockedCallUsers} setBlockedUsers={setBlockedCallUsers} isRtl={isRtl} notifSettings={notifSettings} setNotifSettings={setNotifSettings} appThemeMode={appThemeMode} setAppThemeMode={setAppThemeMode} setIsKycModalOpen={setIsKycModalOpen} setIsSuggestionModalOpen={setIsSuggestionModalOpen} setIsTermsModalOpen={setIsTermsModalOpen} setIsVipModalOpen={setIsVipModalOpen} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} showToast={showToast} loc={loc} />
 
       {/* MODAL: VIP & REWARD SYSTEM MODALS */}
       <VipAndRewardModals isLevelUpModalOpen={isLevelUpModalOpen} setIsLevelUpModalOpen={setIsLevelUpModalOpen} isRtl={isRtl} userLevel={userLevel} levelUpModalData={levelUpModalData} isReferralRulesModalOpen={isReferralRulesModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} isVipModalOpen={isVipModalOpen} setIsVipModalOpen={setIsVipModalOpen} selectedVipPlan={selectedVipPlan} setSelectedVipPlan={setSelectedVipPlan} selectedVipDuration={selectedVipDuration} setSelectedVipDuration={setSelectedVipDuration} selectedVipPayMethod={selectedVipPayMethod} setSelectedVipPayMethod={setSelectedVipPayMethod} userCoins={userCoins} setUserCoins={setUserCoins} setVipPlan={setVipPlan} setVipExpireDays={setVipExpireDays} setIsVipMonthlyClaimed={setIsVipMonthlyClaimed} isVipCelebrationOpen={isVipCelebrationOpen} setIsVipCelebrationOpen={setIsVipCelebrationOpen} vipPlan={vipPlan} vipExpireDays={vipExpireDays} showToast={showToast} />

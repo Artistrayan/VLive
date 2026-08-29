@@ -106,11 +106,13 @@ export default function StreamerApplicationModal({
       console.warn('submitKyc error:', e);
     }
 
-    setKycApplications(prev => {
-      const updated = [newApp, ...prev];
-      safeStorage.setItem('vlive_kyc_applications', JSON.stringify(updated));
-      return updated;
-    });
+    if (apiProfile && typeof apiProfile.getMyKycApplications === 'function') {
+      apiProfile.getMyKycApplications().then(apps => {
+        if (apps) setKycApplications(apps);
+      });
+    } else {
+      setKycApplications(prev => [newApp, ...prev]);
+    }
     
     showToast(loc('✅ درخواست شما با موفقیت ثبت شد', '✅ Your application was successfully submitted'));
   };

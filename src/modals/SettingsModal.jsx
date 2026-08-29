@@ -17,7 +17,7 @@ export default function SettingsModal(props) {
     userName, setUserName,
     userBio, setUserBio,
     currentUsername, authUsername, authEmail,
-    currentTelegramId, userGender, isVerified, verificationsList,
+    currentTelegramId, userGender, setUserGender, setIsBecomeStreamerModalOpen, isVerified, verificationsList,
     isUserRayan, userLevel, vipPlan,
     userCoins, userDiamonds, userCashBalance,
     isRtl,
@@ -313,6 +313,23 @@ export default function SettingsModal(props) {
                         <span className="text-pink-400 font-bold">@{currentUsername || 'Vlive1001'}</span>
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">{window.loc('دائمی و غیرقابل تغییر', 'Permanent & Read-Only')}</span>
                       </div>
+                    </div>
+                    <div>
+                      <label className="text-slate-300 font-semibold mb-1 block">{window.loc('جنسیت (Gender)', 'Gender')}</label>
+                      <select 
+                        value={userGender} 
+                        onChange={(e) => {
+                          const newGender = e.target.value;
+                          if (setUserGender) setUserGender(newGender);
+                          if (newGender === 'female' && setIsBecomeStreamerModalOpen) {
+                            setIsBecomeStreamerModalOpen(true);
+                          }
+                        }}
+                        className="w-full px-3 py-2 rounded-2xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500"
+                      >
+                        <option value="male">{window.loc('مرد (Male)', 'Male')}</option>
+                        <option value="female">{window.loc('زن (Female)', 'Female')}</option>
+                      </select>
                     </div>
 
                     <div className="sm:col-span-2 space-y-2 border-t border-slate-800/80 pt-2">

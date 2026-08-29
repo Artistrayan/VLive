@@ -1350,10 +1350,12 @@ export default function ProfileTab(props) {
               <Activity className="w-5 h-5 text-emerald-400" />
               <span className="text-[10px] text-slate-400 font-bold">{window.loc('فعالیت', 'Activity')}</span>
             </button>
-            <button onClick={() => setActiveProfileTab('lives')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Video className="w-5 h-5 text-pink-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('لایوها', 'Lives')}</span>
-            </button>
+            {isStreamerUser && (
+              <button onClick={() => setActiveProfileTab('lives')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
+                <Video className="w-5 h-5 text-pink-400" />
+                <span className="text-[10px] text-slate-400 font-bold">{window.loc('لایوها', 'Lives')}</span>
+              </button>
+            )}
             <button onClick={() => setActiveProfileTab('likes')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
               <Heart className="w-5 h-5 text-rose-400" />
               <span className="text-[10px] text-slate-400 font-bold">{window.loc('علاقه‌مندی', 'Favorites')}</span>

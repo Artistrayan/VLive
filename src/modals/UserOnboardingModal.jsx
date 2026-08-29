@@ -351,9 +351,6 @@ export default function UserOnboardingModal({
           requestedAt: new Date().toISOString()
         };
 
-        const existingApps = JSON.parse(safeStorage.getItem('vlive_kyc_applications') || '[]');
-        existingApps.unshift(kycReq);
-        safeStorage.setItem('vlive_kyc_applications', JSON.stringify(existingApps));
 
         // Send to real backend
         import('../services/api.js').then(({ apiProfile }) => {
