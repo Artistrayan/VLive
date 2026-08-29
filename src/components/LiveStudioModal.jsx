@@ -633,8 +633,8 @@ export default function LiveStudioModal({
     } catch (e) {
       console.warn('Error closing LiveKit room:', e);
     }
-    setStudioPhase('SUMMARY');
-    showToast(window.loc('⏹️ پخش زنده پایان یافت. خلاصه عملکرد تولید شد.', '⏹️ The live broadcast has ended. A performance summary was generated.'));
+    showToast(window.loc('⏹️ پخش زنده پایان یافت.', '⏹️ The live broadcast has ended.'));
+    if (onClose) onClose();
   };
 
   // Chat message send with AI Moderation
