@@ -2263,6 +2263,56 @@ export default function App() {
       }
     }).catch(err => console.warn('Streams fetch notice:', err));
 
+    // Subscribe to real-time live stream broadcasts across all users
+    const liveBroadcastChannel = apiLive.subscribeToLiveStreams({
+      onStreamStarted: (newStream) => {
+        if (!newStream || !newStream.id) return;
+        setStreamsList(prev => {
+          const arr = Array.isArray(prev) ? prev : [];
+          if (arr.some(s => s.id === newStream.id)) {
+            return arr.map(s => s.id === newStream.id ? { ...s, ...newStream } : s);
+          }
+          return [newStream, ...arr];
+        });
+      },
+      onStreamEnded: (endedStreamId) => {
+        if (!endedStreamId) return;
+        setStreamsList(prev => {
+          const arr = Array.isArray(prev) ? prev : [];
+          return arr.filter(s => s.id !== endedStreamId);
+        });
+      },
+      onStreamUpdated: (updatedStream) => {
+        if (!updatedStream || !updatedStream.id) return;
+        setStreamsList(prev => {
+          const arr = Array.isArray(prev) ? prev : [];
+          return arr.map(s => s.id === updatedStream.id ? { ...s, ...updatedStream } : s);
+        });
+      }
+    });
+
+    const handleLocalStreamStarted = (e) => {
+      const newStream = e.detail;
+      if (!newStream || !newStream.id) return;
+      setStreamsList(prev => {
+        const arr = Array.isArray(prev) ? prev : [];
+        if (arr.some(s => s.id === newStream.id)) return arr;
+        return [newStream, ...arr];
+      });
+    };
+
+    const handleLocalStreamEnded = (e) => {
+      const endedId = e.detail?.streamId;
+      if (!endedId) return;
+      setStreamsList(prev => {
+        const arr = Array.isArray(prev) ? prev : [];
+        return arr.filter(s => s.id !== endedId);
+      });
+    };
+
+    window.addEventListener('vlive_stream_started', handleLocalStreamStarted);
+    window.addEventListener('vlive_stream_ended', handleLocalStreamEnded);
+
     // Fetch Notifications from API
     apiNotifications.getNotifications().then(notifs => {
       if (notifs) {
@@ -2347,6 +2397,9 @@ export default function App() {
     return () => {
       window.removeEventListener('vlive_new_notification', handleLocalNotifEvent);
       window.removeEventListener('vlive_kyc_updated', handleKycUpdatedEvent);
+      window.removeEventListener('vlive_stream_started', handleLocalStreamStarted);
+      window.removeEventListener('vlive_stream_ended', handleLocalStreamEnded);
+      try { liveBroadcastChannel?.unsubscribe(); } catch (e) {}
       activeNotifChannels.forEach(ch => {
         try { ch.unsubscribe(); } catch (e) {}
       });

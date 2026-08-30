@@ -89,7 +89,6 @@ export default function StreamerApplicationModal({
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
   const videoRef = useRef(null);
-  const fileInputRef = useRef(null);
 
   // Equipment & Rules
   const [rulesAccepted, setRulesAccepted] = useState(false);
@@ -120,26 +119,42 @@ export default function StreamerApplicationModal({
     }
   }, [isCameraActive, cameraStream]);
 
-  // Camera Management (HD Resolution & High Fidelity)
+  // Camera Management - STRICTLY FRONT CAMERA ONLY (User Facing)
   const startCamera = async () => {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showToast(loc('دسترسی به وبکم مستقیم مقدور نیست، لطفاً از دکمه بارگذاری سلفی استفاده کنید 📸', 'Direct camera stream not supported, please upload selfie photo 📸'));
+        showToast(loc('دسترسی به دوربین توسط مرورگر پشتیبانی نمی‌شود', 'Camera stream is not supported by your browser'));
         return;
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'user', 
-          width: { ideal: 1920, min: 720 }, 
-          height: { ideal: 1080, min: 720 } 
-        },
-        audio: false
-      });
+
+      let stream = null;
+      try {
+        // Enforce front camera (user facing)
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: { exact: 'user' }, 
+            width: { ideal: 1280, max: 1920 }, 
+            height: { ideal: 720, max: 1080 } 
+          },
+          audio: false
+        });
+      } catch (exactErr) {
+        // Fallback for browsers that don't support exact facingMode
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: 'user', 
+            width: { ideal: 1280, max: 1920 }, 
+            height: { ideal: 720, max: 1080 } 
+          },
+          audio: false
+        });
+      }
+
       setCameraStream(stream);
       setIsCameraActive(true);
     } catch (err) {
-      console.warn('Camera error:', err);
-      showToast(loc('دسترسی به دوربین مستقیم داده نشد. می‌توانید با دکمه انتخاب فایل سلفی بگیرید 📸', 'Camera access failed. You can take/upload a selfie with the upload button 📸'));
+      console.warn('Front camera access error:', err);
+      showToast(loc('⛔ دسترسی به دوربین جلوی گوشی امکان‌پذیر نشد. لطفاً مجوز دوربین را در مرورگر فعال کنید.', '⛔ Front camera access failed. Please enable camera permissions in your browser.'));
     }
   };
 
@@ -151,11 +166,27 @@ export default function StreamerApplicationModal({
     setIsCameraActive(false);
   };
 
+  // High-clarity optimized capture: balanced resolution & compression for instant fast load on slow/weak internet
   const capturePhotoFromStream = () => {
     if (!videoRef.current) return;
     const v = videoRef.current;
-    const w = v.videoWidth || 1280;
-    const h = v.videoHeight || 720;
+    const rawW = v.videoWidth || 1280;
+    const rawH = v.videoHeight || 720;
+    
+    // Scale to balanced optimal size (max 960px) ensuring crystal clarity of gesture + under 150KB size
+    const maxDim = 960;
+    let w = rawW;
+    let h = rawH;
+    if (w > maxDim || h > maxDim) {
+      if (w > h) {
+        h = Math.round((h * maxDim) / w);
+        w = maxDim;
+      } else {
+        w = Math.round((w * maxDim) / h);
+        h = maxDim;
+      }
+    }
+
     const canvas = document.createElement('canvas');
     canvas.width = w;
     canvas.height = h;
@@ -163,26 +194,15 @@ export default function StreamerApplicationModal({
     if (ctx) {
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
+      // Mirror horizontally to match the natural front camera mirror preview
+      ctx.translate(w, 0);
+      ctx.scale(-1, 1);
       ctx.drawImage(v, 0, 0, w, h);
     }
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
     setCapturedSelfie(dataUrl);
     stopCamera();
-    showToast(loc('📸 عکس سلفی با کیفیت بالا و ژست درخواستی با موفقیت ثبت شد.', '📸 High-quality gesture selfie captured successfully.'));
-  };
-
-  const handleSelfieFileSelect = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      // High resolution compress keeping max details
-      const compressed = await compressImageFile(file, 1600, 0.92);
-      setCapturedSelfie(compressed);
-      stopCamera();
-      showToast(loc('📸 عکس سلفی با کیفیت بالا با موفقیت انتخاب شد.', '📸 High-quality gesture selfie selected successfully.'));
-    } catch (err) {
-      showToast(loc('خطا در پردازش تصویر سلفی', 'Error processing selfie image'));
-    }
+    showToast(loc('📸 عکس سلفی دوربین جلو با کیفیت و ژست درخواستی با موفقیت ثبت شد.', '📸 Front camera selfie captured successfully.'));
   };
 
   const randomizePose = () => {
@@ -472,14 +492,14 @@ export default function StreamerApplicationModal({
               </div>
             </div>
 
-            {/* Live Camera View or Captured Photo Preview */}
+            {/* Live Front Camera View or Captured Photo Preview */}
             <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 flex flex-col items-center justify-center min-h-[220px]">
               {capturedSelfie ? (
                 <div className="w-full relative">
                   <img src={capturedSelfie} alt="Gesture Selfie" className="w-full h-56 object-cover rounded-2xl" />
                   <div className="absolute top-2 right-2 px-2.5 py-1 rounded-xl bg-slate-950/80 backdrop-blur-md border border-pink-500/40 text-[10px] font-bold text-pink-300 flex items-center gap-1.5">
                     <span>{selectedPose.icon}</span>
-                    <span>{loc('سلفی ثبت شد', 'Selfie Captured')}</span>
+                    <span>{loc('سلفی دوربین جلو ثبت شد', 'Front Camera Selfie Captured')}</span>
                   </div>
                   <div className="absolute bottom-2 inset-x-2 flex gap-2">
                     <button
@@ -491,59 +511,60 @@ export default function StreamerApplicationModal({
                       className="flex-1 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white font-bold text-xs border border-slate-700 flex items-center justify-center gap-1.5 transition"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
-                      <span>{loc('عکس‌برداری مجدد', 'Retake Photo')}</span>
+                      <span>{loc('سلفی مجدد با دوربین جلو', 'Retake Front Selfie')}</span>
                     </button>
                   </div>
                 </div>
               ) : isCameraActive ? (
                 <div className="w-full relative flex flex-col items-center">
-                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-56 object-cover rounded-2xl" />
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    playsInline 
+                    muted 
+                    className="w-full h-56 object-cover rounded-2xl" 
+                    style={{ transform: 'scaleX(-1)' }}
+                  />
+                  <div className="absolute top-2 right-2 px-2.5 py-1 rounded-xl bg-slate-950/80 backdrop-blur-md border border-pink-500/40 text-[10px] font-bold text-pink-300 flex items-center gap-1.5">
+                    <Camera className="w-3 h-3 text-pink-400 animate-pulse" />
+                    <span>{loc('📱 دوربین جلوی گوشی (سلفی زنده)', '📱 Front Camera (Live Selfie)')}</span>
+                  </div>
                   <div className="absolute bottom-3 inset-x-3 flex justify-between gap-2">
                     <button
                       type="button"
                       onClick={capturePhotoFromStream}
-                      className="flex-1 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-black text-xs shadow-lg shadow-pink-600/40 flex items-center justify-center gap-1.5 transition active:scale-98"
+                      className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-black text-xs shadow-lg shadow-pink-600/40 flex items-center justify-center gap-1.5 transition active:scale-98"
                     >
                       <Camera className="w-4 h-4" />
-                      <span>{loc('📸 ثبت عکس سلفی', 'Take Snapshot')}</span>
+                      <span>{loc('📸 ثبت سلفی با ژست', 'Capture Gesture Selfie')}</span>
                     </button>
                     <button
                       type="button"
                       onClick={stopCamera}
-                      className="px-3 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+                      className="px-3 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 transition"
                     >
-                      {loc('انصراف', 'Cancel')}
+                      {loc('بستن دوربین', 'Close Camera')}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="p-6 text-center space-y-3">
-                  <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-pink-400">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-pink-500/30 flex items-center justify-center mx-auto text-pink-400 shadow-lg shadow-pink-500/10">
                     <Camera className="w-7 h-7" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-white">{loc('سلفی احراز هویت با علامت مشخص', 'Take verification selfie with gesture')}</p>
-                    <p className="text-[10px] text-slate-400 mt-1">{loc('چهره و دست شما در تصویر باید کاملاً واضح باشد.', 'Your face and gesture must be clearly visible.')}</p>
+                    <p className="text-xs font-bold text-white">{loc('سلفی زنده احراز هویت با دوربین جلو', 'Live Front Camera Verification Selfie')}</p>
+                    <p className="text-[10px] text-slate-400 mt-1">{loc('ثبت سلفی فقط از طریق دوربین جلوی گوشی و با ژست مشخص مجاز است (انتخاب از گالری ممنوع است).', 'Selfie must strictly be taken using the front camera with the requested gesture (gallery upload is disabled).')}</p>
                   </div>
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+                  <div className="flex items-center justify-center pt-1">
                     <button
                       type="button"
                       onClick={startCamera}
-                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow transition"
+                      className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-pink-600/30 transition active:scale-98"
                     >
                       <Camera className="w-4 h-4" />
-                      <span>{loc('باز کردن دوربین زنده', 'Open Live Camera')}</span>
+                      <span>{loc('📱 باز کردن دوربین جلوی گوشی', '📱 Open Front Camera')}</span>
                     </button>
-                    
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition"
-                    >
-                      <Upload className="w-4 h-4" />
-                      <span>{loc('بارگذاری از گالری', 'Upload Photo')}</span>
-                    </button>
-                    <input ref={fileInputRef} type="file" accept="image/*" capture="user" className="hidden" onChange={handleSelfieFileSelect} />
                   </div>
                 </div>
               )}

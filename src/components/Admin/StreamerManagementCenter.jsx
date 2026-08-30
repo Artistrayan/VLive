@@ -10,10 +10,12 @@ import {
 } from 'lucide-react';
 import { STREAMER_LEVELS, AVAILABLE_BADGES, getStreamerScores, detectAntiCheatAnomalies } from '../../services/streamerScoring';
 
-// Component for High-Definition, crisp image display with auto-fallback & shimmer
+// Component for High-Definition, crisp image display with auto-fallback & progressive loading for slow internet
 function HighQualityKycImage({ src, alt, className = "", onClick, badge = null, fallbackText = "بدون تصویر", isZoomable = true }) {
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(Boolean(src));
+
+  const isDataUri = typeof src === 'string' && src.startsWith('data:');
 
   if (!src || hasError) {
     return (
@@ -35,14 +37,16 @@ function HighQualityKycImage({ src, alt, className = "", onClick, badge = null, 
       {isLoading && (
         <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-1.5 z-10">
           <Sparkles className="w-5 h-5 text-pink-400 animate-spin" />
-          <span className="text-[9px] text-pink-300/80 font-mono">بارگذاری تصویر HD...</span>
+          <span className="text-[9px] text-pink-300/80 font-mono">در حال بارگذاری تصویر HD...</span>
         </div>
       )}
       <img
         src={src}
         alt={alt || "KYC Image"}
+        loading="lazy"
+        decoding="async"
         referrerPolicy="no-referrer"
-        crossOrigin="anonymous"
+        crossOrigin={isDataUri ? undefined : "anonymous"}
         onLoad={() => setIsLoading(false)}
         onError={() => {
           setHasError(true);
