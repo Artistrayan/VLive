@@ -50,16 +50,17 @@ export default function StreamerManagementCenter({
         }
       }
     });
-    // Remove duplicates by username
+    // Remove duplicates safely
     const unique = [];
-    const map = new Set();
+    const seen = new Set();
     for (const app of combined) {
-      if (!map.has(app.username)) {
-        map.add(app.username);
+      const key = (app.id || app.username || Math.random()).toString().toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
         unique.push(app);
       }
     }
-    return unique.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    return unique.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
   }, [kycApplications, usersList]);
 
   const pendingKycCount = mergedKycApplications.filter(a => (a.status || '').toLowerCase() === 'pending').length;

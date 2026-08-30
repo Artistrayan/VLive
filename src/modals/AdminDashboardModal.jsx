@@ -175,16 +175,18 @@ export default function AdminDashboardModal(props) {
         }
       }
     });
+    // Remove duplicates safely
     const unique = [];
-    const map = new Set();
+    const seen = new Set();
     for (const app of combined) {
-      if (!map.has(app.username)) {
-        map.add(app.username);
+      const key = (app.id || app.username || Math.random()).toString().toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
         unique.push(app);
       }
     }
-    return unique.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-  }, [props.kycApplications, props.usersList]);
+    return unique.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+  }, [props.kycApplications, props.usersList, props.adminUsersList]);
 
   // Auto-fetch KYC applications and fresh data on panel open
   React.useEffect(() => {
