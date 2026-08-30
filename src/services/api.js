@@ -565,7 +565,7 @@ export const apiProfile = {
       if (uid && !String(uid).startsWith('user_')) {
         const res = await supabase
           .from('kyc_applications')
-          .select('*, profiles:user_id(username, name, avatar, bio, user_type, is_verified)')
+          .select('*, profiles:user_id(username, name, avatar, bio, user_type, is_verified, status)')
           .eq('user_id', uid)
           .order('created_at', { ascending: false });
         data = res.data;
@@ -575,13 +575,24 @@ export const apiProfile = {
       if (!error && Array.isArray(data) && data.length > 0) {
         return data.map(app => {
           let parsed = {};
-          try { parsed = JSON.parse(app.national_id || '{}'); } catch(e) {}
+          try {
+            if (app.national_id && app.national_id.startsWith('{')) {
+              parsed = JSON.parse(app.national_id);
+            }
+          } catch(e) {}
+
+          const rawStatus = (app.status || parsed.status || '').toLowerCase();
+          let currentStatus = 'Pending';
+          if (rawStatus === 'approved') currentStatus = 'Approved';
+          else if (rawStatus === 'rejected') currentStatus = 'Rejected';
+          else if (rawStatus === 'correction') currentStatus = 'Correction';
+
           return {
             id: app.id,
             user_id: app.user_id,
             username: app.profiles?.username || app.full_name,
             name: app.full_name || app.profiles?.name || app.profiles?.username,
-            status: app.status || 'Pending',
+            status: currentStatus,
             description: parsed.description || '',
             streamCategory: parsed.streamCategory || '',
             streamTopic: parsed.streamTopic || '',
@@ -590,6 +601,9 @@ export const apiProfile = {
             avatar: app.profiles?.avatar || app.document_url || '',
             requestedPose: parsed.requestedPose || '',
             verificationType: parsed.verificationType || 'MANUAL_GESTURE_SELFIE',
+            admin_notes: parsed.admin_notes || app.admin_notes || '',
+            rejectionReason: parsed.rejection_reason || parsed.rejectionReason || (currentStatus === 'Rejected' ? parsed.admin_notes : ''),
+            correctionMessage: parsed.correction_message || parsed.correctionMessage || (currentStatus === 'Correction' ? parsed.admin_notes : ''),
             created_at: app.created_at
           };
         });
@@ -1180,6 +1194,25 @@ export function getCanonicalConversationId(u1, u2) {
   return s1 < s2 ? `dm_${s1}_${s2}` : `dm_${s2}_${s1}`;
 }
 
+const CONV_READ_KEY_PREFIX = 'vlive_conv_read_state_';
+
+export function getConvReadMap(uid) {
+  if (!uid) return {};
+  try {
+    const raw = safeStorage.getItem(CONV_READ_KEY_PREFIX + uid);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveConvReadMap(uid, map) {
+  if (!uid) return;
+  try {
+    safeStorage.setItem(CONV_READ_KEY_PREFIX + uid, JSON.stringify(map));
+  } catch {}
+}
+
 export const apiMessages = {
   async getConversations() {
     let uid = getUserId();
@@ -1222,6 +1255,8 @@ export const apiMessages = {
       }
 
       // 3. Hydrate with latest message for each conversation
+      const readMap = getConvReadMap(userUuid) || getConvReadMap(uid) || {};
+
       const hydratedList = await Promise.all(uniqueConvs.map(async (conv) => {
         const partnerId = conv.user1_id === userUuid ? conv.user2_id : conv.user1_id;
         const pKey = String(partnerId || '').trim();
@@ -1232,6 +1267,7 @@ export const apiMessages = {
 
         let lastMessageText = '';
         let lastMessageTime = conv.created_at;
+        let lastMessageSenderId = null;
         const { data: lastMsgs } = await supabase
           .from('messages')
           .select('id, content, created_at, sender_id')
@@ -1244,11 +1280,34 @@ export const apiMessages = {
           if (visibleMsg) {
             lastMessageText = visibleMsg.content || '';
             lastMessageTime = visibleMsg.created_at;
+            lastMessageSenderId = visibleMsg.sender_id;
           }
         }
 
         const resolvedName = formatUserDisplayName(prof, partnerId);
         const resolvedUsername = formatUserUsername(prof, partnerId);
+
+        // Read/Unread state calculation
+        const readState = readMap[String(conv.id)] || readMap[String(partnerId)] || null;
+        let isUnread = false;
+        let unreadCount = 0;
+
+        if (readState) {
+          if (readState.isUnread) {
+            isUnread = true;
+            unreadCount = 1;
+          } else if (readState.lastReadAt && lastMessageTime) {
+            const lastMsgTimestamp = new Date(lastMessageTime).getTime();
+            const lastReadTimestamp = new Date(readState.lastReadAt).getTime();
+            if (lastMessageSenderId && lastMessageSenderId !== userUuid && lastMessageSenderId !== uid && lastMsgTimestamp > lastReadTimestamp) {
+              isUnread = true;
+              unreadCount = 1;
+            }
+          }
+        } else if (lastMessageSenderId && lastMessageSenderId !== userUuid && lastMessageSenderId !== uid) {
+          isUnread = true;
+          unreadCount = 1;
+        }
 
         return {
           id: conv.id,
@@ -1268,7 +1327,8 @@ export const apiMessages = {
           },
           lastMessage: lastMessageText,
           lastTime: lastMessageTime ? new Date(lastMessageTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Recently',
-          unreadCount: 0,
+          unreadCount: unreadCount,
+          isUnread: isUnread,
           messages: []
         };
       }));
@@ -1277,6 +1337,71 @@ export const apiMessages = {
       console.warn('getConversations exception:', e);
       return [];
     }
+  },
+
+  markConversationAsRead(conversationId, forUserId = null) {
+    if (!conversationId) return { success: false };
+    try {
+      const uid = forUserId || getUserId() || 'me';
+      const map = getConvReadMap(uid);
+      map[String(conversationId)] = {
+        lastReadAt: new Date().toISOString(),
+        isUnread: false
+      };
+      saveConvReadMap(uid, map);
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  markConversationAsUnread(conversationId, forUserId = null) {
+    if (!conversationId) return { success: false };
+    try {
+      const uid = forUserId || getUserId() || 'me';
+      const map = getConvReadMap(uid);
+      map[String(conversationId)] = {
+        lastReadAt: 0,
+        isUnread: true
+      };
+      saveConvReadMap(uid, map);
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  markAllConversationsAsRead(forUserId = null, convIds = []) {
+    try {
+      const uid = forUserId || getUserId() || 'me';
+      const map = getConvReadMap(uid);
+      const now = new Date().toISOString();
+      if (Array.isArray(convIds) && convIds.length > 0) {
+        convIds.forEach(id => {
+          map[String(id)] = {
+            lastReadAt: now,
+            isUnread: false
+          };
+        });
+      } else {
+        Object.keys(map).forEach(id => {
+          map[id] = {
+            lastReadAt: now,
+            isUnread: false
+          };
+        });
+      }
+      saveConvReadMap(uid, map);
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  getConversationReadState(conversationId, forUserId = null) {
+    const uid = forUserId || getUserId() || 'me';
+    const map = getConvReadMap(uid);
+    return map[String(conversationId)] || null;
   },
 
   async getMessages(conversationId, partnerId = null) {
@@ -3538,7 +3663,7 @@ export const apiAdmin = {
     try {
       const { data, error } = await supabase
         .from('kyc_applications')
-        .select('*, profiles:user_id(id, username, name, avatar, bio, user_type, is_verified)')
+        .select('*, profiles:user_id(id, username, name, avatar, bio, user_type, is_verified, status)')
         .order('created_at', { ascending: false });
       
       let dbApps = [];
@@ -3554,12 +3679,18 @@ export const apiAdmin = {
           const profile = app.profiles || {};
           const uname = profile.username || app.full_name || (app.user_id ? `user_${String(app.user_id).slice(-4)}` : 'applicant');
           
+          const rawStatus = (app.status || parsed.status || '').toLowerCase();
+          let currentStatus = 'Pending';
+          if (rawStatus === 'approved') currentStatus = 'Approved';
+          else if (rawStatus === 'rejected') currentStatus = 'Rejected';
+          else if (rawStatus === 'correction') currentStatus = 'Correction';
+
           return {
             id: app.id,
             user_id: app.user_id,
             username: uname,
             name: app.full_name || profile.name || uname,
-            status: app.status || 'Pending',
+            status: currentStatus,
             description: parsed.description || '',
             streamCategory: parsed.streamCategory || 'عمومی',
             streamTopic: parsed.streamTopic || 'لایو گپ و گفتگو',
@@ -3571,6 +3702,9 @@ export const apiAdmin = {
             selfiePhoto: app.selfie_url || '',
             videoDemoUrl: parsed.videoDemoUrl || '',
             docUrl: app.document_url || '',
+            admin_notes: parsed.admin_notes || app.admin_notes || '',
+            rejectionReason: parsed.rejection_reason || parsed.rejectionReason || (currentStatus === 'Rejected' ? parsed.admin_notes : ''),
+            correctionMessage: parsed.correction_message || parsed.correctionMessage || (currentStatus === 'Correction' ? parsed.admin_notes : ''),
             created_at: app.created_at
           };
         });
@@ -3601,27 +3735,47 @@ export const apiAdmin = {
         } catch(e) {}
       });
 
-      // Combine by username/id, prioritizing real DB apps
-      const combinedMap = new Map();
+      // Return all database applications, merged cleanly with any offline/local submissions
+      const resultList = [...dbApps];
+      const seenIds = new Set(dbApps.map(a => String(a.id || '').toLowerCase()).filter(Boolean));
+      const seenUserIds = new Set(dbApps.map(a => String(a.user_id || '').toLowerCase()).filter(Boolean));
+      const seenUsernames = new Set(dbApps.map(a => String(a.username || '').toLowerCase()).filter(Boolean));
 
-      // Add DB apps first
-      dbApps.forEach(app => {
-        if (app.username || app.id) {
-          const key = String(app.username || app.id).toLowerCase();
-          combinedMap.set(key, app);
-        }
-      });
-
-      // Merge local apps
       localApps.forEach(locApp => {
-        if (!locApp || (!locApp.username && !locApp.id)) return;
-        const key = String(locApp.username || locApp.id).toLowerCase();
-        if (combinedMap.has(key)) {
-          const existing = combinedMap.get(key);
-          combinedMap.set(key, {
+        if (!locApp) return;
+        const locId = String(locApp.id || '').toLowerCase();
+        const locUid = String(locApp.user_id || '').toLowerCase();
+        const locUname = String(locApp.username || '').toLowerCase();
+
+        // Check if this local app matches an existing DB app
+        const existingIdx = resultList.findIndex(a => 
+          (locId && String(a.id || '').toLowerCase() === locId) ||
+          (locUid && String(a.user_id || '').toLowerCase() === locUid) ||
+          (locUname && String(a.username || '').toLowerCase() === locUname)
+        );
+
+        if (existingIdx !== -1) {
+          const existing = resultList[existingIdx];
+          let effectiveStatus = existing.status;
+          if (!effectiveStatus || effectiveStatus === 'Pending') {
+            if (locApp.status && locApp.status !== 'Pending') {
+              effectiveStatus = locApp.status;
+            }
+          }
+
+          const rawMergedStatus = String(effectiveStatus || 'Pending').toLowerCase();
+          let normalizedMergedStatus = 'Pending';
+          if (rawMergedStatus === 'approved') normalizedMergedStatus = 'Approved';
+          else if (rawMergedStatus === 'rejected') normalizedMergedStatus = 'Rejected';
+          else if (rawMergedStatus === 'correction') normalizedMergedStatus = 'Correction';
+
+          resultList[existingIdx] = {
             ...existing,
             ...locApp,
-            status: existing.status && existing.status !== 'Pending' ? existing.status : (locApp.status || 'Pending'),
+            status: normalizedMergedStatus,
+            admin_notes: locApp.admin_notes || existing.admin_notes || '',
+            rejectionReason: locApp.rejectionReason || existing.rejectionReason || '',
+            correctionMessage: locApp.correctionMessage || existing.correctionMessage || '',
             selfiePhoto: locApp.selfiePhoto || existing.selfiePhoto || '',
             idCardPhoto: locApp.idCardPhoto || locApp.avatar || existing.idCardPhoto || existing.avatar || '',
             avatar: locApp.avatar || locApp.idCardPhoto || existing.avatar || existing.idCardPhoto || '',
@@ -3629,13 +3783,21 @@ export const apiAdmin = {
             streamCategory: locApp.streamCategory || existing.streamCategory || '',
             streamTopic: locApp.streamTopic || existing.streamTopic || '',
             description: locApp.description || existing.description || ''
-          });
-        } else {
-          combinedMap.set(key, locApp);
+          };
+        } else if (locId && !seenIds.has(locId) && !seenUsernames.has(locUname)) {
+          const rawLocStatus = String(locApp.status || 'Pending').toLowerCase();
+          let normLocStatus = 'Pending';
+          if (rawLocStatus === 'approved') normLocStatus = 'Approved';
+          else if (rawLocStatus === 'rejected') normLocStatus = 'Rejected';
+          else if (rawLocStatus === 'correction') normLocStatus = 'Correction';
+
+          seenIds.add(locId);
+          if (locUname) seenUsernames.add(locUname);
+          resultList.push({ ...locApp, status: normLocStatus });
         }
       });
 
-      return Array.from(combinedMap.values());
+      return resultList.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
     } catch (e) {
       // Fallback: scan all local storage keys
       const localApps = [];
@@ -3655,9 +3817,15 @@ export const apiAdmin = {
 
   async updateKycStatus(id, status, userId = null, notes = '', username = '') {
     try {
-      const isApproved = status === 'Approved' || status === 'approved';
-      const isRejected = status === 'Rejected' || status === 'rejected';
-      const isCorrection = status === 'Correction' || status === 'correction';
+      const sLower = String(status || '').toLowerCase();
+      let normalizedStatus = 'Pending';
+      if (sLower === 'approved') normalizedStatus = 'Approved';
+      else if (sLower === 'rejected') normalizedStatus = 'Rejected';
+      else if (sLower === 'correction') normalizedStatus = 'Correction';
+
+      const isApproved = normalizedStatus === 'Approved';
+      const isRejected = normalizedStatus === 'Rejected';
+      const isCorrection = normalizedStatus === 'Correction';
 
       let targetId = userId;
       let userProfile = null;
@@ -3677,43 +3845,106 @@ export const apiAdmin = {
       }
 
       // 1. Update kyc_applications table in Supabase
-      if (id && !String(id).startsWith('kyc_') && isNaN(Number(id))) {
-        await supabase
-          .from('kyc_applications')
-          .update({ 
-            status: status, 
-            admin_notes: notes || '',
-            rejection_reason: isRejected ? notes : null,
-            correction_message: isCorrection ? notes : null,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', id);
+      if (id && String(id).length > 10 && !String(id).startsWith('user_kyc_')) {
+        try {
+          const { data: existingKyc } = await supabase
+            .from('kyc_applications')
+            .select('national_id')
+            .eq('id', id)
+            .maybeSingle();
+
+          let meta = {};
+          try {
+            if (existingKyc?.national_id && existingKyc.national_id.startsWith('{')) {
+              meta = JSON.parse(existingKyc.national_id);
+            }
+          } catch(e) {}
+
+          meta.admin_notes = notes || '';
+          if (isRejected) meta.rejection_reason = notes;
+          if (isCorrection) meta.correction_message = notes;
+          meta.status = normalizedStatus;
+          meta.updated_at = new Date().toISOString();
+
+          await supabase
+            .from('kyc_applications')
+            .update({ 
+              status: normalizedStatus, 
+              national_id: JSON.stringify(meta),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', id);
+        } catch (err) {
+          console.warn('kyc_applications update error:', err);
+        }
+      } else if (targetId && !String(targetId).startsWith('user_')) {
+        try {
+          const { data: existingKyc } = await supabase
+            .from('kyc_applications')
+            .select('id, national_id')
+            .eq('user_id', targetId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (existingKyc?.id) {
+            let meta = {};
+            try {
+              if (existingKyc.national_id && existingKyc.national_id.startsWith('{')) {
+                meta = JSON.parse(existingKyc.national_id);
+              }
+            } catch(e) {}
+
+            meta.admin_notes = notes || '';
+            if (isRejected) meta.rejection_reason = notes;
+            if (isCorrection) meta.correction_message = notes;
+            meta.status = normalizedStatus;
+            meta.updated_at = new Date().toISOString();
+
+            await supabase
+              .from('kyc_applications')
+              .update({ 
+                status: normalizedStatus, 
+                national_id: JSON.stringify(meta),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingKyc.id);
+          }
+        } catch (err) {}
       }
       
-      // 2. Update user profile in Supabase
-      if (targetId && !String(targetId).startsWith('user_')) {
-        if (isApproved) {
-          await supabase
-            .from('profiles')
-            .update({ 
-              is_verified: true, 
-              user_type: 'STREAMER', 
-              is_streamer: true,
-              is_host: true,
-              role: 'streamer',
-              status: 'approved' 
-            })
-            .eq('id', targetId);
-        } else if (isRejected) {
-          await supabase
-            .from('profiles')
-            .update({ status: 'rejected' })
-            .eq('id', targetId);
-        } else if (isCorrection) {
-          await supabase
-            .from('profiles')
-            .update({ status: 'correction' })
-            .eq('id', targetId);
+      // 2. Update user profile in Supabase using valid schema columns
+      if (targetId && String(targetId).length > 10 && !String(targetId).startsWith('user_')) {
+        try {
+          if (isApproved) {
+            await supabase
+              .from('profiles')
+              .update({ 
+                is_verified: true, 
+                user_type: 'STREAMER', 
+                status: 'approved',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', targetId);
+          } else if (isRejected) {
+            await supabase
+              .from('profiles')
+              .update({ 
+                status: 'rejected',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', targetId);
+          } else if (isCorrection) {
+            await supabase
+              .from('profiles')
+              .update({ 
+                status: 'correction',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', targetId);
+          }
+        } catch (err) {
+          console.warn('Profile status update error:', err);
         }
       }
 
@@ -3751,46 +3982,53 @@ export const apiAdmin = {
           metadata: {
             action_type: actionType,
             kyc_id: id,
-            status: status,
+            status: normalizedStatus,
             notes: notes,
             sender_name: 'مدیریت V.Live'
           }
         });
       }
 
-      // 5. Update local storage record
+      // 5. Update local storage records across all keys
       try {
-        const localApps = JSON.parse(safeStorage.getItem('vlive_kyc_apps_local') || '[]');
-        const updated = localApps.map(a => (a.id === id || (username && a.username === username) || (targetId && a.user_id === targetId)) ? { 
-          ...a, 
-          status, 
-          admin_notes: notes,
-          rejectionReason: isRejected ? notes : a.rejectionReason,
-          correctionMessage: isCorrection ? notes : a.correctionMessage
-        } : a);
-        safeStorage.setItem('vlive_kyc_apps_local', JSON.stringify(updated));
+        const updateAppRecord = (a) => {
+          if (a.id === id || (username && a.username === username) || (targetId && a.user_id === targetId)) {
+            return {
+              ...a,
+              status: normalizedStatus,
+              admin_notes: notes,
+              rejectionReason: isRejected ? notes : (isApproved ? '' : (a.rejectionReason || a.rejection_reason || '')),
+              rejection_reason: isRejected ? notes : (isApproved ? '' : (a.rejection_reason || a.rejectionReason || '')),
+              correctionMessage: isCorrection ? notes : (isApproved ? '' : (a.correctionMessage || a.correction_message || '')),
+              correction_message: isCorrection ? notes : (isApproved ? '' : (a.correction_message || a.correctionMessage || '')),
+              updated_at: new Date().toISOString()
+            };
+          }
+          return a;
+        };
 
-        // Also update other kyc keys
-        const kycAppsKey = JSON.parse(safeStorage.getItem('vlive_kyc_applications') || '[]');
-        if (Array.isArray(kycAppsKey) && kycAppsKey.length > 0) {
-          const updated2 = kycAppsKey.map(a => (a.id === id || (username && a.username === username) || (targetId && a.user_id === targetId)) ? {
-            ...a,
-            status,
-            admin_notes: notes,
-            rejectionReason: isRejected ? notes : a.rejectionReason,
-            correctionMessage: isCorrection ? notes : a.correctionMessage
-          } : a);
-          safeStorage.setItem('vlive_kyc_applications', JSON.stringify(updated2));
-        }
+        const keys = ['vlive_kyc_apps_local', 'vlive_kyc_applications', 'vlive_kyc_apps', 'vlive_verifications'];
+        keys.forEach(k => {
+          try {
+            const raw = safeStorage.getItem(k);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) {
+                const updated = parsed.map(updateAppRecord);
+                safeStorage.setItem(k, JSON.stringify(updated));
+              }
+            }
+          } catch(e) {}
+        });
 
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('vlive_kyc_updated', { 
-            detail: { id, status, notes, username, userId: targetId, actionType, notifTitle, notifDesc } 
+            detail: { id, status: normalizedStatus, notes, username, userId: targetId, actionType, notifTitle, notifDesc } 
           }));
         }
       } catch(e) {}
 
-      return { success: true };
+      return { success: true, status: normalizedStatus };
     } catch (e) {
       console.warn('updateKycStatus error:', e);
       return { success: false, error: e.message };

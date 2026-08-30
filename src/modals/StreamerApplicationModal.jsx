@@ -215,10 +215,14 @@ export default function StreamerApplicationModal({
   if (!isOpen) return null;
 
   const renderStatusPage = () => {
-    const isPending = existingApp?.status === 'Pending';
-    const isApproved = existingApp?.status === 'Approved';
-    const isRejected = existingApp?.status === 'Rejected';
-    const isCorrection = existingApp?.status === 'Correction';
+    const rawStatus = String(existingApp?.status || 'Pending').toLowerCase();
+    const isPending = rawStatus === 'pending';
+    const isApproved = rawStatus === 'approved';
+    const isRejected = rawStatus === 'rejected';
+    const isCorrection = rawStatus === 'correction';
+
+    const rejectionText = existingApp?.rejectionReason || existingApp?.rejection_reason || (isRejected ? existingApp?.admin_notes : '');
+    const correctionText = existingApp?.correctionMessage || existingApp?.correction_message || (isCorrection ? existingApp?.admin_notes : '');
 
     return (
       <div className="space-y-6 p-4">
@@ -227,12 +231,14 @@ export default function StreamerApplicationModal({
             isPending ? 'bg-amber-500/10 border-amber-500/40 text-amber-400' :
             isApproved ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' :
             isRejected ? 'bg-rose-500/10 border-rose-500/40 text-rose-400' :
-            'bg-orange-500/10 border-orange-500/40 text-orange-400'
+            isCorrection ? 'bg-orange-500/10 border-orange-500/40 text-orange-400' :
+            'bg-slate-800 border-slate-700 text-slate-300'
           }`}>
             {isPending && <Clock className="w-10 h-10 animate-pulse" />}
             {isApproved && <CheckCircle className="w-10 h-10" />}
             {isRejected && <X className="w-10 h-10" />}
             {isCorrection && <AlertTriangle className="w-10 h-10" />}
+            {!isPending && !isApproved && !isRejected && !isCorrection && <Clock className="w-10 h-10" />}
           </div>
 
           <div>
@@ -241,6 +247,7 @@ export default function StreamerApplicationModal({
               {isApproved && loc('درخواست شما تایید شده است ✨', 'Application Approved ✨')}
               {isRejected && loc('وضعیت درخواست: رد شد ✕', 'Application Status: Rejected ✕')}
               {isCorrection && loc('نیاز به بازبینی و اصلاح مدارک ⚠️', 'Needs Correction ⚠️')}
+              {!isPending && !isApproved && !isRejected && !isCorrection && loc('وضعیت درخواست:', 'Application Status:') + ' ' + (existingApp?.status || '')}
             </h3>
 
             <p className="text-xs sm:text-sm text-slate-400 mt-2.5 leading-relaxed px-2">
@@ -285,27 +292,28 @@ export default function StreamerApplicationModal({
                 isPending ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
                 isApproved ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
                 isRejected ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
-                'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                isCorrection ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' :
+                'bg-slate-800 text-slate-300 border border-slate-700'
               }`}>
                 {isPending ? loc('در حال بررسی', 'Pending') :
                  isApproved ? loc('تایید شده', 'Approved') :
                  isRejected ? loc('رد شده', 'Rejected') :
-                 loc('نیازمند اصلاح', 'Correction')}
+                 isCorrection ? loc('نیازمند اصلاح', 'Correction') : (existingApp?.status || '')}
               </span>
             </div>
           </div>
           
-          {existingApp?.rejectionReason && (
+          {rejectionText && (
             <div className="w-full p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs text-right space-y-1">
               <span className="font-bold block text-rose-400">{loc('علت اعلام‌شده از سوی مدیریت:', 'Reason from Admin:')}</span>
-              <p className="leading-relaxed">{existingApp.rejectionReason}</p>
+              <p className="leading-relaxed">{rejectionText}</p>
             </div>
           )}
           
-          {existingApp?.correctionMessage && (
+          {correctionText && (
             <div className="w-full p-4 rounded-2xl bg-orange-500/10 border border-orange-500/30 text-orange-300 text-xs text-right space-y-1">
               <span className="font-bold block text-orange-400">{loc('پیام اصلاحیه مدیریت:', 'Admin Correction Note:')}</span>
-              <p className="leading-relaxed">{existingApp.correctionMessage}</p>
+              <p className="leading-relaxed">{correctionText}</p>
             </div>
           )}
         </div>

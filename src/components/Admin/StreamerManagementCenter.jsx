@@ -94,10 +94,25 @@ export default function StreamerManagementCenter({
 }) {
   // Combine passed kycApplications with dynamic requests derived from usersList
   const mergedKycApplications = React.useMemo(() => {
-    const combined = [...(kycApplications || [])];
+    const combined = [...(kycApplications || [])].map(app => {
+      const rawStatus = String(app.status || 'Pending').toLowerCase();
+      let normalized = 'Pending';
+      if (rawStatus === 'approved') normalized = 'Approved';
+      else if (rawStatus === 'rejected') normalized = 'Rejected';
+      else if (rawStatus === 'correction') normalized = 'Correction';
+      return { ...app, status: normalized };
+    });
+
     (usersList || []).forEach(u => {
-      if (u.kyc_status === 'pending' || u.wantToBeStreamer || u.isStreamerRequested) {
-        const existingIdx = combined.findIndex(c => c.username === u.username || c.user_id === u.id);
+      const isAlreadyStreamer = u.isStreamer || u.isHost || u.is_streamer || u.user_type === 'STREAMER';
+      const userKycStatus = String(u.kyc_status || '').toLowerCase();
+      
+      // Do not add dynamic pending request if user is already handled or a streamer
+      if (!isAlreadyStreamer && userKycStatus !== 'approved' && userKycStatus !== 'rejected' && (userKycStatus === 'pending' || u.wantToBeStreamer || u.isStreamerRequested)) {
+        const existingIdx = combined.findIndex(c => 
+          (c.username && u.username && String(c.username).toLowerCase() === String(u.username).toLowerCase()) || 
+          (c.user_id && u.id && String(c.user_id) === String(u.id))
+        );
         const dynamicApp = {
           id: 'user_kyc_' + (u.username || u.id),
           user_id: u.id,
@@ -111,22 +126,22 @@ export default function StreamerManagementCenter({
           idCardPhoto: u.avatar || '',
           avatar: u.avatar || '',
           verificationType: 'ONBOARDING_APPLICATION',
-          requestedPose: u.requestedPose || '✌️ ژست پپیروزی',
+          requestedPose: u.requestedPose || '✌️ ژست پیروزی',
           created_at: u.created_at || new Date().toISOString()
         };
         if (existingIdx === -1) {
           combined.push(dynamicApp);
-        } else if (combined[existingIdx].status === 'Pending') {
-          // Enhance existing pending with any missing details
+        } else if (String(combined[existingIdx].status || '').toLowerCase() === 'pending') {
           combined[existingIdx] = { ...dynamicApp, ...combined[existingIdx], status: 'Pending' };
         }
       }
     });
-    // Remove duplicates safely
+
+    // Remove duplicates safely by application ID
     const unique = [];
     const seen = new Set();
     for (const app of combined) {
-      const key = (app.id || app.username || Math.random()).toString().toLowerCase();
+      const key = String(app.id || app.user_id || app.username || Math.random()).toLowerCase();
       if (!seen.has(key)) {
         seen.add(key);
         unique.push(app);
@@ -211,8 +226,21 @@ export default function StreamerManagementCenter({
     if (apiAdmin && apiAdmin.updateKycStatus) {
       await apiAdmin.updateKycStatus(app.id, 'Approved', app.user_id, '', app.username);
     }
-    setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Approved' } : a));
-    setUsersList(prev => prev.map(u => (u.username === app.username || u.id === app.user_id) ? { ...u, isStreamer: true, isHost: true, isVerified: true, role: 'streamer', user_type: 'STREAMER' } : u));
+    setKycApplications(prev => {
+      const arr = Array.isArray(prev) ? prev : [];
+      return arr.map(a => (a.id === app.id || (a.username && a.username === app.username) || (a.user_id && a.user_id === app.user_id)) ? { ...a, status: 'Approved', admin_notes: '' } : a);
+    });
+    setUsersList(prev => prev.map(u => (u.username === app.username || u.id === app.user_id) ? { 
+      ...u, 
+      isStreamer: true, 
+      isHost: true, 
+      isVerified: true, 
+      role: 'streamer', 
+      user_type: 'STREAMER',
+      kyc_status: 'Approved',
+      wantToBeStreamer: false,
+      isStreamerRequested: false
+    } : u));
     addAdminAuditLog(`Approved Streamer KYC Application #${String(app.id).slice(0,6)} for @${app.username}`);
     showToast(window.loc(`✅ درخواست استریمی @${app.username} با موفقیت تایید شد`, `✅ Streamer app @${app.username} approved`));
     if (selectedApplication?.id === app.id) setSelectedApplication(null);
@@ -223,7 +251,22 @@ export default function StreamerManagementCenter({
     if (apiAdmin && apiAdmin.updateKycStatus) {
       await apiAdmin.updateKycStatus(app.id, 'Rejected', app.user_id, reason, app.username);
     }
-    setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Rejected', rejectionReason: reason, admin_notes: reason } : a));
+    setKycApplications(prev => {
+      const arr = Array.isArray(prev) ? prev : [];
+      return arr.map(a => (a.id === app.id || (a.username && a.username === app.username) || (a.user_id && a.user_id === app.user_id)) ? { 
+        ...a, 
+        status: 'Rejected', 
+        rejectionReason: reason, 
+        rejection_reason: reason,
+        admin_notes: reason 
+      } : a);
+    });
+    setUsersList(prev => prev.map(u => (u.username === app.username || u.id === app.user_id) ? { 
+      ...u, 
+      kyc_status: 'Rejected',
+      wantToBeStreamer: false,
+      isStreamerRequested: false
+    } : u));
     addAdminAuditLog(`Rejected Streamer KYC Application #${String(app.id).slice(0,6)} for @${app.username} (Reason: ${reason})`);
     showToast(window.loc(`✕ درخواست استریمی @${app.username} رد شد`, `✕ Streamer app @${app.username} rejected`));
     if (selectedApplication?.id === app.id) setSelectedApplication(null);
@@ -234,7 +277,22 @@ export default function StreamerManagementCenter({
     if (apiAdmin && apiAdmin.updateKycStatus) {
       await apiAdmin.updateKycStatus(app.id, 'Correction', app.user_id, msg, app.username);
     }
-    setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Correction', correctionMessage: msg, admin_notes: msg } : a));
+    setKycApplications(prev => {
+      const arr = Array.isArray(prev) ? prev : [];
+      return arr.map(a => (a.id === app.id || (a.username && a.username === app.username) || (a.user_id && a.user_id === app.user_id)) ? { 
+        ...a, 
+        status: 'Correction', 
+        correctionMessage: msg, 
+        correction_message: msg,
+        admin_notes: msg 
+      } : a);
+    });
+    setUsersList(prev => prev.map(u => (u.username === app.username || u.id === app.user_id) ? { 
+      ...u, 
+      kyc_status: 'Correction',
+      wantToBeStreamer: false,
+      isStreamerRequested: false
+    } : u));
     addAdminAuditLog(`Requested Correction for KYC Application #${String(app.id).slice(0,6)} for @${app.username}`);
     showToast(window.loc(`درخواست اصلاحیه برای @${app.username} ارسال شد`, `Correction request sent to @${app.username}`));
     if (selectedApplication?.id === app.id) setSelectedApplication(null);
@@ -691,11 +749,13 @@ export default function StreamerManagementCenter({
                             isPending ? 'bg-amber-500/20 text-amber-300 border-amber-500/30 animate-pulse' :
                             isApproved ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
                             isRejected ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' :
-                            'bg-orange-500/20 text-orange-300 border-orange-500/30'
+                            isCorrection ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
+                            'bg-slate-800 text-slate-300 border-slate-700'
                           }`}>
                             {isPending ? '⏳ در انتظار بررسی' :
                              isApproved ? '✓ تایید شده' :
-                             isRejected ? '✕ رد شده' : '⚠️ نیاز به اصلاح'}
+                             isRejected ? '✕ رد شده' :
+                             isCorrection ? '⚠️ نیاز به اصلاح' : (app.status || 'در انتظار')}
                           </span>
                         </div>
                       </div>

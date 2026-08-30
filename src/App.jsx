@@ -3379,9 +3379,25 @@ export default function App() {
           {activeTab === 'home' ? <Home className="w-6 h-6 font-black group-hover:scale-110 transition duration-300" /> : <Home className="w-5 h-5" />}
         </button>
 
-        {/* 2. VIP (👑) */}
-        <button onClick={() => setIsVipModalOpen(true)} className="flex flex-col items-center gap-1 p-2 rounded-2xl text-amber-500/80 hover:text-amber-400 active:scale-95 transition-all duration-300 group" title={loc('اشتراک VIP', 'VIP Subscription')}>
-          <Crown className="w-5 h-5 text-amber-400 group-hover:scale-110 transition duration-300" />
+        {/* 2. Messages (💬) */}
+        <button onClick={() => setActiveTab('messages')} className={activeTab === 'messages' ? "relative -top-4 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition-all duration-300 group" : "relative flex flex-col items-center gap-1 p-2 rounded-2xl text-slate-400 hover:text-slate-200 active:scale-95 transition-all duration-300 group"} title={loc('پیام‌ها', 'Messages')}>
+          {activeTab === 'messages' ? (
+            <MessageSquare className="w-6 h-6 font-black group-hover:scale-110 transition duration-300" />
+          ) : (
+            <div className="relative">
+              <MessageSquare className="w-5 h-5 group-hover:scale-110 transition duration-300" />
+              {totalUnreadMessages > 0 && (
+                <span className="absolute -top-1.5 -right-2 bg-gradient-to-r from-pink-500 to-rose-500 text-slate-950 font-black text-[9px] min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full border border-slate-900 shadow-[0_0_10px_rgba(236,72,153,0.8)] animate-pulse">
+                  {totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}
+                </span>
+              )}
+            </div>
+          )}
+          {activeTab === 'messages' && totalUnreadMessages > 0 && (
+            <span className="absolute -top-1 -right-1 bg-pink-500 text-slate-950 font-black text-[9px] min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full border border-slate-900 shadow-md">
+              {totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}
+            </span>
+          )}
         </button>
 
         {/* 3. Match (Center Fire) */}
@@ -3391,7 +3407,12 @@ export default function App() {
               </div>}
         </button>
 
-        {/* 4. Support (Headphones 🎧) - ACTIVATED */}
+        {/* 4. VIP (👑) */}
+        <button onClick={() => setIsVipModalOpen(true)} className="flex flex-col items-center gap-1 p-2 rounded-2xl text-amber-500/80 hover:text-amber-400 active:scale-95 transition-all duration-300 group" title={loc('اشتراک VIP', 'VIP Subscription')}>
+          <Crown className="w-5 h-5 text-amber-400 group-hover:scale-110 transition duration-300" />
+        </button>
+
+        {/* 5. Support (Headphones 🎧) - ACTIVATED */}
         <button onClick={() => {
             setIsSupportModalOpen(true);
             showToast(loc('🎧 مرکز پشتیبانی ۲۴/۷ فعال شد', '🎧 24/7 Support Center activated'));

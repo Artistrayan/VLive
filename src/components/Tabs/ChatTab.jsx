@@ -8,7 +8,7 @@ import {
   CheckCheck, Send, Mic, Image, Paperclip, Smile, Gift, Sparkles, X, ChevronRight,
   Shield, Check, UserPlus, Phone, Camera, User, Users, Archive, VolumeX, ChevronLeft,
   MoreVertical, Lock, AlertTriangle, Ban, Globe, Bot, MapPin, DollarSign, MicOff,
-  UserCheck, Crown, Clock
+  UserCheck, Crown, Clock, Mail, MailCheck, Inbox, RotateCcw
 } from 'lucide-react';
 
 export default function ChatTab(props) {
@@ -769,26 +769,32 @@ export default function ChatTab(props) {
               </VisualSectionWrapper>
             </div>
 
-            {/* 3. CATEGORY TABS: ALL, PRIVATE, GROUPS, CALLS, ARCHIVED */}
+            {/* 3. CATEGORY TABS: UNREAD, READ, ALL, PRIVATE, GROUPS, CALLS, ARCHIVED */}
             <div className={(activeConversationId ? "hidden md:flex" : "flex") + " items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs font-bold shrink-0"}>
-              {[
-                { id: 'all', label: 'All', icon: MessageSquare, badge: conversations.length },
-                { id: 'private', label: window.loc('Private (خصوصی)', 'Private'), icon: User, badge: conversations.filter(c => !c.isGroup && !c.archived).length },
-                { id: 'groups', label: window.loc('Groups (گروه‌ها)', 'Groups'), icon: Users, badge: conversations.filter(c => c.isGroup).length },
-                { id: 'calls', label: window.loc('Calls (تماس‌ها)', 'Calls'), icon: Phone, badge: conversations.filter(c => c.type === 'call').length },
-                { id: 'archived', label: window.loc('Archived (بایگانی)', 'Archived'), icon: Archive, badge: conversations.filter(c => c.archived).length }
-              ].map(tab => {
+              {(() => {
+                const unreadList = conversations.filter(c => (c.unreadCount || 0) > 0 && !c.archived);
+                const readList = conversations.filter(c => (!c.unreadCount || c.unreadCount === 0) && !c.archived);
+                return [
+                  { id: 'unread', label: window.loc('خوانده‌نشده', 'Unread'), icon: Mail, badge: unreadList.length, highlight: unreadList.length > 0 },
+                  { id: 'read', label: window.loc('خوانده‌شده', 'Read'), icon: MailCheck, badge: readList.length },
+                  { id: 'all', label: window.loc('همه', 'All'), icon: MessageSquare, badge: conversations.length },
+                  { id: 'private', label: window.loc('Private (خصوصی)', 'Private'), icon: User, badge: conversations.filter(c => !c.isGroup && !c.archived).length },
+                  { id: 'groups', label: window.loc('Groups (گروه‌ها)', 'Groups'), icon: Users, badge: conversations.filter(c => c.isGroup).length },
+                  { id: 'calls', label: window.loc('Calls (تماس‌ها)', 'Calls'), icon: Phone, badge: conversations.filter(c => c.type === 'call').length },
+                  { id: 'archived', label: window.loc('Archived (بایگانی)', 'Archived'), icon: Archive, badge: conversations.filter(c => c.archived).length }
+                ];
+              })().map(tab => {
                 const IconComponent = tab.icon;
                 const isActive = msgFilterTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setMsgFilterTab(tab.id)}
-                    className={"px-3 py-1.5 rounded-xl flex items-center gap-1.5 shrink-0 transition border " + (isActive ? "bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-400 shadow-md" : "bg-slate-900/80 text-slate-400 border-slate-800/80 hover:bg-slate-800 hover:text-slate-200")}
+                    className={"px-3 py-1.5 rounded-xl flex items-center gap-1.5 shrink-0 transition border " + (isActive ? "bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-400 shadow-md" : (tab.highlight ? "bg-pink-500/10 text-pink-300 border-pink-500/30 hover:bg-pink-500/20" : "bg-slate-900/80 text-slate-400 border-slate-800/80 hover:bg-slate-800 hover:text-slate-200"))}
                   >
-                    <IconComponent className="w-3.5 h-3.5" />
+                    <IconComponent className={"w-3.5 h-3.5 " + (tab.highlight && !isActive ? "text-pink-400 animate-pulse" : "")} />
                     <span>{tab.label}</span>
-                    <span className={"px-1.5 py-0.2 rounded-full text-[9px] " + (isActive ? "bg-white/20 text-white font-black" : "bg-slate-950 text-slate-400")}>
+                    <span className={"px-1.5 py-0.2 rounded-full text-[9px] " + (isActive ? "bg-white/20 text-white font-black" : (tab.highlight ? "bg-pink-500 text-slate-950 font-black" : "bg-slate-950 text-slate-400"))}>
                       {tab.badge}
                     </span>
                   </button>
@@ -802,13 +808,42 @@ export default function ChatTab(props) {
               {/* CONVERSATIONS LIST SIDEBAR */}
               <div className={"w-full md:w-80 border-r border-slate-800/80 flex flex-col bg-slate-950 " + (activeConversationId ? "hidden md:flex" : "flex")}>
                 <div className="p-3 border-b border-slate-800/80 bg-slate-900/50 flex items-center justify-between text-xs font-bold text-slate-400">
-                  <span>Recent Conversations</span>
-                  <span className="text-[10px] text-pink-400">Live Sync</span>
+                  <div className="flex items-center gap-2">
+                    <span>{window.loc('گفتگوها و پیام‌ها', 'Recent Conversations')}</span>
+                    {conversations.filter(c => (c.unreadCount || 0) > 0).length > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/30 text-[10px]">
+                        {conversations.filter(c => (c.unreadCount || 0) > 0).length} {window.loc('خوانده‌نشده', 'unread')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {conversations.some(c => (c.unreadCount || 0) > 0) && (
+                      <button
+                        onClick={() => {
+                          const currentUid = getUserId() || currentUser?.id;
+                          apiMessages.markAllConversationsAsRead(currentUid, conversations.map(c => c.id));
+                          setConversations(prev => prev.map(c => ({ ...c, unreadCount: 0 })));
+                          showToast(window.loc('همه پیام‌ها خوانده شدند ✅', 'All messages marked as read ✅'));
+                        }}
+                        className="text-[10px] text-pink-400 hover:text-pink-300 transition flex items-center gap-1 hover:underline"
+                        title={window.loc('علامت‌گذاری همه به عنوان خوانده‌شده', 'Mark all as read')}
+                      >
+                        <CheckCheck className="w-3 h-3" />
+                        <span>{window.loc('خوانده شدن همه', 'Mark All Read')}</span>
+                      </button>
+                    )}
+                    <span className="text-[10px] text-emerald-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Live
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar">
                   {(() => {
                     const filteredConvs = conversations.filter(conv => {
+                      if (msgFilterTab === 'unread') return (conv.unreadCount || 0) > 0 && !conv.archived;
+                      if (msgFilterTab === 'read') return (!conv.unreadCount || conv.unreadCount === 0) && !conv.archived;
                       if (msgFilterTab === 'private' && (conv.isGroup || conv.archived)) return false;
                       if (msgFilterTab === 'groups' && !conv.isGroup) return false;
                       if (msgFilterTab === 'calls' && conv.type !== 'call') return false;
@@ -837,7 +872,11 @@ export default function ChatTab(props) {
                         <div className="py-12 text-center space-y-2 text-slate-500 px-4">
                           <MessageSquare className="w-8 h-8 mx-auto text-slate-600 animate-pulse" />
                           <p className="text-xs font-bold text-slate-400">
-                            {window.loc('هیچ گفتگویی یافت نشد', 'No conversation found')}
+                            {msgFilterTab === 'unread' 
+                              ? window.loc('هیچ پیام خوانده‌نشده‌ای وجود ندارد ✨', 'No unread messages ✨')
+                              : (msgFilterTab === 'read'
+                                ? window.loc('هیچ پیام خوانده‌شده‌ای وجود ندارد', 'No read messages found')
+                                : window.loc('هیچ گفتگویی یافت نشد', 'No conversation found'))}
                           </p>
                           <p className="text-[10px] text-slate-500">
                             {window.loc('برای شروع گفتگو دکمه چت جدید را بزنید', 'Click New Chat to start a conversation')}
@@ -846,7 +885,8 @@ export default function ChatTab(props) {
                       );
                     }
 
-                    return filteredConvs.map(conv => {
+                    // Helper to render a single conversation item card
+                    const renderConvItem = (conv, isUnreadItem = false) => {
                       const isSelected = activeConversationId === conv.id;
                       const cUser = conv.user || {};
                       const cName = cUser.name || '';
@@ -859,15 +899,22 @@ export default function ChatTab(props) {
                           <button
                             onClick={() => {
                               setActiveConversationId(conv.id);
+                              // Immediately mark as read in state so it transfers to Read section!
                               setConversations(prev => prev.map(c => c.id === conv.id ? { ...c, unreadCount: 0 } : c));
+                              const currentUid = getUserId() || currentUser?.id;
+                              apiMessages.markConversationAsRead(conv.id, currentUid);
                             }}
-                            className={"w-full p-3 rounded-2xl flex items-center gap-3 transition text-left border " + (isSelected ? "bg-gradient-to-r from-pink-500/20 via-purple-500/10 to-transparent border-pink-500/50 shadow-md" : "bg-slate-900/40 border-slate-800/60 hover:bg-slate-900 hover:border-slate-700")}
+                            className={"w-full p-3 rounded-2xl flex items-center gap-3 transition text-left border " + (isSelected 
+                              ? "bg-gradient-to-r from-pink-500/20 via-purple-500/10 to-transparent border-pink-500/50 shadow-md" 
+                              : (isUnreadItem 
+                                ? "bg-slate-900/90 border-pink-500/40 hover:bg-slate-900 hover:border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.1)]" 
+                                : "bg-slate-900/40 border-slate-800/60 hover:bg-slate-900 hover:border-slate-700"))}
                           >
                             <div className="relative shrink-0">
                               {cUser.avatar ? (
-                                <img src={cUser.avatar} alt={cDisplayMain} className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-700" />
+                                <img src={cUser.avatar} alt={cDisplayMain} className={"w-11 h-11 rounded-2xl object-cover ring-1 " + (isUnreadItem ? "ring-pink-500/60" : "ring-slate-700")} />
                               ) : (
-                                <div className="w-11 h-11 rounded-2xl bg-slate-800 flex items-center justify-center text-xs font-bold text-white ring-1 ring-slate-700">
+                                <div className={"w-11 h-11 rounded-2xl flex items-center justify-center text-xs font-bold text-white ring-1 " + (isUnreadItem ? "bg-gradient-to-br from-pink-600 to-purple-700 ring-pink-500/60" : "bg-slate-800 ring-slate-700")}>
                                   {cDisplayMain.charAt(0).toUpperCase()}
                                 </div>
                               )}
@@ -891,17 +938,19 @@ export default function ChatTab(props) {
                                   {cUser.isVerified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
                                   {conv.pinned && <Pin className="w-3 h-3 text-amber-400 shrink-0 fill-amber-400" />}
                                 </span>
-                                <span className="text-[9px] text-slate-500 font-mono shrink-0">{conv.lastTime}</span>
+                                <span className={"text-[9px] font-mono shrink-0 " + (isUnreadItem ? "text-pink-400 font-bold" : "text-slate-500")}>
+                                  {conv.lastTime}
+                                </span>
                               </div>
 
                               <div className="flex items-center justify-between text-[11px]">
-                                <p className="text-slate-400 truncate flex-1 pr-2">
+                                <p className={"truncate flex-1 pr-2 " + (isUnreadItem ? "text-slate-200 font-medium" : "text-slate-400")}>
                                   {conv.lastMessage || window.loc('گفتگو ایجاد شد', 'Conversation created')}
                                 </p>
 
                                 {conv.unreadCount > 0 ? (
-                                  <span className="px-1.5 py-0.5 rounded-full bg-pink-500 text-slate-950 font-black text-[9px] shrink-0 shadow-sm">
-                                    {conv.unreadCount}
+                                  <span className="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-slate-950 font-black text-[9px] shrink-0 shadow-sm animate-pulse">
+                                    {conv.unreadCount} {window.loc('جدید', 'new')}
                                   </span>
                                 ) : conv.muted ? (
                                   <VolumeX className="w-3 h-3 text-slate-600 shrink-0" />
@@ -932,7 +981,58 @@ export default function ChatTab(props) {
                           </button>
                         </div>
                       );
-                    });
+                    };
+
+                    // When in specific tabs 'unread' or 'read', render items directly
+                    if (msgFilterTab === 'unread' || msgFilterTab === 'read') {
+                      return filteredConvs.map(conv => renderConvItem(conv, (conv.unreadCount || 0) > 0));
+                    }
+
+                    // In 'all', 'private', 'groups' tabs: Separate Unread and Read into distinct visual sections!
+                    const unreadItems = filteredConvs.filter(c => (c.unreadCount || 0) > 0);
+                    const readItems = filteredConvs.filter(c => !c.unreadCount || c.unreadCount === 0);
+
+                    return (
+                      <div className="space-y-4">
+                        {/* UNREAD MESSAGES SECTION */}
+                        {unreadItems.length > 0 && (
+                          <div className="space-y-1.5 bg-pink-950/20 border border-pink-500/20 rounded-2xl p-2">
+                            <div className="flex items-center justify-between px-1 py-0.5 text-[11px] font-black text-pink-400">
+                              <span className="flex items-center gap-1.5">
+                                <Mail className="w-3.5 h-3.5 animate-pulse" />
+                                {window.loc('پیام‌های خوانده‌نشده', 'Unread Messages')}
+                              </span>
+                              <span className="px-1.5 py-0.2 rounded-full bg-pink-500 text-slate-950 font-black text-[9px]">
+                                {unreadItems.length}
+                              </span>
+                            </div>
+                            <div className="space-y-1.5">
+                              {unreadItems.map(conv => renderConvItem(conv, true))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* READ MESSAGES SECTION */}
+                        {readItems.length > 0 && (
+                          <div className="space-y-1.5">
+                            {unreadItems.length > 0 && (
+                              <div className="flex items-center justify-between px-2 pt-1 text-[11px] font-bold text-slate-400">
+                                <span className="flex items-center gap-1.5">
+                                  <MailCheck className="w-3.5 h-3.5 text-slate-500" />
+                                  {window.loc('گفتگوهای خوانده‌شده', 'Read Conversations')}
+                                </span>
+                                <span className="text-[10px] text-slate-500 font-mono">
+                                  {readItems.length}
+                                </span>
+                              </div>
+                            )}
+                            <div className="space-y-1.5">
+                              {readItems.map(conv => renderConvItem(conv, false))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
                   })()}
                 </div>
               </div>
