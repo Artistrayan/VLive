@@ -80,6 +80,17 @@ export default function ProfileTab(props) {
     (isVerified && currentUser?.role !== 'user')
   );
 
+  const userGenderVal = userGender || currentUser?.gender || '';
+  const isFemaleUser = Boolean(
+    String(userGenderVal).trim().toLowerCase() === 'female' ||
+    userGenderVal === 'خانم' ||
+    userGenderVal === 'زن'
+  );
+
+  const isFemaleApprovedStreamer = Boolean(
+    (isFemaleUser || isUserRayan || userRole === 'admin' || userRole === 'super_admin') && isStreamerUser
+  );
+
   // if (activeTab !== 'profile') return null;
 
   const { isSuperAdmin, isEditMode, setIsEditMode } = useVisualUiEditor();
@@ -1200,25 +1211,31 @@ export default function ProfileTab(props) {
                   <span>{window.loc('آمار و عملکرد لایواستریم‌ها', 'Live Broadcast Performance')}</span>
                 </h3>
 
-                <button
-                  onClick={() => {
-                    if (!isStreamerUser) {
+                {isFemaleApprovedStreamer ? (
+                  <button
+                    onClick={() => {
+                      if (setIsLiveStudioOpen) {
+                        setIsLiveStudioOpen(true);
+                      } else if (setIsHostLiveOpen) {
+                        setIsHostLiveOpen(true);
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold"
+                  >
+                    {window.loc('شروع لایو جدید 🎥', 'Go Live 🎥')}
+                  </button>
+                ) : isFemaleUser ? (
+                  <button
+                    onClick={() => {
                       if (typeof setIsBecomeStreamerModalOpen === 'function') {
-                        showToast(window.loc('🔒 دسترسی به اجرای زنده مختص استریمرهای تایید شده است.', '🔒 Live streaming is reserved for verified streamers.'));
                         setIsBecomeStreamerModalOpen(true);
                       }
-                      return;
-                    }
-                    if (setIsLiveStudioOpen) {
-                      setIsLiveStudioOpen(true);
-                    } else if (setIsHostLiveOpen) {
-                      setIsHostLiveOpen(true);
-                    }
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold"
-                >
-                  {isStreamerUser ? window.loc('شروع لایو جدید 🎥', 'Go Live 🎥') : window.loc('درخواست لایواستریم 🎙️', 'Request Live 🎙️')}
-                </button>
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold"
+                  >
+                    {window.loc('درخواست لایواستریم 🎙️', 'Request Live 🎙️')}
+                  </button>
+                ) : null}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">

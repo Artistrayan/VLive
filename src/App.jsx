@@ -2781,10 +2781,31 @@ export default function App() {
     (kycApplications && Array.isArray(kycApplications) && kycApplications.some(a => (a.username === (currentUsername || userName) || a.user_id === currentUser?.id) && a.status === 'Approved'))
   );
 
+  const isUserAdmin = Boolean(
+    isUserRayan ||
+    isUserSuperAdmin ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'super_admin'
+  );
+
+  const isFemaleUser = Boolean(
+    userGender === 'female' ||
+    currentUser?.gender === 'female' ||
+    currentUser?.gender === 'خانم' ||
+    currentUser?.gender === 'زن'
+  );
+
+  // Admins & Management are exempt from gender and streamer verification constraints
+  const isApprovedStreamerOrAdmin = Boolean(
+    isUserAdmin || (isFemaleUser && isStreamerUser)
+  );
+
   const handleOpenLiveBroadcast = () => {
-    if (isStreamerUser) {
+    if (isApprovedStreamerOrAdmin) {
       setIsLiveStudioOpen(true);
-    } else {
+    } else if (isFemaleUser) {
       const userApp = (kycApplications || []).find(a => (a.username === (currentUsername || userName) || a.user_id === currentUser?.id));
       if (userApp && userApp.status === 'Pending') {
         showToast(loc('⏳ درخواست احراز هویت استریمری شما در انتظار بررسی توسط مدیریت است', '⏳ Your streamer KYC application is pending admin review'));
@@ -2792,6 +2813,8 @@ export default function App() {
         showToast(loc('🔒 دسترسی به اجرای زنده منحصراً مختص استریمرهای تایید شده است. لطفاً فرم احراز هویت را تکمیل نمایید.', '🔒 Live broadcasting is strictly for verified streamers. Please complete your identity verification first.'));
       }
       setIsBecomeStreamerModalOpen(true);
+    } else {
+      showToast(loc('🔒 ثبت‌نام و فعالیت به عنوان استریمر منحصراً مختص کاربران خانم می‌باشد.', '🔒 Streamer application is strictly for female users.'));
     }
   };
 
@@ -2923,15 +2946,11 @@ export default function App() {
               </button>
             </div>
 
-            {/* Camera Go-Live Icon Button (Opens Live Studio for Streamers / Prompts KYC for Regular Users) */}
-            {isStreamerUser ? (
+            {/* Camera Go-Live Icon Button (Shown for Admins or Approved Female Streamers) */}
+            {isApprovedStreamerOrAdmin && (
               <button onClick={() => setIsLiveStudioOpen(true)} className="ml-1 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 border border-pink-400/80 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-300 relative shrink-0 shadow-[0_0_15px_rgba(236,72,153,0.7)] group" title={loc('اجرا و شروع لایواستریم 🎥', 'Start Live Studio Broadcast 🎥')}>
                 <Video className="w-4 h-4 text-white animate-pulse" />
                 <span className="absolute -top-1 -right-1 bg-lime-400 text-slate-950 text-[8px] font-black w-3.5 h-3.5 flex items-center justify-center rounded-full border border-slate-950 shadow-md">+</span>
-              </button>
-            ) : (
-              <button onClick={handleOpenLiveBroadcast} className="ml-1 w-8 h-8 rounded-full bg-slate-900 border border-pink-500/40 flex items-center justify-center text-pink-400 hover:scale-110 active:scale-95 transition-all duration-300 relative shrink-0 shadow-md group" title={loc('درخواست نشان استریمری 🎙️', 'Apply as Streamer 🎙️')}>
-                <Sparkles className="w-4 h-4 text-pink-400" />
               </button>
             )}
           </div>
@@ -3107,7 +3126,7 @@ export default function App() {
 
             {/* SUB-TAB 2: LIVE STREAMS (DEDICATED WATCHING EXPERIENCE) */}
             {homeSubTab === 'live' && <div className="animate-fadeIn">
-                <LiveStreamSystem currentUser={currentUser} userRole={userRole} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isVerified={isVerified} isStreamerUser={isStreamerUser} kycApplications={kycApplications} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} currentUsername={currentUsername} userCoins={userCoins} setUserCoins={setUserCoins} vipPlan={vipPlan} setVipPlan={setVipPlan} streamsList={streamsList} setStreamsList={setStreamsList} viewingStream={viewingStream} setViewingStream={setViewingStream} showToast={showToast} setActiveTab={setActiveTab} handleInitiateCall={handleInitiateCall} addAdminAuditLog={addAdminAuditLog} setAdminReportsList={setAdminReportsList} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} />
+                <LiveStreamSystem currentUser={currentUser} userRole={userRole} userGender={userGender} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isVerified={isVerified} isStreamerUser={isStreamerUser} kycApplications={kycApplications} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} currentUsername={currentUsername} userCoins={userCoins} setUserCoins={setUserCoins} vipPlan={vipPlan} setVipPlan={setVipPlan} streamsList={streamsList} setStreamsList={setStreamsList} viewingStream={viewingStream} setViewingStream={setViewingStream} showToast={showToast} setActiveTab={setActiveTab} handleInitiateCall={handleInitiateCall} addAdminAuditLog={addAdminAuditLog} setAdminReportsList={setAdminReportsList} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} />
               </div>}
 
           </div>}

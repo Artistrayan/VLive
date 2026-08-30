@@ -10,6 +10,7 @@ export default function LiveStreamSystem({
   currentUser,
   currentUsername,
   userRole,
+  userGender,
   isUserRayan,
   isUserSuperAdmin,
   isVerified,
@@ -87,6 +88,15 @@ export default function LiveStreamSystem({
     (isVerified && currentUser?.role !== 'user') ||
     (kycApplications && Array.isArray(kycApplications) && kycApplications.some(a => (a.username === (currentUsername || currentUser?.username) || a.user_id === currentUser?.id) && a.status === 'Approved'))
   );
+
+  const userGenderVal = userGender || currentUser?.gender || '';
+  const isFemaleUser = Boolean(
+    String(userGenderVal).trim().toLowerCase() === 'female' ||
+    userGenderVal === 'خانم' ||
+    userGenderVal === 'زن'
+  );
+
+  const isFemaleApprovedStreamer = Boolean((isFemaleUser || isUserAdmin) && isApprovedStreamer);
 
   // Fetch / Sync streams from Supabase on load
   useEffect(() => {
@@ -266,46 +276,23 @@ export default function LiveStreamSystem({
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              if (!isApprovedStreamer) {
-                const userApp = (kycApplications || []).find(a => (a.username === (currentUsername || currentUser?.username) || a.user_id === currentUser?.id));
-                if (userApp && userApp.status === 'Pending') {
-                  showToast(window.loc('⏳ درخواست احراز هویت استریمری شما در انتظار بررسی توسط مدیریت است', '⏳ Your streamer KYC application is pending admin review'));
+          {isFemaleApprovedStreamer && (
+            <button
+              onClick={() => {
+                if (setIsLiveStudioOpen) {
+                  setIsLiveStudioOpen(true);
+                } else if (setIsHostLiveOpen) {
+                  setIsHostLiveOpen(true);
                 } else {
-                  showToast(window.loc('🔒 آغاز پخش زنده منحصراً مختص استریمرهای تایید شده است. لطفاً فرم احراز هویت را تکمیل فرمایید.', '🔒 Live broadcasting is strictly for verified streamers. Please complete your streamer KYC application.'));
+                  setIsStartLiveModalOpen(true);
                 }
-                if (setIsBecomeStreamerModalOpen) {
-                  setIsBecomeStreamerModalOpen(true);
-                }
-                return;
-              }
-              if (setIsLiveStudioOpen) {
-                setIsLiveStudioOpen(true);
-              } else if (setIsHostLiveOpen) {
-                setIsHostLiveOpen(true);
-              } else {
-                setIsStartLiveModalOpen(true);
-              }
-            }}
-            className={`px-3.5 py-2 rounded-2xl ${
-              isApprovedStreamer 
-                ? 'bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 shadow-pink-500/30' 
-                : 'bg-gradient-to-r from-purple-700 to-indigo-700 shadow-purple-500/20'
-            } hover:opacity-95 text-white font-black text-xs shadow-lg flex items-center gap-1.5 hover:scale-102 active:scale-95 transition`}
-          >
-            {isApprovedStreamer ? (
-              <>
-                <Video className="w-4 h-4 animate-pulse" />
-                <span>{window.loc('ورود به Live Studio 🎥', 'Open Live Studio 🎥')}</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4 text-amber-300 animate-spin" />
-                <span>{window.loc('درخواست نشان استریمری 🎙️', 'Apply as Streamer 🎙️')}</span>
-              </>
-            )}
-          </button>
+              }}
+              className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 hover:opacity-95 text-white font-black text-xs shadow-lg flex items-center gap-1.5 hover:scale-102 active:scale-95 transition shadow-pink-500/30 shrink-0"
+            >
+              <Video className="w-4 h-4 animate-pulse" />
+              <span>{window.loc('ورود به Live Studio 🎥', 'Open Live Studio 🎥')}</span>
+            </button>
+          )}
         </div>
 
         {/* MAIN TYPE TOGGLE (Standard Live vs Adult Live 18+) */}
