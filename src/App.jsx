@@ -19,6 +19,7 @@ import LuxuryGiftOverlay from './components/Overlays/LuxuryGiftOverlay';
 import VipEntranceBanner from './components/Overlays/VipEntranceBanner';
 import PreCallConfirmModal from './components/Overlays/PreCallConfirmModal';
 import { EntranceRibbonOverlay } from './components/Overlays/AvatarFramesAndRibbons';
+import VLiveEntrySplashLoader from './components/Overlays/VLiveEntrySplashLoader';
 import LiveStreamSystem from './components/LiveStreamSystem';
 import LiveStudioModal from './components/LiveStudioModal';
 import StreamerDashboardModal from './components/StreamerDashboardModal';
@@ -81,6 +82,29 @@ export default function App() {
   const [activeProfileTab, setActiveProfileTab] = useState('overview');
   const [walletSubTab, setWalletSubTab] = useState('deposit');
   const [showEntrySplash, setShowEntrySplash] = useState(false);
+  const [isInitialSplashActive, setIsInitialSplashActive] = useState(true);
+
+  const handleInitialSplashComplete = useCallback(() => {
+    setIsInitialSplashActive(false);
+    setShowEntrySplash(false);
+
+    // Determine if profile was completed previously
+    const isProfileCompleted = Boolean(
+      safeStorage.getItem('vlive_profile_completed') === 'true' ||
+      safeStorage.getItem('vlive_user_onboarded') === 'true' ||
+      safeStorage.getItem('vlive_has_registered') === 'true'
+    );
+
+    setIsLoggedIn(true);
+
+    if (!isProfileCompleted) {
+      // First Time: Splash Loader -> Profile Completion Screen
+      setIsOnboardingOpen(true);
+    } else {
+      // Returning User: Splash Loader -> Home Screen
+      setActiveTab('home');
+    }
+  }, []);
 
   // User Profile & Authentication State (Strict Real Identity - No Mock/Fallback)
   const [authStatus, setAuthStatus] = useState('loading'); // 'loading' | 'authenticated' | 'unauthenticated' | 'error'
@@ -2539,230 +2563,9 @@ export default function App() {
       </div>;
   }
 
-  // REAL AUTHENTICATION & ONBOARDING SYSTEM
-  if (!isLoggedIn) {
-    return <div className="cyber-container min-h-screen text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden dir-ltr bg-slate-950">
-        {toastMessage && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border border-pink-500 text-pink-300 px-6 py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-3 animate-fadeIn">
-            <Sparkles className="w-5 h-5 text-pink-400 animate-pulse" />
-            <span className="text-sm font-semibold">{toastMessage}</span>
-          </div>}
-
-        {/* ULTRA-PREMIUM TELEGRAM MINI APP WELCOME & LOGIN SCREEN */}
-        {(() => {
-        // Extract real Telegram user strictly from WebApp context
-        const tgApp = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
-        const tgUser = tgApp?.initDataUnsafe?.user;
-        const hasTgSession = Boolean(tgUser?.id || (typeof window !== 'undefined' && window.Telegram?.WebApp?.initData));
-        const detectedTgName = tgUser?.first_name ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() : (tgUser?.username || 'Telegram User');
-        const detectedTgUsername = tgUser?.username || (tgUser?.id ? `tg_${tgUser.id}` : 'user');
-        const detectedTgAvatar = tgUser?.photo_url || '';
-        const detectedTgId = tgUser?.id ? String(tgUser.id) : '';
-
-        const handleTelegramOneTapAuth = async () => {
-          if (!termsAgreed) {
-            setTermsAgreed(true);
-            showToast(loc('⚠️ لطفا قوانین را تایید کنید و دوباره کلیک کنید.', '⚠️ Please accept the terms and click again.'));
-            return;
-          }
-
-          try {
-            // Trigger Haptic Feedback
-            if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
-              window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
-            }
-            const initData = typeof window !== 'undefined' ? window.Telegram?.WebApp?.initData || '' : '';
-
-            const authRes = await apiAuth.loginWithTelegram(initData);
-            if (authRes && authRes.success && authRes.user) {
-              const u = authRes.user;
-              const finalName = u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : (u.name || u.username || 'User');
-              const finalUsername = u.username || (u.telegram_id ? `user_${String(u.telegram_id).slice(-4)}` : 'user');
-              const finalAvatar = u.avatar_url || u.avatar || '';
-              const cleanRole = String(u.role || '').toLowerCase();
-              const isVerifiedAdmin = (String(u.telegram_id) === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin'));
-              const assignedRole = isVerifiedAdmin ? 'admin' : (u.role || 'user');
-
-              setUserName(finalName);
-              setCurrentUsername(finalUsername);
-              setAuthUserRecord(u);
-              setUserAvatar(finalAvatar);
-              setAuthFullName(finalName);
-              setAuthUsername(finalUsername);
-              setUserRole(assignedRole);
-              setCurrentTelegramId(u.telegram_id ? String(u.telegram_id) : '');
-              setAuthTelegramId(u.telegram_id ? String(u.telegram_id) : '');
-              setIsVerified(u.is_verified || false);
-              if (u.coins || u.wallet_stars) setUserCoins(u.coins || u.wallet_stars);
-
-              setIsLoggedIn(true);
-              setAuthStatus('authenticated');
-              setHasRegistered(true);
-              setShowEntrySplash(false);
-              setActiveTab('home');
-              safeStorage.setItem('vlive_user_logged_in', 'true');
-              safeStorage.setItem('vlive_has_registered', 'true');
-              showToast(loc(`✨ ورود موفق با تلگرام! خوش آمدید @${finalUsername}`, `✨ Authenticated via Telegram! Welcome @${finalUsername}`));
-            } else {
-              showToast(loc('❌ خطا در احراز هویت: ' + (authRes?.message || authRes?.error || 'جلسه تلگرام یافت نشد'), '❌ Auth Failed: ' + (authRes?.message || authRes?.error || 'Telegram session not detected')));
-            }
-          } catch (error) {
-            console.error('Login Error:', error);
-            showToast(loc('❌ خطای غیرمنتظره در ورود: ' + error.message, '❌ Unexpected login error: ' + error.message));
-          }
-        };
-
-        return <div className="relative w-full max-w-md mx-auto space-y-4 my-auto py-2 px-1 animate-fadeIn dir-ltr">
-              
-              {/* Subtle Ambient Glows */}
-              <div className="absolute -top-16 -left-16 w-52 h-52 rounded-full bg-gradient-to-br from-pink-500/20 via-purple-600/20 to-transparent blur-3xl pointer-events-none" />
-              <div className="absolute -bottom-16 -right-16 w-52 h-52 rounded-full bg-gradient-to-tl from-cyan-500/20 via-blue-600/20 to-transparent blur-3xl pointer-events-none" />
-
-              {/* 1. TOP BAR: LANGUAGE SELECTOR & TELEGRAM STATUS */}
-              <div className="flex items-center justify-between px-1">
-                {/* Language Switcher */}
-                <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl shadow-md">
-                  <button onClick={() => handleSelectLanguage('fa')} className={`px-3 py-1 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${currentAppLang === 'fa' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}>
-                    <span>🇮🇷</span>
-                    <span>{loc('فارسی', 'Farsi')}</span>
-                  </button>
-                  <button onClick={() => handleSelectLanguage('en')} className={`px-3 py-1 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${currentAppLang === 'en' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}>
-                    <span>🇺🇸</span>
-                    <span>English</span>
-                  </button>
-                  <button onClick={() => setIsLanguageModalOpen(true)} className="px-2 py-1 rounded-xl text-xs font-bold bg-slate-800/80 hover:bg-purple-600/40 text-cyan-300 hover:text-white transition flex items-center gap-1 border border-slate-700/60" title={loc('همه زبان‌ها', 'All Languages')}>
-                    <Languages className="w-3.5 h-3.5 text-cyan-400" />
-                  </button>
-                </div>
-
-                {/* Telegram App Badge */}
-                <div className={`px-3 py-1 rounded-2xl border text-[11px] font-bold flex items-center gap-1.5 shadow-sm backdrop-blur-xl ${hasTgSession ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'}`}>
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{hasTgSession ? 'Telegram' : 'Browser'}</span>
-                  <span className={`w-2 h-2 rounded-full ${hasTgSession ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-                </div>
-              </div>
-
-              {/* 2. MAIN CARD */}
-              <div className="relative card-3d p-6 sm:p-7 rounded-3xl bg-slate-900/90 border border-pink-500/30 backdrop-blur-2xl shadow-[0_0_60px_rgba(236,72,153,0.2)] space-y-5 overflow-hidden">
-                
-                {/* Logo & Slogan */}
-                <div className="text-center space-y-3">
-                  <div className="relative w-20 h-20 mx-auto">
-                    <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 blur-xl opacity-75 animate-pulse" />
-                    <div className="relative w-full h-full rounded-3xl bg-slate-950 border-2 border-pink-500/60 p-1 flex items-center justify-center shadow-xl">
-                      <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center shadow-inner">
-                        <Video className="w-8 h-8 text-pink-400" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300 tracking-tight flex items-center justify-center gap-1.5">
-                      <span>V.LIVE</span>
-                      <Sparkles className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
-                    </h1>
-                    <p className="text-xs text-slate-300 font-medium max-w-xs mx-auto">
-                      {loc('پلتفرم اختصاصی پخش زنده و چت تصویری', 'Live Streaming & Video Platform')}
-                    </p>
-                  </div>
-                </div>
-
-                {/* 3. USER PROFILE (IF INSIDE TELEGRAM) */}
-                {hasTgSession ? (
-                  <div className="relative p-3.5 rounded-2xl bg-slate-950/80 border border-pink-500/30 shadow-md flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative shrink-0">
-                        {detectedTgAvatar ? (
-                          <img src={detectedTgAvatar} alt={detectedTgName} className="w-12 h-12 rounded-2xl object-cover ring-2 ring-pink-500/60 shadow" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-600 to-purple-600 flex items-center justify-center text-white font-bold text-base ring-2 ring-pink-500/60 shadow">
-                            {detectedTgName && typeof detectedTgName === 'string' ? detectedTgName.charAt(0).toUpperCase() : 'U'}
-                          </div>
-                        )}
-                        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-950 shadow" />
-                      </div>
-
-                      <div className="text-left min-w-0">
-                        <div className="flex items-center gap-1">
-                          <p className="text-sm font-black text-white truncate">{detectedTgName}</p>
-                          <BadgeCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                        </div>
-                        <p className="text-xs text-cyan-300 font-mono">@{detectedTgUsername}</p>
-                      </div>
-                    </div>
-
-                    <div className="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold flex items-center gap-1 shrink-0">
-                      <Check className="w-3 h-3 text-emerald-400" />
-                      <span>{loc('تایید شده', 'Connected')}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/40 text-center space-y-1.5">
-                    <div className="flex items-center justify-center gap-1.5 text-amber-300 font-bold text-xs">
-                      <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                      <span>{loc('لطفاً از طریق ربات تلگرام باز کنید', 'Please open via Telegram Bot')}</span>
-                    </div>
-                    <p className="text-[11px] text-slate-300">
-                      {loc('جهت ورود خودکار، برنامه را در تلگرام اجرا کنید.', 'To login automatically, run this inside Telegram.')}
-                    </p>
-                  </div>
-                )}
-
-                {/* 4. MAIN ACTION BUTTON */}
-                <div className="pt-1">
-                  {hasTgSession ? (
-                    <button onClick={handleTelegramOneTapAuth} className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-cyan-500 via-purple-600 to-pink-500 hover:from-cyan-400 hover:to-pink-400 text-white font-black text-sm shadow-[0_0_30px_rgba(236,72,153,0.4)] active:scale-95 transition-all flex items-center justify-center gap-2 border border-cyan-300/40">
-                      <Send className="w-4 h-4" />
-                      <span>{loc('ورود با تلگرام', 'Continue with Telegram')}</span>
-                      <ArrowRight className="w-4 h-4 ml-1" />
-                    </button>
-                  ) : (
-                    <a href="https://t.me/vlive_app_bot" target="_blank" rel="noreferrer" className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-sm shadow-[0_0_30px_rgba(6,182,212,0.4)] active:scale-95 transition-all flex items-center justify-center gap-2 border border-cyan-300/40">
-                      <Send className="w-4 h-4" />
-                      <span>{loc('باز کردن در تلگرام (@vlive_app_bot)', 'Open in Telegram (@vlive_app_bot)')}</span>
-                    </a>
-                  )}
-                </div>
-
-                {/* 5. TERMS AGREEMENT CHECKBOX */}
-                <div className="pt-1 text-center">
-                  <label className="inline-flex items-center gap-2 cursor-pointer text-xs text-slate-400 hover:text-slate-300">
-                    <input type="checkbox" checked={termsAgreed} onChange={e => setTermsAgreed(e.target.checked)} className="w-4 h-4 accent-pink-500 rounded cursor-pointer" />
-                    <span className="text-[11px]">
-                      {loc('پذیرش', 'I accept the')}{' '}
-                      <button type="button" onClick={() => setIsTermsModalOpen(true)} className="text-pink-400 hover:text-pink-300 font-bold underline">
-                        {loc('قوانین و شرایط استفاده', 'Terms of Service')}
-                      </button>
-                    </span>
-                  </label>
-                </div>
-
-              </div>
-
-              {/* FOOTER */}
-              <div className="text-center text-[10px] text-slate-500 font-mono pt-1">
-                © 2026 V.LIVE Platform
-              </div>
-
-            </div>;
-      })()}
-
-        {/* MODAL: LANGUAGE PICKER */}
-        <ContentAndEngagementModals
-          isLanguageModalOpen={isLanguageModalOpen}
-          setIsLanguageModalOpen={setIsLanguageModalOpen}
-          currentAppLang={currentAppLang}
-          setCurrentAppLang={setCurrentAppLang}
-          handleSelectLanguage={handleSelectLanguage}
-          APP_LANGUAGES={APP_LANGUAGES}
-          showToast={showToast}
-          loc={loc}
-          isRtl={isRtl}
-        />
-
-        {/* MODAL: TERMS OF SERVICE & PRIVACY POLICY READER */}
-        <TermsModal isTermsModalOpen={isTermsModalOpen} setIsTermsModalOpen={setIsTermsModalOpen} />
-      </div>;
+  // ENTRY SPLASH LOADER & ONBOARDING SYSTEM
+  if (isInitialSplashActive || !isLoggedIn) {
+    return <VLiveEntrySplashLoader onLoadingComplete={handleInitialSplashComplete} />;
   }
   const isStreamerUser = Boolean(
     isUserRayan ||
@@ -2829,101 +2632,7 @@ export default function App() {
           <span className="text-sm font-semibold">{toastMessage}</span>
         </div>}
 
-      {/* RETURNING USER ENTRY SPLASH SCREEN (صفحه اول ورود) */}
-      {showEntrySplash && <div className="fixed inset-0 z-50 bg-slate-950 text-slate-100 flex flex-col items-center justify-between p-6 overflow-hidden animate-fadeIn select-none dir-ltr">
-          
-          {/* Ambient Background Spotlights & Particles */}
-          <div className="absolute top-1/4 -left-20 w-80 h-80 rounded-full bg-gradient-to-br from-pink-500/25 via-purple-600/20 to-transparent blur-3xl pointer-events-none animate-pulse" />
-          <div className="absolute bottom-1/4 -right-20 w-80 h-80 rounded-full bg-gradient-to-tl from-cyan-500/25 via-blue-600/20 to-transparent blur-3xl pointer-events-none animate-pulse" style={{
-            animationDelay: '1.5s'
-          }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
 
-          {/* Top Brand Bar */}
-          <div className="w-full max-w-sm flex items-center justify-between z-20 pt-2">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-pink-500/40">
-                <Video className="w-4 h-4 text-white animate-pulse" />
-              </div>
-              <span className="font-black text-lg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300">
-                V.LIVE
-              </span>
-            </div>
-
-            <div className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-black flex items-center gap-1.5 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>Live System Active</span>
-            </div>
-          </div>
-
-          {/* Center User Profile & Glamorous Login Action */}
-          <div className="w-full max-w-sm my-auto flex flex-col items-center text-center space-y-7 z-20">
-            
-            {/* Returning User Avatar & Badge Card */}
-            <div className="relative group">
-              <div className="absolute -inset-3 rounded-full bg-gradient-to-tr from-pink-500 via-purple-600 via-cyan-400 to-amber-400 blur-xl opacity-75 group-hover:opacity-100 animate-pulse transition duration-700" />
-              
-              <div className="relative w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-2xl">
-                <img src={userAvatar} alt="Profile" className="w-full h-full rounded-full object-cover border-2 border-slate-950" />
-                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-pink-600 to-purple-600 text-white font-black text-[9px] border border-slate-950 shadow-md whitespace-nowrap">
-                  {vipPlan === 'adult_vip' ? '🔞 VIP 18+' : isVerified ? '👑 VIP Streamer' : '✨ VIP Member'}
-                </div>
-              </div>
-            </div>
-
-            {/* User Greeting Info */}
-            <div className="space-y-1">
-              <h2 className="text-2xl font-black text-white flex items-center justify-center gap-2">
-                <span>{loc('خوش آمدید،', 'welcome,')} {userName}</span>
-                <Sparkles className="w-5 h-5 text-amber-400 animate-bounce" />
-              </h2>
-              <p className="text-xs text-slate-400 font-medium dir-rtl">
-                @{currentUsername || 'rayan'} • {userCoins.toLocaleString()} {loc('🪙 سکه موجود است', '🪙 coins available')}
-              </p>
-            </div>
-
-            {/* THE SEXY GLOWING LOGIN ICON & ENTER BUTTON */}
-            <div className="w-full flex flex-col items-center space-y-3 pt-2">
-              <button onClick={() => {
-                if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
-                  window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
-                }
-                setShowEntrySplash(false);
-                setActiveTab('home');
-                showToast(loc('✨ ورود به صفحه اصلی V.LIVE با موفقیت انجام شد', '✨ Entering V.LIVE Home Screen'));
-              }} className="group relative w-full max-w-xs py-4 px-6 rounded-3xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 hover:from-pink-500 hover:via-purple-500 hover:to-cyan-400 text-white font-black text-base shadow-[0_0_40px_rgba(236,72,153,0.7)] hover:shadow-[0_0_60px_rgba(236,72,153,0.9)] active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 overflow-hidden">
-                {/* Shimmer Light Reflection Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
-
-                {/* Animated Login / Play Icon */}
-                <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner group-hover:scale-110 transition duration-300">
-                  <LogIn className="w-5 h-5 text-white animate-pulse" />
-                </div>
-
-                <span className="tracking-wide">{loc('ورود به V.LIVE', 'Login to V.LIVE')}</span>
-
-                <ArrowRight className="w-5 h-5 text-cyan-200 group-hover:translate-x-1 transition duration-300" />
-              </button>
-            </div>
-
-          </div>
-
-          {/* Footer: Switch Account Option */}
-          <div className="w-full max-w-sm text-center z-20 pb-2">
-            <button onClick={() => {
-              safeStorage.setItem('vlive_has_registered', 'false');
-              safeStorage.setItem('vlive_user_logged_in', 'false');
-              setHasRegistered(false);
-              setIsLoggedIn(false);
-              setAuthStep('welcome');
-              setShowEntrySplash(false);
-              showToast(loc('صفحه ثبت‌نام و ورود با تلگرام فعال شد', 'Switched to Telegram Register & Auth Screen'));
-            }} className="text-xs text-slate-400 hover:text-pink-400 transition font-bold underline underline-offset-4 dir-rtl">
-              {loc('ورود با حساب دیگر یا تلگرام 🔄', 'Login with another account or Telegram 🔄')}
-            </button>
-          </div>
-
-        </div>}
 
       {/* HEADER NAVBAR - COMPACT SLEEK REDESIGN */}
       <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/80 px-3 sm:px-4 py-2 shadow-md w-full shrink-0">
@@ -4594,6 +4303,7 @@ export default function App() {
           safeStorage.setItem('vlive_user_logged_in', 'true');
           safeStorage.setItem('vlive_has_registered', 'true');
           safeStorage.setItem('vlive_user_onboarded', 'true');
+          safeStorage.setItem('vlive_profile_completed', 'true');
           showToast(loc(`✨ ثبت‌نام و تکمیل مشخصات با موفقیت انجام شد! خوش آمدید @${finalProfile.username}`, `✨ Profile completed successfully! Welcome @${finalProfile.username}`));
         }} />
 
