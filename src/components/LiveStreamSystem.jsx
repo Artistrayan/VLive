@@ -102,15 +102,8 @@ export default function LiveStreamSystem({
   useEffect(() => {
     const fetchStreams = async () => {
       const dbStreams = await apiLive.getLiveStreams(liveTypeTab);
-      if (Array.isArray(dbStreams) && dbStreams.length > 0) {
-        // Merge with local streams safely
-        setStreamsList(prev => {
-          const merged = [...dbStreams];
-          prev.forEach(p => {
-            if (!merged.some(m => m.id === p.id)) merged.push(p);
-          });
-          return merged;
-        });
+      if (Array.isArray(dbStreams)) {
+        setStreamsList(dbStreams);
       }
     };
     fetchStreams();

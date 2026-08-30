@@ -2282,9 +2282,7 @@ export default function App() {
       apiSocial.getStories().then(res => setAdvancedStories(res || []));
     }
     apiHome.getActiveStreams().then(streams => {
-      if (streams && streams.length > 0) {
-        setStreamsList(streams);
-      }
+      setStreamsList(Array.isArray(streams) ? streams : []);
     }).catch(err => console.warn('Streams fetch notice:', err));
 
     // Subscribe to real-time live stream broadcasts across all users
@@ -2768,18 +2766,17 @@ export default function App() {
                       
                       {/* Image Container with aspect ratio */}
                       <div className="aspect-[4/5] relative cursor-pointer overflow-hidden" onClick={() => {
-                    if (user.isStreaming || streamsList.some(s => s.host === user.name)) {
-                      const stream = streamsList.find(s => s.host === user.name) || {
-                        host: user.name,
-                        avatar: user.avatar,
-                        id: 'stream_' + user.id
-                      };
-                      setViewingStream(stream);
-                    } else {
-                      setSelectedUser(user);
-                      setIsUserProfileModalOpen(true);
-                    }
-                  }}>
+                        const activeStreamForUser = (streamsList || []).find(s => s && (
+                          (s.host_id && String(s.host_id) === String(user.id)) ||
+                          (s.host && (s.host === user.name || s.host === user.username))
+                        ));
+                        if (activeStreamForUser) {
+                          setViewingStream(activeStreamForUser);
+                        } else {
+                          setSelectedUser(user);
+                          setIsUserProfileModalOpen(true);
+                        }
+                      }}>
                         {user.avatar ? (
                           <img src={user.avatar} alt={user.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                         ) : (
@@ -2795,11 +2792,13 @@ export default function App() {
                              <span className="text-[8px] font-black text-emerald-400">Online</span>
                           </div>}
 
-                        {/* Top Right: Live Badge */}
-                        {(user.isStreaming || streamsList.some(s => s.host === user.name)) && <div className="absolute top-1.5 right-1.5 flex items-center gap-1 bg-rose-600/90 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-rose-400/60">
+                        {/* Top Right: Live Badge (ONLY if real active stream exists) */}
+                        {Boolean((streamsList || []).some(s => s && ((s.host_id && String(s.host_id) === String(user.id)) || (s.host && (s.host === user.name || s.host === user.username))))) && (
+                          <div className="absolute top-1.5 right-1.5 flex items-center gap-1 bg-rose-600/90 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-rose-400/60">
                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                              <span className="text-[8px] font-black text-white">LIVE</span>
-                          </div>}
+                          </div>
+                        )}
                         
                         {/* Bottom Info Overlay */}
                         <div className="absolute bottom-1.5 left-2 right-2 pointer-events-none">

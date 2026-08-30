@@ -949,15 +949,17 @@ export const apiHome = {
         }
       } catch (e) {}
 
-      // 3. Merge cached active live streams
+      // 3. Clear stale local storage streams if not active in Supabase
       try {
-        const cached = JSON.parse(safeStorage.getItem('vlive_active_live_streams') || '[]');
-        if (Array.isArray(cached)) {
-          cached.forEach(c => {
-            if (c && c.id && !streamsMap.has(c.id) && c.status !== 'ended') {
-              streamsMap.set(c.id, c);
-            }
-          });
+        if (streamsMap.size === 0) {
+          safeStorage.removeItem('vlive_active_live_streams');
+        } else {
+          const activeIds = Array.from(streamsMap.keys());
+          const cached = JSON.parse(safeStorage.getItem('vlive_active_live_streams') || '[]');
+          if (Array.isArray(cached)) {
+            const valid = cached.filter(c => c && c.id && activeIds.includes(c.id));
+            safeStorage.setItem('vlive_active_live_streams', JSON.stringify(valid));
+          }
         }
       } catch (e) {}
 
