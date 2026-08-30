@@ -331,13 +331,11 @@ export default function ChatTab(props) {
     const resolvePartnerProfile = async () => {
       try {
         const pid = String(partnerId || activeConversationId).trim();
-        let query = supabase.from('profiles').select('id, username, username_handle, name, avatar, is_streamer, is_verified, role, status, updated_at, birth_date, age, telegram_id');
+        let query = supabase.from('profiles').select('id, username, name, avatar, is_verified, status, updated_at');
         if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pid)) {
           query = query.eq('id', pid);
-        } else if (/^\d+$/.test(pid)) {
-          query = query.or(`telegram_id.eq.${pid},id.eq.${pid}`);
         } else {
-          query = query.or(`username.ilike.${pid},username_handle.ilike.${pid},id.eq.${pid}`);
+          query = query.or(`username.ilike.${pid},name.ilike.${pid},id.eq.${pid}`);
         }
         const { data: profData } = await query.limit(1).maybeSingle();
         if (isMounted && profData) {
@@ -891,8 +889,10 @@ export default function ChatTab(props) {
                       const cUser = conv.user || {};
                       const cName = cUser.name || '';
                       const cUsername = cUser.username ? String(cUser.username).replace(/^@/, '') : '';
-                      const cDisplayMain = cName && !cName.startsWith('@') ? cName : (cUsername ? `@${cUsername}` : (cName || 'User'));
-                      const cShowSub = cUsername && cDisplayMain.toLowerCase().replace(/^@/, '') !== cUsername.toLowerCase();
+                      const cDisplayMain = (cName && cName !== 'کاربر' && cName !== 'User' && !cName.startsWith('@'))
+                        ? cName
+                        : (cUsername ? `@${cUsername}` : (cName || 'کاربر'));
+                      const cShowSub = Boolean(cUsername && cDisplayMain.toLowerCase().replace(/^@/, '') !== cUsername.toLowerCase());
 
                       return (
                         <div key={conv.id} className="relative group">
@@ -1071,8 +1071,10 @@ export default function ChatTab(props) {
                                 {(() => {
                                   const pName = currentConv?.user?.name || '';
                                   const pUsername = currentConv?.user?.username ? String(currentConv.user.username).replace(/^@/, '') : '';
-                                  const pDisplay = pName && !pName.startsWith('@') ? pName : (pUsername ? `@${pUsername}` : (pName || 'User'));
-                                  const pShowSub = pUsername && pDisplay.toLowerCase().replace(/^@/, '') !== pUsername.toLowerCase();
+                                  const pDisplay = (pName && pName !== 'کاربر' && pName !== 'User' && !pName.startsWith('@'))
+                                    ? pName
+                                    : (pUsername ? `@${pUsername}` : (pName || 'کاربر'));
+                                  const pShowSub = Boolean(pUsername && pDisplay.toLowerCase().replace(/^@/, '') !== pUsername.toLowerCase());
                                   return (
                                     <>
                                       <h3 className="text-xs font-bold text-white truncate">{pDisplay}</h3>

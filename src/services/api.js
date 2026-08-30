@@ -1008,11 +1008,11 @@ export async function resolveProfileUuid(identifier) {
   }
   try {
     const isNumeric = /^\d+$/.test(str);
-    let query = supabase.from('profiles').select('id, username, username_handle, name, telegram_id');
+    let query = supabase.from('profiles').select('id, username, name');
     if (isNumeric) {
-      query = query.or(`telegram_id.eq.${str},username.ilike.${str},username_handle.ilike.${str}`);
+      query = query.or(`id.eq.${str},username.ilike.${str}`);
     } else {
-      query = query.or(`username.ilike.${str},username_handle.ilike.${str},name.ilike.${str}`);
+      query = query.or(`username.ilike.${str},name.ilike.${str}`);
     }
     const { data } = await query.limit(1).maybeSingle();
     return data?.id || null;
@@ -1075,27 +1075,20 @@ export async function getOrCreateConversation(userAId, userBId) {
 // Helper to format clean display name (shows real name or username handle)
 export function formatUserDisplayName(prof, fallbackId) {
   if (!prof && !fallbackId) return 'کاربر';
-  const usernameHandle = prof?.username_handle && typeof prof.username_handle === 'string' ? prof.username_handle.trim().replace(/^@/, '') : '';
   const username = prof?.username && typeof prof.username === 'string' ? prof.username.trim().replace(/^@/, '') : '';
   const name = prof?.name && typeof prof.name === 'string' ? prof.name.trim() : '';
-  const telegramId = prof?.telegram_id ? String(prof.telegram_id).trim() : '';
 
-  // 1. Real custom display name (if not UUID or raw number)
-  if (name && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(name) && !/^\d{6,}$/.test(name)) {
+  // 1. Real custom display name (if not UUID or raw number and not default 'User' or 'کاربر')
+  if (name && name !== 'کاربر' && name !== 'User' && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(name) && !/^\d{6,}$/.test(name)) {
     return name;
   }
 
-  // 2. Custom username handle
-  if (usernameHandle && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(usernameHandle)) {
-    return usernameHandle;
-  }
-
-  // 3. Custom username
+  // 2. Custom username
   if (username && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(username)) {
-    return username;
+    return `@${username}`;
   }
 
-  // 4. Fallback ID if passed as username/name string
+  // 3. Fallback ID if passed as username/name string
   if (fallbackId) {
     const fid = String(fallbackId).trim().replace(/^@/, '');
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(fid) && !/^\d{6,}$/.test(fid)) {
@@ -1103,10 +1096,8 @@ export function formatUserDisplayName(prof, fallbackId) {
     }
   }
 
-  if (name) return name;
-  if (username) return username;
-  if (usernameHandle) return usernameHandle;
-  if (telegramId) return `user_${telegramId.slice(-4)}`;
+  if (name && name !== 'User' && name !== 'کاربر') return name;
+  if (username) return `@${username}`;
 
   return 'کاربر';
 }
@@ -1114,11 +1105,8 @@ export function formatUserDisplayName(prof, fallbackId) {
 // Helper to format clean username handle
 export function formatUserUsername(prof, fallbackId) {
   if (!prof && !fallbackId) return '';
-  const usernameHandle = prof?.username_handle && typeof prof.username_handle === 'string' ? prof.username_handle.trim().replace(/^@/, '') : '';
   const username = prof?.username && typeof prof.username === 'string' ? prof.username.trim().replace(/^@/, '') : '';
-  const telegramId = prof?.telegram_id ? String(prof.telegram_id).trim() : '';
 
-  if (usernameHandle && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(usernameHandle)) return usernameHandle;
   if (username && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(username)) return username;
 
   if (fallbackId) {
@@ -1129,8 +1117,6 @@ export function formatUserUsername(prof, fallbackId) {
   }
 
   if (username) return username;
-  if (usernameHandle) return usernameHandle;
-  if (telegramId) return `user_${telegramId.slice(-4)}`;
   return '';
 }
 
@@ -1242,15 +1228,13 @@ export const apiMessages = {
       // 2. Fetch profiles of conversation partners
       const { data: profs } = await supabase
         .from('profiles')
-        .select('id, username, username_handle, name, avatar, is_streamer, is_verified, role, status, updated_at, birth_date, age, telegram_id');
+        .select('id, username, name, avatar, is_verified, status, updated_at');
 
       const profilesMap = new Map();
       if (Array.isArray(profs)) {
         profs.forEach(p => {
           if (p.id) profilesMap.set(String(p.id).trim(), p);
           if (p.username) profilesMap.set(String(p.username).trim().toLowerCase(), p);
-          if (p.username_handle) profilesMap.set(String(p.username_handle).trim().toLowerCase(), p);
-          if (p.telegram_id) profilesMap.set(String(p.telegram_id).trim(), p);
         });
       }
 
@@ -1460,15 +1444,13 @@ export const apiMessages = {
       if (senderIds.length > 0) {
         const { data: profs } = await supabase
           .from('profiles')
-          .select('id, username, username_handle, name, avatar, telegram_id, role, is_verified, is_streamer')
+          .select('id, username, name, avatar, is_verified, status')
           .in('id', senderIds);
 
         if (Array.isArray(profs)) {
           profs.forEach(p => {
             if (p.id) senderProfilesMap.set(String(p.id).trim(), p);
             if (p.username) senderProfilesMap.set(String(p.username).trim().toLowerCase(), p);
-            if (p.username_handle) senderProfilesMap.set(String(p.username_handle).trim().toLowerCase(), p);
-            if (p.telegram_id) senderProfilesMap.set(String(p.telegram_id).trim(), p);
           });
         }
       }
@@ -3756,11 +3738,9 @@ export const apiAdmin = {
 
         if (existingIdx !== -1) {
           const existing = resultList[existingIdx];
-          let effectiveStatus = existing.status;
-          if (!effectiveStatus || effectiveStatus === 'Pending') {
-            if (locApp.status && locApp.status !== 'Pending') {
-              effectiveStatus = locApp.status;
-            }
+          let effectiveStatus = existing.status || 'Pending';
+          if (existing.status === 'Pending' && locApp.status && locApp.status !== 'Pending') {
+            effectiveStatus = locApp.status;
           }
 
           const rawMergedStatus = String(effectiveStatus || 'Pending').toLowerCase();
@@ -3769,13 +3749,19 @@ export const apiAdmin = {
           else if (rawMergedStatus === 'rejected') normalizedMergedStatus = 'Rejected';
           else if (rawMergedStatus === 'correction') normalizedMergedStatus = 'Correction';
 
+          const isApproved = normalizedMergedStatus === 'Approved';
+          const isRejected = normalizedMergedStatus === 'Rejected';
+          const isCorrection = normalizedMergedStatus === 'Correction';
+
           resultList[existingIdx] = {
             ...existing,
             ...locApp,
             status: normalizedMergedStatus,
-            admin_notes: locApp.admin_notes || existing.admin_notes || '',
-            rejectionReason: locApp.rejectionReason || existing.rejectionReason || '',
-            correctionMessage: locApp.correctionMessage || existing.correctionMessage || '',
+            admin_notes: isApproved ? '' : (locApp.admin_notes || existing.admin_notes || ''),
+            rejectionReason: isRejected ? (locApp.rejectionReason || existing.rejectionReason || locApp.admin_notes || existing.admin_notes || '') : '',
+            rejection_reason: isRejected ? (locApp.rejection_reason || existing.rejection_reason || locApp.admin_notes || existing.admin_notes || '') : '',
+            correctionMessage: isCorrection ? (locApp.correctionMessage || existing.correctionMessage || locApp.admin_notes || existing.admin_notes || '') : '',
+            correction_message: isCorrection ? (locApp.correction_message || existing.correction_message || locApp.admin_notes || existing.admin_notes || '') : '',
             selfiePhoto: locApp.selfiePhoto || existing.selfiePhoto || '',
             idCardPhoto: locApp.idCardPhoto || locApp.avatar || existing.idCardPhoto || existing.avatar || '',
             avatar: locApp.avatar || locApp.idCardPhoto || existing.avatar || existing.idCardPhoto || '',
