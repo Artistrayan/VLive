@@ -462,11 +462,10 @@ export const apiProfile = {
   },
 
   async submitKyc(data) {
-    const uid = getUserId();
-    if (!uid) return { success: false };
+    const uid = data?.user_id || data?.userId || authData?.user?.id || getUserId() || (data?.username ? `user_${data.username}` : `user_${Date.now()}`);
     
     // Combine fields into description for Streamer Applications and KYC
-    let finalDescription = data.description || '';
+    let finalDescription = data?.description || '';
     if (typeof data === 'object') {
       finalDescription = JSON.stringify({
         description: data.description || '',
@@ -487,48 +486,54 @@ export const apiProfile = {
 
     const { error } = await supabase.from('kyc_applications').insert([{
       user_id: uid,
-      username: data.username,
-      national_id: data.nationalId || `id_${Date.now()}`,
+      username: data?.username,
+      national_id: data?.nationalId || `id_${Date.now()}`,
       description: finalDescription,
       status: 'Pending',
-      video_demo_url: data.videoUrl || data.videoDemoUrl || '',
-      doc_url: data.docUrl || data.selfiePhoto || ''
+      video_demo_url: data?.videoUrl || data?.videoDemoUrl || '',
+      doc_url: data?.docUrl || data?.selfiePhoto || ''
     }]);
     
     if (error) {
       console.warn('KYC insert error:', error);
     }
     
-    // Also store locally for instant UI sync
+    // Always store locally for instant UI and Admin Panel sync
     try {
       const localApps = JSON.parse(safeStorage.getItem('vlive_kyc_apps_local') || '[]');
       const newAppEntry = {
-        id: 'kyc_' + Date.now(),
+        id: data?.id || ('kyc_' + Date.now()),
         user_id: uid,
-        username: data.username,
-        name: data.name || data.username,
+        username: data?.username,
+        name: data?.name || data?.username,
         status: 'Pending',
-        description: data.description || '',
-        streamCategory: data.streamCategory || '',
-        streamTopic: data.streamTopic || '',
-        selfiePhoto: data.selfiePhoto || '',
-        requestedPose: data.requestedPose || '',
-        verificationType: data.verificationType || 'MANUAL_GESTURE_SELFIE',
-        idCardPhoto: data.idCardPhoto || data.avatar || '',
-        avatar: data.avatar || '',
+        description: data?.description || '',
+        streamCategory: data?.streamCategory || '',
+        streamTopic: data?.streamTopic || '',
+        selfiePhoto: data?.selfiePhoto || '',
+        requestedPose: data?.requestedPose || '',
+        verificationType: data?.verificationType || 'MANUAL_GESTURE_SELFIE',
+        idCardPhoto: data?.idCardPhoto || data?.avatar || '',
+        avatar: data?.avatar || '',
         created_at: new Date().toISOString()
       };
-      safeStorage.setItem('vlive_kyc_apps_local', JSON.stringify([newAppEntry, ...localApps.filter(a => a.username !== data.username)]));
+      safeStorage.setItem('vlive_kyc_apps_local', JSON.stringify([newAppEntry, ...localApps.filter(a => a.username !== data?.username)]));
+      window.dispatchEvent(new CustomEvent('vlive_kyc_updated', { detail: newAppEntry }));
     } catch(e) {}
 
-    return { success: !error };
+    return { success: true };
   },
 
   async getMyKycApplications() {
     const uid = getUserId();
-    if (!uid) return [];
     try {
-      const { data, error } = await supabase.from('kyc_applications').select('*').eq('user_id', uid).order('created_at', { ascending: false });
+      let data = null;
+      let error = null;
+      if (uid) {
+        const res = await supabase.from('kyc_applications').select('*').eq('user_id', uid).order('created_at', { ascending: false });
+        data = res.data;
+        error = res.error;
+      }
       if (error || !data || data.length === 0) {
         // Check local storage fallback
         const localApps = JSON.parse(safeStorage.getItem('vlive_kyc_apps_local') || '[]');
@@ -3382,7 +3387,7 @@ export const apiAdmin = {
     }
   },
 
-  async updateKycStatus(id, status, userId = null, notes = '') {
+  async updateKycStatus(id, status, userId = null, notes = '', username = '') {
     if (!(await verifyAdminServerRole())) return { success: false, error: 'Unauthorized' };
     try {
       const { error } = await supabase
@@ -3394,13 +3399,29 @@ export const apiAdmin = {
         })
         .eq('id', id);
       
-      if (status === 'Approved' && userId) {
-        await supabase
-          .from('profiles')
-          .update({ is_verified: true, user_type: 'STREAMER' })
-          .eq('id', userId);
+      if (status === 'Approved') {
+        if (userId) {
+          await supabase
+            .from('profiles')
+            .update({ is_verified: true, user_type: 'STREAMER', is_streamer: true })
+            .eq('id', userId);
+        } else if (username) {
+          await supabase
+            .from('profiles')
+            .update({ is_verified: true, user_type: 'STREAMER', is_streamer: true })
+            .eq('username', username);
+        }
       }
-      return { success: !error };
+
+      // Also update local storage record
+      try {
+        const localApps = JSON.parse(safeStorage.getItem('vlive_kyc_apps_local') || '[]');
+        const updated = localApps.map(a => (a.id === id || (username && a.username === username)) ? { ...a, status, admin_notes: notes } : a);
+        safeStorage.setItem('vlive_kyc_apps_local', JSON.stringify(updated));
+        window.dispatchEvent(new CustomEvent('vlive_kyc_updated', { detail: { id, status, notes } }));
+      } catch(e) {}
+
+      return { success: true };
     } catch (e) {
       return { success: false, error: e.message };
     }

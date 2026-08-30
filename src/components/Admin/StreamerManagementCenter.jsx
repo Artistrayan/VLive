@@ -17,9 +17,13 @@ export default function StreamerManagementCenter({
   showToast = (() => {}),
   kycApplications = [],
   setKycApplications = (() => {}),
+  initialSubTab = null,
   loc = ((a, b) => b || a)
 }) {
-  const [streamerSubTab, setStreamerSubTab] = useState('streamers'); // 'streamers' | 'scores' | 'kyc' | 'history' | 'ai_risk' | 'settings' | 'logs'
+  const pendingKycCount = (kycApplications || []).filter(a => (a.status || '').toLowerCase() === 'pending').length;
+  const defaultTab = initialSubTab || (pendingKycCount > 0 ? 'kyc' : 'kyc');
+  const [streamerSubTab, setStreamerSubTab] = useState(defaultTab); // 'streamers' | 'scores' | 'kyc' | 'history' | 'ai_risk' | 'settings' | 'logs'
+  const [kycStatusFilter, setKycStatusFilter] = useState('All'); // 'All' | 'Pending' | 'Approved' | 'Rejected' | 'Correction'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -37,13 +41,20 @@ export default function StreamerManagementCenter({
   // Admin Config State for Levels
   const [levelConfigs, setLevelConfigs] = useState(STREAMER_LEVELS);
 
-  // Auto-refresh applications on mount
+  // Sync initialSubTab when parent changes it
+  React.useEffect(() => {
+    if (initialSubTab) {
+      setStreamerSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
+
+  // Auto-refresh applications on mount and on KYC update event
   const handleRefreshApplications = async () => {
     setIsRefreshing(true);
     try {
       if (apiAdmin && typeof apiAdmin.getKycApplications === 'function') {
         const freshApps = await apiAdmin.getKycApplications();
-        if (freshApps) {
+        if (freshApps && Array.isArray(freshApps)) {
           setKycApplications(freshApps);
         }
       }
@@ -56,40 +67,48 @@ export default function StreamerManagementCenter({
 
   React.useEffect(() => {
     handleRefreshApplications();
+
+    const handleKycEvent = () => {
+      handleRefreshApplications();
+    };
+    window.addEventListener('vlive_kyc_updated', handleKycEvent);
+    return () => window.removeEventListener('vlive_kyc_updated', handleKycEvent);
   }, []);
 
   // Extract streamers & pending applicants
   const streamersList = usersList.filter(u => u.isStreamer || u.isHost || u.is_streamer);
-  const pendingKycCount = kycApplications.filter(a => a.status === 'Pending').length;
   
   const handleApproveKyc = async (app) => {
     if (apiAdmin && apiAdmin.updateKycStatus) {
-      await apiAdmin.updateKycStatus(app.id, 'Approved', app.user_id);
+      await apiAdmin.updateKycStatus(app.id, 'Approved', app.user_id, '', app.username);
     }
     setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Approved' } : a));
-    setUsersList(prev => prev.map(u => u.username === app.username ? { ...u, isStreamer: true, isHost: true, isVerified: true, role: 'streamer' } : u));
+    setUsersList(prev => prev.map(u => (u.username === app.username || u.id === app.user_id) ? { ...u, isStreamer: true, isHost: true, isVerified: true, role: 'streamer', user_type: 'STREAMER' } : u));
     addAdminAuditLog(`Approved Streamer KYC Application #${String(app.id).slice(0,6)} for @${app.username}`);
     showToast(window.loc(`✅ درخواست استریمی @${app.username} با موفقیت تایید شد`, `✅ Streamer app @${app.username} approved`));
+    if (selectedApplication?.id === app.id) setSelectedApplication(null);
   };
 
   const handleRejectKyc = async (app) => {
     const reason = prompt(window.loc('دلیل رد درخواست (برای کاربر نمایش داده می‌شود):', 'Reason for rejection:')) || 'Rejected by admin';
     if (apiAdmin && apiAdmin.updateKycStatus) {
-      await apiAdmin.updateKycStatus(app.id, 'Rejected', app.user_id);
+      await apiAdmin.updateKycStatus(app.id, 'Rejected', app.user_id, reason, app.username);
     }
-    setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Rejected', rejectionReason: reason } : a));
-    addAdminAuditLog(`Rejected Streamer KYC Application #${String(app.id).slice(0,6)} for @${app.username}`);
+    setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Rejected', rejectionReason: reason, admin_notes: reason } : a));
+    addAdminAuditLog(`Rejected Streamer KYC Application #${String(app.id).slice(0,6)} for @${app.username} (Reason: ${reason})`);
     showToast(window.loc(`✕ درخواست استریمی @${app.username} رد شد`, `✕ Streamer app @${app.username} rejected`));
+    if (selectedApplication?.id === app.id) setSelectedApplication(null);
   };
 
   const handleCorrectionKyc = async (app) => {
     const msg = prompt(window.loc('پیام اصلاحیه برای کاربر:', 'Correction message:')) || 'Please update your documents';
     if (apiAdmin && apiAdmin.updateKycStatus) {
-      await apiAdmin.updateKycStatus(app.id, 'Correction', app.user_id);
+      await apiAdmin.updateKycStatus(app.id, 'Correction', app.user_id, msg, app.username);
     }
-    setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Correction', correctionMessage: msg } : a));
+    setKycApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'Correction', correctionMessage: msg, admin_notes: msg } : a));
     addAdminAuditLog(`Requested Correction for KYC Application #${String(app.id).slice(0,6)} for @${app.username}`);
     showToast(window.loc(`درخواست اصلاحیه برای @${app.username} ارسال شد`, `Correction request sent to @${app.username}`));
+    if (selectedApplication?.id === app.id) setSelectedApplication(null);
   };
 
   const handleToggleFreezeIncome = (streamer) => {
@@ -408,72 +427,317 @@ export default function StreamerManagementCenter({
       {/* ================= TAB 3: KYC APPLICATIONS ================= */}
       {streamerSubTab === 'kyc' && (
         <div className="space-y-4 animate-fadeIn">
-          {kycApplications.filter(a => a.status === 'Pending').length === 0 ? (
-            <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 text-center text-slate-400">
-              <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-              <span>{window.loc('کلیه درخواست‌های احراز هویت استریمرها بررسی شده‌اند.', 'All streamers authentication requests have been checked.')}</span>
+          {/* SEARCH & STATUS FILTER BAR */}
+          <div className="p-3.5 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-md">
+            {/* Filter Buttons */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 md:pb-0 text-xs">
+              {[
+                { id: 'All', label: window.loc('همه', 'All'), count: (kycApplications || []).length },
+                { id: 'Pending', label: window.loc('در انتظار بررسی', 'Pending'), count: (kycApplications || []).filter(a => (a.status || '').toLowerCase() === 'pending').length, color: 'text-amber-400' },
+                { id: 'Approved', label: window.loc('تأیید شده', 'Approved'), count: (kycApplications || []).filter(a => (a.status || '').toLowerCase() === 'approved').length, color: 'text-emerald-400' },
+                { id: 'Rejected', label: window.loc('رد شده', 'Rejected'), count: (kycApplications || []).filter(a => (a.status || '').toLowerCase() === 'rejected').length, color: 'text-rose-400' },
+                { id: 'Correction', label: window.loc('نیاز به اصلاح', 'Correction'), count: (kycApplications || []).filter(a => (a.status || '').toLowerCase() === 'correction').length, color: 'text-orange-400' }
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setKycStatusFilter(f.id)}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 border ${
+                    kycStatusFilter === f.id
+                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white border-pink-400 shadow-md font-black'
+                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <span>{f.label}</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-mono ${kycStatusFilter === f.id ? 'bg-white/20 text-white' : 'bg-slate-900 ' + (f.color || 'text-slate-300')}`}>
+                    {f.count}
+                  </span>
+                </button>
+              ))}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {kycApplications.filter(a => a.status === 'Pending').map(app => (
-                <div key={app.id} className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 shadow-xl">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <div>
-                      <h4 className="font-bold text-white text-xs">{app.name || app.username} (@{app.username})</h4>
-                      <span className="text-[10px] text-slate-400 font-mono">
-                        {app.requestedPose ? `ژست درخواستی: ${app.requestedPose}` : `${window.loc('دسته‌بندی:', 'Category:')} ${app.streamCategory || 'N/A'}`}
-                      </span>
-                    </div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 text-[10px] font-mono font-bold border border-pink-500/30">
-                      {app.verificationType === 'MANUAL_GESTURE_SELFIE' ? 'احراز هویت دستی ✋' : (app.aiConfidence || 'بررسی هویت')}
-                    </span>
-                  </div>
 
-                  <p className="text-[10px] text-slate-300">
-                    <span className="font-bold text-slate-400">{window.loc('توضیحات:', 'Description:')}</span> {app.description || '-'}
+            {/* Search Input */}
+            <div className="relative min-w-[200px]">
+              <Search className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                placeholder={window.loc('جستجوی نام کاربری، دسته‌بندی...', 'Search username, category...')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-3 pr-8 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-pink-500 transition"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">✕</button>
+              )}
+            </div>
+          </div>
+
+          {/* APPLICATION LIST */}
+          {(() => {
+            const filteredApps = (kycApplications || []).filter(app => {
+              const matchesStatus = kycStatusFilter === 'All' 
+                ? true 
+                : (app.status || '').toLowerCase() === kycStatusFilter.toLowerCase();
+              
+              const q = searchQuery.toLowerCase().trim();
+              const matchesSearch = !q 
+                || (app.username || '').toLowerCase().includes(q) 
+                || (app.name || '').toLowerCase().includes(q)
+                || (app.streamCategory || '').toLowerCase().includes(q)
+                || (app.streamTopic || '').toLowerCase().includes(q)
+                || (app.description || '').toLowerCase().includes(q);
+
+              return matchesStatus && matchesSearch;
+            });
+
+            if (filteredApps.length === 0) {
+              return (
+                <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 text-center text-slate-400 space-y-3">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+                  <p className="font-bold text-white text-sm">
+                    {kycStatusFilter === 'Pending'
+                      ? window.loc('هیچ درخواست معلقی در صف انتظار بررسی وجود ندارد.', 'No pending applications in the review queue.')
+                      : window.loc('هیچ درخواستی با این فیلتر یافت نشد.', 'No applications found matching this filter.')}
                   </p>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <span className="text-[9px] text-slate-400 font-bold">{window.loc('عکس انتخابی پروفایل:', 'Profile Photo:')}</span>
-                      <img src={app.idCardPhoto || app.docUrl || app.avatar} alt="Profile Photo" className="w-full h-28 object-cover rounded-2xl border border-slate-800" />
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-[9px] text-pink-400 font-bold">{window.loc('سلفی ژست دست (دوربین):', 'Live Gesture Selfie:')}</span>
-                      {app.selfiePhoto ? (
-                        <img src={app.selfiePhoto} alt="Live Gesture Selfie" className="w-full h-28 object-cover rounded-2xl border border-pink-500/40" />
-                      ) : app.videoDemoUrl ? (
-                        <video src={app.videoDemoUrl} className="w-full h-28 object-cover rounded-2xl border border-slate-800" controls />
-                      ) : (
-                        <div className="w-full h-28 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center text-[10px] text-slate-500">
-                          بدون سلفی
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 pt-1">
+                  <div className="flex justify-center gap-2">
                     <button
-                      onClick={() => handleApproveKyc(app)}
-                      className="flex-1 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow"
+                      onClick={() => { setKycStatusFilter('All'); setSearchQuery(''); }}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
                     >
-                      {window.loc('✓ تایید نهایی', '✓ Approve')}
+                      {window.loc('نمایش همه درخواست‌ها', 'Show all applications')}
                     </button>
                     <button
-                      onClick={() => handleCorrectionKyc(app)}
-                      className="flex-1 py-2 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs shadow"
+                      onClick={handleRefreshApplications}
+                      className="px-3.5 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1.5"
                     >
-                      {window.loc('! درخواست اصلاح', '! Request Correction')}
-                    </button>
-                    <button
-                      onClick={() => handleRejectKyc(app)}
-                      className="flex-1 py-2 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow"
-                    >
-                      {window.loc('✕ رد درخواست', '✕ Reject')}
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      {window.loc('بروزرسانی داده‌ها', 'Refresh data')}
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredApps.map(app => {
+                  const isPending = (app.status || '').toLowerCase() === 'pending';
+                  const isApproved = (app.status || '').toLowerCase() === 'approved';
+                  const isRejected = (app.status || '').toLowerCase() === 'rejected';
+                  const isCorrection = (app.status || '').toLowerCase() === 'correction';
+
+                  return (
+                    <div key={app.id || app.username} className={`p-4 rounded-3xl bg-slate-900 border space-y-3 shadow-xl transition-all ${
+                      isPending ? 'border-pink-500/50 shadow-pink-500/10' :
+                      isApproved ? 'border-emerald-500/40' :
+                      isRejected ? 'border-rose-500/40' : 'border-slate-800'
+                    }`}>
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                        <div className="flex items-center gap-2.5">
+                          <img src={app.avatar || app.idCardPhoto || ''} alt="" className="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                          <div>
+                            <h4 className="font-bold text-white text-xs flex items-center gap-1">
+                              <span>{app.name || app.username}</span>
+                              <span className="text-[10px] text-pink-400 font-mono">(@{app.username})</span>
+                            </h4>
+                            <span className="text-[10px] text-slate-400 font-mono block">
+                              {app.requestedPose ? `ژست درخواستی: ${app.requestedPose}` : `${window.loc('دسته‌بندی:', 'Category:')} ${app.streamCategory || 'عمومی'}`}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Status Badge */}
+                        <div className="text-right">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border inline-block ${
+                            isPending ? 'bg-amber-500/20 text-amber-300 border-amber-500/30 animate-pulse' :
+                            isApproved ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+                            isRejected ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' :
+                            'bg-orange-500/20 text-orange-300 border-orange-500/30'
+                          }`}>
+                            {isPending ? '⏳ در انتظار بررسی' :
+                             isApproved ? '✓ تایید شده' :
+                             isRejected ? '✕ رد شده' : '⚠️ نیاز به اصلاح'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Topic & Description */}
+                      <div className="bg-slate-950/60 p-2.5 rounded-2xl border border-slate-800/80 space-y-1">
+                        {app.streamTopic && (
+                          <p className="text-[10px] text-white font-bold">
+                            <span className="text-slate-400 font-normal">{window.loc('موضوع لایو:', 'Stream Topic:')}</span> {app.streamTopic}
+                          </p>
+                        )}
+                        <p className="text-[10px] text-slate-300 line-clamp-2">
+                          <span className="font-bold text-slate-400">{window.loc('توضیحات:', 'Description:')}</span> {app.description || '-'}
+                        </p>
+                        {app.admin_notes && (
+                          <p className="text-[10px] text-rose-300 font-mono">
+                            <span className="font-bold text-slate-400">یادداشت مدیریت:</span> {app.admin_notes}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Photos Display (Profile vs Gesture Selfie) */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <span className="text-[9px] text-slate-400 font-bold block">{window.loc('عکس حساب/کارت:', 'Profile Photo:')}</span>
+                          <div 
+                            onClick={() => setSelectedApplication(app)}
+                            className="w-full h-28 rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden cursor-pointer hover:border-pink-500 transition relative group"
+                          >
+                            <img src={app.idCardPhoto || app.docUrl || app.avatar} alt="Profile Photo" className="w-full h-full object-cover group-hover:scale-105 transition" />
+                            <span className="absolute bottom-1 right-1 bg-slate-950/80 text-[8px] text-white px-1.5 py-0.5 rounded font-mono">بزرگنمایی 🔍</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <span className="text-[9px] text-pink-400 font-bold block">{window.loc('سلفی ژست دست (تطبیق چهره):', 'Gesture Selfie:')}</span>
+                          <div 
+                            onClick={() => setSelectedApplication(app)}
+                            className="w-full h-28 rounded-2xl bg-slate-950 border border-pink-500/40 overflow-hidden cursor-pointer hover:border-pink-400 transition relative group"
+                          >
+                            {app.selfiePhoto ? (
+                              <img src={app.selfiePhoto} alt="Live Gesture Selfie" className="w-full h-full object-cover group-hover:scale-105 transition" />
+                            ) : app.videoDemoUrl ? (
+                              <video src={app.videoDemoUrl} className="w-full h-full object-cover" controls />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-500">
+                                بدون سلفی
+                              </div>
+                            )}
+                            {app.selfiePhoto && (
+                              <span className="absolute bottom-1 right-1 bg-pink-950/80 text-[8px] text-pink-200 px-1.5 py-0.5 rounded font-mono">سلفی ژست 🔍</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <button
+                          onClick={() => handleApproveKyc(app)}
+                          className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow flex items-center justify-center gap-1"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>{window.loc('✓ تایید نهایی و اعطای استریمر', '✓ Approve Streamer')}</span>
+                        </button>
+                        <button
+                          onClick={() => handleCorrectionKyc(app)}
+                          className="px-3 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs shadow"
+                          title={window.loc('درخواست ارسال مدارک اصلاحی', 'Request Correction')}
+                        >
+                          {window.loc('اصلاحیه', 'Correction')}
+                        </button>
+                        <button
+                          onClick={() => handleRejectKyc(app)}
+                          className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow flex items-center justify-center gap-1"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span>{window.loc('رد', 'Reject')}</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          {/* APPLICATION DETAILS / ZOOM MODAL */}
+          {selectedApplication && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+              <div className="w-full max-w-2xl bg-slate-900 border border-pink-500/40 rounded-3xl p-5 space-y-4 shadow-2xl animate-scaleIn max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-5 h-5 text-pink-400" />
+                    <div>
+                      <h3 className="font-bold text-white text-sm">
+                        {window.loc('بررسی هویت و سلفی استریمر:', 'Streamer Identity Review:')} {selectedApplication.name || selectedApplication.username}
+                      </h3>
+                      <span className="text-[10px] text-pink-300 font-mono">@{selectedApplication.username}</span>
+                    </div>
+                  </div>
+                  <button onClick={() => setSelectedApplication(null)} className="p-1.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white">✕</button>
+                </div>
+
+                {/* Gesture Pose Details */}
+                {selectedApplication.requestedPose && (
+                  <div className="p-3 rounded-2xl bg-pink-950/60 border border-pink-500/40 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-pink-300 font-bold block">{window.loc('ژست تصادفی اختصاص‌یافته برای راستی‌آزمایی سلفی:', 'Assigned Gesture Pose for Selfie Verification:')}</span>
+                      <span className="text-sm font-black text-white">{selectedApplication.requestedPose}</span>
+                    </div>
+                    <span className="px-3 py-1 rounded-full bg-pink-500/20 text-pink-300 font-mono text-xs border border-pink-500/30">
+                      ✋ تطبیق دستی
+                    </span>
+                  </div>
+                )}
+
+                {/* Big Image Comparison */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <span className="text-xs font-bold text-slate-300">{window.loc('عکس حساب / پروفایل', 'Profile Photo')}</span>
+                    <img
+                      src={selectedApplication.idCardPhoto || selectedApplication.docUrl || selectedApplication.avatar}
+                      alt="Profile"
+                      className="w-full h-64 object-contain bg-slate-950 rounded-2xl border border-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <span className="text-xs font-bold text-pink-400">{window.loc('عکس سلفی زنده با ژست دست', 'Live Selfie with Gesture')}</span>
+                    {selectedApplication.selfiePhoto ? (
+                      <img
+                        src={selectedApplication.selfiePhoto}
+                        alt="Selfie"
+                        className="w-full h-64 object-contain bg-slate-950 rounded-2xl border border-pink-500/40"
+                      />
+                    ) : (
+                      <div className="w-full h-64 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-500 text-xs">
+                        {window.loc('سلفی ثبت نشده', 'No selfie uploaded')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Extra Details */}
+                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">{window.loc('دسته‌بندی استریم:', 'Stream Category:')}</span>
+                    <span className="text-white font-bold">{selectedApplication.streamCategory || 'عمومی'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">{window.loc('موضوع لایو:', 'Stream Topic:')}</span>
+                    <span className="text-white font-bold">{selectedApplication.streamTopic || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">{window.loc('بیوگرافی و برنامه تولید محتوا:', 'Bio & Content Plan:')}</span>
+                    <p className="text-slate-200 bg-slate-900 p-2 rounded-xl">{selectedApplication.description || '-'}</p>
+                  </div>
+                </div>
+
+                {/* Modal Action Buttons */}
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => handleApproveKyc(selectedApplication)}
+                    className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow flex items-center justify-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{window.loc('تایید نهایی و ارتقا به استریمر', 'Approve & Upgrade to Streamer')}</span>
+                  </button>
+                  <button
+                    onClick={() => handleCorrectionKyc(selectedApplication)}
+                    className="px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs"
+                  >
+                    {window.loc('درخواست اصلاحیه', 'Request Correction')}
+                  </button>
+                  <button
+                    onClick={() => handleRejectKyc(selectedApplication)}
+                    className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
+                  >
+                    {window.loc('رد درخواست', 'Reject')}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
