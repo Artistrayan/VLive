@@ -86,28 +86,31 @@ export default function StreamerDashboardModal({
 
   if (!isOpen) return null;
 
-  // Strict Permission Checker
-  const isUserAllowedStreamer = Boolean(
+  const userGenderVal = String(currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
+  const isFemaleUser = Boolean(
+    userGenderVal === 'female' ||
+    userGenderVal === 'خانم' ||
+    userGenderVal === 'زن' ||
+    userGenderVal === 'f'
+  );
+
+  const isManagementApproved = Boolean(
     isStreamerUser ||
-    isUserRayan ||
-    isUserSuperAdmin ||
+    isVerified ||
+    userRole === 'streamer' ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||
-    userRole === 'streamer' ||
     currentUser?.role === 'streamer' ||
     currentUser?.role === 'admin' ||
     currentUser?.role === 'super_admin' ||
     currentUser?.user_type === 'STREAMER' ||
     currentUser?.isStreamer ||
     currentUser?.is_streamer ||
-    currentUser?.isHost ||
-    canAccessCreatorStudio(
-      (userRole === 'admin' || userRole === 'super_admin' || isUserRayan || isUserSuperAdmin || currentUser?.user_type === 'STREAMER' || currentUser?.isStreamer || currentUser?.is_streamer) ? 'streamer' : (userRole || 'user'),
-      'APPROVED',
-      currentUsername,
-      currentUser?.telegram_id
-    )
+    currentUser?.isHost
   );
+
+  // STRICT RULE: Streamer Dashboard requires BOTH Female Gender AND Management Approval!
+  const isUserAllowedStreamer = Boolean(isFemaleUser && isManagementApproved);
 
   // Handle Withdrawal Submission
   const handleRequestWithdrawal = async (e) => {

@@ -36,23 +36,31 @@ export default function LiveStudioModal({
   loc = ((a, b) => a || b),
   isRtl = true
 }) {
-  // Check if user is an authorized streamer or admin
-  const isAuthorizedStreamer = Boolean(
+  const userGenderVal = String(currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
+  const isFemaleUser = Boolean(
+    userGenderVal === 'female' ||
+    userGenderVal === 'خانم' ||
+    userGenderVal === 'زن' ||
+    userGenderVal === 'f'
+  );
+
+  const isManagementApproved = Boolean(
     isStreamerUser ||
-    isUserRayan ||
-    isUserSuperAdmin ||
+    isVerified ||
+    userRole === 'streamer' ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||
-    userRole === 'streamer' ||
     currentUser?.role === 'streamer' ||
     currentUser?.role === 'admin' ||
     currentUser?.role === 'super_admin' ||
     currentUser?.user_type === 'STREAMER' ||
     currentUser?.isStreamer ||
     currentUser?.is_streamer ||
-    currentUser?.isHost ||
-    (isVerified && currentUser?.role !== 'user')
+    currentUser?.isHost
   );
+
+  // STRICT RULE: Both female gender AND management approval required!
+  const isAuthorizedStreamer = Boolean(isFemaleUser && isManagementApproved);
 
   // Phase state: 'PRE_LIVE' | 'COUNTDOWN' | 'LIVE' | 'SUMMARY'
   const [studioPhase, setStudioPhase] = useState('PRE_LIVE');

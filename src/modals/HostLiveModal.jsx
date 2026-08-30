@@ -40,13 +40,19 @@ export default function HostLiveModal({
 }) {
   if (!isOpen) return null;
 
-  const isAuthorizedStreamer = Boolean(
+  const userGenderVal = String(currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
+  const isFemaleUser = Boolean(
+    userGenderVal === 'female' ||
+    userGenderVal === 'خانم' ||
+    userGenderVal === 'زن' ||
+    userGenderVal === 'f'
+  );
+
+  const isManagementApproved = Boolean(
     isStreamerUser ||
-    isUserRayan ||
-    isUserSuperAdmin ||
+    userRole === 'streamer' ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||
-    userRole === 'streamer' ||
     currentUser?.role === 'streamer' ||
     currentUser?.role === 'admin' ||
     currentUser?.role === 'super_admin' ||
@@ -55,6 +61,9 @@ export default function HostLiveModal({
     currentUser?.is_streamer ||
     currentUser?.isHost
   );
+
+  // STRICT RULE: Both female gender AND management approval required!
+  const isAuthorizedStreamer = Boolean(isFemaleUser && isManagementApproved);
 
   if (!isAuthorizedStreamer) {
     return (

@@ -75,28 +75,34 @@ export default function LiveStreamSystem({
     String(currentUser?.telegram_id || '').trim() === '8933698119'
   );
 
-  const isApprovedStreamer = Boolean(
-    isUserAdmin || 
+  const userGenderVal = String(userGender || currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
+  const isFemaleUser = Boolean(
+    userGenderVal === 'female' ||
+    userGenderVal === 'خانم' ||
+    userGenderVal === 'زن' ||
+    userGenderVal === 'f'
+  );
+
+  const isManagementApproved = Boolean(
+    isVerified ||
     isStreamerUser ||
     userRole === 'streamer' ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
     currentUser?.role === 'streamer' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'super_admin' ||
     currentUser?.user_type === 'STREAMER' ||
     currentUser?.isStreamer || 
     currentUser?.isVerifiedStreamer || 
     currentUser?.is_streamer ||
     currentUser?.isHost ||
-    (isVerified && currentUser?.role !== 'user') ||
     (kycApplications && Array.isArray(kycApplications) && kycApplications.some(a => (a.username === (currentUsername || currentUser?.username) || a.user_id === currentUser?.id) && a.status === 'Approved'))
   );
 
-  const userGenderVal = userGender || currentUser?.gender || '';
-  const isFemaleUser = Boolean(
-    String(userGenderVal).trim().toLowerCase() === 'female' ||
-    userGenderVal === 'خانم' ||
-    userGenderVal === 'زن'
-  );
-
-  const isFemaleApprovedStreamer = Boolean((isFemaleUser || isUserAdmin) && isApprovedStreamer);
+  // STRICT RULE: Streamer = Female Gender AND Management Approval together
+  const isFemaleApprovedStreamer = Boolean(isFemaleUser && isManagementApproved);
+  const isApprovedStreamer = isFemaleApprovedStreamer;
 
   // Fetch / Sync streams from Supabase on load
   useEffect(() => {

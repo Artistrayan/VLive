@@ -67,29 +67,30 @@ export default function ProfileTab(props) {
     addAdminAuditLog = (() => {})
   } = props;
 
-  const isStreamerUser = Boolean(
-    isUserRayan ||
+  const userGenderVal = String(userGender || currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
+  const isFemaleUser = Boolean(
+    userGenderVal === 'female' ||
+    userGenderVal === 'خانم' ||
+    userGenderVal === 'زن' ||
+    userGenderVal === 'f'
+  );
+
+  const isManagementApproved = Boolean(
+    isVerified ||
+    userRole === 'streamer' ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||
-    userRole === 'streamer' ||
     currentUser?.role === 'streamer' ||
     currentUser?.user_type === 'STREAMER' ||
     currentUser?.isStreamer ||
     currentUser?.is_streamer ||
-    currentUser?.isHost ||
-    (isVerified && currentUser?.role !== 'user')
+    currentUser?.isHost
   );
 
-  const userGenderVal = userGender || currentUser?.gender || '';
-  const isFemaleUser = Boolean(
-    String(userGenderVal).trim().toLowerCase() === 'female' ||
-    userGenderVal === 'خانم' ||
-    userGenderVal === 'زن'
-  );
-
-  const isFemaleApprovedStreamer = Boolean(
-    (isFemaleUser || isUserRayan || userRole === 'admin' || userRole === 'super_admin') && isStreamerUser
-  );
+  // STRICT RULE: Both female gender AND management approval required!
+  // If user is male or changes gender to male, streamer access is revoked.
+  const isStreamerUser = Boolean(isFemaleUser && isManagementApproved);
+  const isFemaleApprovedStreamer = isStreamerUser;
 
   // if (activeTab !== 'profile') return null;
 
@@ -400,6 +401,8 @@ export default function ProfileTab(props) {
       if (typeof setIsBecomeStreamerModalOpen === 'function') {
         setIsBecomeStreamerModalOpen(true);
       }
+    } else if (editForm.gender === 'male' && prevGender !== 'male') {
+      showToast(window.loc('⚠️ با تغییر جنسیت به آقا، قابلیّت و دسترسی استریمری شما لغو شد (استریمر = خانم + تایید مدیریت).', 'By changing gender to male, streamer access is revoked (Streamer = Female + Admin approval).'));
     }
 
     // Immediate DB sync via apiProfile.syncProfileState

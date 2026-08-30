@@ -69,11 +69,21 @@ export default function StreamerApplicationModal({
   currentUsername,
   isVerified,
   userName,
-  userAvatar = ''
+  userAvatar = '',
+  userGender,
+  currentUser
 }) {
   const username = currentUsername || userName || 'user';
   const [isReapplying, setIsReapplying] = useState(false);
   
+  const userGenderVal = String(userGender || currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
+  const isFemaleUser = Boolean(
+    userGenderVal === 'female' ||
+    userGenderVal === 'خانم' ||
+    userGenderVal === 'زن' ||
+    userGenderVal === 'f'
+  );
+
   // Find if there's an existing active application for this user
   const userApps = Array.isArray(kycApplications) ? kycApplications.filter(app => app.username === username || (app.user && app.user === username)) : [];
   const existingApp = isReapplying ? null : (userApps.length > 0 ? userApps[0] : null);
@@ -82,6 +92,27 @@ export default function StreamerApplicationModal({
   const [streamCategory, setStreamCategory] = useState('');
   const [streamTopic, setStreamTopic] = useState('');
   const [description, setDescription] = useState('');
+
+  if (!isOpen) return null;
+
+  if (!isFemaleUser) {
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center mx-auto text-xl font-bold">
+            🔒
+          </div>
+          <h3 className="text-white font-bold text-base">{loc('ثبت‌نام استریمر منحصراً مخصوص خانم‌هاست', 'Streamer Registration for Females Only')}</h3>
+          <p className="text-slate-400 text-xs leading-relaxed">
+            {loc('طبق قوانین پلتفرم V.LIVE، قابلیت استریمر شدن و اجرای زنده منحصراً مخصوص کاربران خانم + تایید مدیریت می‌باشد.', 'According to V.LIVE rules, streamer status requires female gender plus admin approval.')}
+          </p>
+          <button onClick={onClose} className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition">
+            {loc('بستن', 'Close')}
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   // Gesture Selfie State
   const [selectedPose, setSelectedPose] = useState(VERIFICATION_POSES[0]);

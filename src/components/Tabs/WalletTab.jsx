@@ -25,17 +25,26 @@ export default function WalletTab(props) {
     currentUser, userRole, currentUsername, isUserRayan, isVerified
   } = props;
 
-  const isStreamerUser = Boolean(
+  const userGenderVal = String(currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
+  const isFemaleUser = Boolean(
+    userGenderVal === 'female' ||
+    userGenderVal === 'خانم' ||
+    userGenderVal === 'زن' ||
+    userGenderVal === 'f'
+  );
+
+  const isManagementApproved = Boolean(
     isVerified ||
-    isUserSuperAdmin ||
-    isUserRayan ||
+    userRole === 'streamer' ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||
     currentUser?.isStreamer ||
     currentUser?.is_streamer ||
-    currentUser?.isVerified ||
-    String(currentUsername || '').toLowerCase() === 'rayan'
+    currentUser?.isVerified
   );
+
+  // STRICT RULE: Streamer = Female Gender AND Management Approval together
+  const isStreamerUser = Boolean(isFemaleUser && isManagementApproved);
 
   React.useEffect(() => {
     if (!isStreamerUser && (walletSubTab === 'withdraw' || walletSubTab === 'convert' || walletSubTab === 'creator')) {

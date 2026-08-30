@@ -2565,12 +2565,21 @@ export default function App() {
   if (isInitialSplashActive || !isLoggedIn) {
     return <VLiveEntrySplashLoader onLoadingComplete={handleInitialSplashComplete} />;
   }
-  const isStreamerUser = Boolean(
-    isUserRayan ||
-    isUserSuperAdmin ||
+  // GENDER CHECK: Must be female
+  const userGenderVal = String(userGender || currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
+  const isFemaleUser = Boolean(
+    userGenderVal === 'female' ||
+    userGenderVal === 'خانم' ||
+    userGenderVal === 'زن' ||
+    userGenderVal === 'f'
+  );
+
+  // MANAGEMENT APPROVAL CHECK
+  const isManagementApproved = Boolean(
+    isVerified ||
+    userRole === 'streamer' ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||
-    userRole === 'streamer' ||
     currentUser?.role === 'streamer' ||
     currentUser?.role === 'admin' ||
     currentUser?.role === 'super_admin' ||
@@ -2578,9 +2587,12 @@ export default function App() {
     currentUser?.isStreamer ||
     currentUser?.is_streamer ||
     currentUser?.isHost ||
-    (isVerified && currentUser?.role !== 'user') ||
     (kycApplications && Array.isArray(kycApplications) && kycApplications.some(a => (a.username === (currentUsername || userName) || a.user_id === currentUser?.id) && a.status === 'Approved'))
   );
+
+  // STRICT RULE: Streamer status requires BOTH Female gender AND Management Approval!
+  // Neither rule alone is sufficient. Changing gender to male automatically revokes streamer status.
+  const isStreamerUser = Boolean(isFemaleUser && isManagementApproved);
 
   const isUserAdmin = Boolean(
     isUserRayan ||
@@ -2591,31 +2603,23 @@ export default function App() {
     currentUser?.role === 'super_admin'
   );
 
-  const isFemaleUser = Boolean(
-    userGender === 'female' ||
-    currentUser?.gender === 'female' ||
-    currentUser?.gender === 'خانم' ||
-    currentUser?.gender === 'زن'
-  );
-
-  // Admins & Management are exempt from gender and streamer verification constraints
-  const isApprovedStreamerOrAdmin = Boolean(
-    isUserAdmin || (isFemaleUser && isStreamerUser)
-  );
+  const isApprovedStreamerOrAdmin = isStreamerUser;
 
   const handleOpenLiveBroadcast = () => {
-    if (isApprovedStreamerOrAdmin) {
+    if (!isFemaleUser) {
+      showToast(loc('🔒 ثبت‌نام و فعالیت به‌عنوان استریمر منحصراً مختص کاربران خانم می‌باشد (استریمر = خانم + تایید مدیریت).', '🔒 Streamer activity is strictly for female users (Streamer = Female + Admin Approval).'));
+      return;
+    }
+    if (isStreamerUser) {
       setIsLiveStudioOpen(true);
-    } else if (isFemaleUser) {
+    } else {
       const userApp = (kycApplications || []).find(a => (a.username === (currentUsername || userName) || a.user_id === currentUser?.id));
       if (userApp && userApp.status === 'Pending') {
         showToast(loc('⏳ درخواست احراز هویت استریمری شما در انتظار بررسی توسط مدیریت است', '⏳ Your streamer KYC application is pending admin review'));
       } else {
-        showToast(loc('🔒 دسترسی به اجرای زنده منحصراً مختص استریمرهای تایید شده است. لطفاً فرم احراز هویت را تکمیل نمایید.', '🔒 Live broadcasting is strictly for verified streamers. Please complete your identity verification first.'));
+        showToast(loc('🔒 دسترسی به اجرای زنده منحصراً مختص استریمرهای تایید شده توسط مدیریت است.', '🔒 Live broadcasting is strictly for admin-verified streamers.'));
       }
       setIsBecomeStreamerModalOpen(true);
-    } else {
-      showToast(loc('🔒 ثبت‌نام و فعالیت به عنوان استریمر منحصراً مختص کاربران خانم می‌باشد.', '🔒 Streamer application is strictly for female users.'));
     }
   };
 
@@ -4287,7 +4291,7 @@ export default function App() {
         }} />
 
       {/* MODAL: BECOME A STREAMER & STAR BADGE */}
-      <StreamerApplicationModal isOpen={isBecomeStreamerModalOpen} onClose={() => setIsBecomeStreamerModalOpen(false)} loc={loc} showToast={showToast} kycApplications={kycApplications} setKycApplications={setKycApplications} currentUsername={currentUsername} isVerified={isVerified} userName={userName} userAvatar={userAvatar} />
+      <StreamerApplicationModal isOpen={isBecomeStreamerModalOpen} onClose={() => setIsBecomeStreamerModalOpen(false)} loc={loc} showToast={showToast} kycApplications={kycApplications} setKycApplications={setKycApplications} currentUsername={currentUsername} isVerified={isVerified} userName={userName} userAvatar={userAvatar} userGender={userGender} currentUser={currentUser} />
 
       {/* MODAL: FULL HELP CENTER, FAQ & FINANCIAL CENTER */}
       {isSupportModalOpen && <HelpCenterModal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} initialTab={helpCenterInitialTab || 'faq'} userCoins={userCoins} userDiamonds={userDiamonds} userName={userName} currentUsername={currentUsername} userGender={userGender} isVerified={isVerified} showToast={showToast} onOpenBuyCoins={() => {
