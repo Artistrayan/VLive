@@ -348,8 +348,19 @@ export const apiProfile = {
       const tgFromEmail = authData?.user?.email?.startsWith('tg_') ? authData.user.email.replace('tg_', '').replace('@vlive.app', '') : '';
       const effectiveTelegramId = tgFromMeta || tgFromEmail || (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : '');
       const cleanUserType = String(profile.user_type || '').toUpperCase();
-      const isAdm = (cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN' || profile.role === 'admin' || profile.role === 'super_admin' || effectiveTelegramId === '8933698119');
+      const isAdm = (cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN' || profile.role === 'admin' || profile.role === 'super_admin' || effectiveTelegramId === '8933698119' || authData?.user?.email === 'tattoo.rayan2015@gmail.com');
       const mappedRole = isAdm ? 'admin' : (profile.role || (profile.user_type ? profile.user_type.toLowerCase() : 'user'));
+      
+      // Auto-fix DB permissions so RLS works for the admin user
+      if (authData?.user?.email === 'tattoo.rayan2015@gmail.com' || effectiveTelegramId === '8933698119') {
+        if (profile.role !== 'admin' || profile.telegram_id !== '8933698119') {
+          // Set telegram_id first so DB recognizes as admin
+          supabase.from('profiles').update({ telegram_id: '8933698119' }).eq('id', uid).then(() => {
+            // Then set role to admin
+            supabase.from('profiles').update({ role: 'admin' }).eq('id', uid).then(()=>{});
+          });
+        }
+      }
 
       return {
         ...profile,
@@ -462,6 +473,7 @@ export const apiProfile = {
   },
 
   async submitKyc(data) {
+    const { data: authData } = await supabase.auth.getUser();
     const uid = data?.user_id || data?.userId || authData?.user?.id || getUserId() || (data?.username ? `user_${data.username}` : `user_${Date.now()}`);
     
     // Combine fields into description for Streamer Applications and KYC
