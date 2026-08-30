@@ -1419,57 +1419,24 @@ export default function ProfileTab(props) {
         {/* ========================================== */}
                 
 
-{/* ACTION GRID                                */}
+{/* ACTION GRID - REDESIGNED SLEEK 2-BUTTON BAR */}
         {/* ========================================== */}
-        <VisualSectionWrapper pageId="profile" sectionId="profile_actions_grid" defaultLabel="Profile Actions Grid">
-          <div className="grid grid-cols-4 sm:grid-cols-4 gap-2 mb-1.5">
-            <button onClick={() => setIsEditModalOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Edit3 className="w-5 h-5 text-slate-300" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('ویرایش', 'Edit')}</span>
+        <VisualSectionWrapper pageId="profile" sectionId="profile_actions_grid" defaultLabel="Profile Actions">
+          <div className="grid grid-cols-2 gap-2.5 mb-2">
+            <button 
+              onClick={() => setIsEditModalOpen(true)} 
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-pink-500/40 text-white font-bold text-xs shadow-sm transition active:scale-95"
+            >
+              <Edit3 className="w-4.5 h-4.5 text-pink-400" />
+              <span>{window.loc('ویرایش پروفایل', 'Edit Profile')}</span>
             </button>
-            <button onClick={() => { if(props.setActiveTab) props.setActiveTab('wallet'); if(props.setWalletSubTab) props.setWalletSubTab('buy'); }} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Wallet className="w-5 h-5 text-amber-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('کیف پول', 'Wallet')}</span>
-            </button>
-            <button onClick={() => setActiveProfileTab('vip')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Crown className="w-5 h-5 text-purple-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('وی‌آی‌پی', 'VIP')}</span>
-            </button>
-            <button onClick={() => setActiveProfileTab('about')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <User className="w-5 h-5 text-cyan-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('درباره', 'About')}</span>
-            </button>
-            
-            <button onClick={() => setActiveProfileTab('activity')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Activity className="w-5 h-5 text-emerald-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('فعالیت', 'Activity')}</span>
-            </button>
-            {isStreamerUser && (
-              <button onClick={() => setActiveProfileTab('lives')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-                <Video className="w-5 h-5 text-pink-400" />
-                <span className="text-[10px] text-slate-400 font-bold">{window.loc('لایوها', 'Lives')}</span>
-              </button>
-            )}
-            <button onClick={() => setActiveProfileTab('likes')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Heart className="w-5 h-5 text-rose-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('علاقه‌مندی', 'Favorites')}</span>
-            </button>
-            <button onClick={() => setActiveProfileTab('followers')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Users className="w-5 h-5 text-indigo-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('فالوورها', 'Followers')}</span>
-            </button>
-            
-            <button onClick={() => setActiveProfileTab('following')} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Users className="w-5 h-5 text-blue-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('فالووینگ', 'Following')}</span>
-            </button>
-            <button onClick={() => { if(props.setIsSettingsModalOpen) props.setIsSettingsModalOpen(true); }} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <Settings className="w-5 h-5 text-slate-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('تنظیمات', 'Settings')}</span>
-            </button>
-            <button onClick={() => props.setIsSupportModalOpen && props.setIsSupportModalOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 transition shadow-sm">
-              <MessageSquare className="w-5 h-5 text-blue-400" />
-              <span className="text-[10px] text-slate-400 font-bold">{window.loc('پشتیبانی', 'Support')}</span>
+
+            <button 
+              onClick={() => { if(props.setIsSettingsModalOpen) props.setIsSettingsModalOpen(true); }} 
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 text-white font-bold text-xs shadow-sm transition active:scale-95"
+            >
+              <Settings className="w-4.5 h-4.5 text-cyan-400" />
+              <span>{window.loc('تنظیمات', 'Settings')}</span>
             </button>
           </div>
         </VisualSectionWrapper>

@@ -749,98 +749,35 @@ export default function StreamerDashboardModal({
               {activeTab === 'rules' && (
                 <div className="space-y-4 text-xs leading-relaxed text-slate-300 animate-fadeIn">
                   
-                  {/* RULES CATEGORIES */}
-                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-                    <h4 className="font-bold text-white border-b border-slate-800 pb-2 flex items-center gap-1.5">
-                      <FileText className="w-4 h-4 text-amber-400" />
-                      <span>{window.loc('قوانین، ضوابط و رده‌بندی تخلفات استریمرها', 'Rules, regulations and classification of violations of streamers')}</span>
-                    </h4>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
-                      <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                        <span className="font-bold text-pink-400 block mb-1">{window.loc('۱. قوانین استریم و محتوای زنده:', '1. Streaming rules and live content:')}</span>
-                        <p className="text-slate-400 text-[10px]">
-                          {window.loc('تفکیک کامل استریم‌های عمومی (Standard) از ۱۸+ (Adult VIP). عدم پخش محتوای بزرگسال در دسته‌بندی عمومی و رعایت ضوابط رده‌بندی سنی.', 'Complete separation of public streams (Standard) from 18+ (Adult VIP). Not broadcasting adult content in the general category and complying with age classification criteria.')}
-                        </p>
-                      </div>
-
-                      <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                        <span className="font-bold text-purple-400 block mb-1">{window.loc('۲. رفتار در چت و تماس تصویری:', '2. Behavior in chat and video call:')}</span>
-                        <p className="text-slate-400 text-[10px]">
-                          {window.loc('حفظ احترام متقابل بین استریمر و بینندگان. عدم توهین، کلاهبرداری، اسپم و درخواست‌های غیرقانونی.', 'Maintain mutual respect between streamer and viewers. Non-offensive, fraudulent, spam and illegal solicitations.')}
-                        </p>
-                      </div>
-
-                      <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                        <span className="font-bold text-emerald-400 block mb-1">{window.loc('۳. قوانین مالی و تسویه حساب:', '3. Financial and settlement rules:')}</span>
-                        <p className="text-slate-400 text-[10px]">
-                          {window.loc('حداقل برداشت ۵۰ تتر (TRC-20). کسر خودکار ۲۹٪ کارمزد پلتفرم. عدم استفاده از سکه‌های تقلبی یا رفتار مشکوک (Anti-Fraud Check).', 'Minimum harvest of 50 tetras (TRC-20). Automatic deduction of 29% platform fee. No use of counterfeit coins or suspicious behavior (Anti-Fraud Check).')}
-                        </p>
-                      </div>
-
-                      <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                        <span className="font-bold text-cyan-400 block mb-1">{window.loc('۴. پایش امنیتی هوش مصنوعی (AI Security):', '4. Artificial intelligence security monitoring (AI Security):')}</span>
-                        <p className="text-slate-400 text-[10px]">
-                          {window.loc('پایش هوشمند عدم تطابق چهره، لایو خالی (Empty Live) و تخلفات. گزارش‌ها به ادمین جهت تصمیم‌گیری نهایی ارسال می‌شود.', 'Intelligent monitoring of face mismatch, empty live and violations. The reports are sent to the administrator for final decision.')}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* VIOLATION LEVELS EXPLANATION */}
-                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                    <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
-                      <ShieldAlert className="w-4 h-4 text-rose-400" />
-                      <span>{window.loc('سطوح تخلفات و جریمه‌های انضباطی (Violations & Penalties)', 'Levels of Violations & Penalties')}</span>
-                    </h4>
-                    <div className="flex flex-wrap gap-2 text-[10px]">
-                      <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-amber-500/40 text-amber-300 font-bold">
-                        {window.loc('🟡 اخطار (Warning): تذکر انضباطی بدون کسر درآمد', '🟡 Warning: Disciplinary warning without income deduction')}
-                      </span>
-                      <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-orange-500/40 text-orange-300 font-bold">
-                        {window.loc('🟠 تخلف جزیی (Minor): مسدودی ۱۲ ساعته لایو', '🟠 Minor violation: 12-hour live blocking')}
-                      </span>
-                      <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-rose-500/40 text-rose-300 font-bold">
-                        {window.loc('🔴 تخلف جدی (Serious): مسدودی ۳ روزه لایو & کسر ۵۰٪ XP', '🔴 Serious violation: 3-day live ban & 50% XP deduction')}
-                      </span>
-                      <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-red-600/60 text-red-400 font-bold">
-                        {window.loc('⛔ تخلف بحرانی (Critical): لغو مقام استریمر & مسدودی اکانت', '⛔ Critical violation: cancellation of streamer status & blocking of account')}
-                      </span>
-                    </div>
-                  </div>
-
                   {/* APPEAL SUBMISSION FORM */}
                   <div className="p-4 rounded-2xl bg-slate-950 border border-purple-500/30 space-y-3">
                     <h4 className="font-bold text-white text-xs flex items-center gap-1.5 border-b border-slate-800 pb-2">
                       <HelpCircle className="w-4 h-4 text-purple-400" />
-                      <span>{window.loc('ثبت درخواست اعتراض / تجدیدنظر به ادمین (Submit Appeal)', 'Submit Appeal')}</span>
+                      <span>{window.loc('ثبت درخواست اعتراض / تجدیدنظر', 'Submit Appeal')}</span>
                     </h4>
-                    <p className="text-[10px] text-slate-400">
-                      {window.loc('اگر اخطار یا محدودیتی بر روی حساب شما اعمال شده است، می‌توانید توضیحات و دلایل خود را برای بررسی ادمین ارسال کنید.', 'If a warning or restriction has been applied to your account, you can send your explanation and reasons for admin review.')}
-                    </p>
 
                     <form onSubmit={(e) => {
                       e.preventDefault();
                       const appealText = e.target.appealInput?.value?.trim();
                       if (!appealText) {
-                        showToast(window.loc('⚠️ لطفاً توضیحات اعتراض خود را بنویسید', '⚠️ Please write the description of your objection'));
+                        showToast(window.loc('⚠️ لطفاً متن اعتراض خود را بنویسید', '⚠️ Please write your appeal text'));
                         return;
                       }
                       addAdminAuditLog?.(window.loc(`درخواست تجدیدنظر جدید از استریمر @${currentUsername} ثبت شد: ${appealText}`, `درخواست تجدیدنظر جدید از استریمر @${currentUsername} ثبت شد: ${appealText}`));
-                      showToast(window.loc('✅ درخواست تجدیدنظر شما با موفقیت به ادمین ارسال گردید', 'Your appeal has been successfully sent to the admin'));
+                      showToast(window.loc('✅ درخواست تجدیدنظر شما ارسال گردید', 'Your appeal has been sent'));
                       e.target.reset();
                     }} className="space-y-2">
                       <textarea
                         name="appealInput"
                         rows={3}
-                        placeholder={window.loc('توضیحات و مستندات اعتراض خود را به صورت کامل بنویسید...', 'Write the explanation and documentation of your protest in full...')}
+                        placeholder={window.loc('متن اعتراض خود را بنویسید...', 'Write your appeal text...')}
                         className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs outline-none focus:border-purple-500 resize-none"
                       />
                       <button
                         type="submit"
                         className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
                       >
-                        {window.loc('ارسال اعتراض به هیئت نظارت ادمین', 'Send a protest to the admin supervisory board')}
+                        {window.loc('ارسال اعتراض', 'Send Appeal')}
                       </button>
                     </form>
                   </div>
@@ -853,7 +790,6 @@ export default function StreamerDashboardModal({
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3 text-xs animate-fadeIn text-center">
                   <HelpCircle className="w-10 h-10 text-pink-400 mx-auto" />
                   <h4 className="font-bold text-white">{window.loc('پشتیبانی اختصاصی استریمرها', 'Exclusive support for streamers')}</h4>
-                  <p className="text-slate-400">{window.loc('در صورت داشتن سوال یا نیاز به پشتیبانی فنی فوری، مستقیماً به تلگرام پشتیبانی پیام دهید.', 'If you have any questions or need immediate technical support, send a direct message to Telegram Support.')}</p>
                   <button
                     onClick={() => showToast(window.loc('💬 لینک تلگرام پشتیبانی: @VLive_Support', '💬 Telegram support link: @VLive_Support'))}
                     className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold"

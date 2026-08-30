@@ -471,7 +471,7 @@ export default function UserOnboardingModal({
                   className="mt-0.5 w-4 h-4 rounded text-pink-600 focus:ring-pink-500 bg-slate-900 border-slate-700"
                 />
                 <label htmlFor="ageCheck" className="text-[11px] text-amber-200 cursor-pointer leading-relaxed">
-                  تایید می‌کنم که سن من بالای ۱۸ سال است و قوانین فعالیت سالم در برنامه V.LIVE را می‌پذیرم. 🔞
+                  تایید سن بالای ۱۸ سال 🔞
                 </label>
               </div>
 

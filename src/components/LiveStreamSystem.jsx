@@ -366,9 +366,6 @@ export default function LiveStreamSystem({
               <ShieldAlert className="w-5 h-5 text-amber-400" />
               <span>{window.loc('محدودیت دسترسی به بخش لایوهای ۱۸+', 'Restricted access to the 18+ live section')}</span>
             </h3>
-            <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
-              {window.loc('طبق قوانین پلتفرم V.LIVE، مشاهده محتوای بزرگسال نیازمند تایید سن ۱۸+، پذیرش شرایط محتوا و داشتن اشتراک فعال Adult VIP می‌باشد.', 'According to the rules of the V.LIVE platform, viewing adult content requires confirming the age of 18+, accepting the content terms and having an active Adult VIP subscription.')}
-            </p>
           </div>
 
           {/* CHECKBOXES & VERIFICATION STEPS */}

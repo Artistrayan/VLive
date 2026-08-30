@@ -66,21 +66,6 @@ export default function HostLiveModal({
 
           <div className="space-y-2">
             <h3 className="text-lg sm:text-xl font-black text-white">{loc('اجرای زنده نیازمند تایید استریمر است', 'Live Broadcast Requires Streamer Verification')}</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              {loc('برای شروع لایواستریم در پلتفرم V.LIVE، لازم است ابتدا فرم احراز هویت استریمر و سلفی تاییدیه را ارسال فرمایید تا پس از تایید مدیریت، قابلیت اجرای زنده برای شما فعال گردد.', 'To host live broadcasts on V.LIVE, you must submit your streamer KYC application and gesture selfie for admin approval.')}
-            </p>
-          </div>
-
-          <div className="bg-slate-950/90 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs text-right">
-            <div className="flex items-center gap-2 text-amber-400 font-bold">
-              <ShieldAlert className="w-4 h-4 shrink-0" />
-              <span>{loc('مراحل تایید استریمر:', 'Streamer Approval Steps:')}</span>
-            </div>
-            <ul className="text-[11px] text-slate-400 list-disc list-inside space-y-1">
-              <li>{loc('تکمیل اطلاعات هویتی و شبکه‌های اجتماعی', 'Complete identity and social profile')}</li>
-              <li>{loc('گرفتن سلفی به همراه نماد/ژست تصادفی مشخص شده', 'Capture selfie with designated random hand gesture')}</li>
-              <li>{loc('بررسی و اعطای دسترسی توسط مدیریت', 'Verification and grant by admin')}</li>
-            </ul>
           </div>
 
           <div className="flex gap-2.5 pt-2">
@@ -111,53 +96,6 @@ export default function HostLiveModal({
   return (
     <div className="fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-xl flex flex-col p-4 animate-fadeIn overflow-y-auto" dir={isRtl ? "rtl" : "ltr"}>
       <div className="flex-1 w-full max-w-lg mx-auto space-y-4 my-auto py-4">
-        
-        {/* Step-by-Step Spotlight Walkthrough Header */}
-        {liveGuideStep > 0 && (
-          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-pink-600/90 via-purple-700/90 to-cyan-600/90 border border-pink-400/60 shadow-[0_0_25px_rgba(236,72,153,0.5)] text-white space-y-2 transition-all">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 font-black text-xs">
-                <Sparkles className="w-4 h-4 text-amber-300 animate-spin" />
-                <span>{loc(`راهنمای گام به گام (گام ${liveGuideStep} از ۴)`, `Live Setup Walkthrough (Step ${liveGuideStep} of 4)`)}</span>
-              </div>
-              <button
-                onClick={() => {
-                  setLiveGuideStep(0);
-                  safeStorage.setItem('vlive_live_setup_guide_seen', 'true');
-                }}
-                className="text-[10px] bg-slate-950/60 hover:bg-slate-950 px-2 py-0.5 rounded-lg text-slate-300 hover:text-white transition"
-              >
-                {loc('رد شدن ✕', 'Skip ✕')}
-              </button>
-            </div>
-            <p className="text-[11px] font-bold text-pink-100 leading-relaxed">
-              {liveGuideStep === 1 && loc('💡 گام اول: نوع استریم را مشخص کنید (عمومی، لایو بزرگسالان 🔞 یا اختصاصی)', '💡 Step 1: Select broadcast type (Public, Adult 18+ VIP or Private)')}
-              {liveGuideStep === 2 && loc('💡 گام دوم: عنوان و موضوع استریم را تنظیم کنید', '💡 Step 2: Set your title & category tags')}
-              {liveGuideStep === 3 && loc('💡 گام سوم: تصویر دوربین و میکروفون را قبل از شروع بررسی کنید', '💡 Step 3: Check camera and microphone preview')}
-              {liveGuideStep === 4 && loc('💡 گام چهارم: با لمس دکمه شروع، پخش زنده شما آغاز خواهد شد 🚀', '💡 Step 4: Tap Start Broadcast to go live 🚀')}
-            </p>
-            <div className="flex items-center justify-between pt-1 border-t border-white/20">
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, 4].map(s => (
-                  <span key={s} className={`w-2 h-2 rounded-full transition-all ${s === liveGuideStep ? 'w-5 bg-amber-300' : s < liveGuideStep ? 'bg-emerald-400' : 'bg-white/40'}`} />
-                ))}
-              </div>
-              <button
-                onClick={() => {
-                  if (liveGuideStep < 4) {
-                    setLiveGuideStep(prev => prev + 1);
-                  } else {
-                    setLiveGuideStep(0);
-                    safeStorage.setItem('vlive_live_setup_guide_seen', 'true');
-                  }
-                }}
-                className="px-3 py-1 rounded-xl bg-white text-slate-950 font-black text-xs hover:bg-amber-300 transition flex items-center gap-1 shadow-md"
-              >
-                <span>{liveGuideStep < 4 ? loc('گام بعدی ❯', 'Next Step ❯') : loc('پایان راهنما ✓', 'Finish Guide ✓')}</span>
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Modal Header */}
         <div className="flex items-center justify-between bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800">
@@ -180,19 +118,9 @@ export default function HostLiveModal({
                   </span>
                 )}
               </h2>
-              <p className="text-[11px] text-slate-400 font-medium">
-                {loc('پخش عمومی، لایو بزرگسالان و لایو اختصاصی', 'Public, 18+ VIP & Private streams')}
-              </p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setLiveGuideStep(1)}
-              className="px-2 py-1 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/40 text-[11px] font-bold transition flex items-center gap-1"
-            >
-              <Sparkles className="w-3 h-3" />
-              <span>{loc('راهنما', 'Guide')}</span>
-            </button>
             <button 
               onClick={onClose}
               className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs transition"

@@ -1982,11 +1982,10 @@ export default function WalletTab(props) {
                 {/* REFERRAL SYSTEM SUB-TABS */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-slate-800">
                   {[
-                    { id: 'overview', label: window.loc('👥 ۶. لیست دعوت‌ها (Invites List)', '👥 6. Invites List') },
-                    { id: 'milestones', label: window.loc('🎯 ۱۰. پاداش مرحله‌ای (Milestones)', '🎯 10. Milestones') },
-                    { id: 'leaderboard', label: window.loc('🏆 ۹. رتبه دعوت (Top Inviters)', '🏆 9. Top Inviters') },
-                    { id: 'analytics', label: window.loc('📊 ۱۴. نمودار درآمد و رشد', '📊 14. Income and growth chart') },
-                    { id: 'rules', label: window.loc('📜 ۱۳&۱۷. قوانین و ضدتقلب', '📜 13&17. Laws and anti-fraud') }
+                    { id: 'overview', label: window.loc('👥 لیست دعوت‌ها', '👥 Invites List') },
+                    { id: 'milestones', label: window.loc('🎯 پاداش مرحله‌ای', '🎯 Milestones') },
+                    { id: 'leaderboard', label: window.loc('🏆 رتبه دعوت', '🏆 Top Inviters') },
+                    { id: 'analytics', label: window.loc('📊 نمودار رشد', '📊 Growth Chart') }
                   ].map(tab => (
                     <button
                       key={tab.id}

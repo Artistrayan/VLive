@@ -281,19 +281,6 @@ export function StreamerWelcomeGuideModal({
           </p>
         </div>
         
-        <div className="space-y-2 bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 text-xs text-slate-300">
-          <h4 className="font-black text-white text-xs mb-1.5 flex items-center gap-1.5 text-pink-400">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{loc('نکات کلیدی فعالیت میزبانی:', 'Creator Guidelines:')}</span>
-          </h4>
-          <ul className="space-y-1.5 list-disc pr-4 text-[11px] text-slate-300">
-            <li><strong className="text-white">{loc('شروع استریم با کیفیت بالا:', 'HD Streaming:')}</strong> {loc('محیط پرنور و جذاب را انتخاب نمایید.', 'Use good lighting & environment.')}</li>
-            <li><strong className="text-white">{loc('تعرفه تماس‌های اختصاصی:', 'Private Rates:')}</strong> {loc('نرخ هر دقیقه را در Creator Studio تنظیم کنید.', 'Configure min rates in Creator Studio.')}</li>
-            <li><strong className="text-white">{loc('هدایا و تسویه حساب:', 'Gifts & Payouts:')}</strong> {loc('هدایای بینندگان مستقیماً به ولت اضافه می‌شود.', 'All gifts go directly to your wallet.')}</li>
-            <li><strong className="text-white">{loc('قوانین پلتفرم:', 'Community Rules:')}</strong> {loc('رعایت پوشش و قوانین پلتفرم الزامی است.', 'Respect community rules & dress code.')}</li>
-          </ul>
-        </div>
-        
         <button
           onClick={onClose}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 active:scale-95 text-white font-black text-xs shadow-lg transition border border-pink-400/30"

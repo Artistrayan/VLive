@@ -625,18 +625,11 @@ export default function StreamerApplicationModal({
       case 5:
         return (
           <div className="space-y-4">
-            <h4 className="font-bold text-white mb-2">{loc('۵. قوانین و مقررات استریمری', '5. Rules and Regulations')}</h4>
-            <div className="h-44 overflow-y-auto p-4 rounded-xl bg-slate-950/50 border border-slate-800 text-xs text-slate-300 space-y-2.5 leading-relaxed">
-              <p>۱. {loc('حفظ احترام مخاطبان و رعایت حریم خصوصی الزامی است.', 'Respecting privacy and community members is mandatory.')}</p>
-              <p>۲. {loc('انتشار هرگونه محتوای هنجارشکنانه یا غیرقانونی موجب مسدودی دائم حساب می‌شود.', 'Inappropriate or illegal content leads to ban.')}</p>
-              <p>۳. {loc('هرگونه تبانی، تقلب یا فریب در سیستم هدایا اکیداً ممنوع است.', 'Any fraud in gifts will lead to immediate ban.')}</p>
-              <p>۴. {loc('استریمر متعهد به حفظ کیفیت پایدار صدا و تصویر می‌باشد.', 'Streamer is committed to quality broadcast.')}</p>
-              <p>۵. {loc('درخواست وجه و پرداخت خارج از درگاه پلتفرم مجاز نیست.', 'Direct external transactions are strictly prohibited.')}</p>
-            </div>
+            <h4 className="font-bold text-white mb-2">{loc('تایید نهایی و ارسال', 'Final Confirmation')}</h4>
             
             <label className="flex items-center gap-3 p-3 rounded-2xl bg-slate-950/60 border border-slate-800 cursor-pointer hover:border-cyan-500/40 transition">
               <input type="checkbox" checked={rulesAccepted} onChange={e => setRulesAccepted(e.target.checked)} className="w-5 h-5 accent-cyan-500 cursor-pointer" />
-              <span className="text-xs text-slate-200 font-bold">{loc('تمام قوانین و مقررات استریمری V.Live را مطالعه کرده و می‌پذیرم.', 'I have read and accept all streamer rules.')}</span>
+              <span className="text-xs text-slate-200 font-bold">{loc('پذیرش قوانین و شرایط استریم', 'Accept streamer terms')}</span>
             </label>
           </div>
         );

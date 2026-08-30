@@ -84,11 +84,8 @@ export default function PermissionsPromptModal({
             <h3 className="font-black text-sm text-white">
               {isGranular 
                 ? loc('مجوز دسترسی به قابلیت‌های برنامه', 'App Feature Permission Request')
-                : loc('دسترسی‌های سیستم و قوانین V.LIVE', 'System Permissions & Terms')}
+                : loc('دسترسی‌های سیستم', 'System Permissions')}
             </h3>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              {loc('جهت استفاده از لایواستریم، تماس مستقیم و اعلان‌ها', 'For live streaming, direct calls & notifications')}
-            </p>
           </div>
         </div>
 

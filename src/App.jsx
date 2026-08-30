@@ -4230,8 +4230,7 @@ export default function App() {
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">{loc('قوانین و شرایط کامل Match', 'Full Match Terms and Conditions')}</h3>
-                  <p className="text-[11px] text-slate-400">{loc('راهنمای کامل سیستم مچ هوشمند V.LIVE', 'A complete guide to the V.LIVE smart wrist system')}</p>
+                  <h3 className="text-base font-black text-white">{loc('شرایط Match', 'Match Conditions')}</h3>
                 </div>
               </div>
               <button onClick={() => setIsMatchRulesModalOpen(false)} className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-sm font-bold transition">
@@ -4243,46 +4242,27 @@ export default function App() {
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                 <h4 className="font-black text-amber-400 flex items-center gap-1.5">
                   <span>🎁</span>
-                  <span>{loc('۱. سهمیه ۳ تماس رایگان روزانه', '1. Quota of 3 free calls per day')}</span>
+                  <span>{loc('سهمیه ۳ تماس رایگان روزانه', 'Quota of 3 free calls per day')}</span>
                 </h4>
-                <p className="text-[11px] text-slate-400">
-                  {loc('هر کاربر در روز دارای ۳ تماس رایگان است. در صورت عدم استفاده در طول روز، این سهمیه ذخیره نخواهد شد و پایان هر روز بازنشانی می‌شود.', 'Each user has 3 free calls per day. If not used during the day, this quota will not be saved and will be reset at the end of each day.')}
-                </p>
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                 <h4 className="font-black text-cyan-400 flex items-center gap-1.5">
                   <span>⏱️</span>
-                  <span>{loc('۲. زمان تماس رایگان (۳۰ ثانیه)', '2. Free call time (30 seconds)')}</span>
+                  <span>{loc('زمان تماس رایگان (۳۰ ثانیه)', 'Free call time (30 seconds)')}</span>
                 </h4>
-                <p className="text-[11px] text-slate-400">
-                  {loc('مدت زمان هر تماس رایگان مچینگ حداکثر ۳۰ ثانیه می‌باشد. پس از ۳۰ ثانیه تماس به‌صورت خودکار خاتمه می‌یابد.', 'The duration of each free matching call is a maximum of 30 seconds. After 30 seconds, the call is automatically terminated.')}
-                </p>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <h4 className="font-black text-pink-400 flex items-center gap-1.5">
-                  <span>⭐</span>
-                  <span>{loc('۳. استثنای استریمرهای تایید شده', '3. Except for verified streamers')}</span>
-                </h4>
-                <p className="text-[11px] text-slate-400">
-                  {loc('کاربران تایید شده استریمر شامل محدودیت تماس رایگان استاندارد نبوده و تابع قوانین اختصاصی استریمرها می‌باشند.', 'Streamer verified users are not subject to the standard free call limit and are subject to the streamer\'s own rules.')}
-                </p>
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                 <h4 className="font-black text-emerald-400 flex items-center gap-1.5">
                   <span>💎</span>
-                  <span>{loc('۴. قوانین تماس تصویری با استریمرها', '4. Video call rules with streamers')}</span>
+                  <span>{loc('تماس تصویری با استریمرها', 'Video call with streamers')}</span>
                 </h4>
-                <p className="text-[11px] text-slate-400">
-                  {loc('در تماس با استریمر، ۲۰ ثانیه اول کاملاً رایگان است. بعد از ۲۰ ثانیه، سکه به‌صورت دقیقه‌ای از موجودی کاربر مقابل کسر می‌شود. در صورت کمبود موجودی، تماس خودکار قطع خواهد شد.', 'When contacting the streamer, the first 20 seconds are completely free. After 20 seconds, the coin will be deducted from the opposite user\'s balance. In case of lack of stock, the automatic call will be disconnected.')}
-                </p>
               </div>
             </div>
 
             <button onClick={() => setIsMatchRulesModalOpen(false)} className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-102 active:scale-95 transition">
-              {loc('متوجه شدم و تایید می‌کنم', 'I understand and confirm')}
+              {loc('تایید', 'Confirm')}
             </button>
           </div>
         </div>}

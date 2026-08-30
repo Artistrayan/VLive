@@ -481,21 +481,6 @@ export default function LiveStudioModal({
 
           <div className="space-y-2">
             <h3 className="text-lg sm:text-xl font-black text-white">{loc('دسترسی به استودیو لایو مسدود است', 'Live Studio Access Restricted')}</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              {loc('بر اساس قوانین پلتفرم V.LIVE، اجرای زنده و میزبانی لایواستریم منحصراً برای کاربرانی که احراز هویت استریمری آن‌ها توسط مدیریت تایید گردیده مجاز است.', 'Live broadcast hosting is strictly restricted to verified streamers whose KYC applications have been approved by administration.')}
-            </p>
-          </div>
-
-          <div className="bg-slate-950/90 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs text-right">
-            <div className="flex items-center gap-2 text-amber-400 font-bold">
-              <ShieldAlert className="w-4 h-4 shrink-0" />
-              <span>{loc('شرایط فعال‌سازی اجرای زنده:', 'Activation Requirements:')}</span>
-            </div>
-            <ul className="text-[11px] text-slate-400 list-disc list-inside space-y-1">
-              <li>{loc('ثبت نام و تکمیل مشخصات پروفایل', 'Complete your profile information')}</li>
-              <li>{loc('ارسال سلفی ژست دست و مدارک در بخش احراز هویت استریمر', 'Submit gesture selfie & documents in streamer KYC')}</li>
-              <li>{loc('تایید رسمی حساب توسط مدیریت ارشد پلتفرم', 'Official verification & approval by senior admin')}</li>
-            </ul>
           </div>
 
           <div className="flex gap-2.5 pt-2">
