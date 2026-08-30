@@ -120,7 +120,7 @@ export default function StreamerApplicationModal({
     }
   }, [isCameraActive, cameraStream]);
 
-  // Camera Management
+  // Camera Management (HD Resolution & High Fidelity)
   const startCamera = async () => {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -128,7 +128,11 @@ export default function StreamerApplicationModal({
         return;
       }
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } },
+        video: { 
+          facingMode: 'user', 
+          width: { ideal: 1920, min: 720 }, 
+          height: { ideal: 1080, min: 720 } 
+        },
         audio: false
       });
       setCameraStream(stream);
@@ -150,27 +154,32 @@ export default function StreamerApplicationModal({
   const capturePhotoFromStream = () => {
     if (!videoRef.current) return;
     const v = videoRef.current;
-    const w = v.videoWidth || 640;
-    const h = v.videoHeight || 640;
+    const w = v.videoWidth || 1280;
+    const h = v.videoHeight || 720;
     const canvas = document.createElement('canvas');
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(v, 0, 0, w, h);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    if (ctx) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(v, 0, 0, w, h);
+    }
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
     setCapturedSelfie(dataUrl);
     stopCamera();
-    showToast(loc('📸 عکس سلفی با ژست درخواستی با موفقیت ثبت شد.', '📸 Gesture selfie captured successfully.'));
+    showToast(loc('📸 عکس سلفی با کیفیت بالا و ژست درخواستی با موفقیت ثبت شد.', '📸 High-quality gesture selfie captured successfully.'));
   };
 
   const handleSelfieFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const compressed = await compressImageFile(file, 640, 640, 0.85);
+      // High resolution compress keeping max details
+      const compressed = await compressImageFile(file, 1600, 0.92);
       setCapturedSelfie(compressed);
       stopCamera();
-      showToast(loc('📸 عکس سلفی با موفقیت انتخاب شد.', '📸 Gesture selfie selected successfully.'));
+      showToast(loc('📸 عکس سلفی با کیفیت بالا با موفقیت انتخاب شد.', '📸 High-quality gesture selfie selected successfully.'));
     } catch (err) {
       showToast(loc('خطا در پردازش تصویر سلفی', 'Error processing selfie image'));
     }

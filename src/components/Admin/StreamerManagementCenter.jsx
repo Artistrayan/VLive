@@ -4,9 +4,77 @@ import {
   Video, ShieldCheck, ShieldAlert, CheckCircle2, XCircle, AlertTriangle, 
   Crown, Gift, DollarSign, Clock, Users, Eye, FileText, Ban, Lock, Unlock, 
   Sparkles, Camera, Award, ArrowUpRight, Filter, Search, Sliders, TrendingUp, 
-  ThumbsUp, Activity, Cpu, History, Zap, Settings, RefreshCw
+  ThumbsUp, Activity, Cpu, History, Zap, Settings, RefreshCw,
+  ZoomIn, ZoomOut, RotateCw, Maximize2, Download, Image as ImageIcon,
+  ExternalLink, Layers, Check, User
 } from 'lucide-react';
 import { STREAMER_LEVELS, AVAILABLE_BADGES, getStreamerScores, detectAntiCheatAnomalies } from '../../services/streamerScoring';
+
+// Component for High-Definition, crisp image display with auto-fallback & shimmer
+function HighQualityKycImage({ src, alt, className = "", onClick, badge = null, fallbackText = "بدون تصویر", isZoomable = true }) {
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(Boolean(src));
+
+  if (!src || hasError) {
+    return (
+      <div 
+        onClick={onClick}
+        className={`w-full h-full flex flex-col items-center justify-center bg-slate-950/90 border border-slate-800/80 text-slate-500 text-[10px] p-2 text-center select-none rounded-2xl ${className}`}
+      >
+        <Camera className="w-6 h-6 mb-1 text-slate-600 opacity-60" />
+        <span className="text-[9px] font-mono text-slate-400">{fallbackText}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className={`relative w-full h-full group overflow-hidden bg-slate-950 rounded-2xl select-none ${isZoomable ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
+      {isLoading && (
+        <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-1.5 z-10">
+          <Sparkles className="w-5 h-5 text-pink-400 animate-spin" />
+          <span className="text-[9px] text-pink-300/80 font-mono">بارگذاری تصویر HD...</span>
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt || "KYC Image"}
+        referrerPolicy="no-referrer"
+        crossOrigin="anonymous"
+        onLoad={() => setIsLoading(false)}
+        onError={() => {
+          setHasError(true);
+          setIsLoading(false);
+        }}
+        className={`w-full h-full object-cover object-center group-hover:scale-105 transition-all duration-300 ${className} ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+        style={{ 
+          imageRendering: 'auto',
+          WebkitBackfaceVisibility: 'hidden'
+        }}
+      />
+      
+      {/* Visual Badges */}
+      <div className="absolute top-1.5 right-1.5 flex items-center gap-1 z-10 pointer-events-none">
+        {badge && (
+          <span className="bg-slate-950/90 backdrop-blur-md border border-pink-500/40 text-[9px] font-bold text-pink-300 px-2 py-0.5 rounded-lg shadow-lg">
+            {badge}
+          </span>
+        )}
+      </div>
+
+      {isZoomable && (
+        <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+          <span className="px-2.5 py-1 rounded-xl bg-slate-900/90 text-white font-bold text-[10px] border border-pink-500/40 shadow-lg flex items-center gap-1 backdrop-blur-sm">
+            <ZoomIn className="w-3.5 h-3.5 text-pink-400" />
+            <span>بزرگنمایی و بازبینی HD</span>
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function StreamerManagementCenter({
   usersList = [],
@@ -70,6 +138,20 @@ export default function StreamerManagementCenter({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // High-Resolution Image Inspector Modal State
+  const [inspectorTab, setInspectorTab] = useState('compare'); // 'compare' | 'selfie' | 'profile'
+  const [inspectorZoom, setInspectorZoom] = useState(1); // 1, 1.5, 2, 2.5, 3
+  const [inspectorRotate, setInspectorRotate] = useState(0); // 0, 90, 180, 270
+  const [inspectorGrid, setInspectorGrid] = useState(false);
+
+  const openApplicationInspector = (app, initialTab = 'compare') => {
+    setSelectedApplication(app);
+    setInspectorTab(initialTab);
+    setInspectorZoom(1);
+    setInspectorRotate(0);
+    setInspectorGrid(false);
+  };
 
   // Selected streamer for score editing
   const [editingStreamer, setEditingStreamer] = useState(null);
@@ -568,6 +650,9 @@ export default function StreamerManagementCenter({
                   const isRejected = (app.status || '').toLowerCase() === 'rejected';
                   const isCorrection = (app.status || '').toLowerCase() === 'correction';
 
+                  const profileImg = app.avatar || app.idCardPhoto || app.docUrl || app.document_url || '';
+                  const selfieImg = app.selfiePhoto || app.selfie_url || '';
+
                   return (
                     <div key={app.id || app.username} className={`p-4 rounded-3xl bg-slate-900 border space-y-3 shadow-xl transition-all ${
                       isPending ? 'border-pink-500/50 shadow-pink-500/10' :
@@ -576,7 +661,15 @@ export default function StreamerManagementCenter({
                     }`}>
                       <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
                         <div className="flex items-center gap-2.5">
-                          <img src={app.avatar || app.idCardPhoto || ''} alt="" className="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                          <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-700 bg-slate-950 flex-shrink-0">
+                            <HighQualityKycImage
+                              src={profileImg || selfieImg}
+                              alt="Avatar"
+                              className="w-full h-full"
+                              fallbackText="👤"
+                              isZoomable={false}
+                            />
+                          </div>
                           <div>
                             <h4 className="font-bold text-white text-xs flex items-center gap-1">
                               <span>{app.name || app.username}</span>
@@ -620,36 +713,54 @@ export default function StreamerManagementCenter({
                         )}
                       </div>
 
-                      {/* Photos Display (Profile vs Gesture Selfie) */}
-                      <div className="grid grid-cols-2 gap-2">
+                      {/* Photos Display (Profile vs Gesture Selfie) with HD quality */}
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-1">
-                          <span className="text-[9px] text-slate-400 font-bold block">{window.loc('عکس حساب/کارت:', 'Profile Photo:')}</span>
-                          <div 
-                            onClick={() => setSelectedApplication(app)}
-                            className="w-full h-28 rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden cursor-pointer hover:border-pink-500 transition relative group"
-                          >
-                            <img src={app.idCardPhoto || app.docUrl || app.avatar} alt="Profile Photo" className="w-full h-full object-cover group-hover:scale-105 transition" />
-                            <span className="absolute bottom-1 right-1 bg-slate-950/80 text-[8px] text-white px-1.5 py-0.5 rounded font-mono">بزرگنمایی 🔍</span>
+                          <div className="flex items-center justify-between px-0.5">
+                            <span className="text-[10px] text-slate-300 font-bold flex items-center gap-1">
+                              <ImageIcon className="w-3 h-3 text-cyan-400" />
+                              <span>{window.loc('عکس حساب/کارت:', 'Profile Photo:')}</span>
+                            </span>
+                            <span className="text-[8px] text-cyan-400 font-mono">HD</span>
+                          </div>
+                          <div className="w-full h-32 rounded-2xl border border-slate-800 hover:border-cyan-500/60 shadow-lg transition overflow-hidden">
+                            <HighQualityKycImage
+                              src={profileImg}
+                              alt="Profile Photo"
+                              badge="👤 پروفایل"
+                              fallbackText="بدون تصویر پروفایل"
+                              onClick={() => openApplicationInspector(app, 'profile')}
+                            />
                           </div>
                         </div>
 
                         <div className="space-y-1">
-                          <span className="text-[9px] text-pink-400 font-bold block">{window.loc('سلفی ژست دست (تطبیق چهره):', 'Gesture Selfie:')}</span>
-                          <div 
-                            onClick={() => setSelectedApplication(app)}
-                            className="w-full h-28 rounded-2xl bg-slate-950 border border-pink-500/40 overflow-hidden cursor-pointer hover:border-pink-400 transition relative group"
-                          >
-                            {app.selfiePhoto ? (
-                              <img src={app.selfiePhoto} alt="Live Gesture Selfie" className="w-full h-full object-cover group-hover:scale-105 transition" />
+                          <div className="flex items-center justify-between px-0.5">
+                            <span className="text-[10px] text-pink-300 font-bold flex items-center gap-1">
+                              <Camera className="w-3 h-3 text-pink-400" />
+                              <span>{window.loc('سلفی ژست دست (زنده):', 'Gesture Selfie:')}</span>
+                            </span>
+                            <span className="text-[8px] text-pink-400 font-mono">1080p</span>
+                          </div>
+                          <div className="w-full h-32 rounded-2xl border border-pink-500/40 hover:border-pink-400 shadow-lg shadow-pink-500/5 transition overflow-hidden">
+                            {selfieImg ? (
+                              <HighQualityKycImage
+                                src={selfieImg}
+                                alt="Live Gesture Selfie"
+                                badge="✨ سلفی زنده"
+                                fallbackText="بدون سلفی"
+                                onClick={() => openApplicationInspector(app, 'selfie')}
+                              />
                             ) : app.videoDemoUrl ? (
-                              <video src={app.videoDemoUrl} className="w-full h-full object-cover" controls />
+                              <video src={app.videoDemoUrl} className="w-full h-full object-cover rounded-2xl" controls />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-500">
-                                بدون سلفی
+                              <div 
+                                onClick={() => openApplicationInspector(app, 'selfie')}
+                                className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-500 text-[10px] cursor-pointer rounded-2xl"
+                              >
+                                <Camera className="w-6 h-6 text-slate-600 mb-1" />
+                                <span>سلفی ثبت نشده</span>
                               </div>
-                            )}
-                            {app.selfiePhoto && (
-                              <span className="absolute bottom-1 right-1 bg-pink-950/80 text-[8px] text-pink-200 px-1.5 py-0.5 rounded font-mono">سلفی ژست 🔍</span>
                             )}
                           </div>
                         </div>
@@ -659,21 +770,21 @@ export default function StreamerManagementCenter({
                       <div className="flex flex-wrap gap-2 pt-1">
                         <button
                           onClick={() => handleApproveKyc(app)}
-                          className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow flex items-center justify-center gap-1"
+                          className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow flex items-center justify-center gap-1 transition"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>{window.loc('✓ تایید نهایی و اعطای استریمر', '✓ Approve Streamer')}</span>
                         </button>
                         <button
                           onClick={() => handleCorrectionKyc(app)}
-                          className="px-3 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs shadow"
+                          className="px-3 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs shadow transition"
                           title={window.loc('درخواست ارسال مدارک اصلاحی', 'Request Correction')}
                         >
                           {window.loc('اصلاحیه', 'Correction')}
                         </button>
                         <button
                           onClick={() => handleRejectKyc(app)}
-                          className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow flex items-center justify-center gap-1"
+                          className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow flex items-center justify-center gap-1 transition"
                         >
                           <XCircle className="w-3.5 h-3.5" />
                           <span>{window.loc('رد', 'Reject')}</span>
@@ -686,103 +797,279 @@ export default function StreamerManagementCenter({
             );
           })()}
 
-          {/* APPLICATION DETAILS / ZOOM MODAL */}
-          {selectedApplication && (
-            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-              <div className="w-full max-w-2xl bg-slate-900 border border-pink-500/40 rounded-3xl p-5 space-y-4 shadow-2xl animate-scaleIn max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Crown className="w-5 h-5 text-pink-400" />
-                    <div>
-                      <h3 className="font-bold text-white text-sm">
-                        {window.loc('بررسی هویت و سلفی استریمر:', 'Streamer Identity Review:')} {selectedApplication.name || selectedApplication.username}
-                      </h3>
-                      <span className="text-[10px] text-pink-300 font-mono">@{selectedApplication.username}</span>
+          {/* ADVANCED HIGH-DEFINITION APPLICATION & PHOTO INSPECTOR MODAL */}
+          {selectedApplication && (() => {
+            const modalProfileImg = selectedApplication.avatar || selectedApplication.idCardPhoto || selectedApplication.docUrl || selectedApplication.document_url || '';
+            const modalSelfieImg = selectedApplication.selfiePhoto || selectedApplication.selfie_url || '';
+
+            return (
+              <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-3 sm:p-5 animate-fadeIn">
+                <div className="w-full max-w-4xl bg-slate-900/95 border border-pink-500/40 rounded-3xl p-4 sm:p-6 space-y-4 shadow-2xl animate-scaleIn max-h-[92vh] overflow-y-auto flex flex-col">
+                  
+                  {/* Modal Header */}
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 p-0.5 flex items-center justify-center shadow-lg shadow-pink-500/20">
+                        <Crown className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-black text-white text-sm sm:text-base flex items-center gap-2">
+                          <span>{window.loc('بازبینی تخصصی و تطبیق هویت استریمر:', 'Streamer Identity & Photo Verification:')}</span>
+                          <span className="text-pink-400">{selectedApplication.name || selectedApplication.username}</span>
+                        </h3>
+                        <span className="text-[11px] text-slate-400 font-mono">@{selectedApplication.username}</span>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setSelectedApplication(null)} 
+                      className="p-2 rounded-2xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Gesture Pose Details Banner */}
+                  {selectedApplication.requestedPose && (
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-r from-pink-950/70 via-slate-900 to-purple-950/70 border border-pink-500/40 flex flex-wrap items-center justify-between gap-2 shadow-inner">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-lg">
+                          ✋
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-pink-300 font-bold block">{window.loc('ژست تصادفی اختصاص‌یافته برای راستی‌آزمایی سلفی:', 'Assigned Verification Gesture Pose:')}</span>
+                          <span className="text-xs sm:text-sm font-black text-white">{selectedApplication.requestedPose}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[11px] border border-emerald-500/40 flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          <span>تطبیق بیومتریک و دستی</span>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mode Tabs & High-Res Inspection Toolbar */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950/80 p-2 rounded-2xl border border-slate-800">
+                    {/* Tabs */}
+                    <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                      <button
+                        onClick={() => { setInspectorTab('compare'); setInspectorZoom(1); }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                          inspectorTab === 'compare' ? 'bg-pink-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>{window.loc('تطبیق همزمان دو عکس', 'Side-by-Side Comparison')}</span>
+                      </button>
+
+                      <button
+                        onClick={() => setInspectorTab('selfie')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                          inspectorTab === 'selfie' ? 'bg-pink-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>{window.loc('سلفی ژست زنده (HD)', 'Live Selfie (HD)')}</span>
+                      </button>
+
+                      <button
+                        onClick={() => setInspectorTab('profile')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                          inspectorTab === 'profile' ? 'bg-cyan-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        <span>{window.loc('عکس حساب / کارت', 'Profile / ID')}</span>
+                      </button>
+                    </div>
+
+                    {/* Image Viewer Controls */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setInspectorZoom(prev => Math.min(prev + 0.5, 3))}
+                        className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
+                        title="بزرگنمایی (+)"
+                      >
+                        <ZoomIn className="w-4 h-4 text-pink-400" />
+                      </button>
+                      <span className="text-[10px] font-mono text-slate-300 px-1 font-bold">
+                        {Math.round(inspectorZoom * 100)}%
+                      </span>
+                      <button
+                        onClick={() => setInspectorZoom(prev => Math.max(prev - 0.5, 1))}
+                        className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
+                        title="کوچک‌نمایی (-)"
+                      >
+                        <ZoomOut className="w-4 h-4 text-pink-400" />
+                      </button>
+
+                      <button
+                        onClick={() => setInspectorRotate(prev => (prev + 90) % 360)}
+                        className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition ml-1"
+                        title="چرخش ۹۰ درجه تصویر"
+                      >
+                        <RotateCw className="w-4 h-4 text-cyan-400" />
+                      </button>
+
+                      <button
+                        onClick={() => setInspectorGrid(prev => !prev)}
+                        className={`p-1.5 rounded-lg border transition ${inspectorGrid ? 'bg-pink-600/30 border-pink-500 text-pink-300' : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-400'}`}
+                        title="خطوط راهنمای تطبیق چهره"
+                      >
+                        <Sliders className="w-4 h-4" />
+                      </button>
+
+                      {(modalSelfieImg || modalProfileImg) && (
+                        <a
+                          href={inspectorTab === 'selfie' ? modalSelfieImg : modalProfileImg || modalSelfieImg}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
+                          title="مشاهده تصویر با کیفیت اصلی در تب جدید"
+                        >
+                          <ExternalLink className="w-4 h-4 text-emerald-400" />
+                        </a>
+                      )}
                     </div>
                   </div>
-                  <button onClick={() => setSelectedApplication(null)} className="p-1.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white">✕</button>
-                </div>
 
-                {/* Gesture Pose Details */}
-                {selectedApplication.requestedPose && (
-                  <div className="p-3 rounded-2xl bg-pink-950/60 border border-pink-500/40 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] text-pink-300 font-bold block">{window.loc('ژست تصادفی اختصاص‌یافته برای راستی‌آزمایی سلفی:', 'Assigned Gesture Pose for Selfie Verification:')}</span>
-                      <span className="text-sm font-black text-white">{selectedApplication.requestedPose}</span>
-                    </div>
-                    <span className="px-3 py-1 rounded-full bg-pink-500/20 text-pink-300 font-mono text-xs border border-pink-500/30">
-                      ✋ تطبیق دستی
-                    </span>
-                  </div>
-                )}
+                  {/* PHOTO VIEWING STAGE */}
+                  <div className="relative rounded-3xl bg-slate-950 border border-slate-800 p-3 min-h-[320px] max-h-[460px] overflow-hidden flex items-center justify-center">
+                    
+                    {/* Grid Overlay Guide if enabled */}
+                    {inspectorGrid && (
+                      <div className="absolute inset-0 pointer-events-none z-20 grid grid-cols-3 grid-rows-3 border border-pink-500/30 divide-x divide-y divide-pink-500/20">
+                        <div /><div /><div /><div /><div /><div /><div /><div /><div />
+                      </div>
+                    )}
 
-                {/* Big Image Comparison */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-bold text-slate-300">{window.loc('عکس حساب / پروفایل', 'Profile Photo')}</span>
-                    <img
-                      src={selectedApplication.idCardPhoto || selectedApplication.docUrl || selectedApplication.avatar}
-                      alt="Profile"
-                      className="w-full h-64 object-contain bg-slate-950 rounded-2xl border border-slate-800"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-bold text-pink-400">{window.loc('عکس سلفی زنده با ژست دست', 'Live Selfie with Gesture')}</span>
-                    {selectedApplication.selfiePhoto ? (
-                      <img
-                        src={selectedApplication.selfiePhoto}
-                        alt="Selfie"
-                        className="w-full h-64 object-contain bg-slate-950 rounded-2xl border border-pink-500/40"
-                      />
-                    ) : (
-                      <div className="w-full h-64 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-500 text-xs">
-                        {window.loc('سلفی ثبت نشده', 'No selfie uploaded')}
+                    {/* Mode 1: SIDE BY SIDE COMPARISON */}
+                    {inspectorTab === 'compare' && (
+                      <div className="w-full h-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Profile Card */}
+                        <div className="space-y-1.5 flex flex-col">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                              <ImageIcon className="w-3.5 h-3.5 text-cyan-400" />
+                              <span>{window.loc('عکس حساب / پروفایل', 'Profile / ID Photo')}</span>
+                            </span>
+                            <span className="text-[10px] text-cyan-400 font-mono bg-cyan-950/60 px-2 py-0.5 rounded-lg border border-cyan-500/30">HD Original</span>
+                          </div>
+                          <div className="flex-1 w-full min-h-[260px] rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden relative flex items-center justify-center">
+                            <img
+                              src={modalProfileImg || modalSelfieImg}
+                              alt="Profile"
+                              referrerPolicy="no-referrer"
+                              crossOrigin="anonymous"
+                              className="max-h-[360px] w-full object-contain transition-transform duration-300"
+                              style={{
+                                transform: `scale(${inspectorZoom}) rotate(${inspectorRotate}deg)`,
+                                imageRendering: '-webkit-optimize-contrast'
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Selfie Card */}
+                        <div className="space-y-1.5 flex flex-col">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-xs font-bold text-pink-400 flex items-center gap-1">
+                              <Camera className="w-3.5 h-3.5 text-pink-400" />
+                              <span>{window.loc('عکس سلفی زنده با ژست دست', 'Live Selfie with Gesture')}</span>
+                            </span>
+                            <span className="text-[10px] text-pink-400 font-mono bg-pink-950/60 px-2 py-0.5 rounded-lg border border-pink-500/30">1080p Live Capture</span>
+                          </div>
+                          <div className="flex-1 w-full min-h-[260px] rounded-2xl bg-slate-900 border border-pink-500/40 overflow-hidden relative flex items-center justify-center">
+                            {modalSelfieImg ? (
+                              <img
+                                src={modalSelfieImg}
+                                alt="Selfie"
+                                referrerPolicy="no-referrer"
+                                crossOrigin="anonymous"
+                                className="max-h-[360px] w-full object-contain transition-transform duration-300"
+                                style={{
+                                  transform: `scale(${inspectorZoom}) rotate(${inspectorRotate}deg)`,
+                                  imageRendering: '-webkit-optimize-contrast'
+                                }}
+                              />
+                            ) : (
+                              <div className="flex flex-col items-center justify-center text-slate-500 text-xs p-4">
+                                <Camera className="w-8 h-8 text-slate-600 mb-1" />
+                                <span>{window.loc('سلفی بارگذاری نشده', 'No selfie uploaded')}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Mode 2: SINGLE FOCUS VIEW (Selfie or Profile) */}
+                    {inspectorTab !== 'compare' && (
+                      <div className="w-full h-full flex items-center justify-center overflow-auto p-2">
+                        <img
+                          src={inspectorTab === 'selfie' ? modalSelfieImg : modalProfileImg || modalSelfieImg}
+                          alt="Focused Full Inspection"
+                          referrerPolicy="no-referrer"
+                          crossOrigin="anonymous"
+                          className="max-h-[400px] w-auto object-contain transition-transform duration-300 rounded-2xl shadow-2xl"
+                          style={{
+                            transform: `scale(${inspectorZoom}) rotate(${inspectorRotate}deg)`,
+                            imageRendering: '-webkit-optimize-contrast'
+                          }}
+                        />
                       </div>
                     )}
                   </div>
-                </div>
 
-                {/* Extra Details */}
-                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">{window.loc('دسته‌بندی استریم:', 'Stream Category:')}</span>
-                    <span className="text-white font-bold">{selectedApplication.streamCategory || 'عمومی'}</span>
+                  {/* Application Details Summary */}
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
+                        <span className="text-slate-400">{window.loc('دسته‌بندی استریم:', 'Stream Category:')}</span>
+                        <span className="text-pink-300 font-bold">{selectedApplication.streamCategory || 'عمومی'}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
+                        <span className="text-slate-400">{window.loc('موضوع لایو:', 'Stream Topic:')}</span>
+                        <span className="text-white font-bold">{selectedApplication.streamTopic || '-'}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block mb-1 font-bold">{window.loc('بیوگرافی و برنامه تولید محتوا:', 'Bio & Content Plan:')}</span>
+                      <p className="text-slate-200 bg-slate-900/90 p-2.5 rounded-xl leading-relaxed border border-slate-800/60">
+                        {selectedApplication.description || '-'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">{window.loc('موضوع لایو:', 'Stream Topic:')}</span>
-                    <span className="text-white font-bold">{selectedApplication.streamTopic || '-'}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block mb-0.5">{window.loc('بیوگرافی و برنامه تولید محتوا:', 'Bio & Content Plan:')}</span>
-                    <p className="text-slate-200 bg-slate-900 p-2 rounded-xl">{selectedApplication.description || '-'}</p>
-                  </div>
-                </div>
 
-                {/* Modal Action Buttons */}
-                <div className="flex gap-2 pt-2">
-                  <button
-                    onClick={() => handleApproveKyc(selectedApplication)}
-                    className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow flex items-center justify-center gap-1.5"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>{window.loc('تایید نهایی و ارتقا به استریمر', 'Approve & Upgrade to Streamer')}</span>
-                  </button>
-                  <button
-                    onClick={() => handleCorrectionKyc(selectedApplication)}
-                    className="px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs"
-                  >
-                    {window.loc('درخواست اصلاحیه', 'Request Correction')}
-                  </button>
-                  <button
-                    onClick={() => handleRejectKyc(selectedApplication)}
-                    className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
-                  >
-                    {window.loc('رد درخواست', 'Reject')}
-                  </button>
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
+                    <button
+                      onClick={() => handleApproveKyc(selectedApplication)}
+                      className="flex-1 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition active:scale-98"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{window.loc('✓ تایید نهایی مدارک و اعطای دسترسی استریمر', '✓ Approve & Grant Streamer')}</span>
+                    </button>
+                    <button
+                      onClick={() => handleCorrectionKyc(selectedApplication)}
+                      className="px-5 py-3 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs sm:text-sm shadow transition"
+                    >
+                      {window.loc('درخواست اصلاحیه', 'Request Correction')}
+                    </button>
+                    <button
+                      onClick={() => handleRejectKyc(selectedApplication)}
+                      className="px-5 py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm shadow flex items-center justify-center gap-1.5 transition"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      <span>{window.loc('رد درخواست', 'Reject')}</span>
+                    </button>
+                  </div>
+
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
