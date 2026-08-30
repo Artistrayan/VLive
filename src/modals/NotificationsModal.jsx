@@ -270,6 +270,38 @@ export default function NotificationsModal(props) {
                                     </span>
                                   </div>
                                 )}
+                                {item.actionType === 'kyc_approved' && (
+                                  <div className="pt-1.5 flex items-center gap-2">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsNotificationsOpen(false);
+                                        if (props.setIsLiveStudioOpen) props.setIsLiveStudioOpen(true);
+                                        else if (props.onSwitchMainTab) props.onSwitchMainTab('live');
+                                        showToast(window.loc('🚀 استودیو پخش زنده آماده است!', '🚀 Live studio is ready!'));
+                                      }}
+                                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs shadow-md flex items-center gap-1.5"
+                                    >
+                                      <Video className="w-3.5 h-3.5" />
+                                      <span>{window.loc('شروع اجرای زنده', 'Start Live Stream')}</span>
+                                    </button>
+                                  </div>
+                                )}
+                                {(item.actionType === 'kyc_correction' || item.actionType === 'kyc_rejected') && (
+                                  <div className="pt-1.5 flex items-center gap-2">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsNotificationsOpen(false);
+                                        if (props.setIsBecomeStreamerModalOpen) props.setIsBecomeStreamerModalOpen(true);
+                                      }}
+                                      className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-pink-500/40 text-pink-300 font-black text-xs shadow-md flex items-center gap-1.5"
+                                    >
+                                      <AlertCircle className="w-3.5 h-3.5 text-pink-400" />
+                                      <span>{window.loc('مشاهده وضعیت و بازبینی مدارک', 'View Status & Review')}</span>
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>

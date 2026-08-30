@@ -2296,6 +2296,44 @@ export default function App() {
       const ch = apiNotifications.subscribeToNotifications(tid, onReceiveNotif);
       if (ch) activeNotifChannels.push(ch);
     });
+
+    const handleLocalNotifEvent = (e) => {
+      if (e.detail) onReceiveNotif(e.detail);
+    };
+
+    const handleKycUpdatedEvent = (e) => {
+      const detail = e.detail;
+      if (!detail) return;
+      const { id, status, notes, username, userId } = detail;
+      
+      setKycApplications(prev => {
+        const arr = Array.isArray(prev) ? prev : [];
+        return arr.map(a => {
+          if (a.id === id || (username && a.username === username) || (userId && a.user_id === userId)) {
+            return {
+              ...a,
+              status,
+              admin_notes: notes,
+              rejectionReason: status === 'Rejected' ? notes : a.rejectionReason,
+              correctionMessage: status === 'Correction' ? notes : a.correctionMessage
+            };
+          }
+          return a;
+        });
+      });
+
+      const myUser = currentUsername || userName;
+      const myId = currentUser?.id || uid;
+      if ((username && username === myUser) || (userId && (userId === myId || String(userId) === String(myId)))) {
+        if (status === 'Approved' || status === 'approved') {
+          setIsVerified(true);
+          setCurrentUser(prev => prev ? { ...prev, is_verified: true, isVerified: true, isStreamer: true, isHost: true, role: 'streamer', user_type: 'STREAMER' } : prev);
+        }
+      }
+    };
+
+    window.addEventListener('vlive_new_notification', handleLocalNotifEvent);
+    window.addEventListener('vlive_kyc_updated', handleKycUpdatedEvent);
     
     // Check if first-time system permissions have already been granted or prompted
     const isPermGranted = safeStorage.getItem('vlive_permissions_granted');
@@ -2307,6 +2345,8 @@ export default function App() {
     }
 
     return () => {
+      window.removeEventListener('vlive_new_notification', handleLocalNotifEvent);
+      window.removeEventListener('vlive_kyc_updated', handleKycUpdatedEvent);
       activeNotifChannels.forEach(ch => {
         try { ch.unsubscribe(); } catch (e) {}
       });
@@ -3309,7 +3349,7 @@ export default function App() {
       </nav>
 
       {/* MODAL: REDESIGNED NOTIFICATIONS SYSTEM */}
-      <NotificationsModal isNotificationsOpen={isNotificationsOpen} setIsNotificationsOpen={setIsNotificationsOpen} isNotifSettingsOpen={isNotifSettingsOpen} setIsNotifSettingsOpen={setIsNotifSettingsOpen} isRtl={isRtl} notificationsList={notificationsList} setNotificationsList={setNotificationsList} notificationFilterTab={notificationFilterTab} setNotificationFilterTab={setNotificationFilterTab} notifSettings={notifSettings} setNotifSettings={setNotifSettings} setActiveChatCall={setActiveChatCall} setIsSettingsModalOpen={setIsSettingsModalOpen} showToast={showToast} onSwitchMainTab={(tab) => setActiveTab(tab)} onOpenChat={(targetId) => { if (targetId) handleStartNewChatWithUser({ id: targetId }); }} />
+      <NotificationsModal isNotificationsOpen={isNotificationsOpen} setIsNotificationsOpen={setIsNotificationsOpen} isNotifSettingsOpen={isNotifSettingsOpen} setIsNotifSettingsOpen={setIsNotifSettingsOpen} isRtl={isRtl} notificationsList={notificationsList} setNotificationsList={setNotificationsList} notificationFilterTab={notificationFilterTab} setNotificationFilterTab={setNotificationFilterTab} notifSettings={notifSettings} setNotifSettings={setNotifSettings} setActiveChatCall={setActiveChatCall} setIsSettingsModalOpen={setIsSettingsModalOpen} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} showToast={showToast} onSwitchMainTab={(tab) => setActiveTab(tab)} onOpenChat={(targetId) => { if (targetId) handleStartNewChatWithUser({ id: targetId }); }} />
 
       {/* MODAL: 18-SECTION SETTINGS MODAL */}
       <SettingsModal currentUser={currentUser} userRole={userRole} handleLogout={handleLogout} isSettingsModalOpen={isSettingsModalOpen} setIsSettingsModalOpen={setIsSettingsModalOpen} currentAppLang={currentAppLang} setCurrentAppLang={setCurrentAppLang} handleSelectLanguage={handleSelectLanguage} APP_LANGUAGES={APP_LANGUAGES} setIsLanguageModalOpen={setIsLanguageModalOpen} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} currentUsername={currentUsername} authUsername={authUsername} authEmail={authEmail} currentTelegramId={currentTelegramId} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} isVerified={isVerified} verificationsList={verificationsList} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} blockedUsers={blockedCallUsers} setBlockedUsers={setBlockedCallUsers} isRtl={isRtl} notifSettings={notifSettings} setNotifSettings={setNotifSettings} appThemeMode={appThemeMode} setAppThemeMode={setAppThemeMode} setIsKycModalOpen={setIsKycModalOpen} setIsSuggestionModalOpen={setIsSuggestionModalOpen} setIsTermsModalOpen={setIsTermsModalOpen} setIsVipModalOpen={setIsVipModalOpen} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} showToast={showToast} loc={loc} />

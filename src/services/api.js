@@ -2995,17 +2995,8 @@ export const apiNotifications = {
       const targetUuid = (await resolveProfileUuid(targetUserId)) || targetUserId;
       const record = {
         user_id: targetUuid,
-        type: notifData.type || 'message',
         title: notifData.title || 'اعلان جدید',
-        content: notifData.content || notifData.desc || notifData.text || '',
-        metadata: {
-          sender_id: notifData.senderId || notifData.sender_id,
-          sender_username: notifData.senderUsername || notifData.sender_username,
-          sender_name: notifData.senderName || notifData.sender_name,
-          avatar: notifData.avatar,
-          conversation_id: notifData.conversationId || notifData.conversation_id,
-          action_type: notifData.actionType || notifData.action_type
-        },
+        message: notifData.content || notifData.message || notifData.desc || notifData.text || '',
         is_read: false
       };
 
@@ -3016,54 +3007,74 @@ export const apiNotifications = {
         .maybeSingle();
 
       if (error) {
-        console.warn('createNotification DB primary insert note:', error.message);
-        // Fallback for older schema without title/metadata columns
-        const fallbackRecord = {
-          user_id: targetUuid,
-          type: record.type,
-          content: `${record.title}: ${record.content}`,
-          is_read: false
-        };
-        const fbRes = await supabase
-          .from('notifications')
-          .insert([fallbackRecord])
-          .select()
-          .maybeSingle();
-        if (fbRes.data) {
-          data = fbRes.data;
-          error = null;
-        }
+        console.warn('createNotification DB insert note:', error.message);
+        // Retry with generic columns if needed
+        try {
+          const altRes = await supabase
+            .from('notifications')
+            .insert([{
+              user_id: targetUuid,
+              title: notifData.title || 'اعلان جدید',
+              content: notifData.content || notifData.message || notifData.desc || '',
+              type: notifData.type || 'system',
+              is_read: false
+            }])
+            .select()
+            .maybeSingle();
+          if (altRes.data) {
+            data = altRes.data;
+            error = null;
+          }
+        } catch {}
       }
 
       const notifObj = {
-        id: data?.id || `notif_${Date.now()}`,
-        type: record.type,
-        title: record.title,
-        desc: record.content,
-        content: record.content,
-        metadata: record.metadata,
+        id: data?.id || `notif_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        type: notifData.type || 'system',
+        title: notifData.title || 'اعلان جدید',
+        desc: notifData.content || notifData.message || notifData.desc || '',
+        content: notifData.content || notifData.message || notifData.desc || '',
+        message: notifData.content || notifData.message || notifData.desc || '',
+        metadata: {
+          sender_id: notifData.senderId || notifData.sender_id || 'admin',
+          sender_username: notifData.senderUsername || notifData.sender_username || 'admin',
+          sender_name: notifData.senderName || notifData.sender_name || 'مدیریت V.Live',
+          avatar: notifData.avatar || '',
+          conversation_id: notifData.conversationId || notifData.conversation_id,
+          action_type: notifData.actionType || notifData.action_type || ''
+        },
         time: new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
         timeGroup: 'Today',
         unread: true,
-        sender: record.metadata.sender_name || record.metadata.sender_username || '',
-        avatar: record.metadata.avatar || '',
-        actionType: record.metadata.action_type || ''
+        sender: notifData.senderName || notifData.sender || 'مدیریت V.Live',
+        avatar: notifData.avatar || '',
+        actionType: notifData.actionType || notifData.action_type || ''
       };
 
       try {
         const currentUid = getUserId();
-        if (currentUid) {
-          const currentUserUuid = await resolveProfileUuid(currentUid).catch(()=>null) || currentUid;
-          if (String(targetUserId) === String(currentUid) || String(targetUuid) === String(currentUserUuid)) {
-            const cached = JSON.parse(safeStorage.getItem('vlive_user_notifs_v1') || '[]');
-            const next = [notifObj, ...(Array.isArray(cached) ? cached : [])].slice(0, 100);
-            safeStorage.setItem('vlive_user_notifs_v1', JSON.stringify(next));
-          }
+        const currentUserUuid = (currentUid && await resolveProfileUuid(currentUid).catch(()=>null)) || currentUid;
+        
+        // Save to general notifications cache
+        const cached = JSON.parse(safeStorage.getItem('vlive_user_notifs_v1') || '[]');
+        const next = [notifObj, ...(Array.isArray(cached) ? cached : [])].slice(0, 100);
+        safeStorage.setItem('vlive_user_notifs_v1', JSON.stringify(next));
+
+        // Also save to target user's specific key if available
+        if (targetUserId) {
+          const userKey = `vlive_user_notifs_${targetUserId}`;
+          const uCached = JSON.parse(safeStorage.getItem(userKey) || '[]');
+          safeStorage.setItem(userKey, JSON.stringify([notifObj, ...uCached].slice(0, 100)));
+        }
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('vlive_new_notification', { detail: notifObj }));
         }
       } catch (cacheErr) {}
 
       const targetsToNotify = new Set([String(targetUserId)]);
       if (targetUuid) targetsToNotify.add(String(targetUuid));
+      if (notifData.username) targetsToNotify.add(String(notifData.username));
 
       targetsToNotify.forEach(tid => {
         try {
@@ -3079,7 +3090,7 @@ export const apiNotifications = {
         } catch {}
       });
 
-      return { success: !error, data };
+      return { success: !error, data: notifObj };
     } catch (e) {
       console.warn('createNotification exception:', e);
       return { success: false, error: e.message };
@@ -3487,49 +3498,138 @@ export const apiAdmin = {
 
   async updateKycStatus(id, status, userId = null, notes = '', username = '') {
     try {
-      // 1. Update kyc_applications table if real ID
+      const isApproved = status === 'Approved' || status === 'approved';
+      const isRejected = status === 'Rejected' || status === 'rejected';
+      const isCorrection = status === 'Correction' || status === 'correction';
+
+      let targetId = userId;
+      let userProfile = null;
+      if (!targetId && username) {
+        try {
+          const { data: prof } = await supabase.from('profiles').select('*').eq('username', username).maybeSingle();
+          if (prof?.id) {
+            targetId = prof.id;
+            userProfile = prof;
+          }
+        } catch(e) {}
+      } else if (targetId) {
+        try {
+          const { data: prof } = await supabase.from('profiles').select('*').eq('id', targetId).maybeSingle();
+          if (prof) userProfile = prof;
+        } catch(e) {}
+      }
+
+      // 1. Update kyc_applications table in Supabase
       if (id && !String(id).startsWith('kyc_') && isNaN(Number(id))) {
         await supabase
           .from('kyc_applications')
           .update({ 
             status: status, 
+            admin_notes: notes || '',
+            rejection_reason: isRejected ? notes : null,
+            correction_message: isCorrection ? notes : null,
             updated_at: new Date().toISOString()
           })
           .eq('id', id);
       }
       
-      const isApproved = status === 'Approved' || status === 'approved';
-      const isRejected = status === 'Rejected' || status === 'rejected';
-
-      let targetId = userId;
-      if (!targetId && username) {
-        try {
-          const { data: prof } = await supabase.from('profiles').select('id').eq('username', username).maybeSingle();
-          if (prof?.id) targetId = prof.id;
-        } catch(e) {}
-      }
-
+      // 2. Update user profile in Supabase
       if (targetId && !String(targetId).startsWith('user_')) {
         if (isApproved) {
           await supabase
             .from('profiles')
-            .update({ is_verified: true, user_type: 'STREAMER', status: 'approved' })
+            .update({ 
+              is_verified: true, 
+              user_type: 'STREAMER', 
+              is_streamer: true,
+              is_host: true,
+              role: 'streamer',
+              status: 'approved' 
+            })
             .eq('id', targetId);
         } else if (isRejected) {
           await supabase
             .from('profiles')
             .update({ status: 'rejected' })
             .eq('id', targetId);
+        } else if (isCorrection) {
+          await supabase
+            .from('profiles')
+            .update({ status: 'correction' })
+            .eq('id', targetId);
         }
       }
 
-      // Also update local storage record
+      // 3. Build descriptive notification payload for user
+      let notifTitle = 'اعلان وضعیت احراز هویت استریمر';
+      let notifDesc = '';
+      let actionType = 'kyc_status';
+
+      if (isApproved) {
+        notifTitle = '🎉 تایید درخواست استریمر | Streamer Approved';
+        notifDesc = 'تبریک! درخواست احراز هویت و ارتقای حساب شما به استریمر با موفقیت توسط مدیریت تایید شد. اکنون می‌توانید لایو استریم را آغاز کنید.';
+        actionType = 'kyc_approved';
+      } else if (isRejected) {
+        notifTitle = '❌ عدم تایید درخواست استریمر | Application Rejected';
+        notifDesc = `درخواست استریمر شما توسط مدیریت تایید نشد.${notes ? `\nعلت: ${notes}` : ''}`;
+        actionType = 'kyc_rejected';
+      } else if (isCorrection) {
+        notifTitle = '⚠️ نیاز به اصلاح مدارک استریمر | Correction Required';
+        notifDesc = `درخواست استریمر شما نیاز به اصلاح دارد.${notes ? `\nپیام مدیریت: ${notes}` : ''}\nلطفاً اطلاعات اصلاح‌شده را در فرم استریمر مجدداً ارسال نمایید.`;
+        actionType = 'kyc_correction';
+      }
+
+      // 4. Send official notification via apiNotifications
+      const notifyTarget = targetId || username;
+      if (notifyTarget) {
+        await apiNotifications.createNotification({
+          targetUserId: targetId || username,
+          username: username || userProfile?.username,
+          type: 'system',
+          title: notifTitle,
+          content: notifDesc,
+          desc: notifDesc,
+          actionType: actionType,
+          senderName: 'مدیریت V.Live',
+          metadata: {
+            action_type: actionType,
+            kyc_id: id,
+            status: status,
+            notes: notes,
+            sender_name: 'مدیریت V.Live'
+          }
+        });
+      }
+
+      // 5. Update local storage record
       try {
         const localApps = JSON.parse(safeStorage.getItem('vlive_kyc_apps_local') || '[]');
-        const updated = localApps.map(a => (a.id === id || (username && a.username === username)) ? { ...a, status, admin_notes: notes } : a);
+        const updated = localApps.map(a => (a.id === id || (username && a.username === username) || (targetId && a.user_id === targetId)) ? { 
+          ...a, 
+          status, 
+          admin_notes: notes,
+          rejectionReason: isRejected ? notes : a.rejectionReason,
+          correctionMessage: isCorrection ? notes : a.correctionMessage
+        } : a);
         safeStorage.setItem('vlive_kyc_apps_local', JSON.stringify(updated));
+
+        // Also update other kyc keys
+        const kycAppsKey = JSON.parse(safeStorage.getItem('vlive_kyc_applications') || '[]');
+        if (Array.isArray(kycAppsKey) && kycAppsKey.length > 0) {
+          const updated2 = kycAppsKey.map(a => (a.id === id || (username && a.username === username) || (targetId && a.user_id === targetId)) ? {
+            ...a,
+            status,
+            admin_notes: notes,
+            rejectionReason: isRejected ? notes : a.rejectionReason,
+            correctionMessage: isCorrection ? notes : a.correctionMessage
+          } : a);
+          safeStorage.setItem('vlive_kyc_applications', JSON.stringify(updated2));
+        }
+
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('vlive_kyc_updated', { detail: { id, status, notes } }));
+          window.dispatchEvent(new CustomEvent('vlive_kyc_updated', { 
+            detail: { id, status, notes, username, userId: targetId, actionType, notifTitle, notifDesc } 
+          }));
         }
       } catch(e) {}
 
