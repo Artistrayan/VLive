@@ -3347,15 +3347,15 @@ export const apiAdmin = {
             username: app.username,
             name: parsed.name || app.username,
             status: app.status || 'Pending',
-            description: parsed.description || app.description,
+            description: parsed.description || (typeof app.description === 'string' && !app.description.startsWith('{') ? app.description : ''),
             streamCategory: parsed.streamCategory || '',
             streamTopic: parsed.streamTopic || '',
             requestedPose: parsed.requestedPose || '',
-            verificationType: parsed.verificationType || '',
+            verificationType: parsed.verificationType || 'MANUAL_GESTURE_SELFIE',
             aiConfidence: parsed.aiConfidence || '',
             idCardPhoto: parsed.idCardPhoto || parsed.avatar || app.doc_url || '',
             avatar: parsed.avatar || app.doc_url || '',
-            selfiePhoto: parsed.selfiePhoto || '',
+            selfiePhoto: parsed.selfiePhoto || app.doc_url || '',
             videoDemoUrl: parsed.videoDemoUrl || app.video_demo_url || '',
             docUrl: parsed.docUrl || app.doc_url || '',
             created_at: app.created_at
@@ -3363,27 +3363,105 @@ export const apiAdmin = {
         });
       }
 
-      // Merge with any local sync applications
-      let localApps = [];
+      // Collect local applications from all possible storage keys
+      const localApps = [];
+      const keysToScan = [
+        'vlive_kyc_apps_local',
+        'vlive_kyc_applications',
+        'vlive_kyc_apps',
+        'vlive_kyc_app',
+        'vlive_streamer_applications',
+        'vlive_verifications'
+      ];
+
+      keysToScan.forEach(k => {
+        try {
+          const raw = safeStorage.getItem(k);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              localApps.push(...parsed);
+            } else if (typeof parsed === 'object' && parsed !== null) {
+              localApps.push(parsed);
+            }
+          }
+        } catch(e) {}
+      });
+
+      // Also check cached users list for any user who requested streamer status or submitted KYC during onboarding
       try {
-        localApps = JSON.parse(safeStorage.getItem('vlive_kyc_apps_local') || '[]');
+        const cachedUsers = JSON.parse(safeStorage.getItem('vlive_app_users_v8') || '[]');
+        cachedUsers.forEach(u => {
+          if (u.kyc_status === 'pending' || u.wantToBeStreamer || u.isStreamerRequested) {
+            localApps.push({
+              id: 'user_kyc_' + (u.username || u.id),
+              user_id: u.id,
+              username: u.username,
+              name: u.name || u.username,
+              status: u.kyc_status === 'approved' ? 'Approved' : 'Pending',
+              description: u.bio || `درخواست استریمر کاربر ${u.username}`,
+              streamCategory: u.category || 'عمومی',
+              streamTopic: u.topic || 'لایو گپ و گفتگو',
+              selfiePhoto: u.selfiePhoto || u.avatar || '',
+              idCardPhoto: u.avatar || '',
+              avatar: u.avatar || '',
+              verificationType: 'MANUAL_GESTURE_SELFIE',
+              requestedPose: u.requestedPose || '✌️ ژست پپیروزی',
+              created_at: u.created_at || new Date().toISOString()
+            });
+          }
+        });
       } catch(e) {}
 
-      // Combine by unique username/id
-      const combined = [...dbApps];
-      localApps.forEach(locApp => {
-        if (!combined.some(c => c.username === locApp.username || c.id === locApp.id)) {
-          combined.push(locApp);
+      // Combine by username/id, merging details so rich local fields aren't overwritten by blank DB fields
+      const combinedMap = new Map();
+
+      // Add DB apps first
+      dbApps.forEach(app => {
+        if (app.username || app.id) {
+          const key = String(app.username || app.id).toLowerCase();
+          combinedMap.set(key, app);
         }
       });
 
-      return combined;
+      // Merge local apps
+      localApps.forEach(locApp => {
+        if (!locApp || (!locApp.username && !locApp.id)) return;
+        const key = String(locApp.username || locApp.id).toLowerCase();
+        if (combinedMap.has(key)) {
+          const existing = combinedMap.get(key);
+          combinedMap.set(key, {
+            ...existing,
+            ...locApp,
+            status: existing.status && existing.status !== 'Pending' ? existing.status : (locApp.status || 'Pending'),
+            selfiePhoto: locApp.selfiePhoto || existing.selfiePhoto || '',
+            idCardPhoto: locApp.idCardPhoto || locApp.avatar || existing.idCardPhoto || existing.avatar || '',
+            avatar: locApp.avatar || locApp.idCardPhoto || existing.avatar || existing.idCardPhoto || '',
+            requestedPose: locApp.requestedPose || existing.requestedPose || '',
+            streamCategory: locApp.streamCategory || existing.streamCategory || '',
+            streamTopic: locApp.streamTopic || existing.streamTopic || '',
+            description: locApp.description || existing.description || ''
+          });
+        } else {
+          combinedMap.set(key, locApp);
+        }
+      });
+
+      return Array.from(combinedMap.values());
     } catch (e) {
-      try {
-        return JSON.parse(safeStorage.getItem('vlive_kyc_apps_local') || '[]');
-      } catch(err) {
-        return [];
-      }
+      // Fallback: scan all local storage keys
+      const localApps = [];
+      const keysToScan = ['vlive_kyc_apps_local', 'vlive_kyc_applications', 'vlive_kyc_apps', 'vlive_verifications'];
+      keysToScan.forEach(k => {
+        try {
+          const raw = safeStorage.getItem(k);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) localApps.push(...parsed);
+          }
+        } catch(err) {}
+      });
+      return localApps;
     }
   },
 

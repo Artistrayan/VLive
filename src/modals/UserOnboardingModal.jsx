@@ -330,27 +330,28 @@ export default function UserOnboardingModal({
     try {
       await apiProfile.updateProfile(finalProfileData);
 
-      // If user is female, ALWAYS submit the Profile Photo & Pose Selfie to Admin KYC queue for manual human inspection
-      if (gender === 'female' && capturedSelfie) {
+      // Submit application to Admin KYC queue whenever user requests streamer status or submits gesture selfie
+      if (wantToBeStreamer || capturedSelfie || gender === 'female') {
         const kycReq = {
           id: 'kyc_' + Date.now(),
           username: username.trim(),
           name: fullName.trim() || username.trim(),
           avatar: avatarPreview || '',
           idCardPhoto: avatarPreview || '', // Profile Photo
-          selfiePhoto: capturedSelfie || '', // Live Gesture Selfie
+          selfiePhoto: capturedSelfie || avatarPreview || '', // Live Gesture Selfie
           docUrl: avatarPreview || '',
           videoDemoUrl: '',
-          gender: 'female',
-          verificationType: 'MANUAL_GESTURE_SELFIE',
-          requestedPose: selectedPose.titleFa,
+          gender: gender || 'female',
+          verificationType: capturedSelfie ? 'MANUAL_GESTURE_SELFIE' : 'STREAMER_APPLICATION',
+          requestedPose: selectedPose?.titleFa || '✌️ ژست پپیروزی',
           aiConfidence: 'تایید دستی مدیر',
-          description: `احراز هویت بیومتریک و ژست عکاسی: ${selectedPose.titleFa} | کاربر خانم`,
+          description: wantToBeStreamer 
+            ? `درخواست استریمی کاربر هنگام ثبت‌نام | ژست: ${selectedPose?.titleFa || '-'}`
+            : `احراز هویت بیومتریک و ژست عکاسی: ${selectedPose?.titleFa || '-'} | کاربر خانم`,
           wantToBeStreamer: wantToBeStreamer,
           status: 'Pending',
           requestedAt: new Date().toISOString()
         };
-
 
         // Send to real backend
         import('../services/api.js').then(({ apiProfile }) => {

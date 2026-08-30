@@ -2230,20 +2230,10 @@ export default function App() {
     }
     if (apiAdmin && typeof apiAdmin.getKycApplications === 'function') {
       apiAdmin.getKycApplications().then(apps => {
-        if (apps && apps.length > 0) {
+        if (apps && Array.isArray(apps)) {
           setKycApplications(apps);
-        } else if (apiProfile && typeof apiProfile.getMyKycApplications === 'function') {
-          apiProfile.getMyKycApplications().then(myApps => {
-            if (myApps) setKycApplications(myApps);
-          });
         }
-      }).catch(() => {
-        if (apiProfile && typeof apiProfile.getMyKycApplications === 'function') {
-          apiProfile.getMyKycApplications().then(myApps => {
-            if (myApps) setKycApplications(myApps);
-          });
-        }
-      });
+      }).catch(() => {});
     } else if (apiProfile && typeof apiProfile.getMyKycApplications === 'function') {
       apiProfile.getMyKycApplications().then(apps => {
         if (apps) setKycApplications(apps);
