@@ -146,6 +146,46 @@ export default function AdminDashboardModal(props) {
 
   const { setIsEditMode, setIsInspectorOpen } = useVisualUiEditor();
 
+  const mergedKycApplications = React.useMemo(() => {
+    const combined = [...(props.kycApplications || [])];
+    const sourceUsers = (props.adminUsersList && props.adminUsersList.length > 0) ? props.adminUsersList : (props.usersList || []);
+    sourceUsers.forEach(u => {
+      if (u.kyc_status === 'pending' || u.wantToBeStreamer || u.isStreamerRequested) {
+        const existingIdx = combined.findIndex(c => c.username === u.username || c.user_id === u.id);
+        const dynamicApp = {
+          id: 'user_kyc_' + (u.username || u.id),
+          user_id: u.id,
+          username: u.username,
+          name: u.name || u.username,
+          status: 'Pending',
+          description: u.bio || `درخواست استریمر کاربر ${u.username} (ثبت نام)`,
+          streamCategory: u.category || 'عمومی',
+          streamTopic: u.topic || 'گپ و گفتگو',
+          selfiePhoto: u.selfiePhoto || u.avatar || '',
+          idCardPhoto: u.avatar || '',
+          avatar: u.avatar || '',
+          verificationType: 'ONBOARDING_APPLICATION',
+          requestedPose: u.requestedPose || '✌️ ژست پپیروزی',
+          created_at: u.created_at || new Date().toISOString()
+        };
+        if (existingIdx === -1) {
+          combined.push(dynamicApp);
+        } else if (combined[existingIdx].status === 'Pending') {
+          combined[existingIdx] = { ...dynamicApp, ...combined[existingIdx], status: 'Pending' };
+        }
+      }
+    });
+    const unique = [];
+    const map = new Set();
+    for (const app of combined) {
+      if (!map.has(app.username)) {
+        map.add(app.username);
+        unique.push(app);
+      }
+    }
+    return unique.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  }, [props.kycApplications, props.usersList]);
+
   // Auto-fetch KYC applications and fresh data on panel open
   React.useEffect(() => {
     if (isAdminPanelOpen) {
@@ -404,7 +444,7 @@ export default function AdminDashboardModal(props) {
                   { 
                     id: 'verification', 
                     label: window.loc('🔑 تأیید هویت و استریمرها', '🔑 Verification & Streamers'),
-                    badge: (props.kycApplications || []).filter(a => a.status === 'Pending').length
+                    badge: mergedKycApplications.filter(a => a.status === 'Pending').length
                   },
                   { id: 'roles', label: window.loc('👥 ادمین‌ها', '👥 Admin Roles') },
                   { id: 'security', label: window.loc('🔒 امنیت', '🔒 Security') },
@@ -443,7 +483,7 @@ export default function AdminDashboardModal(props) {
               {adminActiveTab === 'dashboard' && (
                 <div className="space-y-4">
                   {/* PENDING STREAMER / KYC APPLICATIONS BANNER */}
-                  {(props.kycApplications || []).filter(a => a.status === 'Pending').length > 0 && (
+                  {mergedKycApplications.filter(a => a.status === 'Pending').length > 0 && (
                     <div className="p-3.5 rounded-2xl bg-gradient-to-r from-pink-950/90 via-purple-950/90 to-slate-950 border border-pink-500/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-lg animate-pulse">
                       <div className="flex items-center gap-2 text-pink-200">
                         <Crown className="w-5 h-5 text-pink-400 shrink-0" />
@@ -452,7 +492,7 @@ export default function AdminDashboardModal(props) {
                             {window.loc('👑 درخواست‌های جدید استریمر و احراز هویت در صف بررسی!', '👑 New Streamer & KYC Applications Pending Review!')}
                           </p>
                           <span className="text-[10px] text-pink-300">
-                            {(props.kycApplications || []).filter(a => a.status === 'Pending').length} {window.loc('درخواست احراز هویت با عکس و سلفی دست در انتظار تایید مدیریت است.', 'verification requests with gesture selfie are waiting for admin review.')}
+                            {mergedKycApplications.filter(a => a.status === 'Pending').length} {window.loc('درخواست احراز هویت با عکس و سلفی دست در انتظار تایید مدیریت است.', 'verification requests with gesture selfie are waiting for admin review.')}
                           </span>
                         </div>
                       </div>
@@ -574,14 +614,14 @@ export default function AdminDashboardModal(props) {
                         <span className="flex items-center gap-1">
                           <Crown className="w-3.5 h-3.5 text-pink-400" /> {window.loc('درخواست‌های استریمر و احراز هویت', 'Streamer & KYC Requests')}
                         </span>
-                        {(props.kycApplications || []).filter(a => a.status === 'Pending').length > 0 && (
+                        {mergedKycApplications.filter(a => a.status === 'Pending').length > 0 && (
                           <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-mono animate-pulse">
-                            {(props.kycApplications || []).filter(a => a.status === 'Pending').length} معلق
+                            {mergedKycApplications.filter(a => a.status === 'Pending').length} معلق
                           </span>
                         )}
                       </span>
                       <p className="text-base font-black text-pink-400">
-                        {(props.kycApplications || []).filter(a => a.status === 'Pending').length} {window.loc('درخواست در انتظار بررسی', 'Pending requests')}
+                        {mergedKycApplications.filter(a => a.status === 'Pending').length} {window.loc('درخواست در انتظار بررسی', 'Pending requests')}
                       </p>
                       <span className="text-[9px] text-pink-300 truncate block">{window.loc('بررسی مدارک و سلفی با ژست دست 👈', 'Review docs & gesture selfie 👈')}</span>
                     </button>
@@ -1386,7 +1426,7 @@ export default function AdminDashboardModal(props) {
                   setAdminWithdrawalsList={setAdminWithdrawalsList}
                   addAdminAuditLog={addAdminAuditLog}
                   showToast={showToast}
-                  kycApplications={props.kycApplications}
+                  kycApplications={mergedKycApplications}
                   setKycApplications={props.setKycApplications}
                   loc={loc}
                 />

@@ -494,6 +494,11 @@ export const apiProfile = {
       doc_url: data?.docUrl || data?.selfiePhoto || ''
     }]);
     
+    // Ensure profile reflects the pending status so admins can fetch it dynamically
+    if (uid && !uid.includes('user_')) {
+      await this.updateProfile({ kyc_status: 'pending', wantToBeStreamer: true });
+    }
+    
     if (error) {
       console.warn('KYC insert error:', error);
     }
@@ -3388,6 +3393,33 @@ export const apiAdmin = {
         } catch(e) {}
       });
 
+      // Also fetch from profiles table for any user who requested streamer status or submitted KYC during onboarding
+      try {
+        const { data: profileApps, error: profileErr } = await supabase.from('profiles').select('*');
+        if (!profileErr && Array.isArray(profileApps)) {
+          profileApps.forEach(u => {
+            if (u.kyc_status === 'pending' || u.wantToBeStreamer || u.isStreamerRequested) {
+              localApps.push({
+                id: 'user_kyc_' + (u.username || u.id),
+                user_id: u.id,
+                username: u.username,
+                name: u.name || u.username,
+                status: u.kyc_status === 'approved' ? 'Approved' : 'Pending',
+                description: u.bio || `درخواست استریمر کاربر ${u.username}`,
+                streamCategory: u.category || 'عمومی',
+                streamTopic: u.topic || 'لایو گپ و گفتگو',
+                selfiePhoto: u.selfiePhoto || u.avatar || '',
+                idCardPhoto: u.avatar || '',
+                avatar: u.avatar || '',
+                verificationType: 'MANUAL_GESTURE_SELFIE',
+                requestedPose: u.requestedPose || '✌️ ژست پپیروزی',
+                created_at: u.created_at || new Date().toISOString()
+              });
+            }
+          });
+        }
+      } catch(e) {}
+
       // Also check cached users list for any user who requested streamer status or submitted KYC during onboarding
       try {
         const cachedUsers = JSON.parse(safeStorage.getItem('vlive_app_users_v8') || '[]');
@@ -3481,13 +3513,19 @@ export const apiAdmin = {
         if (userId) {
           await supabase
             .from('profiles')
-            .update({ is_verified: true, user_type: 'STREAMER', is_streamer: true })
+            .update({ is_verified: true, user_type: 'STREAMER', is_streamer: true, kyc_status: 'approved' })
             .eq('id', userId);
         } else if (username) {
           await supabase
             .from('profiles')
-            .update({ is_verified: true, user_type: 'STREAMER', is_streamer: true })
+            .update({ is_verified: true, user_type: 'STREAMER', is_streamer: true, kyc_status: 'approved' })
             .eq('username', username);
+        }
+      } else if (status === 'Rejected') {
+        if (userId) {
+          await supabase.from('profiles').update({ kyc_status: 'rejected' }).eq('id', userId);
+        } else if (username) {
+          await supabase.from('profiles').update({ kyc_status: 'rejected' }).eq('username', username);
         }
       }
 

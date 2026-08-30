@@ -20,7 +20,49 @@ export default function StreamerManagementCenter({
   initialSubTab = null,
   loc = ((a, b) => b || a)
 }) {
-  const pendingKycCount = (kycApplications || []).filter(a => (a.status || '').toLowerCase() === 'pending').length;
+  // Combine passed kycApplications with dynamic requests derived from usersList
+  const mergedKycApplications = React.useMemo(() => {
+    const combined = [...(kycApplications || [])];
+    (usersList || []).forEach(u => {
+      if (u.kyc_status === 'pending' || u.wantToBeStreamer || u.isStreamerRequested) {
+        const existingIdx = combined.findIndex(c => c.username === u.username || c.user_id === u.id);
+        const dynamicApp = {
+          id: 'user_kyc_' + (u.username || u.id),
+          user_id: u.id,
+          username: u.username,
+          name: u.name || u.username,
+          status: 'Pending',
+          description: u.bio || `درخواست استریمر کاربر ${u.username} (ثبت نام)`,
+          streamCategory: u.category || 'عمومی',
+          streamTopic: u.topic || 'گپ و گفتگو',
+          selfiePhoto: u.selfiePhoto || u.avatar || '',
+          idCardPhoto: u.avatar || '',
+          avatar: u.avatar || '',
+          verificationType: 'ONBOARDING_APPLICATION',
+          requestedPose: u.requestedPose || '✌️ ژست پپیروزی',
+          created_at: u.created_at || new Date().toISOString()
+        };
+        if (existingIdx === -1) {
+          combined.push(dynamicApp);
+        } else if (combined[existingIdx].status === 'Pending') {
+          // Enhance existing pending with any missing details
+          combined[existingIdx] = { ...dynamicApp, ...combined[existingIdx], status: 'Pending' };
+        }
+      }
+    });
+    // Remove duplicates by username
+    const unique = [];
+    const map = new Set();
+    for (const app of combined) {
+      if (!map.has(app.username)) {
+        map.add(app.username);
+        unique.push(app);
+      }
+    }
+    return unique.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  }, [kycApplications, usersList]);
+
+  const pendingKycCount = mergedKycApplications.filter(a => (a.status || '').toLowerCase() === 'pending').length;
   const defaultTab = initialSubTab || (pendingKycCount > 0 ? 'kyc' : 'kyc');
   const [streamerSubTab, setStreamerSubTab] = useState(defaultTab); // 'streamers' | 'scores' | 'kyc' | 'history' | 'ai_risk' | 'settings' | 'logs'
   const [kycStatusFilter, setKycStatusFilter] = useState('All'); // 'All' | 'Pending' | 'Approved' | 'Rejected' | 'Correction'
@@ -432,11 +474,11 @@ export default function StreamerManagementCenter({
             {/* Filter Buttons */}
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 md:pb-0 text-xs">
               {[
-                { id: 'All', label: window.loc('همه', 'All'), count: (kycApplications || []).length },
-                { id: 'Pending', label: window.loc('در انتظار بررسی', 'Pending'), count: (kycApplications || []).filter(a => (a.status || '').toLowerCase() === 'pending').length, color: 'text-amber-400' },
-                { id: 'Approved', label: window.loc('تأیید شده', 'Approved'), count: (kycApplications || []).filter(a => (a.status || '').toLowerCase() === 'approved').length, color: 'text-emerald-400' },
-                { id: 'Rejected', label: window.loc('رد شده', 'Rejected'), count: (kycApplications || []).filter(a => (a.status || '').toLowerCase() === 'rejected').length, color: 'text-rose-400' },
-                { id: 'Correction', label: window.loc('نیاز به اصلاح', 'Correction'), count: (kycApplications || []).filter(a => (a.status || '').toLowerCase() === 'correction').length, color: 'text-orange-400' }
+                { id: 'All', label: window.loc('همه', 'All'), count: mergedKycApplications.length },
+                { id: 'Pending', label: window.loc('در انتظار بررسی', 'Pending'), count: mergedKycApplications.filter(a => (a.status || '').toLowerCase() === 'pending').length, color: 'text-amber-400' },
+                { id: 'Approved', label: window.loc('تأیید شده', 'Approved'), count: mergedKycApplications.filter(a => (a.status || '').toLowerCase() === 'approved').length, color: 'text-emerald-400' },
+                { id: 'Rejected', label: window.loc('رد شده', 'Rejected'), count: mergedKycApplications.filter(a => (a.status || '').toLowerCase() === 'rejected').length, color: 'text-rose-400' },
+                { id: 'Correction', label: window.loc('نیاز به اصلاح', 'Correction'), count: mergedKycApplications.filter(a => (a.status || '').toLowerCase() === 'correction').length, color: 'text-orange-400' }
               ].map(f => (
                 <button
                   key={f.id}
@@ -473,7 +515,7 @@ export default function StreamerManagementCenter({
 
           {/* APPLICATION LIST */}
           {(() => {
-            const filteredApps = (kycApplications || []).filter(app => {
+            const filteredApps = mergedKycApplications.filter(app => {
               const matchesStatus = kycStatusFilter === 'All' 
                 ? true 
                 : (app.status || '').toLowerCase() === kycStatusFilter.toLowerCase();
