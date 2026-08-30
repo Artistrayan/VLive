@@ -14,11 +14,17 @@ export default function StreamerDashboardModal({
   onClose,
   currentUser,
   currentUsername,
+  userRole,
+  isUserRayan,
+  isUserSuperAdmin,
+  isVerified,
+  isStreamerUser,
   userCoins,
   setUserCoins,
   showToast,
   onSwitchMainTab,
   setIsStartLiveModalOpen,
+  onOpenStreamerApplication,
   addAdminAuditLog
 }) {
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'live' | 'income' | 'analytics' | 'settings' | 'rules' | 'support'
@@ -81,10 +87,26 @@ export default function StreamerDashboardModal({
   if (!isOpen) return null;
 
   // Strict Permission Checker
-  const isUserAllowedStreamer = canAccessCreatorStudio(
-    currentUser?.user_type === 'STREAMER' ? 'streamer' : (currentUser?.isStreamer ? 'streamer' : 'user'),
-    'APPROVED',
-    currentUsername
+  const isUserAllowedStreamer = Boolean(
+    isStreamerUser ||
+    isUserRayan ||
+    isUserSuperAdmin ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    userRole === 'streamer' ||
+    currentUser?.role === 'streamer' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'super_admin' ||
+    currentUser?.user_type === 'STREAMER' ||
+    currentUser?.isStreamer ||
+    currentUser?.is_streamer ||
+    currentUser?.isHost ||
+    canAccessCreatorStudio(
+      (userRole === 'admin' || userRole === 'super_admin' || isUserRayan || isUserSuperAdmin || currentUser?.user_type === 'STREAMER' || currentUser?.isStreamer || currentUser?.is_streamer) ? 'streamer' : (userRole || 'user'),
+      'APPROVED',
+      currentUsername,
+      currentUser?.telegram_id
+    )
   );
 
   // Handle Withdrawal Submission
@@ -184,20 +206,34 @@ export default function StreamerDashboardModal({
 
         {/* ACCESS DENIED GATE FOR NON-STREAMERS */}
         {!isUserAllowedStreamer ? (
-          <div className="p-10 text-center space-y-4 my-auto dir-rtl">
+          <div className="p-8 sm:p-10 text-center space-y-4 my-auto dir-rtl max-w-md mx-auto">
             <div className="w-16 h-16 rounded-3xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center mx-auto shadow-inner">
               <Lock className="w-8 h-8 text-rose-400" />
             </div>
-            <h3 className="text-lg font-black text-white">{window.loc('عدم دسترسی به پنل استریمر', 'Lack of access to the streamer panel')}</h3>
-            <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-              {window.loc('این بخش فقط برای استریمرهای تایید شده V.LIVE فعال می‌باشد. جهت درخواست فعال‌سازی پنل استریمر به ادمین پیام ارسال کنید یا احراز هویت را انجام دهید.', 'This section is only active for verified V.LIVE streamers. To request the activation of the streamer panel, send a message to the admin or perform authentication.')}
+            <h3 className="text-lg font-black text-white">{window.loc('عدم دسترسی به پنل استریمر', 'Streamer Panel Access Restricted')}</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              {window.loc('این بخش فقط برای استریمرهای تایید شده V.LIVE فعال می‌باشد. جهت فعال‌سازی پنل استریمر، لطفاً احراز هویت استریمری و سلفی را تکمیل نمایید.', 'This section is only active for verified V.LIVE streamers. Please complete your streamer KYC verification to unlock.')}
             </p>
-            <button
-              onClick={onClose}
-              className="px-6 py-2.5 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs"
-            >
-              {window.loc('متوجه شدم', 'I understand')}
-            </button>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={onClose}
+                className="flex-1 px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition"
+              >
+                {window.loc('بستن', 'Close')}
+              </button>
+              {onOpenStreamerApplication && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenStreamerApplication();
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 hover:opacity-95 text-white font-bold text-xs shadow-lg shadow-pink-500/30 transition flex items-center justify-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{window.loc('احراز هویت استریمر 🎙️', 'Streamer KYC 🎙️')}</span>
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden">

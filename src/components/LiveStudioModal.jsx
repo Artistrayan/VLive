@@ -23,6 +23,8 @@ export default function LiveStudioModal({
   isUserRayan,
   isUserSuperAdmin,
   isVerified,
+  isStreamerUser,
+  onOpenStreamerApplication,
   userCoins,
   setUserCoins,
   streamsList,
@@ -34,6 +36,24 @@ export default function LiveStudioModal({
   loc = ((a, b) => a || b),
   isRtl = true
 }) {
+  // Check if user is an authorized streamer or admin
+  const isAuthorizedStreamer = Boolean(
+    isStreamerUser ||
+    isUserRayan ||
+    isUserSuperAdmin ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    userRole === 'streamer' ||
+    currentUser?.role === 'streamer' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'super_admin' ||
+    currentUser?.user_type === 'STREAMER' ||
+    currentUser?.isStreamer ||
+    currentUser?.is_streamer ||
+    currentUser?.isHost ||
+    (isVerified && currentUser?.role !== 'user')
+  );
+
   // Phase state: 'PRE_LIVE' | 'COUNTDOWN' | 'LIVE' | 'SUMMARY'
   const [studioPhase, setStudioPhase] = useState('PRE_LIVE');
 
@@ -238,7 +258,7 @@ export default function LiveStudioModal({
 
   // Camera Lifecycle & Device Switch Effect
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && isAuthorizedStreamer) {
       setStudioPhase('PRE_LIVE');
       setCountdownNum(3);
       setIsStartingLive(false);
@@ -267,7 +287,7 @@ export default function LiveStudioModal({
         mediaStreamRef.current = null;
       }
     };
-  }, [isOpen]);
+  }, [isOpen, isAuthorizedStreamer]);
 
   const handleCloseStudio = () => {
     setStudioPhase('PRE_LIVE');
@@ -449,6 +469,59 @@ export default function LiveStudioModal({
   }, [studioPhase, isPkActive, pkTimeLeft]);
 
   if (!isOpen) return null;
+
+  // Strict Authorization Lock: Only verified streamers & admins may use Live Studio
+  if (!isAuthorizedStreamer) {
+    return (
+      <div className="fixed inset-0 z-[70] bg-slate-950/95 backdrop-blur-2xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="w-full max-w-md bg-slate-900 border border-pink-500/40 rounded-3xl p-6 sm:p-7 shadow-[0_0_60px_rgba(236,72,153,0.3)] space-y-5 text-center my-auto">
+          <div className="w-16 h-16 rounded-3xl bg-pink-500/20 border border-pink-500/40 text-pink-400 flex items-center justify-center mx-auto shadow-inner">
+            <Lock className="w-8 h-8 text-pink-400" />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-lg sm:text-xl font-black text-white">{loc('دسترسی به استودیو لایو مسدود است', 'Live Studio Access Restricted')}</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              {loc('بر اساس قوانین پلتفرم V.LIVE، اجرای زنده و میزبانی لایواستریم منحصراً برای کاربرانی که احراز هویت استریمری آن‌ها توسط مدیریت تایید گردیده مجاز است.', 'Live broadcast hosting is strictly restricted to verified streamers whose KYC applications have been approved by administration.')}
+            </p>
+          </div>
+
+          <div className="bg-slate-950/90 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs text-right">
+            <div className="flex items-center gap-2 text-amber-400 font-bold">
+              <ShieldAlert className="w-4 h-4 shrink-0" />
+              <span>{loc('شرایط فعال‌سازی اجرای زنده:', 'Activation Requirements:')}</span>
+            </div>
+            <ul className="text-[11px] text-slate-400 list-disc list-inside space-y-1">
+              <li>{loc('ثبت نام و تکمیل مشخصات پروفایل', 'Complete your profile information')}</li>
+              <li>{loc('ارسال سلفی ژست دست و مدارک در بخش احراز هویت استریمر', 'Submit gesture selfie & documents in streamer KYC')}</li>
+              <li>{loc('تایید رسمی حساب توسط مدیریت ارشد پلتفرم', 'Official verification & approval by senior admin')}</li>
+            </ul>
+          </div>
+
+          <div className="flex gap-2.5 pt-2">
+            <button
+              onClick={handleCloseStudio}
+              className="flex-1 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition"
+            >
+              {loc('بستن پنجره', 'Close')}
+            </button>
+            {onOpenStreamerApplication && (
+              <button
+                onClick={() => {
+                  handleCloseStudio();
+                  onOpenStreamerApplication();
+                }}
+                className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 hover:opacity-95 text-white font-bold text-xs shadow-lg shadow-pink-500/30 transition flex items-center justify-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{loc('درخواست نشان استریمر 🎙️', 'Apply as Streamer 🎙️')}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Format Duration HH:MM:SS
   const formatTime = (totalSeconds) => {

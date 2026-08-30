@@ -2218,7 +2218,12 @@ export default function App() {
         if (p) setPosts(p);
       });
     }
-    if (apiAdmin && typeof apiAdmin.getSupportTickets === 'function' && (userRole === 'admin' || userRole === 'super_admin')) {
+    if (apiAdmin && typeof apiAdmin.getReports === 'function') {
+      apiAdmin.getReports().then(reps => {
+        if (reps && reps.length > 0) setAdminReportsList(reps);
+      }).catch(() => {});
+    }
+    if (apiAdmin && typeof apiAdmin.getSupportTickets === 'function') {
       apiAdmin.getSupportTickets().then(tickets => {
         if (tickets) setAdminTicketsList(tickets);
       });
@@ -2677,13 +2682,35 @@ export default function App() {
       </div>;
   }
   const isStreamerUser = Boolean(
-    isVerified ||
+    isUserRayan ||
+    isUserSuperAdmin ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||
+    userRole === 'streamer' ||
+    currentUser?.role === 'streamer' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'super_admin' ||
+    currentUser?.user_type === 'STREAMER' ||
     currentUser?.isStreamer ||
     currentUser?.is_streamer ||
-    currentUser?.isHost
+    currentUser?.isHost ||
+    (isVerified && currentUser?.role !== 'user') ||
+    (kycApplications && Array.isArray(kycApplications) && kycApplications.some(a => (a.username === (currentUsername || userName) || a.user_id === currentUser?.id) && a.status === 'Approved'))
   );
+
+  const handleOpenLiveBroadcast = () => {
+    if (isStreamerUser) {
+      setIsLiveStudioOpen(true);
+    } else {
+      const userApp = (kycApplications || []).find(a => (a.username === (currentUsername || userName) || a.user_id === currentUser?.id));
+      if (userApp && userApp.status === 'Pending') {
+        showToast(loc('⏳ درخواست احراز هویت استریمری شما در انتظار بررسی توسط مدیریت است', '⏳ Your streamer KYC application is pending admin review'));
+      } else {
+        showToast(loc('🔒 دسترسی به اجرای زنده منحصراً مختص استریمرهای تایید شده است. لطفاً فرم احراز هویت را تکمیل نمایید.', '🔒 Live broadcasting is strictly for verified streamers. Please complete your identity verification first.'));
+      }
+      setIsBecomeStreamerModalOpen(true);
+    }
+  };
 
   return <VisualUiEditorProvider isSuperAdmin={isUserSuperAdmin} showToast={showToast}>
       <DynamicThemeStyleInjector />
@@ -2813,11 +2840,15 @@ export default function App() {
               </button>
             </div>
 
-            {/* Camera Go-Live Icon Button (Opens Live Studio with Camera Preview) */}
-            {isStreamerUser && (
+            {/* Camera Go-Live Icon Button (Opens Live Studio for Streamers / Prompts KYC for Regular Users) */}
+            {isStreamerUser ? (
               <button onClick={() => setIsLiveStudioOpen(true)} className="ml-1 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 border border-pink-400/80 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-300 relative shrink-0 shadow-[0_0_15px_rgba(236,72,153,0.7)] group" title={loc('اجرا و شروع لایواستریم 🎥', 'Start Live Studio Broadcast 🎥')}>
                 <Video className="w-4 h-4 text-white animate-pulse" />
                 <span className="absolute -top-1 -right-1 bg-lime-400 text-slate-950 text-[8px] font-black w-3.5 h-3.5 flex items-center justify-center rounded-full border border-slate-950 shadow-md">+</span>
+              </button>
+            ) : (
+              <button onClick={handleOpenLiveBroadcast} className="ml-1 w-8 h-8 rounded-full bg-slate-900 border border-pink-500/40 flex items-center justify-center text-pink-400 hover:scale-110 active:scale-95 transition-all duration-300 relative shrink-0 shadow-md group" title={loc('درخواست نشان استریمری 🎙️', 'Apply as Streamer 🎙️')}>
+                <Sparkles className="w-4 h-4 text-pink-400" />
               </button>
             )}
           </div>
@@ -2993,7 +3024,7 @@ export default function App() {
 
             {/* SUB-TAB 2: LIVE STREAMS (DEDICATED WATCHING EXPERIENCE) */}
             {homeSubTab === 'live' && <div className="animate-fadeIn">
-                <LiveStreamSystem currentUser={currentUser} userRole={userRole} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isVerified={isVerified} currentUsername={currentUsername} userCoins={userCoins} setUserCoins={setUserCoins} vipPlan={vipPlan} setVipPlan={setVipPlan} streamsList={streamsList} setStreamsList={setStreamsList} viewingStream={viewingStream} setViewingStream={setViewingStream} showToast={showToast} setActiveTab={setActiveTab} handleInitiateCall={handleInitiateCall} addAdminAuditLog={addAdminAuditLog} setAdminReportsList={setAdminReportsList} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} />
+                <LiveStreamSystem currentUser={currentUser} userRole={userRole} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isVerified={isVerified} isStreamerUser={isStreamerUser} kycApplications={kycApplications} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} currentUsername={currentUsername} userCoins={userCoins} setUserCoins={setUserCoins} vipPlan={vipPlan} setVipPlan={setVipPlan} streamsList={streamsList} setStreamsList={setStreamsList} viewingStream={viewingStream} setViewingStream={setViewingStream} showToast={showToast} setActiveTab={setActiveTab} handleInitiateCall={handleInitiateCall} addAdminAuditLog={addAdminAuditLog} setAdminReportsList={setAdminReportsList} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} />
               </div>}
 
           </div>}
@@ -3256,7 +3287,7 @@ export default function App() {
         {/* TAB 3: WALLET & EARNINGS TAB */}
         <WalletTab currentUser={currentUser} userRole={userRole} currentUsername={currentUsername} isUserRayan={isUserRayan} handleBuyService={handleBuyService} activeTab={activeTab} txHistoryList={txHistoryList} userCoins={userCoins} setUserCoins={setUserCoins} userDiamonds={userDiamonds} setUserDiamonds={setUserDiamonds} userCashBalance={userCashBalance} setUserCashBalance={setUserCashBalance} walletSubTab={walletSubTab} setWalletSubTab={setWalletSubTab} referralCode={referralCode} setIsVipModalOpen={setIsVipModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} showToast={showToast} isVerified={isVerified} isUserSuperAdmin={isUserSuperAdmin} loc={loc} isRtl={isRtl} />
         {/* TAB 4: PROFILE TAB */}
-        <ProfileTab currentUser={currentUser} userRole={userRole} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsKycModalOpen={setIsKycModalOpen} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsSettingsModalOpen={setIsSettingsModalOpen} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={Boolean(isVerified)} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} />
+        <ProfileTab currentUser={currentUser} userRole={userRole} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsKycModalOpen={setIsKycModalOpen} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={Boolean(isVerified)} isStreamerUser={isStreamerUser} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} />
         </main>
       <nav className="fixed bottom-0 w-full max-w-[800px] z-40 bg-slate-900/95 backdrop-blur-2xl border-t border-slate-800/80 p-2 sm:px-6 flex justify-between items-center shadow-[0_-5px_30px_rgba(0,0,0,0.5)]">
         
@@ -3992,7 +4023,13 @@ export default function App() {
       <HostLiveModal isOpen={isHostLiveOpen || isLiveModalOpen} onClose={() => {
           setIsHostLiveOpen(false);
           setIsLiveModalOpen(false);
-        }} loc={loc} isRtl={isRtl} currentUsername={currentUsername} userName={userName} userAvatar={userAvatar} hostLiveType={hostLiveType} setHostLiveType={setHostLiveType} hostLiveTitle={hostLiveTitle} setHostLiveTitle={setHostLiveTitle} hostLiveCategory={hostLiveCategory} setHostLiveCategory={setHostLiveCategory} hostCoinRate={hostCoinRate} setHostCoinRate={setHostCoinRate} hostAdultConsent={hostAdultConsent} setHostAdultConsent={setHostAdultConsent} isCamEnabled={isCamEnabled} setIsCamEnabled={setIsCamEnabled} isMicEnabled={isMicEnabled} setIsMicEnabled={setIsMicEnabled} liveGuideStep={liveGuideStep} setLiveGuideStep={setLiveGuideStep} onStartLive={() => {
+        }} loc={loc} isRtl={isRtl} currentUsername={currentUsername} userName={userName} userAvatar={userAvatar} currentUser={currentUser} userRole={userRole} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isStreamerUser={isStreamerUser} onOpenStreamerApplication={() => setIsBecomeStreamerModalOpen(true)} hostLiveType={hostLiveType} setHostLiveType={setHostLiveType} hostLiveTitle={hostLiveTitle} setHostLiveTitle={setHostLiveTitle} hostLiveCategory={hostLiveCategory} setHostLiveCategory={setHostLiveCategory} hostCoinRate={hostCoinRate} setHostCoinRate={setHostCoinRate} hostAdultConsent={hostAdultConsent} setHostAdultConsent={setHostAdultConsent} isCamEnabled={isCamEnabled} setIsCamEnabled={setIsCamEnabled} isMicEnabled={isMicEnabled} setIsMicEnabled={setIsMicEnabled} liveGuideStep={liveGuideStep} setLiveGuideStep={setLiveGuideStep} onStartLive={() => {
+          if (!isStreamerUser) {
+            handleOpenLiveBroadcast();
+            setIsHostLiveOpen(false);
+            setIsLiveModalOpen(false);
+            return;
+          }
           if (hostLiveType === 'adult' && !hostAdultConsent) {
             showToast(loc('⚠️ لطفاً قوانین و تاییدیه محتوای 18+ را علامت بزنید', '⚠️ Please confirm 18+ content rules'));
             return;
@@ -4032,10 +4069,10 @@ export default function App() {
         </div>}
 
       {/* MODAL: STREAMER CENTER DASHBOARD */}
-      <StreamerDashboardModal isOpen={isStreamerCenterOpen} onClose={() => setIsStreamerCenterOpen(false)} currentUser={currentUser} userRole={userRole} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isVerified={isVerified} currentUsername={currentUsername} userCoins={userCoins} setUserCoins={setUserCoins} showToast={showToast} onSwitchMainTab={setActiveTab} setIsStartLiveModalOpen={() => setIsHostLiveOpen(true)} addAdminAuditLog={addAdminAuditLog} />
+      <StreamerDashboardModal isOpen={isStreamerCenterOpen} onClose={() => setIsStreamerCenterOpen(false)} currentUser={currentUser} userRole={userRole} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isVerified={isVerified} isStreamerUser={isStreamerUser} onOpenStreamerApplication={() => setIsBecomeStreamerModalOpen(true)} currentUsername={currentUsername} userCoins={userCoins} setUserCoins={setUserCoins} showToast={showToast} onSwitchMainTab={setActiveTab} setIsStartLiveModalOpen={() => { if (isStreamerUser) { setIsHostLiveOpen(true); } else { handleOpenLiveBroadcast(); } }} addAdminAuditLog={addAdminAuditLog} />
 
       {/* MODAL: LIVE STUDIO (INTERNAL STREAMER PANEL) */}
-      <LiveStudioModal isOpen={isLiveStudioOpen} onClose={() => { setIsLiveStudioOpen(false); setViewingStream(null); }} currentUser={currentUser} userRole={userRole} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isVerified={isVerified} currentUsername={currentUsername} userCoins={userCoins} setUserCoins={setUserCoins} streamsList={streamsList} setStreamsList={setStreamsList} setViewingStream={setViewingStream} showToast={showToast} addAdminAuditLog={addAdminAuditLog} setAdminReportsList={setAdminReportsList} loc={loc} isRtl={isRtl} />
+      <LiveStudioModal isOpen={isLiveStudioOpen} onClose={() => { setIsLiveStudioOpen(false); setViewingStream(null); }} currentUser={currentUser} userRole={userRole} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isVerified={isVerified} isStreamerUser={isStreamerUser} onOpenStreamerApplication={() => setIsBecomeStreamerModalOpen(true)} currentUsername={currentUsername} userCoins={userCoins} setUserCoins={setUserCoins} streamsList={streamsList} setStreamsList={setStreamsList} setViewingStream={setViewingStream} showToast={showToast} addAdminAuditLog={addAdminAuditLog} setAdminReportsList={setAdminReportsList} loc={loc} isRtl={isRtl} />
 
       {/* MODAL: ADMIN SECURITY & DASHBOARD */}
             <AdminDashboardModal currentUser={currentUser} userRole={userRole} currentUsername={currentUsername} authUsername={authUsername} authEmail={authEmail} isUserSuperAdmin={isUserSuperAdmin} isAdminPinModalOpen={isAdminPinModalOpen} setIsAdminPinModalOpen={setIsAdminPinModalOpen} isAdminPanelOpen={isAdminPanelOpen} setIsAdminPanelOpen={setIsAdminPanelOpen} showAdminPinModal={showAdminPinModal} setShowAdminPinModal={setShowAdminPinModal} enteredAdminUsername={enteredAdminUsername} setEnteredAdminUsername={setEnteredAdminUsername} enteredAdminPassword={enteredAdminPassword} setEnteredAdminPassword={setEnteredAdminPassword} currentTelegramId={currentTelegramId} isUserRayan={isUserRayan} adminRolesList={adminRolesList} setAdminRolesList={setAdminRolesList} activeAdminSession={activeAdminSession} setActiveAdminSession={setActiveAdminSession} usersList={usersList} setUsersList={setUsersList} isAddAdminModalOpen={isAddAdminModalOpen} setIsAddAdminModalOpen={setIsAddAdminModalOpen} newAdminUsername={newAdminUsername} setNewAdminUsername={setNewAdminUsername} newAdminPassword={newAdminPassword} setNewAdminPassword={setNewAdminPassword} newAdminTelegramId={newAdminTelegramId} setNewAdminTelegramId={setNewAdminTelegramId} newAdminRole={newAdminRole} setNewAdminRole={setNewAdminRole} showToast={showToast} loc={loc} isRtl={isRtl} adminActiveTab={adminActiveTab} setAdminActiveTab={setAdminActiveTab} adminStatsTimeframe={adminStatsTimeframe} setAdminStatsTimeframe={setAdminStatsTimeframe} adminUserFilterStatus={adminUserFilterStatus} setAdminUserFilterStatus={setAdminUserFilterStatus} adminGlobalSearch={adminGlobalSearch} setAdminGlobalSearch={setAdminGlobalSearch} adminUsersList={adminUsersList} setAdminUsersList={setAdminUsersList} adminLivesList={adminLivesList} setAdminLivesList={setAdminLivesList} adminReportsList={adminReportsList} setAdminReportsList={setAdminReportsList} adminReportCategoryFilter={adminReportCategoryFilter} setAdminReportCategoryFilter={setAdminReportCategoryFilter} adminWithdrawalsList={adminWithdrawalsList} setAdminWithdrawalsList={setAdminWithdrawalsList} adminMaxWithdrawal={adminMaxWithdrawal} setAdminMaxWithdrawal={setAdminMaxWithdrawal} adminMinWithdrawal={adminMinWithdrawal} setAdminMinWithdrawal={setAdminMinWithdrawal} adminNetworkFee={adminNetworkFee} setAdminNetworkFee={setAdminNetworkFee} adminPlatformFee={adminPlatformFee} setAdminPlatformFee={setAdminPlatformFee} adminWhitelist={adminWhitelist} setAdminWhitelist={setAdminWhitelist} isPayoutFrozen={isPayoutFrozen} setIsPayoutFrozen={setIsPayoutFrozen} adminAdsList={adminAdsList} setAdminAdsList={setAdminAdsList} adminEventsList={adminEventsList} setAdminEventsList={setAdminEventsList} adminNotifTitle={adminNotifTitle} setAdminNotifTitle={setAdminNotifTitle} adminNotifBody={adminNotifBody} setAdminNotifBody={setAdminNotifBody} adminNotifCategory={adminNotifCategory} setAdminNotifCategory={setAdminNotifCategory} adminModerationQueue={adminModerationQueue} setAdminModerationQueue={setAdminModerationQueue} kycApplications={kycApplications} setKycApplications={setKycApplications} adminTicketsList={adminTicketsList} setAdminTicketsList={setAdminTicketsList} adminTicketFilter={adminTicketFilter} setAdminTicketFilter={setAdminTicketFilter} adminReplyingTicket={adminReplyingTicket} setAdminReplyingTicket={setAdminReplyingTicket} adminTicketReplyText={adminTicketReplyText} setAdminTicketReplyText={setAdminTicketReplyText} adminVipPlans={adminVipPlans} setAdminVipPlans={setAdminVipPlans} isAddVipPlanModalOpen={isAddVipPlanModalOpen} setIsAddVipPlanModalOpen={setIsAddVipPlanModalOpen} editingVipPlan={editingVipPlan} setEditingVipPlan={setEditingVipPlan} newVipPlanTitle={newVipPlanTitle} setNewVipPlanTitle={setNewVipPlanTitle} newVipPlanCoins={newVipPlanCoins} setNewVipPlanCoins={setNewVipPlanCoins} newVipPlanUsdt={newVipPlanUsdt} setNewVipPlanUsdt={setNewVipPlanUsdt} isAddUserModalOpen={isAddUserModalOpen} setIsAddUserModalOpen={setIsAddUserModalOpen} adminNewUser={adminNewUser} setAdminNewUser={setAdminNewUser} newAdminPermissions={newAdminPermissions} setNewAdminPermissions={setNewAdminPermissions} editingAdminObj={editingAdminObj} setEditingAdminObj={setEditingAdminObj} newAdminName={newAdminName} setNewAdminName={setNewAdminName} adminMaintenanceMode={adminMaintenanceMode} setAdminMaintenanceMode={setAdminMaintenanceMode} adminAiBadImages={adminAiBadImages} setAdminAiBadImages={setAdminAiBadImages} adminAiOffensiveText={adminAiOffensiveText} setAdminAiOffensiveText={setAdminAiOffensiveText} aiSecuritySettings={aiSecuritySettings} setAiSecuritySettings={setAiSecuritySettings} aiReportList={aiReportList} setAiReportList={setAiReportList} aiReportedChatsList={aiReportedChatsList} setAiReportedChatsList={setAiReportedChatsList} aiSupportTicketsList={aiSupportTicketsList} setAiSupportTicketsList={setAiSupportTicketsList} aiStreamerVerificationsList={aiStreamerVerificationsList} setAiStreamerVerificationsList={setAiStreamerVerificationsList} aiReferralFraudList={aiReferralFraudList} setAiReferralFraudList={setAiReferralFraudList} adminBackupsList={adminBackupsList} setAdminBackupsList={setAdminBackupsList} adminLogsList={adminLogsList} setAdminLogsList={setAdminLogsList} addAdminAuditLog={addAdminAuditLog} handleRunAiReportAnalyzer={handleRunAiReportAnalyzer} handleRunAiChatModerator={handleRunAiChatModerator} handleGenerateAiSupportReply={handleGenerateAiSupportReply} handleRunAiStreamerVerification={handleRunAiStreamerVerification} handleRunAiReferralFraudCheck={handleRunAiReferralFraudCheck} adminEditingUser={adminEditingUser} setAdminEditingUser={setAdminEditingUser} apiAdmin={apiAdmin} setStreamsList={setStreamsList} newAdminGiftName={newAdminGiftName} setNewAdminGiftName={setNewAdminGiftName} newAdminGiftCoins={newAdminGiftCoins} setNewAdminGiftCoins={setNewAdminGiftCoins} verificationsList={verificationsList} setVerificationsList={setVerificationsList} setIsVerified={setIsVerified} />
@@ -4508,12 +4545,34 @@ export default function App() {
             }
             if (typeof addAdminAuditLog === 'function') addAdminAuditLog('Admin Verify', `Toggled verify for ${data.username}`);
           } else if (actionType === 'streamer') {
-            setUsersList(prev => prev.map(u => u.id === data.userId || u.username === data.username ? {
+            const nextStreamer = Boolean(data.isStreamer);
+            if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') {
+              apiAdmin.updateUserFields(data.userId || data.username, { 
+                is_streamer: nextStreamer, 
+                user_type: nextStreamer ? 'STREAMER' : 'USER',
+                role: nextStreamer ? 'streamer' : 'user'
+              });
+            }
+            setUsersList(prev => prev.map(u => (u.id === data.userId || u.username === data.username) ? {
               ...u,
-              isStreamer: data.isStreamer,
-              isHost: data.isStreamer
+              isStreamer: nextStreamer,
+              is_streamer: nextStreamer,
+              isHost: nextStreamer,
+              user_type: nextStreamer ? 'STREAMER' : 'USER',
+              role: nextStreamer ? 'streamer' : (u.role === 'admin' ? 'admin' : 'user')
             } : u));
-            if (typeof addAdminAuditLog === 'function') addAdminAuditLog('Admin Streamer', `Toggled streamer status for ${data.username}`);
+            if (data.username === currentUsername || data.userId === currentUser?.id) {
+              if (setCurrentUser) {
+                setCurrentUser(prev => ({
+                  ...prev,
+                  isStreamer: nextStreamer,
+                  is_streamer: nextStreamer,
+                  user_type: nextStreamer ? 'STREAMER' : 'USER',
+                  role: nextStreamer ? 'streamer' : (prev?.role === 'admin' ? 'admin' : 'user')
+                }));
+              }
+            }
+            if (typeof addAdminAuditLog === 'function') addAdminAuditLog('Admin Streamer', `Toggled streamer status for ${data.username} to ${nextStreamer}`);
           }
         }} />
 

@@ -68,14 +68,16 @@ export default function ProfileTab(props) {
   } = props;
 
   const isStreamerUser = Boolean(
-    isVerified ||
     isUserRayan ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||
+    userRole === 'streamer' ||
+    currentUser?.role === 'streamer' ||
+    currentUser?.user_type === 'STREAMER' ||
     currentUser?.isStreamer ||
     currentUser?.is_streamer ||
-    currentUser?.isVerified ||
-    currentUser?.isHost
+    currentUser?.isHost ||
+    (isVerified && currentUser?.role !== 'user')
   );
 
   // if (activeTab !== 'profile') return null;
@@ -1200,6 +1202,13 @@ export default function ProfileTab(props) {
 
                 <button
                   onClick={() => {
+                    if (!isStreamerUser) {
+                      if (typeof setIsBecomeStreamerModalOpen === 'function') {
+                        showToast(window.loc('🔒 دسترسی به اجرای زنده مختص استریمرهای تایید شده است.', '🔒 Live streaming is reserved for verified streamers.'));
+                        setIsBecomeStreamerModalOpen(true);
+                      }
+                      return;
+                    }
                     if (setIsLiveStudioOpen) {
                       setIsLiveStudioOpen(true);
                     } else if (setIsHostLiveOpen) {
@@ -1208,7 +1217,7 @@ export default function ProfileTab(props) {
                   }}
                   className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold"
                 >
-                  {window.loc('شروع لایو جدید 🎥', 'Go Live 🎥')}
+                  {isStreamerUser ? window.loc('شروع لایو جدید 🎥', 'Go Live 🎥') : window.loc('درخواست لایواستریم 🎙️', 'Request Live 🎙️')}
                 </button>
               </div>
 

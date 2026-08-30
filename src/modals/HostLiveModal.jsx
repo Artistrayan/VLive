@@ -13,6 +13,11 @@ export default function HostLiveModal({
   currentUsername,
   userName,
   userAvatar,
+  currentUser,
+  userRole,
+  isUserRayan,
+  isUserSuperAdmin,
+  isStreamerUser,
   hostLiveType,
   setHostLiveType,
   hostLiveTitle,
@@ -30,9 +35,78 @@ export default function HostLiveModal({
   liveGuideStep,
   setLiveGuideStep,
   onStartLive,
-  onOpenStreamerCenter
+  onOpenStreamerCenter,
+  onOpenStreamerApplication
 }) {
   if (!isOpen) return null;
+
+  const isAuthorizedStreamer = Boolean(
+    isStreamerUser ||
+    isUserRayan ||
+    isUserSuperAdmin ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    userRole === 'streamer' ||
+    currentUser?.role === 'streamer' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'super_admin' ||
+    currentUser?.user_type === 'STREAMER' ||
+    currentUser?.isStreamer ||
+    currentUser?.is_streamer ||
+    currentUser?.isHost
+  );
+
+  if (!isAuthorizedStreamer) {
+    return (
+      <div className="fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="w-full max-w-md bg-slate-900 border border-pink-500/40 rounded-3xl p-6 sm:p-7 shadow-[0_0_60px_rgba(236,72,153,0.3)] space-y-5 text-center my-auto">
+          <div className="w-16 h-16 rounded-3xl bg-pink-500/20 border border-pink-500/40 text-pink-400 flex items-center justify-center mx-auto shadow-inner">
+            <Lock className="w-8 h-8 text-pink-400" />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-lg sm:text-xl font-black text-white">{loc('اجرای زنده نیازمند تایید استریمر است', 'Live Broadcast Requires Streamer Verification')}</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              {loc('برای شروع لایواستریم در پلتفرم V.LIVE، لازم است ابتدا فرم احراز هویت استریمر و سلفی تاییدیه را ارسال فرمایید تا پس از تایید مدیریت، قابلیت اجرای زنده برای شما فعال گردد.', 'To host live broadcasts on V.LIVE, you must submit your streamer KYC application and gesture selfie for admin approval.')}
+            </p>
+          </div>
+
+          <div className="bg-slate-950/90 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs text-right">
+            <div className="flex items-center gap-2 text-amber-400 font-bold">
+              <ShieldAlert className="w-4 h-4 shrink-0" />
+              <span>{loc('مراحل تایید استریمر:', 'Streamer Approval Steps:')}</span>
+            </div>
+            <ul className="text-[11px] text-slate-400 list-disc list-inside space-y-1">
+              <li>{loc('تکمیل اطلاعات هویتی و شبکه‌های اجتماعی', 'Complete identity and social profile')}</li>
+              <li>{loc('گرفتن سلفی به همراه نماد/ژست تصادفی مشخص شده', 'Capture selfie with designated random hand gesture')}</li>
+              <li>{loc('بررسی و اعطای دسترسی توسط مدیریت', 'Verification and grant by admin')}</li>
+            </ul>
+          </div>
+
+          <div className="flex gap-2.5 pt-2">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition"
+            >
+              {loc('انصراف', 'Cancel')}
+            </button>
+            {onOpenStreamerApplication && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenStreamerApplication();
+                }}
+                className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 hover:opacity-95 text-white font-bold text-xs shadow-lg shadow-pink-500/30 transition flex items-center justify-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{loc('تکمیل احراز هویت 🎙️', 'Complete KYC 🎙️')}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-xl flex flex-col p-4 animate-fadeIn overflow-y-auto" dir={isRtl ? "rtl" : "ltr"}>
