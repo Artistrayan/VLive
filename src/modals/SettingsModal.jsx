@@ -1,7 +1,7 @@
 import { APP_LANGUAGES as DEFAULT_APP_LANGUAGES } from '../constants/i18n';
 import React from 'react';
 import { safeStorage } from '../utils/safeStorage';
-import { apiAuth, apiCalls } from '../services/api';
+import { apiAuth, apiCalls, apiProfile } from '../services/api';
 import { isUsernameAlreadyTaken, normalizeUsername, isValidUsername } from '../utils/usernameUtils';
 import { 
   Settings, X, Search, User, ShieldCheck, Bell, Lock, Globe, Palette,
@@ -320,9 +320,14 @@ export default function SettingsModal(props) {
                         value={userGender} 
                         onChange={(e) => {
                           const newGender = e.target.value;
+                          const prevGender = userGender;
                           if (setUserGender) setUserGender(newGender);
-                          if (newGender === 'female' && setIsBecomeStreamerModalOpen) {
-                            setIsBecomeStreamerModalOpen(true);
+                          safeStorage.setItem('vlive_user_gender', newGender);
+                          apiProfile.syncProfileState({ gender: newGender });
+                          if (newGender === 'female' && prevGender !== 'female') {
+                            if (setIsBecomeStreamerModalOpen) setIsBecomeStreamerModalOpen(true);
+                          } else if (newGender === 'male' && prevGender !== 'male') {
+                            showToast(window.loc('⚠️ با تغییر جنسیت به آقا، قابلیّت و دسترسی استریمری شما لغو شد (استریمر = خانم + تایید مدیریت).', 'By changing gender to male, streamer access is revoked (Streamer = Female + Admin approval).'));
                           }
                         }}
                         className="w-full px-3 py-2 rounded-2xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500"
@@ -1206,9 +1211,21 @@ export default function SettingsModal(props) {
             {/* SAVE & CLOSE BUTTON */}
             <div className="border-t border-slate-800 pt-3">
               <button
-                onClick={() => {
+                onClick={async () => {
+                  safeStorage.setItem('vlive_user_name', userName);
+                  safeStorage.setItem('vlive_user_bio', userBio);
+                  safeStorage.setItem('vlive_user_gender', userGender);
+                  try {
+                    await apiProfile.syncProfileState({
+                      name: userName,
+                      bio: userBio,
+                      gender: userGender
+                    });
+                  } catch (e) {
+                    console.warn('Save settings sync error:', e);
+                  }
                   setIsSettingsModalOpen(false);
-                  showToast('All Settings saved successfully! ✨');
+                  showToast(window.loc('تنظیمات با موفقیت ذخیره شد! ✨', 'All Settings saved successfully! ✨'));
                 }}
                 className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-black text-xs shadow-2xl hover:brightness-110 transition flex items-center justify-center gap-2"
               >

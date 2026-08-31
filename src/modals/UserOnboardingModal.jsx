@@ -69,6 +69,7 @@ export default function UserOnboardingModal({
   initialName = '',
   initialAvatar = '',
   initialAge = '',
+  initialGender = '',
   telegramId = '',
   onComplete,
   showToast
@@ -82,7 +83,7 @@ export default function UserOnboardingModal({
   const [age, setAge] = useState(initialAge || '');
   const [isAgeConfirmed, setIsAgeConfirmed] = useState(true);
   const [country, setCountry] = useState('ایران (Iran)');
-  const [gender, setGender] = useState('female'); // 'male' | 'female'
+  const [gender, setGender] = useState(() => initialGender || safeStorage.getItem('vlive_user_gender') || 'male'); // 'male' | 'female'
   const [selectedInterests, setSelectedInterests] = useState(['🎬 پخش زنده و استریم', '💬 گفتگو و چت دوستانه']);
   
   // Photo & Gallery permission

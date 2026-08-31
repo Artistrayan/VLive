@@ -38,7 +38,7 @@ export default function ProfileTab(props) {
     activeTab,
     currentUser,
     userRole,
-    userGender = 'female',
+    userGender = 'male',
     setUserGender = (() => {}),
     setIsBecomeStreamerModalOpen = (() => {}),
     setIsKycModalOpen = (() => {}),

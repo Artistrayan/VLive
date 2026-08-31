@@ -18,7 +18,7 @@ export default function HelpCenterModal({
   userDiamonds = 10000,
   userName = 'User',
   currentUsername = 'user',
-  userGender = 'female',
+  userGender = 'male',
   isVerified = true,
   showToast = () => {},
   onOpenBuyCoins = () => {},

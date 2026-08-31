@@ -116,7 +116,7 @@ export default function App() {
   const [userCoins, setUserCoins] = useState(0);
   const [userDiamonds, setUserDiamonds] = useState(0);
   const [userCashBalance, setUserCashBalance] = useState(0);
-  const [userGender, setUserGender] = useState('female');
+  const [userGender, setUserGender] = useState(() => safeStorage.getItem('vlive_user_gender') || 'male');
   const [userAvatar, setUserAvatar] = useState('');
   const [userBio, setUserBio] = useState('');
   const [isVerified, setIsVerified] = useState(false);
@@ -130,7 +130,7 @@ export default function App() {
   const [authStep, setAuthStep] = useState('welcome');
   const [authUsername, setAuthUsername] = useState('');
   const [authFullName, setAuthFullName] = useState('');
-  const [authGender, setAuthGender] = useState('female');
+  const [authGender, setAuthGender] = useState(() => safeStorage.getItem('vlive_user_gender') || 'male');
   const [authAge, setAuthAge] = useState(20);
   const [authBirthDate, setAuthBirthDate] = useState('');
   const [authTelegramId, setAuthTelegramId] = useState('');
@@ -488,7 +488,7 @@ export default function App() {
   const [editUsername, setEditUsername] = useState('');
   const [editBio, setEditBio] = useState('');
   const [editAvatarUrl, setEditAvatarUrl] = useState('');
-  const [editGender, setEditGender] = useState('female');
+  const [editGender, setEditGender] = useState(() => safeStorage.getItem('vlive_user_gender') || 'male');
 
   // Media Refs
   const videoRef = useRef(null);
@@ -597,7 +597,12 @@ export default function App() {
         if (p.username) setCurrentUsername(p.username);
         if (p.avatar_url) setUserAvatar(p.avatar_url);
         if (p.bio) setUserBio(p.bio);
-        if (p.gender) setUserGender(p.gender);
+        if (p.gender) {
+          setUserGender(p.gender);
+          setAuthGender(p.gender);
+          setEditGender(p.gender);
+          safeStorage.setItem('vlive_user_gender', p.gender);
+        }
         if (typeof p.coins === 'number') setUserCoins(p.coins);
         if (typeof p.diamonds === 'number') setUserDiamonds(p.diamonds);
         if (typeof p.is_verified === 'boolean') setIsVerified(p.is_verified);
@@ -2127,6 +2132,12 @@ export default function App() {
             setAuthUsername(u.username);
             if (u.coins || u.wallet_stars) setUserCoins(u.coins || u.wallet_stars);
             if (u.avatar_url || u.avatar) setUserAvatar(u.avatar_url || u.avatar);
+            if (u.gender) {
+              setUserGender(u.gender);
+              setAuthGender(u.gender);
+              setEditGender(u.gender);
+              safeStorage.setItem('vlive_user_gender', u.gender);
+            }
             setIsVerified(u.is_verified || false);
             
             safeStorage.setItem('vlive_user_logged_in', 'true');
@@ -2157,6 +2168,12 @@ export default function App() {
           setAuthUsername(u.username);
           if (u.coins) setUserCoins(u.coins);
           if (u.avatar) setUserAvatar(u.avatar);
+          if (u.gender) {
+            setUserGender(u.gender);
+            setAuthGender(u.gender);
+            setEditGender(u.gender);
+            safeStorage.setItem('vlive_user_gender', u.gender);
+          }
           setIsVerified(u.is_verified || false);
 
           safeStorage.setItem('vlive_user_logged_in', 'true');
@@ -2210,7 +2227,11 @@ export default function App() {
         setCurrentUsername(profile.username);
         setUserAvatar(profile.avatar || profile.avatar_url || '');
         setUserBio(profile.bio || '');
-        setUserGender(profile.gender || 'Not Specified');
+        const activeGender = profile.gender || safeStorage.getItem('vlive_user_gender') || 'male';
+        setUserGender(activeGender);
+        setAuthGender(activeGender);
+        setEditGender(activeGender);
+        safeStorage.setItem('vlive_user_gender', activeGender);
         if (profile.age !== undefined && profile.age !== null && profile.age !== '') {
           safeStorage.setItem('vlive_profile_age', String(profile.age));
           setAuthAge(String(profile.age));
@@ -2219,7 +2240,6 @@ export default function App() {
         setEditUsername(profile.username);
         setEditAvatarUrl(profile.avatar || profile.avatar_url || '');
         setEditBio(profile.bio || '');
-        setEditGender(profile.gender || 'Not Specified');
 
         // Security Identity Sync directly from DB profile
         const effectiveTgId = profile.telegram_id ? String(profile.telegram_id) : (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : currentTelegramId || '');
@@ -2730,9 +2750,7 @@ export default function App() {
                   <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
                     {usersList.filter(u => {
                     if (u.status === 'banned' || u.isBanned) return false;
-                    const g = String(u.gender || '').trim().toLowerCase();
-                    const isF = g === 'female' || g === 'زن' || g === 'خانم' || !u.gender && u.role !== 'admin';
-                    return isF && (u.isVip || u.is_vip || u.isTop);
+                    return (u.isVip || u.is_vip || u.isTop);
                   }).map(user => <div key={user.id} className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group" onClick={() => {
                     setSelectedUser(user);
                     setIsUserProfileModalOpen(true);
@@ -4272,13 +4290,18 @@ export default function App() {
         </div>}
 
       {/* MODAL: MANDATORY FIRST-TIME ONBOARDING & BIOMETRIC AI VERIFICATION */}
-      <UserOnboardingModal isOpen={isOnboardingOpen} initialUsername={pendingOnboardUser?.username || currentUsername} initialName={pendingOnboardUser?.name || userName} initialAvatar={pendingOnboardUser?.avatar || userAvatar} telegramId={pendingOnboardUser?.telegram_id || currentTelegramId} showToast={showToast} onComplete={finalProfile => {
+      <UserOnboardingModal isOpen={isOnboardingOpen} initialUsername={pendingOnboardUser?.username || currentUsername} initialName={pendingOnboardUser?.name || userName} initialAvatar={pendingOnboardUser?.avatar || userAvatar} initialGender={safeStorage.getItem('vlive_user_gender') || userGender || 'male'} telegramId={pendingOnboardUser?.telegram_id || currentTelegramId} showToast={showToast} onComplete={finalProfile => {
           setIsOnboardingOpen(false);
           setPendingOnboardUser(null);
           setUserName(finalProfile.name);
           setCurrentUsername(finalProfile.username);
           if (finalProfile.avatar) setUserAvatar(finalProfile.avatar);
-          if (finalProfile.gender) setAuthGender(finalProfile.gender);
+          if (finalProfile.gender) {
+            setUserGender(finalProfile.gender);
+            setAuthGender(finalProfile.gender);
+            setEditGender(finalProfile.gender);
+            safeStorage.setItem('vlive_user_gender', finalProfile.gender);
+          }
           setIsLoggedIn(true);
           setHasRegistered(true);
           setShowEntrySplash(false);
