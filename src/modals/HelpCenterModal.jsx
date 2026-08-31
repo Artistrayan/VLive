@@ -508,7 +508,7 @@ export default function HelpCenterModal({
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-500"
                       >
                         <option value="usdt_trc20">{loc('تتر Tether USDT (شبکه ترون TRC20)', 'Tether USDT (TRC20)')}</option>
-                        <option value="usdt_bep20">{loc('تتر Tether USDT (شبکه بایننس BEP20)', 'Tether USDT (BEP20)')}</option>
+                        
                       </select>
                     </div>
 

@@ -5,7 +5,7 @@ import {
   Hand, ShieldCheck, Clock, UserCheck
 } from 'lucide-react';
 import { safeStorage } from '../utils/safeStorage';
-import { apiProfile, apiAdmin } from '../services/api';
+import { apiProfile, apiAdmin, apiAuth } from '../services/api';
 import { compressImageFile } from '../services/performance';
 import { interestService } from '../services/interestService';
 
@@ -326,10 +326,20 @@ export default function UserOnboardingModal({
     if (avatarPreview) {
       safeStorage.setItem('vlive_user_avatar', avatarPreview);
     }
+    if (country) {
+      safeStorage.setItem('vlive_profile_city', country);
+    }
+    if (selectedInterests && selectedInterests.length > 0) {
+      safeStorage.setItem('vlive_profile_interests', selectedInterests.join(', '));
+    }
+    safeStorage.setItem('vlive_profile_completed', 'true');
+    safeStorage.setItem('vlive_has_registered', 'true');
+    safeStorage.setItem('vlive_user_logged_in', 'true');
 
     // Save to backend / Supabase
     try {
-      await apiProfile.updateProfile(finalProfileData);
+      await apiAuth.registerOrLoginUser(finalProfileData);
+      await apiProfile.syncProfileState(finalProfileData);
 
       // Submit application to Admin KYC queue whenever user requests streamer status or submits gesture selfie
       if (wantToBeStreamer || capturedSelfie || gender === 'female') {

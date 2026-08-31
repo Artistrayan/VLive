@@ -2497,8 +2497,9 @@ export default function App() {
       const detail = e.detail;
       if (!detail) return;
       if (detail.name) setUserName(detail.name);
-      if (detail.avatar) setUserAvatar(detail.avatar);
-      if (detail.bio) setUserBio(detail.bio);
+      if (detail.username) setCurrentUsername(detail.username);
+      if (detail.avatar || detail.avatar_url) setUserAvatar(detail.avatar || detail.avatar_url);
+      if (detail.bio !== undefined) setUserBio(detail.bio);
       if (detail.gender) {
         setUserGender(detail.gender);
         setAuthGender(detail.gender);
@@ -2507,6 +2508,7 @@ export default function App() {
       }
       if (detail.birth_date) setAuthBirthDate(detail.birth_date);
       if (detail.age) setAuthAge(String(detail.age));
+      if (detail.city || detail.country) setAuthCity(detail.city || detail.country);
     };
 
     if (typeof window !== 'undefined') {
@@ -4299,14 +4301,25 @@ export default function App() {
       <UserOnboardingModal isOpen={isOnboardingOpen} initialUsername={pendingOnboardUser?.username || currentUsername} initialName={pendingOnboardUser?.name || userName} initialAvatar={pendingOnboardUser?.avatar || userAvatar} initialGender={safeStorage.getItem('vlive_user_gender') || userGender || 'male'} telegramId={pendingOnboardUser?.telegram_id || currentTelegramId} showToast={showToast} onComplete={finalProfile => {
           setIsOnboardingOpen(false);
           setPendingOnboardUser(null);
-          setUserName(finalProfile.name);
-          setCurrentUsername(finalProfile.username);
+          if (finalProfile.name) setUserName(finalProfile.name);
+          if (finalProfile.username) setCurrentUsername(finalProfile.username);
           if (finalProfile.avatar) setUserAvatar(finalProfile.avatar);
           if (finalProfile.gender) {
             setUserGender(finalProfile.gender);
             setAuthGender(finalProfile.gender);
             setEditGender(finalProfile.gender);
             safeStorage.setItem('vlive_user_gender', finalProfile.gender);
+          }
+          if (finalProfile.age) {
+            setAuthAge(String(finalProfile.age));
+            safeStorage.setItem('vlive_profile_age', String(finalProfile.age));
+          }
+          if (finalProfile.country || finalProfile.city) {
+            setAuthCity(finalProfile.country || finalProfile.city);
+            safeStorage.setItem('vlive_profile_city', finalProfile.country || finalProfile.city);
+          }
+          if (finalProfile.interests) {
+            safeStorage.setItem('vlive_profile_interests', finalProfile.interests);
           }
           setIsLoggedIn(true);
           setHasRegistered(true);
@@ -4316,6 +4329,10 @@ export default function App() {
           safeStorage.setItem('vlive_has_registered', 'true');
           safeStorage.setItem('vlive_user_onboarded', 'true');
           safeStorage.setItem('vlive_profile_completed', 'true');
+          syncUserAndFetchBackendProfiles();
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('vlive_profile_updated', { detail: finalProfile }));
+          }
           showToast(loc(`✨ ثبت‌نام و تکمیل مشخصات با موفقیت انجام شد! خوش آمدید @${finalProfile.username}`, `✨ Profile completed successfully! Welcome @${finalProfile.username}`));
         }} />
 

@@ -1,4 +1,5 @@
-import { apiVip } from '../services/api';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
+import { apiVip, apiSupport } from '../services/api';
 import React from 'react';
 import { Crown, ShieldAlert, X, Clock, CreditCard } from 'lucide-react';
 
@@ -245,28 +246,38 @@ export default function VipAndRewardModals(props) {
                     <CreditCard className="w-4 h-4 text-amber-400" />
                     {window.loc('روش پرداخت', 'payment method')}
                   </h4>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    <button
-                      onClick={() => setSelectedVipPayMethod('in_app')}
-                      className={`p-2.5 rounded-xl border text-center transition ${selectedVipPayMethod === 'in_app' ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
-                    >
-                      {window.loc('پرداخت درون‌برنامه‌ای', 'In-app payment')}
-                    </button>
-                    <button
-                      onClick={() => setSelectedVipPayMethod('usdt')}
-                      className={`p-2.5 rounded-xl border text-center transition ${selectedVipPayMethod === 'usdt' ? 'bg-emerald-500/10 border-emerald-400 text-emerald-300 font-bold' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
-                    >
-                      USDT
-                    </button>
-                    <button
-                      onClick={() => setSelectedVipPayMethod('coins')}
-                      className={`p-2.5 rounded-xl border text-center transition ${selectedVipPayMethod === 'coins' ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
-                    >
-                      {window.loc('سکه‌ها', 'coins')}
-                    </button>
-                  </div>
+                  <div className="flex flex-col space-y-4">
+                      {/* Fixed USDT TRC20 Wallet Section */}
+                      <div className="bg-slate-900 border border-emerald-500/30 p-4 rounded-xl flex flex-col items-center justify-center space-y-3">
+                        <span className="text-emerald-400 font-bold text-sm">Scan QR Code to Pay (USDT TRC20)</span>
+                        <div className="p-2 bg-white rounded-xl">
+                          <QRCode value="TJj6T4kC6bQpY9jA3fX9zP2kR4yH7mL5vN" size={120} />
+                        </div>
+                        <div className="text-center w-full">
+                          <span className="text-[10px] text-slate-400 block mb-1">TRC20 Wallet Address:</span>
+                          <div className="bg-slate-950 p-2 rounded-lg border border-slate-800 text-[10px] font-mono text-emerald-300 break-all select-all text-center">
+                            TJj6T4kC6bQpY9jA3fX9zP2kR4yH7mL5vN
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 mb-2">
+                        <label className="text-xs text-slate-300 font-bold">Transaction Hash (TXID):</label>
+                        <input
+                          type="text"
+                          id="vipTxHashInput"
+                          placeholder="e.g. 5d41402abc4b2a76b9719d911017c592..."
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white font-mono outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
                   <button
                     onClick={async () => {
+                      const txInput = document.getElementById('vipTxHashInput')?.value?.trim();
+                      if (!txInput || txInput.length < 10) {
+                        showToast(window.loc('لطفاً کد پیگیری (TX Hash) معتبر وارد کنید', 'Please enter a valid TX Hash'));
+                        return;
+                      }
                       const basePrices = { silver: 300, gold: 500, diamond: 1000 };
                       const durationMonthsMap = { '1m': 1, '3m': 3, '6m': 6, '12m': 12 };
                       const durationNum = typeof selectedVipDuration === 'number' ? selectedVipDuration : (durationMonthsMap[selectedVipDuration] || 1);

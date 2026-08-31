@@ -1,4 +1,5 @@
 import { apiVip, apiWallet, apiReferral } from '../../services/api';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 import React from 'react';
 import { safeStorage } from '../../utils/safeStorage';
 import { economyService } from '../../services/economyService';
@@ -125,7 +126,31 @@ export default function WalletTab(props) {
   const setIsVipCelebrationOpen = props.setIsVipCelebrationOpen || (() => showToast('VIP Celebration!'));
 
   const [selectedCoinPackPayment, setSelectedCoinPackPayment] = React.useState('USDT');
-  const handleBuyCoinsPack = props.handleBuyCoinsPack || ((pack) => showToast(window.loc('خرید بسته کوین با موفقیت انجام شد', 'The purchase of the coin package has been successfully completed')));
+  const handleBuyCoinsPack = props.handleBuyCoinsPack || (async (packCoins, packPrice) => {
+    if (selectedCoinPackPayment !== 'USDT TRC20') {
+      showToast(window.loc('فقط درگاه پرداخت تتر فعال است.', 'Only Tether payment is active.'));
+      return;
+    }
+    const txInput = prompt(window.loc('لطفا برای تایید خرید ' + packCoins + ' سکه، کد هش تراکنش تتر به آدرس TQY2B6FvF2U7n3b8V9Z4Y3K9X5U7n3b8V9 را وارد کنید:', 'Please enter the USDT TRC20 Tx Hash sent to TQY2B6FvF2U7n3b8V9Z4Y3K9X5U7n3b8V9 to verify purchase of ' + packCoins + ' coins:'));
+    if (txInput && txInput.length > 10) {
+        try {
+            const { apiSupport } = await import('../../services/api');
+            const res = await apiSupport.submitTicket(
+                'Coin Pack Purchase (USDT)',
+                `User requested ${packCoins} coins for ${packPrice}.\nTX Hash: ${txInput}\nMethod: USDT TRC20`
+            );
+            if (res && res.success !== false) {
+                showToast(window.loc('درخواست خرید ثبت شد. پس از تایید شبکه اعمال می‌شود.', 'Purchase request submitted. Will be applied after network confirmation.'));
+            } else {
+                showToast(res?.error || 'Failed to submit request');
+            }
+        } catch(e) {
+            showToast('API error');
+        }
+    } else if (txInput) {
+        showToast(window.loc('کد هش نامعتبر است', 'Invalid TX Hash'));
+    }
+  });
   const handleConvertDiamondsAction = props.handleConvertDiamondsAction || (() => showToast(window.loc('تبدیل الماس انجام شد', 'Diamond conversion done')));
   const [withdrawPinInput, setWithdrawPinInput] = React.useState('');
   const handleRequestWithdrawalAction = props.handleRequestWithdrawalAction || (() => showToast(window.loc('درخواست برداشت ثبت شد', 'Withdrawal request registered')));
@@ -509,12 +534,22 @@ export default function WalletTab(props) {
                     >
                       {window.loc('🪙 USDT TRC20', '🪙 USDT TRC20')}
                     </button>
-                    <button
-                      onClick={() => setSelectedCoinPackPayment('USDT BEP20')}
-                      className={`p-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 transition ${selectedCoinPackPayment === 'USDT BEP20' ? 'bg-amber-500 text-slate-950 border-amber-300 font-black' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
-                    >
-                      {window.loc('🪙 USDT BEP20', '🪙 USDT BEP20')}
-                    </button>
+                    
+                  </div>
+                </div>
+
+                
+                {/* Fixed USDT TRC20 Wallet Section for Deposits */}
+                <div className="p-4 rounded-2xl bg-slate-900 border border-emerald-500/30 flex flex-col items-center justify-center space-y-3 mb-4">
+                  <span className="text-emerald-400 font-bold text-sm">Scan QR Code to Deposit (USDT TRC20)</span>
+                  <div className="p-2 bg-white rounded-xl">
+                    <QRCode value="TJj6T4kC6bQpY9jA3fX9zP2kR4yH7mL5vN" size={120} />
+                  </div>
+                  <div className="text-center w-full max-w-sm">
+                    <span className="text-[10px] text-slate-400 block mb-1">TRC20 Wallet Address:</span>
+                    <div className="bg-slate-950 p-2 rounded-lg border border-slate-800 text-[10px] font-mono text-emerald-300 break-all select-all text-center">
+                      TJj6T4kC6bQpY9jA3fX9zP2kR4yH7mL5vN
+                    </div>
                   </div>
                 </div>
 
@@ -644,7 +679,7 @@ export default function WalletTab(props) {
                         className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-emerald-400"
                       >
                         <option value="USDT TRC20">{window.loc('USDT TRC20 (تتر شبکه‌ ترون)', 'USDT TRC20 (Tether Tron Network)')}</option>
-                        <option value="USDT BEP20">{window.loc('USDT BEP20 (تتر شبکه بایننس)', 'USDT BEP20 (Tether BSC Network)')}</option>
+                        
                       </select>
                     </div>
                   </div>
@@ -1583,7 +1618,7 @@ export default function WalletTab(props) {
                             className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none"
                           >
                             <option value="USDT TRC20">USDT TRC20 Crypto Wallet</option>
-                            <option value="USDT BEP20">USDT BEP20 Crypto Wallet</option>
+                            
                           </select>
                         </div>
 

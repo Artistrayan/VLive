@@ -43,6 +43,134 @@ export const apiStorage = {
 // 2. AUTH SERVICE (Telegram & Real Session)
 // ==========================================
 export const apiAuth = {
+  async registerOrLoginUser(userData) {
+    if (!userData || !userData.username) {
+      return { success: false, error: 'INVALID_DATA' };
+    }
+    const cleanUsername = String(userData.username).trim().toLowerCase().replace(/[^a-z0-9_]/g, '_') || `user_${Date.now().toString().slice(-4)}`;
+    const email = `u_${cleanUsername}@vlive.app`;
+    const password = `vlive_pass_${cleanUsername}_2026!`;
+    const isSuperAdminId = (userData.telegram_id === '8933698119' || email === 'tattoo.rayan2015@gmail.com');
+
+    let userId = null;
+    let authUser = null;
+
+    // 1. Check if Supabase auth already has an active session
+    try {
+      const { data: currentAuth } = await supabase.auth.getUser();
+      if (currentAuth?.user?.id) {
+        userId = currentAuth.user.id;
+        authUser = currentAuth.user;
+      }
+    } catch (e) {
+      console.warn('getUser check notice:', e);
+    }
+
+    if (!userId) {
+      // 2. Try signing in with standard username credentials
+      try {
+        const { data: signInRes } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInRes?.user) {
+          userId = signInRes.user.id;
+          authUser = signInRes.user;
+          if (signInRes.session?.access_token) {
+            setStoredToken(signInRes.session.access_token);
+          }
+        }
+      } catch (err) {
+        console.warn('signInWithPassword notice in registerOrLoginUser:', err);
+      }
+    }
+
+    if (!userId) {
+      // 3. If sign in didn't return a user, sign up
+      try {
+        const { data: signUpRes } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              name: userData.name || userData.username,
+              username: userData.username,
+              gender: userData.gender || 'male',
+              avatar: userData.avatar || ''
+            }
+          }
+        });
+        if (signUpRes?.user) {
+          userId = signUpRes.user.id;
+          authUser = signUpRes.user;
+          if (signUpRes.session?.access_token) {
+            setStoredToken(signUpRes.session.access_token);
+          }
+        }
+      } catch (err) {
+        console.warn('signUp notice in registerOrLoginUser:', err);
+      }
+    }
+
+    // 4. Fallback if Auth is blocked or unconfirmed
+    if (!userId) {
+      userId = getUserId() || `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    }
+
+    if (userId) {
+      localStorage.setItem('vlive_user_id', userId);
+    }
+
+    const birthDateVal = userData.birth_date || userData.birthdate || userData.birthday;
+    const computedAge = birthDateVal ? calculateAge(birthDateVal) : (userData.age ? Number(userData.age) : null);
+
+    const profileUpsert = {
+      id: userId,
+      name: userData.name || userData.username,
+      username: userData.username,
+      avatar: userData.avatar || '',
+      avatar_url: userData.avatar || '',
+      gender: userData.gender || 'male',
+      age: computedAge,
+      city: userData.city || userData.country || '',
+      interests: userData.interests || '',
+      user_type: isSuperAdminId ? 'ADMIN' : 'REAL_USER',
+      role: isSuperAdminId ? 'admin' : 'user',
+      status: 'approved',
+      telegram_id: userData.telegram_id || '',
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      await supabase.from('profiles').upsert([profileUpsert], { onConflict: 'id' });
+      await supabase.from('wallets').upsert([{ user_id: userId, coins: 5000, usdt_balance: 0.0 }], { onConflict: 'user_id' });
+    } catch (err) {
+      console.warn('Profile upsert in registerOrLoginUser note:', err);
+    }
+
+    // Save locally
+    if (userData.name) localStorage.setItem('vlive_user_name', userData.name);
+    if (userData.username) localStorage.setItem('vlive_current_username', userData.username);
+    if (userData.avatar) localStorage.setItem('vlive_user_avatar', userData.avatar);
+    if (userData.gender) localStorage.setItem('vlive_user_gender', userData.gender);
+    if (userData.city || userData.country) localStorage.setItem('vlive_profile_city', userData.city || userData.country);
+    if (computedAge) localStorage.setItem('vlive_profile_age', String(computedAge));
+    if (userData.interests) localStorage.setItem('vlive_profile_interests', userData.interests);
+    localStorage.setItem('vlive_user_onboarded', 'true');
+    localStorage.setItem('vlive_profile_completed', 'true');
+    localStorage.setItem('vlive_has_registered', 'true');
+    localStorage.setItem('vlive_user_logged_in', 'true');
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('vlive_profile_updated', { detail: { ...userData, age: computedAge, city: userData.city || userData.country } }));
+    }
+
+    return {
+      success: true,
+      user: {
+        ...profileUpsert,
+        id: userId
+      }
+    };
+  },
+
   async isUsernameTakenInDb(username, excludeUserId = null) {
     if (!username) return false;
     const clean = username.trim().toLowerCase();
@@ -387,7 +515,12 @@ export const apiProfile = {
   async updateProfile(updates) {
     const { data: authData } = await supabase.auth.getUser();
     const uid = authData?.user?.id || getUserId();
-    if (!uid) return { success: false, error: 'NOT_AUTHENTICATED' };
+    if (!uid) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vlive_profile_updated', { detail: updates }));
+      }
+      return { success: false, error: 'NOT_AUTHENTICATED' };
+    }
 
     // STRICT SECURITY: Strip any attempt to alter roles, verification, VIP, balance, or primary keys
     const safeUpdates = { ...updates };
@@ -429,20 +562,76 @@ export const apiProfile = {
       safeUpdates.avatar_url = safeUpdates.avatar;
     }
 
-    let { data, error } = await supabase.from('profiles').update(safeUpdates).eq('id', uid).select();
-    if (error) {
-      // Fallback: in case avatar_url or avatar column does not exist in schema
-      const fallbackUpdates = { ...safeUpdates };
-      delete fallbackUpdates.avatar_url;
-      const res = await supabase.from('profiles').update(fallbackUpdates).eq('id', uid).select();
-      data = res.data;
-      error = res.error;
+    let data = null;
+    let error = null;
+
+    try {
+      const { data: existingProf } = await supabase.from('profiles').select('id').eq('id', uid).maybeSingle();
+      if (!existingProf) {
+        // Upsert if profile does not exist yet
+        const upsertPayload = {
+          id: uid,
+          name: safeUpdates.name || safeUpdates.username || 'User',
+          username: safeUpdates.username || `user_${String(uid).slice(-4)}`,
+          avatar: safeUpdates.avatar || '',
+          avatar_url: safeUpdates.avatar || safeUpdates.avatar_url || '',
+          gender: safeUpdates.gender || 'male',
+          city: safeUpdates.city || '',
+          interests: safeUpdates.interests || '',
+          age: safeUpdates.age || null,
+          bio: safeUpdates.bio || '',
+          status: 'approved',
+          user_type: 'REAL_USER',
+          updated_at: new Date().toISOString(),
+          ...safeUpdates
+        };
+        const res = await supabase.from('profiles').upsert([upsertPayload], { onConflict: 'id' }).select();
+        data = res.data;
+        error = res.error;
+      } else {
+        const res = await supabase.from('profiles').update({
+          ...safeUpdates,
+          updated_at: new Date().toISOString()
+        }).eq('id', uid).select();
+        data = res.data;
+        error = res.error;
+        if (error) {
+          // Fallback: in case avatar_url or a custom column does not exist in schema
+          const fallbackUpdates = { ...safeUpdates };
+          delete fallbackUpdates.avatar_url;
+          const resFallback = await supabase.from('profiles').update({
+            ...fallbackUpdates,
+            updated_at: new Date().toISOString()
+          }).eq('id', uid).select();
+          data = resFallback.data;
+          error = resFallback.error;
+        }
+      }
+    } catch (dbErr) {
+      console.warn('updateProfile DB exception:', dbErr);
+      error = dbErr;
     }
 
-    if (!error && safeUpdates.avatar) {
-      try {
-        localStorage.setItem('vlive_user_avatar', safeUpdates.avatar);
-      } catch (e) {}
+    // Local Storage & Cross-tab sync
+    if (safeUpdates.name) localStorage.setItem('vlive_user_name', safeUpdates.name);
+    if (safeUpdates.username) localStorage.setItem('vlive_current_username', safeUpdates.username);
+    if (safeUpdates.avatar) localStorage.setItem('vlive_user_avatar', safeUpdates.avatar);
+    if (safeUpdates.gender) localStorage.setItem('vlive_user_gender', safeUpdates.gender);
+    if (safeUpdates.city) localStorage.setItem('vlive_profile_city', safeUpdates.city);
+    if (safeUpdates.age) localStorage.setItem('vlive_profile_age', String(safeUpdates.age));
+    if (safeUpdates.birth_date) localStorage.setItem('vlive_profile_birthdate', safeUpdates.birth_date);
+    if (safeUpdates.interests) localStorage.setItem('vlive_profile_interests', safeUpdates.interests);
+    if (safeUpdates.bio !== undefined) localStorage.setItem('vlive_user_bio', safeUpdates.bio);
+    if (safeUpdates.occupation !== undefined) localStorage.setItem('vlive_profile_occupation', safeUpdates.occupation);
+    if (safeUpdates.education !== undefined) localStorage.setItem('vlive_profile_education', safeUpdates.education);
+    if (safeUpdates.relationship !== undefined) localStorage.setItem('vlive_profile_relationship', safeUpdates.relationship);
+    if (safeUpdates.languages !== undefined) localStorage.setItem('vlive_profile_languages', safeUpdates.languages);
+    if (safeUpdates.instagram !== undefined) localStorage.setItem('vlive_profile_ig', safeUpdates.instagram);
+    if (safeUpdates.telegram !== undefined) localStorage.setItem('vlive_profile_tg', safeUpdates.telegram);
+    if (safeUpdates.cover !== undefined) localStorage.setItem('vlive_profile_cover', safeUpdates.cover);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('vlive_profile_updated', { detail: safeUpdates }));
     }
 
     return { success: !error, data: data?.[0], error: error?.message };

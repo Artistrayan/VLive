@@ -136,60 +136,192 @@ export default function ProfileTab(props) {
     return safeStorage.getItem('vlive_profile_tg') || '';
   });
 
-  // Sync real profile data from Supabase DB on mount
+  // Sync real profile data from Supabase DB on mount & listen to updates
   useEffect(() => {
     let isMounted = true;
-    apiProfile.getProfile().then(profile => {
-      if (!isMounted || !profile) return;
-      
-      const birthVal = profile.birth_date || profile.birthdate || profile.birthday;
-      let effectiveAge = '';
-      if (birthVal) {
-        setUserBirthDate(birthVal);
-        safeStorage.setItem('vlive_profile_birthdate', birthVal);
-        const calc = calculateAge(birthVal);
-        if (calc !== null) {
-          effectiveAge = String(calc);
+    
+    const refreshFromSupabase = () => {
+      apiProfile.getProfile().then(profile => {
+        if (!isMounted || !profile) return;
+        
+        const birthVal = profile.birth_date || profile.birthdate || profile.birthday;
+        let effectiveAge = '';
+        if (birthVal) {
+          setUserBirthDate(birthVal);
+          safeStorage.setItem('vlive_profile_birthdate', birthVal);
+          const calc = calculateAge(birthVal);
+          if (calc !== null) {
+            effectiveAge = String(calc);
+          }
         }
+
+        if (!effectiveAge && profile.age !== undefined && profile.age !== null && profile.age !== '') {
+          effectiveAge = String(profile.age);
+        }
+
+        if (effectiveAge) {
+          setUserAge(effectiveAge);
+          safeStorage.setItem('vlive_profile_age', effectiveAge);
+          setEditForm(prev => ({ ...prev, age: effectiveAge, birth_date: birthVal || prev.birth_date }));
+        }
+
+        if (profile.name) {
+          setUserName(profile.name);
+          safeStorage.setItem('vlive_user_name', profile.name);
+        }
+        if (profile.avatar || profile.avatar_url) {
+          const av = profile.avatar || profile.avatar_url;
+          setUserAvatar(av);
+          safeStorage.setItem('vlive_user_avatar', av);
+        }
+        if (profile.gender) {
+          if (typeof setUserGender === 'function') setUserGender(profile.gender);
+          safeStorage.setItem('vlive_user_gender', profile.gender);
+        }
+        if (profile.city) {
+          setUserCity(profile.city);
+          safeStorage.setItem('vlive_profile_city', profile.city);
+          setEditForm(prev => ({ ...prev, city: profile.city }));
+        }
+        if (profile.bio) {
+          setUserBio(profile.bio);
+          setEditForm(prev => ({ ...prev, bio: profile.bio }));
+        }
+        if (profile.occupation) {
+          setUserOccupation(profile.occupation);
+          safeStorage.setItem('vlive_profile_occupation', profile.occupation);
+          setEditForm(prev => ({ ...prev, occupation: profile.occupation }));
+        }
+        if (profile.education) {
+          setUserEducation(profile.education);
+          safeStorage.setItem('vlive_profile_education', profile.education);
+          setEditForm(prev => ({ ...prev, education: profile.education }));
+        }
+        if (profile.relationship) {
+          setUserRelationship(profile.relationship);
+          safeStorage.setItem('vlive_profile_relationship', profile.relationship);
+          setEditForm(prev => ({ ...prev, relationship: profile.relationship }));
+        }
+        if (profile.interests) {
+          setUserInterests(profile.interests);
+          safeStorage.setItem('vlive_profile_interests', profile.interests);
+          setEditForm(prev => ({ ...prev, interests: profile.interests }));
+        }
+        if (profile.languages) {
+          setUserLanguages(profile.languages);
+          safeStorage.setItem('vlive_profile_languages', profile.languages);
+          setEditForm(prev => ({ ...prev, languages: profile.languages }));
+        }
+        if (profile.instagram) {
+          setInstagramLink(profile.instagram);
+          safeStorage.setItem('vlive_profile_ig', profile.instagram);
+        }
+        if (profile.telegram) {
+          setTelegramLink(profile.telegram);
+          safeStorage.setItem('vlive_profile_tg', profile.telegram);
+        }
+      }).catch(e => console.warn('ProfileTab getProfile sync error:', e));
+    };
+
+    refreshFromSupabase();
+
+    const handleProfileUpdate = (e) => {
+      const detail = e?.detail;
+      if (!detail || !isMounted) return;
+      if (detail.name) {
+        setUserName(detail.name);
+        safeStorage.setItem('vlive_user_name', detail.name);
+      }
+      if (detail.avatar || detail.avatar_url) {
+        const av = detail.avatar || detail.avatar_url;
+        setUserAvatar(av);
+        safeStorage.setItem('vlive_user_avatar', av);
+      }
+      if (detail.bio !== undefined) {
+        setUserBio(detail.bio);
+        safeStorage.setItem('vlive_user_bio', detail.bio);
+      }
+      if (detail.gender) {
+        if (typeof setUserGender === 'function') setUserGender(detail.gender);
+        safeStorage.setItem('vlive_user_gender', detail.gender);
+      }
+      if (detail.city || detail.country) {
+        const loc = detail.city || detail.country;
+        setUserCity(loc);
+        safeStorage.setItem('vlive_profile_city', loc);
+      }
+      if (detail.age !== undefined && detail.age !== null && detail.age !== '') {
+        const ageStr = String(detail.age);
+        setUserAge(ageStr);
+        safeStorage.setItem('vlive_profile_age', ageStr);
+      }
+      if (detail.birth_date) {
+        setUserBirthDate(detail.birth_date);
+        safeStorage.setItem('vlive_profile_birthdate', detail.birth_date);
+      }
+      if (detail.interests) {
+        setUserInterests(detail.interests);
+        safeStorage.setItem('vlive_profile_interests', detail.interests);
+      }
+      if (detail.occupation) {
+        setUserOccupation(detail.occupation);
+        safeStorage.setItem('vlive_profile_occupation', detail.occupation);
+      }
+      if (detail.education) {
+        setUserEducation(detail.education);
+        safeStorage.setItem('vlive_profile_education', detail.education);
+      }
+      if (detail.relationship) {
+        setUserRelationship(detail.relationship);
+        safeStorage.setItem('vlive_profile_relationship', detail.relationship);
+      }
+      if (detail.languages) {
+        setUserLanguages(detail.languages);
+        safeStorage.setItem('vlive_profile_languages', detail.languages);
+      }
+      if (detail.instagram) {
+        setInstagramLink(detail.instagram);
+        safeStorage.setItem('vlive_profile_ig', detail.instagram);
+      }
+      if (detail.telegram) {
+        setTelegramLink(detail.telegram);
+        safeStorage.setItem('vlive_profile_tg', detail.telegram);
+      }
+      if (detail.cover) {
+        setCoverPhoto(detail.cover);
+        safeStorage.setItem('vlive_profile_cover', detail.cover);
       }
 
-      if (!effectiveAge && profile.age !== undefined && profile.age !== null && profile.age !== '') {
-        effectiveAge = String(profile.age);
-      }
+      setEditForm(prev => ({
+        ...prev,
+        name: detail.name || prev.name,
+        bio: detail.bio !== undefined ? detail.bio : prev.bio,
+        avatar: detail.avatar || detail.avatar_url || prev.avatar,
+        gender: detail.gender || prev.gender,
+        city: detail.city || detail.country || prev.city,
+        age: detail.age !== undefined && detail.age !== null ? String(detail.age) : prev.age,
+        birth_date: detail.birth_date || prev.birth_date,
+        interests: detail.interests || prev.interests,
+        occupation: detail.occupation || prev.occupation,
+        education: detail.education || prev.education,
+        relationship: detail.relationship || prev.relationship,
+        languages: detail.languages || prev.languages,
+        instagram: detail.instagram || prev.instagram,
+        telegram: detail.telegram || prev.telegram,
+        cover: detail.cover || prev.cover
+      }));
+    };
 
-      if (effectiveAge) {
-        setUserAge(effectiveAge);
-        safeStorage.setItem('vlive_profile_age', effectiveAge);
-        setEditForm(prev => ({ ...prev, age: effectiveAge, birth_date: birthVal || prev.birth_date }));
-      }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('vlive_profile_updated', handleProfileUpdate);
+    }
 
-      if (profile.city) {
-        setUserCity(profile.city);
-        safeStorage.setItem('vlive_profile_city', profile.city);
-        setEditForm(prev => ({ ...prev, city: profile.city }));
+    return () => { 
+      isMounted = false;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('vlive_profile_updated', handleProfileUpdate);
       }
-      if (profile.bio) {
-        setUserBio(profile.bio);
-        setEditForm(prev => ({ ...prev, bio: profile.bio }));
-      }
-      if (profile.occupation) {
-        setUserOccupation(profile.occupation);
-        safeStorage.setItem('vlive_profile_occupation', profile.occupation);
-        setEditForm(prev => ({ ...prev, occupation: profile.occupation }));
-      }
-      if (profile.education) {
-        setUserEducation(profile.education);
-        safeStorage.setItem('vlive_profile_education', profile.education);
-        setEditForm(prev => ({ ...prev, education: profile.education }));
-      }
-      if (profile.interests) {
-        setUserInterests(profile.interests);
-        safeStorage.setItem('vlive_profile_interests', profile.interests);
-        setEditForm(prev => ({ ...prev, interests: profile.interests }));
-      }
-    }).catch(e => console.warn('ProfileTab getProfile sync error:', e));
-
-    return () => { isMounted = false; };
+    };
   }, []);
 
   // --- EDIT PROFILE MODAL STATE ---
@@ -202,42 +334,42 @@ export default function ProfileTab(props) {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({
-    name: userName || authFullName || 'User',
-    bio: userBio || authBio || '',
+    name: userName || authFullName || safeStorage.getItem('vlive_user_name') || 'User',
+    bio: userBio || authBio || safeStorage.getItem('vlive_user_bio') || '',
     gender: userGender || currentUser?.gender || safeStorage.getItem('vlive_user_gender') || 'male',
-    city: userCity,
-    birth_date: userBirthDate,
-    age: userAge,
-    occupation: userOccupation,
-    education: userEducation,
-    relationship: userRelationship,
-    interests: userInterests,
-    languages: userLanguages,
-    instagram: instagramLink,
-    telegram: telegramLink,
-    avatar: userAvatar || authAvatar || PRESET_AVATARS[0],
-    cover: coverPhoto
+    city: userCity || safeStorage.getItem('vlive_profile_city') || '',
+    birth_date: userBirthDate || safeStorage.getItem('vlive_profile_birthdate') || '',
+    age: userAge || safeStorage.getItem('vlive_profile_age') || '',
+    occupation: userOccupation || safeStorage.getItem('vlive_profile_occupation') || '',
+    education: userEducation || safeStorage.getItem('vlive_profile_education') || '',
+    relationship: userRelationship || safeStorage.getItem('vlive_profile_relationship') || 'Single',
+    interests: userInterests || safeStorage.getItem('vlive_profile_interests') || '',
+    languages: userLanguages || safeStorage.getItem('vlive_profile_languages') || 'فارسی (Persian)',
+    instagram: instagramLink || safeStorage.getItem('vlive_profile_ig') || '',
+    telegram: telegramLink || safeStorage.getItem('vlive_profile_tg') || '',
+    avatar: userAvatar || authAvatar || safeStorage.getItem('vlive_user_avatar') || PRESET_AVATARS[0],
+    cover: coverPhoto || safeStorage.getItem('vlive_profile_cover') || ''
   });
 
   useEffect(() => {
     if (isEditModalOpen) {
       setEditForm(prev => ({
         ...prev,
-        name: userName || prev.name,
-        bio: userBio || prev.bio,
+        name: userName || safeStorage.getItem('vlive_user_name') || prev.name,
+        bio: userBio || safeStorage.getItem('vlive_user_bio') || prev.bio,
         gender: userGender || currentUser?.gender || safeStorage.getItem('vlive_user_gender') || 'male',
-        city: userCity || prev.city,
-        birth_date: userBirthDate || prev.birth_date,
-        age: userAge || prev.age,
-        occupation: userOccupation || prev.occupation,
-        education: userEducation || prev.education,
-        relationship: userRelationship || prev.relationship,
-        interests: userInterests || prev.interests,
-        languages: userLanguages || prev.languages,
-        instagram: instagramLink || prev.instagram,
-        telegram: telegramLink || prev.telegram,
-        avatar: userAvatar || prev.avatar,
-        cover: coverPhoto || prev.cover
+        city: userCity || safeStorage.getItem('vlive_profile_city') || prev.city,
+        birth_date: userBirthDate || safeStorage.getItem('vlive_profile_birthdate') || prev.birth_date,
+        age: userAge || safeStorage.getItem('vlive_profile_age') || prev.age,
+        occupation: userOccupation || safeStorage.getItem('vlive_profile_occupation') || prev.occupation,
+        education: userEducation || safeStorage.getItem('vlive_profile_education') || prev.education,
+        relationship: userRelationship || safeStorage.getItem('vlive_profile_relationship') || prev.relationship,
+        interests: userInterests || safeStorage.getItem('vlive_profile_interests') || prev.interests,
+        languages: userLanguages || safeStorage.getItem('vlive_profile_languages') || prev.languages,
+        instagram: instagramLink || safeStorage.getItem('vlive_profile_ig') || prev.instagram,
+        telegram: telegramLink || safeStorage.getItem('vlive_profile_tg') || prev.telegram,
+        avatar: userAvatar || safeStorage.getItem('vlive_user_avatar') || prev.avatar,
+        cover: coverPhoto || safeStorage.getItem('vlive_profile_cover') || prev.cover
       }));
     }
   }, [isEditModalOpen, userName, userBio, userGender, userCity, userBirthDate, userAge, userOccupation, userEducation, userRelationship, userInterests, userLanguages, instagramLink, telegramLink, userAvatar, coverPhoto]);
