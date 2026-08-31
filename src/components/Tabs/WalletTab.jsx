@@ -1,6 +1,8 @@
 import { apiVip, apiWallet, apiReferral } from '../../services/api';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { APP_CONFIG } from '../../config';
+// from 'react';
 import { safeStorage } from '../../utils/safeStorage';
 import { economyService } from '../../services/economyService';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
@@ -131,7 +133,7 @@ export default function WalletTab(props) {
       showToast(window.loc('فقط درگاه پرداخت تتر فعال است.', 'Only Tether payment is active.'));
       return;
     }
-    const txInput = prompt(window.loc('لطفا برای تایید خرید ' + packCoins + ' سکه، کد هش تراکنش تتر به آدرس TQY2B6FvF2U7n3b8V9Z4Y3K9X5U7n3b8V9 را وارد کنید:', 'Please enter the USDT TRC20 Tx Hash sent to TQY2B6FvF2U7n3b8V9Z4Y3K9X5U7n3b8V9 to verify purchase of ' + packCoins + ' coins:'));
+    const txInput = prompt(window.loc('لطفا برای تایید خرید ' + packCoins + ' سکه، کد هش تراکنش تتر به آدرس ' + APP_CONFIG.TRON_PAYMENT_ADDRESS + ' را وارد کنید:', 'Please enter the USDT TRC20 Tx Hash sent to ' + APP_CONFIG.TRON_PAYMENT_ADDRESS + ' to verify purchase of ' + packCoins + ' coins:'));
     if (txInput && txInput.length > 10) {
         try {
             const { apiSupport } = await import('../../services/api');
@@ -543,12 +545,12 @@ export default function WalletTab(props) {
                 <div className="p-4 rounded-2xl bg-slate-900 border border-emerald-500/30 flex flex-col items-center justify-center space-y-3 mb-4">
                   <span className="text-emerald-400 font-bold text-sm">Scan QR Code to Deposit (USDT TRC20)</span>
                   <div className="p-2 bg-white rounded-xl">
-                    <QRCode value="TJj6T4kC6bQpY9jA3fX9zP2kR4yH7mL5vN" size={120} />
+                    <QRCode value={APP_CONFIG.TRON_PAYMENT_ADDRESS} size={120} />
                   </div>
                   <div className="text-center w-full max-w-sm">
                     <span className="text-[10px] text-slate-400 block mb-1">TRC20 Wallet Address:</span>
                     <div className="bg-slate-950 p-2 rounded-lg border border-slate-800 text-[10px] font-mono text-emerald-300 break-all select-all text-center">
-                      TJj6T4kC6bQpY9jA3fX9zP2kR4yH7mL5vN
+                      {APP_CONFIG.TRON_PAYMENT_ADDRESS}
                     </div>
                   </div>
                 </div>
@@ -2229,38 +2231,17 @@ export default function WalletTab(props) {
                     </div>
                   </div>
 
-                  {/* PAYMENT METHOD SELECTOR */}
+                  {/* PAYMENT METHOD SELECTOR (USDT ONLY) */}
                   <div className="p-5 rounded-3xl bg-slate-950 border border-slate-800 space-y-3 flex flex-col justify-between">
                     <div>
-                      <h4 className="text-xs font-black text-amber-300 flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-amber-400" />
+                      <h4 className="text-xs font-black text-emerald-400 flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-emerald-400" />
                         {window.loc('۴. روش پرداخت (Payment Method)', '4. Payment Method')}
                       </h4>
 
-                      <div className="grid grid-cols-3 gap-2 text-xs mt-3">
-                        <button
-                          onClick={() => setSelectedVipPayMethod('in_app')}
-                          className={`p-3 rounded-2xl border text-center transition space-y-1 ${selectedVipPayMethod === 'in_app' ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold shadow-md' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
-                        >
-                          <CreditCard className="w-5 h-5 mx-auto text-amber-400" />
-                          <span className="block text-[11px] font-bold">{window.loc('پرداخت در برنامه‌ای', 'Payment in a program')}</span>
-                        </button>
-
-                        <button
-                          onClick={() => setSelectedVipPayMethod('usdt')}
-                          className={`p-3 rounded-2xl border text-center transition space-y-1 ${selectedVipPayMethod === 'usdt' ? 'bg-emerald-500/10 border-emerald-400 text-emerald-300 font-bold shadow-md' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
-                        >
-                          <DollarSign className="w-5 h-5 mx-auto text-emerald-400" />
-                          <span className="block text-[11px] font-bold">USDT (TRC20)</span>
-                        </button>
-
-                        <button
-                          onClick={() => setSelectedVipPayMethod('coins')}
-                          className={`p-3 rounded-2xl border text-center transition space-y-1 ${selectedVipPayMethod === 'coins' ? 'bg-amber-500/10 border-amber-400 text-amber-300 font-bold shadow-md' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
-                        >
-                          <CoinsIcon className="w-5 h-5 mx-auto text-amber-400" />
-                          <span className="block text-[11px] font-bold">{window.loc('سکه‌های من', 'my coins')}</span>
-                        </button>
+                      <div className="mt-3 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-center gap-2">
+                        <DollarSign className="w-5 h-5 text-emerald-400" />
+                        <span className="text-xs font-black">USDT TRC20 ({window.loc('تنها روش پرداخت فعال', 'Only active payment method')})</span>
                       </div>
                     </div>
 
@@ -2279,47 +2260,13 @@ export default function WalletTab(props) {
                         </button>
                       ) : (
                         <button
-                          onClick={async () => {
-                            const basePrices = { silver: 300, gold: 500, diamond: 1000 };
-                            const discountMultipliers = { 1: 1.0, 3: 0.85, 6: 0.75, 12: 0.60 };
-                            const monthlyCost = basePrices[selectedVipPlan] || 500;
-                            const totalBaseCoins = monthlyCost * selectedVipDuration;
-                            const finalCoinsCost = Math.round(totalBaseCoins * (discountMultipliers[selectedVipDuration] || 1.0));
-
-                            if (selectedVipPayMethod === 'coins') {
-                              if (userCoins < finalCoinsCost) {
-                                showToast(window.loc(`موجودی سکه کافی نیست! هزینه: ${finalCoinsCost} سکه`, `موجودی سکه کافی نیست! هزینه: ${finalCoinsCost} سکه`));
-                                return;
-                              }
-                            }
-
-                            const res = await apiVip.purchasePlan({
-                              plan: selectedVipPlan,
-                              durationMonths: selectedVipDuration,
-                              priceCoins: finalCoinsCost
-                            });
-
-                            if (res && res.success !== false) {
-                              if (selectedVipPayMethod === 'coins') {
-                                setUserCoins(prev => Math.max(0, prev - finalCoinsCost));
-                              }
-                              setVipPlan(selectedVipPlan);
-                              setVipExpireDays(selectedVipDuration * 30);
-                              setIsVipMonthlyClaimed(false);
-                              safeStorage.setItem('vlive_vip_plan', selectedVipPlan);
-                              safeStorage.setItem('vlive_vip_expire_days', (selectedVipDuration * 30).toString());
-                              safeStorage.setItem('vlive_vip_monthly_claimed', 'false');
-
-                              setIsVipCelebrationOpen(true);
-                              showToast(window.loc(`👑 اشتراک ${(selectedVipPlan || 'VIP').toUpperCase()} با موفقیت در دیتابیس فعال شد!`, `👑 اشتراک ${(selectedVipPlan || 'VIP').toUpperCase()} با موفقیت در دیتابیس فعال شد!`));
-                            } else {
-                              showToast(window.loc('خطا در خرید اشتراک VIP: ', 'Error purchasing VIP: ') + (res?.error || ''));
-                            }
+                          onClick={() => {
+                            setIsVipModalOpen(true);
                           }}
-                          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-[0_0_25px_rgba(245,158,11,0.4)] hover:brightness-110 transition active:scale-95 flex items-center justify-center gap-2 animate-pulse"
+                          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 text-slate-950 font-black text-xs shadow-[0_0_25px_rgba(16,185,129,0.4)] hover:brightness-110 transition active:scale-95 flex items-center justify-center gap-2"
                         >
-                          <Crown className="w-4 h-4 fill-slate-950" />
-                          <span>{window.loc('تایید و فعال‌سازی اشتراک', 'Subscription confirmation and activation')} {(selectedVipPlan || 'VIP').toUpperCase()} ({selectedVipDuration} {window.loc('ماهه)', 'month)')}</span>
+                          <DollarSign className="w-4 h-4" />
+                          <span>{window.loc('پرداخت تتر و فعال‌سازی VIP', 'Pay USDT & Activate VIP')}</span>
                         </button>
                       )}
                     </div>

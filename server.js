@@ -811,7 +811,90 @@ Text to translate: "${text}"`;
         return res.end(JSON.stringify({ success: true, source: 'Server AI Engine', translatedText: translated }));
       }
 
-      // 1. Report Analyzer (Admin Security API)
+      
+      // 0. Automatic USDT TRC20 Verification Endpoint
+      if (reqUrl === '/api/payments/verify-usdt') {
+        const authResult = await authenticateRequest(req, data);
+        if (!authResult.authenticated) {
+          res.statusCode = 401;
+          return res.end(JSON.stringify({ success: false, error: 'Unauthorized' }));
+        }
+
+        const { txid, plan, durationMonths } = data;
+        if (!txid || !plan) {
+          res.statusCode = 400;
+          return res.end(JSON.stringify({ success: false, error: 'Missing txid or plan' }));
+        }
+
+        const TRON_PAYMENT_ADDRESS = process.env.TRON_PAYMENT_ADDRESS;
+        const TRON_USDT_CONTRACT = process.env.TRON_USDT_CONTRACT || 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+        const TRONSCAN_API_URL = process.env.TRONSCAN_API_URL || 'https://apilist.tronscanapi.com/api/transaction-info?hash=';
+        const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+        if (!TRON_PAYMENT_ADDRESS || !SERVICE_ROLE_KEY) {
+          console.error('[SECURITY FATAL] Missing TRON_PAYMENT_ADDRESS or SUPABASE_SERVICE_ROLE_KEY in ENV');
+          res.statusCode = 500;
+          return res.end(JSON.stringify({ success: false, error: 'Configuration Error: Payment system is not securely configured on server.' }));
+        }
+
+        try {
+          // Verify on Blockchain (TronScan Public API)
+          const txRes = await fetch(`${TRONSCAN_API_URL}${txid}`);
+          const txData = await txRes.json();
+
+          if (!txData || txData.contractRet !== 'SUCCESS' || txData.confirmed !== true) {
+            return res.end(JSON.stringify({ success: false, error: 'Transaction is either not successful, not found, or unconfirmed.' }));
+          }
+
+          // Parse TRC20 transfer info
+          const transfers = txData.trc20TransferInfo || [];
+          let validTransfer = null;
+          
+          for (const transfer of transfers) {
+            if (
+              transfer.contract_address === TRON_USDT_CONTRACT &&
+              transfer.to_address === TRON_PAYMENT_ADDRESS
+            ) {
+              validTransfer = transfer;
+              break;
+            }
+          }
+
+          if (!validTransfer) {
+            return res.end(JSON.stringify({ success: false, error: 'Transaction does not contain a valid USDT transfer to the official address.' }));
+          }
+
+          const amountUsdt = parseInt(validTransfer.amount_str, 10) / Math.pow(10, parseInt(validTransfer.decimals, 10));
+
+          if (amountUsdt <= 0) {
+            return res.end(JSON.stringify({ success: false, error: 'Transaction amount is invalid.' }));
+          }
+
+          // Call secure RPC
+          const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+          
+          const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('rpc_process_usdt_vip', {
+            p_txid: txid,
+            p_user_id: authResult.user.id,
+            p_plan: plan,
+            p_duration_months: parseInt(durationMonths, 10) || 1,
+            p_amount_usdt: amountUsdt,
+            p_recipient: TRON_PAYMENT_ADDRESS,
+            p_contract: TRON_USDT_CONTRACT
+          });
+
+          if (rpcError) {
+            console.error('RPC Error:', rpcError);
+            return res.end(JSON.stringify({ success: false, error: rpcError.message }));
+          }
+
+          return res.end(JSON.stringify({ success: true, data: rpcData }));
+        } catch (err) {
+          console.error('USDT Verification Error:', err);
+          return res.end(JSON.stringify({ success: false, error: 'Internal server error during verification.' }));
+        }
+      }
+// 1. Report Analyzer (Admin Security API)
       if (reqUrl === '/api/ai-security/analyze-report') {
         const { reportText = '', category = '', user = '' } = data;
         const prompt = `You are an AI Security Moderator for V.Live+. Analyze this user report:

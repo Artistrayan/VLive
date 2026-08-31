@@ -2538,13 +2538,46 @@ export const apiVip = {
 
     try {
       const { data, error } = await supabase.rpc('rpc_purchase_vip', {
-        p_plan: plan.toLowerCase(),
+        p_plan: (plan || 'gold').toLowerCase(),
         p_duration_months: parseInt(durationMonths, 10) || 1,
         p_idempotency_key: idempotencyKey
       });
 
       if (error) return { success: false, error: error.message };
       return data;
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async getVipRules() {
+    try {
+      const { data, error } = await supabase.from('vip_rules').select('*').order('created_at', { ascending: true });
+      if (error) return [];
+      return data || [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async activateVipDirectly(userId, plan = 'gold', durationMonths = 1) {
+    try {
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + parseInt(durationMonths, 10));
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          is_vip: true,
+          vip_plan: plan.toLowerCase(),
+          vip_expires_at: expiresAt.toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select();
+
+      if (error) return { success: false, error: error.message };
+      return { success: true, user: data?.[0] };
     } catch (e) {
       return { success: false, error: e.message };
     }

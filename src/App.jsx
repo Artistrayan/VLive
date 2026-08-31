@@ -2175,6 +2175,17 @@ export default function App() {
             safeStorage.setItem('vlive_user_gender', u.gender);
           }
           setIsVerified(u.is_verified || false);
+          if (u.is_vip || u.vip_plan) {
+            const pName = u.vip_plan || 'gold';
+            setVipPlan(pName);
+            safeStorage.setItem('vlive_vip_plan', pName);
+            if (u.vip_expires_at) {
+              const remainingDays = Math.max(0, Math.ceil((new Date(u.vip_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+              setVipExpireDays(remainingDays);
+            } else {
+              setVipExpireDays(30);
+            }
+          }
 
           safeStorage.setItem('vlive_user_logged_in', 'true');
           setIsLoggedIn(true);
@@ -2253,6 +2264,17 @@ export default function App() {
           setAuthTelegramId(effectiveTgId);
         }
         setIsVerified(profile.is_verified || false);
+        if (profile.is_vip || profile.vip_plan) {
+          const pName = profile.vip_plan || 'gold';
+          setVipPlan(pName);
+          safeStorage.setItem('vlive_vip_plan', pName);
+          if (profile.vip_expires_at) {
+            const remainingDays = Math.max(0, Math.ceil((new Date(profile.vip_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+            setVipExpireDays(remainingDays);
+          } else {
+            setVipExpireDays(30);
+          }
+        }
       }
     }).catch(err => console.warn('Profile load err:', err));
 
