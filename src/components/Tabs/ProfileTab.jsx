@@ -513,7 +513,11 @@ export default function ProfileTab(props) {
               <div className="flex items-start justify-between gap-4">
                 {/* Avatar on Top-Left + Username under photo */}
                 <div className="flex flex-col items-center -mt-12 sm:-mt-16 shrink-0">
-                  <div className="relative group">
+                  <div 
+                    onClick={() => setIsEditModalOpen(true)}
+                    className="relative group cursor-pointer"
+                    title={window.loc('کلیک برای ویرایش پروفایل', 'Click to edit profile')}
+                  >
                     <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full p-1 bg-gradient-to-tr from-pink-500 via-purple-500 to-amber-400 shadow-[0_0_35px_rgba(236,72,153,0.5)]">
                       <img
                         src={userAvatar || authAvatar || PRESET_AVATARS[0]}
@@ -1305,149 +1309,7 @@ export default function ProfileTab(props) {
       {/* ========================================== */}
       {/* 3. EDIT PROFILE MODAL                      */}
       {/* ========================================== */}
-      
-
-{/* DEDICATED ADMIN CARD FOR ADMIN USERS       */}
-        {/* ========================================== */}
-        {isAdminUser && (
-          <div className="p-3 rounded-2xl bg-gradient-to-r from-rose-950/90 via-slate-900 to-slate-900 border border-rose-500/50 shadow-xl space-y-2 animate-fadeIn">
-            {/* Top Action Row: Entry Button Only */}
-            <div className="flex items-center justify-between gap-2 pb-1 border-b border-rose-500/30">
-              <button
-                onClick={() => setIsAdminPanelOpen && setIsAdminPanelOpen(true)}
-                className="w-full py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs shadow-md flex items-center justify-center gap-1.5 transition active:scale-95"
-              >
-                <Shield className="w-4 h-4" />
-                <span>{window.loc('ورود به پنل مدیریت', 'Enter Admin Panel')}</span>
-              </button>
-            </div>
-
-            {/* 4 Compact Interactive Clickable Stats Cards */}
-            <div className="grid grid-cols-4 gap-1.5 text-xs">
-              <button
-                type="button"
-                onClick={() => {
-                  if (setAdminActiveTab) setAdminActiveTab('users');
-                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
-                  showToast(window.loc('مدیریت و آمار کامل کاربران 👥', 'Full User Management & Stats 👥'));
-                }}
-                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-cyan-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
-              >
-                <span className="block text-sm sm:text-base font-black text-white group-hover:text-cyan-300 transition">
-                  {formatNum((usersList || []).length)}
-                </span>
-                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
-                  <Users className="w-2.5 h-2.5 text-cyan-400 inline" />
-                  {window.loc('کل کاربران', 'Total Users')}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (setAdminActiveTab) setAdminActiveTab('verification');
-                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
-                  showToast(window.loc('بررسی مدارک و درخواست‌های احراز هویت 📑', 'Identity Verification & Pending Documents 📑'));
-                }}
-                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-amber-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
-              >
-                <span className="block text-sm sm:text-base font-black text-amber-400 group-hover:scale-110 transition">
-                  {formatNum((usersList || []).filter(u => u.isPendingAuth || u.status === 'pending' || u.kycStatus === 'pending').length)}
-                </span>
-                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
-                  <ShieldAlert className="w-2.5 h-2.5 text-amber-400 inline" />
-                  {window.loc('احراز معلق', 'Pending Auth')}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (setAdminActiveTab) setAdminActiveTab('verification');
-                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
-                  showToast(window.loc('مدیریت و آمار مجری‌ها و استریمرها 🎙️', 'Streamers & Broadcaster Management 🎙️'));
-                }}
-                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-cyan-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
-              >
-                <span className="block text-sm sm:text-base font-black text-cyan-400 group-hover:scale-110 transition">
-                  {formatNum((usersList || []).filter(u => u.isStreamer || u.isBroadcaster || u.role === 'streamer').length)}
-                </span>
-                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
-                  <Radio className="w-2.5 h-2.5 text-cyan-400 inline" />
-                  {window.loc('استریمرها', 'Streamers')}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (setAdminActiveTab) setAdminActiveTab('reports');
-                  if (setIsAdminPanelOpen) setIsAdminPanelOpen(true);
-                  showToast(window.loc('مرکز بررسی گزارش‌های تخلف 🚨', 'Violation Reports Center 🚨'));
-                }}
-                className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-rose-400 text-center flex flex-col justify-center items-center min-w-0 cursor-pointer transition active:scale-95 group shadow-sm"
-              >
-                <span className="block text-sm sm:text-base font-black text-rose-400 group-hover:scale-110 transition">
-                  {formatNum((adminReportsList || []).length)}
-                </span>
-                <span className="text-[9px] text-slate-400 group-hover:text-slate-200 truncate w-full flex items-center justify-center gap-0.5">
-                  <Shield className="w-2.5 h-2.5 text-rose-400 inline" />
-                  {window.loc('گزارش‌ها', 'Reports')}
-                </span>
-              </button>
-            </div>
-
-            {/* Visual Editor / Audit Log Quick Actions */}
-            <div className="flex gap-1.5 pt-1">
-              <button
-                onClick={() => setIsEditMode && setIsEditMode(!isEditMode)}
-                className="flex-1 py-2 rounded-xl bg-amber-950/50 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300 font-bold text-[11px] flex items-center justify-center gap-1 transition"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>{isEditMode ? window.loc('خروج از ویرایش بصری', 'Exit Visual Edit') : window.loc('ویرایش بصری UI', 'Visual UI Editor')}</span>
-              </button>
-              <button
-                onClick={() => {
-                  addAdminAuditLog(window.loc('بازبینی سریع کاربران از پروفایل انجام شد', 'Quick review of user profiles was done'));
-                  showToast(window.loc('بررسی امنیتی کامل اجرا شد ✅', 'A complete security check has been implemented'));
-                }}
-                className="flex-1 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-[11px] flex items-center justify-center gap-1 transition"
-              >
-                <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{window.loc('ثبت لاگ نظارت', 'Record Audit Log')}</span>
-              </button>
-            </div>
-          </div>
-        )}
-        {/* ========================================== */}
-                
-
-{/* ACTION GRID - REDESIGNED SLEEK 2-BUTTON BAR */}
-        {/* ========================================== */}
-        <VisualSectionWrapper pageId="profile" sectionId="profile_actions_grid" defaultLabel="Profile Actions">
-          <div className="grid grid-cols-2 gap-2.5 mb-2">
-            <button 
-              onClick={() => setIsEditModalOpen(true)} 
-              className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-pink-500/40 text-white font-bold text-xs shadow-sm transition active:scale-95"
-            >
-              <Edit3 className="w-4.5 h-4.5 text-pink-400" />
-              <span>{window.loc('ویرایش پروفایل', 'Edit Profile')}</span>
-            </button>
-
-            <button 
-              onClick={() => { if(props.setIsSettingsModalOpen) props.setIsSettingsModalOpen(true); }} 
-              className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 text-white font-bold text-xs shadow-sm transition active:scale-95"
-            >
-              <Settings className="w-4.5 h-4.5 text-cyan-400" />
-              <span>{window.loc('تنظیمات', 'Settings')}</span>
-            </button>
-          </div>
-        </VisualSectionWrapper>
-
-        {/* ========================================== */}
-        {/* MODALS                                    */}
-        {/* ========================================== */}
-{isEditModalOpen && (
+      {isEditModalOpen && (
         <div className="fixed inset-0 z-[70] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn overflow-y-auto" dir="rtl">
           <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl my-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
