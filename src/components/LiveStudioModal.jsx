@@ -271,7 +271,7 @@ export default function LiveStudioModal({
       setCountdownNum(3);
       setIsStartingLive(false);
       setLiveDurationSeconds(0);
-      setViewerCount(1);
+      setViewerCount(0);
       setLikeCount(0);
       setGiftCoinsEarned(0);
       setFollowersGained(0);
@@ -612,7 +612,7 @@ export default function LiveStudioModal({
       live_type: liveType,
       description: liveDesc,
       thumbnail: thumbnailUrl,
-      viewers: 1,
+      viewers: 0,
       isSelfStream: true,
       status: 'active',
       is_ticketed: isTicketedLive,
@@ -646,7 +646,7 @@ export default function LiveStudioModal({
       }
       const roomService = new LiveStreamRoomService(createdStream.id, {
         onViewerUpdate: (count) => {
-          setViewerCount(Math.max(1, count));
+          setViewerCount(Math.max(0, count));
         },
         onLikeUpdate: (count) => {
           setLikeCount(prev => prev + (count || 1));
@@ -675,7 +675,7 @@ export default function LiveStudioModal({
           showToast?.(window.loc(`🌟 کاربر @${followerData.username || ''} شما را دنبال کرد!`, `🌟 User followed you!`));
         }
       });
-      roomService.subscribe(currentUser);
+      roomService.subscribe({ ...currentUser, isBroadcaster: true, isHost: true });
       roomServiceRef.current = roomService;
     } catch (roomErr) {
       console.warn('Live room real-time sync warning:', roomErr);

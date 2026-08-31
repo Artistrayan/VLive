@@ -240,7 +240,7 @@ export default function LiveStreamSystem({
       category: streamPayload.category,
       live_type: streamPayload.live_type,
       thumbnail: streamPayload.thumbnail,
-      viewers: 1,
+      viewers: 0,
       isSelfStream: true,
       status: 'active',
       livekit_token: tokenRes.token,

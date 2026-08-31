@@ -2499,6 +2499,12 @@ export default function App() {
       if (detail.name) setUserName(detail.name);
       if (detail.avatar) setUserAvatar(detail.avatar);
       if (detail.bio) setUserBio(detail.bio);
+      if (detail.gender) {
+        setUserGender(detail.gender);
+        setAuthGender(detail.gender);
+        setEditGender(detail.gender);
+        safeStorage.setItem('vlive_user_gender', detail.gender);
+      }
       if (detail.birth_date) setAuthBirthDate(detail.birth_date);
       if (detail.age) setAuthAge(String(detail.age));
     };

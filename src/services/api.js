@@ -379,6 +379,11 @@ export const apiProfile = {
     }
   },
 
+  async getMyProfile() {
+    const data = await this.getProfile();
+    return { success: !!data, data };
+  },
+
   async updateProfile(updates) {
     const { data: authData } = await supabase.auth.getUser();
     const uid = authData?.user?.id || getUserId();
@@ -829,8 +834,15 @@ export const apiProfile = {
     if (!targetUserId) return { success: false };
     try {
       const viewerId = viewerData.id || getUserId();
-      // Avoid counting self-views excessively
-      if (viewerId && String(viewerId) === String(targetUserId)) {
+      const viewerUsername = (viewerData.username || viewerData.name || '').trim().toLowerCase();
+      const targetUserStr = String(targetUserId).trim().toLowerCase();
+
+      // Avoid counting self-views: check by ID, username, and target match
+      if (
+        (viewerId && String(viewerId).toLowerCase() === targetUserStr) ||
+        (viewerUsername && viewerUsername === targetUserStr) ||
+        targetUserStr === 'me'
+      ) {
         return { success: true, isSelf: true };
       }
 
@@ -846,10 +858,10 @@ export const apiProfile = {
 
       const visitorEntry = {
         id: viewerId || `visitor_${Date.now()}`,
-        name: viewerData.name || viewerData.username || 'App Visitor',
+        name: viewerData.name || viewerData.fullName || viewerData.username || 'کاربر مهمان',
         username: viewerData.username || 'visitor',
         avatar: viewerData.avatar || '',
-        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        time: new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
         date: new Date().toLocaleDateString('fa-IR'),
         timestamp: Date.now()
       };
@@ -859,6 +871,16 @@ export const apiProfile = {
       visitors.unshift(visitorEntry);
       visitors = visitors.slice(0, 50); // keep last 50
       localStorage.setItem(storageKey, JSON.stringify(visitors));
+
+      // Also record in viewer's own visited profiles log
+      try {
+        if (viewerUsername) {
+          const myVisitedKey = `vlive_profile_visitors_${viewerUsername}`;
+          const myVisited = JSON.parse(localStorage.getItem(myVisitedKey) || '[]');
+          const updated = [visitorEntry, ...myVisited.filter(x => x.id !== visitorEntry.id)].slice(0, 50);
+          localStorage.setItem(myVisitedKey, JSON.stringify(updated));
+        }
+      } catch (e) {}
 
       // 2. Increment views_count in Supabase
       const { data: targetProfile } = await supabase.from('profiles').select('views_count').eq('id', targetUserId).maybeSingle();
@@ -876,7 +898,18 @@ export const apiProfile = {
     try {
       const storageKey = `vlive_profile_visitors_${targetUserId}`;
       const stored = localStorage.getItem(storageKey);
-      return stored ? JSON.parse(stored) : [];
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      
+      // Fallback check for general profile visitors
+      const generalStored = localStorage.getItem('vlive_profile_visitors_me');
+      if (generalStored) {
+        const parsed = JSON.parse(generalStored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+      return [];
     } catch (e) {
       return [];
     }

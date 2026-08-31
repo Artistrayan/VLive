@@ -18,43 +18,44 @@ export class LiveStreamRoomService {
     if (!this.streamId) return;
 
     const channelName = `stream_room_${this.streamId}`;
+    const myUserId = currentUser?.id || getUserId();
+    const isHost = Boolean(currentUser?.isBroadcaster || currentUser?.isHost);
+
     this.channel = supabase.channel(channelName, {
       config: {
         presence: {
-          key: currentUser?.id || getUserId() || `viewer_${Date.now()}`
+          key: myUserId || `viewer_${Date.now()}`
         }
       }
     });
 
+    const computeViewerStats = () => {
+      const state = this.channel.presenceState();
+      const allPresences = [];
+      Object.keys(state).forEach(key => {
+        const list = state[key];
+        if (Array.isArray(list)) {
+          list.forEach(p => allPresences.push(p));
+        }
+      });
+      // Filter out the broadcaster from viewers list and count
+      const viewersOnly = allPresences.filter(p => !p.is_host && !p.isBroadcaster && String(p.user_id) !== String(this.hostId));
+      const viewerCount = viewersOnly.length;
+      if (this.callbacks.onViewerUpdate) {
+        this.callbacks.onViewerUpdate(viewerCount, viewersOnly);
+      }
+    };
+
     // 1. PRESENCE (Real Viewers)
     this.channel
       .on('presence', { event: 'sync' }, () => {
-        const state = this.channel.presenceState();
-        const viewers = [];
-        Object.keys(state).forEach(key => {
-          const presences = state[key];
-          if (Array.isArray(presences)) {
-            presences.forEach(p => viewers.push(p));
-          }
-        });
-        const count = viewers.length;
-        if (this.callbacks.onViewerUpdate) {
-          this.callbacks.onViewerUpdate(count, viewers);
-        }
+        computeViewerStats();
       })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        const state = this.channel.presenceState();
-        const count = Object.keys(state).length;
-        if (this.callbacks.onViewerUpdate) {
-          this.callbacks.onViewerUpdate(count);
-        }
+      .on('presence', { event: 'join' }, () => {
+        computeViewerStats();
       })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        const state = this.channel.presenceState();
-        const count = Object.keys(state).length;
-        if (this.callbacks.onViewerUpdate) {
-          this.callbacks.onViewerUpdate(count);
-        }
+      .on('presence', { event: 'leave' }, () => {
+        computeViewerStats();
       });
 
     // 2. BROADCAST (Real Likes, Gifts, Messages, Follow Events)
@@ -84,10 +85,12 @@ export class LiveStreamRoomService {
     this.channel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
         const profile = {
-          user_id: currentUser?.id || getUserId(),
+          user_id: myUserId,
           username: currentUser?.username || currentUser?.name || 'Anonymous',
           name: currentUser?.name || currentUser?.username || 'Viewer',
           avatar: currentUser?.avatar || '',
+          is_host: isHost,
+          isBroadcaster: isHost,
           joined_at: new Date().toISOString()
         };
         await this.channel.track(profile);

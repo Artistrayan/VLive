@@ -320,12 +320,18 @@ export default function ProfileTab(props) {
     return () => window.removeEventListener('vlive_follow_changed', syncFollow);
   }, []);
 
-  // Increments real views count on profile visit
+  // Load real profile visitors and persistent views count without counting self visits
   useEffect(() => {
-    const newViews = userViewsCount + 1;
-    setUserViewsCount(newViews);
-    safeStorage.setItem('vlive_user_views', String(newViews));
-    setProfileVisitors(apiProfile.getProfileVisitors(currentUsername || 'me'));
+    const targetKey = currentUsername || 'me';
+    setProfileVisitors(apiProfile.getProfileVisitors(targetKey));
+    
+    // Sync views count from Supabase/safeStorage
+    apiProfile.getProfile().then(p => {
+      if (p && p.views_count !== undefined) {
+        setUserViewsCount(Number(p.views_count) || 0);
+        safeStorage.setItem('vlive_user_views', String(p.views_count || 0));
+      }
+    }).catch(() => {});
   }, [currentUsername]);
 
   // --- LOCAL POSTS STATE WITH REAL LIKES & COMMENTS ---
