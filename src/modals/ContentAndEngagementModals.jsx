@@ -327,14 +327,28 @@ export default function ContentAndEngagementModals(props) {
             </div>
             <div className="pt-2 flex items-center gap-2">
               <button
-                onClick={handlePublishStory}
-                className="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg"
+                onClick={() => {
+                  if (!newStoryImage) {
+                    showToast && showToast(window.loc('لطفاً تصویر یا ویدیو برای استوری انتخاب کنید', 'Please select an image or video for the story'));
+                    return;
+                  }
+                  if (typeof handlePublishStory === 'function') {
+                    handlePublishStory({
+                      mediaUrl: newStoryImage,
+                      caption: newStoryCaption || ''
+                    });
+                  } else {
+                    setIsAddStoryModalOpen(false);
+                    showToast && showToast(window.loc('استوری با موفقیت منتشر شد ✨', 'Story published successfully ✨'));
+                  }
+                }}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs shadow-lg cursor-pointer"
               >
                 {window.loc('انتشار استوری در پروفایل ⚡', 'Publish Story ⚡')}
               </button>
               <button
                 onClick={() => setIsAddStoryModalOpen(false)}
-                className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+                className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs cursor-pointer"
               >
                 {window.loc('انصراف', 'Cancel')}
               </button>
