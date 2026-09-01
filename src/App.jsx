@@ -2764,17 +2764,30 @@ export default function App() {
         {/* TAB 1: HOME (EXPLORE & LIVE SUB-TABS) */}
         {activeTab === 'home' && <div className="space-y-3 animate-fadeIn pb-12">
             
-            {/* TOP COMPACT SUB-TAB SWITCHER (EXPLORE / LIVE) */}
-            <div className="grid grid-cols-2 gap-1 bg-slate-950/90 p-1 rounded-2xl border border-slate-800 shadow-sm max-w-xs mx-auto">
-              <button onClick={() => setHomeSubTab('explore')} className={`py-1.5 px-3 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center gap-1.5 ${homeSubTab === 'explore' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20' : 'text-slate-400 hover:text-white'}`}>
-                <Compass className="w-3.5 h-3.5" />
-                <span>Explore</span>
-              </button>
+            {/* TOP COMPACT SUB-TAB SWITCHER (EXPLORE / LIVE) + START LIVE BUTTON */}
+            <div className={`flex items-center justify-center gap-2 mx-auto ${isApprovedStreamerOrAdmin ? 'max-w-md' : 'max-w-xs'}`}>
+              <div className="grid grid-cols-2 gap-1 bg-slate-950/90 p-1 rounded-2xl border border-slate-800 shadow-sm flex-1">
+                <button onClick={() => setHomeSubTab('explore')} className={`py-1.5 px-3 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center gap-1.5 ${homeSubTab === 'explore' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20' : 'text-slate-400 hover:text-white'}`}>
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>{loc('اکسپلور', 'Explore')}</span>
+                </button>
 
-              <button onClick={() => setHomeSubTab('live')} className={`py-1.5 px-3 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center gap-1.5 ${homeSubTab === 'live' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20' : 'text-slate-400 hover:text-white'}`}>
-                <Radio className="w-3.5 h-3.5 text-pink-400 animate-pulse" />
-                <span>Live Streams</span>
-              </button>
+                <button onClick={() => setHomeSubTab('live')} className={`py-1.5 px-3 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center gap-1.5 ${homeSubTab === 'live' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20' : 'text-slate-400 hover:text-white'}`}>
+                  <Radio className="w-3.5 h-3.5 text-pink-400 animate-pulse" />
+                  <span>{loc('لایوها', 'Live Streams')}</span>
+                </button>
+              </div>
+
+              {isApprovedStreamerOrAdmin && (
+                <button 
+                  onClick={() => setIsLiveStudioOpen(true)}
+                  className="py-1.5 px-3 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 hover:opacity-95 text-white font-black text-xs shadow-lg shadow-pink-500/30 flex items-center justify-center gap-1.5 hover:scale-105 active:scale-95 transition shrink-0 border border-pink-400/50"
+                  title={loc('ورود به استودیو لایو 🎥', 'Open Live Studio 🎥')}
+                >
+                  <Video className="w-4 h-4 animate-pulse" />
+                  <span className="hidden sm:inline">{loc('شروع لایو', 'Start Live')}</span>
+                </button>
+              )}
             </div>
 
             {/* SUB-TAB 1: EXPLORE (USER DISCOVERY FEED) */}

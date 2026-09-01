@@ -275,24 +275,6 @@ export default function LiveStreamSystem({
               <p className="text-[11px] text-slate-400 font-semibold">{window.loc('پخش زنده استریمرهای تایید شده', 'Live streaming from verified streamers')}</p>
             </div>
           </div>
-
-          {isFemaleApprovedStreamer && (
-            <button
-              onClick={() => {
-                if (setIsLiveStudioOpen) {
-                  setIsLiveStudioOpen(true);
-                } else if (setIsHostLiveOpen) {
-                  setIsHostLiveOpen(true);
-                } else {
-                  setIsStartLiveModalOpen(true);
-                }
-              }}
-              className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 hover:opacity-95 text-white font-black text-xs shadow-lg flex items-center gap-1.5 hover:scale-102 active:scale-95 transition shadow-pink-500/30 shrink-0"
-            >
-              <Video className="w-4 h-4 animate-pulse" />
-              <span>{window.loc('ورود به Live Studio 🎥', 'Open Live Studio 🎥')}</span>
-            </button>
-          )}
         </div>
 
         {/* MAIN TYPE TOGGLE (Standard Live vs Adult Live 18+) */}
