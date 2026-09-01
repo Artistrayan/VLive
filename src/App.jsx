@@ -119,7 +119,7 @@ export default function App() {
   const [userGender, setUserGender] = useState(() => safeStorage.getItem('vlive_user_gender') || 'male');
   const [userAvatar, setUserAvatar] = useState('');
   const [userBio, setUserBio] = useState('');
-  const [, setIsVerified] = useState(false);
+  const [isVerified, setIsVerified] = useState(() => safeStorage.getItem('vlive_is_verified') === 'true');
   const [userRole, setUserRole] = useState('user');
   const [userLevel, setUserLevel] = useState(1);
   const [vipPlan, setVipPlan] = useState('Free');
