@@ -2877,7 +2877,7 @@ export default function App() {
                         <div className="absolute bottom-1.5 left-2 right-2 pointer-events-none">
                           <h4 className="text-xs font-black text-white drop-shadow-md truncate flex items-center gap-1">
                             <span className="truncate">{user.name}{user.age ? `, ${user.age}` : ''}</span>
-                            {Boolean(user. user.is_verified || user.verified) && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0 inline-block" />}
+                            {Boolean(user?.is_verified || user?.isVerified || user?.verified) && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0 inline-block" />}
                           </h4>
                           <p className="text-[9px] text-pink-300 font-bold drop-shadow-md truncate">📍 {user.city} • Lv.{user.level}</p>
                         </div>
@@ -3030,7 +3030,7 @@ export default function App() {
                     setIsUserProfileModalOpen(true);
                   }} className="absolute top-1/2 -right-5 -translate-y-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-purple-500 shadow-[0_0_15px_#ec4899] cursor-pointer hover:scale-130 transition duration-300 z-30 group" title={matchDeckProfiles[1]?.name || ''}>
                       <img src={matchDeckProfiles[1]?.avatar || ''} alt="Candidate" className="w-full h-full rounded-full object-cover border border-slate-950" />
-                      {Boolean(matchDeckProfiles[1]?. matchDeckProfiles[1]?.is_verified || matchDeckProfiles[1]?.verified) && (
+                      {Boolean(matchDeckProfiles[1]?.is_verified || matchDeckProfiles[1]?.isVerified || matchDeckProfiles[1]?.verified) && (
                         <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-cyan-400 border border-slate-950 flex items-center justify-center text-[7px] text-slate-950 font-black">
                           ✔
                         </div>
@@ -3056,7 +3056,7 @@ export default function App() {
                     setIsUserProfileModalOpen(true);
                   }} className="absolute top-1/2 -left-5 -translate-y-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-cyan-400 to-blue-500 shadow-[0_0_15px_#22d3ee] cursor-pointer hover:scale-130 transition duration-300 z-30 group" title={matchDeckProfiles[3]?.name || ''}>
                       <img src={matchDeckProfiles[3]?.avatar || ''} alt="Candidate" className="w-full h-full rounded-full object-cover border border-slate-950" />
-                      {Boolean(matchDeckProfiles[3]?. matchDeckProfiles[3]?.is_verified || matchDeckProfiles[3]?.verified) && (
+                      {Boolean(matchDeckProfiles[3]?.is_verified || matchDeckProfiles[3]?.isVerified || matchDeckProfiles[3]?.verified) && (
                         <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-cyan-400 border border-slate-950 flex items-center justify-center text-[7px] text-slate-950 font-black">
                           ✔
                         </div>
@@ -3122,7 +3122,7 @@ export default function App() {
                       <h3 className="text-xl font-black text-white flex items-center gap-1.5">
                         <span>{matchDeckProfiles[matchCardIndex]?.name}</span>
                         <span className="text-sm text-pink-400 font-bold">({matchDeckProfiles[matchCardIndex]?.age})</span>
-                        {Boolean(matchDeckProfiles[matchCardIndex]?. matchDeckProfiles[matchCardIndex]?.is_verified || matchDeckProfiles[matchCardIndex]?.verified) && <BadgeCheck className="w-4 h-4 text-cyan-400" />}
+                        {Boolean(matchDeckProfiles[matchCardIndex]?.is_verified || matchDeckProfiles[matchCardIndex]?.isVerified || matchDeckProfiles[matchCardIndex]?.verified) && <BadgeCheck className="w-4 h-4 text-cyan-400" />}
                       </h3>
                       <p className="text-xs text-slate-300 font-medium">📍 {matchDeckProfiles[matchCardIndex]?.city} • Online Streamer</p>
 
