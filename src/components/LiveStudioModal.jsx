@@ -573,15 +573,6 @@ export default function LiveStudioModal({
 
   // Start Live Broadcast flow
   const handleInitiateStart = () => {
-    if (!liveTitle.trim()) {
-      showToast(window.loc('⚠️ لطفاً عنوان لایواستریم را وارد نمایید', '⚠️ Please enter the title of the live stream'));
-      return;
-    }
-    if (liveType === 'adult' && !adultConsent) {
-      showToast(window.loc('⚠️ لطفاً تاییدیه قوانین محتوای ۱۸+ را علامت بزنید', '⚠️ Please check the 18+ content rules approval'));
-      return;
-    }
-
     // Trigger Countdown
     setStudioPhase('COUNTDOWN');
     let currentCount = 3;
@@ -1042,27 +1033,6 @@ export default function LiveStudioModal({
                 </div>
               )}
             </div>
-
-            {/* Adult Consent Box if Adult Type */}
-            {liveType === 'adult' && (
-              <div className="p-3 rounded-2xl bg-rose-950/40 border border-rose-500/40 space-y-2">
-                <div className="flex items-center gap-2 text-rose-300 font-bold">
-                  <ShieldAlert className="w-4 h-4 text-amber-400" />
-                  <span>{window.loc('قوانین استریم بزرگسالان (VIP 18+)', 'Adult Streaming Rules (VIP 18+)')}</span>
-                </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={adultConsent}
-                    onChange={(e) => setAdultConsent(e.target.checked)}
-                    className="w-4 h-4 accent-rose-500 rounded cursor-pointer"
-                  />
-                  <span className="text-[11px] text-slate-300 font-semibold">
-                    {window.loc('تایید می‌کنم محتوای این لایو مطابق شرایط سنی ۱۸+ بوده و مسئولیت آن را می‌پذیرم.', 'I confirm that the content of this live is 18+ and I accept responsibility for it.')}
-                  </span>
-                </label>
-              </div>
-            )}
           </div>
 
           {/* Launch Live Button - 3D Embossed START */}

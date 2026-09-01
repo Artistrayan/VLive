@@ -405,20 +405,6 @@ export default function HostLiveModal({
           )}
         </div>
 
-        {/* 18+ Consent (Only if adult selected) */}
-        {hostLiveType === 'adult' && (
-          <label className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-950/40 border border-rose-500/40 cursor-pointer text-xs text-rose-300 font-bold animate-fadeIn">
-            <input 
-              type="checkbox"
-              checked={hostAdultConsent}
-              onChange={(e) => setHostAdultConsent(e.target.checked)}
-              className="w-4 h-4 accent-rose-500 rounded cursor-pointer"
-            />
-            <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
-            <span>{loc('تایید رده سنی ۱۸+ و عدم مغایرت قوانین', '18+ confirmed')}</span>
-          </label>
-        )}
-
         {/* Private Stream Coin Rate */}
         {hostLiveType === 'private' && (
           <div className="flex items-center justify-between p-2.5 bg-slate-900 border border-purple-500/30 rounded-xl animate-fadeIn">

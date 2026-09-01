@@ -3603,7 +3603,7 @@ export default function App() {
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                   <h3 className="text-sm font-black text-white flex items-center gap-1.5">
                     <FileText className="w-4 h-4 text-pink-400" />
-                    <span>{loc('اطلاعات لایواستریم & قوانین', 'Livestream info & rules')}</span>
+                    <span>{loc('اطلاعات لایواستریم', 'Livestream info')}</span>
                   </h3>
                   <button onClick={() => setIsLiveInfoPanelOpen(false)} className="text-slate-400 hover:text-white">
                     <X className="w-4 h-4" />
@@ -3611,11 +3611,6 @@ export default function App() {
                 </div>
 
                 <div className="space-y-2 text-xs text-slate-300 max-h-60 overflow-y-auto custom-scrollbar pr-1">
-                  <div>
-                    <span className="text-[10px] text-pink-400 font-bold block">{loc('عنوان استریم:', 'Stream title:')}</span>
-                    <p className="font-bold text-white">{viewingStream.title || loc('لایواستریم اختصاصی V.LIVE', 'Exclusive V.LIVE live stream')}</p>
-                  </div>
-
                   <div className="grid grid-cols-1 gap-1.5 text-[10px] text-center">
                     <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
                       <span className="text-slate-400 block">{loc('کشور', 'the country')}</span>
@@ -3625,26 +3620,14 @@ export default function App() {
 
                   <div>
                     <span className="text-[10px] text-pink-400 font-bold block">{loc('برچسب‌ها:', 'Tags:')}</span>
-                    <p className="text-[11px] font-mono text-cyan-300">{viewingStream.tags || '#vlive #stream #live'}</p>
+                    <p className="text-[11px] font-mono text-cyan-300">{viewingStream?.tags || '#vlive #stream #live'}</p>
                   </div>
 
                   <div>
                     <span className="text-[10px] text-pink-400 font-bold block">{loc('توضیحات لایو:', 'Live description:')}</span>
                     <p className="text-[11px] text-slate-300 leading-relaxed">
-                      {viewingStream.description || loc('به پخش زنده خوش آمدید! برای حمایت می‌توانید هدیه ارسال کنید و در چت گفتگو نمایید.', 'Welcome to the live stream! To support, you can send a gift and talk in the chat.')}
+                      {viewingStream?.description || loc('به پخش زنده خوش آمدید! برای حمایت می‌توانید هدیه ارسال کنید و در چت گفتگو نمایید.', 'Welcome to the live stream! To support, you can send a gift and talk in the chat.')}
                     </p>
-                  </div>
-
-                  <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1 text-[11px]">
-                    <span className="font-black text-amber-400 flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>{loc('قوانین روم و چت زنده:', 'Room rules and live chat:')}</span>
-                    </span>
-                    <ul className="list-disc list-inside text-slate-400 space-y-0.5 text-[10px]">
-                      <li>{loc('احترام متقابل به میزبان و سایر بینندگان الزامی است.', 'Mutual respect for the host and other viewers is required.')}</li>
-                      <li>{loc('ارسال لینک‌های مشکوک، تبلیغات و پیام‌های تکراری ممنوع است.', 'It is forbidden to send suspicious links, advertisements and duplicate messages.')}</li>
-                      <li>{loc('هوش مصنوعی هوشمند تمام پیام‌ها را بررسی می‌کند.', 'Intelligent artificial intelligence checks all messages.')}</li>
-                    </ul>
                   </div>
                 </div>
               </div>}
@@ -3932,11 +3915,7 @@ export default function App() {
             setIsLiveModalOpen(false);
             return;
           }
-          if (hostLiveType === 'adult' && !hostAdultConsent) {
-            showToast(loc('⚠️ لطفاً قوانین و تاییدیه محتوای 18+ را علامت بزنید', '⚠️ Please confirm 18+ content rules'));
-            return;
-          }
-          const finalTitle = hostLiveTitle.trim() || (hostLiveType === 'adult' ? `🔞 لایو بزرگسالان @${currentUsername || userName}` : `لایواستریم @${currentUsername || userName}`);
+          const finalTitle = (hostLiveType === 'adult' ? `🔞 لایو بزرگسالان @${currentUsername || userName}` : `لایواستریم @${currentUsername || userName}`);
           showToast(loc('در حال آماده‌سازی و شروع لایواستریم...', 'Starting Live Broadcast...'));
           setTimeout(() => {
             setIsHostLiveOpen(false);
