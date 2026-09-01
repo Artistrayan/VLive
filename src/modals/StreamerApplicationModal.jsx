@@ -49,10 +49,6 @@ const VERIFICATION_POSES = [
 ];
 
 const CATEGORIES = [
-  { id: 'Chatting', icon: '💬', labelFa: 'چت و گفتگو', labelEn: 'Chatting' },
-  { id: 'Gaming', icon: '🎮', labelFa: 'گیمینگ', labelEn: 'Gaming' },
-  { id: 'Music', icon: '🎵', labelFa: 'موسیقی', labelEn: 'Music' },
-  { id: 'Art', icon: '🎨', labelFa: 'هنر و رقص', labelEn: 'Art & Dance' },
   { id: 'Lifestyle', icon: '🌟', labelFa: 'لایف‌استایل', labelEn: 'Lifestyle' },
   { id: 'Talk', icon: '🎙️', labelFa: 'گفتگو', labelEn: 'Talk Show' },
 ];

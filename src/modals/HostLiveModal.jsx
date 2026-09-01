@@ -245,11 +245,8 @@ export default function HostLiveModal({
   const effectiveLevel = currentUser?.level || currentUser?.user_level || userLevel || 1;
 
   const CATEGORY_ICONS = [
-    { id: 'Chatting', icon: '💬', label: loc('چت', 'Chat') },
-    { id: 'Gaming', icon: '🎮', label: loc('گیم', 'Game') },
+    { id: 'General', icon: '🌐', label: loc('عمومی', 'General') },
     { id: '18+ VIP', icon: '🔞', label: loc('VIP', 'VIP') },
-    { id: 'Music', icon: '🎵', label: loc('موزیک', 'Music') },
-    { id: 'Dance', icon: '💃', label: loc('هنر', 'Art') },
     { id: 'Talk Show', icon: '🎙️', label: loc('گفتگو', 'Talk') }
   ];
 

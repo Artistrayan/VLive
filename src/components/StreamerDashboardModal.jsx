@@ -67,7 +67,7 @@ export default function StreamerDashboardModal({
   // New Schedule Stream Form State
   const [newScheduleTitle, setNewScheduleTitle] = useState('');
   const [newScheduleDate, setNewScheduleDate] = useState('');
-  const [newScheduleCategory, setNewScheduleCategory] = useState('Gaming');
+  const [newScheduleCategory, setNewScheduleCategory] = useState('General');
   const [newScheduleType, setNewScheduleType] = useState('standard');
 
   // Load Streamer Data from Supabase / Local Storage
@@ -511,10 +511,8 @@ export default function StreamerDashboardModal({
                           onChange={(e) => setNewScheduleCategory(e.target.value)}
                           className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500"
                         >
-                          <option value="Gaming">{window.loc('گیمینگ 🎮', 'Gaming 🎮')}</option>
-                          <option value="Music">{window.loc('موسیقی 🎵', 'Music 🎵')}</option>
-                          <option value="Chat">{window.loc('چت & گپ 💬', 'Chat & Chat 💬')}</option>
-                          <option value="VIP Chat">{window.loc('چت ۱۸+ VIP 🔞', 'Chat 18+ VIP 🔞')}</option>
+                          <option value="General">{window.loc('عمومی', 'General')}</option>
+                          <option value="VIP">{window.loc('اختصاصی VIP 🔞', 'VIP Exclusive 🔞')}</option>
                         </select>
                       </div>
 

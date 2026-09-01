@@ -85,7 +85,7 @@ export default function LiveStudioModal({
   // Pre-Live Form & Device Configuration States
   const [liveType, setLiveType] = useState('standard'); // 'standard' | 'adult'
   const [liveTitle, setLiveTitle] = useState('');
-  const [liveCategory, setLiveCategory] = useState('Gaming');
+  const [liveCategory, setLiveCategory] = useState('Trending');
   const [liveDesc, setLiveDesc] = useState('');
   const [liveTags, setLiveTags] = useState('#game #vlive #stream');
   const [liveLanguage, setLiveLanguage] = useState(window.loc('فارسی (Persian)', 'Persian'));

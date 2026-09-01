@@ -1043,10 +1043,8 @@ export default function WalletTab(props) {
                               onChange={(e) => setCreatorLiveCategory(e.target.value)}
                               className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-3 py-2.5 text-xs text-white focus:outline-none"
                             >
-                              <option value="Music">🎵 Music & Concert</option>
-                              <option value="Gaming">🎮 Gaming & Esports</option>
-                              <option value="Talk">💬 Talk Show & Chat</option>
-                              <option value="Dance">💃 Dance & Party</option>
+                              <option value="General">🌐 General Stream</option>
+                              <option value="VIP">🔞 VIP Exclusive</option>
                             </select>
                           </div>
 

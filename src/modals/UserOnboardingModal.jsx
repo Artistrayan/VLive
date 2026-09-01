@@ -23,9 +23,8 @@ const AVAILABLE_COUNTRIES = [
 ];
 
 const PRESET_INTERESTS = [
-  '🎬 پخش زنده و استریم', '🎵 موسیقی و خوانندگی', '🎮 گیمینگ و بازی',
-  '✈️ سفر و گردشگری', '💄 مد و زیبایی', '🍳 آشپزی و لایف استایل',
-  '💻 تکنولوژی و برنامه‌نویسی', '⚽ ورزش و تناسب اندام', '💬 گفتگو و چت دوستانه'
+  '🎬 پخش زنده و استریم', '✈️ سفر و گردشگری', '💄 مد و زیبایی',
+  '🍳 آشپزی و لایف استایل', '💻 تکنولوژی و برنامه‌نویسی', '⚽ ورزش و تناسب اندام'
 ];
 
 // Randomized verification poses requested from female applicants
@@ -85,7 +84,7 @@ export default function UserOnboardingModal({
   const [isAgeConfirmed, setIsAgeConfirmed] = useState(true);
   const [country, setCountry] = useState('ایران (Iran)');
   const [gender, setGender] = useState(() => initialGender || safeStorage.getItem('vlive_user_gender') || 'male'); // 'male' | 'female'
-  const [selectedInterests, setSelectedInterests] = useState(['🎬 پخش زنده و استریم', '💬 گفتگو و چت دوستانه']);
+  const [selectedInterests, setSelectedInterests] = useState(['🎬 پخش زنده و استریم']);
   
   // Photo & Gallery permission
   const [hasGalleryPermission, setHasGalleryPermission] = useState(() => {

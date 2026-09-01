@@ -55,7 +55,7 @@ export default function LiveStreamSystem({
   const [isStartLiveModalOpen, setIsStartLiveModalOpen] = useState(false);
   const [newLiveType, setNewLiveType] = useState('standard');
   const [newLiveTitle, setNewLiveTitle] = useState('');
-  const [newLiveCategory, setNewLiveCategory] = useState('Gaming');
+  const [newLiveCategory, setNewLiveCategory] = useState('Trending');
   const [newLiveDesc, setNewLiveDesc] = useState('');
   const [newLiveThumbnail, setNewLiveThumbnail] = useState('');
   const [newLiveTags, setNewLiveTags] = useState('#game #chat');
@@ -153,19 +153,13 @@ export default function LiveStreamSystem({
   // Standard Categories list
   const standardCategories = [
     { id: 'all', label: window.loc('همه', 'everyone') },
-    { id: 'Gaming', label: window.loc('گیمینگ 🎮', 'Gaming 🎮') },
-    { id: 'Music', label: window.loc('موسیقی 🎵', 'Music 🎵') },
-    { id: 'Chat', label: window.loc('چت آنلاین 💬', 'Online chat 💬') },
-    { id: 'Dance', label: window.loc('رقص & هنر 💃', 'Dance & Art 💃') },
     { id: 'Trending', label: window.loc('محبوب‌ترین‌ها 🔥', 'The most popular 🔥') }
   ];
 
   // Adult 18+ Categories list
   const adultCategories = [
     { id: 'all', label: window.loc('همه ۱۸+', 'All 18+') },
-    { id: 'VIP Chat', label: window.loc('چت اختصاصی 🔞', 'Private chat 🔞') },
-    { id: 'Hot Dance', label: window.loc('رقص داغ 🔥', 'Hot dance 🔥') },
-    { id: 'Romance', label: window.loc('گپ عاشقانه ❤️', 'Romantic chat ❤️') },
+    { id: 'VIP Chat', label: window.loc('اختصاصی 🔞', 'Private 🔞') },
     { id: 'Private Live', label: window.loc('استریم خصوصی 💥', 'Private stream 💥') }
   ];
 
@@ -556,7 +550,7 @@ export default function LiveStreamSystem({
                     type="button"
                     onClick={() => {
                       setNewLiveType('standard');
-                      setNewLiveCategory('Gaming');
+                      setNewLiveCategory('Trending');
                     }}
                     title={window.loc('پخش استاندارد', 'Standard')}
                     className={`py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center ${
@@ -595,7 +589,7 @@ export default function LiveStreamSystem({
                   type="text"
                   value={newLiveTitle}
                   onChange={(e) => setNewLiveTitle(e.target.value)}
-                  placeholder={window.loc('مثال: پخش زنده گپ و گفت شبانه 🎵', 'Example: live broadcast of night chat 🎵')}
+                  placeholder={window.loc('مثال: پخش زنده شبانه 🎵', 'Example: night live stream 🎵')}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-semibold outline-none focus:border-pink-500"
                 />
               </div>
@@ -612,17 +606,12 @@ export default function LiveStreamSystem({
                 >
                   {newLiveType === 'standard' ? (
                     <>
-                      <option value="Gaming">{window.loc('گیمینگ 🎮', 'Gaming 🎮')}</option>
-                      <option value="Music">{window.loc('موسیقی 🎵', 'Music 🎵')}</option>
-                      <option value="Chat">{window.loc('چت آنلاین 💬', 'Online chat 💬')}</option>
-                      <option value="Dance">{window.loc('رقص & هنر 💃', 'Dance & Art 💃')}</option>
+                      <option value="Trending">{window.loc('محبوب‌ترین‌ها 🔥', 'Popular 🔥')}</option>
                       <option value="IRL">{window.loc('زندگی روزمره 📹', 'Daily life 📹')}</option>
                     </>
                   ) : (
                     <>
-                      <option value="VIP Chat">{window.loc('چت اختصاصی 🔞', 'Private chat 🔞')}</option>
-                      <option value="Hot Dance">{window.loc('رقص داغ 🔥', 'Hot dance 🔥')}</option>
-                      <option value="Romance">{window.loc('گپ عاشقانه ❤️', 'Romantic chat ❤️')}</option>
+                      <option value="VIP Chat">{window.loc('اختصاصی 🔞', 'Private 🔞')}</option>
                       <option value="Private Live">{window.loc('استریم خصوصی 💥', 'Private stream 💥')}</option>
                     </>
                   )}
