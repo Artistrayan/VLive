@@ -327,16 +327,28 @@ export default function LiveStudioModal({
     setIsMirrored(!isCurrentlyFront); // Front is mirrored (true), back is not mirrored (false)
 
     try {
-      // 1. Stop existing video tracks
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getVideoTracks().forEach(t => t.stop());
+      const currentStream = mediaStreamRef.current;
+      const oldVideoTrack = currentStream ? currentStream.getVideoTracks()[0] : null;
+
+      // 1. First attempt applyConstraints on existing active track (Zero permission prompt)
+      if (oldVideoTrack && typeof oldVideoTrack.applyConstraints === 'function') {
+        try {
+          await oldVideoTrack.applyConstraints({
+            facingMode: { ideal: nextFacingMode },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          });
+          showToast(window.loc(
+            isCurrentlyFront ? '🔄 دوربین پشت فعال شد' : '🔄 دوربین جلو فعال شد',
+            isCurrentlyFront ? '🔄 Back camera activated' : '🔄 Front camera activated'
+          ));
+          return;
+        } catch (constraintErr) {
+          // Continue to seamless replacement fallback
+        }
       }
 
-      // 2. Preserve existing audio track
-      const existingAudioTrack = mediaStreamRef.current ? mediaStreamRef.current.getAudioTracks()[0] : null;
-      const isAudioActive = existingAudioTrack && existingAudioTrack.readyState === 'live';
-
-      // 3. Fetch new video stream with the new facingMode
+      // 2. Fetch new video stream with the new facingMode FIRST (keep current track open so permission session remains active)
       let newVideoStream;
       try {
         newVideoStream = await navigator.mediaDevices.getUserMedia({
@@ -354,23 +366,24 @@ export default function LiveStudioModal({
         });
       }
 
+      // 3. Stop old video track AFTER new track is acquired
+      if (oldVideoTrack) {
+        try { oldVideoTrack.stop(); } catch(e) {}
+      }
+
       const newVideoTrack = newVideoStream.getVideoTracks()[0];
       if (newVideoTrack) {
         newVideoTrack.enabled = isCamEnabled;
       }
 
-      // 4. Create new combined stream
+      // 4. Preserve existing audio track
+      const existingAudioTrack = currentStream ? currentStream.getAudioTracks()[0] : null;
+      const isAudioActive = existingAudioTrack && existingAudioTrack.readyState === 'live';
+
       const newStream = new MediaStream();
       if (newVideoTrack) newStream.addTrack(newVideoTrack);
       if (isAudioActive) {
         newStream.addTrack(existingAudioTrack);
-      } else {
-        try {
-          const aStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          if (aStream.getAudioTracks()[0]) {
-            newStream.addTrack(aStream.getAudioTracks()[0]);
-          }
-        } catch (aErr) {}
       }
 
       mediaStreamRef.current = newStream;
@@ -805,6 +818,39 @@ export default function LiveStudioModal({
             </button>
           </div>
 
+          {/* Type Selector (Standard vs Adult 18+) - Moved ABOVE Camera Preview */}
+          <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800 shadow-xl">
+            <button
+              type="button"
+              onClick={() => {
+                setLiveType('standard');
+              }}
+              className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
+                liveType === 'standard'
+                  ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md font-black'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Video className="w-4 h-4 text-cyan-300" />
+              <span>{window.loc('📺 لایواستریم استاندارد', '📺 Standard live stream')}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setLiveType('adult');
+              }}
+              className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
+                liveType === 'adult'
+                  ? 'bg-gradient-to-r from-rose-600 via-purple-700 to-amber-500 text-white shadow-md font-black'
+                  : 'text-rose-400 hover:text-rose-200'
+              }`}
+            >
+              <ShieldAlert className="w-4 h-4 text-amber-400 animate-pulse" />
+              <span>{window.loc('🔥 لایواستریم بزرگسال (۱۸+)', '🔥 adult live stream (18+)')}</span>
+            </button>
+          </div>
+
           {/* Camera Preview & Hardware Test Box */}
           <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 shadow-xl">
             <div className="flex items-center justify-between text-slate-300 font-bold">
@@ -907,26 +953,26 @@ export default function LiveStudioModal({
               )}
             </div>
 
-            {/* Quick Hardware Controls Bar */}
+            {/* Quick Hardware Controls Bar - ONLY ICONS for Cam & Mic */}
             <div className="grid grid-cols-4 gap-2">
               <button
                 onClick={() => setIsCamEnabled(!isCamEnabled)}
-                className={`py-2 rounded-xl font-bold flex items-center justify-center gap-1 border transition ${
+                className={`py-2 rounded-xl font-bold flex items-center justify-center border transition ${
                   isCamEnabled ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                 }`}
+                title={isCamEnabled ? window.loc('دوربین روشن', 'Camera on') : window.loc('دوربین خاموش', 'Camera off')}
               >
-                <Camera className="w-3.5 h-3.5" />
-                <span>{isCamEnabled ? window.loc('دوربین روشن', 'Camera on') : window.loc('دوربین خاموش', 'Camera off')}</span>
+                {isCamEnabled ? <Camera className="w-5 h-5" /> : <CameraOff className="w-5 h-5" />}
               </button>
 
               <button
                 onClick={() => setIsMicEnabled(!isMicEnabled)}
-                className={`py-2 rounded-xl font-bold flex items-center justify-center gap-1 border transition ${
+                className={`py-2 rounded-xl font-bold flex items-center justify-center border transition ${
                   isMicEnabled ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                 }`}
+                title={isMicEnabled ? window.loc('میکروفون فعال', 'Active microphone') : window.loc('میکروفون قطع', 'Microphone cut off')}
               >
-                {isMicEnabled ? <Mic className="w-3.5 h-3.5" /> : <MicOff className="w-3.5 h-3.5" />}
-                <span>{isMicEnabled ? window.loc('میکروفون فعال', 'Active microphone') : window.loc('میکروفون قطع', 'Microphone cut off')}</span>
+                {isMicEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
               </button>
 
               <button
@@ -947,63 +993,13 @@ export default function LiveStudioModal({
                 className="py-2 rounded-xl bg-purple-950/60 border border-purple-500/30 text-purple-300 font-bold flex items-center justify-center gap-1 hover:bg-purple-900/60"
               >
                 <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                <span>{window.loc('زیبایی:', 'Beauty:')} {beautyFilter}</span>
+                <span>{beautyFilter}</span>
               </button>
             </div>
           </div>
 
           {/* Broadcast Type & Live Information Form */}
           <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3.5 shadow-xl">
-            <h4 className="font-bold text-white text-xs flex items-center gap-2">
-              <Radio className="w-4 h-4 text-pink-400" />
-              <span>{window.loc('مشخصات استریم', 'Stream specifications')}</span>
-            </h4>
-
-            {/* Type Selector (Standard vs Adult 18+) */}
-            <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
-              <button
-                type="button"
-                onClick={() => {
-                  setLiveType('standard');
-                }}
-                className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
-                  liveType === 'standard'
-                    ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md font-black'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Video className="w-4 h-4 text-cyan-300" />
-                <span>{window.loc('📺 لایواستریم استاندارد', '📺 Standard live stream')}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setLiveType('adult');
-                }}
-                className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
-                  liveType === 'adult'
-                    ? 'bg-gradient-to-r from-rose-600 via-purple-700 to-amber-500 text-white shadow-md font-black'
-                    : 'text-rose-400 hover:text-rose-200'
-                }`}
-              >
-                <ShieldAlert className="w-4 h-4 text-amber-400 animate-pulse" />
-                <span>{window.loc('🔥 لایواستریم بزرگسال (۱۸+)', '🔥 adult live stream (18+)')}</span>
-              </button>
-            </div>
-
-            {/* Title Input */}
-            <div>
-              <label className="block text-slate-300 font-bold mb-1">{window.loc('✏️ عنوان استریم:', '✏️ stream title:')}</label>
-              <input
-                type="text"
-                value={liveTitle}
-                onChange={(e) => setLiveTitle(e.target.value)}
-                placeholder={window.loc('عنوان لایو خود را بنویسید (مثال: گپ و گفت شبانه 🎶)...', 'Write the title of your live (example: Night chat 🎶)...')}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-semibold outline-none focus:border-pink-500"
-              />
-            </div>
-
             {/* Ticketed VIP Stream Switch & Pricing */}
             <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
               <div className="flex items-center justify-between">
@@ -1069,13 +1065,15 @@ export default function LiveStudioModal({
             )}
           </div>
 
-          {/* Launch Live Button */}
+          {/* Launch Live Button - 3D Embossed START */}
           <button
             onClick={handleInitiateStart}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 text-white font-black text-sm shadow-xl shadow-pink-500/30 hover:scale-102 active:scale-95 transition flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-2xl bg-gradient-to-b from-pink-500 via-pink-600 to-purple-700 text-white font-black shadow-[0_10px_25px_rgba(236,72,153,0.5),inset_0_2px_4px_rgba(255,255,255,0.4)] border-b-4 border-pink-800 active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all duration-150 flex items-center justify-center gap-2 group"
           >
-            <Play className="w-5 h-5 fill-white" />
-            <span>{window.loc('شروع لایواستریم استودیو (Start Live)', 'Start live stream studio (Start Live)')}</span>
+            <Play className="w-6 h-6 fill-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] group-hover:scale-110 transition-transform" />
+            <span className="font-mono tracking-widest text-2xl font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase">
+              START
+            </span>
           </button>
         </div>
       )}

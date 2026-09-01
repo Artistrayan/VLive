@@ -304,12 +304,8 @@ export class LiveKitManager {
           }
         }
 
-        // 2. Seamless replacement fallback
+        // 2. Seamless replacement fallback - Get new stream FIRST so browser permission session remains open
         const oldVideoTracks = this.localMediaStream.getVideoTracks();
-        oldVideoTracks.forEach(t => {
-          try { t.stop(); } catch(e) {}
-          try { this.localMediaStream.removeTrack(t); } catch(e) {}
-        });
 
         let newStream;
         try {
@@ -326,6 +322,12 @@ export class LiveKitManager {
             video: { facingMode: targetFacing }
           });
         }
+
+        // Stop old video tracks AFTER acquiring new stream
+        oldVideoTracks.forEach(t => {
+          try { t.stop(); } catch(e) {}
+          try { this.localMediaStream.removeTrack(t); } catch(e) {}
+        });
 
         const newVideoTrack = newStream.getVideoTracks()[0];
         if (newVideoTrack) {

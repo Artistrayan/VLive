@@ -131,7 +131,60 @@ export default function HostLiveModal({
   const toggleCameraFacing = async () => {
     const nextMode = facingMode === 'user' ? 'environment' : 'user';
     setFacingMode(nextMode);
-    await startCamera(nextMode);
+
+    const oldStream = streamRef.current;
+    const oldVideoTrack = oldStream ? oldStream.getVideoTracks()[0] : null;
+
+    // 1. Try applyConstraints on existing active track first
+    if (oldVideoTrack && typeof oldVideoTrack.applyConstraints === 'function') {
+      try {
+        await oldVideoTrack.applyConstraints({
+          facingMode: { ideal: nextMode },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        });
+        return;
+      } catch (e) {
+        // Fallback to seamless stream replacement
+      }
+    }
+
+    // 2. Acquire new stream BEFORE stopping old stream so permission session stays open
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+
+      let newStream;
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: nextMode },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+      } catch (e) {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: nextMode },
+          audio: false
+        });
+      }
+
+      // Stop old tracks AFTER new stream is acquired
+      if (oldStream) {
+        oldStream.getTracks().forEach(t => t.stop());
+      }
+
+      streamRef.current = newStream;
+      setCameraStream(newStream);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = newStream;
+        videoRef.current.play().catch(() => {});
+      }
+    } catch (err) {
+      console.warn('HostLiveModal camera flip error:', err);
+    }
   };
 
   useEffect(() => {
@@ -230,6 +283,54 @@ export default function HostLiveModal({
           </button>
         </div>
 
+        {/* Broadcast Type Switcher (Icon-First) - Moved ABOVE Camera Preview */}
+        <div className="grid grid-cols-3 gap-2 p-1.5 bg-slate-900 rounded-2xl border border-slate-800 shadow-xl">
+          <button
+            onClick={() => {
+              setHostLiveType('standard');
+              setHostLiveCategory('Chatting');
+            }}
+            className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+              hostLiveType === 'standard'
+                ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md font-black'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>{loc('عمومی', 'Public')}</span>
+          </button>
+          
+          <button
+            onClick={() => {
+              setHostLiveType('adult');
+              setHostLiveCategory('18+ VIP');
+            }}
+            className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+              hostLiveType === 'adult'
+                ? 'bg-gradient-to-r from-rose-600 to-purple-700 text-white shadow-md font-black'
+                : 'text-rose-400 hover:bg-rose-950/30'
+            }`}
+          >
+            <Flame className="w-3.5 h-3.5 text-rose-400" />
+            <span>{loc('۱۸+ VIP', '18+ VIP')}</span>
+          </button>
+          
+          <button
+            onClick={() => {
+              setHostLiveType('private');
+              setHostLiveCategory('Private');
+            }}
+            className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+              hostLiveType === 'private'
+                ? 'bg-gradient-to-r from-purple-600 to-cyan-500 text-white shadow-md font-black'
+                : 'text-purple-400 hover:bg-purple-950/30'
+            }`}
+          >
+            <Lock className="w-3.5 h-3.5" />
+            <span>{loc('خصوصی', 'Private')}</span>
+          </button>
+        </div>
+
         {/* Real Live Camera Preview Box */}
         <div className="relative w-full h-52 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-xl group">
           {isCamEnabled ? (
@@ -304,54 +405,6 @@ export default function HostLiveModal({
           )}
         </div>
 
-        {/* Broadcast Type Switcher (Icon-First) */}
-        <div className="grid grid-cols-3 gap-2 p-1 bg-slate-900 rounded-2xl border border-slate-800">
-          <button
-            onClick={() => {
-              setHostLiveType('standard');
-              setHostLiveCategory('Chatting');
-            }}
-            className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-              hostLiveType === 'standard'
-                ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md font-black'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span>{loc('عمومی', 'Public')}</span>
-          </button>
-          
-          <button
-            onClick={() => {
-              setHostLiveType('adult');
-              setHostLiveCategory('18+ VIP');
-            }}
-            className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-              hostLiveType === 'adult'
-                ? 'bg-gradient-to-r from-rose-600 to-purple-700 text-white shadow-md font-black'
-                : 'text-rose-400 hover:bg-rose-950/30'
-            }`}
-          >
-            <Flame className="w-3.5 h-3.5 text-rose-400" />
-            <span>{loc('۱۸+ VIP', '18+ VIP')}</span>
-          </button>
-          
-          <button
-            onClick={() => {
-              setHostLiveType('private');
-              setHostLiveCategory('Private');
-            }}
-            className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-              hostLiveType === 'private'
-                ? 'bg-gradient-to-r from-purple-600 to-cyan-500 text-white shadow-md font-black'
-                : 'text-purple-400 hover:bg-purple-950/30'
-            }`}
-          >
-            <Lock className="w-3.5 h-3.5" />
-            <span>{loc('خصوصی', 'Private')}</span>
-          </button>
-        </div>
-
         {/* 18+ Consent (Only if adult selected) */}
         {hostLiveType === 'adult' && (
           <label className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-950/40 border border-rose-500/40 cursor-pointer text-xs text-rose-300 font-bold animate-fadeIn">
@@ -391,36 +444,25 @@ export default function HostLiveModal({
           </div>
         )}
 
-        {/* Stream Title Input */}
-        <input 
-          type="text"
-          value={hostLiveTitle}
-          onChange={(e) => setHostLiveTitle(e.target.value)}
-          placeholder={
-            hostLiveType === 'adult'
-              ? loc('عنوان لایو ۱۸+ ...', '18+ Title...')
-              : loc('عنوان لایواستریم ...', 'Stream title...')
-          }
-          className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-pink-500 text-xs font-medium"
-        />
-
-        {/* Start Button */}
+        {/* Start Button - 3D Embossed START */}
         <div className="space-y-2 pt-1">
           <button 
             onClick={() => {
               stopCamera();
               onStartLive();
             }}
-            className={`w-full py-3.5 rounded-2xl text-white font-black text-sm shadow-xl active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 ${
+            className={`w-full py-4 rounded-2xl text-white font-black shadow-[0_10px_25px_rgba(236,72,153,0.5),inset_0_2px_4px_rgba(255,255,255,0.4)] border-b-4 border-pink-800 active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all duration-150 flex items-center justify-center gap-2 group ${
               hostLiveType === 'adult'
-                ? 'bg-gradient-to-r from-rose-600 to-purple-600 shadow-rose-500/30'
+                ? 'bg-gradient-to-b from-rose-500 via-rose-600 to-purple-800 border-rose-900 shadow-rose-500/40'
                 : hostLiveType === 'private'
-                ? 'bg-gradient-to-r from-purple-600 to-cyan-500 shadow-purple-500/30'
-                : 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 shadow-pink-500/30'
+                ? 'bg-gradient-to-b from-purple-500 via-purple-600 to-cyan-800 border-purple-900 shadow-purple-500/40'
+                : 'bg-gradient-to-b from-pink-500 via-pink-600 to-purple-700 border-pink-800 shadow-pink-500/40'
             }`}
           >
-            <Sparkles className="w-4 h-4" />
-            <span>{loc('شروع پخش زنده', 'Go Live Now')}</span>
+            <Play className="w-6 h-6 fill-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] group-hover:scale-110 transition-transform" />
+            <span className="font-mono tracking-widest text-2xl font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase">
+              START
+            </span>
           </button>
           
           <button
