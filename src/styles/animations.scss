@@ -90,3 +90,23 @@
   animation: pulseGlow 2.5s ease-in-out infinite;
 }
 
+@keyframes colorShift3D {
+  0% {
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: hue-rotate(60deg);
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+}
+
+.animate-color-shift-3d {
+  background-size: 250% 250%;
+  animation: colorShift3D 4s ease infinite;
+}
+

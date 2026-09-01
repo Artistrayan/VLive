@@ -7,6 +7,7 @@ import {
   Cpu, BatteryCharging, Wifi, Play, Square, Award, Filter, ArrowRight, Share2, Info, Coins
 } from 'lucide-react';
 import { apiLive, apiAdmin } from '../services/api';
+import { safeStorage } from '../utils/safeStorage';
 import { LiveStreamRoomService } from '../services/liveStreamRoomService';
 import { livekitManager, fetchLiveKitToken } from '../services/livekitService';
 import LuxuryGiftOverlay from './Overlays/LuxuryGiftOverlay';
@@ -197,32 +198,44 @@ export default function LiveStudioModal({
         return;
       }
 
-      const isBackCam = selectedCamera.toLowerCase().includes('back') || selectedCamera.toLowerCase().includes('rear');
-      const videoConstraints = {
-        facingMode: isBackCam ? 'environment' : 'user',
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      };
+      // Re-use active stream if already available to avoid repeated getUserMedia permission prompts
+      let stream = mediaStreamRef.current;
+      if (stream && stream.active && stream.getTracks().some(t => t.readyState === 'live')) {
+        setCameraPermission('granted');
+        setMicPermission('granted');
+        setMediaStream(stream);
+      } else {
+        const isBackCam = selectedCamera.toLowerCase().includes('back') || selectedCamera.toLowerCase().includes('rear');
+        const videoConstraints = {
+          facingMode: isBackCam ? 'environment' : 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        };
 
-      let stream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: videoConstraints,
-          audio: true
-        });
-      } catch (err) {
-        // Fallback for devices/Android WebView that fail with explicit constraints
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true
-        });
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: videoConstraints,
+            audio: true
+          });
+        } catch (err) {
+          // Fallback for devices/Android WebView that fail with explicit constraints
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+          });
+        }
+
+        // Update stream & permission states
+        setCameraPermission('granted');
+        setMicPermission('granted');
+        setMediaStream(stream);
+        mediaStreamRef.current = stream;
+
+        // Persist permission status so prompt modals never trigger again
+        safeStorage.setItem('vlive_permissions_granted', 'true');
+        safeStorage.setItem('vlive_camera_permission_granted', 'true');
+        safeStorage.setItem('vlive_permissions_prompted_once', 'true');
       }
-
-      // Update stream & permission states
-      setCameraPermission('granted');
-      setMicPermission('granted');
-      setMediaStream(stream);
-      mediaStreamRef.current = stream;
 
       // Extract LocalVideoTrack for LiveKit publishing
       const vTrack = stream.getVideoTracks()[0];
@@ -968,11 +981,10 @@ export default function LiveStudioModal({
 
               <button
                 onClick={toggleCameraFacing}
-                className="py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-bold flex items-center justify-center gap-1 hover:text-white transition active:scale-95"
+                className="py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-bold flex items-center justify-center hover:text-white transition active:scale-95"
                 title={window.loc('تغییر بین دوربین جلو و پشت', 'Switch front and back camera')}
               >
-                <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="truncate">{selectedCamera.toLowerCase().includes('front') ? window.loc('دوربین پشت 🔄', 'Back Cam 🔄') : window.loc('دوربین جلو 🔄', 'Front Cam 🔄')}</span>
+                <RefreshCw className="w-5 h-5 text-cyan-400" />
               </button>
 
               <button
@@ -989,59 +1001,56 @@ export default function LiveStudioModal({
             </div>
           </div>
 
-          {/* Broadcast Type & Live Information Form */}
-          <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3.5 shadow-xl">
-            {/* Ticketed VIP Stream Switch & Pricing */}
-            <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${isTicketedLive ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-slate-400'}`}>
-                    <Lock className="w-3.5 h-3.5" />
-                  </div>
+          {/* Ticketed VIP Stream Switch & Pricing */}
+          <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${isTicketedLive ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-slate-400'}`}>
+                  <Lock className="w-3.5 h-3.5" />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsTicketedLive(!isTicketedLive)}
-                  className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${isTicketedLive ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-slate-800'}`}
-                >
-                  <div className={`w-5 h-5 rounded-full bg-white transition-transform ${isTicketedLive ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
               </div>
-
-              {isTicketedLive && (
-                <div className="pt-2 border-t border-slate-800 space-y-1.5 animate-fadeIn">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-300 font-bold">{window.loc('💰 مبلغ بلیط:', '💰 Price:')}</span>
-                    <span className="font-mono font-black text-amber-300">{ticketPrice} Coins</span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {[25, 50, 100, 250].map((price) => (
-                      <button
-                        key={price}
-                        type="button"
-                        onClick={() => setTicketPrice(price)}
-                        className={`py-1.5 rounded-xl font-mono text-[11px] font-bold border transition ${
-                          ticketPrice === price 
-                            ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-black' 
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        {price} 🪙
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => setIsTicketedLive(!isTicketedLive)}
+                className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${isTicketedLive ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-slate-800'}`}
+              >
+                <div className={`w-5 h-5 rounded-full bg-white transition-transform ${isTicketedLive ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
             </div>
+
+            {isTicketedLive && (
+              <div className="pt-2 border-t border-slate-800 space-y-1.5 animate-fadeIn">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-300 font-bold">{window.loc('💰 مبلغ بلیط:', '💰 Price:')}</span>
+                  <span className="font-mono font-black text-amber-300">{ticketPrice} Coins</span>
+                </div>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[25, 50, 100, 250].map((price) => (
+                    <button
+                      key={price}
+                      type="button"
+                      onClick={() => setTicketPrice(price)}
+                      className={`py-1.5 rounded-xl font-mono text-[11px] font-bold border transition ${
+                        ticketPrice === price 
+                          ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-black' 
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {price} 🪙
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Launch Live Button - 3D Embossed START */}
+          {/* Launch Live Button - 3D Embossed Animated Color-Shift START */}
           <button
             onClick={handleInitiateStart}
-            className="w-full py-4 rounded-2xl bg-gradient-to-b from-pink-500 via-pink-600 to-purple-700 text-white font-black shadow-[0_10px_25px_rgba(236,72,153,0.5),inset_0_2px_4px_rgba(255,255,255,0.4)] border-b-4 border-pink-800 active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all duration-150 flex items-center justify-center gap-2 group"
+            className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 via-rose-500 to-amber-500 animate-color-shift-3d text-white font-black shadow-[0_12px_28px_rgba(236,72,153,0.6),0_6px_0_#831843,inset_0_2px_4px_rgba(255,255,255,0.4)] border-t border-pink-300/40 active:translate-y-1.5 active:shadow-[0_2px_10px_rgba(236,72,153,0.4),0_1px_0_#831843] hover:brightness-110 transition-all duration-150 flex items-center justify-center gap-2 group cursor-pointer"
           >
-            <Play className="w-6 h-6 fill-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] group-hover:scale-110 transition-transform" />
-            <span className="font-mono tracking-widest text-2xl font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase">
+            <Play className="w-7 h-7 fill-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] group-hover:scale-120 transition-transform duration-300 animate-pulse" />
+            <span className="font-mono tracking-widest text-3xl font-black drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)] uppercase">
               START
             </span>
           </button>

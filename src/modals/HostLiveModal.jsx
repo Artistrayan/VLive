@@ -85,9 +85,14 @@ export default function HostLiveModal({
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
 
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(t => t.stop());
-        streamRef.current = null;
+      // Re-use active stream if available
+      if (streamRef.current && streamRef.current.active && streamRef.current.getVideoTracks().some(t => t.readyState === 'live')) {
+        setCameraStream(streamRef.current);
+        if (videoRef.current) {
+          videoRef.current.srcObject = streamRef.current;
+          videoRef.current.play().catch(() => {});
+        }
+        return;
       }
 
       let stream;
@@ -109,6 +114,10 @@ export default function HostLiveModal({
 
       streamRef.current = stream;
       setCameraStream(stream);
+
+      safeStorage.setItem('vlive_permissions_granted', 'true');
+      safeStorage.setItem('vlive_camera_permission_granted', 'true');
+      safeStorage.setItem('vlive_permissions_prompted_once', 'true');
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -355,11 +364,10 @@ export default function HostLiveModal({
                 <button
                   type="button"
                   onClick={toggleCameraFacing}
-                  className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-cyan-400 border border-cyan-500/40 backdrop-blur-md shadow-md active:scale-95 transition flex items-center gap-1"
+                  className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-cyan-400 border border-cyan-500/40 backdrop-blur-md shadow-md active:scale-95 transition flex items-center justify-center"
                   title={facingMode === 'user' ? loc('دوربین عقب', 'Back Camera') : loc('دوربین جلو', 'Front Camera')}
                 >
-                  <RefreshCw className="w-4 h-4" />
-                  <span className="text-[10px] font-bold">{facingMode === 'user' ? 'Front' : 'Back'}</span>
+                  <RefreshCw className="w-5 h-5" />
                 </button>
               </div>
 
@@ -430,23 +438,17 @@ export default function HostLiveModal({
           </div>
         )}
 
-        {/* Start Button - 3D Embossed START */}
+        {/* Start Button - 3D Embossed Animated Color-Shift START */}
         <div className="space-y-2 pt-1">
           <button 
             onClick={() => {
               stopCamera();
               onStartLive();
             }}
-            className={`w-full py-4 rounded-2xl text-white font-black shadow-[0_10px_25px_rgba(236,72,153,0.5),inset_0_2px_4px_rgba(255,255,255,0.4)] border-b-4 border-pink-800 active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all duration-150 flex items-center justify-center gap-2 group ${
-              hostLiveType === 'adult'
-                ? 'bg-gradient-to-b from-rose-500 via-rose-600 to-purple-800 border-rose-900 shadow-rose-500/40'
-                : hostLiveType === 'private'
-                ? 'bg-gradient-to-b from-purple-500 via-purple-600 to-cyan-800 border-purple-900 shadow-purple-500/40'
-                : 'bg-gradient-to-b from-pink-500 via-pink-600 to-purple-700 border-pink-800 shadow-pink-500/40'
-            }`}
+            className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 via-rose-500 to-amber-500 animate-color-shift-3d text-white font-black shadow-[0_12px_28px_rgba(236,72,153,0.6),0_6px_0_#831843,inset_0_2px_4px_rgba(255,255,255,0.4)] border-t border-pink-300/40 active:translate-y-1.5 active:shadow-[0_2px_10px_rgba(236,72,153,0.4),0_1px_0_#831843] hover:brightness-110 transition-all duration-150 flex items-center justify-center gap-2 group cursor-pointer"
           >
-            <Play className="w-6 h-6 fill-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] group-hover:scale-110 transition-transform" />
-            <span className="font-mono tracking-widest text-2xl font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase">
+            <Play className="w-7 h-7 fill-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] group-hover:scale-120 transition-transform duration-300 animate-pulse" />
+            <span className="font-mono tracking-widest text-3xl font-black drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)] uppercase">
               START
             </span>
           </button>
