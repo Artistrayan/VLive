@@ -2766,7 +2766,7 @@ export default function App() {
             <div className="max-w-md mx-auto w-full px-1">
               <div className="grid grid-cols-3 gap-1.5 bg-slate-950/90 backdrop-blur-xl p-1.5 rounded-2xl border border-slate-800/90 shadow-xl shadow-purple-950/20">
                 
-                {/* 1. قطب‌نما (Explore) */}
+                {/* 1. کاربران (Users Feed) */}
                 <button 
                   onClick={() => setHomeSubTab('explore')} 
                   className={`py-2 px-2 sm:px-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-1.5 group ${
@@ -2774,10 +2774,10 @@ export default function App() {
                       ? 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white shadow-md shadow-pink-500/25 font-black' 
                       : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
                   }`} 
-                  title={loc('قطب‌نما (اکسپلور)', 'Explore Compass')}
+                  title={loc('کشف کاربران', 'Explore Users')}
                 >
-                  <Compass className={`w-5 h-5 transition-transform duration-300 ${homeSubTab === 'explore' ? 'scale-110 text-white rotate-45' : 'text-slate-400 group-hover:rotate-45'}`} />
-                  <span className="text-xs font-bold">{loc('قطب‌نما', 'Explore')}</span>
+                  <Users className={`w-5 h-5 transition-transform duration-300 ${homeSubTab === 'explore' ? 'scale-110 text-white' : 'text-cyan-400/90 group-hover:scale-105'}`} />
+                  <span className="text-xs font-bold">{loc('کاربران', 'Users')}</span>
                 </button>
 
                 {/* 2. نمایش اجرای زنده (Live Feed) */}

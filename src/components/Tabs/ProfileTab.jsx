@@ -346,6 +346,7 @@ export default function ProfileTab(props) {
   }, []);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [activeSeparateModal, setActiveSeparateModal] = useState(null);
   const [editForm, setEditForm] = useState({
     name: userName || authFullName || safeStorage.getItem('vlive_user_name') || 'User',
     bio: userBio || authBio || safeStorage.getItem('vlive_user_bio') || '',
@@ -769,390 +770,294 @@ export default function ProfileTab(props) {
         </VisualSectionWrapper>
 
         {/* ========================================== */}
-        {/* SEPARATE STATS CARD UNDERNEATH PROFILE     */}
+        {/* SEPARATE PAGES & FEATURES HUB (صفحات مجزا) */}
         {/* ========================================== */}
-        <VisualSectionWrapper pageId="profile" sectionId="profile_stats_card" defaultLabel="Profile Statistics Bar">
-          <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-lg flex justify-around items-center text-center">
-            {/* Followers */}
-            <button
-              onClick={() => {
-                setActiveProfileTab('followers');
-                showToast(window.loc('لیست فالوورهای شما 👥', 'Your followers list 👥'));
-              }}
-              className={`flex flex-col items-center gap-1 px-2.5 py-2 rounded-2xl transition group flex-1 max-w-[90px] border ${
-                activeProfileTab === 'followers'
-                  ? 'bg-indigo-950/80 border-indigo-500/60 shadow-md ring-1 ring-indigo-500/40'
-                  : 'bg-slate-950/80 hover:bg-slate-800 border-slate-800'
-              }`}
-              title={window.loc('فالوورها', 'Followers')}
-            >
-              <Users className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition shrink-0" />
-              <span className="text-xs sm:text-sm font-black text-white">{formatNum(userFollowersCount)}</span>
-              <span className="text-[10px] font-bold text-slate-400 group-hover:text-white transition truncate w-full">
-                {window.loc('فالوورها', 'Followers')}
+        <VisualSectionWrapper pageId="profile" sectionId="profile_separate_pages_hub" defaultLabel="Separate Pages Hub">
+          <div className="p-4 bg-slate-900/90 rounded-3xl border border-slate-800 shadow-xl space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5 px-1">
+              <h3 className="text-xs font-black text-white flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-pink-400" />
+                <span>{window.loc('صفحات و بخش‌های مجزای پروفایل', 'Dedicated Profile Pages')}</span>
+              </h3>
+              <span className="text-[10px] text-slate-400 font-mono font-bold bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800">
+                {window.loc('۶ صفحه مجزا', '6 Standalone Pages')}
               </span>
-            </button>
+            </div>
 
-            {/* Following */}
-            <button
-              onClick={() => {
-                setActiveProfileTab('following');
-                showToast(window.loc('لیست افراد دنبال‌شده 🤝', 'Following list 🤝'));
-              }}
-              className={`flex flex-col items-center gap-1 px-2.5 py-2 rounded-2xl transition group flex-1 max-w-[90px] border ${
-                activeProfileTab === 'following'
-                  ? 'bg-blue-950/80 border-blue-500/60 shadow-md ring-1 ring-blue-500/40'
-                  : 'bg-slate-950/80 hover:bg-slate-800 border-slate-800'
-              }`}
-              title={window.loc('فالووینگ', 'Following')}
-            >
-              <UserCheck className="w-5 h-5 text-blue-400 group-hover:scale-110 transition shrink-0" />
-              <span className="text-xs sm:text-sm font-black text-white">{formatNum(userFollowingCount)}</span>
-              <span className="text-[10px] font-bold text-slate-400 group-hover:text-white transition truncate w-full">
-                {window.loc('فالووینگ', 'Following')}
-              </span>
-            </button>
+            {/* 6 Grid Tiles for Dedicated Pages */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              
+              {/* 1. Followers Dedicated Page */}
+              <button
+                onClick={() => {
+                  setActiveSeparateModal('followers');
+                  showToast(window.loc('ورود به صفحه مجزای فالوورها 👥', 'Opened Followers Page 👥'));
+                }}
+                className="p-3 rounded-2xl bg-gradient-to-br from-indigo-950/60 to-slate-950 border border-indigo-500/30 hover:border-indigo-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2 shadow-sm hover:shadow-indigo-500/20 group text-right cursor-pointer"
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 group-hover:scale-110 transition shrink-0">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-black text-indigo-400 font-mono bg-indigo-950/90 px-2 py-0.5 rounded-full border border-indigo-500/30">
+                    {formatNum(followersList.length || userFollowersCount)}
+                  </span>
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-white group-hover:text-indigo-300 transition">{window.loc('صفحه فالوورها', 'Followers Page')}</h4>
+                  <p className="text-[9.5px] text-slate-400 mt-0.5">{window.loc('مدیریت دنبال‌کنندگان 👥', 'Manage followers 👥')}</p>
+                </div>
+              </button>
 
-            {/* Likes */}
-            <button
-              onClick={() => {
-                setActiveProfileTab('likes');
-                showToast(window.loc('پست‌ها و مطالب محبوب شما ❤️', 'Your liked posts & stats ❤️'));
-              }}
-              className={`flex flex-col items-center gap-1 px-2.5 py-2 rounded-2xl transition group flex-1 max-w-[90px] border ${
-                activeProfileTab === 'likes'
-                  ? 'bg-pink-950/80 border-pink-500/60 shadow-md ring-1 ring-pink-500/40'
-                  : 'bg-slate-950/80 hover:bg-slate-800 border-slate-800'
-              }`}
-              title={window.loc('لایک‌ها', 'Likes')}
-            >
-              <Heart className="w-5 h-5 text-pink-400 fill-pink-500/20 group-hover:scale-110 transition shrink-0" />
-              <span className="text-xs sm:text-sm font-black text-pink-400">{formatNum(userTotalLikes)}</span>
-              <span className="text-[10px] font-bold text-slate-400 group-hover:text-pink-300 transition truncate w-full">
-                {window.loc('لایک‌ها', 'Likes')}
-              </span>
-            </button>
+              {/* 2. Following Dedicated Page */}
+              <button
+                onClick={() => {
+                  setActiveSeparateModal('following');
+                  showToast(window.loc('ورود به صفحه مجزای فالووینگ 🤝', 'Opened Following Page 🤝'));
+                }}
+                className="p-3 rounded-2xl bg-gradient-to-br from-blue-950/60 to-slate-950 border border-blue-500/30 hover:border-blue-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2 shadow-sm hover:shadow-blue-500/20 group text-right cursor-pointer"
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/40 group-hover:scale-110 transition shrink-0">
+                    <UserCheck className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-black text-blue-400 font-mono bg-blue-950/90 px-2 py-0.5 rounded-full border border-blue-500/30">
+                    {formatNum(userFollowingCount)}
+                  </span>
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-white group-hover:text-blue-300 transition">{window.loc('صفحه فالووینگ', 'Following Page')}</h4>
+                  <p className="text-[9.5px] text-slate-400 mt-0.5">{window.loc('افراد دنبال‌شده 🤝', 'Users followed 🤝')}</p>
+                </div>
+              </button>
 
-            {/* Views */}
-            <button
-              onClick={() => {
-                setActiveProfileTab('activity');
-                showToast(window.loc('تاریخچه بازدیدها و فعالیت‌های اخیر 👁️', 'Views & activity history 👁️'));
-              }}
-              className={`flex flex-col items-center gap-1 px-2.5 py-2 rounded-2xl transition group flex-1 max-w-[90px] border ${
-                activeProfileTab === 'activity'
-                  ? 'bg-cyan-950/80 border-cyan-500/60 shadow-md ring-1 ring-cyan-500/40'
-                  : 'bg-slate-950/80 hover:bg-slate-800 border-slate-800'
-              }`}
-              title={window.loc('بازدیدها', 'Views')}
-            >
-              <Eye className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition shrink-0" />
-              <span className="text-xs sm:text-sm font-black text-cyan-400">{formatNum(userViewsCount)}</span>
-              <span className="text-[10px] font-bold text-slate-400 group-hover:text-cyan-300 transition truncate w-full">
-                {window.loc('بازدیدها', 'Views')}
-              </span>
-            </button>
+              {/* 3. Likes Dedicated Page */}
+              <button
+                onClick={() => {
+                  setActiveSeparateModal('likes');
+                  showToast(window.loc('ورود به صفحه مجزای لایک‌ها ❤️', 'Opened Likes Page ❤️'));
+                }}
+                className="p-3 rounded-2xl bg-gradient-to-br from-pink-950/60 to-slate-950 border border-pink-500/30 hover:border-pink-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2 shadow-sm hover:shadow-pink-500/20 group text-right cursor-pointer"
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="p-2 rounded-xl bg-pink-500/20 text-pink-400 border border-pink-500/40 group-hover:scale-110 transition shrink-0">
+                    <Heart className="w-4 h-4 fill-pink-500/30" />
+                  </div>
+                  <span className="text-xs font-black text-pink-400 font-mono bg-pink-950/90 px-2 py-0.5 rounded-full border border-pink-500/30">
+                    {formatNum(userTotalLikes)}
+                  </span>
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-white group-hover:text-pink-300 transition">{window.loc('صفحه لایک‌ها', 'Likes Page')}</h4>
+                  <p className="text-[9.5px] text-slate-400 mt-0.5">{window.loc('پست‌ها و لایک‌ها ❤️', 'Liked posts & heart ❤️')}</p>
+                </div>
+              </button>
+
+              {/* 4. Views Dedicated Page */}
+              <button
+                onClick={() => {
+                  setActiveSeparateModal('views');
+                  showToast(window.loc('ورود به صفحه مجزای بازدیدها 👁️', 'Opened Views Page 👁️'));
+                }}
+                className="p-3 rounded-2xl bg-gradient-to-br from-cyan-950/60 to-slate-950 border border-cyan-500/30 hover:border-cyan-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2 shadow-sm hover:shadow-cyan-500/20 group text-right cursor-pointer"
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 group-hover:scale-110 transition shrink-0">
+                    <Eye className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-black text-cyan-400 font-mono bg-cyan-950/90 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                    {formatNum(userViewsCount)}
+                  </span>
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-white group-hover:text-cyan-300 transition">{window.loc('صفحه بازدیدها', 'Views Page')}</h4>
+                  <p className="text-[9.5px] text-slate-400 mt-0.5">{window.loc('آمار بازدیدکنندگان 👁️', 'Profile visitors 👁️')}</p>
+                </div>
+              </button>
+
+              {/* 5. Photos Gallery Dedicated Page */}
+              <button
+                onClick={() => {
+                  setActiveSeparateModal('photos');
+                  showToast(window.loc('ورود به صفحه مجزای گالری عکس‌ها 🖼️', 'Opened Photos Page 🖼️'));
+                }}
+                className="p-3 rounded-2xl bg-gradient-to-br from-purple-950/60 to-slate-950 border border-purple-500/30 hover:border-purple-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2 shadow-sm hover:shadow-purple-500/20 group text-right cursor-pointer"
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/40 group-hover:scale-110 transition shrink-0">
+                    <Image className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-black text-purple-400 font-mono bg-purple-950/90 px-2 py-0.5 rounded-full border border-purple-500/30">
+                    {formatNum(profilePosts.filter(p => !p.video).length)}
+                  </span>
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-white group-hover:text-purple-300 transition">{window.loc('گالری عکس‌ها', 'Photos Gallery')}</h4>
+                  <p className="text-[9.5px] text-slate-400 mt-0.5">{window.loc('تصاویر منتشرشده 🖼️', 'Published photos 🖼️')}</p>
+                </div>
+              </button>
+
+              {/* 6. Videos Gallery Dedicated Page */}
+              <button
+                onClick={() => {
+                  setActiveSeparateModal('videos');
+                  showToast(window.loc('ورود به صفحه مجزای گالری ویدیوها 📹', 'Opened Videos Page 📹'));
+                }}
+                className="p-3 rounded-2xl bg-gradient-to-br from-rose-950/60 to-slate-950 border border-rose-500/30 hover:border-rose-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2 shadow-sm hover:shadow-rose-500/20 group text-right cursor-pointer"
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/40 group-hover:scale-110 transition shrink-0">
+                    <Video className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-black text-rose-400 font-mono bg-rose-950/90 px-2 py-0.5 rounded-full border border-rose-500/30">
+                    {formatNum(profilePosts.filter(p => p.video).length)}
+                  </span>
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-white group-hover:text-rose-300 transition">{window.loc('گالری ویدیوها', 'Videos Gallery')}</h4>
+                  <p className="text-[9.5px] text-slate-400 mt-0.5">{window.loc('ویدیوهای منتشرشده 📹', 'Published videos 📹')}</p>
+                </div>
+              </button>
+
+            </div>
           </div>
         </VisualSectionWrapper>
 
         {/* ========================================== */}
-        {/* SUB-NAVIGATION CONTENT TABS                */}
+        {/* MAIN PROFILE DETAILS & TIMELINE           */}
         {/* ========================================== */}
-        <VisualSectionWrapper pageId="profile" sectionId="profile_tab_nav" defaultLabel="Profile Content Tabs">
-          <div className="flex bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 mb-1.5 items-center justify-around gap-2">
-            {/* Photos Icon Tab & Add (+) Button */}
-            <div className={`flex items-center gap-2.5 px-5 py-2 rounded-xl transition-all ${
-              activeProfileTab === 'photos' 
-                ? 'bg-slate-800 text-pink-400 border border-slate-700/80 shadow-md' 
-                : 'text-slate-500 hover:text-slate-300'
-            }`}>
-              <button
-                onClick={() => setActiveProfileTab('photos')}
-                className="flex items-center gap-1 transition active:scale-95"
-                title={window.loc('عکس‌ها', 'Photos')}
+        <div className="space-y-4 animate-fadeIn">
+          
+          {/* About & Biography Card */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl">
+            <h3 className="font-black text-white text-base pb-3 border-b border-slate-800 flex items-center justify-between">
+              <span>{window.loc('اطلاعات شخصی و بیوگرافی', 'Personal Details & Biography')}</span>
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="text-slate-400 flex items-center gap-1.5 font-bold">
+                  <User className="w-3.5 h-3.5 text-pink-400" />
+                  <span>{window.loc('جنسیت کاربر', 'User Gender')}</span>
+                </span>
+                <p className="text-white font-black text-sm flex items-center gap-2">
+                  <span>{userGender === 'female' ? window.loc('زن (Female) 👩', 'Female 👩') : window.loc('مرد (Male) 👨', 'Male 👨')}</span>
+                  {userGender === 'female' && (
+                    <span className="text-[10px] bg-pink-500/20 text-pink-400 px-2 py-0.5 rounded-full border border-pink-500/30 font-bold">
+                      {window.loc('واجد شرایط استریم ✨', 'Stream Eligible ✨')}
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="text-slate-400 flex items-center gap-1.5 font-bold">
+                  <User className="w-3.5 h-3.5 text-pink-400" />
+                  <span>{window.loc('سن و تاریخ تولد', 'Age & Birthday')}</span>
+                </span>
+                <p className="text-white font-black text-sm">{userAge ? `${userAge} ${window.loc('سال', 'years old')}` : window.loc('ثبت نشده (ویرایش نمایید)', 'Not specified (Edit profile)')}</p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="text-slate-400 flex items-center gap-1.5 font-bold">
+                  <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{window.loc('شهر و موقعیت', 'Location')}</span>
+                </span>
+                <p className="text-white font-black text-sm">{userCity || window.loc('ثبت نشده', 'Not specified')}</p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="text-slate-400 flex items-center gap-1.5 font-bold">
+                  <Briefcase className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{window.loc('شغل و فعالیت', 'Occupation')}</span>
+                </span>
+                <p className="text-white font-black text-sm">{userOccupation || window.loc('ثبت نشده', 'Not specified')}</p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="text-slate-400 flex items-center gap-1.5 font-bold">
+                  <GraduationCap className="w-3.5 h-3.5 text-purple-400" />
+                  <span>{window.loc('تحصیلات', 'Education')}</span>
+                </span>
+                <p className="text-white font-black text-sm">{userEducation || window.loc('ثبت نشده', 'Not specified')}</p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="text-slate-400 flex items-center gap-1.5 font-bold">
+                  <Heart className="w-3.5 h-3.5 text-rose-400" />
+                  <span>{window.loc('وضعیت تاهل', 'Relationship Status')}</span>
+                </span>
+                <p className="text-white font-black text-sm">{userRelationship}</p>
+              </div>
+            </div>
+
+            {/* Languages & Interests Tags */}
+            <div className="space-y-3 pt-3 border-t border-slate-800">
+              <div 
+                onClick={() => setIsLanguageModalOpen(true)}
+                className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between cursor-pointer hover:border-emerald-500/50 transition group"
               >
-                <Image className="w-7 h-7" />
-              </button>
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-emerald-400 group-hover:rotate-12 transition-transform" />
+                  <span className="text-xs font-bold text-slate-300">{window.loc('زبان‌های گفتاری:', 'Spoken Languages:')}</span>
+                  <span className="text-xs font-black text-white">{userLanguages}</span>
+                </div>
+                <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                  {window.loc('تغییر 🌐', 'CHANGE 🌐')}
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                <span className="text-xs font-bold text-slate-300">{window.loc('علاقه‌مندی‌ها', 'Interests & Tags')}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {(() => {
+                    try {
+                      const parsed = JSON.parse(userInterests);
+                      if (Array.isArray(parsed)) {
+                        return parsed.map(id => {
+                          const item = fullInterestsList.find(i => i.id === id);
+                          if (!item) return null;
+                          return (
+                            <span key={id} className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-[11px] font-bold">
+                              <span>{item.icon}</span>
+                              <span>{item.name}</span>
+                            </span>
+                          );
+                        });
+                      }
+                    } catch(e) {}
+                    return userInterests.split(',').map((tag, i) => (
+                      <span key={i} className="px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-bold">
+                        #{tag.trim()}
+                      </span>
+                    ));
+                  })()}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* User Posts Timeline Card */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="font-black text-white text-base flex items-center gap-2">
+                <Camera className="w-5 h-5 text-pink-400" />
+                <span>{window.loc('پست‌ها و محتوای منتشرشده', 'Published Posts & Timeline')}</span>
+              </h3>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
+                onClick={() => {
                   setNewPostType('photo');
                   setIsCreatePostModalOpen(true);
                 }}
-                className="p-0.5 rounded-md bg-pink-500/20 hover:bg-pink-500/40 text-pink-400 border border-pink-500/30 transition active:scale-95 flex items-center justify-center shrink-0"
-                title={window.loc('گذاشتن پست عکس جدید', 'Create Photo Post')}
+                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-xs shadow-md hover:scale-105 active:scale-95 transition flex items-center gap-1"
               >
-                <Plus className="w-2.5 h-2.5" />
+                <Plus className="w-4 h-4" />
+                <span>{window.loc('ایجاد پست جدید', 'New Post')}</span>
               </button>
             </div>
 
-            {/* Videos Icon Tab & Add (+) Button */}
-            <div className={`flex items-center gap-2.5 px-5 py-2 rounded-xl transition-all ${
-              activeProfileTab === 'videos' 
-                ? 'bg-slate-800 text-cyan-400 border border-slate-700/80 shadow-md' 
-                : 'text-slate-500 hover:text-slate-300'
-            }`}>
-              <button
-                onClick={() => setActiveProfileTab('videos')}
-                className="flex items-center gap-1 transition active:scale-95"
-                title={window.loc('فیلم‌ها', 'Videos')}
-              >
-                <Video className="w-7 h-7" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setNewPostType('video');
-                  setIsCreatePostModalOpen(true);
-                }}
-                className="p-0.5 rounded-md bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 border border-cyan-500/30 transition active:scale-95 flex items-center justify-center shrink-0"
-                title={window.loc('گذاشتن پست ویدیو جدید', 'Create Video Post')}
-              >
-                <Plus className="w-2.5 h-2.5" />
-              </button>
-            </div>
-          </div>
-        </VisualSectionWrapper>
-        {/* 2. SUB-TAB CONTENT PANELS                  */}
-        {/* ========================================== */}
-
-        {/* TAB: FOLLOWERS LIST */}
-        {activeProfileTab === 'followers' && (
-          <div className="space-y-4 animate-fadeIn">
-            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-                    <Users className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-white text-sm">{window.loc('دنبال‌کنندگان شما', 'Your Followers')}</h3>
-                    <span className="text-[10px] text-slate-400 font-mono">{formatNum(followersList.length || userFollowersCount)} {window.loc('فالوور ثبت‌شده', 'Registered Followers')}</span>
-                  </div>
-                </div>
-                <span className="text-xs font-bold text-indigo-400 bg-indigo-950/80 px-2.5 py-1 rounded-full border border-indigo-500/30">
-                  👥 {formatNum(followersList.length || userFollowersCount)}
-                </span>
-              </div>
-
-              {/* Followers List Grid */}
-              <div className="space-y-2.5">
-                {followersList.length > 0 ? (
-                  followersList.map(u => (
-                    <div key={u.id || u.username} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 transition flex items-center justify-between gap-3 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          {(u.avatar || u.userAvatar) ? (
-                            <img src={u.avatar || u.userAvatar} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
-                              <User className="w-5 h-5" />
-                            </div>
-                          )}
-                          {(u.isOnline || u.online) && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-950 animate-pulse" />}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
-                            <span>{u.name || u.username}</span>
-                            {u.isVIP && <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-black border border-amber-500/40">VIP</span>}
-                          </h4>
-                          <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level || 1)}</span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={async () => {
-                          await apiProfile.followUser(u);
-                          showToast(`${window.loc('شما با موفقیت دنبال کردید:', 'You successfully followed:')} @${u.username}`);
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] shadow transition active:scale-95 flex items-center gap-1"
-                      >
-                        <UserCheck className="w-3.5 h-3.5" />
-                        <span>{window.loc('فالو متقابل', 'Follow Back')}</span>
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 px-4 rounded-2xl bg-slate-950 border border-dashed border-slate-800 space-y-2">
-                    <Users className="w-8 h-8 text-slate-600 mx-auto" />
-                    <p className="text-slate-400 text-xs font-bold">{window.loc('هنوز کاربری شما را دنبال نکرده است.', 'No followers yet.')}</p>
-                    <p className="text-slate-500 text-[11px]">{window.loc('با انتشار پست یا برگزاری لایواستریم، فالوورهای بیشتری جذب کنید.', 'Gain more followers by posting or hosting livestreams.')}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB: FOLLOWING LIST */}
-        {activeProfileTab === 'following' && (
-          <div className="space-y-4 animate-fadeIn">
-            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                    <UserCheck className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-white text-sm">{window.loc('افراد دنبال‌شده توسط شما', 'Users You Follow')}</h3>
-                    <span className="text-[10px] text-slate-400 font-mono">{formatNum(userFollowingCount)} {window.loc('استریمر و کاربر', 'Streamers & Users')}</span>
-                  </div>
-                </div>
-                <span className="text-xs font-bold text-blue-400 bg-blue-950/80 px-2.5 py-1 rounded-full border border-blue-500/30">
-                  🤝 {formatNum(userFollowingCount)}
-                </span>
-              </div>
-
-              {/* Following List Grid */}
-              <div className="space-y-2.5">
-                {followingList.length > 0 ? (
-                  followingList.map(u => (
-                    <div key={u.id || u.username} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between gap-3 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          {u.avatar ? (
-                            <img src={u.avatar} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
-                              <User className="w-5 h-5" />
-                            </div>
-                          )}
-                          {u.isLive && <span className="absolute -top-1 -right-1 text-[8px] font-black bg-rose-600 text-white px-1 rounded-full border border-slate-950 animate-pulse">LIVE</span>}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
-                            <span>{u.name || u.username}</span>
-                            {u.role && <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.2 rounded font-black border border-blue-500/40">{u.role}</span>}
-                          </h4>
-                          <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level || 1)}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        {u.isLive && (
-                          <button
-                            onClick={() => {
-                              if (props.setActiveTab) props.setActiveTab('home');
-                              showToast(`${window.loc('ورود به لایواستریم', 'Joining livestream of')} @${u.username}`);
-                            }}
-                            className="px-2.5 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-[10px] border border-rose-500/40 transition flex items-center gap-1"
-                          >
-                            <Video className="w-3 h-3" />
-                            <span>{window.loc('لایو', 'Live')}</span>
-                          </button>
-                        )}
-                        <button
-                          onClick={async () => {
-                            await apiProfile.unfollowUser(u.id || u.username);
-                            showToast(`${window.loc('لغو دنبال‌کردن', 'Unfollowed')} @${u.username}`);
-                          }}
-                          className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-red-950/60 hover:text-red-300 text-slate-300 font-bold text-[10px] border border-slate-800 transition"
-                        >
-                          {window.loc('دنبال‌شده (لغو)', 'Following (Unfollow)')}
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 px-4 rounded-2xl bg-slate-950 border border-dashed border-slate-800 space-y-3">
-                    <UserCheck className="w-8 h-8 text-slate-600 mx-auto" />
-                    <p className="text-slate-400 text-xs font-bold">{window.loc('هنوز کاربری را دنبال نکرده‌اید.', 'You are not following anyone yet.')}</p>
-                    <button
-                      onClick={() => props.setActiveTab && props.setActiveTab('home')}
-                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition inline-flex items-center gap-1.5"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>{window.loc('کشف استریمرها و کاربران', 'Discover Streamers & Users')}</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB: LIKES FEED */}
-        {activeProfileTab === 'likes' && (
-          <div className="space-y-4 animate-fadeIn">
-            <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-pink-500/20 text-pink-400 border border-pink-500/30">
-                    <Heart className="w-5 h-5 fill-pink-500/30" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-white text-sm">{window.loc('پست‌ها و فعالیت‌های پسندیده‌شده', 'Liked Content & Heart History')}</h3>
-                    <span className="text-[10px] text-slate-400 font-mono">{formatNum(userTotalLikes)} {window.loc('لایک ثبت‌شده', 'Total Likes')}</span>
-                  </div>
-                </div>
-                <span className="text-xs font-bold text-pink-400 bg-pink-950/80 px-2.5 py-1 rounded-full border border-pink-500/30">
-                  ❤️ {formatNum(userTotalLikes)}
-                </span>
-              </div>
-
-              {/* Liked Posts Grid */}
-              <div className="space-y-3">
-                {profilePosts.filter(p => p.liked || p.likes > 0).length === 0 ? (
-                  <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-2">
-                    <Heart className="w-8 h-8 text-slate-600 mx-auto" />
-                    <p className="text-xs text-slate-400 font-bold">{window.loc('هنوز پستی را لایک نکرده‌اید', 'No liked posts yet')}</p>
-                  </div>
-                ) : (
-                  profilePosts.filter(p => p.liked || p.likes > 0).map(post => (
-                    <div key={`liked-${post.id}`} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5 hover:border-pink-500/30 transition">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          {post.avatar ? (
-                            <img src={post.avatar} alt={post.author} className="w-8 h-8 rounded-full object-cover border border-slate-700" />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
-                              <User className="w-4 h-4" />
-                            </div>
-                          )}
-                          <div>
-                            <h4 className="font-bold text-white text-xs">{post.author}</h4>
-                            <span className="text-[9.5px] text-slate-400">@{post.username} • {post.time}</span>
-                          </div>
-                        </div>
-                        <button
-                          onClick={async () => {
-                            const nextLiked = !post.liked;
-                            if (nextLiked) {
-                              await apiSocial.likePost(post.id);
-                            } else {
-                              await apiSocial.unlikePost(post.id);
-                            }
-                            setProfilePosts(prev => prev.map(p => p.id === post.id ? { ...p, liked: nextLiked, likes: Math.max(0, p.likes + (nextLiked ? 1 : -1)) } : p));
-                          }}
-                          className={`text-xs font-black flex items-center gap-1 px-2.5 py-1 rounded-full border transition active:scale-95 ${
-                            post.liked ? 'bg-pink-600 text-white border-pink-500' : 'bg-pink-950/60 text-pink-400 border-pink-500/30 hover:bg-pink-900/60'
-                          }`}
-                        >
-                          <Heart className={`w-3.5 h-3.5 ${post.liked ? 'fill-white' : 'fill-pink-400'}`} />
-                          <span>{formatNum(post.likes)}</span>
-                        </button>
-                      </div>
-                      <p className="text-xs text-slate-300 leading-relaxed dir-rtl">{post.content}</p>
-                      {post.image && (
-                        <div className="rounded-xl overflow-hidden aspect-video border border-slate-800 max-h-40">
-                          <img src={post.image} alt="Attachment" className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        
-        {/* ========================================== */}
-        {/* SUB-TAB CONTENT PANELS                  */}
-        {/* ========================================== */}
-{/* TAB 1: POSTS FEED */}
-        { (activeProfileTab === 'photos' || activeProfileTab === 'videos') && (
-          <div className="space-y-4 animate-fadeIn">
             {profilePosts.length === 0 ? (
-              <div className="p-8 text-center bg-slate-900/80 rounded-3xl border border-dashed border-slate-800 space-y-3">
+              <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-3">
                 <Camera className="w-10 h-10 text-slate-600 mx-auto" />
                 <h4 className="text-sm font-bold text-white">{window.loc('هنوز پستی منتشر نشده است', 'No posts published yet')}</h4>
                 <p className="text-xs text-slate-400">{window.loc('اولین عکس، ویدیو یا دل‌نوشته خود را با دوستانتان به اشتراک بگذارید.', 'Share your first photo, video or thoughts with your friends.')}</p>
@@ -1165,10 +1070,10 @@ export default function ProfileTab(props) {
               </div>
             ) : (
               profilePosts.map(post => (
-                <div key={post.id} className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3.5">
+                <div key={post.id} className="p-4 sm:p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <img src={post.avatar} alt={post.author} className="w-10 h-10 rounded-full object-cover border border-purple-500/40" />
+                      <img src={post.avatar} alt={post.author} className="w-9 h-9 rounded-full object-cover border border-purple-500/40" />
                       <div>
                         <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
                           <span>{post.author}</span>
@@ -1193,7 +1098,13 @@ export default function ProfileTab(props) {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs text-slate-400">
+                  {post.video && (
+                    <div className="rounded-2xl overflow-hidden aspect-video border border-slate-800 bg-slate-950">
+                      <video src={post.video} controls className="w-full h-full object-cover" />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2.5 border-t border-slate-800/80 text-xs text-slate-400">
                     <button
                       onClick={() => {
                         setProfilePosts(prev => prev.map(p => p.id === post.id ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p));
@@ -1221,154 +1132,292 @@ export default function ProfileTab(props) {
               ))
             )}
           </div>
-        )}
+        </div>
 
-        {/* TAB 4: ABOUT DETAILS */}
-        {activeProfileTab === 'about' && (
-          <div className="space-y-4 animate-fadeIn">
-            <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
-              <h3 className="font-black text-white text-base pb-3 border-b border-slate-800 flex items-center justify-between">
-                <span>{window.loc('اطلاعات شخصی و بیوگرافی', 'Personal Details & Biography')}</span>
-              </h3>
+      </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 flex items-center gap-1.5 font-bold">
-                    <User className="w-3.5 h-3.5 text-pink-400" />
-                    <span>{window.loc('جنسیت کاربر', 'User Gender')}</span>
-                  </span>
-                  <p className="text-white font-black text-sm flex items-center gap-2">
-                    <span>{userGender === 'female' ? window.loc('زن (Female) 👩', 'Female 👩') : window.loc('مرد (Male) 👨', 'Male 👨')}</span>
-                    {userGender === 'female' && (
-                      <span className="text-[10px] bg-pink-500/20 text-pink-400 px-2 py-0.5 rounded-full border border-pink-500/30">
-                        {window.loc('واجد شرایط استریم ✨', 'Stream Eligible ✨')}
-                      </span>
-                    )}
-                  </p>
-                </div>
+      {/* ========================================== */}
+      {/* FULLSCREEN STANDALONE MODALS (صفحات مجزا)   */}
+      {/* ========================================== */}
+      {activeSeparateModal !== null && (
+        <div className="fixed inset-0 z-[80] bg-slate-950/95 backdrop-blur-2xl flex flex-col p-4 sm:p-6 animate-fadeIn overflow-y-auto dir-rtl">
+          
+          {/* Top Modal Navigation Header */}
+          <div className="flex items-center justify-between pb-4 border-b border-slate-800/80 shrink-0 max-w-3xl mx-auto w-full">
+            <button
+              onClick={() => setActiveSeparateModal(null)}
+              className="px-4 py-2 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white flex items-center gap-2 font-bold text-xs hover:border-pink-500/50 transition active:scale-95"
+            >
+              <ChevronRight className="w-4 h-4 text-pink-400 rotate-180" />
+              <span>{window.loc('بازگشت به پروفایل', 'Back to Profile')}</span>
+            </button>
 
-                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 flex items-center gap-1.5 font-bold">
-                    <User className="w-3.5 h-3.5 text-pink-400" />
-                    <span>{window.loc('سن و تاریخ تولد', 'Age & Birthday')}</span>
-                  </span>
-                  <p className="text-white font-black text-sm">{userAge ? `${userAge} ${window.loc('سال', 'years old')}` : window.loc('ثبت نشده (ویرایش نمایید)', 'Not specified (Edit profile)')}</p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 flex items-center gap-1.5 font-bold">
-                    <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>{window.loc('شهر و موقعیت', 'Location')}</span>
-                  </span>
-                  <p className="text-white font-black text-sm">{userCity || window.loc('ثبت نشده', 'Not specified')}</p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 flex items-center gap-1.5 font-bold">
-                    <Briefcase className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{window.loc('شغل و فعالیت', 'Occupation')}</span>
-                  </span>
-                  <p className="text-white font-black text-sm">{userOccupation || window.loc('ثبت نشده', 'Not specified')}</p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 flex items-center gap-1.5 font-bold">
-                    <GraduationCap className="w-3.5 h-3.5 text-purple-400" />
-                    <span>{window.loc('تحصیلات', 'Education')}</span>
-                  </span>
-                  <p className="text-white font-black text-sm">{userEducation || window.loc('ثبت نشده', 'Not specified')}</p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 flex items-center gap-1.5 font-bold">
-                    <Heart className="w-3.5 h-3.5 text-rose-400" />
-                    <span>{window.loc('وضعیت تاهل', 'Relationship Status')}</span>
-                  </span>
-                  <p className="text-white font-black text-sm">{userRelationship}</p>
-                </div>
-
-                <div 
-                  onClick={() => setIsLanguageModalOpen(true)}
-                  className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1 cursor-pointer hover:border-emerald-500/50 transition group"
-                  title={window.loc('تغییر زبان برنامه', 'Change App Language')}
-                >
-                  <span className="text-slate-400 flex items-center justify-between font-bold">
-                    <span className="flex items-center gap-1.5">
-                      <Globe className="w-3.5 h-3.5 text-emerald-400 group-hover:rotate-12 transition-transform" />
-                      <span>{window.loc('زبان‌ها', 'Languages')}</span>
-                    </span>
-                    <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                      {window.loc('تغییر 🌐', 'CHANGE 🌐')}
-                    </span>
-                  </span>
-                  <p className="text-white font-black text-sm">{userLanguages}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-2 border-t border-slate-800">
-                <span className="text-xs font-bold text-slate-300">{window.loc('علاقه‌مندی‌ها', 'Interests & Tags')}</span>
-                <div className="flex flex-wrap gap-2">
-{(() => {
-                    try {
-                      const parsed = JSON.parse(userInterests);
-                      if (Array.isArray(parsed)) {
-                        return parsed.map(id => {
-                          const item = fullInterestsList.find(i => i.id === id);
-                          if (!item) return null;
-                          return (
-                            <span key={id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-[11px] font-bold">
-                              <span>{item.icon}</span>
-                              <span>{item.name}</span>
-                            </span>
-                          );
-                        });
-                      }
-                    } catch(e) {}
-                    return userInterests.split(',').map((tag, i) => (
-                      <span key={i} className="px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-bold">
-                        #{tag.trim()}
-                      </span>
-                    ));
-                  })()}
-                </div>
-              </div>
+            <div className="flex items-center gap-2">
+              {activeSeparateModal === 'followers' && (
+                <>
+                  <Users className="w-5 h-5 text-indigo-400" />
+                  <h2 className="text-base font-black text-white">{window.loc('صفحه مجزای دنبال‌کنندگان', 'Followers Dedicated Page')}</h2>
+                </>
+              )}
+              {activeSeparateModal === 'following' && (
+                <>
+                  <UserCheck className="w-5 h-5 text-blue-400" />
+                  <h2 className="text-base font-black text-white">{window.loc('صفحه مجزای دنبال‌شوندگان', 'Following Dedicated Page')}</h2>
+                </>
+              )}
+              {activeSeparateModal === 'likes' && (
+                <>
+                  <Heart className="w-5 h-5 text-pink-400 fill-pink-500/30" />
+                  <h2 className="text-base font-black text-white">{window.loc('صفحه مجزای لایک‌ها', 'Likes Dedicated Page')}</h2>
+                </>
+              )}
+              {activeSeparateModal === 'views' && (
+                <>
+                  <Eye className="w-5 h-5 text-cyan-400" />
+                  <h2 className="text-base font-black text-white">{window.loc('صفحه مجزای بازدیدکنندگان', 'Visitors Dedicated Page')}</h2>
+                </>
+              )}
+              {activeSeparateModal === 'photos' && (
+                <>
+                  <Image className="w-5 h-5 text-purple-400" />
+                  <h2 className="text-base font-black text-white">{window.loc('صفحه مجزای گالری عکس‌ها', 'Photos Gallery Dedicated Page')}</h2>
+                </>
+              )}
+              {activeSeparateModal === 'videos' && (
+                <>
+                  <Video className="w-5 h-5 text-rose-400" />
+                  <h2 className="text-base font-black text-white">{window.loc('صفحه مجزای گالری ویدیوها', 'Videos Gallery Dedicated Page')}</h2>
+                </>
+              )}
             </div>
+
+            <button
+              onClick={() => setActiveSeparateModal(null)}
+              className="p-2 rounded-full bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-        )}
 
-        {/* TAB 5: ACTIVITY & PROFILE VIEWS TIMELINE */}
-        {activeProfileTab === 'activity' && (
-          <div className="space-y-4 animate-fadeIn">
-            {/* Views Summary Card */}
-            <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                    <Eye className="w-5 h-5" />
-                  </div>
+          {/* Dedicated Page Content Container */}
+          <div className="py-4 flex-1 overflow-y-auto max-w-3xl mx-auto w-full space-y-4">
+            
+            {/* 1. SEPARATE FOLLOWERS PAGE */}
+            {activeSeparateModal === 'followers' && (
+              <div className="p-5 rounded-3xl bg-slate-900 border border-indigo-500/30 space-y-4 shadow-2xl">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                   <div>
-                    <h3 className="font-black text-white text-sm">{window.loc('آمار و بازدیدکنندگان پروفایل', 'Profile Views & Visitors')}</h3>
-                    <span className="text-[10px] text-slate-400 font-mono">{formatNum(userViewsCount)} {window.loc('بازدید ثبت‌شده', 'Total Views')}</span>
+                    <h3 className="font-black text-white text-base">{window.loc('لیست کامل دنبال‌کنندگان شما', 'Your Complete Followers List')}</h3>
+                    <p className="text-xs text-slate-400">{window.loc('کاربران و اعضایی که پروفایل شما را دنبال می‌کنند', 'Users and members following your profile')}</p>
                   </div>
+                  <span className="text-xs font-black text-indigo-400 bg-indigo-950 px-3 py-1 rounded-full border border-indigo-500/40 font-mono">
+                    👥 {formatNum(followersList.length || userFollowersCount)}
+                  </span>
                 </div>
-                <span className="text-xs font-bold text-cyan-400 bg-cyan-950/80 px-2.5 py-1 rounded-full border border-cyan-500/30">
-                  👁️ {formatNum(userViewsCount)}
-                </span>
-              </div>
 
-              {/* Profile Visitors List */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold text-slate-300">{window.loc('آخرین بازدیدکنندگان پروفایل شما', 'Recent Profile Visitors')}</h4>
-                {profileVisitors.length > 0 ? (
-                  <div className="space-y-2">
-                    {profileVisitors.map((v, i) => (
-                      <div key={v.id || i} className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between gap-3">
+                <div className="space-y-2.5">
+                  {followersList.length > 0 ? (
+                    followersList.map(u => (
+                      <div key={u.id || u.username} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 transition flex items-center justify-between gap-3 shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            {(u.avatar || u.userAvatar) ? (
+                              <img src={u.avatar || u.userAvatar} alt={u.name || u.username} className="w-11 h-11 rounded-full object-cover border border-slate-700" />
+                            ) : (
+                              <div className="w-11 h-11 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
+                                <User className="w-5 h-5" />
+                              </div>
+                            )}
+                            {(u.isOnline || u.online) && <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-950 animate-pulse" />}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                              <span>{u.name || u.username}</span>
+                              {u.isVIP && <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-black border border-amber-500/40">VIP</span>}
+                            </h4>
+                            <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level || 1)}</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            await apiProfile.followUser(u);
+                            showToast(`${window.loc('شما با موفقیت دنبال کردید:', 'You successfully followed:')} @${u.username}`);
+                          }}
+                          className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow transition active:scale-95 flex items-center gap-1.5"
+                        >
+                          <UserCheck className="w-4 h-4" />
+                          <span>{window.loc('فالو متقابل', 'Follow Back')}</span>
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12 px-4 rounded-2xl bg-slate-950 border border-dashed border-slate-800 space-y-3">
+                      <Users className="w-10 h-10 text-slate-600 mx-auto" />
+                      <p className="text-slate-300 text-xs font-bold">{window.loc('هنوز کاربری شما را دنبال نکرده است.', 'No followers yet.')}</p>
+                      <p className="text-slate-500 text-[11px]">{window.loc('با فعالیت در استریم‌ها و انتشار عکس/ویدیو، فالوور جدید جذب کنید.', 'Gain followers by hosting streams and publishing content.')}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 2. SEPARATE FOLLOWING PAGE */}
+            {activeSeparateModal === 'following' && (
+              <div className="p-5 rounded-3xl bg-slate-900 border border-blue-500/30 space-y-4 shadow-2xl">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div>
+                    <h3 className="font-black text-white text-base">{window.loc('افراد دنبال‌شده توسط شما', 'Users You Follow')}</h3>
+                    <p className="text-xs text-slate-400">{window.loc('استریمرها و کاربرانی که دنبال می‌کنید', 'Streamers & members you are following')}</p>
+                  </div>
+                  <span className="text-xs font-black text-blue-400 bg-blue-950 px-3 py-1 rounded-full border border-blue-500/40 font-mono">
+                    🤝 {formatNum(userFollowingCount)}
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {followingList.length > 0 ? (
+                    followingList.map(u => (
+                      <div key={u.id || u.username} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between gap-3 shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            {u.avatar ? (
+                              <img src={u.avatar} alt={u.name || u.username} className="w-11 h-11 rounded-full object-cover border border-slate-700" />
+                            ) : (
+                              <div className="w-11 h-11 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
+                                <User className="w-5 h-5" />
+                              </div>
+                            )}
+                            {u.isLive && <span className="absolute -top-1 -right-1 text-[8px] font-black bg-rose-600 text-white px-1.5 rounded-full border border-slate-950 animate-pulse">LIVE</span>}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                              <span>{u.name || u.username}</span>
+                              {u.role && <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.2 rounded font-black border border-blue-500/40">{u.role}</span>}
+                            </h4>
+                            <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level || 1)}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {u.isLive && (
+                            <button
+                              onClick={() => {
+                                setActiveSeparateModal(null);
+                                if (props.setActiveTab) props.setActiveTab('home');
+                                showToast(`${window.loc('ورود به لایواستریم', 'Joining livestream of')} @${u.username}`);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-xs border border-rose-500/40 transition flex items-center gap-1"
+                            >
+                              <Video className="w-3.5 h-3.5" />
+                              <span>{window.loc('لایو', 'Live')}</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={async () => {
+                              await apiProfile.unfollowUser(u.id || u.username);
+                              showToast(`${window.loc('لغو دنبال‌کردن', 'Unfollowed')} @${u.username}`);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-red-950/60 hover:text-red-300 text-slate-300 font-bold text-xs border border-slate-800 transition"
+                          >
+                            {window.loc('دنبال‌شده (لغو)', 'Following (Unfollow)')}
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12 px-4 rounded-2xl bg-slate-950 border border-dashed border-slate-800 space-y-3">
+                      <UserCheck className="w-10 h-10 text-slate-600 mx-auto" />
+                      <p className="text-slate-300 text-xs font-bold">{window.loc('هنوز کاربری را دنبال نکرده‌اید.', 'You are not following anyone yet.')}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 3. SEPARATE LIKES PAGE */}
+            {activeSeparateModal === 'likes' && (
+              <div className="p-5 rounded-3xl bg-slate-900 border border-pink-500/30 space-y-4 shadow-2xl">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div>
+                    <h3 className="font-black text-white text-base">{window.loc('آمار و لیست لایک‌ها', 'Likes & Favorites History')}</h3>
+                    <p className="text-xs text-slate-400">{window.loc('پست‌ها و محتوای پسندیده‌شده توسط شما', 'Liked posts and content by you')}</p>
+                  </div>
+                  <span className="text-xs font-black text-pink-400 bg-pink-950 px-3 py-1 rounded-full border border-pink-500/40 font-mono">
+                    ❤️ {formatNum(userTotalLikes)}
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {profilePosts.filter(p => p.liked || p.likes > 0).length === 0 ? (
+                    <div className="p-12 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-2">
+                      <Heart className="w-10 h-10 text-slate-600 mx-auto" />
+                      <p className="text-xs text-slate-400 font-bold">{window.loc('هنوز پستی را لایک نکرده‌اید', 'No liked posts yet')}</p>
+                    </div>
+                  ) : (
+                    profilePosts.filter(p => p.liked || p.likes > 0).map(post => (
+                      <div key={`liked-${post.id}`} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5 hover:border-pink-500/30 transition">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            {post.avatar ? (
+                              <img src={post.avatar} alt={post.author} className="w-9 h-9 rounded-full object-cover border border-slate-700" />
+                            ) : (
+                              <div className="w-9 h-9 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
+                                <User className="w-4 h-4" />
+                              </div>
+                            )}
+                            <div>
+                              <h4 className="font-bold text-white text-xs">{post.author}</h4>
+                              <span className="text-[9.5px] text-slate-400">@{post.username} • {post.time}</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              const nextLiked = !post.liked;
+                              if (nextLiked) {
+                                await apiSocial.likePost(post.id);
+                              } else {
+                                await apiSocial.unlikePost(post.id);
+                              }
+                              setProfilePosts(prev => prev.map(p => p.id === post.id ? { ...p, liked: nextLiked, likes: Math.max(0, p.likes + (nextLiked ? 1 : -1)) } : p));
+                            }}
+                            className={`text-xs font-black flex items-center gap-1 px-3 py-1 rounded-full border transition active:scale-95 ${
+                              post.liked ? 'bg-pink-600 text-white border-pink-500' : 'bg-pink-950/60 text-pink-400 border-pink-500/30 hover:bg-pink-900/60'
+                            }`}
+                          >
+                            <Heart className={`w-4 h-4 ${post.liked ? 'fill-white' : 'fill-pink-400'}`} />
+                            <span>{formatNum(post.likes)}</span>
+                          </button>
+                        </div>
+                        <p className="text-xs text-slate-300 leading-relaxed dir-rtl">{post.content}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 4. SEPARATE VIEWS PAGE */}
+            {activeSeparateModal === 'views' && (
+              <div className="p-5 rounded-3xl bg-slate-900 border border-cyan-500/30 space-y-4 shadow-2xl">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div>
+                    <h3 className="font-black text-white text-base">{window.loc('آمار و بازدیدکنندگان پروفایل', 'Profile Views & Visitors')}</h3>
+                    <p className="text-xs text-slate-400">{window.loc('لیست آخرین افرادی که از صفحه شما دیدن کرده‌اند', 'Recent visitors of your profile')}</p>
+                  </div>
+                  <span className="text-xs font-black text-cyan-400 bg-cyan-950 px-3 py-1 rounded-full border border-cyan-500/40 font-mono">
+                    👁️ {formatNum(userViewsCount)}
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {profileVisitors.length > 0 ? (
+                    profileVisitors.map((v, i) => (
+                      <div key={v.id || i} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                           {v.avatar ? (
-                            <img src={v.avatar} alt={v.name || v.username} className="w-9 h-9 rounded-full object-cover border border-cyan-500/30" />
+                            <img src={v.avatar} alt={v.name || v.username} className="w-10 h-10 rounded-full object-cover border border-cyan-500/30" />
                           ) : (
-                            <div className="w-9 h-9 rounded-full bg-slate-900 border border-cyan-500/30 flex items-center justify-center text-slate-400">
-                              <User className="w-4 h-4 text-cyan-400" />
+                            <div className="w-10 h-10 rounded-full bg-slate-900 border border-cyan-500/30 flex items-center justify-center text-slate-400">
+                              <User className="w-5 h-5 text-cyan-400" />
                             </div>
                           )}
                           <div>
@@ -1378,117 +1427,98 @@ export default function ProfileTab(props) {
                         </div>
                         <span className="text-[10px] text-slate-400 font-mono">{v.time || window.loc('به تازگی', 'Recently')}</span>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6 px-4 rounded-2xl bg-slate-950 border border-dashed border-slate-800 space-y-1">
-                    <Eye className="w-6 h-6 text-slate-600 mx-auto" />
-                    <p className="text-slate-400 text-xs font-bold">{window.loc('هنوز بازدیدی از پروفایل ثبت نشده است.', 'No profile visits recorded yet.')}</p>
-                    <p className="text-slate-500 text-[11px]">{window.loc('با فعالیت در چت و استریم، پروفایل خود را معرفی کنید.', 'Introduce your profile by chatting and streaming.')}</p>
-                  </div>
-                )}
+                    ))
+                  ) : (
+                    <div className="text-center py-12 px-4 rounded-2xl bg-slate-950 border border-dashed border-slate-800 space-y-2">
+                      <Eye className="w-10 h-10 text-slate-600 mx-auto" />
+                      <p className="text-slate-300 text-xs font-bold">{window.loc('هنوز بازدیدی از پروفایل ثبت نشده است.', 'No profile visits recorded yet.')}</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* TAB 6: LIVES ARCHIVE */}
-        {activeProfileTab === 'lives' && (
-          <div className="space-y-4 animate-fadeIn">
-            <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="font-bold text-white text-sm flex items-center gap-2">
-                  <Video className="w-4 h-4 text-pink-400" />
-                  <span>{window.loc('آمار و عملکرد لایواستریم‌ها', 'Live Broadcast Performance')}</span>
-                </h3>
-
-                {isFemaleApprovedStreamer ? (
+            {/* 5. SEPARATE PHOTOS GALLERY PAGE */}
+            {activeSeparateModal === 'photos' && (
+              <div className="p-5 rounded-3xl bg-slate-900 border border-purple-500/30 space-y-4 shadow-2xl">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div>
+                    <h3 className="font-black text-white text-base">{window.loc('گالری عکس‌های شما', 'Your Photo Gallery')}</h3>
+                    <p className="text-xs text-slate-400">{window.loc('تصاویر منتشرشده در پروفایل', 'Published photos on profile')}</p>
+                  </div>
                   <button
                     onClick={() => {
-                      if (setIsLiveStudioOpen) {
-                        setIsLiveStudioOpen(true);
-                      } else if (setIsHostLiveOpen) {
-                        setIsHostLiveOpen(true);
-                      }
+                      setNewPostType('photo');
+                      setIsCreatePostModalOpen(true);
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold"
+                    className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow transition flex items-center gap-1.5"
                   >
-                    {window.loc('شروع لایو جدید 🎥', 'Go Live 🎥')}
+                    <Plus className="w-4 h-4" />
+                    <span>{window.loc('افزودن عکس جدید', 'Add Photo')}</span>
                   </button>
-                ) : isFemaleUser ? (
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {profilePosts.filter(p => !p.video && p.image).length === 0 ? (
+                    <div className="col-span-full py-12 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-2">
+                      <Image className="w-10 h-10 text-slate-600 mx-auto" />
+                      <p className="text-xs text-slate-400 font-bold">{window.loc('هنوز عکسی در گالری ثبت نشده است', 'No photos in gallery yet')}</p>
+                    </div>
+                  ) : (
+                    profilePosts.filter(p => !p.video && p.image).map(p => (
+                      <div key={p.id} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-800 group bg-slate-950">
+                        <img src={p.image} alt="Photo" className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent opacity-0 group-hover:opacity-100 transition p-2 flex items-end justify-between text-white text-[11px] font-bold">
+                          <span>❤️ {p.likes}</span>
+                          <span>💬 {p.comments}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 6. SEPARATE VIDEOS GALLERY PAGE */}
+            {activeSeparateModal === 'videos' && (
+              <div className="p-5 rounded-3xl bg-slate-900 border border-rose-500/30 space-y-4 shadow-2xl">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div>
+                    <h3 className="font-black text-white text-base">{window.loc('گالری ویدیوهای شما', 'Your Video Gallery')}</h3>
+                    <p className="text-xs text-slate-400">{window.loc('ویدیوها و کلیپ‌های کوتاه منتشرشده', 'Published videos & clips')}</p>
+                  </div>
                   <button
                     onClick={() => {
-                      if (typeof setIsBecomeStreamerModalOpen === 'function') {
-                        setIsBecomeStreamerModalOpen(true);
-                      }
+                      setNewPostType('video');
+                      setIsCreatePostModalOpen(true);
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold"
+                    className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow transition flex items-center gap-1.5"
                   >
-                    {window.loc('درخواست لایواستریم 🎙️', 'Request Live 🎙️')}
+                    <Plus className="w-4 h-4" />
+                    <span>{window.loc('افزودن ویدیوی جدید', 'Add Video')}</span>
                   </button>
-                ) : null}
-              </div>
+                </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 font-medium">{window.loc('مجموع ساعات لایو', 'Total live hours')}</span>
-                  <span className="block text-xl font-black text-white">0 hrs</span>
-                </div>
-                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 font-medium">{window.loc('کل بینندگان', 'Total viewers')}</span>
-                  <span className="block text-xl font-black text-cyan-400">0</span>
-                </div>
-                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 font-medium">{window.loc('درآمد از تماس اختصاصی', 'Earnings from exclusive calls')}</span>
-                  <span className="block text-xl font-black text-amber-400">0 Stars</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {profilePosts.filter(p => p.video).length === 0 ? (
+                    <div className="col-span-full py-12 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-2">
+                      <Video className="w-10 h-10 text-slate-600 mx-auto" />
+                      <p className="text-xs text-slate-400 font-bold">{window.loc('هنوز ویدیویی در گالری ثبت نشده است', 'No videos in gallery yet')}</p>
+                    </div>
+                  ) : (
+                    profilePosts.filter(p => p.video).map(p => (
+                      <div key={p.id} className="relative aspect-video rounded-2xl overflow-hidden border border-slate-800 bg-slate-950">
+                        <video src={p.video} controls className="w-full h-full object-cover" />
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-            </div>
+            )}
+
           </div>
-        )}
-
-        {/* TAB 7: VIP & ACHIEVEMENTS */}
-        {activeProfileTab === 'vip' && (
-          <div className="p-6 rounded-3xl bg-slate-900 border border-amber-500/30 space-y-5 animate-fadeIn">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <Crown className="w-8 h-8 text-amber-400 fill-amber-400 animate-pulse" />
-                <div>
-                  <h3 className="font-black text-white text-lg">VIP Member Status</h3>
-                  <p className="text-xs text-amber-300 font-semibold">{vipPlan && typeof vipPlan === 'string' ? `Active Plan: ${vipPlan.toUpperCase()}` : 'Standard VIP Member'}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsVipModalOpen(true)}
-                className="px-4 py-2 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow-lg"
-              >
-                Upgrade VIP
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
-                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-slate-200">Exclusive Gold Neon Profile Frame</span>
-              </div>
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
-                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-slate-200">High Priority Live Stream Placement</span>
-              </div>
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
-                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-slate-200">Unlimited 4K HD Private Video Calls</span>
-              </div>
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
-                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-slate-200">24/7 Dedicated Support Agent</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-
-      </div>
+        </div>
+      )}
 
       {/* ========================================== */}
       {/* 3. EDIT PROFILE MODAL                      */}
@@ -1978,11 +2008,9 @@ export default function ProfileTab(props) {
         </div>
       )}
 
-
-        
-  </>
+        </>
       )}
     </>
-);
+  );
 }
 
