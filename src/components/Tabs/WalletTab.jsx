@@ -825,10 +825,10 @@ export default function WalletTab(props) {
                         </div>
                         <div className="flex items-center gap-3 mt-1 text-slate-300 text-xs">
                           <span className="flex items-center gap-1 text-amber-300 font-bold">
-                            <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> Host Level 18 💎
+                            <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> Host Level {props.userLevel || currentUser?.level || currentUser?.user_level || 1} 💎
                           </span>
                           <span className="text-slate-500">•</span>
-                          <span className="text-purple-300 font-bold">VIP Gold Partner 🥇</span>
+                          <span className="text-purple-300 font-bold">{currentUser?.vip_level ? `VIP Lv.${currentUser?.vip_level}` : (currentUser?.is_vip ? 'VIP Partner 🥇' : 'Verified Host')}</span>
                         </div>
                       </div>
                     </div>

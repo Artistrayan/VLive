@@ -19,6 +19,7 @@ export default function LiveStudioModal({
   onClose,
   currentUser,
   currentUsername,
+  userLevel = 1,
   userRole,
   isUserRayan,
   isUserSuperAdmin,
@@ -316,58 +317,26 @@ export default function LiveStudioModal({
     if (onClose) onClose();
   };
 
-  // Switch between front and back camera seamlessly without re-requesting mic/full permissions
+  // Switch between front and back camera seamlessly
   const toggleCameraFacing = async () => {
     const isCurrentlyFront = !selectedCamera.toLowerCase().includes('back') && !selectedCamera.toLowerCase().includes('rear');
     const nextCamLabel = isCurrentlyFront ? 'Back Camera (4K)' : 'Front Camera (HD)';
     const nextFacingMode = isCurrentlyFront ? 'environment' : 'user';
 
     setSelectedCamera(nextCamLabel);
-
-    if (!mediaStreamRef.current) {
-      initCameraAndStream();
-      return;
-    }
+    setIsMirrored(!isCurrentlyFront); // Front is mirrored (true), back is not mirrored (false)
 
     try {
-      const activeVideoTrack = mediaStreamRef.current.getVideoTracks()[0];
-      
-      // Strategy 1: applyConstraints on the already granted active track (Zero OS permission prompt)
-      if (activeVideoTrack && typeof activeVideoTrack.applyConstraints === 'function') {
-        try {
-          await activeVideoTrack.applyConstraints({
-            facingMode: { ideal: nextFacingMode },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          });
-          
-          setLocalVideoTrack({
-            id: activeVideoTrack.id,
-            kind: 'video',
-            source: 'camera',
-            mediaStreamTrack: activeVideoTrack,
-            isMuted: !isCamEnabled,
-            published: true
-          });
-
-          showToast(window.loc(
-            isCurrentlyFront ? '🔄 دوربین پشت فعال شد' : '🔄 دوربین جلو فعال شد',
-            isCurrentlyFront ? '🔄 Back camera activated' : '🔄 Front camera activated'
-          ));
-          return;
-        } catch (constraintErr) {
-          // Fallback to seamless stream replacement if applyConstraints is not supported
-        }
+      // 1. Stop existing video tracks
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getVideoTracks().forEach(t => t.stop());
       }
 
-      // Strategy 2: Seamless track replacement without stopping audio
-      const existingAudioTrack = mediaStreamRef.current.getAudioTracks()[0];
+      // 2. Preserve existing audio track
+      const existingAudioTrack = mediaStreamRef.current ? mediaStreamRef.current.getAudioTracks()[0] : null;
       const isAudioActive = existingAudioTrack && existingAudioTrack.readyState === 'live';
 
-      if (activeVideoTrack) {
-        activeVideoTrack.stop();
-      }
-
+      // 3. Fetch new video stream with the new facingMode
       let newVideoStream;
       try {
         newVideoStream = await navigator.mediaDevices.getUserMedia({
@@ -375,11 +344,13 @@ export default function LiveStudioModal({
             facingMode: { ideal: nextFacingMode },
             width: { ideal: 1280 },
             height: { ideal: 720 }
-          }
+          },
+          audio: false
         });
-      } catch (e1) {
+      } catch (idealErr) {
         newVideoStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: nextFacingMode }
+          video: { facingMode: nextFacingMode },
+          audio: false
         });
       }
 
@@ -388,16 +359,32 @@ export default function LiveStudioModal({
         newVideoTrack.enabled = isCamEnabled;
       }
 
+      // 4. Create new combined stream
       const newStream = new MediaStream();
       if (newVideoTrack) newStream.addTrack(newVideoTrack);
       if (isAudioActive) {
         newStream.addTrack(existingAudioTrack);
-      } else if (newVideoStream.getAudioTracks()[0]) {
-        newStream.addTrack(newVideoStream.getAudioTracks()[0]);
+      } else {
+        try {
+          const aStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          if (aStream.getAudioTracks()[0]) {
+            newStream.addTrack(aStream.getAudioTracks()[0]);
+          }
+        } catch (aErr) {}
       }
 
       mediaStreamRef.current = newStream;
       setMediaStream(newStream);
+
+      // 5. Update both video elements immediately
+      if (previewVideoRef.current) {
+        previewVideoRef.current.srcObject = newStream;
+        previewVideoRef.current.play().catch(() => {});
+      }
+      if (liveVideoRef.current) {
+        liveVideoRef.current.srcObject = newStream;
+        liveVideoRef.current.play().catch(() => {});
+      }
 
       if (newVideoTrack) {
         setLocalVideoTrack({
@@ -802,12 +789,12 @@ export default function LiveStudioModal({
               </div>
               <div>
                 <h2 className="text-base font-black text-white flex items-center gap-2">
-                  <span>{window.loc('استودیو پخش زنده (V.Live Studio)', 'V.Live Studio')}</span>
+                  <span>{window.loc('استودیو پخش زنده', 'Live Studio')}</span>
                   <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                    {window.loc('سطح ۱۲', 'Level 12')}
+                    Lv.{currentUser?.level || currentUser?.user_level || userLevel || 1}
                   </span>
                 </h2>
-                <p className="text-[11px] text-slate-400">{window.loc('آماده‌سازی دوربین، صدا و تنظیمات قبل از شروع لایواستریم', 'Preparing the camera, sound and settings before starting the live stream')}</p>
+                <p className="text-[11px] text-slate-400">@{currentUsername || currentUser?.username || 'Host'}</p>
               </div>
             </div>
 
