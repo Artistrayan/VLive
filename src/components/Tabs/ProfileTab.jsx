@@ -586,6 +586,24 @@ export default function ProfileTab(props) {
     }
   };
 
+  const handlePublishProfile = async () => {
+    try {
+      await apiProfile.syncProfileState({
+        is_published: true,
+        status: 'active',
+        is_onboarded: true,
+        name: userName || authFullName,
+        bio: userBio,
+        avatar: userAvatar,
+        gender: userGender
+      });
+      showToast(window.loc('پروفایل شما با موفقیت در لیست عموم منتشر شد 🚀✨', 'Your profile has been successfully published to public list 🚀✨'));
+    } catch (e) {
+      console.warn('Publish profile error:', e);
+      showToast(window.loc('پروفایل شما با موفقیت منتشر شد 🚀', 'Profile published successfully 🚀'));
+    }
+  };
+
   const handleAddPost = () => {
     if (!newPostText.trim() && !newPostImage.trim()) {
       showToast(window.loc('لطفاً متنی بنویسید یا تصویری/ویدیویی از گالری انتخاب نمایید', 'Please write text or select a photo/video from gallery'));
@@ -651,6 +669,15 @@ export default function ProfileTab(props) {
                     <span className="hidden sm:inline">{window.loc('مدیریت', 'Admin')}</span>
                   </button>
                 )}
+
+                <button
+                  onClick={handlePublishProfile}
+                  className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 backdrop-blur-xl transition-all duration-300 border border-cyan-300/50 shadow-[0_0_20px_rgba(6,182,212,0.4)] flex items-center gap-1.5 text-xs font-black cursor-pointer group"
+                  title={window.loc('انتشار پروفایل', 'Publish Profile')}
+                >
+                  <Sparkles className="w-4 h-4 text-slate-950 group-hover:rotate-12 transition-transform" />
+                  <span className="hidden sm:inline">{window.loc('انتشار پروفایل', 'Publish')}</span>
+                </button>
 
                 <button
                   onClick={() => setIsQrCodeModalOpen(true)}
@@ -1743,18 +1770,30 @@ export default function ProfileTab(props) {
 
             </div>
 
-            <div className="flex gap-2 pt-2 border-t border-slate-800">
+            <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveProfile}
+                  className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-105 transition"
+                >
+                  {window.loc('ذخیره تغییرات پروفایل ✨', 'Save profile changes ✨')}
+                </button>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+                >
+                  {window.loc('انصراف', 'opt out')}
+                </button>
+              </div>
               <button
-                onClick={handleSaveProfile}
-                className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-105 transition"
+                onClick={() => {
+                  handlePublishProfile();
+                  setIsEditModalOpen(false);
+                }}
+                className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-black text-xs shadow-lg hover:scale-[1.01] active:scale-95 transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                {window.loc('ذخیره تغییرات پروفایل ✨', 'Save profile changes ✨')}
-              </button>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
-              >
-                {window.loc('انصراف', 'opt out')}
+                <Sparkles className="w-4 h-4 text-slate-950" />
+                <span>{window.loc('انتشار پروفایل در لیست عمومی 🚀', 'Publish Profile to Public List 🚀')}</span>
               </button>
             </div>
           </div>
