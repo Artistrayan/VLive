@@ -110,3 +110,39 @@
   animation: colorShift3D 4s ease infinite;
 }
 
+@keyframes textGradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-gradient-text {
+  background: linear-gradient(90deg, #ec4899, #a855f7, #06b6d4, #f59e0b, #ec4899);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: textGradientShift 3s linear infinite;
+}
+
+@keyframes textPulseScale {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.7));
+  }
+  50% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 22px rgba(6, 182, 212, 0.9));
+  }
+}
+
+.animate-start-text-glow {
+  animation: textPulseScale 2s ease-in-out infinite;
+}
+
+

@@ -1044,16 +1044,18 @@ export default function LiveStudioModal({
             )}
           </div>
 
-          {/* Launch Live Button - 3D Embossed Animated Color-Shift START */}
-          <button
-            onClick={handleInitiateStart}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 via-rose-500 to-amber-500 animate-color-shift-3d text-white font-black shadow-[0_12px_28px_rgba(236,72,153,0.6),0_6px_0_#831843,inset_0_2px_4px_rgba(255,255,255,0.4)] border-t border-pink-300/40 active:translate-y-1.5 active:shadow-[0_2px_10px_rgba(236,72,153,0.4),0_1px_0_#831843] hover:brightness-110 transition-all duration-150 flex items-center justify-center gap-2 group cursor-pointer"
-          >
-            <Play className="w-7 h-7 fill-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] group-hover:scale-120 transition-transform duration-300 animate-pulse" />
-            <span className="font-mono tracking-widest text-3xl font-black drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)] uppercase">
-              START
-            </span>
-          </button>
+          {/* Launch Live Button - Pure Animated Color-Shift Text START (Card background removed) */}
+          <div className="py-2 flex items-center justify-center">
+            <button
+              onClick={handleInitiateStart}
+              className="bg-transparent border-0 outline-none hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 group cursor-pointer animate-start-text-glow py-2 px-6 rounded-full"
+            >
+              <Play className="w-9 h-9 text-pink-500 fill-pink-500 group-hover:scale-120 transition-transform duration-300 drop-shadow-[0_0_12px_rgba(236,72,153,0.8)]" />
+              <span className="animated-gradient-text font-black tracking-widest text-4xl uppercase font-sans drop-shadow-[0_0_18px_rgba(168,85,247,0.8)]">
+                START
+              </span>
+            </button>
+          </div>
         </div>
       )}
 

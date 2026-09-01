@@ -2438,14 +2438,8 @@ export default function App() {
     window.addEventListener('vlive_new_notification', handleLocalNotifEvent);
     window.addEventListener('vlive_kyc_updated', handleKycUpdatedEvent);
     
-    // Check if first-time system permissions have already been granted or prompted
-    const isPermGranted = safeStorage.getItem('vlive_permissions_granted');
-    const isPermDeclined = safeStorage.getItem('vlive_permissions_prompted_once');
-    if (isPermGranted !== 'true' && isPermDeclined !== 'true') {
-      safeStorage.setItem('vlive_permissions_prompted_once', 'true');
-      setPermissionsRequestedType('all');
-      setIsPermissionsPromptOpen(true);
-    }
+    // Ensure browser/native handles permission requests naturally without showing redundant modal popups on launch
+    safeStorage.setItem('vlive_permissions_prompted_once', 'true');
 
     return () => {
       window.removeEventListener('vlive_new_notification', handleLocalNotifEvent);
