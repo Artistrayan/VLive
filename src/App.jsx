@@ -3,7 +3,7 @@ import {
   AlertTriangle, ArrowRight, BadgeCheck, Ban, Bell, Calendar, Check, CheckCircle, CheckCircle2,
   Clock, Coins as CoinsIcon, Compass, Crown, Eye, FileText, Filter,
   Flag, Flame, Gift, Headphones, Heart, Home, Languages, LogIn,
-  MessageSquare, Radio, Send, Settings, Shield, ShieldCheck, Sliders,
+  MessageSquare, Plus, Radio, Send, Settings, Shield, ShieldCheck, Sliders,
   Smartphone, Sparkles, Star, Swords, ThumbsUp, Users, Video, X, Zap
 } from 'lucide-react';
 
