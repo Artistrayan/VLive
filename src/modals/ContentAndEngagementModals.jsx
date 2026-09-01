@@ -212,17 +212,6 @@ export default function ContentAndEngagementModals(props) {
                   />
                 </label>
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-                {PRESET_AVATARS.map((avatar, idx) => (
-                  <img
-                    key={idx}
-                    src={avatar}
-                    alt="Preset"
-                    onClick={() => setNewPostImage(avatar)}
-                    className={`w-12 h-12 rounded-xl object-cover cursor-pointer border-2 transition shrink-0 ${newPostImage === avatar ? 'border-pink-500 scale-105' : 'border-slate-800 opacity-60 hover:opacity-100'}`}
-                  />
-                ))}
-              </div>
               {newPostImage && (
                 <div className="relative rounded-2xl overflow-hidden aspect-video border border-pink-500/40 bg-slate-950 flex items-center justify-center">
                   {newPostImage.startsWith('data:video') || newPostImage.includes('.mp4') ? (
@@ -317,17 +306,6 @@ export default function ContentAndEngagementModals(props) {
                     />
                   </label>
                 </div>
-              </div>
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-                {PRESET_AVATARS.map((avatar, idx) => (
-                  <img
-                    key={idx}
-                    src={avatar}
-                    alt="Preset"
-                    onClick={() => setNewStoryImage(avatar)}
-                    className={`w-12 h-12 rounded-xl object-cover cursor-pointer border-2 transition shrink-0 ${newStoryImage === avatar ? 'border-purple-500 scale-105' : 'border-slate-800 opacity-60 hover:opacity-100'}`}
-                  />
-                ))}
               </div>
               {newStoryImage && (
                 <div className="relative rounded-2xl overflow-hidden aspect-[9/16] max-h-56 mx-auto border border-slate-800 bg-slate-950">

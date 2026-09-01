@@ -3,14 +3,7 @@ import {
   Box, Send, Anchor, Shield, Rocket, Flame, Globe, Star 
 } from 'lucide-react';
 
-export const PRESET_AVATARS = [
-  '',
-  '',
-  '',
-  '',
-  '',
-  ''
-];
+export const PRESET_AVATARS = [];
 
 export const GIFTS_CATALOG = [
   { id: 'rose', name: 'Red Rose', coins: 10, category: 'Basic', icon: Flower, emoji: '🌹', color: 'text-rose-500', bg: 'bg-rose-500/10' },

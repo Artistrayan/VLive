@@ -1522,14 +1522,16 @@ export default function App() {
   const handleSavePermissionsPrompt = useCallback((perms) => {
     setIsPermissionsPromptOpen(false);
 
-    if (perms === true || (perms && typeof perms === 'object' && perms.camera && perms.microphone)) {
+    // Always record that permission prompt was shown and answered so it never shows again automatically
+    safeStorage.setItem('vlive_permissions_prompted_once', 'true');
+
+    if (perms === true || (perms && typeof perms === 'object' && (perms.camera || perms.microphone || perms.notifications))) {
       safeStorage.setItem('vlive_permissions_granted', 'true');
-      safeStorage.setItem('vlive_camera_permission_granted', 'true');
-      safeStorage.setItem('vlive_mic_permission_granted', 'true');
-      if (perms?.notifications) {
-        safeStorage.setItem('vlive_notif_permission_granted', 'true');
-      }
-      showToast(loc('دسترسی‌های سخت‌افزار با موفقیت تایید و ذخیره شدند ✅', 'Hardware permissions successfully granted & saved ✅'));
+      if (perms?.camera) safeStorage.setItem('vlive_camera_permission_granted', 'true');
+      if (perms?.microphone) safeStorage.setItem('vlive_mic_permission_granted', 'true');
+      if (perms?.notifications) safeStorage.setItem('vlive_notif_permission_granted', 'true');
+      
+      showToast(loc('دسترسی‌های سیستم با موفقیت ثبت و ذخیره شدند ✅', 'System permissions successfully granted & saved ✅'));
 
       // If there was a pending user action (e.g. start call, open live studio), execute it now
       if (typeof pendingPermissionAction === 'function') {
@@ -1537,23 +1539,10 @@ export default function App() {
         setPendingPermissionAction(null);
         action();
       }
-    } else if (perms && typeof perms === 'object') {
-      if (perms.camera) safeStorage.setItem('vlive_camera_permission_granted', 'true');
-      if (perms.microphone) safeStorage.setItem('vlive_mic_permission_granted', 'true');
-      if (perms.notifications) safeStorage.setItem('vlive_notif_permission_granted', 'true');
-      if (perms.camera && perms.microphone) {
-        safeStorage.setItem('vlive_permissions_granted', 'true');
-      }
-      showToast(loc('تنظیمات دسترسی با موفقیت ذخیره شد', 'Permission settings saved successfully'));
-
-      if ((perms.camera || perms.microphone) && typeof pendingPermissionAction === 'function') {
-        const action = pendingPermissionAction;
-        setPendingPermissionAction(null);
-        action();
-      }
     } else {
       // Basic / Declined access
-      showToast(loc('ورود با دسترسی پایه. هنگام استفاده از لایو و تماس مجدداً سوال خواهد شد.', 'Entered with basic access. Prompt will appear when using live or calls.'));
+      safeStorage.setItem('vlive_permissions_granted', 'basic');
+      showToast(loc('تنظیمات دسترسی ثبت شد.', 'Permission settings recorded.'));
       setPendingPermissionAction(null);
     }
   }, [showToast, loc, pendingPermissionAction]);
@@ -2531,6 +2520,21 @@ export default function App() {
       if (detail.birth_date) setAuthBirthDate(detail.birth_date);
       if (detail.age) setAuthAge(String(detail.age));
       if (detail.city || detail.country) setAuthCity(detail.city || detail.country);
+
+      setCurrentUser(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          name: detail.name || prev.name,
+          username: detail.username || prev.username,
+          avatar: detail.avatar || detail.avatar_url || prev.avatar,
+          avatar_url: detail.avatar || detail.avatar_url || prev.avatar_url,
+          bio: detail.bio !== undefined ? detail.bio : prev.bio,
+          gender: detail.gender || prev.gender,
+          city: detail.city || prev.city,
+          age: detail.age || prev.age
+        };
+      });
     };
 
     if (typeof window !== 'undefined') {

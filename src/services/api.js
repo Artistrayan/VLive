@@ -577,7 +577,7 @@ export const apiProfile = {
           avatar_url: safeUpdates.avatar || safeUpdates.avatar_url || '',
           gender: safeUpdates.gender || 'male',
           city: safeUpdates.city || '',
-          interests: safeUpdates.interests || '',
+          interests: typeof safeUpdates.interests === 'string' ? safeUpdates.interests : JSON.stringify(safeUpdates.interests || ''),
           age: safeUpdates.age || null,
           bio: safeUpdates.bio || '',
           status: 'approved',
@@ -588,6 +588,21 @@ export const apiProfile = {
         const res = await supabase.from('profiles').upsert([upsertPayload], { onConflict: 'id' }).select();
         data = res.data;
         error = res.error;
+        if (error) {
+          const minimalUpsert = {
+            id: uid,
+            name: safeUpdates.name || 'User',
+            username: safeUpdates.username || `user_${String(uid).slice(-4)}`,
+            avatar: safeUpdates.avatar || '',
+            gender: safeUpdates.gender || 'male',
+            bio: safeUpdates.bio || '',
+            city: safeUpdates.city || '',
+            updated_at: new Date().toISOString()
+          };
+          const minRes = await supabase.from('profiles').upsert([minimalUpsert], { onConflict: 'id' }).select();
+          data = minRes.data;
+          error = minRes.error;
+        }
       } else {
         const res = await supabase.from('profiles').update({
           ...safeUpdates,
@@ -596,15 +611,39 @@ export const apiProfile = {
         data = res.data;
         error = res.error;
         if (error) {
-          // Fallback: in case avatar_url or a custom column does not exist in schema
-          const fallbackUpdates = { ...safeUpdates };
-          delete fallbackUpdates.avatar_url;
-          const resFallback = await supabase.from('profiles').update({
-            ...fallbackUpdates,
+          // Fallback 1: Standard core fields without unknown custom table columns
+          const standardUpdates = {
+            name: safeUpdates.name,
+            username: safeUpdates.username,
+            avatar: safeUpdates.avatar,
+            avatar_url: safeUpdates.avatar || safeUpdates.avatar_url,
+            gender: safeUpdates.gender,
+            bio: safeUpdates.bio,
+            city: safeUpdates.city,
+            age: safeUpdates.age,
+            interests: typeof safeUpdates.interests === 'string' ? safeUpdates.interests : JSON.stringify(safeUpdates.interests || ''),
             updated_at: new Date().toISOString()
-          }).eq('id', uid).select();
+          };
+          Object.keys(standardUpdates).forEach(k => standardUpdates[k] === undefined && delete standardUpdates[k]);
+          
+          const resFallback = await supabase.from('profiles').update(standardUpdates).eq('id', uid).select();
           data = resFallback.data;
           error = resFallback.error;
+
+          if (error) {
+            // Fallback 2: absolute minimal columns
+            const minUpdates = {
+              name: safeUpdates.name,
+              bio: safeUpdates.bio,
+              avatar: safeUpdates.avatar,
+              gender: safeUpdates.gender,
+              updated_at: new Date().toISOString()
+            };
+            Object.keys(minUpdates).forEach(k => minUpdates[k] === undefined && delete minUpdates[k]);
+            const minRes = await supabase.from('profiles').update(minUpdates).eq('id', uid).select();
+            data = minRes.data;
+            error = minRes.error;
+          }
         }
       }
     } catch (dbErr) {

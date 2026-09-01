@@ -337,6 +337,17 @@ export default function SettingsModal(props) {
                       </select>
                     </div>
 
+                    <div className="sm:col-span-2">
+                      <label className="text-slate-300 font-semibold mb-1 block">{window.loc('بیوگرافی (Bio)', 'Bio / Description')}</label>
+                      <textarea
+                        rows="2"
+                        value={userBio || ''}
+                        onChange={e => setUserBio && setUserBio(e.target.value)}
+                        placeholder={window.loc('متن بیوگرافی شما...', 'Your bio description...')}
+                        className="w-full px-3 py-2 rounded-2xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500 resize-none text-xs"
+                      />
+                    </div>
+
                     <div className="sm:col-span-2 space-y-2 border-t border-slate-800/80 pt-2">
                       <p className="font-bold text-white">{window.loc('Change Password (تغییر رمز عبور)', 'Change Password')}</p>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1212,10 +1223,22 @@ export default function SettingsModal(props) {
             <div className="border-t border-slate-800 pt-3">
               <button
                 onClick={async () => {
-                  safeStorage.setItem('vlive_user_name', userName);
-                  safeStorage.setItem('vlive_user_bio', userBio);
-                  safeStorage.setItem('vlive_user_gender', userGender);
                   try {
+                    safeStorage.setItem('vlive_user_name', userName || '');
+                    safeStorage.setItem('vlive_user_bio', userBio || '');
+                    safeStorage.setItem('vlive_user_gender', userGender || 'male');
+                    safeStorage.setItem('vlive_privacy_last_seen', privacyLastSeen);
+                    safeStorage.setItem('vlive_privacy_online_status', String(privacyOnlineStatus));
+                    safeStorage.setItem('vlive_privacy_who_message', privacyWhoMessage);
+                    safeStorage.setItem('vlive_privacy_who_call', privacyWhoCall);
+                    safeStorage.setItem('vlive_notif_settings', JSON.stringify(notifSettingsDetailed));
+                    if (setNotifSettings) setNotifSettings(notifSettingsDetailed);
+                    safeStorage.setItem('vlive_app_theme_mode', appThemeMode);
+                    safeStorage.setItem('vlive_app_accent_color', appAccentColor);
+                    safeStorage.setItem('vlive_auto_save_live', String(autoSaveLive));
+                    safeStorage.setItem('vlive_data_saver', String(dataSaverEnabled));
+                    if (hostUsdtAddress) safeStorage.setItem('vlive_host_usdt_address', hostUsdtAddress);
+
                     await apiProfile.syncProfileState({
                       name: userName,
                       bio: userBio,

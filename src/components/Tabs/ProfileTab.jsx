@@ -513,51 +513,51 @@ export default function ProfileTab(props) {
 
   // Save changes to safeStorage and sync to database immediately
   const handleSaveProfile = async () => {
-    setUserName(editForm.name);
-    setUserBio(editForm.bio);
-    setUserAvatar(editForm.avatar);
-    setCoverPhoto(editForm.cover);
-    setUserCity(editForm.city);
-    setUserBirthDate(editForm.birth_date || '');
-    setUserAge(editForm.age);
-    setUserOccupation(editForm.occupation);
-    setUserEducation(editForm.education);
-    setUserRelationship(editForm.relationship);
-    setUserInterests(editForm.interests);
-    setUserLanguages(editForm.languages);
-    setInstagramLink(editForm.instagram);
-    setTelegramLink(editForm.telegram);
-
-    safeStorage.setItem('vlive_user_name', editForm.name);
-    safeStorage.setItem('vlive_user_bio', editForm.bio);
-    safeStorage.setItem('vlive_user_avatar', editForm.avatar);
-    safeStorage.setItem('vlive_profile_cover', editForm.cover);
-    safeStorage.setItem('vlive_profile_city', editForm.city);
-    safeStorage.setItem('vlive_profile_birthdate', editForm.birth_date || '');
-    safeStorage.setItem('vlive_profile_age', editForm.age);
-    safeStorage.setItem('vlive_profile_occupation', editForm.occupation);
-    safeStorage.setItem('vlive_profile_education', editForm.education);
-    safeStorage.setItem('vlive_profile_relationship', editForm.relationship);
-    safeStorage.setItem('vlive_profile_interests', editForm.interests);
-    safeStorage.setItem('vlive_profile_languages', editForm.languages);
-    safeStorage.setItem('vlive_profile_ig', editForm.instagram);
-    safeStorage.setItem('vlive_profile_tg', editForm.telegram);
-    safeStorage.setItem('vlive_user_gender', editForm.gender);
-
-    const prevGender = userGender;
-    if (setUserGender) setUserGender(editForm.gender);
-
-    // If changing to female, trigger streamer verification modal
-    if (editForm.gender === 'female' && prevGender !== 'female') {
-      if (typeof setIsBecomeStreamerModalOpen === 'function') {
-        setIsBecomeStreamerModalOpen(true);
-      }
-    } else if (editForm.gender === 'male' && prevGender !== 'male') {
-      showToast(window.loc('⚠️ با تغییر جنسیت به آقا، قابلیّت و دسترسی استریمری شما لغو شد (استریمر = خانم + تایید مدیریت).', 'By changing gender to male, streamer access is revoked (Streamer = Female + Admin approval).'));
-    }
-
-    // Immediate DB sync via apiProfile.syncProfileState
     try {
+      if (typeof setUserName === 'function') setUserName(editForm.name);
+      if (typeof setUserBio === 'function') setUserBio(editForm.bio);
+      if (typeof setUserAvatar === 'function') setUserAvatar(editForm.avatar);
+      if (typeof setCoverPhoto === 'function') setCoverPhoto(editForm.cover);
+      if (typeof setUserCity === 'function') setUserCity(editForm.city);
+      if (typeof setUserBirthDate === 'function') setUserBirthDate(editForm.birth_date || '');
+      if (typeof setUserAge === 'function') setUserAge(editForm.age);
+      if (typeof setUserOccupation === 'function') setUserOccupation(editForm.occupation);
+      if (typeof setUserEducation === 'function') setUserEducation(editForm.education);
+      if (typeof setUserRelationship === 'function') setUserRelationship(editForm.relationship);
+      if (typeof setUserInterests === 'function') setUserInterests(editForm.interests);
+      if (typeof setUserLanguages === 'function') setUserLanguages(editForm.languages);
+      if (typeof setInstagramLink === 'function') setInstagramLink(editForm.instagram);
+      if (typeof setTelegramLink === 'function') setTelegramLink(editForm.telegram);
+
+      safeStorage.setItem('vlive_user_name', editForm.name || '');
+      safeStorage.setItem('vlive_user_bio', editForm.bio || '');
+      safeStorage.setItem('vlive_user_avatar', editForm.avatar || '');
+      safeStorage.setItem('vlive_profile_cover', editForm.cover || '');
+      safeStorage.setItem('vlive_profile_city', editForm.city || '');
+      safeStorage.setItem('vlive_profile_birthdate', editForm.birth_date || '');
+      safeStorage.setItem('vlive_profile_age', editForm.age || '');
+      safeStorage.setItem('vlive_profile_occupation', editForm.occupation || '');
+      safeStorage.setItem('vlive_profile_education', editForm.education || '');
+      safeStorage.setItem('vlive_profile_relationship', editForm.relationship || 'Single');
+      safeStorage.setItem('vlive_profile_interests', editForm.interests || '');
+      safeStorage.setItem('vlive_profile_languages', editForm.languages || '');
+      safeStorage.setItem('vlive_profile_ig', editForm.instagram || '');
+      safeStorage.setItem('vlive_profile_tg', editForm.telegram || '');
+      safeStorage.setItem('vlive_user_gender', editForm.gender || 'male');
+
+      const prevGender = userGender;
+      if (typeof setUserGender === 'function') setUserGender(editForm.gender);
+
+      // If changing to female, trigger streamer verification modal
+      if (editForm.gender === 'female' && prevGender !== 'female') {
+        if (typeof setIsBecomeStreamerModalOpen === 'function') {
+          setIsBecomeStreamerModalOpen(true);
+        }
+      } else if (editForm.gender === 'male' && prevGender !== 'male') {
+        showToast(window.loc('⚠️ با تغییر جنسیت به آقا، قابلیّت و دسترسی استریمری شما لغو شد (استریمر = خانم + تایید مدیریت).', 'By changing gender to male, streamer access is revoked (Streamer = Female + Admin approval).'));
+      }
+
+      // Immediate DB sync via apiProfile.syncProfileState
       await apiProfile.syncProfileState({
         name: editForm.name,
         bio: editForm.bio,
@@ -575,12 +575,14 @@ export default function ProfileTab(props) {
         telegram: editForm.telegram,
         is_onboarded: true
       });
+
+      setIsEditModalOpen(false);
+      showToast(window.loc('پروفایل شما با موفقیت به‌روزرسانی و ذخیره شد ✨', 'Profile updated & saved successfully ✨'));
     } catch (e) {
       console.warn('ProfileTab backend sync note:', e);
+      setIsEditModalOpen(false);
+      showToast(window.loc('پروفایل شما ذخیره شد ✨', 'Profile saved successfully ✨'));
     }
-
-    setIsEditModalOpen(false);
-    showToast(window.loc('پروفایل شما با موفقیت به‌روزرسانی و ذخیره شد ✨', 'Profile updated & saved successfully ✨'));
   };
 
   const handleAddPost = () => {
@@ -669,12 +671,18 @@ export default function ProfileTab(props) {
                     className="relative group cursor-pointer"
                     title={window.loc('کلیک برای ویرایش پروفایل', 'Click to edit profile')}
                   >
-                    <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full p-1 bg-gradient-to-tr from-pink-500 via-purple-500 to-amber-400 shadow-[0_0_35px_rgba(236,72,153,0.5)]">
-                      <img
-                        src={userAvatar || authAvatar || PRESET_AVATARS[0]}
-                        alt={userName}
-                        className="w-full h-full object-cover rounded-full bg-slate-900"
-                      />
+                    <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full p-1 bg-gradient-to-tr from-pink-500 via-purple-500 to-amber-400 shadow-[0_0_35px_rgba(236,72,153,0.5)] overflow-hidden">
+                      {(userAvatar || authAvatar) ? (
+                        <img
+                          src={userAvatar || authAvatar}
+                          alt={userName}
+                          className="w-full h-full object-cover rounded-full bg-slate-900"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center text-slate-400">
+                          <User className="w-16 h-16 sm:w-20 sm:h-20 text-pink-400" />
+                        </div>
+                      )}
                     </div>
                     
                     {/* Online Status Badge */}
@@ -739,18 +747,19 @@ export default function ProfileTab(props) {
                     <span className="text-[10px] font-bold text-slate-300">{window.loc('افزودن', 'Add')}</span>
                   </button>
 
-                  {/* Story Circles */}
-                  {[
-                    { title: 'Daily Vlog', img: PRESET_AVATARS[0] || '' },
-                    { title: 'Stream Moments', img: PRESET_AVATARS[1] || '' },
-                    { title: 'VIP Exclusive', img: PRESET_AVATARS[2] || '' },
-                    { title: 'Travel ✈️', img: PRESET_AVATARS[3] || '' },
-                  ].map((story, i) => (
-                    <div key={i} className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group">
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-md">
-                        <img src={story.img} alt={story.title} className="w-full h-full object-cover rounded-full bg-slate-950" />
+                  {/* User Active Stories */}
+                  {(props.userStoriesList || []).map((story, i) => (
+                    <div key={story.id || i} className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-md overflow-hidden">
+                        {story.media_url ? (
+                          <img src={story.media_url} alt={story.title || 'Story'} className="w-full h-full object-cover rounded-full bg-slate-950" />
+                        ) : (
+                          <div className="w-full h-full bg-slate-900 flex items-center justify-center rounded-full text-pink-400 font-bold text-xs">
+                            LIVE
+                          </div>
+                        )}
                       </div>
-                      <span className="text-[10px] font-bold text-slate-300 max-w-[60px] truncate">{story.title}</span>
+                      <span className="text-[10px] font-bold text-slate-300 max-w-[60px] truncate">{story.title || story.caption || 'Story'}</span>
                     </div>
                   ))}
                 </div>
@@ -933,7 +942,13 @@ export default function ProfileTab(props) {
                     <div key={u.id || u.username} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 transition flex items-center justify-between gap-3 shadow-sm">
                       <div className="flex items-center gap-3">
                         <div className="relative">
-                          <img src={u.avatar || u.userAvatar || PRESET_AVATARS[0]} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                          {(u.avatar || u.userAvatar) ? (
+                            <img src={u.avatar || u.userAvatar} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
+                              <User className="w-5 h-5" />
+                            </div>
+                          )}
                           {(u.isOnline || u.online) && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-950 animate-pulse" />}
                         </div>
                         <div>
@@ -994,7 +1009,13 @@ export default function ProfileTab(props) {
                     <div key={u.id || u.username} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between gap-3 shadow-sm">
                       <div className="flex items-center gap-3">
                         <div className="relative">
-                          <img src={u.avatar || PRESET_AVATARS[0]} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                          {u.avatar ? (
+                            <img src={u.avatar} alt={u.name || u.username} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
+                              <User className="w-5 h-5" />
+                            </div>
+                          )}
                           {u.isLive && <span className="absolute -top-1 -right-1 text-[8px] font-black bg-rose-600 text-white px-1 rounded-full border border-slate-950 animate-pulse">LIVE</span>}
                         </div>
                         <div>
@@ -1079,7 +1100,13 @@ export default function ProfileTab(props) {
                     <div key={`liked-${post.id}`} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5 hover:border-pink-500/30 transition">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
-                          <img src={post.avatar || PRESET_AVATARS[0]} alt={post.author} className="w-8 h-8 rounded-full object-cover border border-slate-700" />
+                          {post.avatar ? (
+                            <img src={post.avatar} alt={post.author} className="w-8 h-8 rounded-full object-cover border border-slate-700" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
+                              <User className="w-4 h-4" />
+                            </div>
+                          )}
                           <div>
                             <h4 className="font-bold text-white text-xs">{post.author}</h4>
                             <span className="text-[9.5px] text-slate-400">@{post.username} • {post.time}</span>
@@ -1337,7 +1364,13 @@ export default function ProfileTab(props) {
                     {profileVisitors.map((v, i) => (
                       <div key={v.id || i} className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <img src={v.avatar || PRESET_AVATARS[0]} alt={v.name || v.username} className="w-9 h-9 rounded-full object-cover border border-cyan-500/30" />
+                          {v.avatar ? (
+                            <img src={v.avatar} alt={v.name || v.username} className="w-9 h-9 rounded-full object-cover border border-cyan-500/30" />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-slate-900 border border-cyan-500/30 flex items-center justify-center text-slate-400">
+                              <User className="w-4 h-4 text-cyan-400" />
+                            </div>
+                          )}
                           <div>
                             <h5 className="font-bold text-white text-xs">{v.name || v.username}</h5>
                             <span className="text-[10px] text-slate-400">@{v.username}</span>
@@ -1549,33 +1582,6 @@ export default function ProfileTab(props) {
                     </div>
                   </div>
 
-                  {/* Preset Avatar Selection Grid */}
-                  <div className="pt-2">
-                    <span className="text-[10px] text-slate-400 font-bold block mb-1.5">{window.loc('یا انتخاب از آواتارهای آماده:', 'Or choosing from ready-made avatars:')}</span>
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                      {(PRESET_AVATARS.length > 0 ? PRESET_AVATARS : [
-                        '',
-                        '',
-                        '',
-                        '',
-                        ''
-                      ]).map((presetUrl, pIdx) => (
-                        <button
-                          key={pIdx}
-                          type="button"
-                          onClick={() => {
-                            setEditForm(prev => ({ ...prev, avatar: presetUrl }));
-                            showToast(window.loc('آواتار انتخابی اعمال شد ✨', 'The selected avatar has been applied'));
-                          }}
-                          className={`w-10 h-10 rounded-full border-2 overflow-hidden shrink-0 transition ${
-                            editForm.avatar === presetUrl ? 'border-pink-500 scale-110 shadow-[0_0_10px_rgba(236,72,153,0.5)]' : 'border-slate-800 hover:border-slate-600'
-                          }`}
-                        >
-                          <img src={presetUrl} alt={`Preset ${pIdx}`} className="w-full h-full object-cover" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
 
                 {/* Cover Photo Section */}
@@ -1850,11 +1856,17 @@ export default function ProfileTab(props) {
 
             {/* User Info Row */}
             <div className="flex items-center gap-3">
-              <img
-                src={userAvatar || authAvatar || PRESET_AVATARS[0]}
-                alt={userName}
-                className="w-10 h-10 rounded-full object-cover border border-pink-500/40"
-              />
+              {(userAvatar || authAvatar) ? (
+                <img
+                  src={userAvatar || authAvatar}
+                  alt={userName}
+                  className="w-10 h-10 rounded-full object-cover border border-pink-500/40"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-slate-900 border border-pink-500/40 flex items-center justify-center text-slate-400">
+                  <User className="w-5 h-5 text-pink-400" />
+                </div>
+              )}
               <div>
                 <h4 className="font-bold text-white text-xs">{userName || authFullName || 'User'}</h4>
                 <span className="text-[10px] text-slate-400">@{currentUsername || authUsername || 'user'}</span>
