@@ -60,7 +60,7 @@ export default function LiveStudioModal({
   const isManagementApproved = Boolean(
     isUserAdmin ||
     isStreamerUser ||
-    isVerified ||
+    
     userRole === 'streamer' ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||

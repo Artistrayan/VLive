@@ -119,7 +119,7 @@ export default function App() {
   const [userGender, setUserGender] = useState(() => safeStorage.getItem('vlive_user_gender') || 'male');
   const [userAvatar, setUserAvatar] = useState('');
   const [userBio, setUserBio] = useState('');
-  const [isVerified, setIsVerified] = useState(false);
+  const [, setIsVerified] = useState(false);
   const [userRole, setUserRole] = useState('user');
   const [userLevel, setUserLevel] = useState(1);
   const [vipPlan, setVipPlan] = useState('Free');
@@ -1595,7 +1595,7 @@ export default function App() {
       return;
     }
 
-    const isApprovedKyc = isVerified || (verificationsList && verificationsList.some(v => v.user === userName && v.status === 'Approved'));
+    const isApprovedKyc =  (verificationsList && verificationsList.some(v => v.user === userName && v.status === 'Approved'));
     if (!isApprovedKyc) {
       showToast(loc('⛔ احراز هویت الزامی است! لطفاً ابتدا مدارک خود را ارسال کنید.', '⛔ Identity Verification required! Please complete verification first.'));
       setIsKycModalOpen(true);
@@ -2119,8 +2119,8 @@ export default function App() {
             const tgIdStr = u.telegram_id ? String(u.telegram_id) : (tgApp?.initDataUnsafe?.user?.id ? String(tgApp.initDataUnsafe.user.id) : '');
             const cleanRole = String(u.role || (u.user_type ? u.user_type.toLowerCase() : '')).toLowerCase();
             const cleanUserType = String(u.user_type || '').toUpperCase();
-            const isVerifiedAdmin = (tgIdStr === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN'));
-            const assignedRole = isVerifiedAdmin ? 'admin' : (u.role || (u.user_type ? u.user_type.toLowerCase() : 'user'));
+            const Admin = (tgIdStr === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN'));
+            const assignedRole = Admin ? 'admin' : (u.role || (u.user_type ? u.user_type.toLowerCase() : 'user'));
 
             setUserName(fullTgName);
             setCurrentUsername(u.username);
@@ -2155,8 +2155,8 @@ export default function App() {
           const tgIdStr = u.telegram_id ? String(u.telegram_id) : (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : '');
           const cleanRole = String(u.role || (u.user_type ? u.user_type.toLowerCase() : '')).toLowerCase();
           const cleanUserType = String(u.user_type || '').toUpperCase();
-          const isVerifiedAdmin = (tgIdStr === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN'));
-          const assignedRole = isVerifiedAdmin ? 'admin' : (u.role || (u.user_type ? u.user_type.toLowerCase() : 'user'));
+          const Admin = (tgIdStr === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN'));
+          const assignedRole = Admin ? 'admin' : (u.role || (u.user_type ? u.user_type.toLowerCase() : 'user'));
 
           setUserName(fullName);
           setCurrentUsername(u.username);
@@ -2256,8 +2256,8 @@ export default function App() {
         const effectiveTgId = profile.telegram_id ? String(profile.telegram_id) : (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : currentTelegramId || '');
         const cleanRole = String(profile.role || (profile.user_type ? profile.user_type.toLowerCase() : '')).toLowerCase();
         const cleanUserType = String(profile.user_type || '').toUpperCase();
-        const isVerifiedAdmin = (effectiveTgId === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN'));
-        const assignedRole = isVerifiedAdmin ? 'admin' : (profile.role || (profile.user_type ? profile.user_type.toLowerCase() : 'user'));
+        const Admin = (effectiveTgId === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN'));
+        const assignedRole = Admin ? 'admin' : (profile.role || (profile.user_type ? profile.user_type.toLowerCase() : 'user'));
         setUserRole(assignedRole);
         if (effectiveTgId) {
           setCurrentTelegramId(effectiveTgId);
@@ -2641,7 +2641,7 @@ export default function App() {
   // MANAGEMENT APPROVAL CHECK
   const isManagementApproved = Boolean(
     isUserAdmin ||
-    isVerified ||
+    
     userRole === 'streamer' ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||
@@ -2767,25 +2767,22 @@ export default function App() {
             {/* TOP COMPACT SUB-TAB SWITCHER (EXPLORE / LIVE) + START LIVE BUTTON */}
             <div className={`flex items-center justify-center gap-2 mx-auto ${isApprovedStreamerOrAdmin ? 'max-w-md' : 'max-w-xs'}`}>
               <div className="grid grid-cols-2 gap-1 bg-slate-950/90 p-1 rounded-2xl border border-slate-800 shadow-sm flex-1">
-                <button onClick={() => setHomeSubTab('explore')} className={`py-1.5 px-3 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center gap-1.5 ${homeSubTab === 'explore' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20' : 'text-slate-400 hover:text-white'}`}>
-                  <Compass className="w-3.5 h-3.5" />
-                  <span>{loc('اکسپلور', 'Explore')}</span>
+                <button onClick={() => setHomeSubTab('explore')} className={`py-1.5 px-3 rounded-xl transition-all duration-300 flex items-center justify-center ${homeSubTab === 'explore' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20' : 'text-slate-400 hover:text-white'}`} title={loc('اکسپلور', 'Explore')}>
+                  <Compass className="w-5 h-5" />
                 </button>
 
-                <button onClick={() => setHomeSubTab('live')} className={`py-1.5 px-3 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center gap-1.5 ${homeSubTab === 'live' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20' : 'text-slate-400 hover:text-white'}`}>
-                  <Radio className="w-3.5 h-3.5 text-pink-400 animate-pulse" />
-                  <span>{loc('لایوها', 'Live Streams')}</span>
+                <button onClick={() => setHomeSubTab('live')} className={`py-1.5 px-3 rounded-xl transition-all duration-300 flex items-center justify-center ${homeSubTab === 'live' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20' : 'text-slate-400 hover:text-white'}`} title={loc('لایوها', 'Live Streams')}>
+                  <Radio className={`w-5 h-5 ${homeSubTab === 'live' ? '' : 'text-pink-400'} animate-pulse`} />
                 </button>
               </div>
 
               {isApprovedStreamerOrAdmin && (
                 <button 
                   onClick={() => setIsLiveStudioOpen(true)}
-                  className="py-1.5 px-3 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 hover:opacity-95 text-white font-black text-xs shadow-lg shadow-pink-500/30 flex items-center justify-center gap-1.5 hover:scale-105 active:scale-95 transition shrink-0 border border-pink-400/50"
+                  className="py-1.5 px-4 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 hover:opacity-95 text-white shadow-lg shadow-pink-500/30 flex items-center justify-center hover:scale-105 active:scale-95 transition shrink-0 border border-pink-400/50"
                   title={loc('ورود به استودیو لایو 🎥', 'Open Live Studio 🎥')}
                 >
-                  <Video className="w-4 h-4 animate-pulse" />
-                  <span className="hidden sm:inline">{loc('شروع لایو', 'Start Live')}</span>
+                  <Video className="w-5 h-5 animate-pulse" />
                 </button>
               )}
             </div>
@@ -2880,7 +2877,7 @@ export default function App() {
                         <div className="absolute bottom-1.5 left-2 right-2 pointer-events-none">
                           <h4 className="text-xs font-black text-white drop-shadow-md truncate flex items-center gap-1">
                             <span className="truncate">{user.name}{user.age ? `, ${user.age}` : ''}</span>
-                            {Boolean(user.isVerified || user.is_verified || user.verified) && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0 inline-block" />}
+                            {Boolean(user. user.is_verified || user.verified) && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0 inline-block" />}
                           </h4>
                           <p className="text-[9px] text-pink-300 font-bold drop-shadow-md truncate">📍 {user.city} • Lv.{user.level}</p>
                         </div>
@@ -3033,7 +3030,7 @@ export default function App() {
                     setIsUserProfileModalOpen(true);
                   }} className="absolute top-1/2 -right-5 -translate-y-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-purple-500 shadow-[0_0_15px_#ec4899] cursor-pointer hover:scale-130 transition duration-300 z-30 group" title={matchDeckProfiles[1]?.name || ''}>
                       <img src={matchDeckProfiles[1]?.avatar || ''} alt="Candidate" className="w-full h-full rounded-full object-cover border border-slate-950" />
-                      {Boolean(matchDeckProfiles[1]?.isVerified || matchDeckProfiles[1]?.is_verified || matchDeckProfiles[1]?.verified) && (
+                      {Boolean(matchDeckProfiles[1]?. matchDeckProfiles[1]?.is_verified || matchDeckProfiles[1]?.verified) && (
                         <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-cyan-400 border border-slate-950 flex items-center justify-center text-[7px] text-slate-950 font-black">
                           ✔
                         </div>
@@ -3059,7 +3056,7 @@ export default function App() {
                     setIsUserProfileModalOpen(true);
                   }} className="absolute top-1/2 -left-5 -translate-y-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-cyan-400 to-blue-500 shadow-[0_0_15px_#22d3ee] cursor-pointer hover:scale-130 transition duration-300 z-30 group" title={matchDeckProfiles[3]?.name || ''}>
                       <img src={matchDeckProfiles[3]?.avatar || ''} alt="Candidate" className="w-full h-full rounded-full object-cover border border-slate-950" />
-                      {Boolean(matchDeckProfiles[3]?.isVerified || matchDeckProfiles[3]?.is_verified || matchDeckProfiles[3]?.verified) && (
+                      {Boolean(matchDeckProfiles[3]?. matchDeckProfiles[3]?.is_verified || matchDeckProfiles[3]?.verified) && (
                         <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-cyan-400 border border-slate-950 flex items-center justify-center text-[7px] text-slate-950 font-black">
                           ✔
                         </div>
@@ -3125,7 +3122,7 @@ export default function App() {
                       <h3 className="text-xl font-black text-white flex items-center gap-1.5">
                         <span>{matchDeckProfiles[matchCardIndex]?.name}</span>
                         <span className="text-sm text-pink-400 font-bold">({matchDeckProfiles[matchCardIndex]?.age})</span>
-                        {Boolean(matchDeckProfiles[matchCardIndex]?.isVerified || matchDeckProfiles[matchCardIndex]?.is_verified || matchDeckProfiles[matchCardIndex]?.verified) && <BadgeCheck className="w-4 h-4 text-cyan-400" />}
+                        {Boolean(matchDeckProfiles[matchCardIndex]?. matchDeckProfiles[matchCardIndex]?.is_verified || matchDeckProfiles[matchCardIndex]?.verified) && <BadgeCheck className="w-4 h-4 text-cyan-400" />}
                       </h3>
                       <p className="text-xs text-slate-300 font-medium">📍 {matchDeckProfiles[matchCardIndex]?.city} • Online Streamer</p>
 
@@ -3173,7 +3170,7 @@ export default function App() {
         {/* TAB 3: WALLET & EARNINGS TAB */}
         <WalletTab currentUser={currentUser} userRole={userRole} currentUsername={currentUsername} isUserRayan={isUserRayan} handleBuyService={handleBuyService} activeTab={activeTab} txHistoryList={txHistoryList} userCoins={userCoins} setUserCoins={setUserCoins} userDiamonds={userDiamonds} setUserDiamonds={setUserDiamonds} userCashBalance={userCashBalance} setUserCashBalance={setUserCashBalance} walletSubTab={walletSubTab} setWalletSubTab={setWalletSubTab} referralCode={referralCode} setIsVipModalOpen={setIsVipModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} showToast={showToast} isVerified={isVerified} isUserSuperAdmin={isUserSuperAdmin} loc={loc} isRtl={isRtl} />
         {/* TAB 4: PROFILE TAB */}
-        <ProfileTab currentUser={currentUser} userRole={userRole} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsKycModalOpen={setIsKycModalOpen} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={Boolean(isVerified)} isStreamerUser={isStreamerUser} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} />
+        <ProfileTab currentUser={currentUser} userRole={userRole} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsKycModalOpen={setIsKycModalOpen} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={isVerified} isStreamerUser={isStreamerUser} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} />
         </main>
       <nav className="fixed bottom-0 w-full max-w-[800px] z-40 bg-slate-900/95 backdrop-blur-2xl border-t border-slate-800/80 p-2 sm:px-6 flex justify-between items-center shadow-[0_-5px_30px_rgba(0,0,0,0.5)]">
         

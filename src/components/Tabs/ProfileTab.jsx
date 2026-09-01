@@ -90,7 +90,7 @@ export default function ProfileTab(props) {
 
   const isManagementApproved = Boolean(
     isUserAdmin ||
-    isVerified ||
+    
     userRole === 'streamer' ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||

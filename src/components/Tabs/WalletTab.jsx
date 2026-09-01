@@ -25,7 +25,7 @@ export default function WalletTab(props) {
     setIsVipModalOpen, setIsReferralRulesModalOpen,
     txHistoryList = [], setTxHistoryList = (() => {}),
     showToast, loc, isRtl, isUserSuperAdmin,
-    currentUser, userRole, currentUsername, isUserRayan, isVerified
+    currentUser, userRole, currentUsername, isUserRayan, 
   } = props;
 
   const userGenderVal = String(currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
@@ -51,13 +51,12 @@ export default function WalletTab(props) {
 
   const isManagementApproved = Boolean(
     isUserAdmin ||
-    isVerified ||
+    
     userRole === 'streamer' ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||
     currentUser?.isStreamer ||
-    currentUser?.is_streamer ||
-    currentUser?.isVerified
+    currentUser?.is_streamer
   );
 
   // STRICT RULE: Streamer = Female Gender AND Management Approval together for users. Admin is unrestricted.
@@ -838,7 +837,7 @@ export default function WalletTab(props) {
                     <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
                       <button
                         onClick={() => {
-                          if (!props.isVerified) {
+                          if (!isManagementApproved) {
                             showToast(window.loc('ابتدا باید درخواست استریمر شدن بدهید و توسط مدیریت تایید شوید ⚠️', 'You must first apply to become a streamer and be approved by admin ⚠️'));
                             return;
                           }
@@ -1010,7 +1009,7 @@ export default function WalletTab(props) {
                       </h3>
                       <button
                         onClick={() => {
-                          if (!props.isVerified) {
+                          if (!isManagementApproved) {
                             showToast(window.loc('ابتدا باید درخواست استریمر شدن بدهید و توسط مدیریت تایید شوید ⚠️', 'You must first apply to become a streamer and be approved by admin ⚠️'));
                             return;
                           }

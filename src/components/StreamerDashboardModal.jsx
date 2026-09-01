@@ -110,7 +110,7 @@ export default function StreamerDashboardModal({
   const isManagementApproved = Boolean(
     isUserAdmin ||
     isStreamerUser ||
-    isVerified ||
+    
     userRole === 'streamer' ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||

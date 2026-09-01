@@ -85,7 +85,7 @@ export default function LiveStreamSystem({
 
   const isManagementApproved = Boolean(
     isUserAdmin ||
-    isVerified ||
+    
     isStreamerUser ||
     userRole === 'streamer' ||
     userRole === 'admin' ||
@@ -95,7 +95,7 @@ export default function LiveStreamSystem({
     currentUser?.role === 'super_admin' ||
     currentUser?.user_type === 'STREAMER' ||
     currentUser?.isStreamer || 
-    currentUser?.isVerifiedStreamer || 
+    Streamer || 
     currentUser?.is_streamer ||
     currentUser?.isHost ||
     (kycApplications && Array.isArray(kycApplications) && kycApplications.some(a => (a.username === (currentUsername || currentUser?.username) || a.user_id === currentUser?.id) && a.status === 'Approved'))
