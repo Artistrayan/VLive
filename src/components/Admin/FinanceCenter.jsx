@@ -106,12 +106,13 @@ export default function FinanceCenter({
     const adjustmentValue = isCredit ? val : -val;
     const res = await apiAdmin.adjustUserWallet(selectedUserForAdjustment.id, adjustmentValue, adjustmentReason || 'Admin Manual Action');
     
-    if (res.success) {
+    if (res && res.success) {
       setUsersList(prev => prev.map(u => {
         if (u.id === selectedUserForAdjustment.id) {
-          const currentCoins = u.coins || u.userCoins || 0;
-          const newCoins = isCredit ? currentCoins + val : Math.max(0, currentCoins - val);
-          return { ...u, coins: newCoins, userCoins: newCoins };
+          const currentCoins = Number(u.coins || u.userCoins || 0);
+          const calculatedCoins = isCredit ? currentCoins + val : Math.max(0, currentCoins - val);
+          const finalCoins = typeof res.new_coins === 'number' ? res.new_coins : calculatedCoins;
+          return { ...u, coins: finalCoins, userCoins: finalCoins };
         }
         return u;
       }));

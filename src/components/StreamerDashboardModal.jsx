@@ -94,7 +94,21 @@ export default function StreamerDashboardModal({
     userGenderVal === 'f'
   );
 
+  const isUserAdmin = Boolean(
+    isUserRayan ||
+    isUserSuperAdmin ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'super_admin' ||
+    currentUser?.user_type === 'ADMIN' ||
+    currentUser?.user_type === 'SUPER_ADMIN' ||
+    String(currentUser?.telegram_id || '').trim() === '8933698119' ||
+    String(currentUsername || currentUser?.username || '').toLowerCase() === 'rayan'
+  );
+
   const isManagementApproved = Boolean(
+    isUserAdmin ||
     isStreamerUser ||
     isVerified ||
     userRole === 'streamer' ||
@@ -109,8 +123,8 @@ export default function StreamerDashboardModal({
     currentUser?.isHost
   );
 
-  // STRICT RULE: Streamer Dashboard requires BOTH Female Gender AND Management Approval!
-  const isUserAllowedStreamer = Boolean(isFemaleUser && isManagementApproved);
+  // STRICT RULE: Streamer Dashboard requires Female Gender AND Management Approval for regular users. Admin is unrestricted.
+  const isUserAllowedStreamer = Boolean(isUserAdmin || (isFemaleUser && isManagementApproved));
 
   // Handle Withdrawal Submission
   const handleRequestWithdrawal = async (e) => {

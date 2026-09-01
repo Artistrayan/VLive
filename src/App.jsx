@@ -2624,8 +2624,23 @@ export default function App() {
     userGenderVal === 'f'
   );
 
+  const isUserAdmin = Boolean(
+    isUserRayan ||
+    isUserSuperAdmin ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'super_admin' ||
+    currentUser?.user_type === 'ADMIN' ||
+    currentUser?.user_type === 'SUPER_ADMIN' ||
+    String(currentUser?.telegram_id || '').trim() === '8933698119' ||
+    String(currentUsername || userName || '').toLowerCase() === 'rayan' ||
+    String(currentUser?.username || '').toLowerCase() === 'rayan'
+  );
+
   // MANAGEMENT APPROVAL CHECK
   const isManagementApproved = Boolean(
+    isUserAdmin ||
     isVerified ||
     userRole === 'streamer' ||
     userRole === 'admin' ||
@@ -2640,22 +2655,18 @@ export default function App() {
     (kycApplications && Array.isArray(kycApplications) && kycApplications.some(a => (a.username === (currentUsername || userName) || a.user_id === currentUser?.id) && a.status === 'Approved'))
   );
 
-  // STRICT RULE: Streamer status requires BOTH Female gender AND Management Approval!
-  // Neither rule alone is sufficient. Changing gender to male automatically revokes streamer status.
-  const isStreamerUser = Boolean(isFemaleUser && isManagementApproved);
+  // STRICT RULE: Streamer status requires Female gender AND Management Approval for regular users.
+  // ADMIN RULE: Admin has NO restrictions, NO approval requirements, and NO gender rules whatsoever!
+  const isStreamerUser = Boolean(isUserAdmin || (isFemaleUser && isManagementApproved));
 
-  const isUserAdmin = Boolean(
-    isUserRayan ||
-    isUserSuperAdmin ||
-    userRole === 'admin' ||
-    userRole === 'super_admin' ||
-    currentUser?.role === 'admin' ||
-    currentUser?.role === 'super_admin'
-  );
-
-  const isApprovedStreamerOrAdmin = isStreamerUser;
+  const isApprovedStreamerOrAdmin = Boolean(isUserAdmin || isStreamerUser);
 
   const handleOpenLiveBroadcast = () => {
+    // Admin has direct full access without any gender check or KYC requirement
+    if (isUserAdmin) {
+      setIsLiveStudioOpen(true);
+      return;
+    }
     if (!isFemaleUser) {
       showToast(loc('🔒 ثبت‌نام و فعالیت به‌عنوان استریمر منحصراً مختص کاربران خانم می‌باشد (استریمر = خانم + تایید مدیریت).', '🔒 Streamer activity is strictly for female users (Streamer = Female + Admin Approval).'));
       return;

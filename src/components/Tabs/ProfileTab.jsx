@@ -75,7 +75,21 @@ export default function ProfileTab(props) {
     userGenderVal === 'f'
   );
 
+  const isUserAdmin = Boolean(
+    isUserRayan ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'super_admin' ||
+    currentUser?.user_type === 'ADMIN' ||
+    currentUser?.user_type === 'SUPER_ADMIN' ||
+    String(currentUser?.telegram_id || '').trim() === '8933698119' ||
+    String(currentUsername || authUsername || userName || '').toLowerCase() === 'rayan' ||
+    String(currentUser?.username || '').toLowerCase() === 'rayan'
+  );
+
   const isManagementApproved = Boolean(
+    isUserAdmin ||
     isVerified ||
     userRole === 'streamer' ||
     userRole === 'admin' ||
@@ -87,9 +101,8 @@ export default function ProfileTab(props) {
     currentUser?.isHost
   );
 
-  // STRICT RULE: Both female gender AND management approval required!
-  // If user is male or changes gender to male, streamer access is revoked.
-  const isStreamerUser = Boolean(isFemaleUser && isManagementApproved);
+  // STRICT RULE: Both female gender AND management approval required for normal users. Admin is unrestricted.
+  const isStreamerUser = Boolean(isUserAdmin || (isFemaleUser && isManagementApproved));
   const isFemaleApprovedStreamer = isStreamerUser;
 
   // if (activeTab !== 'profile') return null;

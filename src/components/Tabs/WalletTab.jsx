@@ -36,7 +36,21 @@ export default function WalletTab(props) {
     userGenderVal === 'f'
   );
 
+  const isUserAdmin = Boolean(
+    isUserRayan ||
+    isUserSuperAdmin ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'super_admin' ||
+    currentUser?.user_type === 'ADMIN' ||
+    currentUser?.user_type === 'SUPER_ADMIN' ||
+    String(currentUser?.telegram_id || '').trim() === '8933698119' ||
+    String(currentUsername || currentUser?.username || '').toLowerCase() === 'rayan'
+  );
+
   const isManagementApproved = Boolean(
+    isUserAdmin ||
     isVerified ||
     userRole === 'streamer' ||
     userRole === 'admin' ||
@@ -46,8 +60,8 @@ export default function WalletTab(props) {
     currentUser?.isVerified
   );
 
-  // STRICT RULE: Streamer = Female Gender AND Management Approval together
-  const isStreamerUser = Boolean(isFemaleUser && isManagementApproved);
+  // STRICT RULE: Streamer = Female Gender AND Management Approval together for users. Admin is unrestricted.
+  const isStreamerUser = Boolean(isUserAdmin || (isFemaleUser && isManagementApproved));
 
   React.useEffect(() => {
     if (!isStreamerUser && (walletSubTab === 'withdraw' || walletSubTab === 'convert' || walletSubTab === 'creator')) {

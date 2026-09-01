@@ -3744,15 +3744,48 @@ export const apiAdmin = {
   async adjustUserWallet(userId, amountCoins, reason) {
     if (!(await verifyAdminServerRole())) return { success: false, error: 'Unauthorized' };
     try {
+      const val = parseInt(amountCoins, 10);
+      if (isNaN(val)) return { success: false, error: 'Invalid coin amount' };
+
+      // 1. Try DB RPC procedure first
       const { data, error } = await supabase.rpc('rpc_admin_adjust_wallet', {
         p_target_user_id: userId,
-        p_amount_coins: parseInt(amountCoins, 10),
+        p_amount_coins: val,
         p_reason: reason || 'Admin adjustment'
       });
-      if (error) {
-        return { success: false, error: error.message };
+
+      if (!error && data && data.success === true) {
+        return { success: true, ...data };
       }
-      return { success: true, ...data };
+
+      console.warn('RPC adjust wallet failed or returned non-success, attempting direct DB wallet update:', error || data?.error);
+
+      // 2. Direct Fallback: Read current wallet and update in PostgreSQL
+      const { data: walData } = await supabase.from('wallets').select('coins, usdt_balance').eq('user_id', userId).maybeSingle();
+      const currentCoins = walData ? Number(walData.coins || 0) : 0;
+      const newCoins = Math.max(0, currentCoins + val);
+
+      const { error: updErr } = await supabase.from('wallets').upsert({
+        user_id: userId,
+        coins: newCoins,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+
+      if (updErr) {
+        console.error('Direct wallet update error:', updErr);
+        return { success: false, error: updErr.message || data?.error || 'Failed to update user wallet' };
+      }
+
+      // Record transaction log for audit
+      await supabase.from('transactions').insert([{
+        user_id: userId,
+        tx_type: val >= 0 ? 'admin_deposit' : 'admin_deduct',
+        amount_coins: val,
+        amount_usdt: 0,
+        description: `Admin Adjustment: ${reason || 'Manual Correction'}`
+      }]).catch(() => {});
+
+      return { success: true, new_coins: newCoins, old_coins: currentCoins };
     } catch (e) {
       return { success: false, error: e.message };
     }
@@ -3842,11 +3875,23 @@ export const apiAdmin = {
   },
   async getAllUsers() {
     try {
-      const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+      const { data: profs, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+      
+      // Fetch wallets to ensure accurate real coin and USDT balances for all users
+      const { data: walData } = await supabase.from('wallets').select('user_id, coins, usdt_balance');
+      const walMap = new Map((walData || []).map(w => [w.user_id, w]));
+
       const processUsers = (list) => (list || []).map(u => {
         const isOnline = presenceService.isUserOnline(u);
+        const w = walMap.get(u.id);
+        const realCoins = w ? Number(w.coins ?? 0) : Number(u.coins ?? u.userCoins ?? 0);
+        const realUsdt = w ? Number(w.usdt_balance ?? 0) : Number(u.usdt_balance ?? 0);
+
         return {
           ...u,
+          coins: realCoins,
+          userCoins: realCoins,
+          usdt_balance: realUsdt,
           city: u.location || u.city || '',
           is_streamer: u.user_type === 'STREAMER' || Boolean(u.is_streamer),
           online: isOnline,
@@ -3855,7 +3900,7 @@ export const apiAdmin = {
         };
       });
 
-      if (!error && data && data.length > 0) return processUsers(data);
+      if (!error && profs && profs.length > 0) return processUsers(profs);
       const approved = await apiHome.getApprovedUsers();
       return processUsers(approved) || [];
     } catch (e) {

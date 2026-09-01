@@ -48,7 +48,21 @@ export default function HostLiveModal({
     userGenderVal === 'f'
   );
 
+  const isUserAdmin = Boolean(
+    isUserRayan ||
+    isUserSuperAdmin ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'super_admin' ||
+    currentUser?.user_type === 'ADMIN' ||
+    currentUser?.user_type === 'SUPER_ADMIN' ||
+    String(currentUser?.telegram_id || '').trim() === '8933698119' ||
+    String(currentUsername || currentUser?.username || '').toLowerCase() === 'rayan'
+  );
+
   const isManagementApproved = Boolean(
+    isUserAdmin ||
     isStreamerUser ||
     userRole === 'streamer' ||
     userRole === 'admin' ||
@@ -62,8 +76,8 @@ export default function HostLiveModal({
     currentUser?.isHost
   );
 
-  // STRICT RULE: Both female gender AND management approval required!
-  const isAuthorizedStreamer = Boolean(isFemaleUser && isManagementApproved);
+  // STRICT RULE: Streamer requires female gender & approval for normal users. ADMIN HAS UNRESTRICTED ACCESS!
+  const isAuthorizedStreamer = Boolean(isUserAdmin || (isFemaleUser && isManagementApproved));
 
   if (!isAuthorizedStreamer) {
     return (

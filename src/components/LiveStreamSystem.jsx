@@ -84,6 +84,7 @@ export default function LiveStreamSystem({
   );
 
   const isManagementApproved = Boolean(
+    isUserAdmin ||
     isVerified ||
     isStreamerUser ||
     userRole === 'streamer' ||
@@ -100,8 +101,8 @@ export default function LiveStreamSystem({
     (kycApplications && Array.isArray(kycApplications) && kycApplications.some(a => (a.username === (currentUsername || currentUser?.username) || a.user_id === currentUser?.id) && a.status === 'Approved'))
   );
 
-  // STRICT RULE: Streamer = Female Gender AND Management Approval together
-  const isFemaleApprovedStreamer = Boolean(isFemaleUser && isManagementApproved);
+  // STRICT RULE: Streamer = Female Gender AND Management Approval together for regular users. Admin has full access.
+  const isFemaleApprovedStreamer = Boolean(isUserAdmin || (isFemaleUser && isManagementApproved));
   const isApprovedStreamer = isFemaleApprovedStreamer;
 
   // Fetch / Sync streams from Supabase on load

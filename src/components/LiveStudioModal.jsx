@@ -44,7 +44,21 @@ export default function LiveStudioModal({
     userGenderVal === 'f'
   );
 
+  const isUserAdmin = Boolean(
+    isUserRayan ||
+    isUserSuperAdmin ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'super_admin' ||
+    currentUser?.user_type === 'ADMIN' ||
+    currentUser?.user_type === 'SUPER_ADMIN' ||
+    String(currentUser?.telegram_id || '').trim() === '8933698119' ||
+    String(currentUsername || currentUser?.username || '').toLowerCase() === 'rayan'
+  );
+
   const isManagementApproved = Boolean(
+    isUserAdmin ||
     isStreamerUser ||
     isVerified ||
     userRole === 'streamer' ||
@@ -59,8 +73,8 @@ export default function LiveStudioModal({
     currentUser?.isHost
   );
 
-  // STRICT RULE: Both female gender AND management approval required!
-  const isAuthorizedStreamer = Boolean(isFemaleUser && isManagementApproved);
+  // STRICT RULE: Streamer requires female gender & approval. ADMIN HAS UNRESTRICTED ACCESS!
+  const isAuthorizedStreamer = Boolean(isUserAdmin || (isFemaleUser && isManagementApproved));
 
   // Phase state: 'PRE_LIVE' | 'COUNTDOWN' | 'LIVE' | 'SUMMARY'
   const [studioPhase, setStudioPhase] = useState('PRE_LIVE');
@@ -316,13 +330,43 @@ export default function LiveStudioModal({
     }
 
     try {
-      // Keep existing live audio track so browser does not ask for microphone permission again
+      const activeVideoTrack = mediaStreamRef.current.getVideoTracks()[0];
+      
+      // Strategy 1: applyConstraints on the already granted active track (Zero OS permission prompt)
+      if (activeVideoTrack && typeof activeVideoTrack.applyConstraints === 'function') {
+        try {
+          await activeVideoTrack.applyConstraints({
+            facingMode: { ideal: nextFacingMode },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          });
+          
+          setLocalVideoTrack({
+            id: activeVideoTrack.id,
+            kind: 'video',
+            source: 'camera',
+            mediaStreamTrack: activeVideoTrack,
+            isMuted: !isCamEnabled,
+            published: true
+          });
+
+          showToast(window.loc(
+            isCurrentlyFront ? '🔄 دوربین پشت فعال شد' : '🔄 دوربین جلو فعال شد',
+            isCurrentlyFront ? '🔄 Back camera activated' : '🔄 Front camera activated'
+          ));
+          return;
+        } catch (constraintErr) {
+          // Fallback to seamless stream replacement if applyConstraints is not supported
+        }
+      }
+
+      // Strategy 2: Seamless track replacement without stopping audio
       const existingAudioTrack = mediaStreamRef.current.getAudioTracks()[0];
       const isAudioActive = existingAudioTrack && existingAudioTrack.readyState === 'live';
 
-      // Stop ONLY old video tracks
-      const oldVideoTracks = mediaStreamRef.current.getVideoTracks();
-      oldVideoTracks.forEach(t => t.stop());
+      if (activeVideoTrack) {
+        activeVideoTrack.stop();
+      }
 
       let newVideoStream;
       try {

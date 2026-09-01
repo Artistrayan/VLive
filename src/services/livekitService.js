@@ -286,6 +286,25 @@ export class LiveKitManager {
     // Direct MediaStream replacement for WebRTC
     if (this.localMediaStream) {
       try {
+        const activeVideoTrack = this.localMediaStream.getVideoTracks()[0];
+        
+        // 1. Attempt applyConstraints on existing granted track first (Zero permission prompt)
+        if (activeVideoTrack && typeof activeVideoTrack.applyConstraints === 'function') {
+          try {
+            await activeVideoTrack.applyConstraints({
+              facingMode: { ideal: targetFacing },
+              width: { ideal: 1280, min: 640 },
+              height: { ideal: 720, min: 360 },
+              frameRate: { ideal: 30, min: 20, max: 30 }
+            });
+            this.emit('camera_switched', { facingMode: targetFacing, stream: this.localMediaStream, track: activeVideoTrack });
+            return { facingMode: targetFacing, track: activeVideoTrack, stream: this.localMediaStream };
+          } catch (constraintErr) {
+            // Continue to seamless replacement fallback
+          }
+        }
+
+        // 2. Seamless replacement fallback
         const oldVideoTracks = this.localMediaStream.getVideoTracks();
         oldVideoTracks.forEach(t => {
           try { t.stop(); } catch(e) {}
