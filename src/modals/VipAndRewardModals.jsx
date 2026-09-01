@@ -1,5 +1,6 @@
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { apiVip, apiSupport } from '../services/api';
+import { supabase } from '../supabaseClient';
 import React, { useState, useEffect } from 'react';
 import { APP_CONFIG } from '../config';
 // from 'react';
@@ -464,15 +465,23 @@ MODE: MANUAL FALLBACK`,
                               // Auto Verification
                               showToast(window.loc('⏳ در حال بررسی تراکنش در شبکه TRON...', '⏳ Verifying transaction on TRON network...'));
                               
-                              const token = localStorage.getItem('vlive_auth_token');
-                              if (!token) throw new Error('Unauthorized');
+                              let token = localStorage.getItem('vlive_auth_token') || localStorage.getItem('vlive_token');
+                              if (!token) {
+                                try {
+                                  const { data: sessionData } = await supabase.auth.getSession();
+                                  token = sessionData?.session?.access_token || '';
+                                } catch (e) {}
+                              }
+                              const tgInitData = window?.Telegram?.WebApp?.initData || '';
+                              if (!token && !tgInitData) throw new Error('Unauthorized: Session required');
+
+                              const headers = { 'Content-Type': 'application/json' };
+                              if (token) headers['Authorization'] = 'Bearer ' + token;
+                              if (tgInitData) headers['x-telegram-init-data'] = tgInitData;
 
                               const res = await fetch('/api/payments/verify-usdt', {
                                 method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                  'Authorization': 'Bearer ' + token
-                                },
+                                headers,
                                 body: JSON.stringify({
                                   txid: txInput,
                                   plan: planKey,

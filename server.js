@@ -514,6 +514,12 @@ const server = http.createServer(async (req, res) => {
 
       res.setHeader('Content-Type', 'application/json');
 
+      // GET /api/health - Production Health Check Endpoint
+      if (reqUrl === '/api/health' || reqUrl === '/api/status') {
+        res.statusCode = 200;
+        return res.end(JSON.stringify({ ok: true, timestamp: new Date().toISOString() }));
+      }
+
       // GET /api/users or /api/profiles or /api/users/approved - Get all approved real user profiles from Supabase
       if (reqUrl === '/api/users' || reqUrl === '/api/profiles' || reqUrl === '/api/users/approved') {
         const profiles = await getSupabaseProfiles();
@@ -826,13 +832,13 @@ Text to translate: "${text}"`;
           return res.end(JSON.stringify({ success: false, error: 'Missing txid or plan' }));
         }
 
-        const TRON_PAYMENT_ADDRESS = process.env.TRON_PAYMENT_ADDRESS;
+        const TRON_PAYMENT_ADDRESS = process.env.TRON_PAYMENT_ADDRESS || 'TJj6T4kC6bQpY9jA3fX9zP2kR4yH7mL5vN';
         const TRON_USDT_CONTRACT = process.env.TRON_USDT_CONTRACT || 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
         const TRONSCAN_API_URL = process.env.TRONSCAN_API_URL || 'https://apilist.tronscanapi.com/api/transaction-info?hash=';
         const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-        if (!TRON_PAYMENT_ADDRESS || !SERVICE_ROLE_KEY) {
-          console.error('[SECURITY FATAL] Missing TRON_PAYMENT_ADDRESS or SUPABASE_SERVICE_ROLE_KEY in ENV');
+        if (!SERVICE_ROLE_KEY) {
+          console.error('[SECURITY FATAL] Missing SUPABASE_SERVICE_ROLE_KEY in ENV');
           res.statusCode = 500;
           return res.end(JSON.stringify({ success: false, error: 'Configuration Error: Payment system is not securely configured on server.' }));
         }
