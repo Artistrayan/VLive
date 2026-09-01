@@ -284,14 +284,14 @@ export default function LiveStreamSystem({
               setLiveTypeTab('standard');
               setSelectedSubCategory('all');
             }}
-            className={`py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+            title={window.loc('پخش استاندارد', 'Standard')}
+            className={`py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center ${
               liveTypeTab === 'standard'
                 ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/30 ring-1 ring-pink-400/50'
                 : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
             }`}
           >
-            <Video className="w-4 h-4 text-cyan-300" />
-            <span>{window.loc('📺 پخش زنده استاندارد', '📺 Standard live broadcast')}</span>
+            <Video className="w-5 h-5 text-cyan-300" />
           </button>
 
           <button
@@ -299,14 +299,14 @@ export default function LiveStreamSystem({
               setLiveTypeTab('adult');
               setSelectedSubCategory('all');
             }}
-            className={`py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+            title={window.loc('پخش زنده ۱۸+', '18+ Live')}
+            className={`py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center ${
               liveTypeTab === 'adult'
                 ? 'bg-gradient-to-r from-rose-600 via-purple-700 to-amber-500 text-white shadow-lg shadow-rose-500/40 ring-1 ring-amber-400/60'
                 : 'text-rose-400 hover:text-rose-200 hover:bg-slate-900/60'
             }`}
           >
-            <ShieldAlert className="w-4 h-4 text-amber-400 animate-pulse" />
-            <span>{window.loc('🔥 پخش زنده ۱۸+ (Adult)', '🔥 Live streaming 18+ (Adult)')}</span>
+            <Flame className="w-5 h-5 text-amber-400 animate-pulse" />
           </button>
         </div>
 
@@ -558,14 +558,14 @@ export default function LiveStreamSystem({
                       setNewLiveType('standard');
                       setNewLiveCategory('Gaming');
                     }}
-                    className={`py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1.5 ${
+                    title={window.loc('پخش استاندارد', 'Standard')}
+                    className={`py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center ${
                       newLiveType === 'standard'
                         ? 'bg-pink-500/20 border-pink-500 text-pink-300 font-black'
                         : 'bg-slate-950 border-slate-800 text-slate-400'
                     }`}
                   >
-                    <Video className="w-4 h-4 text-pink-400" />
-                    <span>{window.loc('استاندارد (عمومی)', 'standard (general)')}</span>
+                    <Video className="w-5 h-5 text-pink-400" />
                   </button>
 
                   <button
@@ -574,14 +574,14 @@ export default function LiveStreamSystem({
                       setNewLiveType('adult');
                       setNewLiveCategory('VIP Chat');
                     }}
-                    className={`py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1.5 ${
+                    title={window.loc('پخش زنده ۱۸+', '18+ Live')}
+                    className={`py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center ${
                       newLiveType === 'adult'
                         ? 'bg-rose-500/20 border-rose-500 text-rose-300 font-black'
                         : 'bg-slate-950 border-slate-800 text-slate-400'
                     }`}
                   >
-                    <ShieldAlert className="w-4 h-4 text-amber-400" />
-                    <span>{window.loc('بزرگسال (۱۸+)', 'adult (18+)')}</span>
+                    <Flame className="w-5 h-5 text-amber-400 animate-pulse" />
                   </button>
                 </div>
               </div>

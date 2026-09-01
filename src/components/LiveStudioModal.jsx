@@ -832,14 +832,14 @@ export default function LiveStudioModal({
               onClick={() => {
                 setLiveType('standard');
               }}
-              className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
+              title={window.loc('لایواستریم استاندارد', 'Standard live stream')}
+              className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center ${
                 liveType === 'standard'
                   ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md font-black'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Video className="w-4 h-4 text-cyan-300" />
-              <span>{window.loc('📺 لایواستریم استاندارد', '📺 Standard live stream')}</span>
+              <Video className="w-5 h-5 text-cyan-300" />
             </button>
 
             <button
@@ -847,14 +847,14 @@ export default function LiveStudioModal({
               onClick={() => {
                 setLiveType('adult');
               }}
-              className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
+              title={window.loc('لایواستریم ۱۸+', '18+ live stream')}
+              className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center ${
                 liveType === 'adult'
                   ? 'bg-gradient-to-r from-rose-600 via-purple-700 to-amber-500 text-white shadow-md font-black'
                   : 'text-rose-400 hover:text-rose-200'
               }`}
             >
-              <ShieldAlert className="w-4 h-4 text-amber-400 animate-pulse" />
-              <span>{window.loc('🔥 لایواستریم بزرگسال (۱۸+)', '🔥 adult live stream (18+)')}</span>
+              <Flame className="w-5 h-5 text-amber-400 animate-pulse" />
             </button>
           </div>
 

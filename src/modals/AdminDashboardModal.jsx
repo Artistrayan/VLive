@@ -721,23 +721,25 @@ export default function AdminDashboardModal(props) {
                       </button>
                       <button
                         onClick={() => setAdminReportCategoryFilter('Standard_Lives')}
-                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition ${
+                        title={window.loc('لایو استاندارد', 'Standard Live')}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition flex items-center justify-center ${
                           adminReportCategoryFilter === 'Standard_Lives'
                             ? 'bg-purple-600 text-white shadow-md'
                             : 'text-slate-400 hover:text-white'
                         }`}
                       >
-                        {window.loc('📺 لایوهای استاندارد', '📺 Standard Lives')}
+                        <Video className="w-4 h-4 text-cyan-300" />
                       </button>
                       <button
                         onClick={() => setAdminReportCategoryFilter('Adult_Lives')}
-                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition ${
+                        title={window.loc('لایو ۱۸+', '18+ Live')}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition flex items-center justify-center ${
                           adminReportCategoryFilter === 'Adult_Lives'
                             ? 'bg-rose-600 text-white shadow-md'
                             : 'text-slate-400 hover:text-white'
                         }`}
                       >
-                        {window.loc('🔥 لایوهای ۱۸+ (Adult)', '🔥 Lives 18+ (Adult)')}
+                        <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
                       </button>
                     </div>
                   </div>

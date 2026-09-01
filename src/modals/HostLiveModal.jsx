@@ -290,21 +290,21 @@ export default function HostLiveModal({
           </button>
         </div>
 
-        {/* Broadcast Type Switcher (Icon-First) - Moved ABOVE Camera Preview */}
+        {/* Broadcast Type Switcher (Icon-Only) - Moved ABOVE Camera Preview */}
         <div className="grid grid-cols-3 gap-2 p-1.5 bg-slate-900 rounded-2xl border border-slate-800 shadow-xl">
           <button
             onClick={() => {
               setHostLiveType('standard');
               setHostLiveCategory('Chatting');
             }}
-            className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+            title={loc('عمومی', 'Public')}
+            className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center ${
               hostLiveType === 'standard'
                 ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md font-black'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Globe className="w-3.5 h-3.5" />
-            <span>{loc('عمومی', 'Public')}</span>
+            <Globe className="w-5 h-5 text-cyan-300" />
           </button>
           
           <button
@@ -312,14 +312,14 @@ export default function HostLiveModal({
               setHostLiveType('adult');
               setHostLiveCategory('18+ VIP');
             }}
-            className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+            title={loc('۱۸+ VIP', '18+ VIP')}
+            className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center ${
               hostLiveType === 'adult'
                 ? 'bg-gradient-to-r from-rose-600 to-purple-700 text-white shadow-md font-black'
                 : 'text-rose-400 hover:bg-rose-950/30'
             }`}
           >
-            <Flame className="w-3.5 h-3.5 text-rose-400" />
-            <span>{loc('۱۸+ VIP', '18+ VIP')}</span>
+            <Flame className="w-5 h-5 text-amber-400 animate-pulse" />
           </button>
           
           <button
@@ -327,14 +327,14 @@ export default function HostLiveModal({
               setHostLiveType('private');
               setHostLiveCategory('Private');
             }}
-            className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+            title={loc('خصوصی', 'Private')}
+            className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center ${
               hostLiveType === 'private'
                 ? 'bg-gradient-to-r from-purple-600 to-cyan-500 text-white shadow-md font-black'
                 : 'text-purple-400 hover:bg-purple-950/30'
             }`}
           >
-            <Lock className="w-3.5 h-3.5" />
-            <span>{loc('خصوصی', 'Private')}</span>
+            <Lock className="w-5 h-5 text-purple-400" />
           </button>
         </div>
 
