@@ -118,10 +118,11 @@ export default function ChatTab(props) {
         setConversations(prev => {
           const currentList = Array.isArray(prev) ? [...prev] : [];
           realConvs.forEach(rc => {
+            if (!rc) return;
             const rcUser = rc.user || {};
             const partner = rc.profiles || {};
             const convId = rc.id || rc.conversation_id;
-            const partnerId = rc.partner_id || rcUser.id || partner.id || rc.recipient_id;
+            const partnerId = rc.partner_id || rcUser.id || partner?.id || rc.recipient_id;
             const isOnline = rcUser.online !== undefined ? rcUser.online : presenceService.isUserOnline(partner);
             
             const existingIdx = currentList.findIndex(m => String(m.id) === String(convId));
@@ -130,14 +131,14 @@ export default function ChatTab(props) {
               partner_id: partnerId,
               user: {
                 id: partnerId,
-                username: rcUser.username || partner.username || partner.username_handle || '',
-                name: rcUser.name || partner.name || (rcUser.username ? `@${String(rcUser.username).replace(/^@/, '')}` : 'User'),
-                avatar: rcUser.avatar || partner.avatar || '',
+                username: rcUser.username || partner?.username || partner?.username_handle || '',
+                name: rcUser.name || partner?.name || (rcUser.username ? `@${String(rcUser.username).replace(/^@/, '')}` : 'User'),
+                avatar: rcUser.avatar || partner?.avatar || '',
                 online: isOnline,
                 isOnline: isOnline,
-                isVerified: rcUser.isVerified || partner.is_verified || false,
-                isStreamer: rcUser.isStreamer || partner.is_streamer || false,
-                role: rcUser.role || partner.role || 'Member'
+                isVerified: Boolean(rcUser.isVerified || partner?.is_verified || partner?.isVerified),
+                isStreamer: Boolean(rcUser.isStreamer || partner?.is_streamer || partner?.isStreamer),
+                role: rcUser.role || partner?.role || 'Member'
               },
               lastMessage: rc.lastMessage || rc.last_message || '',
               lastTime: rc.lastTime || (rc.updated_at ? new Date(rc.updated_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Recently'),
@@ -230,10 +231,10 @@ export default function ChatTab(props) {
             username: formatUserUsername(targetUser, targetUser.id),
             name: formatUserDisplayName(targetUser, targetUser.id),
             avatar: targetUser.avatar || '',
-            isVerified: targetUser.isVerified || targetUser.is_verified || false,
-            isStreamer: targetUser.isStreamer || targetUser.is_streamer || false,
-            online: targetUser.online || targetUser.isOnline || true,
-            role: targetUser.role || 'Member'
+            isVerified: Boolean(targetUser?.isVerified || targetUser?.is_verified || false),
+            isStreamer: Boolean(targetUser?.isStreamer || targetUser?.is_streamer || false),
+            online: targetUser?.online || targetUser?.isOnline || true,
+            role: targetUser?.role || 'Member'
           },
           lastMessage: '',
           lastTime: 'Just now',
@@ -353,10 +354,10 @@ export default function ChatTab(props) {
                     id: profData.id,
                     name: rName,
                     username: rUsername,
-                    avatar: profData.avatar || c.user?.avatar || '',
-                    isVerified: profData.is_verified || Boolean(c.user?.isVerified),
-                    isStreamer: profData.is_streamer || Boolean(c.user?.isStreamer),
-                    role: profData.role || c.user?.role || 'Member'
+                    avatar: profData?.avatar || c.user?.avatar || '',
+                    isVerified: Boolean(profData?.is_verified || profData?.isVerified || c.user?.isVerified),
+                    isStreamer: Boolean(profData?.is_streamer || profData?.isStreamer || c.user?.isStreamer),
+                    role: profData?.role || c.user?.role || 'Member'
                   }
                 };
               }
@@ -1759,10 +1760,10 @@ export default function ChatTab(props) {
                                     id: u.id,
                                     username: u.username,
                                     name: u.name || u.username,
-                                    avatar: u.avatar || '',
-                                    isVerified: u.isVerified || u.is_verified || false,
-                                    online: u.online || u.isOnline || true,
-                                    role: u.role || 'Member'
+                                    avatar: u?.avatar || '',
+                                    isVerified: Boolean(u?.isVerified || u?.is_verified || false),
+                                    online: u?.online || u?.isOnline || true,
+                                    role: u?.role || 'Member'
                                   },
                                   lastMessage: '',
                                   lastTime: 'Just now',
@@ -2097,13 +2098,13 @@ export default function ChatTab(props) {
                               id: convId,
                               partner_id: targetUser.id || targetUser.username,
                               user: {
-                                id: targetUser.id,
-                                username: targetUser.username,
-                                name: targetUser.name || targetUser.username,
-                                avatar: targetUser.avatar || '',
-                                isVerified: targetUser.isVerified || targetUser.is_verified || false,
-                                online: targetUser.online || targetUser.isOnline || true,
-                                role: targetUser.role || 'Member'
+                                id: targetUser?.id,
+                                username: targetUser?.username,
+                                name: targetUser?.name || targetUser?.username,
+                                avatar: targetUser?.avatar || '',
+                                isVerified: Boolean(targetUser?.isVerified || targetUser?.is_verified || false),
+                                online: targetUser?.online || targetUser?.isOnline || true,
+                                role: targetUser?.role || 'Member'
                               },
                               lastMessage: '',
                               lastTime: 'Just now',
@@ -2127,23 +2128,23 @@ export default function ChatTab(props) {
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="relative shrink-0">
-                              {targetUser.avatar ? (
+                              {targetUser?.avatar ? (
                                 <img 
                                   src={targetUser.avatar} 
-                                  alt={targetUser.name} 
+                                  alt={targetUser?.name} 
                                   className="w-10 h-10 rounded-2xl object-cover ring-1 ring-slate-800 group-hover:ring-pink-500 transition" 
                                 />
                               ) : (
                                 <div className="w-10 h-10 rounded-2xl bg-slate-800 flex items-center justify-center text-xs font-bold text-white ring-1 ring-slate-800 group-hover:ring-pink-500 transition">
-                                  {(targetUser.name || targetUser.username || 'U').charAt(0).toUpperCase()}
+                                  {(targetUser?.name || targetUser?.username || 'U').charAt(0).toUpperCase()}
                                 </div>
                               )}
                               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
-                                <h4 className="text-xs font-bold text-white truncate">{targetUser.name || targetUser.username}</h4>
-                                {(targetUser.isVerified || targetUser.is_verified) && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
+                                <h4 className="text-xs font-bold text-white truncate">{targetUser?.name || targetUser?.username}</h4>
+                                {Boolean(targetUser?.isVerified || targetUser?.is_verified) && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
                               </div>
                               <p className="text-[10px] text-pink-400 font-mono">@{targetUser.username}</p>
                             </div>

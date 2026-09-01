@@ -21,25 +21,26 @@ export default function UserManagementCenter({
   const [adminNoteInput, setAdminNoteInput] = useState('');
 
   // Filtering users logic
-  const filteredUsers = usersList.filter(user => {
+  const filteredUsers = (Array.isArray(usersList) ? usersList : []).filter(user => {
+    if (!user) return false;
     const q = searchQuery.toLowerCase();
     const matchesQuery = 
       !q || 
-      (user.name || '').toLowerCase().includes(q) ||
-      (user.username || '').toLowerCase().includes(q) ||
-      (user.email || '').toLowerCase().includes(q) ||
-      (user.city || '').toLowerCase().includes(q) ||
-      (user.id || '').toString().includes(q);
+      (user?.name || '').toLowerCase().includes(q) ||
+      (user?.username || '').toLowerCase().includes(q) ||
+      (user?.email || '').toLowerCase().includes(q) ||
+      (user?.city || '').toLowerCase().includes(q) ||
+      (user?.id || '').toString().includes(q);
 
     if (!matchesQuery) return false;
 
-    if (filterCategory === 'ONLINE') return user.online === true;
-    if (filterCategory === 'VERIFIED') return user.isVerified || user.verified;
-    if (filterCategory === 'VIP') return user.isVip || user.is_vip || user.vip;
-    if (filterCategory === 'STREAMERS') return user.isStreamer || user.isHost || user.is_streamer;
-    if (filterCategory === 'BANNED') return user.isBanned === true;
-    if (filterCategory === 'MUTED') return user.isMuted === true;
-    if (filterCategory === 'SUSPENDED') return user.isSuspended === true;
+    if (filterCategory === 'ONLINE') return user?.online === true;
+    if (filterCategory === 'VERIFIED') return Boolean(user?.isVerified || user?.is_verified || user?.verified);
+    if (filterCategory === 'VIP') return Boolean(user?.isVip || user?.is_vip || user?.vip);
+    if (filterCategory === 'STREAMERS') return Boolean(user?.isStreamer || user?.isHost || user?.is_streamer);
+    if (filterCategory === 'BANNED') return user?.isBanned === true;
+    if (filterCategory === 'MUTED') return user?.isMuted === true;
+    if (filterCategory === 'SUSPENDED') return user?.isSuspended === true;
 
     return true;
   });

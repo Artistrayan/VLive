@@ -3013,9 +3013,11 @@ export default function App() {
                     
                     {/* Orbit Candidate 1 (Top) */}
                     <div onClick={() => {
-                    const target = usersList.find(u => u.isVerified) || matchDeckProfiles[0];
-                    setSelectedUser(target);
-                    setIsUserProfileModalOpen(true);
+                    const target = usersList?.find(u => u?.isVerified || u?.is_verified) || matchDeckProfiles[0];
+                    if (target) {
+                      setSelectedUser(target);
+                      setIsUserProfileModalOpen(true);
+                    }
                   }} className="absolute -top-5 left-1/2 -translate-x-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-lime-400 to-emerald-400 shadow-[0_0_15px_#a3e635] cursor-pointer hover:scale-130 transition duration-300 z-30 group" title={matchDeckProfiles[0]?.name || ''}>
                       <img src={matchDeckProfiles[0]?.avatar || ''} alt="Candidate" className="w-full h-full rounded-full object-cover border border-slate-950" />
                       <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border border-slate-950 flex items-center justify-center">
@@ -4044,18 +4046,18 @@ export default function App() {
                       <div>
                         <div className="flex items-center gap-2">
                           <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-1.5">
-                            {matchDeckProfiles[matchCardIndex].name}, {matchDeckProfiles[matchCardIndex].age}
-                            {matchDeckProfiles[matchCardIndex].isVerified && <span className="text-blue-400 text-sm">✔</span>}
+                            {matchDeckProfiles[matchCardIndex]?.name || ''}{matchDeckProfiles[matchCardIndex]?.age ? `, ${matchDeckProfiles[matchCardIndex]?.age}` : ''}
+                            {matchDeckProfiles[matchCardIndex]?.isVerified && <span className="text-blue-400 text-sm">✔</span>}
                           </h2>
                         </div>
                         <p className="text-xs text-slate-300 font-bold flex items-center gap-1 mt-0.5">
-                          <span>📍</span> {matchDeckProfiles[matchCardIndex].city}
+                          <span>📍</span> {matchDeckProfiles[matchCardIndex]?.city || ''}
                         </p>
                       </div>
 
                       {/* Interests Tags */}
                       <div className="flex flex-wrap gap-1.5">
-                        {matchDeckProfiles[matchCardIndex].interests.map((tag, i) => <span key={i} className="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold">
+                        {(matchDeckProfiles[matchCardIndex]?.interests || []).map((tag, i) => <span key={i} className="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold">
                             {tag}
                           </span>)}
                       </div>
@@ -4185,10 +4187,10 @@ export default function App() {
                       <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between">
                         <div>
                           <h4 className="text-xs font-black text-white flex items-center gap-1">
-                            {matchedMatchUser.name || matchedMatchUser.username || loc('کاربر آنلاین', 'Online User')}
-                            {matchedMatchUser.isVerified && <span className="text-blue-400 text-[10px]">✔</span>}
+                            {matchedMatchUser?.name || matchedMatchUser?.username || loc('کاربر آنلاین', 'Online User')}
+                            {matchedMatchUser?.isVerified && <span className="text-blue-400 text-[10px]">✔</span>}
                           </h4>
-                          <p className="text-[10px] text-slate-300">📍 {matchedMatchUser.city || loc('آنلاین', 'Online')}</p>
+                          <p className="text-[10px] text-slate-300">📍 {matchedMatchUser?.city || loc('آنلاین', 'Online')}</p>
                         </div>
                         <button onClick={() => {
                       setMatchState('idle');
