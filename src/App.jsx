@@ -1460,9 +1460,21 @@ export default function App() {
 
   // Stories
   const handlePublishStory = useCallback(async (storyData) => {
-    setIsAddStoryModalOpen(false);
-    showToast(loc('استوری شما با موفقیت منتشر شد ✨', 'Story published successfully ✨'));
-  }, [showToast]);
+    const mediaUrl = typeof storyData === 'string' ? storyData : (storyData?.mediaUrl || storyData?.url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600');
+    if (typeof apiSocial !== "undefined" && apiSocial.createStory) {
+      const res = await apiSocial.createStory(mediaUrl);
+      if (res.success) {
+        showToast(loc('استوری شما با موفقیت منتشر شد ✨', 'Story published successfully ✨'));
+        setIsAddStoryModalOpen(false);
+        apiSocial.getStories().then(res => setAdvancedStories(res || []));
+      } else {
+        showToast(res.error || loc('خطا در انتشار استوری', 'Error publishing story'));
+      }
+    } else {
+      setIsAddStoryModalOpen(false);
+      showToast(loc('استوری شما با موفقیت منتشر شد ✨', 'Story published successfully ✨'));
+    }
+  }, [showToast, loc]);
 
   const handleCloseStory = useCallback(() => {
     setActiveStoryView(null);
@@ -2810,6 +2822,74 @@ export default function App() {
             {/* SUB-TAB 1: EXPLORE (USER DISCOVERY FEED) */}
             {homeSubTab === 'explore' && <div className="space-y-3 animate-fadeIn">
                 
+                {/* Real Stories Tray (Connected to Database) */}
+                <div className="bg-slate-950/80 p-2.5 rounded-2xl border border-slate-800/80">
+                  <div className="flex items-center justify-between px-1 mb-2">
+                    <span className="text-xs font-black text-pink-400 flex items-center gap-1.5">
+                      <Flame className="w-4 h-4 text-pink-500 animate-bounce" />
+                      <span>{loc('استوری‌های کاربران', 'User Stories')}</span>
+                    </span>
+                    <button
+                      onClick={() => setIsAddStoryModalOpen(true)}
+                      className="text-[10px] font-bold text-pink-400 bg-pink-500/10 hover:bg-pink-500/20 px-2.5 py-1 rounded-full border border-pink-500/30 transition flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>{loc('افزودن استوری', 'Add Story')}</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
+                    {/* Add Story Button Tile */}
+                    <div
+                      onClick={() => setIsAddStoryModalOpen(true)}
+                      className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                    >
+                      <div className="w-14 h-14 rounded-full bg-slate-900 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 transition shadow-md">
+                        <Plus className="w-5 h-5" />
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-300 max-w-[60px] truncate">{loc('استوری من', 'My Story')}</span>
+                    </div>
+
+                    {/* Stories List from Supabase / advancedStories */}
+                    {(advancedStories || []).map((story, i) => (
+                      <div
+                        key={story.id || i}
+                        onClick={() => {
+                          setActiveStoryView({
+                            group: {
+                              user: {
+                                name: story.username || 'User',
+                                avatar: story.userAvatar || '',
+                                isVip: true
+                              },
+                              items: [
+                                {
+                                  id: story.id,
+                                  url: story.imageUrl || story.videoUrl,
+                                  duration: 5,
+                                  time: loc('هم‌اکنون', 'Right now')
+                                }
+                              ],
+                              isMe: story.username === currentUsername
+                            },
+                            currentIndex: 0,
+                            progress: 0
+                          });
+                        }}
+                        className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                      >
+                        <div className="relative w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-lg">
+                          <img
+                            src={story.userAvatar || story.imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+                            alt={story.username}
+                            className="w-full h-full object-cover rounded-full border border-slate-950"
+                          />
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-200 max-w-[60px] truncate">{story.username}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* VIP Users Stories Row */}
                 <div className="bg-slate-950/60 p-2 rounded-2xl border border-slate-800/80">
                   <div className="flex items-center justify-between px-1 mb-1.5">
@@ -3192,7 +3272,7 @@ export default function App() {
         {/* TAB 3: WALLET & EARNINGS TAB */}
         <WalletTab currentUser={currentUser} userRole={userRole} currentUsername={currentUsername} isUserRayan={isUserRayan} handleBuyService={handleBuyService} activeTab={activeTab} txHistoryList={txHistoryList} userCoins={userCoins} setUserCoins={setUserCoins} userDiamonds={userDiamonds} setUserDiamonds={setUserDiamonds} userCashBalance={userCashBalance} setUserCashBalance={setUserCashBalance} walletSubTab={walletSubTab} setWalletSubTab={setWalletSubTab} referralCode={referralCode} setIsVipModalOpen={setIsVipModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} showToast={showToast} isVerified={isVerified} isUserSuperAdmin={isUserSuperAdmin} loc={loc} isRtl={isRtl} />
         {/* TAB 4: PROFILE TAB */}
-        <ProfileTab currentUser={currentUser} userRole={userRole} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsKycModalOpen={setIsKycModalOpen} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={isVerified} isStreamerUser={isStreamerUser} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} />
+        <ProfileTab currentUser={currentUser} userRole={userRole} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsKycModalOpen={setIsKycModalOpen} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={isVerified} isStreamerUser={isStreamerUser} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} advancedStories={advancedStories} setIsAddStoryModalOpen={setIsAddStoryModalOpen} setActiveStoryView={setActiveStoryView} />
         </main>
       <nav className="fixed bottom-0 w-full max-w-[800px] z-40 bg-slate-900/95 backdrop-blur-2xl border-t border-slate-800/80 p-2 sm:px-6 flex justify-between items-center shadow-[0_-5px_30px_rgba(0,0,0,0.5)]">
         

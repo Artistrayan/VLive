@@ -1,6 +1,6 @@
 {
-  "name": "V.Live+18",
-  "description": "Premium 3D Neon Adult Live Stream & Video Call Platform with Crypto Wallet and AI Protection",
+  "name": "V.Live",
+  "description": "V.Live Real-time Live Streaming Platform with Supabase and React",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

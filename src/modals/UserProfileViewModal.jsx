@@ -468,16 +468,47 @@ export default function UserProfileViewModal({
 
             {/* TAB CONTENT: ABOUT */}
             {activeTab === 'about' && (
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3 text-xs animate-fadeIn">
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-4 text-xs animate-fadeIn">
+                {/* Biography */}
+                {bio && (
+                  <div className="space-y-1 pb-3 border-b border-slate-900">
+                    <span className="text-slate-400 font-bold flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+                      <span>{window.loc('بیوگرافی و درباره من', 'Biography & About')}</span>
+                    </span>
+                    <p className="text-white font-medium leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">{bio}</p>
+                  </div>
+                )}
+
+                {/* Personal Info Grid */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-0.5">
+                    <span className="text-slate-400 text-[10px] font-bold">{window.loc('سن', 'Age')}</span>
+                    <p className="text-white font-black">{age ? `${age} ${window.loc('سال', 'years')}` : window.loc('ثبت نشده', 'Not specified')}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-0.5">
+                    <span className="text-slate-400 text-[10px] font-bold">{window.loc('شهر', 'City')}</span>
+                    <p className="text-white font-black">{city || window.loc('ثبت نشده', 'Not specified')}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-0.5">
+                    <span className="text-slate-400 text-[10px] font-bold">{window.loc('شغل', 'Occupation')}</span>
+                    <p className="text-white font-black">{user.occupation || window.loc('ثبت نشده', 'Not specified')}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-0.5">
+                    <span className="text-slate-400 text-[10px] font-bold">{window.loc('تحصیلات', 'Education')}</span>
+                    <p className="text-white font-black">{user.education || window.loc('ثبت نشده', 'Not specified')}</p>
+                  </div>
+                </div>
+
                 <div className="space-y-1">
                   <span className="text-slate-400 font-bold">{window.loc('زبان‌ها:', 'Languages:')}</span>
-                  <p className="text-white font-medium">Persian, English, Turkish</p>
+                  <p className="text-white font-medium">{user.languages || 'Persian, English'}</p>
                 </div>
                 <div className="space-y-1">
                   <span className="text-slate-400 font-bold">{window.loc('علاقه‌مندی‌ها:', 'Interests:')}</span>
                   <div className="flex flex-wrap gap-1.5 pt-1">
-                    {['Music', 'Live Stream', 'Fitness', 'Travel', 'Art'].map((tag, i) => (
-                      <span key={i} className="px-2.5 py-1 rounded-lg bg-slate-900 text-slate-300 font-medium">#{tag}</span>
+                    {(Array.isArray(user.interests) ? user.interests : ['Music', 'Live Stream', 'Fitness', 'Travel']).map((tag, i) => (
+                      <span key={i} className="px-2.5 py-1 rounded-lg bg-slate-900 text-slate-300 font-medium text-[11px]">#{tag}</span>
                     ))}
                   </div>
                 </div>

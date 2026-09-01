@@ -629,50 +629,50 @@ export default function ProfileTab(props) {
         {/* 1. HERO COVER & PROFILE CARD               */}
         {/* ========================================== */}
         <VisualSectionWrapper pageId="profile" sectionId="profile_header_card" defaultLabel="User Avatar, Name & Bio Card">
-          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border border-slate-800 shadow-2xl">
+          <div className="relative rounded-[2rem] overflow-hidden bg-gradient-to-br from-slate-900/95 via-slate-950 to-slate-900/95 border border-slate-800/80 shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
             {/* Cover Banner */}
-            <div className="h-28 sm:h-36 relative overflow-hidden bg-slate-900">
+            <div className="h-32 sm:h-44 relative overflow-hidden bg-slate-900">
               <img 
                 src={coverPhoto} 
                 alt="Cover" 
-                className="w-full h-full object-cover opacity-90 transition duration-500" 
+                className="w-full h-full object-cover opacity-85 hover:scale-105 transition duration-700" 
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-black/30" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
               
               {/* Top Quick Action Buttons */}
-              <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+              <div className="absolute top-4 right-4 flex items-center gap-2.5 z-10">
                 {isAdminUser && (
                   <button
                     onClick={() => setIsAdminPanelOpen && setIsAdminPanelOpen(true)}
-                    className="p-2 rounded-2xl bg-rose-600/90 hover:bg-rose-500 text-white backdrop-blur-md transition border border-rose-400/50 shadow-lg flex items-center gap-1 text-xs font-black"
+                    className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white backdrop-blur-xl transition-all duration-300 border border-rose-400/40 shadow-[0_0_20px_rgba(225,29,72,0.4)] flex items-center gap-1.5 text-xs font-black cursor-pointer group"
                     title={window.loc('پنل مدیریت', 'Admin Panel')}
                   >
-                    <Shield className="w-4 h-4 text-white" />
+                    <Shield className="w-4 h-4 text-white group-hover:rotate-12 transition-transform" />
                     <span className="hidden sm:inline">{window.loc('مدیریت', 'Admin')}</span>
                   </button>
                 )}
 
                 <button
                   onClick={() => setIsQrCodeModalOpen(true)}
-                  className="p-2 rounded-2xl bg-slate-950/70 hover:bg-slate-900 text-white backdrop-blur-md transition border border-white/20"
+                  className="p-2.5 rounded-2xl bg-slate-950/70 hover:bg-slate-900 text-white backdrop-blur-xl transition-all duration-300 border border-white/20 shadow-lg hover:border-cyan-500/50 group cursor-pointer"
                   title="Share QR Code"
                 >
-                  <QrCode className="w-4 h-4 text-cyan-400" />
+                  <QrCode className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
                 </button>
               </div>
             </div>
 
             {/* Profile Info & Avatar */}
-            <div className="px-4 sm:px-6 pb-4 relative space-y-4">
+            <div className="px-5 sm:px-8 pb-5 relative space-y-5">
               <div className="flex items-start justify-between gap-4">
                 {/* Avatar on Top-Left + Username under photo */}
-                <div className="flex flex-col items-center -mt-12 sm:-mt-16 shrink-0">
+                <div className="flex flex-col items-center -mt-14 sm:-mt-20 shrink-0">
                   <div 
                     onClick={() => setIsEditModalOpen(true)}
                     className="relative group cursor-pointer"
                     title={window.loc('کلیک برای ویرایش پروفایل', 'Click to edit profile')}
                   >
-                    <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full p-1 bg-gradient-to-tr from-pink-500 via-purple-500 to-amber-400 shadow-[0_0_35px_rgba(236,72,153,0.5)] overflow-hidden">
+                    <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full p-1 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_40px_rgba(236,72,153,0.4)] overflow-hidden">
                       {(userAvatar || authAvatar) ? (
                         <img
                           src={userAvatar || authAvatar}
@@ -681,7 +681,7 @@ export default function ProfileTab(props) {
                         />
                       ) : (
                         <div className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center text-slate-400">
-                          <User className="w-16 h-16 sm:w-20 sm:h-20 text-pink-400" />
+                          <User className="w-14 h-14 sm:w-18 sm:h-18 text-pink-400" />
                         </div>
                       )}
                     </div>
@@ -692,75 +692,106 @@ export default function ProfileTab(props) {
                     )}
 
                     {/* Level & Verified Badge together at bottom right of Avatar */}
-                    <div className="absolute bottom-1 right-1 z-10 flex items-center gap-1 bg-slate-950/90 backdrop-blur-md p-1 rounded-full border border-slate-800 shadow-xl">
+                    <div className="absolute bottom-1 right-1 z-10 flex items-center gap-1 bg-slate-950/90 backdrop-blur-xl p-1 rounded-full border border-slate-800 shadow-xl">
                       <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white font-black text-xs px-2.5 py-0.5 rounded-full flex items-center gap-0.5">
                         <span className="text-[10px] text-purple-200 uppercase font-bold">Lv</span>
                         <span>{userLevel}</span>
                       </div>
-                      {isVerified && <VerifiedBadge showLabel={false} className="w-5 h-5 shrink-0" />}
+                      {isVerified && <VerifiedBadge showLabel={false} className="w-4 h-4 shrink-0" />}
                     </div>
 
                     {/* Change Avatar Overlay */}
-                    <button
-                      onClick={() => setIsEditModalOpen(true)}
-                      className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition duration-300 text-white font-bold text-xs gap-1 z-20"
-                    >
-                      <Camera className="w-5 h-5 text-pink-400" />
-                    </button>
+                    <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition duration-300 text-white font-bold text-xs gap-1 z-20 backdrop-blur-sm">
+                      <Camera className="w-6 h-6 text-pink-400 animate-pulse" />
+                      <span className="text-[10px]">{window.loc('ویرایش', 'Edit')}</span>
+                    </div>
                   </div>
 
                   {/* Username under profile photo */}
-                  <span className="font-mono text-cyan-400 font-bold text-xs sm:text-sm mt-1.5 text-center">
+                  <span className="font-mono text-cyan-400 font-bold text-xs sm:text-sm mt-2 text-center bg-cyan-950/40 px-3 py-0.5 rounded-full border border-cyan-500/30">
                     @{currentUsername || authUsername || 'user'}
                   </span>
                 </div>
 
                 {/* Right / Side Details (Name & VIP Badge) */}
-                <div className="pt-3 sm:pt-4 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-lg sm:text-2xl font-black text-white tracking-tight">
+                <div className="pt-4 sm:pt-6 flex-1 space-y-2">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                       {userName || authFullName || 'User'}
                     </h1>
                     <VipStatusBadge size="normal" showText={true} />
                   </div>
+                  <p className="text-xs text-slate-400 font-medium line-clamp-2 max-w-md">
+                    {userBio || window.loc('به پروفایل من خوش آمدید ✨', 'Welcome to my profile ✨')}
+                  </p>
                 </div>
               </div>
 
               {/* STORIES SECTION INSIDE PROFILE CARD UNDER AVATAR */}
-              <div className="pt-3 border-t border-slate-800/80 space-y-2">
+              <div className="pt-4 border-t border-slate-800/80 space-y-3">
                 <div className="flex items-center justify-between px-1">
-                  <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                    <Flame className="w-4 h-4 text-amber-400 animate-bounce" />
+                  <span className="text-xs font-black text-slate-200 flex items-center gap-2">
+                    <Flame className="w-4 h-4 text-pink-400 animate-bounce" />
                     <span>{window.loc('استوری‌ها و هایلایت‌ها', 'Stories & Highlights')}</span>
                   </span>
-                  <span className="text-[10px] text-pink-400 font-bold cursor-pointer">{window.loc('مشاهده همه', 'View All')}</span>
+                  <span className="text-[10px] text-pink-400 font-bold hover:underline cursor-pointer">{window.loc('مشاهده همه', 'View All')}</span>
                 </div>
                 
-                <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
+                <div className="flex items-center gap-3.5 overflow-x-auto pb-1.5 scrollbar-none">
                   {/* Add Story Button */}
                   <button
-                    onClick={() => showToast(window.loc('📷 بخش آپلود استوری آماده است', 'Story Creator is active!'))}
-                    className="flex flex-col items-center gap-1 shrink-0 group"
+                    onClick={() => {
+                      if (props.setIsAddStoryModalOpen) props.setIsAddStoryModalOpen(true);
+                      else showToast(window.loc('بخش استوری آماده است', 'Story creator active'));
+                    }}
+                    className="flex flex-col items-center gap-1.5 shrink-0 group cursor-pointer"
                   >
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-950 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 transition">
+                    <div className="w-15 h-15 sm:w-16 sm:h-16 rounded-full bg-slate-950/80 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 group-hover:border-pink-400 transition shadow-inner">
                       <Plus className="w-5 h-5" />
                     </div>
                     <span className="text-[10px] font-bold text-slate-300">{window.loc('افزودن', 'Add')}</span>
                   </button>
 
                   {/* User Active Stories */}
-                  {(props.userStoriesList || []).map((story, i) => (
-                    <div key={story.id || i} className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group">
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-md overflow-hidden">
-                        {story.media_url ? (
-                          <img src={story.media_url} alt={story.title || 'Story'} className="w-full h-full object-cover rounded-full bg-slate-950" />
+                  {(props.advancedStories || props.userStoriesList || []).map((story, i) => (
+                    <div 
+                      key={story.id || i} 
+                      onClick={() => {
+                        if (props.setActiveStoryView) {
+                          props.setActiveStoryView({
+                            group: {
+                              user: {
+                                name: story.username || userName || 'User',
+                                avatar: story.userAvatar || userAvatar || '',
+                                isVip: true
+                              },
+                              items: [
+                                {
+                                  id: story.id,
+                                  url: story.media_url || story.imageUrl || story.videoUrl,
+                                  duration: 5,
+                                  time: window.loc('هم‌اکنون', 'Right now')
+                                }
+                              ],
+                              isMe: true
+                            },
+                            currentIndex: 0,
+                            progress: 0
+                          });
+                        }
+                      }}
+                      className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group"
+                    >
+                      <div className="w-15 h-15 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-[0_0_15px_rgba(236,72,153,0.3)] overflow-hidden">
+                        {(story.media_url || story.imageUrl || story.videoUrl) ? (
+                          <img src={story.media_url || story.imageUrl || story.videoUrl} alt={story.title || 'Story'} className="w-full h-full object-cover rounded-full bg-slate-950" />
                         ) : (
-                          <div className="w-full h-full bg-slate-900 flex items-center justify-center rounded-full text-pink-400 font-bold text-xs">
+                          <div className="w-full h-full bg-slate-900 flex items-center justify-center rounded-full text-pink-400 font-black text-xs">
                             LIVE
                           </div>
                         )}
                       </div>
-                      <span className="text-[10px] font-bold text-slate-300 max-w-[60px] truncate">{story.title || story.caption || 'Story'}</span>
+                      <span className="text-[10px] font-bold text-slate-300 max-w-[65px] truncate">{story.title || story.caption || story.username || 'Story'}</span>
                     </div>
                   ))}
                 </div>
@@ -773,19 +804,19 @@ export default function ProfileTab(props) {
         {/* SEPARATE PAGES & FEATURES HUB (صفحات مجزا) */}
         {/* ========================================== */}
         <VisualSectionWrapper pageId="profile" sectionId="profile_separate_pages_hub" defaultLabel="Separate Pages Hub">
-          <div className="p-4 bg-slate-900/90 rounded-3xl border border-slate-800 shadow-xl space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5 px-1">
-              <h3 className="text-xs font-black text-white flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-pink-400" />
+          <div className="p-5 bg-gradient-to-br from-slate-900/90 via-slate-950 to-slate-900/90 rounded-[2rem] border border-slate-800/80 shadow-[0_10px_30px_rgba(0,0,0,0.4)] backdrop-blur-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3 px-1">
+              <h3 className="text-xs font-black text-white flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-pink-400 animate-spin" style={{ animationDuration: '6s' }} />
                 <span>{window.loc('صفحات و بخش‌های مجزای پروفایل', 'Dedicated Profile Pages')}</span>
               </h3>
-              <span className="text-[10px] text-slate-400 font-mono font-bold bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800">
+              <span className="text-[10px] text-pink-400 font-mono font-bold bg-pink-500/10 px-2.5 py-1 rounded-full border border-pink-500/20 shadow-sm">
                 {window.loc('۶ صفحه مجزا', '6 Standalone Pages')}
               </span>
             </div>
 
             {/* 6 Grid Tiles for Dedicated Pages */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               
               {/* 1. Followers Dedicated Page */}
               <button
@@ -793,19 +824,18 @@ export default function ProfileTab(props) {
                   setActiveSeparateModal('followers');
                   showToast(window.loc('ورود به صفحه مجزای فالوورها 👥', 'Opened Followers Page 👥'));
                 }}
-                className="p-3 rounded-2xl bg-gradient-to-br from-indigo-950/60 to-slate-950 border border-indigo-500/30 hover:border-indigo-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2 shadow-sm hover:shadow-indigo-500/20 group text-right cursor-pointer"
+                className="p-4 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-slate-950 to-slate-950 border border-indigo-500/30 hover:border-indigo-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-3 shadow-lg hover:shadow-[0_0_25px_rgba(99,102,241,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 group-hover:scale-110 transition shrink-0">
+                  <div className="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <Users className="w-4 h-4" />
                   </div>
-                  <span className="text-xs font-black text-indigo-400 font-mono bg-indigo-950/90 px-2 py-0.5 rounded-full border border-indigo-500/30">
+                  <span className="text-xs font-black text-indigo-300 font-mono bg-indigo-950 px-2.5 py-0.5 rounded-full border border-indigo-500/40 shadow-inner">
                     {formatNum(followersList.length || userFollowersCount)}
                   </span>
                 </div>
                 <div>
                   <h4 className="text-xs font-black text-white group-hover:text-indigo-300 transition">{window.loc('صفحه فالوورها', 'Followers Page')}</h4>
-                  <p className="text-[9.5px] text-slate-400 mt-0.5">{window.loc('مدیریت دنبال‌کنندگان 👥', 'Manage followers 👥')}</p>
                 </div>
               </button>
 
@@ -815,19 +845,18 @@ export default function ProfileTab(props) {
                   setActiveSeparateModal('following');
                   showToast(window.loc('ورود به صفحه مجزای فالووینگ 🤝', 'Opened Following Page 🤝'));
                 }}
-                className="p-3 rounded-2xl bg-gradient-to-br from-blue-950/60 to-slate-950 border border-blue-500/30 hover:border-blue-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2 shadow-sm hover:shadow-blue-500/20 group text-right cursor-pointer"
+                className="p-4 rounded-2xl bg-gradient-to-br from-blue-950/40 via-slate-950 to-slate-950 border border-blue-500/30 hover:border-blue-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-3 shadow-lg hover:shadow-[0_0_25px_rgba(59,130,246,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/40 group-hover:scale-110 transition shrink-0">
+                  <div className="p-2.5 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <UserCheck className="w-4 h-4" />
                   </div>
-                  <span className="text-xs font-black text-blue-400 font-mono bg-blue-950/90 px-2 py-0.5 rounded-full border border-blue-500/30">
+                  <span className="text-xs font-black text-blue-300 font-mono bg-blue-950 px-2.5 py-0.5 rounded-full border border-blue-500/40 shadow-inner">
                     {formatNum(userFollowingCount)}
                   </span>
                 </div>
                 <div>
                   <h4 className="text-xs font-black text-white group-hover:text-blue-300 transition">{window.loc('صفحه فالووینگ', 'Following Page')}</h4>
-                  <p className="text-[9.5px] text-slate-400 mt-0.5">{window.loc('افراد دنبال‌شده 🤝', 'Users followed 🤝')}</p>
                 </div>
               </button>
 
@@ -837,19 +866,18 @@ export default function ProfileTab(props) {
                   setActiveSeparateModal('likes');
                   showToast(window.loc('ورود به صفحه مجزای لایک‌ها ❤️', 'Opened Likes Page ❤️'));
                 }}
-                className="p-3 rounded-2xl bg-gradient-to-br from-pink-950/60 to-slate-950 border border-pink-500/30 hover:border-pink-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2 shadow-sm hover:shadow-pink-500/20 group text-right cursor-pointer"
+                className="p-4 rounded-2xl bg-gradient-to-br from-pink-950/40 via-slate-950 to-slate-950 border border-pink-500/30 hover:border-pink-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-3 shadow-lg hover:shadow-[0_0_25px_rgba(236,72,153,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="p-2 rounded-xl bg-pink-500/20 text-pink-400 border border-pink-500/40 group-hover:scale-110 transition shrink-0">
-                    <Heart className="w-4 h-4 fill-pink-500/30" />
+                  <div className="p-2.5 rounded-xl bg-pink-500/20 text-pink-400 border border-pink-500/40 group-hover:scale-110 transition-transform shrink-0">
+                    <Heart className="w-4 h-4 fill-pink-500/40" />
                   </div>
-                  <span className="text-xs font-black text-pink-400 font-mono bg-pink-950/90 px-2 py-0.5 rounded-full border border-pink-500/30">
+                  <span className="text-xs font-black text-pink-300 font-mono bg-pink-950 px-2.5 py-0.5 rounded-full border border-pink-500/40 shadow-inner">
                     {formatNum(userTotalLikes)}
                   </span>
                 </div>
                 <div>
                   <h4 className="text-xs font-black text-white group-hover:text-pink-300 transition">{window.loc('صفحه لایک‌ها', 'Likes Page')}</h4>
-                  <p className="text-[9.5px] text-slate-400 mt-0.5">{window.loc('پست‌ها و لایک‌ها ❤️', 'Liked posts & heart ❤️')}</p>
                 </div>
               </button>
 
@@ -859,19 +887,18 @@ export default function ProfileTab(props) {
                   setActiveSeparateModal('views');
                   showToast(window.loc('ورود به صفحه مجزای بازدیدها 👁️', 'Opened Views Page 👁️'));
                 }}
-                className="p-3 rounded-2xl bg-gradient-to-br from-cyan-950/60 to-slate-950 border border-cyan-500/30 hover:border-cyan-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2 shadow-sm hover:shadow-cyan-500/20 group text-right cursor-pointer"
+                className="p-4 rounded-2xl bg-gradient-to-br from-cyan-950/40 via-slate-950 to-slate-950 border border-cyan-500/30 hover:border-cyan-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-3 shadow-lg hover:shadow-[0_0_25px_rgba(6,182,212,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 group-hover:scale-110 transition shrink-0">
+                  <div className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <Eye className="w-4 h-4" />
                   </div>
-                  <span className="text-xs font-black text-cyan-400 font-mono bg-cyan-950/90 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                  <span className="text-xs font-black text-cyan-300 font-mono bg-cyan-950 px-2.5 py-0.5 rounded-full border border-cyan-500/40 shadow-inner">
                     {formatNum(userViewsCount)}
                   </span>
                 </div>
                 <div>
                   <h4 className="text-xs font-black text-white group-hover:text-cyan-300 transition">{window.loc('صفحه بازدیدها', 'Views Page')}</h4>
-                  <p className="text-[9.5px] text-slate-400 mt-0.5">{window.loc('آمار بازدیدکنندگان 👁️', 'Profile visitors 👁️')}</p>
                 </div>
               </button>
 
@@ -881,19 +908,18 @@ export default function ProfileTab(props) {
                   setActiveSeparateModal('photos');
                   showToast(window.loc('ورود به صفحه مجزای گالری عکس‌ها 🖼️', 'Opened Photos Page 🖼️'));
                 }}
-                className="p-3 rounded-2xl bg-gradient-to-br from-purple-950/60 to-slate-950 border border-purple-500/30 hover:border-purple-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2 shadow-sm hover:shadow-purple-500/20 group text-right cursor-pointer"
+                className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-slate-950 to-slate-950 border border-purple-500/30 hover:border-purple-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-3 shadow-lg hover:shadow-[0_0_25px_rgba(168,85,247,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/40 group-hover:scale-110 transition shrink-0">
+                  <div className="p-2.5 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <Image className="w-4 h-4" />
                   </div>
-                  <span className="text-xs font-black text-purple-400 font-mono bg-purple-950/90 px-2 py-0.5 rounded-full border border-purple-500/30">
+                  <span className="text-xs font-black text-purple-300 font-mono bg-purple-950 px-2.5 py-0.5 rounded-full border border-purple-500/40 shadow-inner">
                     {formatNum(profilePosts.filter(p => !p.video).length)}
                   </span>
                 </div>
                 <div>
                   <h4 className="text-xs font-black text-white group-hover:text-purple-300 transition">{window.loc('گالری عکس‌ها', 'Photos Gallery')}</h4>
-                  <p className="text-[9.5px] text-slate-400 mt-0.5">{window.loc('تصاویر منتشرشده 🖼️', 'Published photos 🖼️')}</p>
                 </div>
               </button>
 
@@ -903,19 +929,18 @@ export default function ProfileTab(props) {
                   setActiveSeparateModal('videos');
                   showToast(window.loc('ورود به صفحه مجزای گالری ویدیوها 📹', 'Opened Videos Page 📹'));
                 }}
-                className="p-3 rounded-2xl bg-gradient-to-br from-rose-950/60 to-slate-950 border border-rose-500/30 hover:border-rose-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2 shadow-sm hover:shadow-rose-500/20 group text-right cursor-pointer"
+                className="p-4 rounded-2xl bg-gradient-to-br from-rose-950/40 via-slate-950 to-slate-950 border border-rose-500/30 hover:border-rose-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-3 shadow-lg hover:shadow-[0_0_25px_rgba(244,63,94,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/40 group-hover:scale-110 transition shrink-0">
+                  <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <Video className="w-4 h-4" />
                   </div>
-                  <span className="text-xs font-black text-rose-400 font-mono bg-rose-950/90 px-2 py-0.5 rounded-full border border-rose-500/30">
+                  <span className="text-xs font-black text-rose-300 font-mono bg-rose-950 px-2.5 py-0.5 rounded-full border border-rose-500/40 shadow-inner">
                     {formatNum(profilePosts.filter(p => p.video).length)}
                   </span>
                 </div>
                 <div>
                   <h4 className="text-xs font-black text-white group-hover:text-rose-300 transition">{window.loc('گالری ویدیوها', 'Videos Gallery')}</h4>
-                  <p className="text-[9.5px] text-slate-400 mt-0.5">{window.loc('ویدیوهای منتشرشده 📹', 'Published videos 📹')}</p>
                 </div>
               </button>
 
@@ -928,114 +953,7 @@ export default function ProfileTab(props) {
         {/* ========================================== */}
         <div className="space-y-4 animate-fadeIn">
           
-          {/* About & Biography Card */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl">
-            <h3 className="font-black text-white text-base pb-3 border-b border-slate-800 flex items-center justify-between">
-              <span>{window.loc('اطلاعات شخصی و بیوگرافی', 'Personal Details & Biography')}</span>
-            </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-slate-400 flex items-center gap-1.5 font-bold">
-                  <User className="w-3.5 h-3.5 text-pink-400" />
-                  <span>{window.loc('جنسیت کاربر', 'User Gender')}</span>
-                </span>
-                <p className="text-white font-black text-sm flex items-center gap-2">
-                  <span>{userGender === 'female' ? window.loc('زن (Female) 👩', 'Female 👩') : window.loc('مرد (Male) 👨', 'Male 👨')}</span>
-                  {userGender === 'female' && (
-                    <span className="text-[10px] bg-pink-500/20 text-pink-400 px-2 py-0.5 rounded-full border border-pink-500/30 font-bold">
-                      {window.loc('واجد شرایط استریم ✨', 'Stream Eligible ✨')}
-                    </span>
-                  )}
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-slate-400 flex items-center gap-1.5 font-bold">
-                  <User className="w-3.5 h-3.5 text-pink-400" />
-                  <span>{window.loc('سن و تاریخ تولد', 'Age & Birthday')}</span>
-                </span>
-                <p className="text-white font-black text-sm">{userAge ? `${userAge} ${window.loc('سال', 'years old')}` : window.loc('ثبت نشده (ویرایش نمایید)', 'Not specified (Edit profile)')}</p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-slate-400 flex items-center gap-1.5 font-bold">
-                  <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>{window.loc('شهر و موقعیت', 'Location')}</span>
-                </span>
-                <p className="text-white font-black text-sm">{userCity || window.loc('ثبت نشده', 'Not specified')}</p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-slate-400 flex items-center gap-1.5 font-bold">
-                  <Briefcase className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{window.loc('شغل و فعالیت', 'Occupation')}</span>
-                </span>
-                <p className="text-white font-black text-sm">{userOccupation || window.loc('ثبت نشده', 'Not specified')}</p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-slate-400 flex items-center gap-1.5 font-bold">
-                  <GraduationCap className="w-3.5 h-3.5 text-purple-400" />
-                  <span>{window.loc('تحصیلات', 'Education')}</span>
-                </span>
-                <p className="text-white font-black text-sm">{userEducation || window.loc('ثبت نشده', 'Not specified')}</p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-slate-400 flex items-center gap-1.5 font-bold">
-                  <Heart className="w-3.5 h-3.5 text-rose-400" />
-                  <span>{window.loc('وضعیت تاهل', 'Relationship Status')}</span>
-                </span>
-                <p className="text-white font-black text-sm">{userRelationship}</p>
-              </div>
-            </div>
-
-            {/* Languages & Interests Tags */}
-            <div className="space-y-3 pt-3 border-t border-slate-800">
-              <div 
-                onClick={() => setIsLanguageModalOpen(true)}
-                className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between cursor-pointer hover:border-emerald-500/50 transition group"
-              >
-                <div className="flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-emerald-400 group-hover:rotate-12 transition-transform" />
-                  <span className="text-xs font-bold text-slate-300">{window.loc('زبان‌های گفتاری:', 'Spoken Languages:')}</span>
-                  <span className="text-xs font-black text-white">{userLanguages}</span>
-                </div>
-                <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
-                  {window.loc('تغییر 🌐', 'CHANGE 🌐')}
-                </span>
-              </div>
-
-              <div className="space-y-1.5">
-                <span className="text-xs font-bold text-slate-300">{window.loc('علاقه‌مندی‌ها', 'Interests & Tags')}</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {(() => {
-                    try {
-                      const parsed = JSON.parse(userInterests);
-                      if (Array.isArray(parsed)) {
-                        return parsed.map(id => {
-                          const item = fullInterestsList.find(i => i.id === id);
-                          if (!item) return null;
-                          return (
-                            <span key={id} className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-[11px] font-bold">
-                              <span>{item.icon}</span>
-                              <span>{item.name}</span>
-                            </span>
-                          );
-                        });
-                      }
-                    } catch(e) {}
-                    return userInterests.split(',').map((tag, i) => (
-                      <span key={i} className="px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-bold">
-                        #{tag.trim()}
-                      </span>
-                    ));
-                  })()}
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* User Posts Timeline Card */}
           <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl">
