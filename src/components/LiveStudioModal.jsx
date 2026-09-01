@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { apiLive, apiAdmin } from '../services/api';
 import { safeStorage } from '../utils/safeStorage';
+import { cameraPermissionService } from '../services/cameraPermissionService';
 import { LiveStreamRoomService } from '../services/liveStreamRoomService';
 import { livekitManager, fetchLiveKitToken } from '../services/livekitService';
 import LuxuryGiftOverlay from './Overlays/LuxuryGiftOverlay';
@@ -213,13 +214,19 @@ export default function LiveStudioModal({
         };
 
         try {
-          stream = await navigator.mediaDevices.getUserMedia({
+          stream = await cameraPermissionService.getUserMedia({
             video: videoConstraints,
             audio: true
           });
         } catch (err) {
+          if (err.message === 'CAMERA_PERMISSION_DENIED') {
+            setCameraPermission('denied');
+            setMicPermission('denied');
+            setCameraError(window.loc('اجازه دسترسی به دوربین و میکروفون تایید نشده است.', 'Camera and microphone permission denied.'));
+            return;
+          }
           // Fallback for devices/Android WebView that fail with explicit constraints
-          stream = await navigator.mediaDevices.getUserMedia({
+          stream = await cameraPermissionService.getUserMedia({
             video: true,
             audio: true
           });
@@ -230,11 +237,7 @@ export default function LiveStudioModal({
         setMicPermission('granted');
         setMediaStream(stream);
         mediaStreamRef.current = stream;
-
-        // Persist permission status so prompt modals never trigger again
-        safeStorage.setItem('vlive_permissions_granted', 'true');
-        safeStorage.setItem('vlive_camera_permission_granted', 'true');
-        safeStorage.setItem('vlive_permissions_prompted_once', 'true');
+        cameraPermissionService.setActiveStream(stream);
       }
 
       // Extract LocalVideoTrack for LiveKit publishing
@@ -364,7 +367,7 @@ export default function LiveStudioModal({
       // 2. Fetch new video stream with the new facingMode FIRST (keep current track open so permission session remains active)
       let newVideoStream;
       try {
-        newVideoStream = await navigator.mediaDevices.getUserMedia({
+        newVideoStream = await cameraPermissionService.getUserMedia({
           video: {
             facingMode: { ideal: nextFacingMode },
             width: { ideal: 1280 },
@@ -373,7 +376,7 @@ export default function LiveStudioModal({
           audio: false
         });
       } catch (idealErr) {
-        newVideoStream = await navigator.mediaDevices.getUserMedia({
+        newVideoStream = await cameraPermissionService.getUserMedia({
           video: { facingMode: nextFacingMode },
           audio: false
         });

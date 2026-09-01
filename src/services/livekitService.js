@@ -8,6 +8,7 @@ import {
 } from 'livekit-client';
 import { supabase } from '../supabaseClient';
 import { getStoredToken } from './api';
+import { cameraPermissionService } from './cameraPermissionService';
 
 /**
  * Real LiveKit Backend Token Fetcher
@@ -154,46 +155,24 @@ export class LiveKitManager {
   }
 
   /**
-   * Check Camera & Microphone Permissions
+   * Check Camera & Microphone Permissions via Central Permission Service
    */
   async checkPermissions() {
-    const result = {
-      camera: 'prompt',
-      microphone: 'prompt',
-      supported: Boolean(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+    const isSupported = Boolean(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    if (!isSupported) {
+      return { camera: 'unavailable', microphone: 'unavailable', supported: false };
+    }
+    const cameraState = await cameraPermissionService.checkCameraPermission();
+    const micState = await cameraPermissionService.checkMicPermission();
+    return {
+      camera: cameraState,
+      microphone: micState,
+      supported: true
     };
-
-    if (!result.supported) {
-      result.camera = 'unavailable';
-      result.microphone = 'unavailable';
-      return result;
-    }
-
-    if (navigator.permissions && navigator.permissions.query) {
-      try {
-        const camPerm = await navigator.permissions.query({ name: 'camera' });
-        result.camera = camPerm.state; // 'granted' | 'denied' | 'prompt'
-        camPerm.onchange = () => {
-          result.camera = camPerm.state;
-          this.emit('permission_changed', result);
-        };
-      } catch (e) {}
-
-      try {
-        const micPerm = await navigator.permissions.query({ name: 'microphone' });
-        result.microphone = micPerm.state;
-        micPerm.onchange = () => {
-          result.microphone = micPerm.state;
-          this.emit('permission_changed', result);
-        };
-      } catch (e) {}
-    }
-
-    return result;
   }
 
   /**
-   * Request Camera & Microphone Hardware Access
+   * Request Camera & Microphone Hardware Access via Central Permission Service
    */
   async requestMediaStream(facingMode = 'user', withAudio = true, withVideo = true) {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -202,7 +181,6 @@ export class LiveKitManager {
 
     this.currentFacingMode = facingMode;
 
-    // High quality 720p @ 30fps video constraints with fallback support
     const videoConstraints = withVideo ? {
       facingMode: { ideal: facingMode },
       width: { ideal: 1280, min: 640 },
@@ -219,29 +197,17 @@ export class LiveKitManager {
     } : false;
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const stream = await cameraPermissionService.getUserMedia({
         video: videoConstraints,
         audio: audioConstraints
       });
       this.localMediaStream = stream;
       return stream;
     } catch (err) {
-      // Fallback with basic constraints if resolution was unsupported
-      try {
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({
-          video: withVideo ? true : false,
-          audio: audioConstraints
-        });
-        this.localMediaStream = fallbackStream;
-        return fallbackStream;
-      } catch (fallbackErr) {
-        if (fallbackErr.name === 'NotAllowedError' || fallbackErr.name === 'PermissionDeniedError') {
-          throw new Error('Camera and microphone permission was denied. Please allow access in browser settings.');
-        } else if (fallbackErr.name === 'NotFoundError' || fallbackErr.name === 'DevicesNotFoundError') {
-          throw new Error('No camera or microphone device found on this system.');
-        }
-        throw fallbackErr;
+      if (err.message === 'CAMERA_PERMISSION_DENIED' || err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        throw new Error('Camera and microphone permission was denied. Please allow access in browser settings.');
       }
+      throw err;
     }
   }
 
@@ -309,7 +275,7 @@ export class LiveKitManager {
 
         let newStream;
         try {
-          newStream = await navigator.mediaDevices.getUserMedia({
+          newStream = await cameraPermissionService.getUserMedia({
             video: {
               facingMode: { ideal: targetFacing },
               width: { ideal: 1280, min: 640 },
@@ -318,7 +284,7 @@ export class LiveKitManager {
             }
           });
         } catch (strictErr) {
-          newStream = await navigator.mediaDevices.getUserMedia({
+          newStream = await cameraPermissionService.getUserMedia({
             video: { facingMode: targetFacing }
           });
         }

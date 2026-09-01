@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { 
   ShieldCheck, Camera, Mic, Bell, Image, FileText, CheckCircle2, Check, X, AlertTriangle, RefreshCw
 } from 'lucide-react';
+import { cameraPermissionService } from '../services/cameraPermissionService';
 
 export default function PermissionsPromptModal({
   isOpen,
@@ -21,20 +22,17 @@ export default function PermissionsPromptModal({
     let micGranted = false;
     let notifsGranted = false;
 
-    // 1. Request Camera & Mic from browser/OS hardware
+    // 1. Request Camera & Mic from central permission service
     if (requestedPermissionType === 'all' || requestedPermissionType === 'camera_mic' || requestedPermissionType === 'camera' || requestedPermissionType === 'microphone') {
       try {
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          const constraints = {
-            video: requestedPermissionType === 'microphone' ? false : { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-            audio: requestedPermissionType === 'camera' ? false : true
-          };
-          const stream = await navigator.mediaDevices.getUserMedia(constraints);
-          if (stream) {
-            cameraGranted = true;
-            micGranted = true;
-            // Stop tracks immediately after granting so hardware LED turns off
-            stream.getTracks().forEach(t => t.stop());
+        const reqVideo = requestedPermissionType !== 'microphone';
+        const reqAudio = requestedPermissionType !== 'camera';
+        const res = await cameraPermissionService.ensurePermissions({ video: reqVideo, audio: reqAudio });
+        if (!res.denied) {
+          cameraGranted = true;
+          micGranted = true;
+          if (res.stream) {
+            res.stream.getTracks().forEach(t => t.stop());
           }
         }
       } catch (err) {

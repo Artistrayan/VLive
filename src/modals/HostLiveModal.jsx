@@ -4,6 +4,7 @@ import {
   Sparkles, Crown, ShieldAlert, RefreshCw, X, Globe, User, Hash
 } from 'lucide-react';
 import { safeStorage } from '../utils/safeStorage';
+import { cameraPermissionService } from '../services/cameraPermissionService';
 
 export default function HostLiveModal({
   isOpen,
@@ -97,7 +98,7 @@ export default function HostLiveModal({
 
       let stream;
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
+        stream = await cameraPermissionService.getUserMedia({
           video: {
             facingMode: { ideal: mode },
             width: { ideal: 1280 },
@@ -106,7 +107,7 @@ export default function HostLiveModal({
           audio: false
         });
       } catch (e) {
-        stream = await navigator.mediaDevices.getUserMedia({
+        stream = await cameraPermissionService.getUserMedia({
           video: { facingMode: mode },
           audio: false
         });
@@ -114,10 +115,7 @@ export default function HostLiveModal({
 
       streamRef.current = stream;
       setCameraStream(stream);
-
-      safeStorage.setItem('vlive_permissions_granted', 'true');
-      safeStorage.setItem('vlive_camera_permission_granted', 'true');
-      safeStorage.setItem('vlive_permissions_prompted_once', 'true');
+      cameraPermissionService.setActiveStream(stream);
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -164,7 +162,7 @@ export default function HostLiveModal({
 
       let newStream;
       try {
-        newStream = await navigator.mediaDevices.getUserMedia({
+        newStream = await cameraPermissionService.getUserMedia({
           video: {
             facingMode: { ideal: nextMode },
             width: { ideal: 1280 },
@@ -173,7 +171,7 @@ export default function HostLiveModal({
           audio: false
         });
       } catch (e) {
-        newStream = await navigator.mediaDevices.getUserMedia({
+        newStream = await cameraPermissionService.getUserMedia({
           video: { facingMode: nextMode },
           audio: false
         });

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { apiProfile } from '../services/api';
 import { safeStorage } from '../utils/safeStorage';
+import { cameraPermissionService } from '../services/cameraPermissionService';
 
 // Verification gesture poses
 const VERIFICATION_POSES = [
@@ -133,12 +134,12 @@ export default function StreamerApplicationModal({
 
       let stream = null;
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
+        stream = await cameraPermissionService.getUserMedia({
           video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: false
         });
       } catch (e) {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        stream = await cameraPermissionService.getUserMedia({ video: true, audio: false });
       }
 
       setCameraStream(stream);

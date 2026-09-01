@@ -5,6 +5,7 @@ import {
   Hand, ShieldCheck, Clock, UserCheck
 } from 'lucide-react';
 import { safeStorage } from '../utils/safeStorage';
+import { cameraPermissionService } from '../services/cameraPermissionService';
 import { apiProfile, apiAdmin, apiAuth } from '../services/api';
 import { compressImageFile } from '../services/performance';
 import { interestService } from '../services/interestService';
@@ -222,7 +223,7 @@ export default function UserOnboardingModal({
         showToast(window.loc('دوربین مستقیم در این محیط پشتیبانی نمی‌شود، لطفاً از دکمه عکاسی سلفی استفاده کنید 📸', 'Direct camera stream not supported, please use selfie upload/snap button 📸'));
         return;
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const stream = await cameraPermissionService.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } },
         audio: false
       });
