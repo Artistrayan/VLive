@@ -74,7 +74,7 @@ export const I18N_DICTIONARY = {
     settings: 'تنظیمات',
     adminPanel: 'پنل مدیریت',
     aiSecurity: 'مرکز امنیت AI',
-    searchPlaceholder: 'جستجوی استریمر، آیدی یا نام...',
+    searchPlaceholder: 'جستجوی کاربر، آیدی یا نام...',
     activeStreams: 'استریم‌های فعال',
     viewAll: 'مشاهده همه',
     online: 'آنلاین',

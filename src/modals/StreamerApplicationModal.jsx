@@ -276,25 +276,6 @@ export default function StreamerApplicationModal({
 
           {step === 2 && (
             <div className="space-y-3">
-              {/* Category Grid */}
-              <div className="grid grid-cols-3 gap-2">
-                {CATEGORIES.map(cat => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setStreamCategory(cat.id)}
-                    className={`p-2.5 rounded-2xl border text-xs font-bold transition flex flex-col items-center gap-1.5 ${
-                      streamCategory === cat.id
-                        ? 'bg-pink-600/20 border-pink-500 text-white shadow-md'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    <span className="text-xl">{cat.icon}</span>
-                    <span className="text-[10px]">{loc(cat.labelFa, cat.labelEn)}</span>
-                  </button>
-                ))}
-              </div>
-
               {/* Topic Input */}
               <input
                 type="text"

@@ -794,7 +794,7 @@ export default function UserOnboardingModal({
                     <Radio className="w-5 h-5 animate-pulse" />
                   </div>
                   <div>
-                    <h3 className="font-black text-xs text-white">درخواست مجوز استریمر و میزبان لایو (Streamer Host)</h3>
+                    <h3 className="font-black text-xs text-white">درخواست مجوز اجرای لایو (Live Host)</h3>
                     <p className="text-[10px] text-slate-400">امکان دریافت هدایای مالی، برودکست زنده و روم خصوصی</p>
                   </div>
                 </div>
@@ -802,7 +802,7 @@ export default function UserOnboardingModal({
                 {/* Switch checkbox */}
                 <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
                   <label htmlFor="streamerOpt" className="text-xs font-bold text-amber-200 cursor-pointer">
-                    مایلم به عنوان استریمر رسمی فعالیت کنم (نیازمند تایید مدیریت)
+                    مایلم به عنوان میزبان رسمی لایو فعالیت کنم (نیازمند تایید مدیریت)
                   </label>
                   <input
                     type="checkbox"
@@ -816,7 +816,7 @@ export default function UserOnboardingModal({
                 <div className="text-[10px] text-slate-400 leading-relaxed bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/80">
                   {wantToBeStreamer ? (
                     <span className="text-amber-300">
-                      ℹ️ با فعال کردن این گزینه، اطلاعات شما جهت تایید استریمر به مدیریت ارسال می‌شود. شما می‌توانید بلافاصله وارد برنامه شوید، اما قابلیت برودکست و اجرای زنده پس از تایید مدیریت فعال خواهد شد.
+                      ℹ️ با فعال کردن این گزینه، اطلاعات شما جهت تایید اجرای لایو به مدیریت ارسال می‌شود. شما می‌توانید بلافاصله وارد برنامه شوید، اما قابلیت برودکست و اجرای زنده پس از تایید مدیریت فعال خواهد شد.
                     </span>
                   ) : (
                     <span>

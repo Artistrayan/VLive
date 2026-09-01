@@ -180,7 +180,7 @@ export default function HelpCenterModal({
                 {loc('مرکز راهنما، سوالات متداول و امور مالی V.LIVE', 'V.LIVE Help Center & FAQ')}
               </h2>
               <p className="text-[11px] text-slate-400 font-medium">
-                {loc('پاسخ‌دهی به سوالات، راهنمای شارژ حساب، تسویه درآمد استریمر و پشتیبانی آنلاین', 'FAQ answers, deposit guide, streamer payouts & live support')}
+                {loc('پاسخ‌دهی به سوالات، راهنمای شارژ حساب، تسویه درآمد و پشتیبانی آنلاین', 'FAQ answers, deposit guide, payouts & live support')}
               </p>
             </div>
           </div>
@@ -227,7 +227,7 @@ export default function HelpCenterModal({
             }`}
           >
             <DollarSign className="w-4 h-4" />
-            <span>{loc('تسویه درآمد استریمر', 'Streamer Payouts')}</span>
+            <span>{loc('تسویه درآمد میزبان', 'Host Payouts')}</span>
           </button>
 
           <button

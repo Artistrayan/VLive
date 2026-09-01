@@ -155,7 +155,7 @@ export default function HostLiveModal({
             <Lock className="w-7 h-7" />
           </div>
 
-          <h3 className="text-base font-black text-white">{loc('دسترسی لایو منحصراً برای استریمرهاست', 'Live requires streamer verification')}</h3>
+          <h3 className="text-base font-black text-white">{loc('دسترسی اجرای لایو نیاز به تایید مدیریت دارد', 'Live broadcasting requires verification')}</h3>
 
           <div className="flex gap-2 pt-2">
             <button
@@ -211,7 +211,6 @@ export default function HostLiveModal({
             </div>
             <div>
               <h2 className="text-sm font-black text-white flex items-center gap-2">
-                <span>{loc('استودیو لایو', 'Live Studio')}</span>
                 <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-black px-1.5 py-0.5 rounded-full">
                   Lv.{effectiveLevel}
                 </span>
@@ -405,24 +404,6 @@ export default function HostLiveModal({
           className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-pink-500 text-xs font-medium"
         />
 
-        {/* Category Pills (Icon-First) */}
-        <div className="flex flex-wrap gap-1.5">
-          {CATEGORY_ICONS.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setHostLiveCategory(cat.id)}
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1 ${
-                hostLiveCategory === cat.id
-                  ? 'bg-pink-500/20 text-pink-300 border-pink-500/50 shadow-sm'
-                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-              }`}
-            >
-              <span>{cat.icon}</span>
-              <span>{cat.label}</span>
-            </button>
-          ))}
-        </div>
-
         {/* Start Button */}
         <div className="space-y-2 pt-1">
           <button 
@@ -450,7 +431,7 @@ export default function HostLiveModal({
             className="w-full py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs flex items-center justify-center gap-1.5 transition"
           >
             <Crown className="w-3.5 h-3.5 text-amber-400" />
-            <span>{loc('داشبورد استریمر', 'Streamer Dashboard')}</span>
+            <span>{loc('داشبورد لایو', 'Live Dashboard')}</span>
           </button>
         </div>
 

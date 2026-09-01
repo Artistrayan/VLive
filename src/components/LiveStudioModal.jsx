@@ -789,7 +789,6 @@ export default function LiveStudioModal({
               </div>
               <div>
                 <h2 className="text-base font-black text-white flex items-center gap-2">
-                  <span>{window.loc('استودیو پخش زنده', 'Live Studio')}</span>
                   <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold">
                     Lv.{currentUser?.level || currentUser?.user_level || userLevel || 1}
                   </span>
@@ -811,7 +810,6 @@ export default function LiveStudioModal({
             <div className="flex items-center justify-between text-slate-300 font-bold">
               <span className="flex items-center gap-1.5">
                 <Camera className="w-4 h-4 text-pink-400" />
-                <span>{window.loc('پیش‌نمایش زنده تصویر و میکروفون', 'Live image and microphone preview')}</span>
               </span>
               <div className="flex items-center gap-1.5">
                 <span className={`text-[9px] px-2 py-0.5 rounded-full font-mono font-bold ${
@@ -958,7 +956,7 @@ export default function LiveStudioModal({
           <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3.5 shadow-xl">
             <h4 className="font-bold text-white text-xs flex items-center gap-2">
               <Radio className="w-4 h-4 text-pink-400" />
-              <span>{window.loc('مشخصات و دسته‌بندی استریم', 'Stream specifications and categories')}</span>
+              <span>{window.loc('مشخصات استریم', 'Stream specifications')}</span>
             </h4>
 
             {/* Type Selector (Standard vs Adult 18+) */}
@@ -967,7 +965,6 @@ export default function LiveStudioModal({
                 type="button"
                 onClick={() => {
                   setLiveType('standard');
-                  setLiveCategory('Gaming');
                 }}
                 className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
                   liveType === 'standard'
@@ -983,7 +980,6 @@ export default function LiveStudioModal({
                 type="button"
                 onClick={() => {
                   setLiveType('adult');
-                  setLiveCategory('VIP Chat');
                 }}
                 className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
                   liveType === 'adult'
@@ -1008,59 +1004,12 @@ export default function LiveStudioModal({
               />
             </div>
 
-            {/* Category & Language Row */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">{window.loc('📂 دسته‌بندی:', '📂 Category:')}</label>
-                <select
-                  value={liveCategory}
-                  onChange={(e) => setLiveCategory(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-semibold outline-none focus:border-pink-500"
-                >
-                  {liveType === 'standard' ? (
-                    <>
-                      <option value="Gaming">{window.loc('گیمینگ 🎮', 'Gaming 🎮')}</option>
-                      <option value="Music">{window.loc('موسیقی 🎵', 'Music 🎵')}</option>
-                      <option value="Chat">{window.loc('چت آنلاین 💬', 'Online chat 💬')}</option>
-                      <option value="Dance">{window.loc('رقص & هنر 💃', 'Dance & Art 💃')}</option>
-                      <option value="IRL">{window.loc('زندگی روزمره 📹', 'Daily life 📹')}</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="VIP Chat">{window.loc('چت اختصاصی 🔞', 'Private chat 🔞')}</option>
-                      <option value="Hot Dance">{window.loc('رقص داغ 🔥', 'Hot dance 🔥')}</option>
-                      <option value="Romance">{window.loc('گپ عاشقانه ❤️', 'Romantic chat ❤️')}</option>
-                      <option value="Private Live">{window.loc('استریم خصوصی 💥', 'Private stream 💥')}</option>
-                    </>
-                  )}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">{window.loc('🌐 زبان پخش:', '🌐 Broadcast language:')}</label>
-                <select
-                  value={liveLanguage}
-                  onChange={(e) => setLiveLanguage(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-semibold outline-none focus:border-pink-500"
-                >
-                  <option value={window.loc('فارسی (Persian)', 'Persian')}>{window.loc('فارسی (Persian)', 'Persian')}</option>
-                  <option value="English">English</option>
-                  <option value={window.loc('العربية (Arabic)', 'Arabic')}>{window.loc('العربية (Arabic)', 'Arabic')}</option>
-                  <option value="Türkçe">Türkçe</option>
-                </select>
-              </div>
-            </div>
-
             {/* Ticketed VIP Stream Switch & Pricing */}
             <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${isTicketedLive ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-slate-400'}`}>
                     <Lock className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <span className="font-bold text-white text-xs block">{window.loc('لایو پولی / ورودی بلیطی (Ticketed Live)', 'Ticketed VIP Live')}</span>
-                    <span className="text-[10px] text-slate-400 block">{window.loc('دریافت ورودی سکه‌ای از بینندگان برای ورود به اتاق', 'Charge viewers coins to enter the room')}</span>
                   </div>
                 </div>
                 <button
@@ -1075,7 +1024,7 @@ export default function LiveStudioModal({
               {isTicketedLive && (
                 <div className="pt-2 border-t border-slate-800 space-y-1.5 animate-fadeIn">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-300 font-bold">{window.loc('💰 مبلغ بلیط ورودی:', '💰 Ticket price:')}</span>
+                    <span className="text-slate-300 font-bold">{window.loc('💰 مبلغ بلیط:', '💰 Price:')}</span>
                     <span className="font-mono font-black text-amber-300">{ticketPrice} Coins</span>
                   </div>
                   <div className="grid grid-cols-4 gap-1.5">

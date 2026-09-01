@@ -428,7 +428,7 @@ export default function UserProfileViewModal({
                   }`}
                 >
                   <Video className="w-3.5 h-3.5" />
-                  <span>{isStreamer ? window.loc('لغو استریمر', 'Cancel streamer') : window.loc('اعطای لایو', 'grant live')}</span>
+                  <span>{isStreamer ? window.loc('لغو دسترسی لایو', 'Revoke Live') : window.loc('اعطای دسترسی لایو', 'Grant Live')}</span>
                 </button>
               </div>
             </div>

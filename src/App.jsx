@@ -2672,7 +2672,7 @@ export default function App() {
       return;
     }
     if (!isFemaleUser) {
-      showToast(loc('🔒 ثبت‌نام و فعالیت به‌عنوان استریمر منحصراً مختص کاربران خانم می‌باشد (استریمر = خانم + تایید مدیریت).', '🔒 Streamer activity is strictly for female users (Streamer = Female + Admin Approval).'));
+      showToast(loc('🔒 ثبت‌نام و فعالیت و اجرای لایواستریم منحصراً مختص کاربران خانم می‌باشد.', '🔒 Live broadcast activity is strictly for female users.'));
       return;
     }
     if (isStreamerUser) {
@@ -2680,9 +2680,9 @@ export default function App() {
     } else {
       const userApp = (kycApplications || []).find(a => (a.username === (currentUsername || userName) || a.user_id === currentUser?.id));
       if (userApp && userApp.status === 'Pending') {
-        showToast(loc('⏳ درخواست احراز هویت استریمری شما در انتظار بررسی توسط مدیریت است', '⏳ Your streamer KYC application is pending admin review'));
+        showToast(loc('⏳ درخواست احراز هویت اجرای لایو شما در انتظار بررسی توسط مدیریت است', '⏳ Your live KYC application is pending admin review'));
       } else {
-        showToast(loc('🔒 دسترسی به اجرای زنده منحصراً مختص استریمرهای تایید شده توسط مدیریت است.', '🔒 Live broadcasting is strictly for admin-verified streamers.'));
+        showToast(loc('🔒 دسترسی به اجرای زنده نیازمند تایید توسط مدیریت است.', '🔒 Live broadcasting requires admin verification.'));
       }
       setIsBecomeStreamerModalOpen(true);
     }
@@ -3583,7 +3583,7 @@ export default function App() {
           {/* Header */}
           <div className="absolute top-0 inset-x-0 p-4 bg-gradient-to-b from-black/80 to-transparent z-30 flex items-center justify-between">
             <div className="flex items-center gap-2 bg-black/40 rounded-full pr-1 pl-3 py-1 border border-white/10 backdrop-blur-md">
-              <span className="text-white font-bold text-xs">{viewingStream.host || loc('استریمر', 'Streamer')}</span>
+              <span className="text-white font-bold text-xs">{viewingStream.host || loc('میزبان', 'Host')}</span>
               <button onClick={() => {
                 const next = !isStreamerFollowed;
                 setIsStreamerFollowed(next);
@@ -3616,15 +3616,7 @@ export default function App() {
                     <p className="font-bold text-white">{viewingStream.title || loc('لایواستریم اختصاصی V.LIVE', 'Exclusive V.LIVE live stream')}</p>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-1.5 text-[10px] text-center">
-                    <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block">{loc('دسته‌بندی', 'categorization')}</span>
-                      <span className="font-bold text-cyan-300">{viewingStream.category || 'General'}</span>
-                    </div>
-                    <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block">{loc('زبان', 'language')}</span>
-                      <span className="font-bold text-emerald-300">{loc('🇮🇷 فارسی', '🇮🇷 Persian')}</span>
-                    </div>
+                  <div className="grid grid-cols-1 gap-1.5 text-[10px] text-center">
                     <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
                       <span className="text-slate-400 block">{loc('کشور', 'the country')}</span>
                       <span className="font-bold text-amber-300">{loc('ایران 🇮🇷', 'Iran 🇮🇷')}</span>
@@ -3637,7 +3629,7 @@ export default function App() {
                   </div>
 
                   <div>
-                    <span className="text-[10px] text-pink-400 font-bold block">{loc('توضیحات استریمر:', 'Streamer description:')}</span>
+                    <span className="text-[10px] text-pink-400 font-bold block">{loc('توضیحات لایو:', 'Live description:')}</span>
                     <p className="text-[11px] text-slate-300 leading-relaxed">
                       {viewingStream.description || loc('به پخش زنده خوش آمدید! برای حمایت می‌توانید هدیه ارسال کنید و در چت گفتگو نمایید.', 'Welcome to the live stream! To support, you can send a gift and talk in the chat.')}
                     </p>
@@ -3649,7 +3641,7 @@ export default function App() {
                       <span>{loc('قوانین روم و چت زنده:', 'Room rules and live chat:')}</span>
                     </span>
                     <ul className="list-disc list-inside text-slate-400 space-y-0.5 text-[10px]">
-                      <li>{loc('احترام متقابل به استریمر و سایر بینندگان الزامی است.', 'Mutual respect for the streamer and other viewers is required.')}</li>
+                      <li>{loc('احترام متقابل به میزبان و سایر بینندگان الزامی است.', 'Mutual respect for the host and other viewers is required.')}</li>
                       <li>{loc('ارسال لینک‌های مشکوک، تبلیغات و پیام‌های تکراری ممنوع است.', 'It is forbidden to send suspicious links, advertisements and duplicate messages.')}</li>
                       <li>{loc('هوش مصنوعی هوشمند تمام پیام‌ها را بررسی می‌کند.', 'Intelligent artificial intelligence checks all messages.')}</li>
                     </ul>
@@ -3809,7 +3801,7 @@ export default function App() {
                   <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                     <div className="flex items-center gap-1.5">
                       <Gift className="w-4 h-4 text-amber-400" />
-                      <span className="font-black text-xs text-white">{loc('🎁 ارسال هدیه به استریمر', '🎁 Send gift to streamer')}</span>
+                      <span className="font-black text-xs text-white">{loc('🎁 ارسال هدیه به میزبان', '🎁 Send gift to host')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] font-mono font-black text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
@@ -4335,7 +4327,7 @@ export default function App() {
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                 <h4 className="font-black text-emerald-400 flex items-center gap-1.5">
                   <span>💎</span>
-                  <span>{loc('تماس تصویری با استریمرها', 'Video call with streamers')}</span>
+                  <span>{loc('تماس تصویری مستقیم', 'Direct video call')}</span>
                 </h4>
               </div>
             </div>

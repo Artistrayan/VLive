@@ -274,7 +274,7 @@ export function StreamerWelcomeGuideModal({
             🌸
           </div>
           <h2 className="text-base font-black text-white">
-            {loc('خوش آمدید به جمع استریمرهای V.LIVE! 🎉', 'Welcome to V.LIVE Creators! 🎉')}
+            {loc('خوش آمدید به جمع میزبانان V.LIVE! 🎉', 'Welcome to V.LIVE Creators! 🎉')}
           </h2>
           <p className="text-[11px] text-pink-400 font-bold">
             {loc('تایید حساب میزبانی شما با موفقیت انجام گردید', 'Host account approved successfully')}
