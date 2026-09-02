@@ -147,8 +147,9 @@ export default function App() {
     return l === 'fa' || l === 'ar';
   });
   const [appFontSize, setAppFontSize] = useState(() => safeStorage.getItem('vlive_app_font_size') || 'medium');
-  const [appAccentColor, setAppAccentColor] = useState(() => safeStorage.getItem('vlive_app_accent_color') || '#00f3ff');
-  const [appThemeMode, setAppThemeMode] = useState('dark');
+  const [appAccentColor, setAppAccentColor] = useState(() => safeStorage.getItem('vlive_app_accent_color') || 'pink');
+  const [appThemeMode, setAppThemeMode] = useState(() => safeStorage.getItem('vlive_app_theme_mode') || 'dark');
+  const [appAnimations, setAppAnimations] = useState(() => safeStorage.getItem('vlive_app_animations') !== 'false');
 
   // UI Toast & Notifications
   const [toastMessage, setToastMessage] = useState(null);
@@ -407,9 +408,6 @@ export default function App() {
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
   const [isReferralRulesModalOpen, setIsReferralRulesModalOpen] = useState(false);
   const [isKycModalOpen, setIsKycModalOpen] = useState(false);
-  const [isPermissionsPromptOpen, setIsPermissionsPromptOpen] = useState(false);
-  const [permissionsRequestedType, setPermissionsRequestedType] = useState('all'); // 'all' | 'camera_mic' | 'camera' | 'microphone' | 'notifications'
-  const [pendingPermissionAction, setPendingPermissionAction] = useState(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isNotifSettingsOpen, setIsNotifSettingsOpen] = useState(false);
@@ -1608,34 +1606,6 @@ export default function App() {
     showToast(loc('با موفقیت خارج شدید', 'Logged out successfully'));
   }, [loc, showToast]);
 
-  const handleSavePermissionsPrompt = useCallback((perms) => {
-    setIsPermissionsPromptOpen(false);
-
-    // Always record that permission prompt was shown and answered so it never shows again automatically
-    safeStorage.setItem('vlive_permissions_prompted_once', 'true');
-
-    if (perms === true || (perms && typeof perms === 'object' && (perms.camera || perms.microphone || perms.notifications))) {
-      safeStorage.setItem('vlive_permissions_granted', 'true');
-      if (perms?.camera) safeStorage.setItem('vlive_camera_permission_granted', 'true');
-      if (perms?.microphone) safeStorage.setItem('vlive_mic_permission_granted', 'true');
-      if (perms?.notifications) safeStorage.setItem('vlive_notif_permission_granted', 'true');
-      
-      showToast(loc('دسترسی‌های سیستم با موفقیت ثبت و ذخیره شدند ✅', 'System permissions successfully granted & saved ✅'));
-
-      // If there was a pending user action (e.g. start call, open live studio), execute it now
-      if (typeof pendingPermissionAction === 'function') {
-        const action = pendingPermissionAction;
-        setPendingPermissionAction(null);
-        action();
-      }
-    } else {
-      // Basic / Declined access
-      safeStorage.setItem('vlive_permissions_granted', 'basic');
-      showToast(loc('تنظیمات دسترسی ثبت شد.', 'Permission settings recorded.'));
-      setPendingPermissionAction(null);
-    }
-  }, [showToast, loc, pendingPermissionAction]);
-
   // AI Admin Copilot Actions
   const handleRunAiChatModerator = useCallback(() => {
     showToast(loc('ربات پایش هوش مصنوعی در حال اسکن چت‌ها...', 'AI moderator scanning chats...'));
@@ -1967,7 +1937,37 @@ export default function App() {
 
   useEffect(() => {
     safeStorage.setItem('vlive_app_font_size', appFontSize);
+    document.documentElement.style.fontSize = (appFontSize === 'small' || appFontSize === 'Small') ? '14px' : ((appFontSize === 'large' || appFontSize === 'Large') ? '18px' : '16px');
   }, [appFontSize]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_app_theme_mode', appThemeMode);
+    if (appThemeMode === 'light') {
+      document.documentElement.classList.add('light-theme');
+      document.documentElement.classList.remove('dark', 'amoled-theme');
+    } else if (appThemeMode === 'amoled') {
+      document.documentElement.classList.add('dark', 'amoled-theme');
+      document.documentElement.classList.remove('light-theme');
+    } else {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light-theme', 'amoled-theme');
+    }
+  }, [appThemeMode]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_app_accent_color', appAccentColor);
+    const colorHex = appAccentColor === 'pink' ? '#ec4899' : appAccentColor === 'purple' ? '#a855f7' : appAccentColor === 'cyan' ? '#06b6d4' : appAccentColor === 'amber' ? '#f59e0b' : appAccentColor === 'emerald' ? '#10b981' : appAccentColor;
+    document.documentElement.style.setProperty('--vlive-accent-color', colorHex);
+  }, [appAccentColor]);
+
+  useEffect(() => {
+    safeStorage.setItem('vlive_app_animations', String(appAnimations));
+    if (!appAnimations) {
+      document.documentElement.classList.add('reduce-motion');
+    } else {
+      document.documentElement.classList.remove('reduce-motion');
+    }
+  }, [appAnimations]);
   useEffect(() => {
     if (notifSettings) {
       safeStorage.setItem('vlive_notif_settings', JSON.stringify(notifSettings));
@@ -3420,7 +3420,61 @@ export default function App() {
       <NotificationsModal isNotificationsOpen={isNotificationsOpen} setIsNotificationsOpen={setIsNotificationsOpen} isNotifSettingsOpen={isNotifSettingsOpen} setIsNotifSettingsOpen={setIsNotifSettingsOpen} isRtl={isRtl} notificationsList={notificationsList} setNotificationsList={setNotificationsList} notificationFilterTab={notificationFilterTab} setNotificationFilterTab={setNotificationFilterTab} notifSettings={notifSettings} setNotifSettings={setNotifSettings} setActiveChatCall={setActiveChatCall} setIsSettingsModalOpen={setIsSettingsModalOpen} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} showToast={showToast} onSwitchMainTab={(tab) => setActiveTab(tab)} onOpenChat={(targetId) => { if (targetId) handleStartNewChatWithUser({ id: targetId }); }} />
 
       {/* MODAL: 18-SECTION SETTINGS MODAL */}
-      <SettingsModal currentUser={currentUser} userRole={userRole} handleLogout={handleLogout} isSettingsModalOpen={isSettingsModalOpen} setIsSettingsModalOpen={setIsSettingsModalOpen} currentAppLang={currentAppLang} setCurrentAppLang={setCurrentAppLang} handleSelectLanguage={handleSelectLanguage} APP_LANGUAGES={APP_LANGUAGES} setIsLanguageModalOpen={setIsLanguageModalOpen} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} currentUsername={currentUsername} authUsername={authUsername} authEmail={authEmail} currentTelegramId={currentTelegramId} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} isVerified={isVerified} verificationsList={verificationsList} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} blockedUsers={blockedCallUsers} setBlockedUsers={setBlockedCallUsers} isRtl={isRtl} notifSettings={notifSettings} setNotifSettings={setNotifSettings} appThemeMode={appThemeMode} setAppThemeMode={setAppThemeMode} setIsKycModalOpen={setIsKycModalOpen} setIsSuggestionModalOpen={setIsSuggestionModalOpen} setIsTermsModalOpen={setIsTermsModalOpen} setIsVipModalOpen={setIsVipModalOpen} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} showToast={showToast} loc={loc} />
+      <SettingsModal 
+        currentUser={currentUser} 
+        userRole={userRole} 
+        handleLogout={handleLogout} 
+        isSettingsModalOpen={isSettingsModalOpen} 
+        setIsSettingsModalOpen={setIsSettingsModalOpen} 
+        currentAppLang={currentAppLang} 
+        setCurrentAppLang={setCurrentAppLang} 
+        handleSelectLanguage={handleSelectLanguage} 
+        APP_LANGUAGES={APP_LANGUAGES} 
+        setIsLanguageModalOpen={setIsLanguageModalOpen} 
+        userAvatar={userAvatar} 
+        setUserAvatar={setUserAvatar} 
+        userName={userName} 
+        setUserName={setUserName} 
+        userBio={userBio} 
+        setUserBio={setUserBio} 
+        currentUsername={currentUsername} 
+        authUsername={authUsername} 
+        authEmail={authEmail} 
+        currentTelegramId={currentTelegramId} 
+        userGender={userGender} 
+        setUserGender={setUserGender} 
+        setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} 
+        isVerified={isVerified} 
+        verificationsList={verificationsList} 
+        isUserRayan={isUserRayan} 
+        userLevel={userLevel} 
+        vipPlan={vipPlan} 
+        userCoins={userCoins} 
+        userDiamonds={userDiamonds} 
+        userCashBalance={userCashBalance} 
+        blockedUsers={blockedCallUsers} 
+        setBlockedUsers={setBlockedCallUsers} 
+        isRtl={isRtl} 
+        notifSettings={notifSettings} 
+        setNotifSettings={setNotifSettings} 
+        appThemeMode={appThemeMode} 
+        setAppThemeMode={setAppThemeMode} 
+        appFontSize={appFontSize}
+        setAppFontSize={setAppFontSize}
+        appAccentColor={appAccentColor}
+        setAppAccentColor={setAppAccentColor}
+        appAnimations={appAnimations}
+        setAppAnimations={setAppAnimations}
+        setActiveTab={setActiveTab}
+        setIsKycModalOpen={setIsKycModalOpen} 
+        setIsSuggestionModalOpen={setIsSuggestionModalOpen} 
+        setIsTermsModalOpen={setIsTermsModalOpen} 
+        setIsVipModalOpen={setIsVipModalOpen} 
+        PRESET_AVATARS={PRESET_AVATARS} 
+        compressImageFile={compressImageFile} 
+        showToast={showToast} 
+        loc={loc} 
+      />
 
       {/* MODAL: VIP & REWARD SYSTEM MODALS */}
       <VipAndRewardModals isLevelUpModalOpen={isLevelUpModalOpen} setIsLevelUpModalOpen={setIsLevelUpModalOpen} isRtl={isRtl} userLevel={userLevel} levelUpModalData={levelUpModalData} isReferralRulesModalOpen={isReferralRulesModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} isVipModalOpen={isVipModalOpen} setIsVipModalOpen={setIsVipModalOpen} selectedVipPlan={selectedVipPlan} setSelectedVipPlan={setSelectedVipPlan} selectedVipDuration={selectedVipDuration} setSelectedVipDuration={setSelectedVipDuration} selectedVipPayMethod={selectedVipPayMethod} setSelectedVipPayMethod={setSelectedVipPayMethod} userCoins={userCoins} setUserCoins={setUserCoins} setVipPlan={setVipPlan} setVipExpireDays={setVipExpireDays} setIsVipMonthlyClaimed={setIsVipMonthlyClaimed} isVipCelebrationOpen={isVipCelebrationOpen} setIsVipCelebrationOpen={setIsVipCelebrationOpen} vipPlan={vipPlan} vipExpireDays={vipExpireDays} showToast={showToast} />
