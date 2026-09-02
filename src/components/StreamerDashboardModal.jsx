@@ -8,6 +8,7 @@ import {
 import { apiStreamer, apiWallet } from '../services/api';
 import { PLATFORM_RULES, canAccessCreatorStudio } from '../services/businessRules';
 import { getStreamerScores } from '../services/streamerScoring';
+import { safeStorage } from '../utils/safeStorage';
 
 export default function StreamerDashboardModal({
   isOpen,

@@ -5,6 +5,7 @@ import {
   ChevronRight, Mic, MicOff, Camera, RefreshCw, Radio, Tag, ShieldAlert, FileText
 } from 'lucide-react';
 import { apiLive, apiAdmin } from '../services/api';
+import { safeStorage } from '../utils/safeStorage';
 
 export default function LiveStreamSystem({
   currentUser,
@@ -95,7 +96,6 @@ export default function LiveStreamSystem({
     currentUser?.role === 'super_admin' ||
     currentUser?.user_type === 'STREAMER' ||
     currentUser?.isStreamer || 
-    Streamer || 
     currentUser?.is_streamer ||
     currentUser?.isHost ||
     (kycApplications && Array.isArray(kycApplications) && kycApplications.some(a => (a.username === (currentUsername || currentUser?.username) || a.user_id === currentUser?.id) && a.status === 'Approved'))

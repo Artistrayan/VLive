@@ -135,6 +135,7 @@ export default function App() {
   const [authBirthDate, setAuthBirthDate] = useState('');
   const [authTelegramId, setAuthTelegramId] = useState('');
   const [authEmail, setAuthEmail] = useState('');
+  const [authCity, setAuthCity] = useState('');
   const [termsAgreed, setTermsAgreed] = useState(true);
   const [hasRegistered, setHasRegistered] = useState(false);
   const [pendingOnboardUser, setPendingOnboardUser] = useState(null);
@@ -523,6 +524,37 @@ export default function App() {
       telegram_id: currentTelegramId || authUserRecord?.telegram_id || authUserRecord?.telegramId
     };
   }, [isLoggedIn, userName, currentUsername, userAvatar, userCoins, userDiamonds, userGender, userRole, isVerified, vipPlan, userBio, currentTelegramId, authUserRecord]);
+
+  const setCurrentUser = useCallback((updater) => {
+    setAuthUserRecord(prev => {
+      const currentObj = {
+        id: getUserId() || prev?.id || '',
+        name: userName,
+        username: currentUsername,
+        avatar: userAvatar,
+        coins: userCoins,
+        diamonds: userDiamonds,
+        gender: userGender,
+        isVerified,
+        vipPlan,
+        bio: userBio,
+        telegramId: currentTelegramId,
+        ...prev,
+        role: userRole,
+        telegram_id: currentTelegramId || prev?.telegram_id || prev?.telegramId
+      };
+      const next = typeof updater === 'function' ? updater(currentObj) : updater;
+      if (!next) return null;
+      if (next.name && next.name !== userName) setUserName(next.name);
+      if (next.username && next.username !== currentUsername) setCurrentUsername(next.username);
+      if (next.avatar && next.avatar !== userAvatar) setUserAvatar(next.avatar);
+      if (next.bio !== undefined && next.bio !== userBio) setUserBio(next.bio);
+      if (next.gender && next.gender !== userGender) setUserGender(next.gender);
+      if (next.isVerified !== undefined && next.isVerified !== isVerified) setIsVerified(next.isVerified);
+      if (next.role && next.role !== userRole) setUserRole(next.role);
+      return { ...prev, ...next };
+    });
+  }, [userName, currentUsername, userAvatar, userCoins, userDiamonds, userGender, isVerified, vipPlan, userBio, currentTelegramId, userRole]);
 
   const filteredUsersList = useMemo(() => {
     if (!Array.isArray(usersList)) return [];
@@ -1466,8 +1498,8 @@ export default function App() {
     // Create optimistic local story item
     const newStoryItem = {
       id: 'story_' + Date.now(),
-      username: currentUsername || authUsername || 'User',
-      userAvatar: userAvatar || authAvatar || '',
+      username: currentUsername || authUsername || currentUser?.username || 'User',
+      userAvatar: userAvatar || currentUser?.avatar_url || currentUser?.avatar || '',
       imageUrl: mediaUrl,
       videoUrl: mediaUrl,
       caption: caption,
@@ -1488,7 +1520,7 @@ export default function App() {
     } catch (e) {
       console.warn('Story background sync note:', e);
     }
-  }, [showToast, loc, currentUsername, authUsername, userAvatar, authAvatar]);
+  }, [showToast, loc, currentUsername, authUsername, currentUser, userAvatar]);
 
   const handleCloseStory = useCallback(() => {
     setActiveStoryView(null);

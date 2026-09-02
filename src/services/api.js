@@ -2,6 +2,7 @@ import { supabase } from '../supabaseClient';
 import { presenceService } from './presenceService';
 import { calculateAge } from './businessRules';
 import { fetchLiveKitToken } from './livekitService';
+import { safeStorage } from '../utils/safeStorage';
 
 export { presenceService, calculateAge };
 

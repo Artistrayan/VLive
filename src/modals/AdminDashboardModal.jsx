@@ -16,7 +16,7 @@ import {
   BarChart2, FileText, Settings, Search, Plus, Trash2, Edit3, CheckCircle2,
   XCircle, Lock, Unlock, AlertTriangle, Send, RefreshCw, X, Check, Award,
   Activity, Crown, Shield, HelpCircle, MessageSquare, Heart, PhoneCall, Sparkles, Filter, Download, AlertCircle,
-  UserPlus, LifeBuoy, BadgeCheck, UserCheck
+  UserPlus, LifeBuoy, BadgeCheck, UserCheck, Flame
 } from 'lucide-react';
 
 export default function AdminDashboardModal(props) {

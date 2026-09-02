@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Video, Flame, Lock, Radio, Camera, Mic, MicOff, 
-  Sparkles, Crown, ShieldAlert, RefreshCw, X, Globe, User, Hash
+  Sparkles, Crown, ShieldAlert, RefreshCw, X, Globe, User, Hash, Play
 } from 'lucide-react';
 import { safeStorage } from '../utils/safeStorage';
 import { cameraPermissionService } from '../services/cameraPermissionService';

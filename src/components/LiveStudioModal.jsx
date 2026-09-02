@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Video, Mic, MicOff, Camera, RefreshCw, Radio, Sparkles, ShieldCheck, ShieldAlert, 
+  Video, Mic, MicOff, Camera, CameraOff, RefreshCw, Radio, Sparkles, ShieldCheck, ShieldAlert, 
   Crown, Users, Eye, Heart, Gift, MessageSquare, Settings, Flame, Lock, Zap, Clock, 
   ThumbsUp, Send, AlertTriangle, X, Check, ChevronUp, ChevronDown, Sliders, Volume2, 
   VolumeX, UserPlus, Swords, BarChart2, UserX, UserMinus, Pin, CornerUpLeft, Trash2, 
