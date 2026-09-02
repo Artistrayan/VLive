@@ -672,6 +672,18 @@ export default function ProfileTab(props) {
   const effectiveUserRole = userRole || props.currentUser?.role || 'user';
   const isAdminUser = isUserAnAdmin(effectiveUserRole, detectedTgId);
 
+  // Female user determination
+  const userGenderStr = String(userGender || props.currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
+  const isFemale = Boolean(
+    userGenderStr === 'female' ||
+    userGenderStr === 'خانم' ||
+    userGenderStr === 'زن' ||
+    userGenderStr === 'f'
+  );
+
+  // Admin is exempt from any restrictions. Regular female users can publish posts and stories. Male users are viewers.
+  const canCreateContent = Boolean(isAdminUser || isFemale);
+
   return (
     <>
       {activeTab === 'profile' && (
@@ -791,19 +803,21 @@ export default function ProfileTab(props) {
                 </div>
                 
                 <div className="flex items-center gap-3 overflow-x-auto pb-1.5 scrollbar-none px-0.5">
-                  {/* Add Story Button */}
-                  <button
-                    onClick={() => {
-                      if (props.setIsAddStoryModalOpen) props.setIsAddStoryModalOpen(true);
-                      else showToast(window.loc('بخش استوری آماده است', 'Story creator active'));
-                    }}
-                    className="flex flex-col items-center gap-1 shrink-0 group cursor-pointer"
-                  >
-                    <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-slate-950/80 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 group-hover:border-pink-400 transition shadow-inner shrink-0">
-                      <Plus className="w-4 h-4" />
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-300">{window.loc('افزودن', 'Add')}</span>
-                  </button>
+                  {/* Add Story Button (For female users & admins) */}
+                  {canCreateContent && (
+                    <button
+                      onClick={() => {
+                        if (props.setIsAddStoryModalOpen) props.setIsAddStoryModalOpen(true);
+                        else showToast(window.loc('بخش استوری آماده است', 'Story creator active'));
+                      }}
+                      className="flex flex-col items-center gap-1 shrink-0 group cursor-pointer"
+                    >
+                      <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-slate-950/80 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 group-hover:border-pink-400 transition shadow-inner shrink-0">
+                        <Plus className="w-4 h-4" />
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-300">{window.loc('افزودن', 'Add')}</span>
+                    </button>
+                  )}
 
                   {/* User Active Stories */}
                   {(props.advancedStories || props.userStoriesList || []).map((story, i) => (
@@ -1015,29 +1029,33 @@ export default function ProfileTab(props) {
                 <Camera className="w-5 h-5 text-pink-400" />
                 <span>{window.loc('پست‌ها و محتوای منتشرشده', 'Published Posts & Timeline')}</span>
               </h3>
-              <button
-                onClick={() => {
-                  setNewPostType('photo');
-                  setIsCreatePostModalOpen(true);
-                }}
-                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-xs shadow-md hover:scale-105 active:scale-95 transition flex items-center gap-1"
-              >
-                <Plus className="w-4 h-4" />
-                <span>{window.loc('ایجاد پست جدید', 'New Post')}</span>
-              </button>
+              {canCreateContent && (
+                <button
+                  onClick={() => {
+                    setNewPostType('photo');
+                    setIsCreatePostModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-xs shadow-md hover:scale-105 active:scale-95 transition flex items-center gap-1"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{window.loc('ایجاد پست جدید', 'New Post')}</span>
+                </button>
+              )}
             </div>
 
             {profilePosts.length === 0 ? (
               <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-3">
                 <Camera className="w-10 h-10 text-slate-600 mx-auto" />
                 <h4 className="text-sm font-bold text-white">{window.loc('هنوز پستی منتشر نشده است', 'No posts published yet')}</h4>
-                <p className="text-xs text-slate-400">{window.loc('اولین عکس، ویدیو یا دل‌نوشته خود را با دوستانتان به اشتراک بگذارید.', 'Share your first photo, video or thoughts with your friends.')}</p>
-                <button
-                  onClick={() => setIsCreatePostModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-bold shadow-lg shadow-pink-500/25 active:scale-95 transition"
-                >
-                  {window.loc('➕ ایجاد اولین پست', '➕ Create First Post')}
-                </button>
+                <p className="text-xs text-slate-400">{window.loc('پست‌ها و محتوای تصویری منتشرشده در این قسمت نمایش داده می‌شوند.', 'Published photos and videos will appear here.')}</p>
+                {canCreateContent && (
+                  <button
+                    onClick={() => setIsCreatePostModalOpen(true)}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-bold shadow-lg shadow-pink-500/25 active:scale-95 transition"
+                  >
+                    {window.loc('➕ ایجاد اولین پست', '➕ Create First Post')}
+                  </button>
+                )}
               </div>
             ) : (
               profilePosts.map(post => (

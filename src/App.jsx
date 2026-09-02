@@ -569,6 +569,16 @@ export default function App() {
     if (!Array.isArray(usersList)) return [];
     let list = [...usersList].filter(u => u && u.status !== 'banned' && !u.isBanned);
     
+    // User Discovery Rule: Show only female users / hosts in the home feed (Admins can see all if needed, but the platform standard is female hosts feed)
+    list = list.filter(u => {
+      // If admin, show all, or if user is female
+      const g = String(u.gender || '').trim().toLowerCase();
+      const isFemale = g === 'female' || g === 'خانم' || g === 'زن' || g === 'f';
+      // Default fallback for streamers without explicit gender is female host
+      const isStreamerOrHost = Boolean(u.isStreamer || u.is_streamer || u.isHost || u.user_type === 'STREAMER');
+      return isFemale || isStreamerOrHost || (isUserAdmin && g !== 'male');
+    });
+
     if (userFilter === 'online') {
       list = list.filter(u => u.online || u.online_status === 'online' || u.status === 'online');
     } else if (userFilter === 'followers') {
@@ -583,7 +593,7 @@ export default function App() {
       list = [...list].sort((a, b) => (Number(b.likes_count || b.likes || 0)) - (Number(a.likes_count || a.likes || 0)));
     }
     return list;
-  }, [usersList, userFilter, followedUsers]);
+  }, [usersList, userFilter, followedUsers, isUserAdmin]);
 
   const totalUnreadMessages = useMemo(() => {
     if (!Array.isArray(conversations)) return 0;
@@ -2825,6 +2835,10 @@ export default function App() {
     String(currentUser?.username || '').toLowerCase() === 'rayan'
   );
 
+  // Can user create stories, publish posts, and broadcast live?
+  // Strictly permitted for female users and admins only! Male users are viewers/audience.
+  const canPublishAndBroadcast = Boolean(isUserAdmin || isFemaleUser);
+
   // MANAGEMENT APPROVAL CHECK
   const isManagementApproved = Boolean(
     isUserAdmin ||
@@ -2999,7 +3013,13 @@ export default function App() {
                       <span>{loc('استوری‌های کاربران', 'User Stories')}</span>
                     </span>
                     <button
-                      onClick={() => setIsAddStoryModalOpen(true)}
+                      onClick={() => {
+                        if (!canPublishAndBroadcast) {
+                          showToast(loc('🔒 ثبت استوری، انتشار پست و اجرای لایو منحصراً مختص کاربران خانم می‌باشد.', '🔒 Story, post creation and live broadcasting are exclusively for female users.'));
+                          return;
+                        }
+                        setIsAddStoryModalOpen(true);
+                      }}
                       className="text-[10px] font-bold text-pink-400 bg-pink-500/10 hover:bg-pink-500/20 px-2.5 py-1 rounded-full border border-pink-500/30 transition flex items-center gap-1"
                     >
                       <Plus className="w-3 h-3" />
@@ -3007,16 +3027,18 @@ export default function App() {
                     </button>
                   </div>
                   <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
-                    {/* Add Story Button Tile */}
-                    <div
-                      onClick={() => setIsAddStoryModalOpen(true)}
-                      className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
-                    >
-                      <div className="w-14 h-14 rounded-full bg-slate-900 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 transition shadow-md">
-                        <Plus className="w-5 h-5" />
+                    {/* Add Story Button Tile (Available for female users and admins) */}
+                    {canPublishAndBroadcast && (
+                      <div
+                        onClick={() => setIsAddStoryModalOpen(true)}
+                        className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                      >
+                        <div className="w-14 h-14 rounded-full bg-slate-900 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 transition shadow-md">
+                          <Plus className="w-5 h-5" />
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-300 max-w-[60px] truncate">{loc('استوری من', 'My Story')}</span>
                       </div>
-                      <span className="text-[10px] font-bold text-slate-300 max-w-[60px] truncate">{loc('استوری من', 'My Story')}</span>
-                    </div>
+                    )}
 
                     {/* Stories List from Supabase / advancedStories */}
                     {(advancedStories || []).map((story, i) => (
