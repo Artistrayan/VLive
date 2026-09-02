@@ -337,7 +337,19 @@ export default function App() {
 
   // Stories & Moments State
   const [posts, setPosts] = useState([]);
-  const [advancedStories, setAdvancedStories] = useState([]);
+  const [advancedStories, setAdvancedStories] = useState(() => {
+    try {
+      const stored = localStorage.getItem('vlive_active_stories');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const now = Date.now();
+        return Array.isArray(parsed)
+          ? parsed.filter(s => !s.expires_at || new Date(s.expires_at).getTime() > now)
+          : [];
+      }
+    } catch (e) {}
+    return [];
+  });
   const [activeStoryView, setActiveStoryView] = useState(null);
   const [isAddStoryModalOpen, setIsAddStoryModalOpen] = useState(false);
   const [isAddPostModalOpen, setIsAddPostModalOpen] = useState(false);
@@ -1506,15 +1518,35 @@ export default function App() {
       created_at: new Date().toISOString()
     };
 
-    setAdvancedStories(prev => [newStoryItem, ...(prev || [])]);
+    setAdvancedStories(prev => {
+      const list = [newStoryItem, ...(prev || [])];
+      try {
+        localStorage.setItem('vlive_active_stories', JSON.stringify(list));
+      } catch (e) {}
+      return list;
+    });
     setIsAddStoryModalOpen(false);
     showToast(loc('استوری شما با موفقیت منتشر شد ✨', 'Story published successfully ✨'));
 
     try {
       if (typeof apiSocial !== "undefined" && apiSocial.createStory) {
-        await apiSocial.createStory(mediaUrl);
+        await apiSocial.createStory(mediaUrl, caption);
         apiSocial.getStories().then(res => {
-          if (res && res.length > 0) setAdvancedStories(res);
+          if (Array.isArray(res) && res.length > 0) {
+            setAdvancedStories(prev => {
+              const map = new Map();
+              res.forEach(item => map.set(item.id || item.imageUrl || item.media_url, item));
+              (prev || []).forEach(item => {
+                const key = item.id || item.imageUrl || item.media_url;
+                if (!map.has(key)) map.set(key, item);
+              });
+              const merged = Array.from(map.values());
+              try {
+                localStorage.setItem('vlive_active_stories', JSON.stringify(merged));
+              } catch (e) {}
+              return merged;
+            });
+          }
         }).catch(() => {});
       }
     } catch (e) {
@@ -2366,9 +2398,24 @@ export default function App() {
     if (typeof apiSocial !== "undefined" && apiSocial.getPosts) {
       apiSocial.getPosts().then(res => setPosts(res || []));
     }
-    if (typeof apiSocial !== "undefined" && apiSocial.getPosts) {
-      apiSocial.getPosts().then(res => setPosts(res || []));
-      apiSocial.getStories().then(res => setAdvancedStories(res || []));
+    if (typeof apiSocial !== "undefined" && apiSocial.getStories) {
+      apiSocial.getStories().then(res => {
+        if (Array.isArray(res) && res.length > 0) {
+          setAdvancedStories(prev => {
+            const map = new Map();
+            res.forEach(item => map.set(item.id || item.imageUrl || item.media_url, item));
+            (prev || []).forEach(item => {
+              const key = item.id || item.imageUrl || item.media_url;
+              if (!map.has(key)) map.set(key, item);
+            });
+            const merged = Array.from(map.values());
+            try {
+              localStorage.setItem('vlive_active_stories', JSON.stringify(merged));
+            } catch (e) {}
+            return merged;
+          });
+        }
+      });
     }
     apiHome.getActiveStreams().then(streams => {
       setStreamsList(Array.isArray(streams) ? streams : []);
@@ -3636,7 +3683,7 @@ export default function App() {
           </div>
 
           {/* Main Story Content Container */}
-          <div className="relative w-full max-w-md flex-1 my-3 rounded-3xl overflow-hidden flex items-center justify-center bg-slate-950 border border-slate-800 shadow-2xl">
+          <div className="relative w-full max-w-sm max-h-[82vh] aspect-[9/16] my-auto rounded-3xl overflow-hidden flex items-center justify-center bg-slate-950 border border-slate-800 shadow-2xl">
             {/* Story Image / Media */}
             <img src={activeStoryView.group.items[activeStoryView.currentIndex]?.url} alt="Story Content" className="w-full h-full object-cover" />
 

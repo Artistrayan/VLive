@@ -586,24 +586,6 @@ export default function ProfileTab(props) {
     }
   };
 
-  const handlePublishProfile = async () => {
-    try {
-      await apiProfile.syncProfileState({
-        is_published: true,
-        status: 'active',
-        is_onboarded: true,
-        name: userName || authFullName,
-        bio: userBio,
-        avatar: userAvatar,
-        gender: userGender
-      });
-      showToast(window.loc('پروفایل شما با موفقیت در لیست عموم منتشر شد 🚀✨', 'Your profile has been successfully published to public list 🚀✨'));
-    } catch (e) {
-      console.warn('Publish profile error:', e);
-      showToast(window.loc('پروفایل شما با موفقیت منتشر شد 🚀', 'Profile published successfully 🚀'));
-    }
-  };
-
   const handleAddPost = () => {
     if (!newPostText.trim() && !newPostImage.trim()) {
       showToast(window.loc('لطفاً متنی بنویسید یا تصویری/ویدیویی از گالری انتخاب نمایید', 'Please write text or select a photo/video from gallery'));
@@ -669,15 +651,6 @@ export default function ProfileTab(props) {
                     <span className="hidden sm:inline">{window.loc('مدیریت', 'Admin')}</span>
                   </button>
                 )}
-
-                <button
-                  onClick={handlePublishProfile}
-                  className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 backdrop-blur-xl transition-all duration-300 border border-cyan-300/50 shadow-[0_0_20px_rgba(6,182,212,0.4)] flex items-center gap-1.5 text-xs font-black cursor-pointer group"
-                  title={window.loc('انتشار پروفایل', 'Publish Profile')}
-                >
-                  <Sparkles className="w-4 h-4 text-slate-950 group-hover:rotate-12 transition-transform" />
-                  <span className="hidden sm:inline">{window.loc('انتشار پروفایل', 'Publish')}</span>
-                </button>
 
                 <button
                   onClick={() => setIsQrCodeModalOpen(true)}
@@ -764,17 +737,17 @@ export default function ProfileTab(props) {
                   <span className="text-[10px] text-pink-400 font-bold hover:underline cursor-pointer">{window.loc('مشاهده همه', 'View All')}</span>
                 </div>
                 
-                <div className="flex items-center gap-3.5 overflow-x-auto pb-1.5 scrollbar-none">
+                <div className="flex items-center gap-3 overflow-x-auto pb-1.5 scrollbar-none px-0.5">
                   {/* Add Story Button */}
                   <button
                     onClick={() => {
                       if (props.setIsAddStoryModalOpen) props.setIsAddStoryModalOpen(true);
                       else showToast(window.loc('بخش استوری آماده است', 'Story creator active'));
                     }}
-                    className="flex flex-col items-center gap-1.5 shrink-0 group cursor-pointer"
+                    className="flex flex-col items-center gap-1 shrink-0 group cursor-pointer"
                   >
-                    <div className="w-15 h-15 sm:w-16 sm:h-16 rounded-full bg-slate-950/80 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 group-hover:border-pink-400 transition shadow-inner">
-                      <Plus className="w-5 h-5" />
+                    <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-slate-950/80 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 group-hover:border-pink-400 transition shadow-inner shrink-0">
+                      <Plus className="w-4 h-4" />
                     </div>
                     <span className="text-[10px] font-bold text-slate-300">{window.loc('افزودن', 'Add')}</span>
                   </button>
@@ -807,18 +780,18 @@ export default function ProfileTab(props) {
                           });
                         }
                       }}
-                      className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group"
+                      className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
                     >
-                      <div className="w-15 h-15 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-[0_0_15px_rgba(236,72,153,0.3)] overflow-hidden">
+                      <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-md overflow-hidden shrink-0">
                         {(story.media_url || story.imageUrl || story.videoUrl) ? (
                           <img src={story.media_url || story.imageUrl || story.videoUrl} alt={story.title || 'Story'} className="w-full h-full object-cover rounded-full bg-slate-950" />
                         ) : (
-                          <div className="w-full h-full bg-slate-900 flex items-center justify-center rounded-full text-pink-400 font-black text-xs">
+                          <div className="w-full h-full bg-slate-900 flex items-center justify-center rounded-full text-pink-400 font-black text-[10px]">
                             LIVE
                           </div>
                         )}
                       </div>
-                      <span className="text-[10px] font-bold text-slate-300 max-w-[65px] truncate">{story.title || story.caption || story.username || 'Story'}</span>
+                      <span className="text-[10px] font-bold text-slate-300 max-w-[54px] truncate text-center">{story.title || story.caption || story.username || 'Story'}</span>
                     </div>
                   ))}
                 </div>
@@ -1785,16 +1758,6 @@ export default function ProfileTab(props) {
                   {window.loc('انصراف', 'opt out')}
                 </button>
               </div>
-              <button
-                onClick={() => {
-                  handlePublishProfile();
-                  setIsEditModalOpen(false);
-                }}
-                className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-black text-xs shadow-lg hover:scale-[1.01] active:scale-95 transition flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4 text-slate-950" />
-                <span>{window.loc('انتشار پروفایل در لیست عمومی 🚀', 'Publish Profile to Public List 🚀')}</span>
-              </button>
             </div>
           </div>
         </div>

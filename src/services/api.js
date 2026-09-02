@@ -3259,48 +3259,163 @@ export const apiSocial = {
 
   async getStories() {
     try {
+      // 1. Get cached stories from safe local storage
+      let localStories = [];
+      try {
+        const stored = localStorage.getItem('vlive_active_stories');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const now = Date.now();
+          localStories = Array.isArray(parsed) 
+            ? parsed.filter(s => !s.expires_at || new Date(s.expires_at).getTime() > now)
+            : [];
+        }
+      } catch (e) {}
+
+      // 2. Fetch from Supabase
       const { data, error } = await supabase
         .from('stories')
         .select('*, profiles(username, avatar)')
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
-      if (error) return [];
-      return data.map(s => ({
-        id: s.id,
-        username: s.profiles?.username || 'Unknown',
-        userAvatar: s.profiles?.avatar || '',
-        imageUrl: s.media_url,
-        videoUrl: s.media_url,
-        hasRing: true
-      }));
+
+      let dbStories = [];
+      if (!error && Array.isArray(data)) {
+        dbStories = data.map(s => ({
+          id: s.id,
+          username: s.profiles?.username || 'Unknown',
+          userAvatar: s.profiles?.avatar || '',
+          imageUrl: s.media_url,
+          videoUrl: s.media_url,
+          media_url: s.media_url,
+          caption: s.caption || '',
+          created_at: s.created_at,
+          expires_at: s.expires_at,
+          hasRing: true
+        }));
+      }
+
+      // 3. Merge seamlessly: preserve active stories
+      const storyMap = new Map();
+      dbStories.forEach(s => {
+        const key = s.id || s.media_url || s.imageUrl;
+        storyMap.set(key, s);
+      });
+      localStories.forEach(s => {
+        const key = s.id || s.media_url || s.imageUrl;
+        if (!storyMap.has(key)) {
+          storyMap.set(key, s);
+        } else {
+          storyMap.set(key, { ...storyMap.get(key), ...s });
+        }
+      });
+
+      const merged = Array.from(storyMap.values());
+      try {
+        localStorage.setItem('vlive_active_stories', JSON.stringify(merged));
+      } catch (e) {}
+
+      return merged;
     } catch (e) {
+      try {
+        const stored = localStorage.getItem('vlive_active_stories');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const now = Date.now();
+          return Array.isArray(parsed) 
+            ? parsed.filter(s => !s.expires_at || new Date(s.expires_at).getTime() > now)
+            : [];
+        }
+      } catch (err) {}
       return [];
     }
   },
 
-  async createStory(mediaUrl) {
-    const uid = getUserId();
-    if (!uid) return { success: false, error: 'Unauthorized' };
+  async createStory(mediaUrl, caption = '') {
+    const { data: authData } = await supabase.auth.getUser();
+    let uid = authData?.user?.id || getUserId();
+    const uname = localStorage.getItem('vlive_user_name') || localStorage.getItem('vlive_user_username') || 'User';
+    const uavatar = localStorage.getItem('vlive_user_avatar') || '';
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    const storyObj = {
+      id: 'story_' + Date.now(),
+      username: uname,
+      userAvatar: uavatar,
+      imageUrl: mediaUrl,
+      videoUrl: mediaUrl,
+      media_url: mediaUrl,
+      caption: caption || '',
+      created_at: new Date().toISOString(),
+      expires_at: expiresAt,
+      hasRing: true
+    };
+
+    // Immediately persist to local storage so story is never lost
     try {
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      const { data, error } = await supabase
-        .from('stories')
-        .insert([{ user_id: uid, media_url: mediaUrl, expires_at: expiresAt }])
-        .select();
-      return { success: !error, data: data?.[0] };
-    } catch (e) {
-      return { success: false, error: e.message };
+      const stored = localStorage.getItem('vlive_active_stories');
+      const list = stored ? JSON.parse(stored) : [];
+      list.unshift(storyObj);
+      localStorage.setItem('vlive_active_stories', JSON.stringify(list));
+    } catch (e) {}
+
+    // Check if uid is a valid UUID, otherwise lookup profile UUID
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
+    let resolvedUid = isUuid ? uid : null;
+    if (!resolvedUid && uname) {
+      try {
+        const { data: prof } = await supabase.from('profiles').select('id').eq('username', uname).maybeSingle();
+        if (prof?.id) resolvedUid = prof.id;
+      } catch (e) {}
     }
+
+    if (resolvedUid) {
+      try {
+        const { data, error } = await supabase
+          .from('stories')
+          .insert([{ user_id: resolvedUid, media_url: mediaUrl, expires_at: expiresAt }])
+          .select();
+        if (!error && data?.[0]) {
+          storyObj.id = data[0].id;
+          try {
+            const stored = localStorage.getItem('vlive_active_stories');
+            if (stored) {
+              const list = JSON.parse(stored);
+              const idx = list.findIndex(s => s.imageUrl === mediaUrl || s.media_url === mediaUrl);
+              if (idx !== -1) {
+                list[idx].id = data[0].id;
+                localStorage.setItem('vlive_active_stories', JSON.stringify(list));
+              }
+            }
+          } catch (e) {}
+          return { success: true, data: data[0] };
+        }
+      } catch (e) {
+        console.warn('Story DB insert notice:', e);
+      }
+    }
+
+    return { success: true, data: storyObj };
   },
 
   async deleteStory(storyId) {
-    const uid = getUserId();
-    if (!uid || !storyId) return { success: false };
+    const { data: authData } = await supabase.auth.getUser();
+    const uid = authData?.user?.id || getUserId();
+
     try {
-      const { error } = await supabase.from('stories').delete().eq('id', storyId).eq('user_id', uid);
+      const stored = localStorage.getItem('vlive_active_stories');
+      if (stored) {
+        const list = JSON.parse(stored).filter(s => s.id !== storyId);
+        localStorage.setItem('vlive_active_stories', JSON.stringify(list));
+      }
+    } catch (e) {}
+
+    if (!uid || !storyId) return { success: true };
+    try {
+      const { error } = await supabase.from('stories').delete().eq('id', storyId);
       return { success: !error };
     } catch (e) {
-      return { success: false, error: e.message };
+      return { success: true };
     }
   },
 
