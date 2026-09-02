@@ -3282,7 +3282,30 @@ export const apiSocial = {
 
   async getStories() {
     try {
-      // 1. Get cached stories from safe local storage
+      // 1. Fetch live stories from Supabase
+      const { data, error } = await supabase
+        .from('stories')
+        .select('*, profiles(username, avatar, name)')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+
+      let dbStories = [];
+      if (!error && Array.isArray(data)) {
+        dbStories = data.map(s => ({
+          id: s.id,
+          username: s.profiles?.username || s.profiles?.name || 'User',
+          userAvatar: s.profiles?.avatar || '',
+          imageUrl: s.media_url,
+          videoUrl: s.media_url,
+          media_url: s.media_url,
+          caption: s.caption || '',
+          created_at: s.created_at,
+          expires_at: s.expires_at,
+          hasRing: true
+        }));
+      }
+
+      // 2. Fetch locally cached stories
       let localStories = [];
       try {
         const stored = localStorage.getItem('vlive_active_stories');
@@ -3295,50 +3318,44 @@ export const apiSocial = {
         }
       } catch (e) {}
 
-      // 2. Fetch from Supabase
-      const { data, error } = await supabase
-        .from('stories')
-        .select('*, profiles(username, avatar)')
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      let dbStories = [];
-      if (!error && Array.isArray(data)) {
-        dbStories = data.map(s => ({
-          id: s.id,
-          username: s.profiles?.username || 'Unknown',
-          userAvatar: s.profiles?.avatar || '',
-          imageUrl: s.media_url,
-          videoUrl: s.media_url,
-          media_url: s.media_url,
-          caption: s.caption || '',
-          created_at: s.created_at,
-          expires_at: s.expires_at,
-          hasRing: true
-        }));
-      }
-
-      // 3. Merge seamlessly: preserve active stories
+      // 3. Deduplicate strictly by ID and media_url (DB takes precedence)
       const storyMap = new Map();
       dbStories.forEach(s => {
-        const key = s.id || s.media_url || s.imageUrl;
-        storyMap.set(key, s);
+        if (s.id) storyMap.set(String(s.id), s);
+        if (s.media_url) storyMap.set(s.media_url, s);
       });
+
       localStories.forEach(s => {
-        const key = s.id || s.media_url || s.imageUrl;
-        if (!storyMap.has(key)) {
+        const byId = s.id ? storyMap.has(String(s.id)) : false;
+        const byUrl = s.media_url ? storyMap.has(s.media_url) : (s.imageUrl ? storyMap.has(s.imageUrl) : false);
+        if (!byId && !byUrl) {
+          const key = String(s.id || s.media_url || s.imageUrl);
           storyMap.set(key, s);
-        } else {
-          storyMap.set(key, { ...storyMap.get(key), ...s });
         }
       });
 
-      const merged = Array.from(storyMap.values());
+      // Deduplicate to distinct stories array
+      const uniqueStories = [];
+      const seenIds = new Set();
+      const seenUrls = new Set();
+
+      for (const item of storyMap.values()) {
+        const idKey = item.id ? String(item.id) : null;
+        const urlKey = item.media_url || item.imageUrl || null;
+        if (idKey && seenIds.has(idKey)) continue;
+        if (urlKey && seenUrls.has(urlKey)) continue;
+        if (idKey) seenIds.add(idKey);
+        if (urlKey) seenUrls.add(urlKey);
+        uniqueStories.push(item);
+      }
+
+      uniqueStories.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+
       try {
-        localStorage.setItem('vlive_active_stories', JSON.stringify(merged));
+        localStorage.setItem('vlive_active_stories', JSON.stringify(uniqueStories));
       } catch (e) {}
 
-      return merged;
+      return uniqueStories;
     } catch (e) {
       try {
         const stored = localStorage.getItem('vlive_active_stories');
@@ -3354,12 +3371,42 @@ export const apiSocial = {
     }
   },
 
+  subscribeToStories(onStoryChange) {
+    try {
+      const channel = supabase.channel('global_stories_changes');
+      channel
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'stories'
+        }, () => {
+          if (typeof onStoryChange === 'function') {
+            this.getStories().then(stories => onStoryChange(stories)).catch(() => {});
+          }
+        })
+        .subscribe();
+      return channel;
+    } catch (e) {
+      console.warn('subscribeToStories error:', e);
+      return null;
+    }
+  },
+
   async createStory(mediaUrl, caption = '') {
     const { data: authData } = await supabase.auth.getUser();
     let uid = authData?.user?.id || getUserId();
-    const uname = localStorage.getItem('vlive_user_name') || localStorage.getItem('vlive_user_username') || 'User';
+    const uname = localStorage.getItem('vlive_user_name') || localStorage.getItem('vlive_current_username') || localStorage.getItem('vlive_user_username') || 'User';
     const uavatar = localStorage.getItem('vlive_user_avatar') || '';
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
+    let resolvedUid = isUuid ? uid : null;
+    if (!resolvedUid && uname) {
+      try {
+        const { data: prof } = await supabase.from('profiles').select('id').eq('username', uname).maybeSingle();
+        if (prof?.id) resolvedUid = prof.id;
+      } catch (e) {}
+    }
 
     const storyObj = {
       id: 'story_' + Date.now(),
@@ -3374,49 +3421,44 @@ export const apiSocial = {
       hasRing: true
     };
 
-    // Immediately persist to local storage so story is never lost
-    try {
-      const stored = localStorage.getItem('vlive_active_stories');
-      const list = stored ? JSON.parse(stored) : [];
-      list.unshift(storyObj);
-      localStorage.setItem('vlive_active_stories', JSON.stringify(list));
-    } catch (e) {}
-
-    // Check if uid is a valid UUID, otherwise lookup profile UUID
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
-    let resolvedUid = isUuid ? uid : null;
-    if (!resolvedUid && uname) {
-      try {
-        const { data: prof } = await supabase.from('profiles').select('id').eq('username', uname).maybeSingle();
-        if (prof?.id) resolvedUid = prof.id;
-      } catch (e) {}
-    }
-
     if (resolvedUid) {
       try {
         const { data, error } = await supabase
           .from('stories')
           .insert([{ user_id: resolvedUid, media_url: mediaUrl, expires_at: expiresAt }])
-          .select();
+          .select('*, profiles(username, avatar, name)');
+
         if (!error && data?.[0]) {
-          storyObj.id = data[0].id;
+          const s = data[0];
+          storyObj.id = s.id;
+          storyObj.username = s.profiles?.username || s.profiles?.name || uname;
+          storyObj.userAvatar = s.profiles?.avatar || uavatar;
+          storyObj.created_at = s.created_at;
+
+          // Update local cache idempotently
           try {
             const stored = localStorage.getItem('vlive_active_stories');
-            if (stored) {
-              const list = JSON.parse(stored);
-              const idx = list.findIndex(s => s.imageUrl === mediaUrl || s.media_url === mediaUrl);
-              if (idx !== -1) {
-                list[idx].id = data[0].id;
-                localStorage.setItem('vlive_active_stories', JSON.stringify(list));
-              }
-            }
+            let list = stored ? JSON.parse(stored) : [];
+            list = list.filter(item => item.id !== storyObj.id && item.media_url !== mediaUrl && item.imageUrl !== mediaUrl);
+            list.unshift(storyObj);
+            localStorage.setItem('vlive_active_stories', JSON.stringify(list));
           } catch (e) {}
-          return { success: true, data: data[0] };
+
+          return { success: true, data: storyObj };
         }
       } catch (e) {
         console.warn('Story DB insert notice:', e);
       }
     }
+
+    // Fallback: update local storage with temp storyObj
+    try {
+      const stored = localStorage.getItem('vlive_active_stories');
+      let list = stored ? JSON.parse(stored) : [];
+      list = list.filter(item => item.id !== storyObj.id && item.media_url !== mediaUrl && item.imageUrl !== mediaUrl);
+      list.unshift(storyObj);
+      localStorage.setItem('vlive_active_stories', JSON.stringify(list));
+    } catch (e) {}
 
     return { success: true, data: storyObj };
   },

@@ -1543,20 +1543,25 @@ export default function App() {
   const handlePublishStory = useCallback(async (storyData) => {
     const mediaUrl = typeof storyData === 'string' ? storyData : (storyData?.mediaUrl || storyData?.url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600');
     const caption = typeof storyData === 'object' && storyData?.caption ? storyData.caption : '';
-    
+    const activeUsername = currentUsername || authUsername || currentUser?.username || 'User';
+    const activeAvatar = userAvatar || currentUser?.avatar_url || currentUser?.avatar || '';
+
     // Create optimistic local story item
+    const tempId = 'story_' + Date.now();
     const newStoryItem = {
-      id: 'story_' + Date.now(),
-      username: currentUsername || authUsername || currentUser?.username || 'User',
-      userAvatar: userAvatar || currentUser?.avatar_url || currentUser?.avatar || '',
+      id: tempId,
+      username: activeUsername,
+      userAvatar: activeAvatar,
       imageUrl: mediaUrl,
       videoUrl: mediaUrl,
+      media_url: mediaUrl,
       caption: caption,
       created_at: new Date().toISOString()
     };
 
     setAdvancedStories(prev => {
-      const list = [newStoryItem, ...(prev || [])];
+      const filtered = (prev || []).filter(s => s.imageUrl !== mediaUrl && s.media_url !== mediaUrl);
+      const list = [newStoryItem, ...filtered];
       try {
         localStorage.setItem('vlive_active_stories', JSON.stringify(list));
       } catch (e) {}
@@ -1567,24 +1572,19 @@ export default function App() {
 
     try {
       if (typeof apiSocial !== "undefined" && apiSocial.createStory) {
-        await apiSocial.createStory(mediaUrl, caption);
-        apiSocial.getStories().then(res => {
-          if (Array.isArray(res) && res.length > 0) {
-            setAdvancedStories(prev => {
-              const map = new Map();
-              res.forEach(item => map.set(item.id || item.imageUrl || item.media_url, item));
-              (prev || []).forEach(item => {
-                const key = item.id || item.imageUrl || item.media_url;
-                if (!map.has(key)) map.set(key, item);
-              });
-              const merged = Array.from(map.values());
-              try {
-                localStorage.setItem('vlive_active_stories', JSON.stringify(merged));
-              } catch (e) {}
-              return merged;
-            });
-          }
-        }).catch(() => {});
+        const createRes = await apiSocial.createStory(mediaUrl, caption);
+        const createdStory = createRes?.data || null;
+
+        // Fetch fresh stories from backend and deduplicate
+        const freshStories = await apiSocial.getStories();
+        if (Array.isArray(freshStories) && freshStories.length > 0) {
+          setAdvancedStories(freshStories);
+        } else if (createdStory) {
+          setAdvancedStories(prev => {
+            const list = (prev || []).map(s => (s.id === tempId || s.media_url === mediaUrl || s.imageUrl === mediaUrl) ? { ...s, ...createdStory } : s);
+            return list;
+          });
+        }
       }
     } catch (e) {
       console.warn('Story background sync note:', e);
@@ -2515,23 +2515,20 @@ export default function App() {
     }
     if (typeof apiSocial !== "undefined" && apiSocial.getStories) {
       apiSocial.getStories().then(res => {
-        if (Array.isArray(res) && res.length > 0) {
-          setAdvancedStories(prev => {
-            const map = new Map();
-            res.forEach(item => map.set(item.id || item.imageUrl || item.media_url, item));
-            (prev || []).forEach(item => {
-              const key = item.id || item.imageUrl || item.media_url;
-              if (!map.has(key)) map.set(key, item);
-            });
-            const merged = Array.from(map.values());
-            try {
-              localStorage.setItem('vlive_active_stories', JSON.stringify(merged));
-            } catch (e) {}
-            return merged;
-          });
+        if (Array.isArray(res)) {
+          setAdvancedStories(res);
         }
-      });
+      }).catch(err => console.warn('Stories load err:', err));
     }
+
+    // Realtime story sync across users
+    const storyChannel = (typeof apiSocial !== "undefined" && typeof apiSocial.subscribeToStories === "function")
+      ? apiSocial.subscribeToStories((freshStories) => {
+          if (Array.isArray(freshStories)) {
+            setAdvancedStories(freshStories);
+          }
+        })
+      : null;
     apiHome.getActiveStreams().then(streams => {
       setStreamsList(Array.isArray(streams) ? streams : []);
     }).catch(err => console.warn('Streams fetch notice:', err));
@@ -2667,6 +2664,7 @@ export default function App() {
       window.removeEventListener('vlive_stream_started', handleLocalStreamStarted);
       window.removeEventListener('vlive_stream_ended', handleLocalStreamEnded);
       try { liveBroadcastChannel?.unsubscribe(); } catch (e) {}
+      try { storyChannel?.unsubscribe(); } catch (e) {}
       activeNotifChannels.forEach(ch => {
         try { ch.unsubscribe(); } catch (e) {}
       });
