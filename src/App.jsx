@@ -33,7 +33,6 @@ import VipAndRewardModals from './modals/VipAndRewardModals';
 import NotificationsModal from './modals/NotificationsModal';
 import StreamerApplicationModal from './modals/StreamerApplicationModal';
 import AdminDashboardModal from './modals/AdminDashboardModal';
-import PermissionsPromptModal from './modals/PermissionsPromptModal';
 import HelpCenterModal from './modals/HelpCenterModal';
 import {
   LuckyWheelModal, PartyRoomStageModal, CreateAgencyModal, StreamerWelcomeGuideModal
@@ -4556,16 +4555,6 @@ export default function App() {
           setIsSupportModalOpen(false);
           setIsKycModalOpen(true);
         }} adminNetworkFee={adminNetworkFee} adminMinWithdrawal={adminMinWithdrawal} transactionsList={transactionsList} setTransactionsList={setTransactionsList} adminTicketsList={adminTicketsList} setAdminTicketsList={setAdminTicketsList} />}
-
-      {/* FIRST TIME SYSTEM PERMISSIONS & TERMS MODAL */}
-      <PermissionsPromptModal 
-        isOpen={isPermissionsPromptOpen} 
-        requestedPermissionType={permissionsRequestedType}
-        onAcceptAll={(perms) => handleSavePermissionsPrompt(perms)} 
-        onAcceptBasic={() => handleSavePermissionsPrompt(false)} 
-        loc={loc} 
-        isRtl={isRtl} 
-      />
 
       {/* VIEW OTHER USER PROFILE MODAL */}
       <UserProfileViewModal isOpen={isUserProfileModalOpen} onClose={() => {

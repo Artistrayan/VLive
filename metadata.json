@@ -1,6 +1,6 @@
 {
   "name": "V.Live",
   "description": "V.Live Real-time Live Streaming Platform with Supabase and React",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["camera", "microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -2,12 +2,14 @@ import { APP_LANGUAGES as DEFAULT_APP_LANGUAGES } from '../constants/i18n';
 import React from 'react';
 import { safeStorage } from '../utils/safeStorage';
 import { apiAuth, apiCalls, apiProfile } from '../services/api';
+import { cameraPermissionService } from '../services/cameraPermissionService';
 import { isUsernameAlreadyTaken, normalizeUsername, isValidUsername } from '../utils/usernameUtils';
 import { 
   Settings, X, Search, User, ShieldCheck, Bell, Lock, Globe, Palette,
   Volume2, Video, Database, Award, HelpCircle, FileText, Info, Camera,
   Crown, Smartphone, Check, ChevronRight, Sparkles, LogOut, Moon, Sun, Monitor,
-  Send, CheckCircle2, EyeOff, Eye, Shield, Sliders, MessageSquare, Wallet, Disc, Zap, Ban, Key, Share2, Copy, Trash2, AlertTriangle
+  Send, CheckCircle2, EyeOff, Eye, Shield, Sliders, MessageSquare, Wallet, Disc, Zap, Ban, Key, Share2, Copy, Trash2, AlertTriangle,
+  Mic, Image
 } from 'lucide-react';
 
 export default function SettingsModal(props) {
@@ -117,7 +119,51 @@ export default function SettingsModal(props) {
       setBlockedUsers(props.blockedUsers);
     }
   }, [props.blockedUsers]);
-  const [systemPerms, setSystemPerms] = React.useState(props.systemPerms || { camera: true, mic: true, location: true, notifs: true });
+  const [systemPerms, setSystemPerms] = React.useState(() => ({
+    camera: safeStorage.getItem('vlive_camera_permission_granted') !== 'false',
+    microphone: safeStorage.getItem('vlive_mic_permission_granted') !== 'false',
+    gallery: safeStorage.getItem('vlive_perm_gallery_granted') !== 'false',
+    notifications: safeStorage.getItem('vlive_notif_permission_granted') !== 'false'
+  }));
+
+  React.useEffect(() => {
+    if (isSettingsModalOpen) {
+      setSystemPerms({
+        camera: safeStorage.getItem('vlive_camera_permission_granted') !== 'false',
+        microphone: safeStorage.getItem('vlive_mic_permission_granted') !== 'false',
+        gallery: safeStorage.getItem('vlive_perm_gallery_granted') !== 'false',
+        notifications: safeStorage.getItem('vlive_notif_permission_granted') !== 'false'
+      });
+    }
+  }, [isSettingsModalOpen]);
+
+  const handleToggleSystemPerm = async (key) => {
+    const nextVal = !systemPerms[key];
+    setSystemPerms(prev => ({ ...prev, [key]: nextVal }));
+
+    if (key === 'camera') {
+      safeStorage.setItem('vlive_camera_permission_granted', nextVal ? 'true' : 'false');
+      if (nextVal) {
+        try { await cameraPermissionService.ensurePermissions({ video: true, audio: false }); } catch (e) {}
+      }
+      showToast(nextVal ? loc('دسترسی دوربین فعال شد 📷', 'Camera access enabled 📷') : loc('دسترسی دوربین غیرفعال شد', 'Camera access disabled'));
+    } else if (key === 'microphone') {
+      safeStorage.setItem('vlive_mic_permission_granted', nextVal ? 'true' : 'false');
+      if (nextVal) {
+        try { await cameraPermissionService.ensurePermissions({ video: false, audio: true }); } catch (e) {}
+      }
+      showToast(nextVal ? loc('دسترسی میکروفون فعال شد 🎙️', 'Microphone access enabled 🎙️') : loc('دسترسی میکروفون غیرفعال شد', 'Microphone access disabled'));
+    } else if (key === 'gallery') {
+      safeStorage.setItem('vlive_perm_gallery_granted', nextVal ? 'true' : 'false');
+      showToast(nextVal ? loc('دسترسی گالری فعال شد 🖼️', 'Gallery access enabled 🖼️') : loc('دسترسی گالری غیرفعال شد', 'Gallery access disabled'));
+    } else if (key === 'notifications') {
+      safeStorage.setItem('vlive_notif_permission_granted', nextVal ? 'true' : 'false');
+      if (nextVal && typeof Notification !== 'undefined' && Notification.requestPermission) {
+        Notification.requestPermission().catch(() => {});
+      }
+      showToast(nextVal ? loc('دسترسی اعلان‌ها فعال شد 🔔', 'Notifications enabled 🔔') : loc('دسترسی اعلان‌ها غیرفعال شد', 'Notifications disabled'));
+    }
+  };
   const [feedbackText, setFeedbackText] = React.useState(props.feedbackText || '');
   const setIsLoggedIn = props.setIsLoggedIn || (() => {});
   const setAuthStep = props.setAuthStep || (() => {});
@@ -1014,30 +1060,70 @@ export default function SettingsModal(props) {
                 <div className="p-4 rounded-3xl bg-slate-950/80 border border-cyan-500/30 backdrop-blur-xl space-y-3 shadow-lg">
                   <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
                     <Key className="w-5 h-5 text-cyan-400" />
-                    <h3 className="text-sm font-bold text-white">{window.loc('۱۳. App System Permissions (دسترسی‌ها)', '13. App System Permissions')}</h3>
+                    <h3 className="text-sm font-bold text-white">{window.loc('۱۳. مجوزهای دسترسی برنامه', '13. App System Permissions')}</h3>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                     {[
-                      { key: 'camera', label: '📷 Camera' },
-                      { key: 'microphone', label: '🎙 Microphone' },
-                      { key: 'notifications', label: '🔔 Notifications' },
-                      { key: 'gallery', label: '🖼 Gallery' },
-                      { key: 'location', label: '📍 Location' }
-                    ].map(perm => (
-                      <div key={perm.key} className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                        <span className="font-bold text-white">{perm.label}</span>
-                        <input
-                          type="checkbox"
-                          checked={systemPerms[perm.key]}
-                          onChange={e => {
-                            const val = e.target.checked;
-                            setSystemPerms(prev => ({ ...prev, [perm.key]: val }));
-                          }}
-                          className="accent-cyan-500 w-4 h-4 rounded"
-                        />
-                      </div>
-                    ))}
+                      { 
+                        key: 'camera', 
+                        label: window.loc('دوربین (جلو و عقب)', 'Camera (Front & Rear)'), 
+                        desc: window.loc('پخش زنده و تماس ویدیویی', 'Live stream & video calls'), 
+                        icon: Camera, 
+                        color: 'text-purple-400' 
+                      },
+                      { 
+                        key: 'microphone', 
+                        label: window.loc('میکروفون', 'Microphone'), 
+                        desc: window.loc('مکالمه صوتی و صدای لایو', 'Voice calls & live audio'), 
+                        icon: Mic, 
+                        color: 'text-pink-400' 
+                      },
+                      { 
+                        key: 'gallery', 
+                        label: window.loc('گالری و رسانه', 'Gallery & Media'), 
+                        desc: window.loc('انتخاب عکس پروفایل و ارسال پست', 'Profile photo & posts'), 
+                        icon: Image, 
+                        color: 'text-cyan-400' 
+                      },
+                      { 
+                        key: 'notifications', 
+                        label: window.loc('نمایش اعلان‌ها', 'Notifications'), 
+                        desc: window.loc('پیام‌ها و هشدارهای برنامه', 'Messages & app alerts'), 
+                        icon: Bell, 
+                        color: 'text-amber-400' 
+                      }
+                    ].map(perm => {
+                      const Icon = perm.icon;
+                      const isChecked = Boolean(systemPerms[perm.key]);
+                      return (
+                        <div 
+                          key={perm.key} 
+                          onClick={() => handleToggleSystemPerm(perm.key)}
+                          className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition ${
+                            isChecked 
+                              ? 'bg-slate-900/90 border-cyan-500/40 text-white shadow-sm' 
+                              : 'bg-slate-950 border-slate-800/80 text-slate-400 hover:border-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className={`p-2 rounded-xl bg-slate-950 border border-slate-800 ${perm.color}`}>
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <span className="font-bold text-xs text-white block">{perm.label}</span>
+                              <span className="text-[10px] text-slate-400 block">{perm.desc}</span>
+                            </div>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {}}
+                            className="accent-cyan-500 w-4 h-4 rounded cursor-pointer pointer-events-none"
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
