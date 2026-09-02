@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   AlertTriangle, ArrowRight, BadgeCheck, Ban, Bell, Calendar, Check, CheckCircle, CheckCircle2,
-  Clock, Coins as CoinsIcon, Compass, Crown, Eye, FileText, Filter,
+  Clock, Coins as CoinsIcon, Compass, Crown, Edit3, Eye, FileText, Filter,
   Flag, Flame, Gift, Headphones, Heart, Home, Languages, LogIn,
   MessageSquare, Plus, Radio, Send, Settings, Shield, ShieldCheck, Sliders,
-  Smartphone, Sparkles, Star, Swords, ThumbsUp, Users, Video, X, Zap
+  Smartphone, Sparkles, Star, Swords, ThumbsUp, Trash2, Users, Video, X, Zap
 } from 'lucide-react';
 
 // Overlays & Components
@@ -513,6 +513,27 @@ export default function App() {
   const isUserRayan = isUserSuperAdmin;
 
   const isTermsAccepted = termsAgreed;
+
+  const userGenderVal = String(userGender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
+  const isFemaleUser = Boolean(
+    userGenderVal === 'female' ||
+    userGenderVal === 'خانم' ||
+    userGenderVal === 'زن' ||
+    userGenderVal === 'f'
+  );
+
+  const isUserAdmin = Boolean(
+    isUserRayan ||
+    isUserSuperAdmin ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    String(currentTelegramId || '').trim() === '8933698119' ||
+    String(currentUsername || userName || '').toLowerCase() === 'rayan'
+  );
+
+  // Can user create stories, publish posts, and broadcast live?
+  // Strictly permitted for female users and admins only! Male users are viewers/audience.
+  const canPublishAndBroadcast = Boolean(isUserAdmin || isFemaleUser);
 
   const currentUser = useMemo(() => {
     if (!isLoggedIn) return null;
@@ -2812,32 +2833,6 @@ export default function App() {
   if (isInitialSplashActive || !isLoggedIn) {
     return <VLiveEntrySplashLoader onLoadingComplete={handleInitialSplashComplete} />;
   }
-  // GENDER CHECK: Must be female
-  const userGenderVal = String(userGender || currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
-  const isFemaleUser = Boolean(
-    userGenderVal === 'female' ||
-    userGenderVal === 'خانم' ||
-    userGenderVal === 'زن' ||
-    userGenderVal === 'f'
-  );
-
-  const isUserAdmin = Boolean(
-    isUserRayan ||
-    isUserSuperAdmin ||
-    userRole === 'admin' ||
-    userRole === 'super_admin' ||
-    currentUser?.role === 'admin' ||
-    currentUser?.role === 'super_admin' ||
-    currentUser?.user_type === 'ADMIN' ||
-    currentUser?.user_type === 'SUPER_ADMIN' ||
-    String(currentUser?.telegram_id || '').trim() === '8933698119' ||
-    String(currentUsername || userName || '').toLowerCase() === 'rayan' ||
-    String(currentUser?.username || '').toLowerCase() === 'rayan'
-  );
-
-  // Can user create stories, publish posts, and broadcast live?
-  // Strictly permitted for female users and admins only! Male users are viewers/audience.
-  const canPublishAndBroadcast = Boolean(isUserAdmin || isFemaleUser);
 
   // MANAGEMENT APPROVAL CHECK
   const isManagementApproved = Boolean(
