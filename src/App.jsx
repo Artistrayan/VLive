@@ -567,14 +567,23 @@ export default function App() {
 
   const filteredUsersList = useMemo(() => {
     if (!Array.isArray(usersList)) return [];
-    return usersList.filter(u => {
-      if (!u) return false;
-      if (userFilter === 'verified' && !u.isVerified && !u.is_verified) return false;
-      if (userFilter === 'online' && u.online_status !== 'online') return false;
-      if (userFilter === 'vip' && !u.isVip && !u.vip) return false;
-      return true;
-    });
-  }, [usersList, userFilter]);
+    let list = [...usersList].filter(u => u && u.status !== 'banned' && !u.isBanned);
+    
+    if (userFilter === 'online') {
+      list = list.filter(u => u.online || u.online_status === 'online' || u.status === 'online');
+    } else if (userFilter === 'followers') {
+      list = list.filter(u => (followedUsers || []).includes(u.id) || (followedUsers || []).includes(u.username) || (apiProfile && typeof apiProfile.isFollowing === 'function' && apiProfile.isFollowing(u.id || u.username)));
+    } else if (userFilter === 'verified') {
+      list = list.filter(u => Boolean(u.isVerified || u.is_verified || u.verified));
+    } else if (userFilter === 'streamers') {
+      list = list.filter(u => Boolean(u.isStreamer || u.is_streamer || u.user_type === 'STREAMER' || u.role === 'streamer'));
+    } else if (userFilter === 'top_level') {
+      list = [...list].sort((a, b) => (Number(b.level || 1)) - (Number(a.level || 1)));
+    } else if (userFilter === 'popular') {
+      list = [...list].sort((a, b) => (Number(b.likes_count || b.likes || 0)) - (Number(a.likes_count || a.likes || 0)));
+    }
+    return list;
+  }, [usersList, userFilter, followedUsers]);
 
   const totalUnreadMessages = useMemo(() => {
     if (!Array.isArray(conversations)) return 0;
@@ -1554,6 +1563,82 @@ export default function App() {
   const handleCloseStory = useCallback(() => {
     setActiveStoryView(null);
   }, []);
+
+  const handleDeleteStory = useCallback(async (storyId) => {
+    if (!storyId) return;
+    try {
+      if (typeof apiSocial !== 'undefined' && apiSocial.deleteStory) {
+        await apiSocial.deleteStory(storyId);
+      }
+      setAdvancedStories(prev => {
+        const next = (prev || []).filter(s => s.id !== storyId);
+        try { localStorage.setItem('vlive_active_stories', JSON.stringify(next)); } catch (e) {}
+        return next;
+      });
+      showToast(loc('استوری با موفقیت حذف شد 🗑️', 'Story deleted successfully 🗑️'));
+      handleCloseStory();
+    } catch (e) {
+      console.warn('Delete story error:', e);
+      setAdvancedStories(prev => (prev || []).filter(s => s.id !== storyId));
+      showToast(loc('استوری حذف شد 🗑️', 'Story deleted 🗑️'));
+      handleCloseStory();
+    }
+  }, [handleCloseStory, showToast, loc]);
+
+  const handleEditStory = useCallback(async (storyId, currentCaption) => {
+    if (!storyId) return;
+    const newCaption = prompt(loc('ویرایش متن/کپشن استوری:', 'Edit story caption:'), currentCaption || '');
+    if (newCaption === null) return;
+    try {
+      if (typeof apiSocial !== 'undefined' && apiSocial.updateStory) {
+        await apiSocial.updateStory(storyId, { caption: newCaption, title: newCaption });
+      }
+      setAdvancedStories(prev => {
+        const next = (prev || []).map(s => s.id === storyId ? { ...s, caption: newCaption, title: newCaption } : s);
+        try { localStorage.setItem('vlive_active_stories', JSON.stringify(next)); } catch (e) {}
+        return next;
+      });
+      setActiveStoryView(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          group: {
+            ...prev.group,
+            items: (prev.group.items || []).map(it => it.id === storyId ? { ...it, caption: newCaption } : it)
+          }
+        };
+      });
+      showToast(loc('استوری ویرایش شد ✏️', 'Story updated ✏️'));
+    } catch (e) {
+      console.warn('Edit story error:', e);
+      showToast(loc('ویرایش انجام شد', 'Updated'));
+    }
+  }, [showToast, loc]);
+
+  const handleToggleLikeUserCard = useCallback(async (e, targetUser) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!targetUser) return;
+    const targetId = targetUser.id || targetUser.username;
+    try {
+      const res = await apiProfile.toggleLikeProfile(targetId);
+      if (res && res.success) {
+        setUsersList(prev => (Array.isArray(prev) ? prev : []).map(u => {
+          if (String(u.id) === String(targetId) || u.username === targetUser.username) {
+            return {
+              ...u,
+              likes_count: res.likes_count,
+              likes: res.likes_count,
+              isLiked: res.isLiked
+            };
+          }
+          return u;
+        }));
+        showToast(res.isLiked ? loc('❤️ پروفایل کاربر لایک شد!', '❤️ User profile liked!') : loc('لایک برداشته شد', 'Like removed'));
+      }
+    } catch (err) {
+      console.warn('Like user card error:', err);
+    }
+  }, [showToast, loc]);
 
   const handleNextStoryItem = useCallback(() => {
     setActiveStoryView(null);
@@ -2803,7 +2888,7 @@ export default function App() {
       <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/80 px-3 sm:px-4 py-2 shadow-md w-full shrink-0">
         <div className="flex items-center justify-between max-w-7xl mx-auto w-full gap-2">
           
-          {/* Left: User Profile & Coins + Streamer Camera Button */}
+          {/* Left: User Profile & Coins */}
           <div className="flex items-center gap-2">
             <button onClick={() => setActiveTab('profile')} className="relative group shrink-0">
               <div className="w-9 h-9 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-cyan-500 shadow-md">
@@ -2819,14 +2904,6 @@ export default function App() {
                 <span className="text-[10px] font-black text-amber-300">{userCoins.toLocaleString()}</span>
               </button>
             </div>
-
-            {/* Camera Go-Live Icon Button (Shown for Admins or Approved Female Streamers) */}
-            {isApprovedStreamerOrAdmin && (
-              <button onClick={() => setIsLiveStudioOpen(true)} className="ml-1 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 via-purple-600 to-cyan-500 border border-pink-400/80 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-300 relative shrink-0 shadow-[0_0_15px_rgba(236,72,153,0.7)] group" title={loc('اجرا و شروع لایواستریم 🎥', 'Start Live Studio Broadcast 🎥')}>
-                <Video className="w-4 h-4 text-white animate-pulse" />
-                <span className="absolute -top-1 -right-1 bg-lime-400 text-slate-950 text-[8px] font-black w-3.5 h-3.5 flex items-center justify-center rounded-full border border-slate-950 shadow-md">+</span>
-              </button>
-            )}
           </div>
 
           {/* Center App Title */}
@@ -3013,86 +3090,130 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Compact User Filter Bar */}
-                <div className="flex items-center justify-between gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800/80">
-                  <div className="flex items-center gap-1">
-                    {['all', 'online', 'followers'].map(f => <button key={f} onClick={() => setUserFilter(f)} className={`px-3 py-1 rounded-lg text-[11px] font-extrabold transition ${userFilter === f ? 'bg-pink-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}>
-                        {f === 'all' ? 'All' : f === 'online' ? 'Online' : 'Following'}
-                      </button>)}
-                  </div>
-                  <button onClick={() => setIsSmartMatchModalOpen(true)} className="p-1.5 rounded-lg bg-slate-900 text-cyan-400 hover:bg-slate-800 transition" title="Filters">
+                {/* Scrollable Compact User Filter Bar (7 Distinct Cards) */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar dir-rtl">
+                  {[
+                    { id: 'all', label: loc('همه', 'All'), icon: '👥' },
+                    { id: 'online', label: loc('آنلاین', 'Online'), icon: '🟢' },
+                    { id: 'followers', label: loc('دنبال‌کنندگان', 'Following'), icon: '🤝' },
+                    { id: 'verified', label: loc('تاییدشده', 'Verified'), icon: '✅' },
+                    { id: 'streamers', label: loc('استریمرها', 'Streamers'), icon: '🎥' },
+                    { id: 'top_level', label: loc('سطح برتر', 'Top Level'), icon: '⭐' },
+                    { id: 'popular', label: loc('محبوب‌ترین', 'Popular'), icon: '❤️' }
+                  ].map(f => {
+                    const isActive = userFilter === f.id;
+                    return (
+                      <button
+                        key={f.id}
+                        onClick={() => setUserFilter(f.id)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-black shrink-0 transition-all border shadow-sm ${
+                          isActive
+                            ? 'bg-gradient-to-r from-pink-500 to-purple-600 border-pink-400 text-white shadow-pink-500/20 scale-102'
+                            : 'bg-slate-900/90 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
+                        }`}
+                      >
+                        <span className="text-xs">{f.icon}</span>
+                        <span>{f.label}</span>
+                      </button>
+                    );
+                  })}
+                  <button onClick={() => setIsSmartMatchModalOpen(true)} className="p-2 rounded-2xl bg-slate-900 border border-slate-800 text-cyan-400 hover:bg-slate-800 shrink-0 transition" title="Filters">
                     <Filter className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
                 {/* USER CARDS GRID (COMPACT, SLEEK ROUNDED EDGES, DENSE DISPLAY) */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-                  {filteredUsersList.map(user => <div key={user.id} className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800/90 shadow-md hover:border-pink-500/40 transition duration-300 group relative flex flex-col">
-                      
-                      {/* Image Container with aspect ratio */}
-                      <div className="aspect-[4/5] relative cursor-pointer overflow-hidden" onClick={() => {
-                        const activeStreamForUser = (streamsList || []).find(s => s && (
-                          (s.host_id && String(s.host_id) === String(user.id)) ||
-                          (s.host && (s.host === user.name || s.host === user.username))
-                        ));
-                        if (activeStreamForUser) {
-                          setViewingStream(activeStreamForUser);
-                        } else {
-                          setSelectedUser(user);
-                          setIsUserProfileModalOpen(true);
-                        }
-                      }}>
-                        {user.avatar ? (
-                          <img src={user.avatar} alt={user.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                        ) : (
-                          <div className="w-full h-full bg-slate-900 flex items-center justify-center text-sm font-bold text-slate-500 group-hover:scale-105 transition duration-500">
-                            {(user.name || user.username || 'U').charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none" />
-                        
-                        {/* Top Left: Online Dot */}
-                        {user.online && <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-slate-950/70 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-slate-800/60">
-                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                             <span className="text-[8px] font-black text-emerald-400">Online</span>
-                          </div>}
+                  {filteredUsersList.map(user => {
+                    const isUserCardLiked = Boolean(
+                      user.isLiked ||
+                      (typeof apiProfile !== 'undefined' && typeof apiProfile.isUserProfileLiked === 'function' && apiProfile.isUserProfileLiked(user.id || user.username))
+                    );
+                    const userLikesCount = Number(user.likes_count || user.likes || 0);
 
-                        {/* Top Right: Live Badge (ONLY if real active stream exists) */}
-                        {Boolean((streamsList || []).some(s => s && ((s.host_id && String(s.host_id) === String(user.id)) || (s.host && (s.host === user.name || s.host === user.username))))) && (
-                          <div className="absolute top-1.5 right-1.5 flex items-center gap-1 bg-rose-600/90 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-rose-400/60">
-                             <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                             <span className="text-[8px] font-black text-white">LIVE</span>
-                          </div>
-                        )}
+                    return (
+                      <div key={user.id} className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800/90 shadow-md hover:border-pink-500/40 transition duration-300 group relative flex flex-col">
                         
-                        {/* Bottom Info Overlay */}
-                        <div className="absolute bottom-1.5 left-2 right-2 pointer-events-none">
-                          <h4 className="text-xs font-black text-white drop-shadow-md truncate flex items-center gap-1">
-                            <span className="truncate">{user.name}{user.age ? `, ${user.age}` : ''}</span>
-                            {Boolean(user?.is_verified || user?.isVerified || user?.verified) && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0 inline-block" />}
-                          </h4>
-                          <p className="text-[9px] text-pink-300 font-bold drop-shadow-md truncate">📍 {user.city} • Lv.{user.level}</p>
+                        {/* Image Container with aspect ratio */}
+                        <div className="aspect-[4/5] relative cursor-pointer overflow-hidden" onClick={() => {
+                          const activeStreamForUser = (streamsList || []).find(s => s && (
+                            (s.host_id && String(s.host_id) === String(user.id)) ||
+                            (s.host && (s.host === user.name || s.host === user.username))
+                          ));
+                          if (activeStreamForUser) {
+                            setViewingStream(activeStreamForUser);
+                          } else {
+                            setSelectedUser(user);
+                            setIsUserProfileModalOpen(true);
+                          }
+                        }}>
+                          {user.avatar ? (
+                            <img src={user.avatar} alt={user.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                          ) : (
+                            <div className="w-full h-full bg-slate-900 flex items-center justify-center text-sm font-bold text-slate-500 group-hover:scale-105 transition duration-500">
+                              {(user.name || user.username || 'U').charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none" />
+                          
+                          {/* Top Left: Online Dot */}
+                          {user.online && <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-slate-950/70 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-slate-800/60">
+                               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                               <span className="text-[8px] font-black text-emerald-400">Online</span>
+                            </div>}
+
+                          {/* Top Right: Heart Like Button with Real Count */}
+                          <button
+                            onClick={(e) => handleToggleLikeUserCard(e, user)}
+                            className={`absolute top-1.5 right-1.5 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full backdrop-blur-md border transition-all shadow-md active:scale-90 ${
+                              isUserCardLiked
+                                ? 'bg-rose-600/90 border-rose-400 text-white shadow-rose-500/30'
+                                : 'bg-slate-950/75 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-900'
+                            }`}
+                            title={loc('لایک پروفایل', 'Like Profile')}
+                          >
+                            <Heart className={`w-3 h-3 ${isUserCardLiked ? 'fill-white text-white' : 'text-pink-400'}`} />
+                            <span className="text-[9px] font-black">{userLikesCount}</span>
+                          </button>
+
+                          {/* Top Right LIVE Badge (if streamer has real active live) */}
+                          {Boolean((streamsList || []).some(s => s && ((s.host_id && String(s.host_id) === String(user.id)) || (s.host && (s.host === user.name || s.host === user.username))))) && (
+                            <div className="absolute top-7 right-1.5 flex items-center gap-1 bg-rose-600/90 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-rose-400/60 z-10">
+                               <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                               <span className="text-[8px] font-black text-white">LIVE</span>
+                            </div>
+                          )}
+                          
+                          {/* Bottom Info Overlay */}
+                          <div className="absolute bottom-1.5 left-2 right-2 pointer-events-none">
+                            <h4 className="text-xs font-black text-white drop-shadow-md truncate flex items-center gap-1">
+                              <span className="truncate">{user.name}{user.age ? `, ${user.age}` : ''}</span>
+                              {Boolean(user?.is_verified || user?.isVerified || user?.verified) && <BadgeCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0 inline-block" />}
+                            </h4>
+                            <p className="text-[9px] text-pink-300 font-bold drop-shadow-md truncate">📍 {user.city} • Lv.{user.level}</p>
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Action Buttons Row */}
-                      <div className="p-1.5 flex items-center gap-1 bg-slate-950 border-t border-slate-900">
-                        <button onClick={e => {
-                      e.stopPropagation();
-                      handleInitiateCall(user, 'video');
-                    }} className="flex-1 py-1 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400 flex items-center justify-center hover:bg-pink-500 hover:text-white transition" title="Video Call">
-                          <Video className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={e => {
-                      e.stopPropagation();
-                      setActiveConversationId(user.id);
-                      setActiveTab('messages');
-                    }} className="flex-1 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center hover:bg-cyan-500 hover:text-white transition" title="Direct Message">
-                          <MessageSquare className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                        {/* Action Buttons Row */}
+                        <div className="p-1.5 flex items-center gap-1 bg-slate-950 border-t border-slate-900">
+                          <button onClick={e => {
+                            e.stopPropagation();
+                            handleInitiateCall(user, 'video');
+                          }} className="flex-1 py-1 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400 flex items-center justify-center hover:bg-pink-500 hover:text-white transition" title="Video Call">
+                            <Video className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={e => {
+                            e.stopPropagation();
+                            setActiveConversationId(user.id);
+                            setActiveTab('messages');
+                          }} className="flex-1 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center hover:bg-cyan-500 hover:text-white transition" title="Direct Message">
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
 
-                    </div>)}
+                      </div>
+                    );
+                  })}
                 </div>
 
               </div>}
@@ -3724,6 +3845,33 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-2">
+                {/* Story Owner or Admin Actions: Edit & Delete */}
+                {(activeStoryView.group.isMe || isUserAdmin || activeStoryView.group.user?.name === userName || activeStoryView.group.user?.username === currentUsername) && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => {
+                        const curItem = activeStoryView.group.items?.[activeStoryView.currentIndex];
+                        handleEditStory(curItem?.id, curItem?.caption);
+                      }}
+                      className="p-1.5 rounded-full bg-slate-900/80 text-cyan-400 hover:bg-cyan-600 hover:text-white transition"
+                      title={loc('ویرایش استوری', 'Edit Story')}
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const curItem = activeStoryView.group.items?.[activeStoryView.currentIndex];
+                        if (confirm(loc('آیا از حذف این استوری اطمینان دارید؟', 'Are you sure you want to delete this story?'))) {
+                          handleDeleteStory(curItem?.id);
+                        }
+                      }}
+                      className="p-1.5 rounded-full bg-slate-900/80 text-rose-400 hover:bg-rose-600 hover:text-white transition"
+                      title={loc('حذف استوری', 'Delete Story')}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
                 {activeStoryView.group.isMe && <button onClick={() => setIsStoryViewersOpen(true)} className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold flex items-center gap-1 border border-white/20">
                     <Eye className="w-3 h-3 text-cyan-400" />
                     <span>{activeStoryView.group.items[activeStoryView.currentIndex]?.views || 0} {loc('بازدید', 'visit')}</span>

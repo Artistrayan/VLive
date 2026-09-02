@@ -480,7 +480,7 @@ export default function ProfileTab(props) {
     }).catch(() => {});
   }, [currentUsername]);
 
-  // --- LOCAL POSTS STATE WITH REAL LIKES & COMMENTS ---
+  // --- LOCAL & REAL POSTS STATE WITH REAL LIKES & COMMENTS ---
   const [profilePosts, setProfilePosts] = useState(() => {
     try {
       const stored = safeStorage.getItem(`vlive_user_posts_${currentUsername || 'me'}`);
@@ -489,6 +489,41 @@ export default function ProfileTab(props) {
       return [];
     }
   });
+
+  // Fetch real posts from apiSocial and sync on mount / event
+  useEffect(() => {
+    let isMounted = true;
+    const loadRealPosts = async () => {
+      try {
+        const allPosts = await apiSocial.getPosts();
+        if (isMounted && Array.isArray(allPosts) && allPosts.length > 0) {
+          const myPosts = allPosts.filter(p => 
+            p.username === currentUsername || 
+            p.author === userName || 
+            p.userId === getUserId()
+          );
+          if (myPosts.length > 0) {
+            setProfilePosts(myPosts);
+            safeStorage.setItem(`vlive_user_posts_${currentUsername || 'me'}`, JSON.stringify(myPosts));
+          }
+        }
+      } catch (err) {
+        console.warn('Load posts error:', err);
+      }
+    };
+    loadRealPosts();
+
+    const handlePostCreated = (e) => {
+      if (e?.detail) {
+        setProfilePosts(prev => [e.detail, ...prev]);
+      }
+    };
+    window.addEventListener('vlive_post_created', handlePostCreated);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('vlive_post_created', handlePostCreated);
+    };
+  }, [currentUsername, userName]);
 
   useEffect(() => {
     try {
@@ -586,33 +621,51 @@ export default function ProfileTab(props) {
     }
   };
 
-  const handleAddPost = () => {
+  const handleAddPost = async () => {
     if (!newPostText.trim() && !newPostImage.trim()) {
       showToast(window.loc('لطفاً متنی بنویسید یا تصویری/ویدیویی از گالری انتخاب نمایید', 'Please write text or select a photo/video from gallery'));
       return;
     }
     const isVid = newPostType === 'video' || (newPostImage && (newPostImage.startsWith('data:video') || newPostImage.includes('.mp4')));
+    const mediaUrl = newPostImage.trim() || null;
     const newPost = {
       id: Date.now(),
       isPinned: false,
       author: userName || props.currentUser?.name || 'User',
       username: currentUsername || props.currentUser?.username || 'user',
       avatar: userAvatar || props.currentUser?.avatar || PRESET_AVATARS[0],
-      time: 'Just now',
+      time: window.loc('هم‌اکنون', 'Just now'),
       content: newPostText,
-      image: isVid ? null : (newPostImage.trim() || null),
-      video: isVid ? (newPostImage.trim() || null) : null,
+      caption: newPostText,
+      image: isVid ? null : mediaUrl,
+      video: isVid ? mediaUrl : null,
       mediaType: isVid ? 'video' : 'photo',
       likes: 0,
       comments: 0,
       shares: 0,
       liked: false
     };
-    setProfilePosts([newPost, ...profilePosts]);
+
+    // Save to local state
+    setProfilePosts(prev => [newPost, ...prev]);
     setNewPostText('');
     setNewPostImage('');
     setNewPostType('photo');
+    setIsCreatePostModalOpen(false);
     showToast(window.loc('پست جدید با موفقیت منتشر شد 🎉', 'New post published successfully 🎉'));
+
+    // Real backend sync via apiSocial
+    try {
+      const res = await apiSocial.createPost(mediaUrl, newPostText);
+      if (res && res.data) {
+        newPost.id = res.data.id;
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vlive_post_created', { detail: newPost }));
+      }
+    } catch (err) {
+      console.warn('apiSocial createPost error:', err);
+    }
   };
 
   const detectedTgId = props.currentUser?.telegram_id || props.currentTelegramId || (typeof window !== 'undefined' ? window.Telegram?.WebApp?.initDataUnsafe?.user?.id : '') || '';

@@ -953,8 +953,12 @@ export default function SettingsModal(props) {
                       onClick={() => {
                         if (setAppThemeMode) setAppThemeMode('dark');
                         safeStorage.setItem('vlive_app_theme_mode', 'dark');
+                        if (typeof document !== 'undefined') {
+                          document.documentElement.classList.remove('light-theme', 'amoled-theme');
+                          document.documentElement.classList.add('dark');
+                        }
                       }}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-bold transition ${appThemeMode === 'dark' ? 'bg-pink-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${appThemeMode === 'dark' ? 'bg-pink-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
                     >
                       🌙 {safeLoc('تاریک', 'Dark')}
                     </button>
@@ -962,8 +966,12 @@ export default function SettingsModal(props) {
                       onClick={() => {
                         if (setAppThemeMode) setAppThemeMode('light');
                         safeStorage.setItem('vlive_app_theme_mode', 'light');
+                        if (typeof document !== 'undefined') {
+                          document.documentElement.classList.remove('dark', 'amoled-theme');
+                          document.documentElement.classList.add('light-theme');
+                        }
                       }}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-bold transition ${appThemeMode === 'light' ? 'bg-pink-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${appThemeMode === 'light' ? 'bg-pink-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
                     >
                       ☀️ {safeLoc('روشن', 'Light')}
                     </button>
@@ -971,8 +979,12 @@ export default function SettingsModal(props) {
                       onClick={() => {
                         if (setAppThemeMode) setAppThemeMode('amoled');
                         safeStorage.setItem('vlive_app_theme_mode', 'amoled');
+                        if (typeof document !== 'undefined') {
+                          document.documentElement.classList.remove('light-theme');
+                          document.documentElement.classList.add('dark', 'amoled-theme');
+                        }
                       }}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-bold transition ${appThemeMode === 'amoled' ? 'bg-pink-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${appThemeMode === 'amoled' ? 'bg-pink-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
                     >
                       🖤 {safeLoc('آمولد', 'AMOLED')}
                     </button>
@@ -1000,30 +1012,6 @@ export default function SettingsModal(props) {
                       />
                     ))}
                   </div>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                  <div>
-                    <p className="font-bold text-white">{safeLoc('اندازه متون (Font Size)', 'Font Size')}</p>
-                    <span className="text-[10px] text-slate-400">{appFontSize}</span>
-                  </div>
-                  <select
-                    value={appFontSize}
-                    onChange={e => {
-                      const sz = e.target.value;
-                      setAppFontSizeState(sz);
-                      if (externalSetAppFontSize) externalSetAppFontSize(sz);
-                      safeStorage.setItem('vlive_app_font_size', sz);
-                      if (typeof document !== 'undefined') {
-                        document.documentElement.style.fontSize = sz === 'Small' ? '14px' : sz === 'Large' ? '18px' : '16px';
-                      }
-                    }}
-                    className="bg-slate-950 border border-slate-800 text-white text-[11px] rounded-xl px-2 py-1 outline-none"
-                  >
-                    <option value="Small">{safeLoc('کوچک', 'Small')}</option>
-                    <option value="Medium">{safeLoc('متوسط', 'Medium')}</option>
-                    <option value="Large">{safeLoc('بزرگ', 'Large')}</option>
-                  </select>
                 </div>
 
                 <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">

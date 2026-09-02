@@ -1758,10 +1758,22 @@ export const apiMessages = {
       }
       const userUuid = uid ? ((await resolveProfileUuid(uid)) || uid) : uid;
 
-      // Delete for requester only (Delete for me)
+      // Permanently delete messages and conversation record from Supabase
+      try {
+        await supabase.from('messages').delete().eq('conversation_id', conversationId);
+        await supabase.from('conversations').delete().eq('id', conversationId);
+      } catch (dbDelErr) {
+        console.warn('DB delete conversation error:', dbDelErr);
+      }
+
+      // Also clean up local deletion caches
       if (userUuid) {
         addDeletedConversationIdForUser(userUuid, conversationId);
         addDeletedConversationIdForUser(uid, conversationId);
+      }
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vlive_conversation_deleted', { detail: { conversationId } }));
       }
       return { success: true };
     } catch (e) {
@@ -1941,10 +1953,21 @@ export const apiMessages = {
       }
       const userUuid = uid ? ((await resolveProfileUuid(uid)) || uid) : uid;
 
-      // Delete for requester only (Delete for me)
+      // Permanently delete message from Supabase
+      try {
+        await supabase.from('messages').delete().eq('id', messageId);
+      } catch (dbDelErr) {
+        console.warn('DB delete message error:', dbDelErr);
+      }
+
+      // Also mark as deleted in local caches
       if (userUuid) {
         addDeletedMessageIdForUser(userUuid, messageId);
         addDeletedMessageIdForUser(uid, messageId);
+      }
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vlive_message_deleted', { detail: { messageId } }));
       }
       return { success: true };
     } catch (e) {
@@ -3396,6 +3419,34 @@ export const apiSocial = {
     }
 
     return { success: true, data: storyObj };
+  },
+
+  async updateStory(storyId, updates = {}) {
+    if (!storyId) return { success: false };
+    try {
+      const stored = localStorage.getItem('vlive_active_stories');
+      if (stored) {
+        const list = JSON.parse(stored).map(s => {
+          if (s.id === storyId) {
+            return { ...s, ...updates, caption: updates.caption !== undefined ? updates.caption : s.caption };
+          }
+          return s;
+        });
+        localStorage.setItem('vlive_active_stories', JSON.stringify(list));
+      }
+    } catch (e) {}
+
+    try {
+      const dbPayload = {};
+      if (updates.caption !== undefined) dbPayload.caption = updates.caption;
+      if (updates.mediaUrl || updates.media_url) dbPayload.media_url = updates.mediaUrl || updates.media_url;
+      if (Object.keys(dbPayload).length > 0) {
+        await supabase.from('stories').update(dbPayload).eq('id', storyId);
+      }
+      return { success: true };
+    } catch (e) {
+      return { success: true };
+    }
   },
 
   async deleteStory(storyId) {
