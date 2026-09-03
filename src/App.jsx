@@ -1371,15 +1371,15 @@ export default function App() {
   const startRandomMatchSearch = useCallback(() => {
     setMatchState('searching');
     setTimeout(() => {
-      // Find a random online female/host user
+      // Find a random online female user
       const realPartners = Array.isArray(usersList) && usersList.length > 0 ? usersList.filter(u => {
         if (!u || u.username === currentUsername) return false;
-        // Online filter forced
+        // Strictly online
         if (!(u.online || u.online_status === 'online' || u.status === 'online')) return false;
+        // Strictly female
         const g = String(u.gender || '').trim().toLowerCase();
         const isFemale = g === 'female' || g === 'خانم' || g === 'زن' || g === 'f';
-        const isStreamerOrHost = Boolean(u.isStreamer || u.is_streamer || u.isHost || u.user_type === 'STREAMER');
-        if (!(isFemale || isStreamerOrHost || (isUserAdmin && g !== 'male'))) return false;
+        if (!isFemale) return false;
         return (u.status === 'approved' || u.isApproved !== false);
       }) : [];
 
@@ -1988,17 +1988,17 @@ export default function App() {
       const realApproved = usersList.filter(u => {
         if (!u) return false;
         
-        // User Discovery Rule: Show only female users / hosts in Match (unless admin)
+        // 1. Strictly female only
         const g = String(u.gender || '').trim().toLowerCase();
         const isFemale = g === 'female' || g === 'خانم' || g === 'زن' || g === 'f';
-        const isStreamerOrHost = Boolean(u.isStreamer || u.is_streamer || u.isHost || u.user_type === 'STREAMER');
-        if (!(isFemale || isStreamerOrHost || (isUserAdmin && g !== 'male'))) return false;
+        if (!isFemale) return false;
+
+        // 2. Strictly online only
+        const isOnline = Boolean(u.online || u.online_status === 'online' || u.status === 'online');
+        if (!isOnline) return false;
 
         const isSelf = String(u.username).trim() === String(currentUsername).trim() || String(u.id) === String(currentUser?.id) || String(u.id) === String(localStorage.getItem('vlive_user_id'));
         if (isSelf) return false;
-        
-        // Match Rule: Sort online users to top, filter only if matchFilterOnlineOnly active
-        if (matchFilterOnlineOnly && !(u.online || u.online_status === 'online' || u.status === 'online')) return false;
         
         if (matchFilterVerifiedOnly && !u.isVerified && u.is_verified !== true) return false;
         return u.status === 'approved' || u.isApproved !== false;
@@ -3289,42 +3289,40 @@ export default function App() {
               </div>}
 
           </div>}
-        {/* TAB: MATCH TAB (RADAR ORBIT RADAR SYSTEM BASED ON REFERENCE SCREENSHOT) */}
+        {/* TAB: MATCH TAB (RADAR & SWIPE MATCH SYSTEM) */}
         {activeTab === 'match' && <div className="h-[calc(100vh-130px)] max-w-md mx-auto flex flex-col justify-between overflow-hidden px-3 py-2 select-none animate-fadeIn font-sans relative">
             
-            {/* TOP BAR: COIN BALANCE (LEFT) + CALENDAR & CLOCK (RIGHT) */}
-            <div className="flex items-center justify-between w-full shrink-0 z-30 pt-1">
-              {/* Left: Lime Glowing Coin Badge [D {coins} +] */}
-              <button onClick={() => setActiveTab('wallet')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-lime-400 text-slate-950 font-black text-xs sm:text-sm shadow-[0_0_20px_rgba(163,230,53,0.7)] hover:bg-lime-300 active:scale-95 transition">
-                <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center text-slate-950 font-black text-xs shadow-inner">
-                  D
-                </div>
-                <span>{userCoins.toLocaleString()}</span>
-                <span className="w-4 h-4 rounded-full bg-slate-950 text-lime-400 text-[10px] font-black flex items-center justify-center ml-0.5">
-                  +
-                </span>
-              </button>
-
-              {/* Right: Calendar, Clock Controls */}
-              <div className="flex items-center gap-2">
-                <button onClick={() => setIsRewardOpeningModalOpen(true)} className="w-8 h-8 rounded-full bg-slate-900/90 border border-slate-800 text-slate-200 hover:text-amber-400 hover:border-amber-500/50 flex items-center justify-center transition shadow" title="Daily Rewards Calendar">
-                  <Calendar className="w-4 h-4" />
+            {/* OVAL 3D MODE SELECTOR (RADAR vs SWIPE) IN ONE ROW WITH EMBOSSED ACTIVE STATE */}
+            <div className="flex items-center justify-center w-full z-30 pt-1 pb-1">
+              <div className="inline-flex items-center p-1.5 rounded-full bg-slate-900/90 border border-slate-800/90 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.08)] gap-2">
+                {/* 1. Radar Button (3D Embossed when active) */}
+                <button
+                  onClick={() => setMatchMode('radar')}
+                  className={`relative flex items-center justify-center gap-2 px-5 py-2.5 rounded-full transition-all duration-300 ${
+                    (matchMode === 'radar' || matchMode === 'random')
+                      ? 'bg-gradient-to-b from-cyan-400 via-cyan-500 to-teal-600 text-slate-950 font-black shadow-[0_6px_20px_rgba(34,211,238,0.45),inset_0_2px_3px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.3)] border-t border-cyan-200/90 -translate-y-0.5 scale-105'
+                      : 'text-slate-400 hover:text-cyan-300 hover:bg-slate-800/60 shadow-sm'
+                  }`}
+                  title={loc('رادار', 'Radar')}
+                >
+                  <Radio className={`w-5 h-5 ${(matchMode === 'radar' || matchMode === 'random') ? 'stroke-[2.5] drop-shadow-[0_2px_3px_rgba(0,0,0,0.3)]' : 'opacity-70'}`} />
+                  <span className="text-xs font-bold">{loc('رادار', 'Radar')}</span>
                 </button>
 
-                <button onClick={() => showToast(`⏰ Daily free match quota: ${freeMatchCallsLeft}`)} className="w-8 h-8 rounded-full bg-slate-900/90 border border-slate-800 text-slate-200 hover:text-cyan-400 hover:border-cyan-500/50 flex items-center justify-center transition shadow" title="Timer & Quota">
-                  <Clock className="w-4 h-4" />
+                {/* 2. Swipe Button (3D Embossed when active) */}
+                <button
+                  onClick={() => setMatchMode('swipe')}
+                  className={`relative flex items-center justify-center gap-2 px-5 py-2.5 rounded-full transition-all duration-300 ${
+                    (matchMode === 'swipe' || matchMode === 'manual')
+                      ? 'bg-gradient-to-b from-pink-500 via-rose-500 to-purple-600 text-white font-black shadow-[0_6px_20px_rgba(236,72,153,0.45),inset_0_2px_3px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.3)] border-t border-pink-200/90 -translate-y-0.5 scale-105'
+                      : 'text-slate-400 hover:text-pink-300 hover:bg-slate-800/60 shadow-sm'
+                  }`}
+                  title={loc('سوایپ', 'Swipe')}
+                >
+                  <Flame className={`w-5 h-5 ${(matchMode === 'swipe' || matchMode === 'manual') ? 'fill-current drop-shadow-[0_2px_3px_rgba(0,0,0,0.3)]' : 'opacity-70'}`} />
+                  <span className="text-xs font-bold">{loc('سوایپ', 'Swipe')}</span>
                 </button>
               </div>
-            </div>
-
-            {/* MODE SELECTOR (RADAR vs SWIPE) */}
-            <div className="flex items-center justify-center gap-6 mt-4 z-30">
-              <button onClick={() => setMatchMode('radar')} className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full transition flex items-center justify-center border backdrop-blur-md ${(matchMode === 'radar' || matchMode === 'random') ? 'bg-gradient-to-tr from-cyan-400 to-emerald-400 border-cyan-300 shadow-[0_0_25px_rgba(34,211,238,0.7)] text-slate-950 scale-105' : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:text-cyan-400 hover:scale-105'}`} title="Radar">
-                <Radio className="w-7 h-7 sm:w-8 sm:h-8" />
-              </button>
-              <button onClick={() => setMatchMode('swipe')} className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full transition flex items-center justify-center border backdrop-blur-md ${(matchMode === 'swipe' || matchMode === 'manual') ? 'bg-gradient-to-tr from-pink-500 to-purple-600 border-pink-400 shadow-[0_0_25px_rgba(236,72,153,0.7)] text-white scale-105' : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:text-pink-400 hover:scale-105'}`} title="Swipe">
-                <Flame className="w-7 h-7 sm:w-8 sm:h-8" />
-              </button>
             </div>
 
             {/* MAIN SYSTEM DISPLAY */}
@@ -3459,42 +3457,36 @@ export default function App() {
                           <span>📍</span> {matchDeckProfiles[matchCardIndex]?.city || loc('تهران', 'Tehran')}
                         </p>
                       </div>
-                      {/* Action Buttons Bar */}
-                      <div className="flex items-center gap-2.5 pt-1">
-                        {/* Reject / Pass Button */}
-                        <button onClick={(e) => {
-                          e.stopPropagation();
-                          setMatchAnimationEffect('reject');
-                          setTimeout(() => {
-                            setMatchCardIndex(prev => prev + 1);
-                            setMatchAnimationEffect(null);
-                            setSwipeDragPos({ x: 0, y: 0 });
-                          }, 250);
-                        }} className="w-12 h-12 rounded-2xl bg-slate-900/90 border border-slate-700 text-rose-400 hover:bg-rose-500/20 font-bold flex items-center justify-center shadow-lg active:scale-95 transition shrink-0" title="Pass">
-                          <X className="w-6 h-6" />
+                      {/* Action Buttons Bar: Strictly X (Pass) and Heart (Like) - No text, no person icon */}
+                      <div className="flex items-center justify-center gap-10 pt-2 pb-1">
+                        {/* Reject / Pass Button (X) */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMatchAnimationEffect('reject');
+                            setTimeout(() => {
+                              setMatchCardIndex(prev => prev + 1);
+                              setMatchAnimationEffect(null);
+                              setSwipeDragPos({ x: 0, y: 0 });
+                            }, 250);
+                          }}
+                          className="w-16 h-16 rounded-full bg-slate-900/90 border border-slate-700/80 text-rose-500 hover:text-rose-400 hover:bg-rose-500/20 shadow-[0_8px_20px_rgba(0,0,0,0.6)] flex items-center justify-center active:scale-90 transition-all hover:scale-105"
+                          title={loc('رد کردن', 'Pass')}
+                        >
+                          <X className="w-8 h-8 stroke-[2.5]" />
                         </button>
 
-                        {/* User Profile Details Button */}
-                        <button onClick={(e) => {
-                          e.stopPropagation();
-                          const target = matchDeckProfiles[matchCardIndex];
-                          if (target) {
-                            setSelectedUserProfile(target);
-                            setIsUserProfileModalOpen(true);
-                          }
-                        }} className="w-12 h-12 rounded-2xl bg-slate-900/90 border border-slate-800 text-slate-300 hover:text-cyan-400 hover:border-cyan-500/40 flex items-center justify-center shadow active:scale-95 transition shrink-0" title="Profile">
-                          <User className="w-5 h-5" />
-                        </button>
-
-                        {/* Like & Video Call Button (User requested: Like redirects to video call if coins sufficient, else error toast, no free calls) */}
-                        <button onClick={(e) => {
-                          e.stopPropagation();
-                          const target = matchDeckProfiles[matchCardIndex];
-                          handleSwipeLikeAction(target);
-                        }} className="flex-1 py-3.5 px-3 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-purple-600 text-white font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(236,72,153,0.7)] flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition" title="Like & Video Call">
-                          <Heart className="w-5 h-5 fill-current animate-pulse text-white shrink-0" />
-                          <Video className="w-5 h-5 text-white shrink-0" />
-                          <span>{loc('لایک و تماس تصویری', 'Like & Video Call')}</span>
+                        {/* Like Button (Heart - redirects to video call if coins sufficient, else error toast per user rule) */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const target = matchDeckProfiles[matchCardIndex];
+                            handleSwipeLikeAction(target);
+                          }}
+                          className="w-16 h-16 rounded-full bg-gradient-to-tr from-pink-500 via-rose-500 to-purple-600 text-white shadow-[0_8px_25px_rgba(236,72,153,0.5)] flex items-center justify-center hover:scale-110 active:scale-90 transition-all"
+                          title={loc('لایک', 'Like')}
+                        >
+                          <Heart className="w-8 h-8 fill-current text-white animate-pulse" />
                         </button>
                       </div>
                     </div>
@@ -3512,29 +3504,15 @@ export default function App() {
                   </div>}
               </div>)}
 
-            {/* SUB-CENTER BADGE: TICKET / PASS INDICATOR (RADAR ONLY vs SWIPE HINT) */}
-            {(matchMode === 'radar' || matchMode === 'random') ? (
+            {/* SUB-CENTER BADGE: TICKET / PASS INDICATOR (RADAR ONLY) */}
+            {(matchMode === 'radar' || matchMode === 'random') && (
               <div className="flex items-center justify-center gap-1 shrink-0 my-1 z-20">
                 <div className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-purple-900/60 border border-purple-500/40 text-purple-300 text-xs font-black shadow-md backdrop-blur-md">
                   <span>🎟️</span>
                   <span>X{freeMatchCallsLeft} {loc('تماس رایگان', 'Free Passes')}</span>
                 </div>
               </div>
-            ) : (
-              <div className="flex items-center justify-center gap-1 shrink-0 my-1 z-20">
-                <div className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-slate-900/80 border border-slate-800 text-slate-400 text-xs font-medium shadow-md backdrop-blur-md">
-                  <Flame className="w-3.5 h-3.5 text-pink-400" />
-                  <span>{loc('سوایپ به راست یا کلیک برای تماس تصویری', 'Swipe right or Click for Video Call')}</span>
-                </div>
-              </div>
             )}
-
-            {/* BOTTOM MAIN CALL BUTTON BAR (GIFT ICON) */}
-            <div className="w-full flex items-center justify-center gap-3 shrink-0 pb-1 z-30">
-              <button onClick={() => setIsRewardOpeningModalOpen(true)} className="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-amber-400 hover:bg-slate-800 hover:border-amber-500/50 shadow-lg active:scale-90 transition shrink-0" title="Free Rewards & Gifts">
-                <Gift className="w-6 h-6 animate-bounce" />
-              </button>
-            </div>
 
           </div>}
 
