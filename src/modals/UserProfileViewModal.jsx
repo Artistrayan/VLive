@@ -66,6 +66,24 @@ export default function UserProfileViewModal({
       setIsVerified(Boolean(user.isVerified || user.verified));
       setIsStreamer(Boolean(user.isStreamer || user.is_streamer || user.isHost));
 
+      // Fetch real verified likes count from backend & persistent stats
+      if (targetId && apiProfile && typeof apiProfile.getProfileLikesCount === 'function') {
+        apiProfile.getProfileLikesCount(targetId).then(cnt => {
+          if (typeof cnt === 'number') {
+            setLikesCount(cnt);
+          }
+        });
+      }
+
+      // Realtime listener for like updates
+      const handleLikeEvent = (e) => {
+        if (e?.detail && (String(e.detail.targetUserId) === String(targetId) || String(e.detail.targetUserId) === String(user.username))) {
+          if (typeof e.detail.isLiked === 'boolean') setIsLiked(e.detail.isLiked);
+          if (typeof e.detail.likesCount === 'number') setLikesCount(e.detail.likesCount);
+        }
+      };
+      window.addEventListener('vlive_profile_liked', handleLikeEvent);
+
       // Record profile view in real-time
       if (targetId) {
         apiProfile.recordProfileView(targetId, currentUser).then(res => {
@@ -74,6 +92,10 @@ export default function UserProfileViewModal({
           }
         });
       }
+
+      return () => {
+        window.removeEventListener('vlive_profile_liked', handleLikeEvent);
+      };
     }
   }, [user, isOpen]);
 
@@ -134,12 +156,15 @@ export default function UserProfileViewModal({
     const targetId = user.id || user.username;
     const nextState = !isLiked;
     setIsLiked(nextState);
-    setLikesCount(prev => Math.max(0, nextState ? prev + 1 : prev - 1));
 
-    if (nextState) {
-      await apiProfile.likeUserProfile(targetId);
+    const res = nextState
+      ? await apiProfile.likeUserProfile(targetId)
+      : await apiProfile.unlikeUserProfile(targetId);
+
+    if (res && typeof res.likesCount === 'number') {
+      setLikesCount(res.likesCount);
     } else {
-      await apiProfile.unlikeUserProfile(targetId);
+      setLikesCount(prev => Math.max(0, nextState ? prev + 1 : prev - 1));
     }
 
     showToast(nextState ? window.loc(`💖 لایک برای ${userName} ثبت شد`, `💖 Liked ${userName}`) : window.loc(`لایک برداشته شد`, `Like removed`));

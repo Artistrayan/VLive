@@ -591,14 +591,11 @@ export default function App() {
     if (!Array.isArray(usersList)) return [];
     let list = [...usersList].filter(u => u && u.status !== 'banned' && !u.isBanned);
     
-    // User Discovery Rule: Show only female users / hosts in the home feed (Admins can see all if needed, but the platform standard is female hosts feed)
+    // User Discovery Rule: Show strictly and only female users in the home feed per user instructions
     list = list.filter(u => {
-      // If admin, show all, or if user is female
       const g = String(u.gender || '').trim().toLowerCase();
       const isFemale = g === 'female' || g === 'خانم' || g === 'زن' || g === 'f';
-      // Default fallback for streamers without explicit gender is female host
-      const isStreamerOrHost = Boolean(u.isStreamer || u.is_streamer || u.isHost || u.user_type === 'STREAMER');
-      return isFemale || isStreamerOrHost || (isUserAdmin && g !== 'male');
+      return isFemale;
     });
 
     if (userFilter === 'online') {
@@ -1683,12 +1680,13 @@ export default function App() {
     try {
       const res = await apiProfile.toggleLikeProfile(targetId);
       if (res && res.success) {
+        const nextLikes = typeof res.likesCount === 'number' ? res.likesCount : (res.likes_count || 0);
         setUsersList(prev => (Array.isArray(prev) ? prev : []).map(u => {
           if (String(u.id) === String(targetId) || u.username === targetUser.username) {
             return {
               ...u,
-              likes_count: res.likes_count,
-              likes: res.likes_count,
+              likes_count: nextLikes,
+              likes: nextLikes,
               isLiked: res.isLiked
             };
           }
@@ -3230,18 +3228,17 @@ export default function App() {
                                <span className="text-[8px] font-black text-emerald-400">Online</span>
                             </div>}
 
-                          {/* Top Right: Heart Like Button with Real Count */}
+                          {/* Top Right: Heart Like Button (No number, pure real like action per user instructions) */}
                           <button
                             onClick={(e) => handleToggleLikeUserCard(e, user)}
-                            className={`absolute top-1.5 right-1.5 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full backdrop-blur-md border transition-all shadow-md active:scale-90 ${
+                            className={`absolute top-1.5 right-1.5 z-10 flex items-center justify-center w-7 h-7 rounded-full backdrop-blur-md border transition-all shadow-md active:scale-90 ${
                               isUserCardLiked
                                 ? 'bg-rose-600/90 border-rose-400 text-white shadow-rose-500/30'
                                 : 'bg-slate-950/75 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-900'
                             }`}
                             title={loc('لایک پروفایل', 'Like Profile')}
                           >
-                            <Heart className={`w-3 h-3 ${isUserCardLiked ? 'fill-white text-white' : 'text-pink-400'}`} />
-                            <span className="text-[9px] font-black">{userLikesCount}</span>
+                            <Heart className={`w-3.5 h-3.5 ${isUserCardLiked ? 'fill-white text-white' : 'text-pink-400'}`} />
                           </button>
 
                           {/* Top Right LIVE Badge (if streamer has real active live) */}

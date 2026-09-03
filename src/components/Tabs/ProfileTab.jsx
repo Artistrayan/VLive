@@ -525,6 +525,32 @@ export default function ProfileTab(props) {
     };
   }, [currentUsername, userName]);
 
+  // Sync real profile likes count from database and API
+  useEffect(() => {
+    let isMounted = true;
+    const uid = getUserId() || currentUsername;
+    if (uid && apiProfile && typeof apiProfile.getProfileLikesCount === 'function') {
+      apiProfile.getProfileLikesCount(uid).then(cnt => {
+        if (isMounted && typeof cnt === 'number') {
+          setExtraLikes(cnt);
+        }
+      });
+    }
+
+    const handleProfileLiked = (e) => {
+      if (e?.detail && (String(e.detail.targetUserId) === String(uid) || String(e.detail.targetUserId) === String(currentUsername))) {
+        if (typeof e.detail.likesCount === 'number') {
+          setExtraLikes(e.detail.likesCount);
+        }
+      }
+    };
+    window.addEventListener('vlive_profile_liked', handleProfileLiked);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('vlive_profile_liked', handleProfileLiked);
+    };
+  }, [currentUsername]);
+
   useEffect(() => {
     try {
       safeStorage.setItem(`vlive_user_posts_${currentUsername || 'me'}`, JSON.stringify(profilePosts));
@@ -534,7 +560,7 @@ export default function ProfileTab(props) {
   }, [profilePosts, currentUsername]);
 
   // Real total likes calculation across posts + persistent likes
-  const userTotalLikes = profilePosts.reduce((sum, post) => sum + (post.likes || 0), 0) + extraLikes;
+  const userTotalLikes = Math.max(extraLikes, profilePosts.reduce((sum, post) => sum + (post.likes || 0), 0));
 
   // Dynamic Profile Completion % based on filled details
   const profileCompletionPercent = (() => {

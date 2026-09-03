@@ -984,6 +984,45 @@ export const apiProfile = {
   },
 
   // ==================== REAL PROFILE LIKES SYSTEM ====================
+  getDirectProfileLikes(targetUserId) {
+    if (!targetUserId) return 0;
+    try {
+      const stored = localStorage.getItem('vlive_profile_likes_counts');
+      const counts = stored ? JSON.parse(stored) : {};
+      return Number(counts[String(targetUserId)] || 0);
+    } catch (e) {
+      return 0;
+    }
+  },
+
+  async getProfileLikesCount(targetUserId) {
+    if (!targetUserId) return 0;
+    try {
+      const resolvedUid = (await resolveProfileUuid(targetUserId)) || targetUserId;
+      // Fetch likes across real posts by this user from Supabase
+      const { data: postsData } = await supabase
+        .from('posts')
+        .select('likes_count')
+        .eq('user_id', resolvedUid);
+      
+      const postsLikes = (postsData || []).reduce((sum, p) => sum + Number(p.likes_count || 0), 0);
+      const directLikes = this.getDirectProfileLikes(targetUserId);
+      return postsLikes + directLikes;
+    } catch (e) {
+      return this.getDirectProfileLikes(targetUserId);
+    }
+  },
+
+  async toggleLikeProfile(targetUserId) {
+    if (!targetUserId) return { success: false };
+    const isLiked = this.isUserProfileLiked(targetUserId);
+    if (isLiked) {
+      return this.unlikeUserProfile(targetUserId);
+    } else {
+      return this.likeUserProfile(targetUserId);
+    }
+  },
+
   async likeUserProfile(targetUserId) {
     if (!targetUserId) return { success: false };
     try {
@@ -996,23 +1035,30 @@ export const apiProfile = {
       }
 
       const isAlreadyLiked = likedProfiles.includes(String(targetUserId));
-      let nextLikesCount = 1;
+      let currentLikes = this.getDirectProfileLikes(targetUserId);
 
       if (!isAlreadyLiked) {
         likedProfiles.push(String(targetUserId));
         localStorage.setItem('vlive_liked_user_profiles', JSON.stringify(likedProfiles));
 
-        // Update in Supabase
-        const { data: targetProfile } = await supabase.from('profiles').select('likes_count').eq('id', targetUserId).maybeSingle();
-        nextLikesCount = (targetProfile?.likes_count || 0) + 1;
-        await supabase.from('profiles').update({ likes_count: nextLikesCount }).eq('id', targetUserId);
+        currentLikes += 1;
+        try {
+          const countsStored = localStorage.getItem('vlive_profile_likes_counts');
+          const counts = countsStored ? JSON.parse(countsStored) : {};
+          counts[String(targetUserId)] = currentLikes;
+          localStorage.setItem('vlive_profile_likes_counts', JSON.stringify(counts));
+        } catch (e) {}
       }
+
+      const totalLikes = await this.getProfileLikesCount(targetUserId);
 
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('vlive_profile_liked', { detail: { targetUserId, isLiked: true, likesCount: nextLikesCount } }));
+        window.dispatchEvent(new CustomEvent('vlive_profile_liked', {
+          detail: { targetUserId, isLiked: true, likesCount: totalLikes }
+        }));
       }
 
-      return { success: true, isLiked: true, likesCount: nextLikesCount };
+      return { success: true, isLiked: true, likesCount: totalLikes };
     } catch (e) {
       return { success: false };
     }
@@ -1029,18 +1075,31 @@ export const apiProfile = {
         likedProfiles = [];
       }
 
-      const updated = likedProfiles.filter(id => id !== String(targetUserId));
-      localStorage.setItem('vlive_liked_user_profiles', JSON.stringify(updated));
+      const isAlreadyLiked = likedProfiles.includes(String(targetUserId));
+      let currentLikes = this.getDirectProfileLikes(targetUserId);
 
-      const { data: targetProfile } = await supabase.from('profiles').select('likes_count').eq('id', targetUserId).maybeSingle();
-      const nextLikesCount = Math.max(0, (targetProfile?.likes_count || 1) - 1);
-      await supabase.from('profiles').update({ likes_count: nextLikesCount }).eq('id', targetUserId);
+      if (isAlreadyLiked) {
+        const updated = likedProfiles.filter(id => id !== String(targetUserId));
+        localStorage.setItem('vlive_liked_user_profiles', JSON.stringify(updated));
 
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('vlive_profile_liked', { detail: { targetUserId, isLiked: false, likesCount: nextLikesCount } }));
+        currentLikes = Math.max(0, currentLikes - 1);
+        try {
+          const countsStored = localStorage.getItem('vlive_profile_likes_counts');
+          const counts = countsStored ? JSON.parse(countsStored) : {};
+          counts[String(targetUserId)] = currentLikes;
+          localStorage.setItem('vlive_profile_likes_counts', JSON.stringify(counts));
+        } catch (e) {}
       }
 
-      return { success: true, isLiked: false, likesCount: nextLikesCount };
+      const totalLikes = await this.getProfileLikesCount(targetUserId);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vlive_profile_liked', {
+          detail: { targetUserId, isLiked: false, likesCount: totalLikes }
+        }));
+      }
+
+      return { success: true, isLiked: false, likesCount: totalLikes };
     } catch (e) {
       return { success: false };
     }
@@ -3245,18 +3304,22 @@ export const apiSocial = {
         .eq('user_id', resolvedUid)
         .order('created_at', { ascending: false });
       if (error) return [];
-      return data.map(p => ({
-        id: p.id,
-        userId: p.user_id,
-        username: p.profiles?.username || p.profiles?.name || 'Unknown',
-        userAvatar: p.profiles?.avatar || '',
-        caption: p.caption,
-        videoUrl: p.media_url,
-        imageUrl: p.media_url,
-        likes: p.likes_count || 0,
-        comments: p.comments_count || 0,
-        time: new Date(p.created_at).toLocaleDateString()
-      }));
+      return (data || [])
+        .filter(p => !p.caption || !p.caption.startsWith('[STORY]'))
+        .map(p => ({
+          id: p.id,
+          userId: p.user_id,
+          username: p.profiles?.username || p.profiles?.name || 'Unknown',
+          userAvatar: p.profiles?.avatar || '',
+          caption: p.caption,
+          videoUrl: p.image_url,
+          imageUrl: p.image_url,
+          media_url: p.image_url,
+          likes: p.likes_count || 0,
+          likes_count: p.likes_count || 0,
+          comments: p.comments_count || 0,
+          time: new Date(p.created_at).toLocaleDateString()
+        }));
     } catch (e) {
       return [];
     }
@@ -3269,18 +3332,22 @@ export const apiSocial = {
         .select('*, profiles(username, avatar, name)')
         .order('created_at', { ascending: false });
       if (error) return [];
-      return data.map(p => ({
-        id: p.id,
-        userId: p.user_id,
-        username: p.profiles?.username || p.profiles?.name || 'Unknown',
-        userAvatar: p.profiles?.avatar || '',
-        caption: p.caption,
-        videoUrl: p.media_url,
-        imageUrl: p.media_url,
-        likes: p.likes_count || 0,
-        comments: p.comments_count || 0,
-        time: new Date(p.created_at).toLocaleDateString()
-      }));
+      return (data || [])
+        .filter(p => !p.caption || !p.caption.startsWith('[STORY]'))
+        .map(p => ({
+          id: p.id,
+          userId: p.user_id,
+          username: p.profiles?.username || p.profiles?.name || 'Unknown',
+          userAvatar: p.profiles?.avatar || '',
+          caption: p.caption,
+          videoUrl: p.image_url,
+          imageUrl: p.image_url,
+          media_url: p.image_url,
+          likes: p.likes_count || 0,
+          likes_count: p.likes_count || 0,
+          comments: p.comments_count || 0,
+          time: new Date(p.created_at).toLocaleDateString()
+        }));
     } catch (e) {
       return [];
     }
@@ -3290,16 +3357,37 @@ export const apiSocial = {
     const uid = getUserId();
     if (!uid) return { success: false, error: 'Unauthorized' };
     try {
-      const resolvedUid = (await resolveProfileUuid(uid)) || uid;
+      let { data: authData } = await supabase.auth.getUser();
+      let activeAuthId = authData?.user?.id;
+      if (!activeAuthId) {
+        const uname = localStorage.getItem('vlive_user_name') || localStorage.getItem('vlive_current_username');
+        if (uname) {
+          const cleanUsername = String(uname).trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+          const email = `u_${cleanUsername}@vlive.app`;
+          const password = `vlive_pass_${cleanUsername}_2026!`;
+          try {
+            const { data: signRes } = await supabase.auth.signInWithPassword({ email, password });
+            if (signRes?.user?.id) activeAuthId = signRes.user.id;
+          } catch (e) {}
+        }
+      }
+
+      const resolvedUid = (await resolveProfileUuid(uid)) || activeAuthId || uid;
+      const finalUserId = activeAuthId || resolvedUid;
+
       const { data, error } = await supabase
         .from('posts')
-        .insert([{ user_id: resolvedUid, media_url: mediaUrl, caption }])
+        .insert([{ user_id: finalUserId, image_url: mediaUrl, caption: caption || '' }])
         .select('*, profiles(username, avatar, name)');
       
       const newPost = data?.[0];
       if (newPost) {
         newPost.username = newPost.profiles?.username || newPost.profiles?.name || 'User';
         newPost.userAvatar = newPost.profiles?.avatar || '';
+        newPost.imageUrl = newPost.image_url;
+        newPost.videoUrl = newPost.image_url;
+        newPost.media_url = newPost.image_url;
+        newPost.likes = newPost.likes_count || 0;
       }
       return { success: !error, data: newPost };
     } catch (e) {
@@ -3321,91 +3409,71 @@ export const apiSocial = {
 
   async getStories() {
     try {
-      // 1. Fetch live stories from Supabase
-      const { data, error } = await supabase
-        .from('stories')
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data: storyPosts, error: postErr } = await supabase
+        .from('posts')
         .select('*, profiles(username, avatar, name)')
-        .gt('expires_at', new Date().toISOString())
+        .ilike('caption', '[STORY]%')
+        .gte('created_at', oneDayAgo)
         .order('created_at', { ascending: false });
 
-      let dbStories = [];
-      if (!error && Array.isArray(data)) {
-        dbStories = data.map(s => ({
-          id: s.id,
-          username: s.profiles?.username || s.profiles?.name || 'User',
-          userAvatar: s.profiles?.avatar || '',
-          imageUrl: s.media_url,
-          videoUrl: s.media_url,
-          media_url: s.media_url,
-          caption: s.caption || '',
-          created_at: s.created_at,
-          expires_at: s.expires_at,
-          hasRing: true
-        }));
+      let sharedStories = [];
+      if (!postErr && Array.isArray(storyPosts)) {
+        sharedStories = storyPosts.map(s => {
+          const cleanCaption = (s.caption || '').replace(/^\[STORY\]\s*/i, '');
+          const createdAt = s.created_at;
+          const expiresAt = new Date(new Date(createdAt).getTime() + 24 * 60 * 60 * 1000).toISOString();
+          return {
+            id: s.id,
+            userId: s.user_id,
+            username: s.profiles?.username || s.profiles?.name || 'User',
+            userAvatar: s.profiles?.avatar || '',
+            imageUrl: s.image_url,
+            videoUrl: s.image_url,
+            media_url: s.image_url,
+            caption: cleanCaption,
+            created_at: createdAt,
+            expires_at: expiresAt,
+            hasRing: true
+          };
+        });
       }
 
-      // 2. Fetch locally cached stories
-      let localStories = [];
+      // Also check standard stories table if populated
       try {
-        const stored = localStorage.getItem('vlive_active_stories');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const now = Date.now();
-          localStories = Array.isArray(parsed) 
-            ? parsed.filter(s => !s.expires_at || new Date(s.expires_at).getTime() > now)
-            : [];
+        const { data: rawStories } = await supabase
+          .from('stories')
+          .select('*')
+          .gt('expires_at', new Date().toISOString())
+          .order('created_at', { ascending: false });
+        if (Array.isArray(rawStories) && rawStories.length > 0) {
+          rawStories.forEach(rs => {
+            if (!sharedStories.some(s => s.id === rs.id || s.media_url === rs.media_url)) {
+              sharedStories.push({
+                id: rs.id,
+                userId: rs.user_id,
+                username: 'User',
+                userAvatar: '',
+                imageUrl: rs.media_url,
+                videoUrl: rs.media_url,
+                media_url: rs.media_url,
+                caption: rs.caption || '',
+                created_at: rs.created_at,
+                expires_at: rs.expires_at,
+                hasRing: true
+              });
+            }
+          });
         }
       } catch (e) {}
 
-      // 3. Deduplicate strictly by ID and media_url (DB takes precedence)
-      const storyMap = new Map();
-      dbStories.forEach(s => {
-        if (s.id) storyMap.set(String(s.id), s);
-        if (s.media_url) storyMap.set(s.media_url, s);
-      });
-
-      localStories.forEach(s => {
-        const byId = s.id ? storyMap.has(String(s.id)) : false;
-        const byUrl = s.media_url ? storyMap.has(s.media_url) : (s.imageUrl ? storyMap.has(s.imageUrl) : false);
-        if (!byId && !byUrl) {
-          const key = String(s.id || s.media_url || s.imageUrl);
-          storyMap.set(key, s);
-        }
-      });
-
-      // Deduplicate to distinct stories array
-      const uniqueStories = [];
-      const seenIds = new Set();
-      const seenUrls = new Set();
-
-      for (const item of storyMap.values()) {
-        const idKey = item.id ? String(item.id) : null;
-        const urlKey = item.media_url || item.imageUrl || null;
-        if (idKey && seenIds.has(idKey)) continue;
-        if (urlKey && seenUrls.has(urlKey)) continue;
-        if (idKey) seenIds.add(idKey);
-        if (urlKey) seenUrls.add(urlKey);
-        uniqueStories.push(item);
-      }
-
-      uniqueStories.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-
+      // Keep cache synced
       try {
-        localStorage.setItem('vlive_active_stories', JSON.stringify(uniqueStories));
+        localStorage.setItem('vlive_active_stories', JSON.stringify(sharedStories));
       } catch (e) {}
 
-      return uniqueStories;
+      return sharedStories;
     } catch (e) {
-      try {
-        const stored = localStorage.getItem('vlive_active_stories');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const now = Date.now();
-          return Array.isArray(parsed) 
-            ? parsed.filter(s => !s.expires_at || new Date(s.expires_at).getTime() > now)
-            : [];
-        }
-      } catch (err) {}
       return [];
     }
   },
@@ -3417,7 +3485,7 @@ export const apiSocial = {
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
-          table: 'stories'
+          table: 'posts'
         }, () => {
           if (typeof onStoryChange === 'function') {
             this.getStories().then(stories => onStoryChange(stories)).catch(() => {});
@@ -3436,92 +3504,61 @@ export const apiSocial = {
     let uid = authData?.user?.id || getUserId();
     const uname = localStorage.getItem('vlive_user_name') || localStorage.getItem('vlive_current_username') || localStorage.getItem('vlive_user_username') || 'User';
     const uavatar = localStorage.getItem('vlive_user_avatar') || '';
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    let resolvedUid = uid;
-    if (!resolvedUid && uname) {
+    let activeAuthId = authData?.user?.id;
+    if (!activeAuthId && uname) {
+      const cleanUsername = String(uname).trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+      const email = `u_${cleanUsername}@vlive.app`;
+      const password = `vlive_pass_${cleanUsername}_2026!`;
       try {
-        const { data: prof } = await supabase.from('profiles').select('id').eq('username', uname).maybeSingle();
-        if (prof?.id) resolvedUid = prof.id;
+        const { data: signRes } = await supabase.auth.signInWithPassword({ email, password });
+        if (signRes?.user?.id) activeAuthId = signRes.user.id;
       } catch (e) {}
     }
 
-    const storyObj = {
-      id: 'story_' + Date.now(),
-      username: uname,
-      userAvatar: uavatar,
-      imageUrl: mediaUrl,
-      videoUrl: mediaUrl,
-      media_url: mediaUrl,
-      caption: caption || '',
-      created_at: new Date().toISOString(),
-      expires_at: expiresAt,
-      hasRing: true
-    };
+    const resolvedUid = (await resolveProfileUuid(uid)) || activeAuthId || uid;
+    const finalUserId = activeAuthId || resolvedUid;
+    const storyCaption = `[STORY] ${caption || ''}`.trim();
 
-    if (resolvedUid) {
-      try {
-        const { data, error } = await supabase
-          .from('stories')
-          .insert([{ user_id: resolvedUid, media_url: mediaUrl, expires_at: expiresAt }])
-          .select('*, profiles(username, avatar, name)');
-
-        if (!error && data?.[0]) {
-          const s = data[0];
-          storyObj.id = s.id;
-          storyObj.username = s.profiles?.username || s.profiles?.name || uname;
-          storyObj.userAvatar = s.profiles?.avatar || uavatar;
-          storyObj.created_at = s.created_at;
-
-          // Update local cache idempotently
-          try {
-            const stored = localStorage.getItem('vlive_active_stories');
-            let list = stored ? JSON.parse(stored) : [];
-            list = list.filter(item => item.id !== storyObj.id && item.media_url !== mediaUrl && item.imageUrl !== mediaUrl);
-            list.unshift(storyObj);
-            localStorage.setItem('vlive_active_stories', JSON.stringify(list));
-          } catch (e) {}
-
-          return { success: true, data: storyObj };
-        }
-      } catch (e) {
-        console.warn('Story DB insert notice:', e);
-      }
-    }
-
-    // Fallback: update local storage with temp storyObj
     try {
-      const stored = localStorage.getItem('vlive_active_stories');
-      let list = stored ? JSON.parse(stored) : [];
-      list = list.filter(item => item.id !== storyObj.id && item.media_url !== mediaUrl && item.imageUrl !== mediaUrl);
-      list.unshift(storyObj);
-      localStorage.setItem('vlive_active_stories', JSON.stringify(list));
-    } catch (e) {}
+      const { data, error } = await supabase
+        .from('posts')
+        .insert([{ user_id: finalUserId, image_url: mediaUrl, caption: storyCaption }])
+        .select('*, profiles(username, avatar, name)');
 
-    return { success: true, data: storyObj };
+      if (!error && data?.[0]) {
+        const s = data[0];
+        const storyObj = {
+          id: s.id,
+          userId: s.user_id,
+          username: s.profiles?.username || s.profiles?.name || uname,
+          userAvatar: s.profiles?.avatar || uavatar,
+          imageUrl: s.image_url,
+          videoUrl: s.image_url,
+          media_url: s.image_url,
+          caption: caption || '',
+          created_at: s.created_at,
+          expires_at: new Date(new Date(s.created_at).getTime() + 24 * 60 * 60 * 1000).toISOString(),
+          hasRing: true
+        };
+        return { success: true, data: storyObj };
+      }
+    } catch (e) {
+      console.warn('createStory error:', e);
+    }
+    return { success: false, error: 'FAILED_TO_CREATE_STORY' };
   },
 
   async updateStory(storyId, updates = {}) {
     if (!storyId) return { success: false };
     try {
-      const stored = localStorage.getItem('vlive_active_stories');
-      if (stored) {
-        const list = JSON.parse(stored).map(s => {
-          if (s.id === storyId) {
-            return { ...s, ...updates, caption: updates.caption !== undefined ? updates.caption : s.caption };
-          }
-          return s;
-        });
-        localStorage.setItem('vlive_active_stories', JSON.stringify(list));
-      }
-    } catch (e) {}
-
-    try {
       const dbPayload = {};
-      if (updates.caption !== undefined) dbPayload.caption = updates.caption;
-      if (updates.mediaUrl || updates.media_url) dbPayload.media_url = updates.mediaUrl || updates.media_url;
+      if (updates.caption !== undefined) dbPayload.caption = `[STORY] ${updates.caption}`.trim();
+      if (updates.mediaUrl || updates.media_url || updates.imageUrl) {
+        dbPayload.image_url = updates.mediaUrl || updates.media_url || updates.imageUrl;
+      }
       if (Object.keys(dbPayload).length > 0) {
-        await supabase.from('stories').update(dbPayload).eq('id', storyId);
+        await supabase.from('posts').update(dbPayload).eq('id', storyId);
       }
       return { success: true };
     } catch (e) {
@@ -3530,24 +3567,7 @@ export const apiSocial = {
   },
 
   async deleteStory(storyId) {
-    const { data: authData } = await supabase.auth.getUser();
-    const uid = authData?.user?.id || getUserId();
-
-    try {
-      const stored = localStorage.getItem('vlive_active_stories');
-      if (stored) {
-        const list = JSON.parse(stored).filter(s => s.id !== storyId);
-        localStorage.setItem('vlive_active_stories', JSON.stringify(list));
-      }
-    } catch (e) {}
-
-    if (!uid || !storyId) return { success: true };
-    try {
-      const { error } = await supabase.from('stories').delete().eq('id', storyId);
-      return { success: !error };
-    } catch (e) {
-      return { success: true };
-    }
+    return this.deletePost(storyId);
   },
 
   async likePost(postId) {
