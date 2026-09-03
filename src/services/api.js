@@ -3399,8 +3399,7 @@ export const apiSocial = {
     const uavatar = localStorage.getItem('vlive_user_avatar') || '';
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
-    let resolvedUid = isUuid ? uid : null;
+    let resolvedUid = uid;
     if (!resolvedUid && uname) {
       try {
         const { data: prof } = await supabase.from('profiles').select('id').eq('username', uname).maybeSingle();
