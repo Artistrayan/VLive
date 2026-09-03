@@ -59,14 +59,14 @@ export default function WalletTab(props) {
     currentUser?.is_streamer
   );
 
-  // STRICT RULE: Streamer = Female Gender AND Management Approval together for users. Admin is unrestricted.
-  const isStreamerUser = Boolean(isUserAdmin || (isFemaleUser && isManagementApproved));
+  // STRICT RULE: Female users and admins can withdraw.
+  const canWithdraw = Boolean(isUserAdmin || isFemaleUser);
 
   React.useEffect(() => {
-    if (!isStreamerUser && (walletSubTab === 'withdraw' || walletSubTab === 'convert' || walletSubTab === 'creator')) {
+    if (!canWithdraw && (walletSubTab === 'withdraw' || walletSubTab === 'convert' || walletSubTab === 'creator')) {
       setWalletSubTab('buy');
     }
-  }, [isStreamerUser, walletSubTab, setWalletSubTab]);
+  }, [canWithdraw, walletSubTab, setWalletSubTab]);
 
   const [localConvertDiamondsInput, setLocalConvertDiamondsInput] = React.useState('');
   const convertDiamondsInput = props.convertDiamondsInput !== undefined ? props.convertDiamondsInput : localConvertDiamondsInput;
@@ -247,7 +247,7 @@ export default function WalletTab(props) {
               </div>
 
               {/* 3 GLASSMORPHISM NEON BALANCE CARDS */}
-              <div className={`grid grid-cols-1 ${isStreamerUser ? 'sm:grid-cols-3' : 'max-w-md mx-auto'} gap-3 pt-2`}>
+              <div className={`grid grid-cols-1 ${canWithdraw ? 'sm:grid-cols-3' : 'max-w-md mx-auto'} gap-3 pt-2`}>
                 
                 {/* 🪙 COINS CARD (GOLD THEME) */}
                 <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-950/80 via-amber-900/40 to-slate-950 border border-amber-500/50 shadow-[0_0_25px_rgba(245,158,11,0.2)] flex flex-col justify-between space-y-3">
@@ -269,7 +269,7 @@ export default function WalletTab(props) {
                   </button>
                 </div>
 
-                {isStreamerUser && (
+                {canWithdraw && (
                   <>
                     {/* 💎 DIAMONDS CARD (BLUE THEME) */}
                     <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-950/80 via-blue-900/40 to-slate-950 border border-cyan-500/50 shadow-[0_0_25px_rgba(6,182,212,0.2)] flex flex-col justify-between space-y-3">
@@ -318,7 +318,7 @@ export default function WalletTab(props) {
             </VisualSectionWrapper>
 
             {/* 2. MAIN BIG ACTION BUTTONS */}
-            <div className={`grid grid-cols-2 ${isStreamerUser ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3 text-xs`}>
+            <div className={`grid grid-cols-2 ${canWithdraw ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3 text-xs`}>
               <button
                 onClick={() => setWalletSubTab('buy')}
                 className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'buy' ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-amber-500/50'}`}
@@ -341,7 +341,7 @@ export default function WalletTab(props) {
                 <span className="text-xs text-slate-200">{window.loc('ارسال هدیه به استریمرها', 'Send gifts to streamers')}</span>
               </button>
 
-              {isStreamerUser && (
+              {canWithdraw && (
                 <button
                   onClick={() => setWalletSubTab('withdraw')}
                   className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'withdraw' ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-emerald-500/50'}`}
@@ -380,7 +380,7 @@ export default function WalletTab(props) {
                 { id: 'security', label: window.loc('🔒 Security (امنیت)', '🔒 Security') },
                 { id: 'giftshop', label: window.loc('🎁 Gift Shop (فروشگاه)', '🎁 Gift Shop') }
               ]
-              .filter(tab => !tab.streamerOnly || isStreamerUser)
+              .filter(tab => !tab.streamerOnly || canWithdraw)
               .map(tab => (
                 <button
                   key={tab.id}
@@ -599,7 +599,7 @@ export default function WalletTab(props) {
             )}
 
             {/* SUB-TAB 3: CONVERT DIAMONDS */}
-            {walletSubTab === 'convert' && isStreamerUser && (
+            {walletSubTab === 'convert' && canWithdraw && (
               <div className="space-y-4 text-xs">
                 <div className="p-5 rounded-3xl bg-slate-950 border border-cyan-500/40 space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -659,7 +659,7 @@ export default function WalletTab(props) {
             )}
 
             {/* SUB-TAB 4: WITHDRAW */}
-            {walletSubTab === 'withdraw' && isStreamerUser && (
+            {walletSubTab === 'withdraw' && canWithdraw && (
               <div className="space-y-5 text-xs">
                 
                 {/* WITHDRAWAL FORM */}
@@ -803,7 +803,7 @@ export default function WalletTab(props) {
             )}
 
             {/* SUB-TAB 6: REDESIGNED ULTIMATE CREATOR STUDIO (20 FEATURES) */}
-            {walletSubTab === 'creator' && isStreamerUser && (
+            {walletSubTab === 'creator' && canWithdraw && (
               <div className="space-y-6 animate-fadeIn text-xs" dir={isRtl ? "rtl" : "ltr"}>
                 
                 {/* 1. TOP HEADER & VERIFICATION BADGE BANNER */}

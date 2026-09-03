@@ -1188,38 +1188,7 @@ export default function App() {
     };
   }, [currentUser?.id, currentUser?.username, currentUser?.telegram_id, currentUsername, loc, showToast]);
 
-  // Call Duration & Billing Interval
-  useEffect(() => {
-    if (!activeCall) return;
-
-    const timer = setInterval(() => {
-      setActiveCall(prev => {
-        if (!prev) return null;
-        const newSec = (prev.seconds || 0) + 1;
-
-        if (!isUserSuperAdmin && newSec > 0 && newSec % 60 === 0 && prev.isPaid) {
-          apiCalls.chargeMinute({
-            sessionId: prev.sessionId,
-            callerId: prev.callerId,
-            receiverId: prev.receiverId,
-            callType: prev.callType
-          }).then(res => {
-            if (res && res.success) {
-              setUserCoins(c => Math.max(0, c - (prev.tariffPerMin || 100)));
-            }
-          }).catch(() => {});
-        }
-
-        return {
-          ...prev,
-          seconds: newSec,
-          consumedCoins: prev.isPaid ? Math.floor(newSec / 60) * (prev.tariffPerMin || 100) : 0
-        };
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [activeCall?.sessionId, isUserSuperAdmin]);
+  // Removed duplicate Call Duration & Billing Interval
 
   // Live Stream Chat & Gifts
   const handleSendStreamChat = useCallback(async () => {
@@ -1959,6 +1928,13 @@ export default function App() {
     if (Array.isArray(usersList) && usersList.length > 0) {
       const realApproved = usersList.filter(u => {
         if (!u) return false;
+        
+        // User Discovery Rule: Show only female users / hosts in Match (unless admin)
+        const g = String(u.gender || '').trim().toLowerCase();
+        const isFemale = g === 'female' || g === 'خانم' || g === 'زن' || g === 'f';
+        const isStreamerOrHost = Boolean(u.isStreamer || u.is_streamer || u.isHost || u.user_type === 'STREAMER');
+        if (!(isFemale || isStreamerOrHost || (isUserAdmin && g !== 'male'))) return false;
+
         const isSelf = String(u.username).trim() === String(currentUsername).trim() || String(u.id) === String(currentUser?.id) || String(u.id) === String(localStorage.getItem('vlive_user_id'));
         if (isSelf) return false;
         if (matchFilterVerifiedOnly && !u.isVerified && u.is_verified !== true) return false;
@@ -2015,24 +1991,29 @@ export default function App() {
           if (!prev) return null;
           const nextSec = prev.seconds + 1;
           let nextCoins = prev.consumedCoins;
-          if (!isUserSuperAdmin && prev.isPaid && nextSec % 60 === 0 && nextSec > 0) {
-            if (userCoins >= prev.tariffPerMin) {
+          
+          // Male users pay for video calls after 30 seconds (first 30s is free)
+          const isBillingSecond = nextSec === 31 || (nextSec > 31 && (nextSec - 31) % 60 === 0);
+          
+          if (!canPublishAndBroadcast && isBillingSecond) {
+            const tariff = prev.tariffPerMin || 100;
+            if (userCoins >= tariff) {
               apiCalls.chargeMinute({
                 sessionId: prev.sessionId,
                 receiverId: prev.user?.id || prev.user?.userId,
-                tariffRate: prev.tariffPerMin
+                tariffRate: tariff
               }).then(chargeRes => {
                 if (chargeRes && chargeRes.success) {
                   setUserCoins(chargeRes.newCoins);
                   apiWallet.getTransactions().then(txs => setTxHistoryList(txs || []));
                 }
               }).catch(err => console.warn('chargeMinute notice:', err));
-              setUserCoins(c => Math.max(0, c - prev.tariffPerMin));
-              nextCoins += prev.tariffPerMin;
-              setTotalEarnings(e => e + prev.tariffPerMin * 0.8);
-              showToast(window.loc(`🪙 ${prev.tariffPerMin} سکه بابت زمان تماس کسر شد`, `🪙 ${prev.tariffPerMin} سکه بابت زمان تماس کسر شد`));
+              setUserCoins(c => Math.max(0, c - tariff));
+              nextCoins += tariff;
+              setTotalEarnings(e => e + tariff * 0.8);
+              showToast(window.loc(`🪙 ${tariff} سکه بابت تماس پس از ۳۰ ثانیه رایگان کسر شد`, `🪙 ${tariff} coins deducted for call after 30s free`));
             } else {
-              showToast(loc('⚠️ اعتبار سکه شما برای ادامه تماس پولی کافی نیست!', '⚠️ Your coin credit is not enough to continue the payment call!'));
+              showToast(loc('⚠️ اعتبار سکه شما برای ادامه تماس کافی نیست!', '⚠️ Your coin credit is not enough to continue the call!'));
               setTimeout(() => {
                 handleEndActiveCall();
               }, 500);
@@ -2049,7 +2030,7 @@ export default function App() {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [activeCall, userCoins, isUserSuperAdmin]);
+  }, [activeCall, userCoins, canPublishAndBroadcast, loc, showToast, handleEndActiveCall]);
 
   useEffect(() => {
     safeStorage.setItem('vlive_app_font_size', appFontSize);
@@ -4534,7 +4515,14 @@ export default function App() {
                   }
                   setMatchState('searching');
                   setTimeout(() => {
-                    const realPartners = Array.isArray(usersList) && usersList.length > 0 ? usersList.filter(u => u && u.username !== currentUsername && (u.status === 'approved' || u.isApproved !== false)) : [];
+                    const realPartners = Array.isArray(usersList) && usersList.length > 0 ? usersList.filter(u => {
+                      if (!u || u.username === currentUsername) return false;
+                      const g = String(u.gender || '').trim().toLowerCase();
+                      const isFemale = g === 'female' || g === 'خانم' || g === 'زن' || g === 'f';
+                      const isStreamerOrHost = Boolean(u.isStreamer || u.is_streamer || u.isHost || u.user_type === 'STREAMER');
+                      if (!(isFemale || isStreamerOrHost || (isUserAdmin && g !== 'male'))) return false;
+                      return (u.status === 'approved' || u.isApproved !== false);
+                    }) : [];
                     if (realPartners.length === 0) {
                       setMatchState('idle');
                       showToast(window.loc('در حال حاضر کاربر دیگری برای اتصال رولت آنلاین نیست', 'No other active users online for roulette right now'));

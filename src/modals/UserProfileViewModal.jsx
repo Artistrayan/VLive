@@ -94,7 +94,23 @@ export default function UserProfileViewModal({
   const distance = user?.distance || '';
 
   // Sample User Media
-  const publicPhotos = user?.photos || [];
+  const [fetchedPhotos, setFetchedPhotos] = useState([]);
+  
+  useEffect(() => {
+    if (user && isOpen && typeof apiSocial !== 'undefined' && apiSocial.getUserPosts) {
+      const targetId = user.id || user.username;
+      apiSocial.getUserPosts(targetId).then(posts => {
+        if (posts && Array.isArray(posts)) {
+          const mediaUrls = posts.map(p => p.imageUrl || p.videoUrl).filter(Boolean);
+          if (mediaUrls.length > 0) {
+            setFetchedPhotos(mediaUrls);
+          }
+        }
+      }).catch(() => {});
+    }
+  }, [user, isOpen]);
+
+  const publicPhotos = fetchedPhotos.length > 0 ? fetchedPhotos : (user?.photos || []);
 
   const toggleFollow = async () => {
     const targetId = user.id || user.username;

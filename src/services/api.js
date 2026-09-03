@@ -3231,17 +3231,44 @@ export const apiCalls = {
 // 10. SOCIAL SERVICE (Posts, Stories, Media)
 // ==========================================
 export const apiSocial = {
-  async getPosts() {
+  async getUserPosts(targetUserId) {
+    if (!targetUserId) return [];
     try {
+      const resolvedUid = (await resolveProfileUuid(targetUserId)) || targetUserId;
       const { data, error } = await supabase
         .from('posts')
-        .select('*, profiles(username, avatar)')
+        .select('*, profiles(username, avatar, name)')
+        .eq('user_id', resolvedUid)
         .order('created_at', { ascending: false });
       if (error) return [];
       return data.map(p => ({
         id: p.id,
         userId: p.user_id,
-        username: p.profiles?.username || 'Unknown',
+        username: p.profiles?.username || p.profiles?.name || 'Unknown',
+        userAvatar: p.profiles?.avatar || '',
+        caption: p.caption,
+        videoUrl: p.media_url,
+        imageUrl: p.media_url,
+        likes: p.likes_count || 0,
+        comments: p.comments_count || 0,
+        time: new Date(p.created_at).toLocaleDateString()
+      }));
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async getPosts() {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*, profiles(username, avatar, name)')
+        .order('created_at', { ascending: false });
+      if (error) return [];
+      return data.map(p => ({
+        id: p.id,
+        userId: p.user_id,
+        username: p.profiles?.username || p.profiles?.name || 'Unknown',
         userAvatar: p.profiles?.avatar || '',
         caption: p.caption,
         videoUrl: p.media_url,
@@ -3259,11 +3286,18 @@ export const apiSocial = {
     const uid = getUserId();
     if (!uid) return { success: false, error: 'Unauthorized' };
     try {
+      const resolvedUid = (await resolveProfileUuid(uid)) || uid;
       const { data, error } = await supabase
         .from('posts')
-        .insert([{ user_id: uid, media_url: mediaUrl, caption }])
-        .select();
-      return { success: !error, data: data?.[0] };
+        .insert([{ user_id: resolvedUid, media_url: mediaUrl, caption }])
+        .select('*, profiles(username, avatar, name)');
+      
+      const newPost = data?.[0];
+      if (newPost) {
+        newPost.username = newPost.profiles?.username || newPost.profiles?.name || 'User';
+        newPost.userAvatar = newPost.profiles?.avatar || '';
+      }
+      return { success: !error, data: newPost };
     } catch (e) {
       return { success: false, error: e.message };
     }
@@ -3273,7 +3307,8 @@ export const apiSocial = {
     const uid = getUserId();
     if (!uid || !postId) return { success: false };
     try {
-      const { error } = await supabase.from('posts').delete().eq('id', postId).eq('user_id', uid);
+      const resolvedUid = (await resolveProfileUuid(uid)) || uid;
+      const { error } = await supabase.from('posts').delete().eq('id', postId).eq('user_id', resolvedUid);
       return { success: !error };
     } catch (e) {
       return { success: false, error: e.message };

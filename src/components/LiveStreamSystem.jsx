@@ -48,10 +48,6 @@ export default function LiveStreamSystem({
   });
   const [isAdultVipModalOpen, setIsAdultVipModalOpen] = useState(false);
 
-  // Check if Adult Access is fully granted
-  const isAdultVipActive = vipPlan === 'VIP Adult' || vipPlan === 'VIP Platinum' || currentUser?.isAdultVip;
-  const hasAdultAccess = isAge18Verified && acceptedAdultRules && isAdultVipActive;
-
   // Streamer Start Live Setup Modal States
   const [isStartLiveModalOpen, setIsStartLiveModalOpen] = useState(false);
   const [newLiveType, setNewLiveType] = useState('standard');
@@ -83,6 +79,10 @@ export default function LiveStreamSystem({
     userGenderVal === 'زن' ||
     userGenderVal === 'f'
   );
+
+  // Check if Adult Access is fully granted
+  const isAdultVipActive = vipPlan === 'VIP Adult' || vipPlan === 'VIP Platinum' || currentUser?.isAdultVip;
+  const hasAdultAccess = isAge18Verified && acceptedAdultRules && (isAdultVipActive || isFemaleUser || isUserAdmin);
 
   const isManagementApproved = Boolean(
     isUserAdmin ||
