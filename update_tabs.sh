@@ -1,0 +1,1 @@
+sed -i -e "s/{ id: 'overview', label: window.loc('آلبوم تصاویر', 'Photos') },/{ id: 'overview', label: window.loc('آلبوم تصاویر', 'Photos') }, { id: 'posts', label: window.loc('پست‌ها', 'Posts') },/g" src/modals/UserProfileViewModal.jsx

@@ -1231,6 +1231,10 @@ export const apiHome = {
     }
   },
 
+  async getExploreProfiles() {
+    return this.getApprovedUsers();
+  },
+
   async getApprovedUsers() {
     try {
       const { data, error } = await supabase

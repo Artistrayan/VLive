@@ -4,7 +4,7 @@ import {
   Clock, Coins as CoinsIcon, Compass, Crown, Edit3, Eye, FileText, Filter,
   Flag, Flame, Gift, Headphones, Heart, Home, Languages, LogIn,
   MessageSquare, Plus, Radio, Send, Settings, Shield, ShieldCheck, Sliders,
-  Smartphone, Sparkles, Star, Swords, ThumbsUp, Trash2, Users, Video, X, Zap
+  Smartphone, Sparkles, Star, Swords, ThumbsUp, Trash2, User, Users, Video, X, Zap
 } from 'lucide-react';
 
 // Overlays & Components
@@ -77,7 +77,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [homeSubTab, setHomeSubTab] = useState('explore');
   const [matchSubTab, setMatchSubTab] = useState('discover');
-  const [matchMode, setMatchMode] = useState('card');
+  const [matchMode, setMatchMode] = useState('swipe');
   const [activeProfileTab, setActiveProfileTab] = useState('overview');
   const [walletSubTab, setWalletSubTab] = useState('deposit');
   const [showEntrySplash, setShowEntrySplash] = useState(false);
@@ -504,6 +504,7 @@ export default function App() {
   const videoRef = useRef(null);
   const callVideoRef = useRef(null);
   const mediaStream = useRef(null);
+  const dragStartRef = useRef({ x: 0, y: 0, active: false });
 
   // Derived / Computed Properties
   const isUserSuperAdmin = useMemo(() => {
@@ -708,14 +709,19 @@ export default function App() {
     });
   }, [userCoins, showToast, loc]);
 
-  const handleStartCallDirect = useCallback(async (targetUser, callType = 'video') => {
+  const handleStartCallDirect = useCallback(async (targetUser, callType = 'video', isRadarCall = false) => {
     if (!targetUser) return;
 
+    let isFreePassUsed = false;
     const requiredCoins = targetUser.tariffPerMin || 100;
-    if (!isUserSuperAdmin && userCoins < requiredCoins) {
-      showToast(loc('سکه کافی برای شروع تماس ندارید', 'Insufficient coins to start call'));
+    
+    if (isRadarCall && !isUserSuperAdmin && freeMatchCallsLeft > 0) {
+      isFreePassUsed = true;
+    } else if (!isUserSuperAdmin && userCoins < requiredCoins) {
+      showToast(loc('موجودی سکه کافی نیست', 'Insufficient coins'));
       return;
     }
+
     setPreCallConfirmHost(null);
     try {
       showToast(loc('در حال ارسال درخواست تماس...', 'Calling...'));
@@ -728,6 +734,10 @@ export default function App() {
       });
 
       if (res && res.success) {
+        if (isFreePassUsed) {
+          setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));
+        }
+
         // 1. Initialize Direct WebRTC PeerConnection as caller
         try {
           const targetPeerId = targetUser.id || targetUser.username;
@@ -753,6 +763,7 @@ export default function App() {
           user: targetUser,
           callType: normalizedCallType,
           isPaid: (targetUser.tariffPerMin || 0) > 0,
+          isFreePassUsed: isFreePassUsed,
           tariffPerMin: targetUser.tariffPerMin || 100,
           sessionId: res.callId || ('call_' + Date.now()),
           callLogId: res.callLogId || res.callId,
@@ -770,7 +781,7 @@ export default function App() {
       console.error('Call initiation error:', err);
       showToast(err.message || loc('خطا در برقراری تماس', 'Call initiation error'));
     }
-  }, [currentUsername, currentUser?.id, showToast, loc, userCoins, isUserSuperAdmin]);
+  }, [currentUsername, currentUser?.id, showToast, loc, userCoins, isUserSuperAdmin, freeMatchCallsLeft]);
 
   const handleCancelOutgoingCall = useCallback(async (outCall) => {
     if (!outCall) return;
@@ -1126,6 +1137,7 @@ export default function App() {
               callType: outCall.callType,
               seconds: 0,
               isPaid: outCall.isPaid,
+              isFreePassUsed: outCall.isFreePassUsed,
               tariffPerMin: outCall.tariffPerMin,
               consumedCoins: 0,
               isOnHold: false,
@@ -1360,54 +1372,103 @@ export default function App() {
 
   // Match Swipe & Gestures
   const startRandomMatchSearch = useCallback(() => {
-    if (!isUserSuperAdmin && freeMatchCallsLeft <= 0 && userCoins < 50) {
-      showToast(loc('اعتبار مچ رایگان شما تمام شده است (۵۰ سکه برای هر مچ)', 'Free match credits depleted (50 coins per match)'));
+    setMatchState('searching');
+    setTimeout(() => {
+      // Find a random online female/host user
+      const realPartners = Array.isArray(usersList) && usersList.length > 0 ? usersList.filter(u => {
+        if (!u || u.username === currentUsername) return false;
+        // Online filter forced
+        if (!(u.online || u.online_status === 'online' || u.status === 'online')) return false;
+        const g = String(u.gender || '').trim().toLowerCase();
+        const isFemale = g === 'female' || g === 'خانم' || g === 'زن' || g === 'f';
+        const isStreamerOrHost = Boolean(u.isStreamer || u.is_streamer || u.isHost || u.user_type === 'STREAMER');
+        if (!(isFemale || isStreamerOrHost || (isUserAdmin && g !== 'male'))) return false;
+        return (u.status === 'approved' || u.isApproved !== false);
+      }) : [];
+
+      if (realPartners.length === 0) {
+        setMatchState('idle');
+        showToast(window.loc('در حال حاضر هیچ کاربری آنلاین نیست', 'No users available right now'));
+        return;
+      }
+      const randomUser = realPartners[Math.floor(Math.random() * realPartners.length)];
+      setMatchedMatchUser(randomUser);
+      setMatchState('connected'); // we use 'connected' state to show the found user profile in Radar
+    }, 2000);
+  }, [usersList, currentUsername, isUserAdmin, showToast]);
+
+  const handleSwipeLikeAction = useCallback((targetProfile) => {
+    const target = targetProfile || (matchDeckProfiles && matchDeckProfiles[matchCardIndex]);
+    if (!target) return;
+
+    setMatchAnimationEffect('like');
+    const requiredCoins = target.tariffPerMin || 100;
+
+    // RULE: In Swipe mode, NO free calls! Free passes are only for radar.
+    if (!isUserSuperAdmin && userCoins < requiredCoins) {
+      setTimeout(() => {
+        showToast(loc('موجودی سکه کافی نیست', 'Insufficient coins'));
+        setMatchAnimationEffect(null);
+        setSwipeDragPos({ x: 0, y: 0 });
+      }, 200);
       return;
     }
-    setMatchState('searching');
-    setTimeout(async () => {
-      try {
-        const res = await apiHome.getRandomMatchProfile();
-        if (res && res.success && res.data) {
-          setMatchedMatchUser(res.data);
-          setMatchState('connected');
-          setMatchCallSeconds(30);
-          setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));
-          showToast(loc(('مچ موفق با ' + (res.data.name || res.data.username) + '! 🎉'), ('Successful match with ' + (res.data.name || res.data.username) + '! 🎉')));
-        } else {
-          setMatchState('idle');
-          showToast(loc('کاربری برای مچ ویدیویی یافت نشد', 'No users available for match'));
-        }
-      } catch {
-        setMatchState('idle');
-        showToast(loc('خطا در برقراری مچ', 'Error connecting match'));
-      }
-    }, 2500);
-  }, [freeMatchCallsLeft, userCoins, showToast, isUserSuperAdmin]);
+
+    setTimeout(() => {
+      setMatchCardIndex(prev => prev + 1);
+      setMatchAnimationEffect(null);
+      setSwipeDragPos({ x: 0, y: 0 });
+      // Call with isRadarCall = false -> strict per-minute coin billing, no free pass
+      handleStartCallDirect(target, 'video', false);
+    }, 300);
+  }, [matchDeckProfiles, matchCardIndex, isUserSuperAdmin, userCoins, showToast, loc, handleStartCallDirect]);
 
   const triggerMatchAction = useCallback((actionType) => {
-    setMatchCardIndex(prev => prev + 1);
     if (actionType === 'like') {
-      showToast(loc('❤️ کاربر به علاقه‌مندی‌ها افزوده شد!', '❤️ User added to favorites!'));
-    } else if (actionType === 'superlike') {
+      const currentTarget = matchDeckProfiles && matchDeckProfiles[matchCardIndex];
+      handleSwipeLikeAction(currentTarget);
+      return;
+    }
+    setMatchCardIndex(prev => prev + 1);
+    if (actionType === 'superlike') {
       showToast(loc('⭐ سوپر لایک ارسال شد!', '⭐ Superlike sent!'));
     } else {
       showToast(loc('رد شد', 'Passed'));
     }
-  }, [showToast]);
+  }, [matchDeckProfiles, matchCardIndex, handleSwipeLikeAction, showToast, loc]);
 
   const handleTouchStart = useCallback((e) => {
     const t = e.touches ? e.touches[0] : e;
-    setSwipeDragPos({ x: t.clientX, y: t.clientY });
+    dragStartRef.current = { x: t.clientX, y: t.clientY, active: true };
   }, []);
 
   const handleTouchMove = useCallback((e) => {
-    // Gesture tracking
+    if (!dragStartRef.current.active) return;
+    const t = e.touches ? e.touches[0] : e;
+    const deltaX = t.clientX - dragStartRef.current.x;
+    const deltaY = t.clientY - dragStartRef.current.y;
+    setSwipeDragPos({ x: deltaX, y: deltaY * 0.2 });
   }, []);
 
   const handleTouchEnd = useCallback(() => {
-    setSwipeDragPos({ x: 0, y: 0 });
-  }, []);
+    if (!dragStartRef.current.active) return;
+    dragStartRef.current.active = false;
+    const currentTarget = matchDeckProfiles && matchDeckProfiles[matchCardIndex];
+    if (swipeDragPos.x > 80) {
+      // Swiped Right -> Like & Video Call
+      handleSwipeLikeAction(currentTarget);
+    } else if (swipeDragPos.x < -80) {
+      // Swiped Left -> Pass
+      setMatchAnimationEffect('reject');
+      setTimeout(() => {
+        setMatchCardIndex(prev => prev + 1);
+        setMatchAnimationEffect(null);
+        setSwipeDragPos({ x: 0, y: 0 });
+      }, 250);
+    } else {
+      setSwipeDragPos({ x: 0, y: 0 });
+    }
+  }, [matchDeckProfiles, matchCardIndex, swipeDragPos.x, handleSwipeLikeAction]);
 
   // Direct Messages & Chat Handlers
   const handleStartNewChatWithUser = useCallback((targetUser) => {
@@ -1937,8 +1998,11 @@ export default function App() {
 
         const isSelf = String(u.username).trim() === String(currentUsername).trim() || String(u.id) === String(currentUser?.id) || String(u.id) === String(localStorage.getItem('vlive_user_id'));
         if (isSelf) return false;
+        
+        // Match Rule: Sort online users to top, filter only if matchFilterOnlineOnly active
+        if (matchFilterOnlineOnly && !(u.online || u.online_status === 'online' || u.status === 'online')) return false;
+        
         if (matchFilterVerifiedOnly && !u.isVerified && u.is_verified !== true) return false;
-        if (matchFilterOnlineOnly && u.online_status !== 'online') return false;
         return u.status === 'approved' || u.isApproved !== false;
       });
       const mapped = realApproved.map((u, idx) => ({
@@ -1946,14 +2010,20 @@ export default function App() {
         name: u.name || u.username,
         username: u.username,
         age: u.age || '',
-        city: u.city,
+        city: u.city || '',
         avatar: u.avatar || '',
         isVerified: Boolean(u.isVerified || u.is_verified || u.verified),
         isVip: Boolean(u.isVip || u.is_vip || u.vip),
+        isOnline: Boolean(u.online || u.online_status === 'online' || u.status === 'online'),
         user_type: u.user_type || 'USER',
         distance: `${(idx + 1) * 2} km`,
-        interests: u.interests || ['🎥 4K Live', '💖 VIP Chat', '☕ Coffee', '✨ Verified']
-      }));
+        interests: u.interests || ['🎥 4K Live', '💖 VIP Chat', '☕ Coffee', '✨ Verified'],
+        tariffPerMin: u.tariffPerMin || 100
+      })).sort((a, b) => {
+        if (a.isOnline && !b.isOnline) return -1;
+        if (!a.isOnline && b.isOnline) return 1;
+        return 0.5 - Math.random();
+      });
       setMatchDeckProfiles(mapped);
     }
   }, [usersList, currentUsername, currentUser, matchFilterVerifiedOnly, matchFilterOnlineOnly, matchFilterMaxDistance]);
@@ -1992,8 +2062,10 @@ export default function App() {
           const nextSec = prev.seconds + 1;
           let nextCoins = prev.consumedCoins;
           
-          // Male users pay for video calls after 30 seconds (first 30s is free)
-          const isBillingSecond = nextSec === 31 || (nextSec > 31 && (nextSec - 31) % 60 === 0);
+          // Male users (non-admin, non-female) pay for video calls.
+          // If a free pass is used, first 20s is free. Otherwise, charged immediately (at sec 1).
+          const freeDuration = prev.isFreePassUsed ? 20 : 0;
+          const isBillingSecond = nextSec === (freeDuration + 1) || (nextSec > freeDuration + 1 && (nextSec - (freeDuration + 1)) % 60 === 0);
           
           if (!canPublishAndBroadcast && isBillingSecond) {
             const tariff = prev.tariffPerMin || 100;
@@ -2011,7 +2083,7 @@ export default function App() {
               setUserCoins(c => Math.max(0, c - tariff));
               nextCoins += tariff;
               setTotalEarnings(e => e + tariff * 0.8);
-              showToast(window.loc(`🪙 ${tariff} سکه بابت تماس پس از ۳۰ ثانیه رایگان کسر شد`, `🪙 ${tariff} coins deducted for call after 30s free`));
+              showToast(window.loc(`🪙 ${tariff} سکه کسر شد`, `🪙 ${tariff} coins deducted`));
             } else {
               showToast(loc('⚠️ اعتبار سکه شما برای ادامه تماس کافی نیست!', '⚠️ Your coin credit is not enough to continue the call!'));
               setTimeout(() => {
@@ -3236,7 +3308,7 @@ export default function App() {
                 </span>
               </button>
 
-              {/* Right: Calendar, Clock & Filter Controls */}
+              {/* Right: Calendar, Clock Controls */}
               <div className="flex items-center gap-2">
                 <button onClick={() => setIsRewardOpeningModalOpen(true)} className="w-8 h-8 rounded-full bg-slate-900/90 border border-slate-800 text-slate-200 hover:text-amber-400 hover:border-amber-500/50 flex items-center justify-center transition shadow" title="Daily Rewards Calendar">
                   <Calendar className="w-4 h-4" />
@@ -3245,176 +3317,87 @@ export default function App() {
                 <button onClick={() => showToast(`⏰ Daily free match quota: ${freeMatchCallsLeft}`)} className="w-8 h-8 rounded-full bg-slate-900/90 border border-slate-800 text-slate-200 hover:text-cyan-400 hover:border-cyan-500/50 flex items-center justify-center transition shadow" title="Timer & Quota">
                   <Clock className="w-4 h-4" />
                 </button>
-
-                <button onClick={() => setIsSmartMatchModalOpen(true)} className="w-8 h-8 rounded-full bg-slate-900/90 border border-slate-800 text-slate-200 hover:text-pink-400 hover:border-pink-500/50 flex items-center justify-center transition shadow" title="Match Filters">
-                  <Filter className="w-4 h-4" />
-                </button>
               </div>
             </div>
 
-            {/* GENDER & MODE SELECTOR PILLS */}
-            <div className="flex items-center justify-between gap-1 mt-2 z-30 bg-slate-950/80 p-1 rounded-2xl border border-slate-800/80 backdrop-blur-md">
-              <div className="flex items-center gap-1">
-                <button onClick={() => {
-                  setMatchGenderFilter('female');
-                  showToast('Female filter active');
-                }} className={`px-3 py-1 rounded-xl text-[11px] font-black transition ${matchGenderFilter === 'female' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
-                  👩 Female
-                </button>
-                <button onClick={() => {
-                  setMatchGenderFilter('both');
-                  showToast('All users selected (Free)');
-                }} className={`px-3 py-1 rounded-xl text-[11px] font-black transition ${matchGenderFilter === 'both' ? 'bg-lime-400 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'}`}>
-                  👥 Both
-                </button>
-              </div>
-
-              <div className="flex items-center gap-1">
-                <button onClick={() => setMatchMode('random')} className={`px-3 py-1 rounded-xl text-[11px] font-black transition ${matchMode === 'random' ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'}`}>
-                  Radar 📡
-                </button>
-                <button onClick={() => setMatchMode('manual')} className={`px-3 py-1 rounded-xl text-[11px] font-black transition ${matchMode === 'manual' ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'}`}>
-                  Swipe 🃏
-                </button>
-              </div>
+            {/* MODE SELECTOR (RADAR vs SWIPE) */}
+            <div className="flex items-center justify-center gap-6 mt-4 z-30">
+              <button onClick={() => setMatchMode('radar')} className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full transition flex items-center justify-center border backdrop-blur-md ${(matchMode === 'radar' || matchMode === 'random') ? 'bg-gradient-to-tr from-cyan-400 to-emerald-400 border-cyan-300 shadow-[0_0_25px_rgba(34,211,238,0.7)] text-slate-950 scale-105' : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:text-cyan-400 hover:scale-105'}`} title="Radar">
+                <Radio className="w-7 h-7 sm:w-8 sm:h-8" />
+              </button>
+              <button onClick={() => setMatchMode('swipe')} className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full transition flex items-center justify-center border backdrop-blur-md ${(matchMode === 'swipe' || matchMode === 'manual') ? 'bg-gradient-to-tr from-pink-500 to-purple-600 border-pink-400 shadow-[0_0_25px_rgba(236,72,153,0.7)] text-white scale-105' : 'bg-slate-900/50 border-slate-700 text-slate-500 hover:text-pink-400 hover:scale-105'}`} title="Swipe">
+                <Flame className="w-7 h-7 sm:w-8 sm:h-8" />
+              </button>
             </div>
 
-            {/* MAIN RADAR ORBIT SYSTEM DISPLAY */}
-            {matchMode === 'random' ? <div className="flex-1 flex flex-col items-center justify-center relative w-full overflow-hidden my-1">
-                
-                {/* Background Ambient Radial Glow */}
-                <div className="absolute inset-0 bg-radial from-lime-500/15 via-purple-500/10 to-transparent blur-3xl pointer-events-none" />
-
-                {/* RADAR SEARCHING STATE (EXPANDING RIPPLE WAVES) */}
-                {matchState === 'searching' && <div className="absolute inset-0 flex flex-col items-center justify-center z-40 bg-slate-950/85 backdrop-blur-md rounded-3xl p-4 animate-fadeIn">
-                    <div className="relative w-64 h-64 flex items-center justify-center">
-                      <div className="absolute w-64 h-64 rounded-full border-2 border-lime-400/80 animate-radar-ripple pointer-events-none" />
-                      <div className="absolute w-64 h-64 rounded-full border-2 border-yellow-300/80 animate-radar-ripple pointer-events-none" style={{
-                    animationDelay: '0.8s'
-                  }} />
-                      <div className="absolute w-64 h-64 rounded-full border-2 border-pink-500/80 animate-radar-ripple pointer-events-none" style={{
-                    animationDelay: '1.6s'
-                  }} />
-                      
-                      <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-lime-400 to-pink-500 shadow-[0_0_40px_rgba(163,230,53,0.8)] z-20">
-                        <img src={userAvatar} alt="Matching" className="w-full h-full rounded-full object-cover border-2 border-slate-950" />
-                      </div>
+            {/* MAIN SYSTEM DISPLAY */}
+            {(matchMode === 'radar' || matchMode === 'random') ? <div className="flex-1 flex flex-col justify-center space-y-5 py-4 w-full relative z-10">
+                {matchState === 'idle' && <div className="space-y-4 text-center">
+                    <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-cyan-400/20 to-emerald-400/20 border border-cyan-400/30 flex items-center justify-center shadow-[0_0_25px_rgba(34,211,238,0.3)]">
+                      <Radio className="w-10 h-10 text-cyan-400 animate-pulse" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-black text-white">{loc('رادار آنلاین', 'Live Radar')}</h4>
+                      <p className="text-xs text-slate-400">
+                        {loc('جستجوی رندوم کاربران آنلاین.', 'Random search for online users.')}
+                      </p>
                     </div>
 
-                    <div className="text-center space-y-1 mt-4 z-40">
-                      <h4 className="text-base font-black text-white flex items-center justify-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-lime-400 animate-ping" />
-                        <span>Finding Streamer...</span>
-                      </h4>
-                      <p className="text-xs text-slate-400 font-medium">Connecting 1080p encrypted video match</p>
-                      
-                      <button onClick={() => setMatchState('idle')} className="mt-3 px-6 py-2 rounded-full bg-rose-600/20 text-rose-300 border border-rose-500/40 text-xs font-bold hover:bg-rose-600 hover:text-white transition">
-                        Cancel
-                      </button>
-                    </div>
+                    {!isUserSuperAdmin && <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 text-right space-y-1">
+                      <p className="font-bold text-amber-400">📜 {loc('تماس رایگان ۲۰ ثانیه‌ای:', 'Free 20s Calls:')} {freeMatchCallsLeft} / 3</p>
+                      <p>• {loc('در صورت اتمام سهمیه، هزینه به صورت دقیقه‌ای کسر می‌شود.', 'If quota ends, calls are charged per minute.')}</p>
+                    </div>}
+
+                    <button onClick={() => startRandomMatchSearch()} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-slate-950 font-black text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition">
+                      {loc('🚀 شروع جستجوی رادار', 'Start Radar Search')}
+                    </button>
                   </div>}
 
-                {/* CONCENTRIC RADAR ORBIT SYSTEM WITH FLOATING FEMALE CANDIDATE AVATARS */}
-                <div className="relative w-76 h-76 sm:w-84 sm:h-84 flex items-center justify-center">
-                  
-                  {/* OUTER ORBIT RING */}
-                  <div className="absolute w-72 h-72 sm:w-80 sm:h-80 rounded-full border border-lime-300/35 border-dashed animate-spin-slow flex items-center justify-center shadow-[0_0_30px_rgba(163,230,53,0.15)]">
-                    
-                    {/* Orbit Candidate 1 (Top) */}
-                    <div onClick={() => {
-                    const target = usersList?.find(u => u?.isVerified || u?.is_verified) || matchDeckProfiles[0];
-                    if (target) {
-                      setSelectedUser(target);
-                      setIsUserProfileModalOpen(true);
-                    }
-                  }} className="absolute -top-5 left-1/2 -translate-x-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-lime-400 to-emerald-400 shadow-[0_0_15px_#a3e635] cursor-pointer hover:scale-130 transition duration-300 z-30 group" title={matchDeckProfiles[0]?.name || ''}>
-                      <img src={matchDeckProfiles[0]?.avatar || ''} alt="Candidate" className="w-full h-full rounded-full object-cover border border-slate-950" />
-                      <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border border-slate-950 flex items-center justify-center">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                {matchState === 'searching' && <div className="py-12 text-center space-y-4">
+                    <div className="w-24 h-24 mx-auto rounded-full border-2 border-cyan-400 border-dashed animate-spin-slow flex items-center justify-center relative shadow-[0_0_25px_rgba(34,211,238,0.3)]">
+                       <Radio className="w-8 h-8 text-cyan-400 animate-ping absolute" />
+                    </div>
+                    <h4 className="text-sm font-black text-white">{loc('در حال اسکن رادار...', 'Scanning Radar...')}</h4>
+                  </div>}
+
+                {matchState === 'connected' && matchedMatchUser && <div className="space-y-4 px-2">
+                    <div className="relative aspect-[3/4] sm:aspect-[4/5] rounded-3xl overflow-hidden bg-slate-950 border border-cyan-400/30 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+                      <img src={matchedMatchUser.avatar || ''} alt={matchedMatchUser.name || matchedMatchUser.username || 'User'} className="absolute inset-0 w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                      
+                      <div className="absolute bottom-6 left-6 right-6 text-center space-y-4">
+                        <div>
+                          <h4 className="text-lg font-black text-white flex items-center justify-center gap-1">
+                            {matchedMatchUser?.name || matchedMatchUser?.username || loc('کاربر آنلاین', 'Online User')}
+                            {matchedMatchUser?.isVerified && <span className="text-blue-400 text-sm">✔</span>}
+                          </h4>
+                          <p className="text-xs text-cyan-300 font-bold mt-1 flex items-center justify-center gap-1">
+                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                             {loc('آنلاین', 'Online')}
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center justify-center gap-4">
+                          <button onClick={() => {
+                            setMatchState('idle');
+                          }} className="w-14 h-14 rounded-full bg-slate-800/80 backdrop-blur border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition shadow-lg">
+                            <X className="w-6 h-6" />
+                          </button>
+                          
+                          <button onClick={() => {
+                            handleStartCallDirect(matchedMatchUser, 'video', true);
+                            setMatchState('idle');
+                          }} className="w-16 h-16 rounded-full bg-gradient-to-tr from-pink-500 to-purple-500 shadow-[0_0_20px_rgba(236,72,153,0.5)] flex items-center justify-center text-white hover:scale-110 active:scale-95 transition">
+                            <Heart className="w-8 h-8 fill-current" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Orbit Candidate 2 (Right) */}
-                    <div onClick={() => {
-                    const target = matchDeckProfiles[1] || usersList[0];
-                    setSelectedUser(target);
-                    setIsUserProfileModalOpen(true);
-                  }} className="absolute top-1/2 -right-5 -translate-y-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-purple-500 shadow-[0_0_15px_#ec4899] cursor-pointer hover:scale-130 transition duration-300 z-30 group" title={matchDeckProfiles[1]?.name || ''}>
-                      <img src={matchDeckProfiles[1]?.avatar || ''} alt="Candidate" className="w-full h-full rounded-full object-cover border border-slate-950" />
-                      {Boolean(matchDeckProfiles[1]?.is_verified || matchDeckProfiles[1]?.isVerified || matchDeckProfiles[1]?.verified) && (
-                        <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-cyan-400 border border-slate-950 flex items-center justify-center text-[7px] text-slate-950 font-black">
-                          ✔
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Orbit Candidate 3 (Bottom) */}
-                    <div onClick={() => {
-                    const target = matchDeckProfiles[2] || usersList[0];
-                    setSelectedUser(target);
-                    setIsUserProfileModalOpen(true);
-                  }} className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-yellow-300 shadow-[0_0_15px_#fde047] cursor-pointer hover:scale-130 transition duration-300 z-30 group" title={matchDeckProfiles[2]?.name || ''}>
-                      <img src={matchDeckProfiles[2]?.avatar || ''} alt="Candidate" className="w-full h-full rounded-full object-cover border border-slate-950" />
-                      <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border border-slate-950 flex items-center justify-center">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                      </div>
-                    </div>
-
-                    {/* Orbit Candidate 4 (Left) */}
-                    <div onClick={() => {
-                    const target = matchDeckProfiles[3] || usersList[0];
-                    setSelectedUser(target);
-                    setIsUserProfileModalOpen(true);
-                  }} className="absolute top-1/2 -left-5 -translate-y-1/2 w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-cyan-400 to-blue-500 shadow-[0_0_15px_#22d3ee] cursor-pointer hover:scale-130 transition duration-300 z-30 group" title={matchDeckProfiles[3]?.name || ''}>
-                      <img src={matchDeckProfiles[3]?.avatar || ''} alt="Candidate" className="w-full h-full rounded-full object-cover border border-slate-950" />
-                      {Boolean(matchDeckProfiles[3]?.is_verified || matchDeckProfiles[3]?.isVerified || matchDeckProfiles[3]?.verified) && (
-                        <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-cyan-400 border border-slate-950 flex items-center justify-center text-[7px] text-slate-950 font-black">
-                          ✔
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* INNER ORBIT RING */}
-                  <div className="absolute w-48 h-48 sm:w-52 sm:h-52 rounded-full border border-yellow-300/40 animate-spin-slow-reverse flex items-center justify-center">
-                    
-                    {/* Inner Orbit Candidate 1 */}
-                    <div onClick={() => {
-                    const target = matchDeckProfiles[0] || usersList[0];
-                    setSelectedUser(target);
-                    setIsUserProfileModalOpen(true);
-                  }} className="absolute top-2 right-2 w-9 h-9 rounded-full p-0.5 bg-lime-300 shadow-[0_0_10px_#a3e635] cursor-pointer hover:scale-125 transition z-30">
-                      <img src={matchDeckProfiles[0]?.avatar || ''} alt="Candidate" className="w-full h-full rounded-full object-cover border border-slate-950" />
-                    </div>
-
-                    {/* Inner Orbit Candidate 2 */}
-                    <div onClick={() => {
-                    const target = matchDeckProfiles[1] || usersList[0];
-                    setSelectedUser(target);
-                    setIsUserProfileModalOpen(true);
-                  }} className="absolute bottom-2 left-2 w-9 h-9 rounded-full p-0.5 bg-pink-400 shadow-[0_0_10px_#ec4899] cursor-pointer hover:scale-125 transition z-30">
-                      <img src={matchDeckProfiles[1]?.avatar || ''} alt="Candidate" className="w-full h-full rounded-full object-cover border border-slate-950" />
-                    </div>
-
-                    {/* Glowing Orbs */}
-                    <div className="absolute top-1/2 left-1 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-lime-300 shadow-[0_0_8px_#a3e635] animate-pulse" />
-                    <div className="absolute top-1/2 right-1 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-pink-400 shadow-[0_0_8px_#ec4899] animate-pulse" />
-                  </div>
-
-                  {/* CENTER PROFILE AVATAR WITH NEON AURA */}
-                  <div onClick={() => startRandomMatchSearch()} className="relative w-22 h-22 sm:w-26 sm:h-26 rounded-full p-1 bg-gradient-to-tr from-lime-400 via-emerald-400 to-cyan-400 shadow-[0_0_40px_rgba(163,230,53,0.75)] z-30 cursor-pointer hover:scale-110 active:scale-95 transition duration-300 group">
-                    <img src={userAvatar} alt={userName} className="w-full h-full rounded-full object-cover border-2 border-slate-950" />
-                    <div className="absolute inset-0 rounded-full bg-lime-400/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                      <Video className="w-8 h-8 text-slate-950 drop-shadow-md" />
-                    </div>
-                  </div>
-
-                </div>
-
+                  </div>}
               </div> : (/* CARD SWIPE MODE */
-            <div className="flex-1 flex flex-col justify-center items-center overflow-hidden py-1">
-                {matchCardIndex < matchDeckProfiles.length && matchDeckProfiles[matchCardIndex] ? <div className="relative w-full max-w-xs h-[340px] rounded-3xl overflow-hidden bg-slate-950 border border-pink-500/30 shadow-2xl flex flex-col justify-end transition-transform duration-200" style={{
-                transform: `translate(${swipeDragPos.x}px, ${swipeDragPos.y}px) rotate(${swipeDragPos.x * 0.05}deg)`
+            <div className="flex-1 flex flex-col justify-center items-center overflow-hidden py-1 w-full relative z-10">
+                {matchCardIndex < matchDeckProfiles.length && matchDeckProfiles[matchCardIndex] ? <div className="relative w-full max-w-[340px] h-[470px] max-h-[63vh] rounded-3xl overflow-hidden bg-slate-950 border border-pink-500/30 shadow-[0_15px_35px_rgba(0,0,0,0.8)] flex flex-col justify-end transition-transform duration-150 group select-none touch-none" style={{
+                transform: `translate(${swipeDragPos.x}px, ${swipeDragPos.y}px) rotate(${swipeDragPos.x * 0.06}deg)`
               }} onTouchStart={handleTouchStart} onMouseDown={e => handleTouchStart({
                 touches: [{
                   clientX: e.clientX,
@@ -3426,49 +3409,131 @@ export default function App() {
                   clientY: e.clientY
                 }]
               })} onTouchEnd={handleTouchEnd} onMouseUp={handleTouchEnd} onMouseLeave={handleTouchEnd}>
-                    <img src={matchDeckProfiles[matchCardIndex]?.avatar || ''} alt={matchDeckProfiles[matchCardIndex]?.name || 'Match'} className="absolute inset-0 w-full h-full object-cover filter brightness-95" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                      {/* Swipe Direction Indicators */}
+                      {swipeDragPos.x > 40 && (
+                        <div className="absolute top-8 right-6 z-40 px-3.5 py-1.5 rounded-2xl bg-pink-500/90 text-white font-black text-xs border-2 border-white shadow-xl rotate-12 flex items-center gap-1.5 animate-pulse">
+                          <Heart className="w-4 h-4 fill-current" />
+                          <span>{loc('لایک و تماس', 'LIKE & CALL')}</span>
+                        </div>
+                      )}
+                      {swipeDragPos.x < -40 && (
+                        <div className="absolute top-8 left-6 z-40 px-3.5 py-1.5 rounded-2xl bg-rose-600/90 text-white font-black text-xs border-2 border-white shadow-xl -rotate-12 flex items-center gap-1.5 animate-pulse">
+                          <X className="w-4 h-4" />
+                          <span>{loc('رد کردن', 'PASS')}</span>
+                        </div>
+                      )}
 
-                    <div className="relative z-20 p-3.5 space-y-1">
-                      <h3 className="text-xl font-black text-white flex items-center gap-1.5">
-                        <span>{matchDeckProfiles[matchCardIndex]?.name}</span>
-                        <span className="text-sm text-pink-400 font-bold">({matchDeckProfiles[matchCardIndex]?.age})</span>
-                        {Boolean(matchDeckProfiles[matchCardIndex]?.is_verified || matchDeckProfiles[matchCardIndex]?.isVerified || matchDeckProfiles[matchCardIndex]?.verified) && <BadgeCheck className="w-4 h-4 text-cyan-400" />}
-                      </h3>
-                      <p className="text-xs text-slate-300 font-medium">📍 {matchDeckProfiles[matchCardIndex]?.city} • Online Streamer</p>
-
-                      <div className="flex items-center gap-2 pt-3">
-                        <button onClick={() => triggerMatchAction('reject')} className="flex-1 py-2 rounded-2xl bg-rose-600/80 hover:bg-rose-600 text-white font-black text-xs transition">
-                          Pass ❌
+                      {matchAnimationEffect && <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm animate-fadeIn">
+                        {matchAnimationEffect === 'like' && <Heart className="w-28 h-28 text-pink-500 fill-pink-500 animate-bounce" />}
+                        {matchAnimationEffect === 'reject' && <X className="w-28 h-28 text-rose-500 animate-ping" />}
+                        {matchAnimationEffect === 'superlike' && <Star className="w-28 h-28 text-amber-400 fill-amber-400 animate-pulse" />}
+                      </div>}
+                    {/* Background Blur & Photo */}
+                    <img src={matchDeckProfiles[matchCardIndex]?.avatar || ''} alt={matchDeckProfiles[matchCardIndex]?.name || 'Match'} className="absolute inset-0 w-full h-full object-cover filter brightness-95 group-hover:scale-105 transition duration-700 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent pointer-events-none" />
+                    {/* Top Badges */}
+                    <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10 pointer-events-none">
+                      <div className="px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md border border-slate-800 text-white text-xs font-black flex items-center gap-1.5 shadow">
+                        <span className={`w-2 h-2 rounded-full ${matchDeckProfiles[matchCardIndex]?.isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
+                        <span>{matchDeckProfiles[matchCardIndex]?.isOnline ? loc('آنلاین', 'Online') : loc('آفلاین', 'Offline')}</span>
+                        <span className="text-slate-500">•</span>
+                        <span>{matchDeckProfiles[matchCardIndex].distance}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="px-2.5 py-1 rounded-full bg-pink-950/85 backdrop-blur-md border border-pink-500/50 text-pink-300 text-xs font-black flex items-center gap-1 shadow-lg">
+                          <span>🪙</span>
+                          <span>{matchDeckProfiles[matchCardIndex].tariffPerMin || 100} / {loc('دقیقه', 'min')}</span>
+                        </div>
+                        {matchDeckProfiles[matchCardIndex].isVip && <span className="px-2.5 py-1 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-500/40 text-amber-300 text-xs font-black flex items-center gap-1">
+                          👑 VIP
+                        </span>}
+                      </div>
+                    </div>
+                    {/* Card Details Info */}
+                    <div className="relative z-10 p-4 space-y-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-1.5 drop-shadow-md">
+                            {matchDeckProfiles[matchCardIndex]?.name || ''}{matchDeckProfiles[matchCardIndex]?.age ? `, ${matchDeckProfiles[matchCardIndex]?.age}` : ''}
+                            {matchDeckProfiles[matchCardIndex]?.isVerified && <span className="text-blue-400 text-sm">✔</span>}
+                          </h2>
+                        </div>
+                        <p className="text-xs text-slate-300 font-bold flex items-center gap-1 mt-0.5 drop-shadow-md">
+                          <span>📍</span> {matchDeckProfiles[matchCardIndex]?.city || loc('تهران', 'Tehran')}
+                        </p>
+                      </div>
+                      {/* Action Buttons Bar */}
+                      <div className="flex items-center gap-2.5 pt-1">
+                        {/* Reject / Pass Button */}
+                        <button onClick={(e) => {
+                          e.stopPropagation();
+                          setMatchAnimationEffect('reject');
+                          setTimeout(() => {
+                            setMatchCardIndex(prev => prev + 1);
+                            setMatchAnimationEffect(null);
+                            setSwipeDragPos({ x: 0, y: 0 });
+                          }, 250);
+                        }} className="w-12 h-12 rounded-2xl bg-slate-900/90 border border-slate-700 text-rose-400 hover:bg-rose-500/20 font-bold flex items-center justify-center shadow-lg active:scale-95 transition shrink-0" title="Pass">
+                          <X className="w-6 h-6" />
                         </button>
-                        <button onClick={() => triggerMatchAction('like')} className="flex-1 py-2 rounded-2xl bg-emerald-600/80 hover:bg-emerald-600 text-white font-black text-xs transition">
-                          Like ❤️
+
+                        {/* User Profile Details Button */}
+                        <button onClick={(e) => {
+                          e.stopPropagation();
+                          const target = matchDeckProfiles[matchCardIndex];
+                          if (target) {
+                            setSelectedUserProfile(target);
+                            setIsUserProfileModalOpen(true);
+                          }
+                        }} className="w-12 h-12 rounded-2xl bg-slate-900/90 border border-slate-800 text-slate-300 hover:text-cyan-400 hover:border-cyan-500/40 flex items-center justify-center shadow active:scale-95 transition shrink-0" title="Profile">
+                          <User className="w-5 h-5" />
+                        </button>
+
+                        {/* Like & Video Call Button (User requested: Like redirects to video call if coins sufficient, else error toast, no free calls) */}
+                        <button onClick={(e) => {
+                          e.stopPropagation();
+                          const target = matchDeckProfiles[matchCardIndex];
+                          handleSwipeLikeAction(target);
+                        }} className="flex-1 py-3.5 px-3 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-purple-600 text-white font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(236,72,153,0.7)] flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition" title="Like & Video Call">
+                          <Heart className="w-5 h-5 fill-current animate-pulse text-white shrink-0" />
+                          <Video className="w-5 h-5 text-white shrink-0" />
+                          <span>{loc('لایک و تماس تصویری', 'Like & Video Call')}</span>
                         </button>
                       </div>
                     </div>
-                  </div> : <div className="text-center space-y-2 p-4">
-                    <p className="text-xs text-slate-300 font-bold">No more profiles in deck!</p>
-                    <button onClick={() => setMatchCardIndex(0)} className="px-5 py-2 rounded-2xl bg-pink-600 text-white font-bold text-xs shadow-lg">
-                      Reset Deck 🔄
+                  </div> : <div className="text-center space-y-4 my-auto py-16">
+                    <div className="w-20 h-20 mx-auto rounded-3xl bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-3xl animate-bounce">
+                      ✨
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-base font-black text-white">{loc('همه کارت‌ها دیده شدند!', 'All profiles viewed!')}</h4>
+                      <p className="text-xs text-slate-400">{loc('برای مشاهده مجدد کارت‌های جدید کلیک کنید.', 'Refresh deck to see new profiles.')}</p>
+                    </div>
+                    <button onClick={() => setMatchCardIndex(0)} className="px-6 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-105 active:scale-95 transition">
+                      {loc('🔄 بارگذاری مجدد', '🔄 Refresh Deck')}
                     </button>
                   </div>}
               </div>)}
 
-            {/* SUB-CENTER BADGE: TICKET / PASS INDICATOR */}
-            <div className="flex items-center justify-center gap-1 shrink-0 my-1 z-20">
-              <div className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-purple-900/60 border border-purple-500/40 text-purple-300 text-xs font-black shadow-md backdrop-blur-md">
-                <span>🎟️</span>
-                <span>X{freeMatchCallsLeft} Free Passes</span>
+            {/* SUB-CENTER BADGE: TICKET / PASS INDICATOR (RADAR ONLY vs SWIPE HINT) */}
+            {(matchMode === 'radar' || matchMode === 'random') ? (
+              <div className="flex items-center justify-center gap-1 shrink-0 my-1 z-20">
+                <div className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-purple-900/60 border border-purple-500/40 text-purple-300 text-xs font-black shadow-md backdrop-blur-md">
+                  <span>🎟️</span>
+                  <span>X{freeMatchCallsLeft} {loc('تماس رایگان', 'Free Passes')}</span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center justify-center gap-1 shrink-0 my-1 z-20">
+                <div className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-slate-900/80 border border-slate-800 text-slate-400 text-xs font-medium shadow-md backdrop-blur-md">
+                  <Flame className="w-3.5 h-3.5 text-pink-400" />
+                  <span>{loc('سوایپ به راست یا کلیک برای تماس تصویری', 'Swipe right or Click for Video Call')}</span>
+                </div>
+              </div>
+            )}
 
-            {/* BOTTOM MAIN CALL BUTTON BAR (GIANT NEON LIME PILL BUTTON + GIFT ICON) */}
+            {/* BOTTOM MAIN CALL BUTTON BAR (GIFT ICON) */}
             <div className="w-full flex items-center justify-center gap-3 shrink-0 pb-1 z-30">
-              <button onClick={() => startRandomMatchSearch()} className="flex-1 max-w-xs py-3.5 px-6 rounded-full bg-lime-400 hover:bg-lime-300 text-slate-950 font-black text-base sm:text-lg shadow-[0_0_35px_rgba(163,230,53,0.75)] hover:shadow-[0_0_50px_rgba(163,230,53,0.95)] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2.5">
-                <Video className="w-6 h-6 fill-slate-950 text-slate-950" />
-                <span>Free Match</span>
-              </button>
-
               <button onClick={() => setIsRewardOpeningModalOpen(true)} className="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-amber-400 hover:bg-slate-800 hover:border-amber-500/50 shadow-lg active:scale-90 transition shrink-0" title="Free Rewards & Gifts">
                 <Gift className="w-6 h-6 animate-bounce" />
               </button>
@@ -4372,14 +4437,12 @@ export default function App() {
             </div>
 
             {/* Match Mode Switcher Tabs */}
-            <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1 rounded-2xl border border-slate-800 shrink-0">
-              <button onClick={() => setMatchSubTab('swipe')} className={`py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${matchSubTab === 'swipe' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}>
-                <span>🔥</span>
-                <span>{loc('کارت‌های مچ (Swipe)', 'Match Deck')}</span>
+            <div className="flex items-center justify-center gap-6 p-2 shrink-0">
+              <button onClick={() => setMatchSubTab('swipe')} className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full transition flex items-center justify-center border ${matchSubTab === 'swipe' ? 'bg-gradient-to-tr from-pink-500 to-purple-600 border-pink-400 text-white shadow-[0_0_25px_rgba(236,72,153,0.6)] scale-110' : 'bg-slate-900/40 border-slate-700 text-slate-500 hover:text-pink-400 hover:scale-105'}`} title="Swipe">
+                <Flame className="w-7 h-7 sm:w-8 sm:h-8" />
               </button>
-              <button onClick={() => setMatchSubTab('roulette')} className={`py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${matchSubTab === 'roulette' ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}>
-                <span>🎲</span>
-                <span>{loc('رولت ویدئویی ۳۰ ثانیه', '30s Roulette')}</span>
+              <button onClick={() => setMatchSubTab('roulette')} className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full transition flex items-center justify-center border ${matchSubTab === 'roulette' ? 'bg-gradient-to-tr from-cyan-400 to-emerald-400 border-cyan-300 text-slate-950 shadow-[0_0_25px_rgba(34,211,238,0.6)] scale-110' : 'bg-slate-900/40 border-slate-700 text-slate-500 hover:text-cyan-400 hover:scale-105'}`} title="Radar">
+                <Radio className="w-7 h-7 sm:w-8 sm:h-8" />
               </button>
             </div>
 
@@ -4490,82 +4553,67 @@ export default function App() {
                   </div>}
               </div>}
 
-            {/* TAB 2: 30s VIDEO ROULETTE */}
+            {/* TAB 2: RADAR MATCH */}
             {matchSubTab === 'roulette' && <div className="flex-1 flex flex-col justify-center space-y-5 py-4">
                 {matchState === 'idle' && <div className="space-y-4 text-center">
-                    <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-pink-500/20 to-purple-500/20 border border-pink-500/30 flex items-center justify-center">
-                      <Video className="w-10 h-10 text-pink-400 animate-pulse" />
+                    <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-cyan-400/20 to-emerald-400/20 border border-cyan-400/30 flex items-center justify-center">
+                      <Radio className="w-10 h-10 text-cyan-400 animate-pulse" />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="text-sm font-black text-white">{loc('رولت ویدئویی ۳۰ ثانیه‌ای رایگان', 'Free 30s Video Roulette')}</h4>
+                      <h4 className="text-sm font-black text-white">{loc('رادار آنلاین', 'Live Radar')}</h4>
                       <p className="text-xs text-slate-400">
-                        {loc('اتصال تصادفی هوشمند با کاربران آنلاین تاییدشده برای مکالمه کوتاه‌مدت.', 'Smart random video pairing with verified online users.')}
+                        {loc('جستجوی رندوم کاربران آنلاین.', 'Random search for online users.')}
                       </p>
                     </div>
 
-                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 text-right space-y-1">
-                      <p className="font-bold text-amber-400">📜 {loc('سهمیه امروز:', 'Daily Quota:')} {freeMatchCallsLeft} / 3</p>
-                      <p>• {loc('رعایت احترام و قوانین اخلاقی الزامی است.', 'Mutual respect and etiquette required.')}</p>
-                    </div>
+                    {!isUserSuperAdmin && <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 text-right space-y-1">
+                      <p className="font-bold text-amber-400">📜 {loc('تماس رایگان ۲۰ ثانیه‌ای:', 'Free 20s Calls:')} {freeMatchCallsLeft} / 3</p>
+                      <p>• {loc('در صورت اتمام سهمیه، هزینه به صورت دقیقه‌ای کسر می‌شود.', 'If quota ends, calls are charged per minute.')}</p>
+                    </div>}
 
-                    <button onClick={() => {
-                  if (freeMatchCallsLeft <= 0) {
-                    showToast('⚠️ Daily free quota reached.');
-                    return;
-                  }
-                  setMatchState('searching');
-                  setTimeout(() => {
-                    const realPartners = Array.isArray(usersList) && usersList.length > 0 ? usersList.filter(u => {
-                      if (!u || u.username === currentUsername) return false;
-                      const g = String(u.gender || '').trim().toLowerCase();
-                      const isFemale = g === 'female' || g === 'خانم' || g === 'زن' || g === 'f';
-                      const isStreamerOrHost = Boolean(u.isStreamer || u.is_streamer || u.isHost || u.user_type === 'STREAMER');
-                      if (!(isFemale || isStreamerOrHost || (isUserAdmin && g !== 'male'))) return false;
-                      return (u.status === 'approved' || u.isApproved !== false);
-                    }) : [];
-                    if (realPartners.length === 0) {
-                      setMatchState('idle');
-                      showToast(window.loc('در حال حاضر کاربر دیگری برای اتصال رولت آنلاین نیست', 'No other active users online for roulette right now'));
-                      return;
-                    }
-                    setMatchState('idle');
-                    showToast(window.loc('در حال حاضر هیچ کاربری برای مچ ویدئویی آنلاین نیست', 'No users available for video match currently'));
-                  }, 2500);
-                }} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition">
-                      {loc('🚀 شروع جستجوی رولت ویدئویی', 'Start Video Roulette')}
+                    <button onClick={() => startRandomMatchSearch()} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-slate-950 font-black text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition">
+                      {loc('🚀 شروع جستجوی رادار', 'Start Radar Search')}
                     </button>
                   </div>}
 
                 {matchState === 'searching' && <div className="py-12 text-center space-y-4">
-                    <div className="w-16 h-16 mx-auto rounded-full border-4 border-pink-500 border-t-transparent animate-spin" />
-                    <h4 className="text-sm font-black text-white">{loc('در حال جستجوی کاربر رندوم آنلاین...', 'Searching for random user...')}</h4>
-                    <p className="text-xs text-slate-400">{loc('لطفاً چند لحظه صبر کنید...', 'Please wait a moment...')}</p>
+                    <div className="w-24 h-24 mx-auto rounded-full border-2 border-cyan-400 border-dashed animate-spin-slow flex items-center justify-center relative">
+                       <Radio className="w-8 h-8 text-cyan-400 animate-ping absolute" />
+                    </div>
+                    <h4 className="text-sm font-black text-white">{loc('در حال اسکن رادار...', 'Scanning Radar...')}</h4>
                   </div>}
 
                 {matchState === 'connected' && matchedMatchUser && <div className="space-y-4">
-                    <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-pink-500/30 flex items-center justify-center">
-                      <img src={matchedMatchUser.avatar || ''} alt={matchedMatchUser.name || matchedMatchUser.username || 'User'} className="absolute inset-0 w-full h-full object-cover opacity-85" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-black/40" />
+                    <div className="relative aspect-[3/4] sm:aspect-[4/5] rounded-3xl overflow-hidden bg-slate-950 border border-cyan-400/30 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+                      <img src={matchedMatchUser.avatar || ''} alt={matchedMatchUser.name || matchedMatchUser.username || 'User'} className="absolute inset-0 w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
                       
-                      <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md border border-pink-500/40 text-pink-400 font-black text-xs flex items-center gap-1.5 animate-pulse">
-                        <span>⏱️</span>
-                        <span>{matchCallSeconds}s</span>
-                      </div>
-
-                      <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between">
+                      <div className="absolute bottom-6 left-6 right-6 text-center space-y-4">
                         <div>
-                          <h4 className="text-xs font-black text-white flex items-center gap-1">
+                          <h4 className="text-lg font-black text-white flex items-center justify-center gap-1">
                             {matchedMatchUser?.name || matchedMatchUser?.username || loc('کاربر آنلاین', 'Online User')}
-                            {matchedMatchUser?.isVerified && <span className="text-blue-400 text-[10px]">✔</span>}
+                            {matchedMatchUser?.isVerified && <span className="text-blue-400 text-sm">✔</span>}
                           </h4>
-                          <p className="text-[10px] text-slate-300">📍 {matchedMatchUser?.city || loc('آنلاین', 'Online')}</p>
+                          <p className="text-xs text-cyan-300 font-bold mt-1 flex items-center justify-center gap-1">
+                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                             {loc('آنلاین', 'Online')}
+                          </p>
                         </div>
-                        <button onClick={() => {
-                      setMatchState('idle');
-                      showToast('📞 Call ended.');
-                    }} className="px-4 py-2 rounded-xl bg-red-600 text-white font-bold text-xs shadow-lg hover:bg-red-500">
-                          {loc('قطع تماس', 'End Call')}
-                        </button>
+                        
+                        <div className="flex items-center justify-center gap-4">
+                          <button onClick={() => {
+                            setMatchState('idle');
+                          }} className="w-14 h-14 rounded-full bg-slate-800/80 backdrop-blur border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition">
+                            <X className="w-6 h-6" />
+                          </button>
+                          
+                          <button onClick={() => {
+                            handleStartCallDirect(matchedMatchUser, 'video', true);
+                            setMatchState('idle');
+                          }} className="w-16 h-16 rounded-full bg-gradient-to-tr from-pink-500 to-purple-500 shadow-[0_0_20px_rgba(236,72,153,0.5)] flex items-center justify-center text-white hover:scale-110 active:scale-95 transition">
+                            <Heart className="w-8 h-8 fill-current" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>}
