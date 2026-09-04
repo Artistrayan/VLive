@@ -3,13 +3,12 @@ import { presenceService } from './presenceService';
 import { calculateAge } from './businessRules';
 import { fetchLiveKitToken } from './livekitService';
 import { safeStorage } from '../utils/safeStorage';
+import { getStoredToken, getUserId } from '../utils/authSession';
 
-export { presenceService, calculateAge };
+export { presenceService, calculateAge, getStoredToken, getUserId };
 
-export const setStoredToken = (token) => localStorage.setItem('vlive_token', token);
-export const setStoredSession = (session) => localStorage.setItem('vlive_session', JSON.stringify(session));
-export const getStoredToken = () => localStorage.getItem('vlive_token');
-export const getUserId = () => localStorage.getItem('vlive_user_id');
+export const setStoredToken = (token) => safeStorage.setItem('vlive_token', token);
+export const setStoredSession = (session) => safeStorage.setItem('vlive_session', JSON.stringify(session));
 
 // ==========================================
 // CORE HELPERS (RESOLVER & ADMIN SECURITY)

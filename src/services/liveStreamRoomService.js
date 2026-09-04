@@ -1,5 +1,5 @@
 import { supabase } from '../supabaseClient';
-import { getUserId } from './api';
+import { getUserId } from '../utils/authSession';
 
 /**
  * Realtime Live Stream Room Service

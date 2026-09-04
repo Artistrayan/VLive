@@ -1,5 +1,5 @@
 import { supabase } from '../supabaseClient.js';
-import { getUserId } from './api.js';
+import { getUserId } from '../utils/authSession.js';
 
 // Cache for global interests
 let cachedInterests = null;

@@ -7,7 +7,7 @@ import {
   ConnectionState
 } from 'livekit-client';
 import { supabase } from '../supabaseClient';
-import { getStoredToken } from './api';
+import { getStoredToken } from '../utils/authSession';
 import { cameraPermissionService } from './cameraPermissionService';
 
 /**
