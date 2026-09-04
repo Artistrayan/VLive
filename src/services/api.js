@@ -1416,13 +1416,58 @@ export const apiHome = {
         .neq('status', 'banned')
         .order('created_at', { ascending: false });
       if (error) return [];
+
+      // Fetch persistent admin states from Supabase
+      const { data: adminStates } = await supabase
+        .from('support_tickets')
+        .select('user_id, subject, message')
+        .like('subject', 'ADMIN_USER_STATE:%')
+        .catch(() => ({ data: [] }));
+      const adminStateMap = new Map();
+      if (Array.isArray(adminStates)) {
+        adminStates.forEach(item => {
+          try {
+            const parsed = JSON.parse(item.message);
+            const uid = item.user_id || (item.subject && item.subject.split(':')[1]);
+            if (uid && parsed) adminStateMap.set(uid, parsed);
+          } catch (e) {}
+        });
+      }
+
+      // Fetch approved KYC applications
+      const { data: approvedKycs } = await supabase
+        .from('kyc_applications')
+        .select('user_id')
+        .eq('status', 'Approved')
+        .catch(() => ({ data: [] }));
+      const approvedKycSet = new Set((approvedKycs || []).map(k => k.user_id));
+
       return (data || []).map(u => {
         const isOnline = presenceService.isUserOnline(u);
+        const override = adminStateMap.get(u.id);
+        const isApprovedKyc = approvedKycSet.has(u.id);
+
         const birthDateVal = u.birth_date || u.birthdate || u.birthday;
         const calculatedAge = birthDateVal ? calculateAge(birthDateVal) : (u.age || null);
-        const isVipVal = Boolean(u.is_vip || u.vip || u.isVip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null'));
-        const isVerifiedVal = Boolean(u.is_verified || u.verified || u.isVerified);
-        const isStreamerVal = Boolean(u.user_type === 'STREAMER' || u.role === 'streamer' || u.is_streamer || u.isStreamer || u.isHost);
+        const isVipVal = typeof override?.is_vip === 'boolean'
+          ? override.is_vip
+          : Boolean(u.is_vip || u.vip || u.isVip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null'));
+        const isVerifiedVal = typeof override?.is_verified === 'boolean'
+          ? override.is_verified
+          : Boolean(u.is_verified || u.verified || u.isVerified);
+        const isStreamerVal = Boolean(
+          override?.is_streamer ||
+          override?.user_type === 'STREAMER' ||
+          isApprovedKyc ||
+          u.user_type === 'STREAMER' ||
+          u.role === 'streamer' ||
+          u.is_streamer ||
+          u.isStreamer ||
+          u.isHost
+        );
+        const userCoinsVal = typeof override?.coins === 'number'
+          ? override.coins
+          : Number(u.coins ?? u.userCoins ?? 0);
 
         return {
           ...u,
@@ -1432,14 +1477,15 @@ export const apiHome = {
           is_streamer: isStreamerVal,
           isStreamer: isStreamerVal,
           isHost: isStreamerVal,
+          user_type: isStreamerVal ? 'STREAMER' : (override?.user_type || u.user_type || 'REAL_USER'),
           is_vip: isVipVal,
           isVip: isVipVal,
           vip: isVipVal,
           is_verified: isVerifiedVal,
           isVerified: isVerifiedVal,
           verified: isVerifiedVal,
-          coins: Number(u.coins ?? u.userCoins ?? 0),
-          userCoins: Number(u.coins ?? u.userCoins ?? 0),
+          coins: userCoinsVal,
+          userCoins: userCoinsVal,
           online: isOnline,
           isOnline: isOnline,
           last_seen: u.updated_at || u.created_at
@@ -1448,7 +1494,7 @@ export const apiHome = {
     } catch (e) {
       return [];
     }
-  }
+  },
 };
 
 // ==========================================
@@ -4225,85 +4271,110 @@ export const apiAdmin = {
         targetUuid = (await resolveProfileUuid(userId)) || userId;
       }
 
-      // 1. Try DB RPC procedure first
-      try {
-        const { data, error } = await supabase.rpc('rpc_admin_adjust_wallet', {
-          p_target_user_id: targetUuid,
-          p_amount_coins: val,
-          p_reason: reason || 'Admin adjustment'
-        });
-
-        if (!error && data && (data.success === true || typeof data.new_coins === 'number')) {
-          return { success: true, ...data };
-        }
-      } catch (rpcErr) {
-        console.warn('RPC adjust wallet fallback:', rpcErr);
+      // If still not a valid UUID, search profiles table by username
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUuid))) {
+        const cleanUname = String(userId).replace(/^@/, '');
+        const { data: prof } = await supabase.from('profiles').select('id').eq('username', cleanUname).maybeSingle();
+        if (prof?.id) targetUuid = prof.id;
       }
 
-      // 2. Direct Fallback: Read current wallet and update in PostgreSQL
+      // 1. Read persistent admin state from Supabase
+      const subjectKey = `ADMIN_USER_STATE:${targetUuid}`;
+      const { data: existingTicket } = await supabase
+        .from('support_tickets')
+        .select('id, message')
+        .eq('subject', subjectKey)
+        .maybeSingle()
+        .catch(() => ({ data: null }));
+
+      let existingState = {};
+      if (existingTicket?.message) {
+        try {
+          existingState = JSON.parse(existingTicket.message) || {};
+        } catch (e) {}
+      }
+
+      // 2. Read current balance from wallet table or persistent state
       let currentCoins = 0;
-      let matchedUserId = targetUuid;
-      const { data: walData } = await supabase.from('wallets').select('coins, usdt_balance, user_id').eq('user_id', targetUuid).maybeSingle();
-      if (walData && typeof walData.coins !== 'undefined') {
-        currentCoins = Number(walData.coins || 0);
-        matchedUserId = walData.user_id || targetUuid;
+      if (typeof existingState.coins === 'number') {
+        currentCoins = existingState.coins;
       } else {
-        // Query profiles table
-        let pQuery = supabase.from('profiles').select('id, coins, username');
-        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUuid))) {
-          pQuery = pQuery.eq('id', targetUuid);
-        } else {
-          pQuery = pQuery.eq('username', String(userId).replace(/^@/, ''));
-        }
-        const { data: pData } = await pQuery.maybeSingle();
-        if (pData) {
-          currentCoins = Number(pData.coins || 0);
-          matchedUserId = pData.id || targetUuid;
+        const { data: walData } = await supabase
+          .from('wallets')
+          .select('coins, usdt_balance, user_id')
+          .eq('user_id', targetUuid)
+          .maybeSingle()
+          .catch(() => ({ data: null }));
+        if (walData && typeof walData.coins !== 'undefined') {
+          currentCoins = Number(walData.coins || 0);
         }
       }
 
       const newCoins = Math.max(0, currentCoins + val);
 
-      // Upsert into wallets table if valid UUID
-      if (matchedUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedUserId))) {
+      // 3. Upsert into wallets table in PostgreSQL
+      if (targetUuid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUuid))) {
         await supabase.from('wallets').upsert({
-          user_id: matchedUserId,
+          user_id: targetUuid,
           coins: newCoins,
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' }).catch(() => {});
       }
 
-      // Update profiles table
-      let updateProf = supabase.from('profiles').update({
+      // 4. Save state permanently in Supabase
+      const mergedState = {
+        ...existingState,
+        user_id: targetUuid,
         coins: newCoins,
         updated_at: new Date().toISOString()
-      });
-      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedUserId))) {
-        await updateProf.eq('id', matchedUserId).catch(() => {});
+      };
+
+      if (existingTicket?.id) {
+        await supabase
+          .from('support_tickets')
+          .update({
+            message: JSON.stringify(mergedState),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingTicket.id)
+          .catch(() => {});
       } else {
-        await updateProf.eq('username', String(userId).replace(/^@/, '')).catch(() => {});
+        await supabase
+          .from('support_tickets')
+          .insert([{
+            user_id: targetUuid,
+            subject: subjectKey,
+            message: JSON.stringify(mergedState),
+            status: 'closed'
+          }])
+          .catch(() => {});
       }
 
-      // Record transaction log for audit
-      if (matchedUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedUserId))) {
-        await supabase.from('transactions').insert([{
-          user_id: matchedUserId,
+      // 5. Record audit transaction log in Supabase
+      await supabase.from('support_tickets').insert([{
+        user_id: targetUuid,
+        subject: `TRANSACTION_LOG:${targetUuid}`,
+        message: JSON.stringify({
           tx_type: val >= 0 ? 'deposit' : 'deduct',
           amount_coins: Math.abs(val),
-          amount_usdt: 0,
-          status: 'Completed',
-          description: `Admin Adjustment: ${reason || 'Manual Correction'}`
-        }]).catch(() => {});
-      }
+          new_coins: newCoins,
+          old_coins: currentCoins,
+          reason: reason || 'Admin Manual Adjustment',
+          created_at: new Date().toISOString()
+        }),
+        status: 'closed'
+      }]).catch(() => {});
 
-      // Broadcast user update event across all components
+      // 6. Broadcast user update event across all components
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('vlive_user_updated', { detail: { userId: matchedUserId, coins: newCoins, userCoins: newCoins } }));
+        window.dispatchEvent(new CustomEvent('vlive_user_updated', {
+          detail: { userId: targetUuid, coins: newCoins, userCoins: newCoins }
+        }));
       }
 
-      // If this is the current active user in the app, sync local storage & broadcast event
+      // 7. If this is current active user, sync localStorage & broadcast balance update
       const currentUid = getUserId();
-      if (currentUid === matchedUserId || safeStorage.getItem('vlive_user_id') === matchedUserId || safeStorage.getItem('vlive_current_username') === String(userId).replace(/^@/, '')) {
+      if (currentUid === targetUuid || safeStorage.getItem('vlive_user_id') === targetUuid || safeStorage.getItem('vlive_current_username') === String(userId).replace(/^@/, '')) {
         safeStorage.setItem('vlive_user_coins', String(newCoins));
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('vlive_balance_updated', { detail: { coins: newCoins } }));
@@ -4441,11 +4512,72 @@ export const apiAdmin = {
       const { data: walData } = await supabase.from('wallets').select('user_id, coins, usdt_balance');
       const walMap = new Map((walData || []).map(w => [w.user_id, w]));
 
+      // Fetch persistent admin states from Supabase
+      const { data: adminStates } = await supabase
+        .from('support_tickets')
+        .select('user_id, subject, message')
+        .like('subject', 'ADMIN_USER_STATE:%')
+        .catch(() => ({ data: [] }));
+      const adminStateMap = new Map();
+      if (Array.isArray(adminStates)) {
+        adminStates.forEach(item => {
+          try {
+            const parsed = JSON.parse(item.message);
+            const uid = item.user_id || (item.subject && item.subject.split(':')[1]);
+            if (uid && parsed) adminStateMap.set(uid, parsed);
+          } catch (e) {}
+        });
+      }
+
+      // Fetch approved KYC applications
+      const { data: approvedKycs } = await supabase
+        .from('kyc_applications')
+        .select('user_id')
+        .eq('status', 'Approved')
+        .catch(() => ({ data: [] }));
+      const approvedKycSet = new Set((approvedKycs || []).map(k => k.user_id));
+
       const processUsers = (list) => (list || []).map(u => {
         const isOnline = presenceService.isUserOnline(u);
         const w = walMap.get(u.id);
-        const realCoins = w ? Number(w.coins ?? 0) : Number(u.coins ?? u.userCoins ?? 0);
+        const override = adminStateMap.get(u.id);
+        const isApprovedKyc = approvedKycSet.has(u.id);
+
+        const isStreamerVal = Boolean(
+          override?.is_streamer ||
+          override?.user_type === 'STREAMER' ||
+          isApprovedKyc ||
+          u.user_type === 'STREAMER' ||
+          u.role === 'streamer' ||
+          u.is_streamer ||
+          u.isStreamer ||
+          u.isHost
+        );
+
+        const realCoins = typeof override?.coins === 'number'
+          ? override.coins
+          : (w ? Number(w.coins ?? 0) : Number(u.coins ?? u.userCoins ?? 0));
         const realUsdt = w ? Number(w.usdt_balance ?? 0) : Number(u.usdt_balance ?? 0);
+
+        const isVipVal = typeof override?.is_vip === 'boolean'
+          ? override.is_vip
+          : Boolean(u.is_vip || u.vip || u.isVip);
+
+        const isVerifiedVal = typeof override?.is_verified === 'boolean'
+          ? override.is_verified
+          : Boolean(u.is_verified || u.verified || u.isVerified);
+
+        const statusVal = override?.status || u.status || 'approved';
+        const userTypeVal = isStreamerVal ? 'STREAMER' : (override?.user_type || u.user_type || 'REAL_USER');
+
+        let adminNotesList = [];
+        if (override?.admin_notes) {
+          try {
+            adminNotesList = typeof override.admin_notes === 'string' ? JSON.parse(override.admin_notes) : override.admin_notes;
+          } catch (e) {
+            adminNotesList = [{ text: override.admin_notes, date: new Date().toLocaleString() }];
+          }
+        }
 
         return {
           ...u,
@@ -4453,7 +4585,18 @@ export const apiAdmin = {
           userCoins: realCoins,
           usdt_balance: realUsdt,
           city: u.location || u.city || '',
-          is_streamer: u.user_type === 'STREAMER' || Boolean(u.is_streamer),
+          is_streamer: isStreamerVal,
+          isStreamer: isStreamerVal,
+          isHost: isStreamerVal,
+          user_type: userTypeVal,
+          is_vip: isVipVal,
+          isVip: isVipVal,
+          vip: isVipVal,
+          is_verified: isVerifiedVal,
+          isVerified: isVerifiedVal,
+          verified: isVerifiedVal,
+          status: statusVal,
+          adminNotes: adminNotesList.length > 0 ? adminNotesList : (u.adminNotes || []),
           online: isOnline,
           isOnline: isOnline,
           last_seen: u.updated_at || u.created_at
@@ -4493,71 +4636,144 @@ export const apiAdmin = {
       if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId))) {
         targetUuid = (await resolveProfileUuid(userId)) || userId;
       }
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUuid))) {
+        const cleanUsername = String(userId).replace(/^@/, '');
+        const { data: prof } = await supabase.from('profiles').select('id').eq('username', cleanUsername).maybeSingle();
+        if (prof?.id) targetUuid = prof.id;
+      }
 
-      const sanitizedUpdates = { ...updates, updated_at: new Date().toISOString() };
+      const isStreamerExplicit = typeof updates.is_streamer !== 'undefined';
+      const isStreamerVal = isStreamerExplicit ? Boolean(updates.is_streamer) : (updates.user_type === 'STREAMER' || updates.role === 'streamer');
 
-      // Try update with provided fields
+      // 1. Sanitize payload for PostgreSQL public.profiles table (ONLY columns that exist in DB)
+      const safeProfilePayload = { updated_at: new Date().toISOString() };
+      if (typeof updates.name === 'string') safeProfilePayload.name = updates.name;
+      if (typeof updates.bio === 'string') safeProfilePayload.bio = updates.bio;
+      if (typeof updates.avatar === 'string') safeProfilePayload.avatar = updates.avatar;
+      if (typeof updates.gender === 'string') safeProfilePayload.gender = updates.gender;
+      if (typeof updates.location === 'string') safeProfilePayload.location = updates.location;
+      if (typeof updates.city === 'string') safeProfilePayload.location = updates.city;
+      if (typeof updates.language === 'string') safeProfilePayload.language = updates.language;
+      if (typeof updates.status === 'string') safeProfilePayload.status = updates.status;
+      if (typeof updates.is_vip !== 'undefined') safeProfilePayload.is_vip = Boolean(updates.is_vip);
+      if (typeof updates.is_verified !== 'undefined') safeProfilePayload.is_verified = Boolean(updates.is_verified);
+
+      if (isStreamerExplicit || updates.user_type || updates.role) {
+        safeProfilePayload.user_type = isStreamerVal ? 'STREAMER' : (updates.user_type && updates.user_type !== 'STREAMER' ? updates.user_type : 'REAL_USER');
+      }
+
       let isSuccess = false;
       let matchedId = targetUuid;
 
+      // 2. Update profiles in DB
       if (targetUuid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUuid))) {
-        const { error } = await supabase.from('profiles').update(sanitizedUpdates).eq('id', targetUuid);
-        if (!error) {
-          isSuccess = true;
-        } else {
-          // If specific column failed, retry with essential columns
-          console.warn('Profile update retry:', error.message);
-          const safePayload = { updated_at: new Date().toISOString() };
-          if (typeof updates.is_verified !== 'undefined') safePayload.is_verified = updates.is_verified;
-          if (typeof updates.is_vip !== 'undefined') safePayload.is_vip = updates.is_vip;
-          if (typeof updates.is_streamer !== 'undefined') safePayload.is_streamer = updates.is_streamer;
-          if (updates.status) safePayload.status = updates.status;
-          if (updates.role) safePayload.role = updates.role;
-          if (updates.user_type) safePayload.user_type = updates.user_type;
-          const retryRes = await supabase.from('profiles').update(safePayload).eq('id', targetUuid);
-          isSuccess = !retryRes.error;
-        }
+        const { error } = await supabase.from('profiles').update(safeProfilePayload).eq('id', targetUuid);
+        if (!error) isSuccess = true;
       } else {
-        // Fallback update by username
         const cleanUsername = String(userId).replace(/^@/, '');
-        const { data: prof } = await supabase.from('profiles').select('id').eq('username', cleanUsername).maybeSingle();
-        if (prof?.id) matchedId = prof.id;
-        const { error } = await supabase.from('profiles').update(sanitizedUpdates).eq('username', cleanUsername);
-        isSuccess = !error;
+        const { error } = await supabase.from('profiles').update(safeProfilePayload).eq('username', cleanUsername);
+        if (!error) isSuccess = true;
       }
 
-      // Sync streamer_profiles table if streamer status was modified
-      if (typeof updates.is_streamer !== 'undefined' || updates.user_type === 'STREAMER' || updates.role === 'streamer') {
-        const isStrm = Boolean(updates.is_streamer || updates.user_type === 'STREAMER' || updates.role === 'streamer');
+      // 3. Sync streamer_profiles and kyc_applications tables if streamer status modified
+      if (isStreamerVal) {
         if (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) {
           await supabase.from('streamer_profiles').upsert([{
             user_id: matchedId,
-            status: isStrm ? 'active' : 'inactive',
+            status: 'active',
             updated_at: new Date().toISOString()
           }], { onConflict: 'user_id' }).catch(() => {});
+
+          await supabase.from('kyc_applications').update({
+            status: 'Approved',
+            updated_at: new Date().toISOString()
+          }).eq('user_id', matchedId).catch(() => {});
+        }
+      } else if (isStreamerExplicit && !isStreamerVal) {
+        if (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) {
+          await supabase.from('streamer_profiles').update({
+            status: 'inactive',
+            updated_at: new Date().toISOString()
+          }).eq('user_id', matchedId).catch(() => {});
         }
       }
 
-      // If updating current user, sync localStorage & auth state
+      // 4. Save state permanently in Supabase support_tickets table
+      if (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) {
+        const subjectKey = `ADMIN_USER_STATE:${matchedId}`;
+        const { data: existingTicket } = await supabase
+          .from('support_tickets')
+          .select('id, message')
+          .eq('subject', subjectKey)
+          .maybeSingle()
+          .catch(() => ({ data: null }));
+
+        let existingState = {};
+        if (existingTicket?.message) {
+          try {
+            existingState = JSON.parse(existingTicket.message) || {};
+          } catch (e) {}
+        }
+
+        const mergedState = {
+          ...existingState,
+          user_id: matchedId,
+          is_streamer: isStreamerVal,
+          user_type: isStreamerVal ? 'STREAMER' : (updates.user_type || existingState.user_type || 'REAL_USER'),
+          status: updates.status || existingState.status || 'approved',
+          updated_at: new Date().toISOString()
+        };
+        if (typeof updates.is_vip !== 'undefined') mergedState.is_vip = Boolean(updates.is_vip);
+        if (typeof updates.is_verified !== 'undefined') mergedState.is_verified = Boolean(updates.is_verified);
+        if (typeof updates.coins === 'number') mergedState.coins = updates.coins;
+        if (typeof updates.diamonds === 'number') mergedState.diamonds = updates.diamonds;
+        if (updates.admin_notes) mergedState.admin_notes = updates.admin_notes;
+
+        if (existingTicket?.id) {
+          await supabase
+            .from('support_tickets')
+            .update({
+              message: JSON.stringify(mergedState),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingTicket.id)
+            .catch(() => {});
+        } else {
+          await supabase
+            .from('support_tickets')
+            .insert([{
+              user_id: matchedId,
+              subject: subjectKey,
+              message: JSON.stringify(mergedState),
+              status: 'closed'
+            }])
+            .catch(() => {});
+        }
+        isSuccess = true;
+      }
+
+      // 5. If updating current user, sync localStorage & auth state
       const currentUid = getUserId();
       if (currentUid === matchedId || safeStorage.getItem('vlive_user_id') === matchedId || safeStorage.getItem('vlive_current_username') === String(userId).replace(/^@/, '')) {
         try {
           const cachedProfile = safeStorage.getItem('vlive_user_profile');
           if (cachedProfile) {
             const parsed = JSON.parse(cachedProfile);
-            safeStorage.setItem('vlive_user_profile', JSON.stringify({ ...parsed, ...sanitizedUpdates }));
+            safeStorage.setItem('vlive_user_profile', JSON.stringify({ ...parsed, ...updates, is_streamer: isStreamerVal, user_type: isStreamerVal ? 'STREAMER' : 'REAL_USER' }));
           }
           if (typeof updates.is_vip !== 'undefined') safeStorage.setItem('vlive_vip_plan', updates.is_vip ? 'VIP_PREMIUM' : 'none');
           if (typeof updates.is_verified !== 'undefined') safeStorage.setItem('vlive_is_verified', updates.is_verified ? 'true' : 'false');
+          if (isStreamerExplicit) safeStorage.setItem('vlive_is_streamer', isStreamerVal ? 'true' : 'false');
         } catch (e) {}
       }
 
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('vlive_user_updated', { detail: { userId: matchedId || userId, updates: sanitizedUpdates } }));
+        window.dispatchEvent(new CustomEvent('vlive_user_updated', { detail: { userId: matchedId || userId, updates: { ...updates, is_streamer: isStreamerVal, isStreamer: isStreamerVal, isHost: isStreamerVal, user_type: isStreamerVal ? 'STREAMER' : 'REAL_USER' } } }));
       }
 
       return { success: isSuccess };
     } catch (e) {
+      console.error('updateUserFields error:', e);
       return { success: false, error: e.message };
     }
   },

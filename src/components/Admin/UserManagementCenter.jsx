@@ -294,16 +294,58 @@ export default function UserManagementCenter({
   };
 
   const handleToggleStreamer = async (user) => {
-    const nextStreamer = !(user.isStreamer || user.isHost || user.is_streamer);
-    setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isStreamer: nextStreamer, isHost: nextStreamer, is_streamer: nextStreamer } : u));
+    const nextStreamer = !(user.isStreamer || user.isHost || user.is_streamer || user.user_type === 'STREAMER');
+    const prevStreamer = !nextStreamer;
+
+    setUsersList(prev => prev.map(u => u.id === user.id ? {
+      ...u,
+      isStreamer: nextStreamer,
+      isHost: nextStreamer,
+      is_streamer: nextStreamer,
+      user_type: nextStreamer ? 'STREAMER' : 'REAL_USER'
+    } : u));
+
     if (selectedUserDetail?.id === user.id) {
-      setSelectedUserDetail(prev => ({ ...prev, isStreamer: nextStreamer, isHost: nextStreamer, is_streamer: nextStreamer }));
+      setSelectedUserDetail(prev => ({
+        ...prev,
+        isStreamer: nextStreamer,
+        isHost: nextStreamer,
+        is_streamer: nextStreamer,
+        user_type: nextStreamer ? 'STREAMER' : 'REAL_USER'
+      }));
     }
+
     if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') { 
-       await apiAdmin.updateUserFields(user.id, { is_streamer: nextStreamer, role: nextStreamer ? 'streamer' : 'user', user_type: nextStreamer ? 'STREAMER' : 'VIEWER' });
+      const res = await apiAdmin.updateUserFields(user.id, {
+        is_streamer: nextStreamer,
+        user_type: nextStreamer ? 'STREAMER' : 'REAL_USER'
+      });
+
+      if (res && res.success === false) {
+        // Rollback
+        setUsersList(prev => prev.map(u => u.id === user.id ? {
+          ...u,
+          isStreamer: prevStreamer,
+          isHost: prevStreamer,
+          is_streamer: prevStreamer,
+          user_type: prevStreamer ? 'STREAMER' : 'REAL_USER'
+        } : u));
+        if (selectedUserDetail?.id === user.id) {
+          setSelectedUserDetail(prev => ({
+            ...prev,
+            isStreamer: prevStreamer,
+            isHost: prevStreamer,
+            is_streamer: prevStreamer,
+            user_type: prevStreamer ? 'STREAMER' : 'REAL_USER'
+          }));
+        }
+        showToast(window.loc(`❌ خطا در ذخیره‌سازی وضعیت استریمر: ${res.error || ''}`, `❌ Failed to save streamer status: ${res.error || ''}`));
+        return;
+      }
     }
+
     addAdminAuditLog(`Admin Action: ${nextStreamer ? 'Promoted to Streamer' : 'Demoted Streamer'} @${user.username || user.name}`);
-    showToast(nextStreamer ? window.loc(`🎥 مقام استریمر به @${user.username} داده شد`, `🎥 Streamer status granted to @${user.username}`) : window.loc(`مقام استریمر @${user.username} لغو شد`, `Streamer status removed from @${user.username}`));
+    showToast(nextStreamer ? window.loc(`🎥 مقام استریمر به @${user.username} داده شد و ذخیره گردید`, `🎥 Streamer status granted and saved for @${user.username}`) : window.loc(`مقام استریمر @${user.username} لغو گردید`, `Streamer status removed for @${user.username}`));
   };
 
   const handleResetPassword = (user) => {
