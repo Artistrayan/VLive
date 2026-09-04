@@ -505,11 +505,11 @@ export default function UserManagementCenter({
                         {/* Dedicated Permissions & Quick Save Button */}
                         <button
                           onClick={() => handleOpenPermissionsModal(u)}
-                          className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 border border-cyan-500/40 text-cyan-300 font-black text-[10px] flex items-center gap-1 transition shadow-md active:scale-95"
+                          className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 border border-cyan-500/40 text-cyan-300 font-black text-[10px] flex items-center gap-1.5 transition shadow-md active:scale-95"
                           title={window.loc('ویرایش کامل دسترسی‌ها، نقش، سکه و ذخیره تغییرات کاربر', 'Edit permissions, role, coins and save changes')}
                         >
-                          <Sliders className="w-3.5 h-3.5 text-cyan-400" />
-                          <span>{window.loc('دسترسی‌ها و تغییرات', 'Permissions & Edit')}</span>
+                          <Save className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>{window.loc('دسترسی‌ها و ذخیره', 'Access & Save')}</span>
                         </button>
 
                         {/* Verification Toggle */}

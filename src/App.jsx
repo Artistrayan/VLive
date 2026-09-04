@@ -83,28 +83,6 @@ export default function App() {
   const [showEntrySplash, setShowEntrySplash] = useState(false);
   const [isInitialSplashActive, setIsInitialSplashActive] = useState(true);
 
-  const handleInitialSplashComplete = useCallback(() => {
-    setIsInitialSplashActive(false);
-    setShowEntrySplash(false);
-
-    // Determine if profile was completed previously
-    const isProfileCompleted = Boolean(
-      safeStorage.getItem('vlive_profile_completed') === 'true' ||
-      safeStorage.getItem('vlive_user_onboarded') === 'true' ||
-      safeStorage.getItem('vlive_has_registered') === 'true'
-    );
-
-    setIsLoggedIn(true);
-
-    if (!isProfileCompleted) {
-      // First Time: Splash Loader -> Profile Completion Screen
-      setIsOnboardingOpen(true);
-    } else {
-      // Returning User: Splash Loader -> Home Screen
-      setActiveTab('home');
-    }
-  }, []);
-
   // User Profile & Authentication State (Strict Real Identity - No Mock/Fallback)
   const [authStatus, setAuthStatus] = useState('loading'); // 'loading' | 'authenticated' | 'unauthenticated' | 'error'
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -318,32 +296,6 @@ export default function App() {
   const [matchAnimationEffect, setMatchAnimationEffect] = useState(null);
   const [swipeDragPos, setSwipeDragPos] = useState({ x: 0, y: 0 });
 
-  // Match deck strictly filtered: Only Female users, Only Online users, Excluding current user
-  const matchDeckProfiles = useMemo(() => {
-    if (!Array.isArray(usersList)) return [];
-    return usersList.filter(u => {
-      if (!u || u.status === 'banned' || u.isBanned) return false;
-      if (u.id === currentUser?.id || u.username === currentUsername || (authUsername && u.username === authUsername)) return false;
-      
-      // Filter 1: Strictly Female users only
-      const g = String(u.gender || '').trim().toLowerCase();
-      const isFemale = g === 'female' || g === 'خانم' || g === 'زن' || g === 'f';
-      if (!isFemale) return false;
-
-      // Filter 2: Strictly Online users only
-      const isOnline = Boolean(u.online || u.online_status === 'online' || u.status === 'online' || u.isOnline);
-      if (!isOnline) return false;
-
-      return true;
-    }).map(u => ({
-      ...u,
-      distance: u.distance || `${Math.floor(Math.random() * 8) + 1} km`,
-      city: u.city || u.location || 'تهران',
-      interests: u.interests || ['Music', 'Art', 'Travel'],
-      isOnline: true
-    }));
-  }, [usersList, currentUser?.id, currentUsername, authUsername]);
-
   // Direct Messages & Chat State
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
@@ -442,6 +394,28 @@ export default function App() {
   const [showStreamerWelcomeModal, setShowStreamerWelcomeModal] = useState(false);
   const [liveGuideStep, setLiveGuideStep] = useState(0);
   const [helpCenterInitialTab, setHelpCenterInitialTab] = useState('faq');
+
+  const handleInitialSplashComplete = useCallback(() => {
+    setIsInitialSplashActive(false);
+    setShowEntrySplash(false);
+
+    // Determine if profile was completed previously
+    const isProfileCompleted = Boolean(
+      safeStorage.getItem('vlive_profile_completed') === 'true' ||
+      safeStorage.getItem('vlive_user_onboarded') === 'true' ||
+      safeStorage.getItem('vlive_has_registered') === 'true'
+    );
+
+    setIsLoggedIn(true);
+
+    if (!isProfileCompleted) {
+      // First Time: Splash Loader -> Profile Completion Screen
+      setIsOnboardingOpen(true);
+    } else {
+      // Returning User: Splash Loader -> Home Screen
+      setActiveTab('home');
+    }
+  }, []);
 
   // KYC & Verification
   const [kycNationalId, setKycNationalId] = useState('');
@@ -611,6 +585,32 @@ export default function App() {
       return { ...prev, ...next };
     });
   }, [userName, currentUsername, userAvatar, userCoins, userDiamonds, userGender, isVerified, vipPlan, userBio, currentTelegramId, userRole]);
+
+  // Match deck strictly filtered: Only Female users, Only Online users, Excluding current user
+  const matchDeckProfiles = useMemo(() => {
+    if (!Array.isArray(usersList)) return [];
+    return usersList.filter(u => {
+      if (!u || u.status === 'banned' || u.isBanned) return false;
+      if (u.id === currentUser?.id || u.username === currentUsername || (authUsername && u.username === authUsername)) return false;
+      
+      // Filter 1: Strictly Female users only
+      const g = String(u.gender || '').trim().toLowerCase();
+      const isFemale = g === 'female' || g === 'خانم' || g === 'زن' || g === 'f';
+      if (!isFemale) return false;
+
+      // Filter 2: Strictly Online users only
+      const isOnline = Boolean(u.online || u.online_status === 'online' || u.status === 'online' || u.isOnline);
+      if (!isOnline) return false;
+
+      return true;
+    }).map(u => ({
+      ...u,
+      distance: u.distance || `${Math.floor(Math.random() * 8) + 1} km`,
+      city: u.city || u.location || 'تهران',
+      interests: u.interests || ['Music', 'Art', 'Travel'],
+      isOnline: true
+    }));
+  }, [usersList, currentUser?.id, currentUsername, authUsername]);
 
   const filteredUsersList = useMemo(() => {
     if (!Array.isArray(usersList)) return [];
