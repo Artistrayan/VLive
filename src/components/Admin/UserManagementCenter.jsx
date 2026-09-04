@@ -19,6 +19,69 @@ export default function UserManagementCenter({
   const [filterCategory, setFilterCategory] = useState('ALL'); // ALL, ONLINE, VERIFIED, VIP, STREAMERS, BANNED, MUTED, SUSPENDED
   const [selectedUserDetail, setSelectedUserDetail] = useState(null);
   const [adminNoteInput, setAdminNoteInput] = useState('');
+  
+  // Direct Wallet/Coin Adjustment Modal State
+  const [adjustCoinModalUser, setAdjustCoinModalUser] = useState(null);
+  const [adjustCoinAmount, setAdjustCoinAmount] = useState('');
+  const [adjustCoinType, setAdjustCoinType] = useState('add'); // 'add', 'deduct', 'set'
+  const [adjustCoinReason, setAdjustCoinReason] = useState('Admin Manual Correction');
+  const [isAdjustingCoin, setIsAdjustingCoin] = useState(false);
+
+  const handleOpenAdjustCoins = (user) => {
+    setAdjustCoinModalUser(user);
+    setAdjustCoinAmount('');
+    setAdjustCoinType('add');
+    setAdjustCoinReason('Admin Manual Adjustment');
+  };
+
+  const handleExecuteCoinAdjustment = async () => {
+    if (!adjustCoinModalUser || !adjustCoinAmount) {
+      showToast(window.loc('لطفاً مبلغ معتبر وارد کنید', 'Please enter a valid amount'));
+      return;
+    }
+    const num = parseInt(adjustCoinAmount, 10);
+    if (isNaN(num) || num < 0) {
+      showToast(window.loc('مبلغ نامعتبر است', 'Invalid amount'));
+      return;
+    }
+
+    setIsAdjustingCoin(true);
+    try {
+      const currentCoins = Number(adjustCoinModalUser.coins ?? adjustCoinModalUser.userCoins ?? 0);
+      let delta = 0;
+      if (adjustCoinType === 'add') delta = num;
+      else if (adjustCoinType === 'deduct') delta = -num;
+      else if (adjustCoinType === 'set') delta = num - currentCoins;
+
+      const res = await apiAdmin.adjustUserWallet(
+        adjustCoinModalUser.id || adjustCoinModalUser.username,
+        delta,
+        adjustCoinReason
+      );
+
+      if (res && (res.success || typeof res.new_coins === 'number')) {
+        const newBalance = typeof res.new_coins === 'number' ? res.new_coins : Math.max(0, currentCoins + delta);
+        setUsersList(prev => prev.map(u => {
+          if (u.id === adjustCoinModalUser.id || u.username === adjustCoinModalUser.username) {
+            return { ...u, coins: newBalance, userCoins: newBalance };
+          }
+          return u;
+        }));
+        if (selectedUserDetail?.id === adjustCoinModalUser.id) {
+          setSelectedUserDetail(prev => ({ ...prev, coins: newBalance, userCoins: newBalance }));
+        }
+        addAdminAuditLog(`Admin Action: Adjusted wallet of @${adjustCoinModalUser.username} by ${delta > 0 ? '+' : ''}${delta} coins (New: ${newBalance})`);
+        showToast(window.loc(`✅ موجودی @${adjustCoinModalUser.username} به ${newBalance.toLocaleString()} سکه تغییر یافت`, `✅ Balance of @${adjustCoinModalUser.username} updated to ${newBalance.toLocaleString()} coins`));
+        setAdjustCoinModalUser(null);
+      } else {
+        showToast(window.loc(`❌ خطا در تغییر موجودی: ${res?.error || 'Database error'}`, `❌ Balance adjustment failed: ${res?.error || 'Database error'}`));
+      }
+    } catch (err) {
+      showToast(window.loc(`❌ خطا در ارتباط: ${err.message}`, `❌ Connection error: ${err.message}`));
+    } finally {
+      setIsAdjustingCoin(false);
+    }
+  };
 
   // Filtering users logic
   const filteredUsers = (Array.isArray(usersList) ? usersList : []).filter(user => {
@@ -349,6 +412,16 @@ export default function UserManagementCenter({
                           <span className="hidden xl:inline">{window.loc('استریمر', 'Streamer')}</span>
                         </button>
 
+                        {/* Coin Adjustment Button */}
+                        <button
+                          onClick={() => handleOpenAdjustCoins(u)}
+                          className="p-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500 hover:text-slate-950 transition flex items-center gap-1 font-bold text-[10px]"
+                          title={window.loc('اصلاح موجودی سکه کاربر', 'Adjust user coin balance')}
+                        >
+                          <DollarSign className="w-3.5 h-3.5" />
+                          <span className="hidden xl:inline">{window.loc('موجودی', 'Coins')}</span>
+                        </button>
+
                         {/* Ban Action */}
                         <button
                           onClick={() => handleToggleBan(u)}
@@ -438,6 +511,14 @@ export default function UserManagementCenter({
                   <span>{(selectedUserDetail.isStreamer || selectedUserDetail.isHost || selectedUserDetail.is_streamer) ? window.loc('استریمر: فعال', 'Streamer: Active') : window.loc('استریمر: غیرفعال', 'Streamer: Inactive')}</span>
                 </button>
 
+                <button
+                  onClick={() => handleOpenAdjustCoins(selectedUserDetail)}
+                  className="px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/50 font-bold text-[10px] flex items-center gap-1 hover:bg-amber-500 hover:text-slate-950 transition"
+                >
+                  <DollarSign className="w-3.5 h-3.5" />
+                  <span>{window.loc('اصلاح موجودی', 'Adjust Balance')}</span>
+                </button>
+
                 <button onClick={() => handleToggleBan(selectedUserDetail)} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-bold text-[10px]">
                   {selectedUserDetail.isBanned ? window.loc('رفع Ban', 'Fix Ban') : window.loc('Ban کاربر', 'Ban the user')}
                 </button>
@@ -476,6 +557,106 @@ export default function UserManagementCenter({
                 <span className="text-[9px] text-slate-500 font-mono">{note.date}</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: DIRECT WALLET COIN ADJUSTMENT ================= */}
+      {adjustCoinModalUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-md bg-slate-900 border border-amber-500/40 rounded-3xl p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2.5 rounded-2xl bg-amber-500/20 text-amber-300">
+                  <DollarSign className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-white text-sm">
+                    {window.loc('اصلاح موجودی کیف پول', 'Adjust Wallet Balance')}
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-mono">
+                    @{adjustCoinModalUser.username} • {window.loc('موجودی فعلی:', 'Current:')} {(adjustCoinModalUser.coins || adjustCoinModalUser.userCoins || 0).toLocaleString()} 🪙
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setAdjustCoinModalUser(null)}
+                className="text-slate-400 hover:text-white text-xs font-bold px-2 py-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Type selector: Add, Deduct, Set exact */}
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'add', label: window.loc('➕ افزایش سکه', '➕ Add Coins'), color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' },
+                { id: 'deduct', label: window.loc('➖ کسر سکه', '➖ Deduct Coins'), color: 'bg-rose-500/20 text-rose-300 border-rose-500/40' },
+                { id: 'set', label: window.loc('🎯 تعیین مستقیم', '🎯 Set Exact'), color: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' }
+              ].map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setAdjustCoinType(t.id)}
+                  className={`py-2 px-1 rounded-2xl border text-center font-bold text-[10px] transition ${
+                    adjustCoinType === t.id
+                      ? `${t.color} font-black ring-2 ring-white/20 shadow-md`
+                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Amount input */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-300 block">
+                {adjustCoinType === 'set' 
+                  ? window.loc('موجودی نهایی جدید (سکه):', 'New exact coin balance:') 
+                  : window.loc('تعداد سکه مورد نظر:', 'Coin amount:')}
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={adjustCoinAmount}
+                  onChange={e => setAdjustCoinAmount(e.target.value)}
+                  placeholder="مثلاً 1000"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-700 text-amber-400 font-mono font-bold text-sm outline-none focus:border-amber-400"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-amber-400">🪙</span>
+              </div>
+            </div>
+
+            {/* Reason input */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-300 block">
+                {window.loc('علت تغییر و ثبت در لاگ:', 'Reason for adjustment & audit log:')}
+              </label>
+              <input
+                type="text"
+                value={adjustCoinReason}
+                onChange={e => setAdjustCoinReason(e.target.value)}
+                placeholder="مثلاً پاداش مسابقه، اصلاح شارژ، جبران خطا..."
+                className="w-full px-4 py-2 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-cyan-400"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                disabled={isAdjustingCoin}
+                onClick={handleExecuteCoinAdjustment}
+                className="flex-1 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition disabled:opacity-50"
+              >
+                {isAdjustingCoin ? window.loc('در حال ثبت در دیتابیس...', 'Saving to database...') : window.loc('💾 اعمال و ذخیره دائمی', '💾 Apply & Save Permanently')}
+              </button>
+              <button
+                onClick={() => setAdjustCoinModalUser(null)}
+                className="px-4 py-2.5 rounded-2xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 transition"
+              >
+                {window.loc('انصراف', 'Cancel')}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -665,16 +665,27 @@ export default function App() {
   // Sync User & Fetch Profiles from Real Backend
   const syncUserAndFetchBackendProfiles = useCallback(async () => {
     try {
-      const profilesRes = await apiHome.getExploreProfiles();
-      if (profilesRes && profilesRes.success && Array.isArray(profilesRes.data)) {
-        setUsersList(profilesRes.data);
+      const exploreRes = await apiHome.getExploreProfiles();
+      const rawList = Array.isArray(exploreRes) ? exploreRes : (exploreRes?.data || []);
+      if (Array.isArray(rawList) && rawList.length > 0) {
+        const mappedList = rawList.map(u => ({
+          ...u,
+          isVerified: Boolean(u.is_verified || u.verified || u.isVerified),
+          isVip: Boolean(u.is_vip || u.vip || u.isVip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null')),
+          isStreamer: Boolean(u.is_streamer || u.user_type === 'STREAMER' || u.role === 'streamer' || u.isStreamer || u.isHost),
+          isHost: Boolean(u.is_streamer || u.user_type === 'STREAMER' || u.role === 'streamer' || u.isStreamer || u.isHost),
+          coins: Number(u.coins ?? u.userCoins ?? 0),
+          userCoins: Number(u.coins ?? u.userCoins ?? 0),
+          diamonds: Number(u.diamonds ?? 0)
+        }));
+        setUsersList(mappedList);
       }
       const myProfile = await apiProfile.getMyProfile();
-      if (myProfile && myProfile.success && myProfile.data) {
-        const p = myProfile.data;
+      if (myProfile && (myProfile.success || myProfile.data || myProfile.id)) {
+        const p = myProfile.data || myProfile;
         if (p.name) setUserName(p.name);
         if (p.username) setCurrentUsername(p.username);
-        if (p.avatar_url) setUserAvatar(p.avatar_url);
+        if (p.avatar_url || p.avatar) setUserAvatar(p.avatar_url || p.avatar);
         if (p.bio) setUserBio(p.bio);
         if (p.gender) {
           setUserGender(p.gender);
@@ -685,6 +696,14 @@ export default function App() {
         if (typeof p.coins === 'number') setUserCoins(p.coins);
         if (typeof p.diamonds === 'number') setUserDiamonds(p.diamonds);
         if (typeof p.is_verified === 'boolean') setIsVerified(p.is_verified);
+        if (typeof p.is_vip === 'boolean') {
+          const isVipUser = p.is_vip || p.vip || (p.vip_plan && p.vip_plan !== 'none');
+          setVipPlan(isVipUser ? (p.vip_plan || 'VIP_PREMIUM') : null);
+        }
+        if (typeof p.is_streamer === 'boolean' || p.user_type === 'STREAMER' || p.role === 'streamer') {
+          const isStrm = Boolean(p.is_streamer || p.user_type === 'STREAMER' || p.role === 'streamer');
+          setIsStreamerUser(isStrm);
+        }
         if (p.role) setUserRole(p.role);
       }
     } catch (err) {
@@ -3404,17 +3423,15 @@ export default function App() {
                   clientY: e.clientY
                 }]
               })} onTouchEnd={handleTouchEnd} onMouseUp={handleTouchEnd} onMouseLeave={handleTouchEnd}>
-                      {/* Swipe Direction Indicators */}
+                      {/* Swipe Direction Indicators: Pure 3D Icons, No Text */}
                       {swipeDragPos.x > 40 && (
-                        <div className="absolute top-8 right-6 z-40 px-3.5 py-1.5 rounded-2xl bg-pink-500/90 text-white font-black text-xs border-2 border-white shadow-xl rotate-12 flex items-center gap-1.5 animate-pulse">
-                          <Heart className="w-4 h-4 fill-current" />
-                          <span>{loc('لایک و تماس', 'LIKE & CALL')}</span>
+                        <div className="absolute top-8 right-6 z-40 p-3 rounded-full bg-pink-500/90 text-white font-black border-2 border-white shadow-xl rotate-12 flex items-center justify-center animate-pulse">
+                          <Heart className="w-6 h-6 fill-current" />
                         </div>
                       )}
                       {swipeDragPos.x < -40 && (
-                        <div className="absolute top-8 left-6 z-40 px-3.5 py-1.5 rounded-2xl bg-rose-600/90 text-white font-black text-xs border-2 border-white shadow-xl -rotate-12 flex items-center gap-1.5 animate-pulse">
-                          <X className="w-4 h-4" />
-                          <span>{loc('رد کردن', 'PASS')}</span>
+                        <div className="absolute top-8 left-6 z-40 p-3 rounded-full bg-rose-600/90 text-white font-black border-2 border-white shadow-xl -rotate-12 flex items-center justify-center animate-pulse">
+                          <X className="w-6 h-6 stroke-[3]" />
                         </div>
                       )}
 

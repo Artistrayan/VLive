@@ -1306,12 +1306,26 @@ export const apiHome = {
         const isOnline = presenceService.isUserOnline(u);
         const birthDateVal = u.birth_date || u.birthdate || u.birthday;
         const calculatedAge = birthDateVal ? calculateAge(birthDateVal) : (u.age || null);
+        const isVipVal = Boolean(u.is_vip || u.vip || u.isVip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null'));
+        const isVerifiedVal = Boolean(u.is_verified || u.verified || u.isVerified);
+        const isStreamerVal = Boolean(u.user_type === 'STREAMER' || u.role === 'streamer' || u.is_streamer || u.isStreamer || u.isHost);
+
         return {
           ...u,
           age: calculatedAge !== null ? calculatedAge : u.age,
           birth_date: birthDateVal || '',
           city: u.location || u.city || '',
-          is_streamer: u.user_type === 'STREAMER' || Boolean(u.is_streamer),
+          is_streamer: isStreamerVal,
+          isStreamer: isStreamerVal,
+          isHost: isStreamerVal,
+          is_vip: isVipVal,
+          isVip: isVipVal,
+          vip: isVipVal,
+          is_verified: isVerifiedVal,
+          isVerified: isVerifiedVal,
+          verified: isVerifiedVal,
+          coins: Number(u.coins ?? u.userCoins ?? 0),
+          userCoins: Number(u.coins ?? u.userCoins ?? 0),
           online: isOnline,
           isOnline: isOnline,
           last_seen: u.updated_at || u.created_at
@@ -4070,10 +4084,16 @@ export const apiAdmin = {
       const val = parseInt(amountCoins, 10);
       if (isNaN(val)) return { success: false, error: 'Invalid coin amount' };
 
+      // Resolve UUID or username
+      let targetUuid = userId;
+      if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId))) {
+        targetUuid = (await resolveProfileUuid(userId)) || userId;
+      }
+
       // 1. Try DB RPC procedure first
       try {
         const { data, error } = await supabase.rpc('rpc_admin_adjust_wallet', {
-          p_target_user_id: userId,
+          p_target_user_id: targetUuid,
           p_amount_coins: val,
           p_reason: reason || 'Admin adjustment'
         });
@@ -4087,47 +4107,63 @@ export const apiAdmin = {
 
       // 2. Direct Fallback: Read current wallet and update in PostgreSQL
       let currentCoins = 0;
-      const { data: walData } = await supabase.from('wallets').select('coins, usdt_balance').eq('user_id', userId).maybeSingle();
+      let matchedUserId = targetUuid;
+      const { data: walData } = await supabase.from('wallets').select('coins, usdt_balance, user_id').eq('user_id', targetUuid).maybeSingle();
       if (walData && typeof walData.coins !== 'undefined') {
         currentCoins = Number(walData.coins || 0);
+        matchedUserId = walData.user_id || targetUuid;
       } else {
-        const { data: pData } = await supabase.from('profiles').select('coins').eq('id', userId).maybeSingle();
-        if (pData && typeof pData.coins !== 'undefined') {
+        // Query profiles table
+        let pQuery = supabase.from('profiles').select('id, coins, username');
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUuid))) {
+          pQuery = pQuery.eq('id', targetUuid);
+        } else {
+          pQuery = pQuery.eq('username', String(userId).replace(/^@/, ''));
+        }
+        const { data: pData } = await pQuery.maybeSingle();
+        if (pData) {
           currentCoins = Number(pData.coins || 0);
+          matchedUserId = pData.id || targetUuid;
         }
       }
 
       const newCoins = Math.max(0, currentCoins + val);
 
-      const { error: updErr } = await supabase.from('wallets').upsert({
-        user_id: userId,
-        coins: newCoins,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' });
-
-      if (updErr) {
-        console.warn('Direct wallet upsert warning, attempting profiles sync:', updErr);
+      // Upsert into wallets table if valid UUID
+      if (matchedUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedUserId))) {
+        await supabase.from('wallets').upsert({
+          user_id: matchedUserId,
+          coins: newCoins,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' }).catch(() => {});
       }
 
-      // Also update profiles table if coins exists
-      await supabase.from('profiles').update({
+      // Update profiles table
+      let updateProf = supabase.from('profiles').update({
         coins: newCoins,
         updated_at: new Date().toISOString()
-      }).eq('id', userId).catch(() => {});
+      });
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedUserId))) {
+        await updateProf.eq('id', matchedUserId).catch(() => {});
+      } else {
+        await updateProf.eq('username', String(userId).replace(/^@/, '')).catch(() => {});
+      }
 
       // Record transaction log for audit
-      await supabase.from('transactions').insert([{
-        user_id: userId,
-        tx_type: val >= 0 ? 'deposit' : 'deduct',
-        amount_coins: Math.abs(val),
-        amount_usdt: 0,
-        status: 'Completed',
-        description: `Admin Adjustment: ${reason || 'Manual Correction'}`
-      }]).catch(() => {});
+      if (matchedUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedUserId))) {
+        await supabase.from('transactions').insert([{
+          user_id: matchedUserId,
+          tx_type: val >= 0 ? 'deposit' : 'deduct',
+          amount_coins: Math.abs(val),
+          amount_usdt: 0,
+          status: 'Completed',
+          description: `Admin Adjustment: ${reason || 'Manual Correction'}`
+        }]).catch(() => {});
+      }
 
       // If this is the current active user in the app, sync local storage & broadcast event
       const currentUid = getUserId();
-      if (currentUid === userId || safeStorage.getItem('vlive_user_id') === userId) {
+      if (currentUid === matchedUserId || safeStorage.getItem('vlive_user_id') === matchedUserId || safeStorage.getItem('vlive_current_username') === String(userId).replace(/^@/, '')) {
         safeStorage.setItem('vlive_user_coins', String(newCoins));
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('vlive_balance_updated', { detail: { coins: newCoins } }));
@@ -4313,26 +4349,74 @@ export const apiAdmin = {
       if (!activeAdminSession) return { success: false, error: 'Unauthorized' };
     }
     try {
+      let targetUuid = userId;
+      if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId))) {
+        targetUuid = (await resolveProfileUuid(userId)) || userId;
+      }
+
       const sanitizedUpdates = { ...updates, updated_at: new Date().toISOString() };
-      const { error } = await supabase.from('profiles').update(sanitizedUpdates).eq('id', userId);
-      
-      // If updating current user, sync localStorage
+
+      // Try update with provided fields
+      let isSuccess = false;
+      let matchedId = targetUuid;
+
+      if (targetUuid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUuid))) {
+        const { error } = await supabase.from('profiles').update(sanitizedUpdates).eq('id', targetUuid);
+        if (!error) {
+          isSuccess = true;
+        } else {
+          // If specific column failed, retry with essential columns
+          console.warn('Profile update retry:', error.message);
+          const safePayload = { updated_at: new Date().toISOString() };
+          if (typeof updates.is_verified !== 'undefined') safePayload.is_verified = updates.is_verified;
+          if (typeof updates.is_vip !== 'undefined') safePayload.is_vip = updates.is_vip;
+          if (typeof updates.is_streamer !== 'undefined') safePayload.is_streamer = updates.is_streamer;
+          if (updates.status) safePayload.status = updates.status;
+          if (updates.role) safePayload.role = updates.role;
+          if (updates.user_type) safePayload.user_type = updates.user_type;
+          const retryRes = await supabase.from('profiles').update(safePayload).eq('id', targetUuid);
+          isSuccess = !retryRes.error;
+        }
+      } else {
+        // Fallback update by username
+        const cleanUsername = String(userId).replace(/^@/, '');
+        const { data: prof } = await supabase.from('profiles').select('id').eq('username', cleanUsername).maybeSingle();
+        if (prof?.id) matchedId = prof.id;
+        const { error } = await supabase.from('profiles').update(sanitizedUpdates).eq('username', cleanUsername);
+        isSuccess = !error;
+      }
+
+      // Sync streamer_profiles table if streamer status was modified
+      if (typeof updates.is_streamer !== 'undefined' || updates.user_type === 'STREAMER' || updates.role === 'streamer') {
+        const isStrm = Boolean(updates.is_streamer || updates.user_type === 'STREAMER' || updates.role === 'streamer');
+        if (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) {
+          await supabase.from('streamer_profiles').upsert([{
+            user_id: matchedId,
+            status: isStrm ? 'active' : 'inactive',
+            updated_at: new Date().toISOString()
+          }], { onConflict: 'user_id' }).catch(() => {});
+        }
+      }
+
+      // If updating current user, sync localStorage & auth state
       const currentUid = getUserId();
-      if (currentUid === userId || safeStorage.getItem('vlive_user_id') === userId) {
+      if (currentUid === matchedId || safeStorage.getItem('vlive_user_id') === matchedId || safeStorage.getItem('vlive_current_username') === String(userId).replace(/^@/, '')) {
         try {
           const cachedProfile = safeStorage.getItem('vlive_user_profile');
           if (cachedProfile) {
             const parsed = JSON.parse(cachedProfile);
             safeStorage.setItem('vlive_user_profile', JSON.stringify({ ...parsed, ...sanitizedUpdates }));
           }
+          if (typeof updates.is_vip !== 'undefined') safeStorage.setItem('vlive_vip_plan', updates.is_vip ? 'VIP_PREMIUM' : 'none');
+          if (typeof updates.is_verified !== 'undefined') safeStorage.setItem('vlive_is_verified', updates.is_verified ? 'true' : 'false');
         } catch (e) {}
       }
 
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('vlive_user_updated', { detail: { userId, updates: sanitizedUpdates } }));
+        window.dispatchEvent(new CustomEvent('vlive_user_updated', { detail: { userId: matchedId || userId, updates: sanitizedUpdates } }));
       }
 
-      return { success: !error };
+      return { success: isSuccess };
     } catch (e) {
       return { success: false, error: e.message };
     }
