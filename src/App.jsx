@@ -279,6 +279,7 @@ export default function App() {
   const [guestRequestStatus, setGuestRequestStatus] = useState(null);
 
   // Match / Roulette State
+  const [matchDeckProfiles, setMatchDeckProfiles] = useState([]);
   const [matchState, setMatchState] = useState('idle');
   const [matchCallSeconds, setMatchCallSeconds] = useState(30);
   const [matchedMatchUser, setMatchedMatchUser] = useState(null);
@@ -586,32 +587,6 @@ export default function App() {
     });
   }, [userName, currentUsername, userAvatar, userCoins, userDiamonds, userGender, isVerified, vipPlan, userBio, currentTelegramId, userRole]);
 
-  // Match deck strictly filtered: Only Female users, Only Online users, Excluding current user
-  const matchDeckProfiles = useMemo(() => {
-    if (!Array.isArray(usersList)) return [];
-    return usersList.filter(u => {
-      if (!u || u.status === 'banned' || u.isBanned) return false;
-      if (u.id === currentUser?.id || u.username === currentUsername || (authUsername && u.username === authUsername)) return false;
-      
-      // Filter 1: Strictly Female users only
-      const g = String(u.gender || '').trim().toLowerCase();
-      const isFemale = g === 'female' || g === 'خانم' || g === 'زن' || g === 'f';
-      if (!isFemale) return false;
-
-      // Filter 2: Strictly Online users only
-      const isOnline = Boolean(u.online || u.online_status === 'online' || u.status === 'online' || u.isOnline);
-      if (!isOnline) return false;
-
-      return true;
-    }).map(u => ({
-      ...u,
-      distance: u.distance || `${Math.floor(Math.random() * 8) + 1} km`,
-      city: u.city || u.location || 'تهران',
-      interests: u.interests || ['Music', 'Art', 'Travel'],
-      isOnline: true
-    }));
-  }, [usersList, currentUser?.id, currentUsername, authUsername]);
-
   const filteredUsersList = useMemo(() => {
     if (!Array.isArray(usersList)) return [];
     let list = [...usersList].filter(u => u && u.status !== 'banned' && !u.isBanned);
@@ -727,7 +702,7 @@ export default function App() {
         }
         if (typeof p.is_streamer === 'boolean' || p.user_type === 'STREAMER' || p.role === 'streamer') {
           const isStrm = Boolean(p.is_streamer || p.user_type === 'STREAMER' || p.role === 'streamer');
-          setIsStreamerUser(isStrm);
+          setCurrentUser(prev => ({ ...prev, is_streamer: isStrm, user_type: isStrm ? 'STREAMER' : prev?.user_type }));
         }
         if (p.role) setUserRole(p.role);
       }
@@ -2070,7 +2045,7 @@ export default function App() {
         const isOnline = Boolean(u.online || u.online_status === 'online' || u.status === 'online');
         if (!isOnline) return false;
 
-        const isSelf = String(u.username).trim() === String(currentUsername).trim() || String(u.id) === String(currentUser?.id) || String(u.id) === String(localStorage.getItem('vlive_user_id'));
+        const isSelf = String(u.username).trim() === String(currentUsername).trim() || String(u.id) === String(currentUser?.id) || (authUsername && String(u.username) === String(authUsername)) || String(u.id) === String(localStorage.getItem('vlive_user_id'));
         if (isSelf) return false;
         
         if (matchFilterVerifiedOnly && !u.isVerified && u.is_verified !== true) return false;
@@ -2096,8 +2071,10 @@ export default function App() {
         return 0.5 - Math.random();
       });
       setMatchDeckProfiles(mapped);
+    } else {
+      setMatchDeckProfiles([]);
     }
-  }, [usersList, currentUsername, currentUser, matchFilterVerifiedOnly, matchFilterOnlineOnly, matchFilterMaxDistance]);
+  }, [usersList, currentUsername, currentUser, authUsername, matchFilterVerifiedOnly, matchFilterOnlineOnly, matchFilterMaxDistance]);
   useEffect(() => {
     let interval = null;
     if (matchState === 'connected' && matchCallSeconds > 0) {
