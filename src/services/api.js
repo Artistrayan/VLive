@@ -3658,7 +3658,7 @@ export const apiSocial = {
 
   async getStories() {
     try {
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const oneDayAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const { data: storyPosts, error: postErr } = await supabase
         .from('posts')
         .select('*, profiles(username, avatar, name)')
@@ -3671,7 +3671,7 @@ export const apiSocial = {
         sharedStories = storyPosts.map(s => {
           const cleanCaption = (s.caption || '').replace(/^\[STORY\]\s*/i, '');
           const createdAt = s.created_at;
-          const expiresAt = new Date(new Date(createdAt).getTime() + 24 * 60 * 60 * 1000).toISOString();
+          const expiresAt = new Date(new Date(createdAt).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
           return {
             id: s.id,
             userId: s.user_id,
@@ -3787,7 +3787,7 @@ export const apiSocial = {
           media_url: s.image_url,
           caption: caption || '',
           created_at: s.created_at,
-          expires_at: new Date(new Date(s.created_at).getTime() + 24 * 60 * 60 * 1000).toISOString(),
+          expires_at: new Date(new Date(s.created_at).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           hasRing: true
         };
         return { success: true, data: storyObj };

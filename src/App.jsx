@@ -433,10 +433,18 @@ export default function App() {
   const [adminActiveTab, setAdminActiveTab] = useState('overview');
   const [adminGlobalSearch, setAdminGlobalSearch] = useState('');
   const [adminStatsTimeframe, setAdminStatsTimeframe] = useState('30d');
-  const [adminMinWithdrawal, setAdminMinWithdrawal] = useState(50);
-  const [adminMaxWithdrawal, setAdminMaxWithdrawal] = useState(5000);
-  const [adminNetworkFee, setAdminNetworkFee] = useState(1.50);
-  const [adminPlatformFee, setAdminPlatformFee] = useState(29);
+  const [adminMinWithdrawal, setAdminMinWithdrawal] = useState(() => {
+    try { return Number(localStorage.getItem('vlive_admin_min_withdrawal')) || 50; } catch(e) { return 50; }
+  });
+  const [adminMaxWithdrawal, setAdminMaxWithdrawal] = useState(() => {
+    try { return Number(localStorage.getItem('vlive_admin_max_withdrawal')) || 5000; } catch(e) { return 5000; }
+  });
+  const [adminNetworkFee, setAdminNetworkFee] = useState(() => {
+    try { return Number(localStorage.getItem('vlive_admin_network_fee')) || 1.50; } catch(e) { return 1.50; }
+  });
+  const [adminPlatformFee, setAdminPlatformFee] = useState(() => {
+    try { return Number(localStorage.getItem('vlive_admin_platform_fee')) || 29; } catch(e) { return 29; }
+  });
   const [adminMaintenanceMode, setAdminMaintenanceMode] = useState(false);
   const [adminUsersList, setAdminUsersList] = useState([]);
   const [adminUserFilterStatus, setAdminUserFilterStatus] = useState('all');
@@ -453,12 +461,21 @@ export default function App() {
   const [adminLivesList, setAdminLivesList] = useState([]);
   const [adminEventsList, setAdminEventsList] = useState([]);
   const [adminAdsList, setAdminAdsList] = useState([]);
-  const [adminRolesList, setAdminRolesList] = useState([]);
   const [adminLogsList, setAdminLogsList] = useState([]);
   const [adminBackupsList, setAdminBackupsList] = useState([]);
-  const [adminWhitelist, setAdminWhitelist] = useState([]);
   const [adminModerationQueue, setAdminModerationQueue] = useState([]);
-  const [adminVipPlans, setAdminVipPlans] = useState([]);
+  
+  // Initialize admin settings from local storage
+  const [adminVipPlans, setAdminVipPlans] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('vlive_admin_vip_plans')) || []; } catch(e) { return []; }
+  });
+  const [adminRolesList, setAdminRolesList] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('vlive_admin_roles_list')) || []; } catch(e) { return []; }
+  });
+  const [adminWhitelist, setAdminWhitelist] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('vlive_admin_whitelist')) || []; } catch(e) { return []; }
+  });
+  
   const [isAddVipPlanModalOpen, setIsAddVipPlanModalOpen] = useState(false);
   const [newVipPlanTitle, setNewVipPlanTitle] = useState('');
   const [newVipPlanCoins, setNewVipPlanCoins] = useState(1000);
@@ -471,6 +488,20 @@ export default function App() {
   const [newAdminTelegramId, setNewAdminTelegramId] = useState('');
   const [newAdminRole, setNewAdminRole] = useState('support');
   const [newAdminPermissions, setNewAdminPermissions] = useState([]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('vlive_admin_min_withdrawal', String(adminMinWithdrawal));
+      localStorage.setItem('vlive_admin_max_withdrawal', String(adminMaxWithdrawal));
+      localStorage.setItem('vlive_admin_network_fee', String(adminNetworkFee));
+      localStorage.setItem('vlive_admin_platform_fee', String(adminPlatformFee));
+      localStorage.setItem('vlive_admin_vip_plans', JSON.stringify(adminVipPlans));
+      localStorage.setItem('vlive_admin_roles_list', JSON.stringify(adminRolesList));
+      localStorage.setItem('vlive_admin_whitelist', JSON.stringify(adminWhitelist));
+    } catch (e) {
+      console.warn("Failed to sync admin settings to storage", e);
+    }
+  }, [adminMinWithdrawal, adminMaxWithdrawal, adminNetworkFee, adminPlatformFee, adminVipPlans, adminRolesList, adminWhitelist]);
   const [editingAdminObj, setEditingAdminObj] = useState(null);
   const [newAdminGiftName, setNewAdminGiftName] = useState('');
   const [newAdminGiftCoins, setNewAdminGiftCoins] = useState(100);
