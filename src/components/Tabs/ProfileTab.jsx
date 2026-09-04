@@ -846,47 +846,60 @@ export default function ProfileTab(props) {
                   )}
 
                   {/* User Active Stories */}
-                  {(props.advancedStories || props.userStoriesList || []).map((story, i) => (
-                    <div 
-                      key={story.id || i} 
-                      onClick={() => {
-                        if (props.setActiveStoryView) {
-                          props.setActiveStoryView({
-                            group: {
-                              user: {
-                                name: story.username || userName || 'User',
-                                avatar: story.userAvatar || userAvatar || '',
-                                isVip: true
+                  {(props.advancedStories || props.userStoriesList || []).map((story, i) => {
+                    const isMyStory = Boolean(
+                      (story.userId && props.currentUser?.id && String(story.userId) === String(props.currentUser.id)) ||
+                      (story.user_id && props.currentUser?.id && String(story.user_id) === String(props.currentUser.id)) ||
+                      (story.userId && props.currentUserId && String(story.userId) === String(props.currentUserId)) ||
+                      (story.user_id && props.currentUserId && String(story.user_id) === String(props.currentUserId)) ||
+                      (story.username && currentUsername && String(story.username).toLowerCase() === String(currentUsername).toLowerCase()) ||
+                      (story.username && authUsername && String(story.username).toLowerCase() === String(authUsername).toLowerCase()) ||
+                      (story.username && userName && String(story.username).toLowerCase() === String(userName).toLowerCase())
+                    );
+
+                    return (
+                      <div 
+                        key={story.id || i} 
+                        onClick={() => {
+                          if (props.setActiveStoryView) {
+                            props.setActiveStoryView({
+                              group: {
+                                user: {
+                                  name: story.username || (isMyStory ? userName : 'User'),
+                                  avatar: story.userAvatar || (isMyStory ? userAvatar : ''),
+                                  isVip: true
+                                },
+                                items: [
+                                  {
+                                    id: story.id,
+                                    url: story.media_url || story.imageUrl || story.videoUrl,
+                                    duration: 5,
+                                    time: window.loc('هم‌اکنون', 'Right now'),
+                                    caption: story.caption || story.title || ''
+                                  }
+                                ],
+                                isMe: isMyStory
                               },
-                              items: [
-                                {
-                                  id: story.id,
-                                  url: story.media_url || story.imageUrl || story.videoUrl,
-                                  duration: 5,
-                                  time: window.loc('هم‌اکنون', 'Right now')
-                                }
-                              ],
-                              isMe: true
-                            },
-                            currentIndex: 0,
-                            progress: 0
-                          });
-                        }
-                      }}
-                      className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
-                    >
-                      <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-md overflow-hidden shrink-0">
-                        {(story.media_url || story.imageUrl || story.videoUrl) ? (
-                          <img src={story.media_url || story.imageUrl || story.videoUrl} alt={story.title || 'Story'} className="w-full h-full object-cover rounded-full bg-slate-950" />
-                        ) : (
-                          <div className="w-full h-full bg-slate-900 flex items-center justify-center rounded-full text-pink-400 font-black text-[10px]">
-                            LIVE
-                          </div>
-                        )}
+                              currentIndex: 0,
+                              progress: 0
+                            });
+                          }
+                        }}
+                        className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                      >
+                        <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-md overflow-hidden shrink-0">
+                          {(story.media_url || story.imageUrl || story.videoUrl) ? (
+                            <img src={story.media_url || story.imageUrl || story.videoUrl} alt={story.title || 'Story'} className="w-full h-full object-cover rounded-full bg-slate-950" />
+                          ) : (
+                            <div className="w-full h-full bg-slate-900 flex items-center justify-center rounded-full text-pink-400 font-black text-[10px]">
+                              LIVE
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-300 max-w-[54px] truncate text-center">{story.title || story.caption || story.username || 'Story'}</span>
                       </div>
-                      <span className="text-[10px] font-bold text-slate-300 max-w-[54px] truncate text-center">{story.title || story.caption || story.username || 'Story'}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>

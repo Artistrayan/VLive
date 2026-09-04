@@ -2775,8 +2775,64 @@ export default function App() {
       }
     };
 
+    const handleBalanceUpdatedEvent = (e) => {
+      const detail = e.detail;
+      if (detail && typeof detail.coins === 'number') {
+        setUserCoins(detail.coins);
+        setCurrentUser(prev => prev ? { ...prev, coins: detail.coins, userCoins: detail.coins } : prev);
+      }
+    };
+
+    const handleVipUpdatedEvent = (e) => {
+      const detail = e.detail;
+      if (detail) {
+        if (detail.isVip) {
+          setVipPlan(detail.vipPlan || 'VIP_GOLD');
+          setCurrentUser(prev => prev ? { ...prev, is_vip: true, isVip: true, vip_plan: detail.vipPlan || 'gold' } : prev);
+        }
+        if (detail.userId) {
+          setUsersList(prev => (prev || []).map(u => {
+            if (u.id === detail.userId || u.username === detail.username) {
+              return { ...u, is_vip: true, isVip: true, vip_plan: detail.vipPlan || 'gold' };
+            }
+            return u;
+          }));
+          setAdminUsersList(prev => (prev || []).map(u => {
+            if (u.id === detail.userId || u.username === detail.username) {
+              return { ...u, is_vip: true, isVip: true, vip_plan: detail.vipPlan || 'gold' };
+            }
+            return u;
+          }));
+        }
+      }
+    };
+
+    const handleUserUpdatedEvent = (e) => {
+      const detail = e.detail;
+      if (!detail) return;
+      setUsersList(prev => (prev || []).map(u => {
+        if ((detail.userId && u.id === detail.userId) || (detail.username && u.username === detail.username)) {
+          return { ...u, ...detail };
+        }
+        return u;
+      }));
+      setAdminUsersList(prev => (prev || []).map(u => {
+        if ((detail.userId && u.id === detail.userId) || (detail.username && u.username === detail.username)) {
+          return { ...u, ...detail };
+        }
+        return u;
+      }));
+      if (detail.userId === currentUser?.id || detail.username === currentUsername) {
+        setCurrentUser(prev => prev ? { ...prev, ...detail } : prev);
+        if (typeof detail.coins === 'number') setUserCoins(detail.coins);
+      }
+    };
+
     window.addEventListener('vlive_new_notification', handleLocalNotifEvent);
     window.addEventListener('vlive_kyc_updated', handleKycUpdatedEvent);
+    window.addEventListener('vlive_balance_updated', handleBalanceUpdatedEvent);
+    window.addEventListener('vlive_vip_updated', handleVipUpdatedEvent);
+    window.addEventListener('vlive_user_updated', handleUserUpdatedEvent);
     
     // Ensure browser/native handles permission requests naturally without showing redundant modal popups on launch
     safeStorage.setItem('vlive_permissions_prompted_once', 'true');
@@ -2784,6 +2840,9 @@ export default function App() {
     return () => {
       window.removeEventListener('vlive_new_notification', handleLocalNotifEvent);
       window.removeEventListener('vlive_kyc_updated', handleKycUpdatedEvent);
+      window.removeEventListener('vlive_balance_updated', handleBalanceUpdatedEvent);
+      window.removeEventListener('vlive_vip_updated', handleVipUpdatedEvent);
+      window.removeEventListener('vlive_user_updated', handleUserUpdatedEvent);
       window.removeEventListener('vlive_stream_started', handleLocalStreamStarted);
       window.removeEventListener('vlive_stream_ended', handleLocalStreamEnded);
       try { liveBroadcastChannel?.unsubscribe(); } catch (e) {}
@@ -3217,12 +3276,13 @@ export default function App() {
                   </div>
                   <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
                     {usersList.filter(u => {
-                    if (u.status === 'banned' || u.isBanned) return false;
-                    return (u.isVip || u.is_vip || u.isTop);
-                  }).map(user => <div key={user.id} className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group" onClick={() => {
-                    setSelectedUser(user);
-                    setIsUserProfileModalOpen(true);
-                  }}>
+                      if (u.status === 'banned' || u.isBanned) return false;
+                      const isVip = Boolean(u.isVip || u.is_vip || u.vip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null') || u.isTop);
+                      return isVip;
+                    }).map(user => <div key={user.id} className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group" onClick={() => {
+                      setSelectedUser(user);
+                      setIsUserProfileModalOpen(true);
+                    }}>
                         <div className="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-orange-500 shadow-md group-hover:scale-105 transition">
                           {user.avatar ? (
                             <img src={user.avatar} alt={user.name} className="w-full h-full object-cover rounded-full border border-slate-950" />
@@ -3233,7 +3293,7 @@ export default function App() {
                           )}
                           {user.online && <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border border-slate-950" />}
                         </div>
-                        <span className="text-[9px] font-bold text-slate-200 max-w-[50px] truncate">{user.name}</span>
+                        <span className="text-[9px] font-bold text-amber-200 max-w-[50px] truncate">{user.name}</span>
                       </div>)}
                   </div>
                 </div>
@@ -3277,10 +3337,15 @@ export default function App() {
                       user.isLiked ||
                       (typeof apiProfile !== 'undefined' && typeof apiProfile.isUserProfileLiked === 'function' && apiProfile.isUserProfileLiked(user.id || user.username))
                     );
+                    const isUserCardVip = Boolean(
+                      user.isVip || user.is_vip || user.vip || (user.vip_plan && user.vip_plan !== 'none' && user.vip_plan !== 'null') || user.isTop
+                    );
                     const userLikesCount = Number(user.likes_count || user.likes || 0);
 
                     return (
-                      <div key={user.id} className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800/90 shadow-md hover:border-pink-500/40 transition duration-300 group relative flex flex-col">
+                      <div key={user.id} className={`bg-slate-950 rounded-2xl overflow-hidden border shadow-md transition duration-300 group relative flex flex-col ${
+                        isUserCardVip ? 'border-amber-500/50 shadow-amber-500/10 hover:border-amber-400' : 'border-slate-800/90 hover:border-pink-500/40'
+                      }`}>
                         
                         {/* Image Container with aspect ratio */}
                         <div className="aspect-[4/5] relative cursor-pointer overflow-hidden" onClick={() => {
@@ -3304,11 +3369,21 @@ export default function App() {
                           )}
                           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none" />
                           
-                          {/* Top Left: Online Dot */}
-                          {user.online && <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-slate-950/70 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-slate-800/60">
-                               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                               <span className="text-[8px] font-black text-emerald-400">Online</span>
-                            </div>}
+                          {/* Top Left: Online Dot / VIP indicator */}
+                          <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start z-10">
+                            {user.online && (
+                              <div className="flex items-center gap-1 bg-slate-950/70 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-slate-800/60">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                <span className="text-[8px] font-black text-emerald-400">Online</span>
+                              </div>
+                            )}
+                            {isUserCardVip && (
+                              <div className="flex items-center gap-0.5 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-[8px] px-1.5 py-0.5 rounded-full shadow-md">
+                                <Crown className="w-2.5 h-2.5 fill-slate-950" />
+                                <span>VIP</span>
+                              </div>
+                            )}
+                          </div>
 
                           {/* Top Right: Heart Like Button (No number, pure real like action per user instructions) */}
                           <button

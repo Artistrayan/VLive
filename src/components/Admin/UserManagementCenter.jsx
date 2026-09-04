@@ -4,7 +4,7 @@ import {
   Users, Search, Filter, ShieldCheck, ShieldAlert, Ban, UserX, UserCheck, 
   Crown, Video, CheckCircle2, AlertTriangle, Key, Trash2, RefreshCw, Eye, 
   MapPin, Smartphone, Clock, DollarSign, Gift, MessageSquare, History, FileText,
-  Lock, Unlock, ChevronRight, Sparkles, MoreVertical, Shield
+  Lock, Unlock, ChevronRight, Sparkles, MoreVertical, Shield, Sliders, Save, Check
 } from 'lucide-react';
 
 export default function UserManagementCenter({
@@ -19,6 +19,138 @@ export default function UserManagementCenter({
   const [filterCategory, setFilterCategory] = useState('ALL'); // ALL, ONLINE, VERIFIED, VIP, STREAMERS, BANNED, MUTED, SUSPENDED
   const [selectedUserDetail, setSelectedUserDetail] = useState(null);
   const [adminNoteInput, setAdminNoteInput] = useState('');
+  
+  // Quick Permissions & Edit Modal State
+  const [editPermissionsUser, setEditPermissionsUser] = useState(null);
+  const [permForm, setPermForm] = useState({
+    name: '',
+    username: '',
+    role: 'user',
+    isVerified: false,
+    isVip: false,
+    vipPlan: 'none',
+    isStreamer: false,
+    isBanned: false,
+    isMuted: false,
+    coins: 0,
+    diamonds: 0,
+    city: '',
+    bio: '',
+    adminNote: ''
+  });
+  const [isSavingPermissions, setIsSavingPermissions] = useState(false);
+
+  const handleOpenPermissionsModal = (user) => {
+    const isVip = Boolean(user.isVip || user.vip || user.is_vip || (user.vip_plan && user.vip_plan !== 'none'));
+    const isVerified = Boolean(user.isVerified || user.verified || user.is_verified);
+    const isStreamer = Boolean(user.isStreamer || user.isHost || user.is_streamer);
+    const isBanned = Boolean(user.isBanned || user.status === 'banned');
+    const isMuted = Boolean(user.isMuted);
+    const coins = Number(user.coins ?? user.userCoins ?? 0);
+    const diamonds = Number(user.diamonds ?? 0);
+
+    setEditPermissionsUser(user);
+    setPermForm({
+      name: user.name || user.fullName || user.username || '',
+      username: user.username || '',
+      role: user.role || (user.user_type === 'ADMIN' ? 'admin' : (isStreamer ? 'streamer' : 'user')),
+      isVerified,
+      isVip,
+      vipPlan: user.vip_plan || user.vipPlan || (isVip ? 'VIP_PREMIUM' : 'none'),
+      isStreamer,
+      isBanned,
+      isMuted,
+      coins,
+      diamonds,
+      city: user.city || user.location || '',
+      bio: user.bio || '',
+      adminNote: ''
+    });
+  };
+
+  const handleSaveUserPermissions = async () => {
+    if (!editPermissionsUser) return;
+    setIsSavingPermissions(true);
+    try {
+      const updates = {
+        name: permForm.name,
+        role: permForm.role,
+        is_verified: permForm.isVerified,
+        is_vip: permForm.isVip,
+        vip_plan: permForm.isVip ? (permForm.vipPlan !== 'none' ? permForm.vipPlan : 'VIP_PREMIUM') : 'none',
+        is_streamer: permForm.isStreamer,
+        is_banned: permForm.isBanned,
+        status: permForm.isBanned ? 'banned' : 'approved',
+        is_muted: permForm.isMuted,
+        city: permForm.city,
+        bio: permForm.bio,
+        user_type: permForm.role === 'admin' || permForm.role === 'super_admin' ? 'ADMIN' : (permForm.isStreamer ? 'STREAMER' : 'REAL_USER')
+      };
+
+      if (permForm.diamonds !== Number(editPermissionsUser.diamonds ?? 0)) {
+        updates.diamonds = Number(permForm.diamonds);
+      }
+
+      // 1. Update Profile fields
+      await apiAdmin.updateUserFields(editPermissionsUser.id || editPermissionsUser.username, updates);
+
+      // 2. Update Coins if changed
+      const origCoins = Number(editPermissionsUser.coins ?? editPermissionsUser.userCoins ?? 0);
+      const newCoins = Number(permForm.coins);
+      if (newCoins !== origCoins) {
+        const delta = newCoins - origCoins;
+        await apiAdmin.adjustUserWallet(editPermissionsUser.id || editPermissionsUser.username, delta, `Admin Permissions Editor: Adjusted to ${newCoins}`);
+      }
+
+      // 3. Add note if present
+      let updatedNotes = editPermissionsUser.adminNotes || [];
+      if (permForm.adminNote && permForm.adminNote.trim()) {
+        updatedNotes = [...updatedNotes, { text: permForm.adminNote.trim(), date: new Date().toLocaleString() }];
+        await apiAdmin.updateUserFields(editPermissionsUser.id || editPermissionsUser.username, { admin_notes: JSON.stringify(updatedNotes) });
+      }
+
+      // 4. Update React State
+      const updatedUserObj = {
+        ...editPermissionsUser,
+        name: permForm.name,
+        role: permForm.role,
+        isVerified: permForm.isVerified,
+        verified: permForm.isVerified,
+        is_verified: permForm.isVerified,
+        isVip: permForm.isVip,
+        vip: permForm.isVip,
+        is_vip: permForm.isVip,
+        vip_plan: permForm.isVip ? permForm.vipPlan : 'none',
+        vipPlan: permForm.isVip ? permForm.vipPlan : 'none',
+        isStreamer: permForm.isStreamer,
+        isHost: permForm.isStreamer,
+        is_streamer: permForm.isStreamer,
+        isBanned: permForm.isBanned,
+        status: permForm.isBanned ? 'banned' : 'approved',
+        isMuted: permForm.isMuted,
+        coins: newCoins,
+        userCoins: newCoins,
+        diamonds: permForm.diamonds,
+        city: permForm.city,
+        bio: permForm.bio,
+        adminNotes: updatedNotes
+      };
+
+      setUsersList(prev => prev.map(u => (u.id === editPermissionsUser.id || u.username === editPermissionsUser.username ? updatedUserObj : u)));
+      
+      if (selectedUserDetail?.id === editPermissionsUser.id) {
+        setSelectedUserDetail(updatedUserObj);
+      }
+
+      addAdminAuditLog(`Admin Action: Updated permissions and details for user @${editPermissionsUser.username} (VIP: ${permForm.isVip}, Verified: ${permForm.isVerified}, Streamer: ${permForm.isStreamer}, Coins: ${newCoins})`);
+      showToast(window.loc(`💾 تغییرات و دسترسی‌های @${editPermissionsUser.username} با موفقیت در دیتابیس ذخیره شد`, `💾 Changes and permissions for @${editPermissionsUser.username} saved successfully`));
+      setEditPermissionsUser(null);
+    } catch (err) {
+      showToast(window.loc(`❌ خطا در ذخیره‌سازی: ${err.message}`, `❌ Save error: ${err.message}`));
+    } finally {
+      setIsSavingPermissions(false);
+    }
+  };
   
   // Direct Wallet/Coin Adjustment Modal State
   const [adjustCoinModalUser, setAdjustCoinModalUser] = useState(null);
@@ -370,6 +502,16 @@ export default function UserManagementCenter({
                           <span>{window.loc('جزئیات', 'Details')}</span>
                         </button>
 
+                        {/* Dedicated Permissions & Quick Save Button */}
+                        <button
+                          onClick={() => handleOpenPermissionsModal(u)}
+                          className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 border border-cyan-500/40 text-cyan-300 font-black text-[10px] flex items-center gap-1 transition shadow-md active:scale-95"
+                          title={window.loc('ویرایش کامل دسترسی‌ها، نقش، سکه و ذخیره تغییرات کاربر', 'Edit permissions, role, coins and save changes')}
+                        >
+                          <Sliders className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>{window.loc('دسترسی‌ها و تغییرات', 'Permissions & Edit')}</span>
+                        </button>
+
                         {/* Verification Toggle */}
                         <button
                           onClick={() => handleToggleVerify(u)}
@@ -653,6 +795,254 @@ export default function UserManagementCenter({
               <button
                 onClick={() => setAdjustCoinModalUser(null)}
                 className="px-4 py-2.5 rounded-2xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 transition"
+              >
+                {window.loc('انصراف', 'Cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: USER PERMISSIONS & QUICK EDIT ================= */}
+      {editPermissionsUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn overflow-y-auto">
+          <div className="w-full max-w-xl bg-slate-900 border border-cyan-500/40 rounded-3xl p-5 shadow-2xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white font-black shadow-lg">
+                  <Sliders className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-white text-sm flex items-center gap-1.5">
+                    <span>{window.loc('ویرایش دسترسی‌ها و ذخیره تغییرات کاربر', 'User Permissions & Edit')}</span>
+                  </h3>
+                  <p className="text-[10px] text-cyan-400 font-mono">
+                    @{editPermissionsUser.username} • ID: {editPermissionsUser.id || 'N/A'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditPermissionsUser(null)}
+                className="text-slate-400 hover:text-white text-sm font-bold p-1 rounded-xl hover:bg-slate-800 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Form Sections */}
+            <div className="space-y-3.5 text-xs">
+              {/* User Identity & Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-2xl bg-slate-950 border border-slate-800/80">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                    {window.loc('نام نمایشی:', 'Display Name:')}
+                  </label>
+                  <input
+                    type="text"
+                    value={permForm.name}
+                    onChange={e => setPermForm(p => ({ ...p, name: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                    {window.loc('شهر / موقعیت مکانی:', 'City / Location:')}
+                  </label>
+                  <input
+                    type="text"
+                    value={permForm.city}
+                    onChange={e => setPermForm(p => ({ ...p, city: e.target.value }))}
+                    placeholder="Tehran, Iran"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs outline-none focus:border-cyan-400"
+                  />
+                </div>
+              </div>
+
+              {/* Roles & System Access */}
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 space-y-2.5">
+                <span className="text-[10px] font-bold text-slate-300 flex items-center gap-1">
+                  <Shield className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{window.loc('سطح دسترسی و نقش سیستمی:', 'System Role & Access Level:')}</span>
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { id: 'user', label: window.loc('کاربر عادی', 'Normal User') },
+                    { id: 'streamer', label: window.loc('استریمر', 'Streamer') },
+                    { id: 'admin', label: window.loc('مدیر ادمین', 'Admin') },
+                    { id: 'super_admin', label: window.loc('مدیر ارشد', 'Super Admin') }
+                  ].map(r => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => setPermForm(p => ({ ...p, role: r.id }))}
+                      className={`py-2 px-2 rounded-xl border text-center font-bold text-[11px] transition ${
+                        permForm.role === r.id
+                          ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-sm'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Feature Badges & Flags Toggles */}
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 space-y-2.5">
+                <span className="text-[10px] font-bold text-slate-300 flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{window.loc('تنظیم نشان‌ها و دسترسی‌های ویژه:', 'Badges & Special Features:')}</span>
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {/* Verified Badge */}
+                  <button
+                    type="button"
+                    onClick={() => setPermForm(p => ({ ...p, isVerified: !p.isVerified }))}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between transition ${
+                      permForm.isVerified
+                        ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300 font-bold'
+                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                      <span>{window.loc('نشان تایید آبی (Verified)', 'Verified Blue Badge')}</span>
+                    </span>
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${permForm.isVerified ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-500'}`}>
+                      {permForm.isVerified ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+
+                  {/* Streamer Access */}
+                  <button
+                    type="button"
+                    onClick={() => setPermForm(p => ({ ...p, isStreamer: !p.isStreamer }))}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between transition ${
+                      permForm.isStreamer
+                        ? 'bg-pink-500/20 border-pink-500 text-pink-300 font-bold'
+                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Video className="w-4 h-4 text-pink-400" />
+                      <span>{window.loc('دسترسی پخش زنده (Streamer)', 'Live Broadcast Access')}</span>
+                    </span>
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${permForm.isStreamer ? 'bg-pink-500 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                      {permForm.isStreamer ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+
+                  {/* VIP Status */}
+                  <button
+                    type="button"
+                    onClick={() => setPermForm(p => ({ ...p, isVip: !p.isVip }))}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between transition ${
+                      permForm.isVip
+                        ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Crown className="w-4 h-4 text-amber-400" />
+                      <span>{window.loc('عضویت ویژه (VIP Member)', 'VIP Membership')}</span>
+                    </span>
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${permForm.isVip ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-500'}`}>
+                      {permForm.isVip ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+
+                  {/* Account Ban / Suspension */}
+                  <button
+                    type="button"
+                    onClick={() => setPermForm(p => ({ ...p, isBanned: !p.isBanned }))}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between transition ${
+                      permForm.isBanned
+                        ? 'bg-rose-600/20 border-rose-500 text-rose-300 font-bold'
+                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Ban className="w-4 h-4 text-rose-400" />
+                      <span>{window.loc('مسدودسازی حساب (Banned)', 'Ban Account')}</span>
+                    </span>
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${permForm.isBanned ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                      {permForm.isBanned ? 'BANNED' : 'ACTIVE'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Financial Balance Modification */}
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 space-y-2.5">
+                <span className="text-[10px] font-bold text-slate-300 flex items-center gap-1">
+                  <DollarSign className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{window.loc('موجودی و تراکنش‌های کیف پول:', 'Wallet Balances:')}</span>
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                      {window.loc('موجودی سکه (Coins):', 'Coin Balance:')}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={permForm.coins}
+                        onChange={e => setPermForm(p => ({ ...p, coins: e.target.value === '' ? '' : Number(e.target.value) }))}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-amber-400 font-mono font-bold text-xs outline-none focus:border-amber-400"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs">🪙</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                      {window.loc('موجودی الماس (Diamonds):', 'Diamond Balance:')}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={permForm.diamonds}
+                        onChange={e => setPermForm(p => ({ ...p, diamonds: e.target.value === '' ? '' : Number(e.target.value) }))}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-cyan-400 font-mono font-bold text-xs outline-none focus:border-cyan-400"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs">💎</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Admin Note */}
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 block">
+                  {window.loc('افزودن یادداشت جدید ادمین:', 'Add Admin Note:')}
+                </label>
+                <input
+                  type="text"
+                  value={permForm.adminNote}
+                  onChange={e => setPermForm(p => ({ ...p, adminNote: e.target.value }))}
+                  placeholder="توضیحات و دستورات مدیریتی..."
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs outline-none focus:border-cyan-400"
+                />
+              </div>
+            </div>
+
+            {/* Primary Save Button */}
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+              <button
+                disabled={isSavingPermissions}
+                onClick={handleSaveUserPermissions}
+                className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 hover:scale-[1.01] active:scale-95 transition disabled:opacity-50"
+              >
+                <Save className="w-4 h-4 text-slate-950" />
+                <span>
+                  {isSavingPermissions
+                    ? window.loc('در حال ذخیره در دیتابیس...', 'Saving to database...')
+                    : window.loc('💾 ذخیره تمامی تغییرات کاربر در دیتابیس', '💾 Save All User Changes to DB')}
+                </span>
+              </button>
+              <button
+                onClick={() => setEditPermissionsUser(null)}
+                className="px-4 py-3 rounded-2xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 transition"
               >
                 {window.loc('انصراف', 'Cancel')}
               </button>

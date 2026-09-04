@@ -467,7 +467,25 @@ export const apiProfile = {
       if (error || !profile) return null;
 
       // Fetch wallet balance
-      const { data: wallet } = await supabase.from('wallets').select('coins, usdt_balance').eq('user_id', uid).single();
+      const { data: wallet } = await supabase.from('wallets').select('coins, usdt_balance').eq('user_id', uid).maybeSingle();
+      
+      // True persistent coin resolution: wallet or profile (whichever is valid and highest/authoritative)
+      let resolvedCoins = 0;
+      if (wallet && typeof wallet.coins === 'number') {
+        resolvedCoins = Number(wallet.coins);
+      } else if (profile && typeof profile.coins === 'number') {
+        resolvedCoins = Number(profile.coins);
+      }
+
+      // Auto-reconcile wallets if missing or out of sync
+      if (!wallet && uid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(uid))) {
+        supabase.from('wallets').upsert({
+          user_id: uid,
+          coins: resolvedCoins,
+          usdt_balance: 0.0,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' }).catch(() => {});
+      }
       
       // Calculate dynamic age from birthdate if available
       const birthDateVal = profile.birth_date || profile.birthdate || profile.birthday || profile.birthDate;
@@ -491,6 +509,8 @@ export const apiProfile = {
         }
       }
 
+      const isVipStatus = Boolean(profile.is_vip || profile.vip || (profile.vip_plan && profile.vip_plan !== 'none' && profile.vip_plan !== 'null'));
+
       return {
         ...profile,
         role: mappedRole,
@@ -498,7 +518,11 @@ export const apiProfile = {
         telegramId: effectiveTelegramId,
         birth_date: birthDateVal || '',
         age: computedAge !== null ? computedAge : profile.age,
-        coins: wallet?.coins ?? 0,
+        is_vip: isVipStatus,
+        isVip: isVipStatus,
+        vip: isVipStatus,
+        coins: resolvedCoins,
+        userCoins: resolvedCoins,
         diamonds: profile.diamonds ?? 0,
         usdt_balance: wallet?.usdt_balance ?? 0.0
       };
@@ -2514,8 +2538,24 @@ export const apiWallet = {
   async getBalance() {
     const uid = getUserId();
     if (!uid) return { coins: 0, usdt_balance: 0 };
-    const { data, error } = await supabase.from('wallets').select('coins, usdt_balance').eq('user_id', uid).single();
-    return error ? { coins: 0, usdt_balance: 0 } : data;
+    try {
+      const { data: walData } = await supabase.from('wallets').select('coins, usdt_balance').eq('user_id', uid).maybeSingle();
+      const { data: profData } = await supabase.from('profiles').select('coins').eq('id', uid).maybeSingle();
+      
+      let coins = 0;
+      if (walData && typeof walData.coins === 'number') {
+        coins = Number(walData.coins);
+      } else if (profData && typeof profData.coins === 'number') {
+        coins = Number(profData.coins);
+      }
+
+      return {
+        coins,
+        usdt_balance: Number(walData?.usdt_balance || 0)
+      };
+    } catch (e) {
+      return { coins: 0, usdt_balance: 0 };
+    }
   },
 
   async getTransactions() {
@@ -2675,16 +2715,89 @@ export const apiVip = {
     const uid = getUserId();
     if (!uid) return { success: false, error: 'Unauthorized' };
     const idempotencyKey = `idemp_vip_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const planKey = (plan || 'gold').toLowerCase();
+    const dur = parseInt(durationMonths, 10) || 1;
 
     try {
       const { data, error } = await supabase.rpc('rpc_purchase_vip', {
-        p_plan: (plan || 'gold').toLowerCase(),
-        p_duration_months: parseInt(durationMonths, 10) || 1,
+        p_plan: planKey,
+        p_duration_months: dur,
         p_idempotency_key: idempotencyKey
       });
 
-      if (error) return { success: false, error: error.message };
-      return data;
+      if (!error && data && data.success) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('vlive_vip_updated', { detail: { userId: uid, isVip: true, vipPlan: planKey } }));
+          window.dispatchEvent(new CustomEvent('vlive_user_updated', { detail: { userId: uid, is_vip: true, isVip: true, vip_plan: planKey } }));
+        }
+        return data;
+      }
+    } catch (rpcErr) {
+      console.warn('RPC purchase VIP error, trying direct DB fallback:', rpcErr);
+    }
+
+    // Direct Database Fallback for VIP Purchase
+    try {
+      const resolvedUid = (await resolveProfileUuid(uid)) || uid;
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + dur);
+
+      const basePrices = { silver: 300, gold: 500, diamond: 1000, elite: 2000 };
+      const multipliers = { 1: 1.0, 3: 0.85, 6: 0.75, 12: 0.60 };
+      const monthly = basePrices[planKey] || 500;
+      const costCoins = Math.round(monthly * dur * (multipliers[dur] || 1.0));
+
+      // Get current balance
+      const { data: walData } = await supabase.from('wallets').select('coins').eq('user_id', resolvedUid).maybeSingle();
+      const { data: profData } = await supabase.from('profiles').select('coins').eq('id', resolvedUid).maybeSingle();
+      const currentCoins = Number(walData?.coins ?? profData?.coins ?? 0);
+
+      if (currentCoins < costCoins) {
+        return { success: false, error: 'INSUFFICIENT_COINS' };
+      }
+
+      const remainingCoins = Math.max(0, currentCoins - costCoins);
+
+      // 1. Update Profiles table
+      await supabase.from('profiles').update({
+        is_vip: true,
+        vip_plan: planKey,
+        vip_expires_at: expiresAt.toISOString(),
+        coins: remainingCoins,
+        updated_at: new Date().toISOString()
+      }).eq('id', resolvedUid);
+
+      // 2. Update Wallets table
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(resolvedUid))) {
+        await supabase.from('wallets').upsert({
+          user_id: resolvedUid,
+          coins: remainingCoins,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' }).catch(() => {});
+      }
+
+      // 3. Record transaction
+      await supabase.from('transactions').insert([{
+        user_id: resolvedUid,
+        tx_type: 'buy_vip',
+        amount_coins: -costCoins,
+        amount_usdt: 0,
+        status: 'Completed',
+        description: `Purchased VIP Plan: ${planKey.toUpperCase()} (${dur} Month${dur > 1 ? 's' : ''})`
+      }]).catch(() => {});
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vlive_balance_updated', { detail: { coins: remainingCoins } }));
+        window.dispatchEvent(new CustomEvent('vlive_vip_updated', { detail: { userId: resolvedUid, isVip: true, vipPlan: planKey } }));
+        window.dispatchEvent(new CustomEvent('vlive_user_updated', { detail: { userId: resolvedUid, is_vip: true, isVip: true, vip_plan: planKey } }));
+      }
+
+      return {
+        success: true,
+        remaining_coins: remainingCoins,
+        plan: planKey,
+        expires_at: expiresAt.toISOString()
+      };
     } catch (e) {
       return { success: false, error: e.message };
     }
@@ -3410,11 +3523,19 @@ export const apiSocial = {
   },
 
   async deletePost(postId) {
-    const uid = getUserId();
-    if (!uid || !postId) return { success: false };
+    const { data: authData } = await supabase.auth.getUser();
+    let uid = authData?.user?.id || getUserId();
+    if (!uid || !postId) return { success: false, error: 'Unauthorized' };
     try {
       const resolvedUid = (await resolveProfileUuid(uid)) || uid;
-      const { error } = await supabase.from('posts').delete().eq('id', postId).eq('user_id', resolvedUid);
+      const isAdm = await verifyAdminServerRole();
+
+      let query = supabase.from('posts').delete().eq('id', postId);
+      if (!isAdm) {
+        // Enforce ownership: only the author can delete
+        query = query.eq('user_id', resolvedUid);
+      }
+      const { error } = await query;
       return { success: !error };
     } catch (e) {
       return { success: false, error: e.message };
@@ -3564,19 +3685,31 @@ export const apiSocial = {
   },
 
   async updateStory(storyId, updates = {}) {
-    if (!storyId) return { success: false };
+    if (!storyId) return { success: false, error: 'Missing story ID' };
+    const { data: authData } = await supabase.auth.getUser();
+    let uid = authData?.user?.id || getUserId();
+    if (!uid) return { success: false, error: 'Unauthorized' };
+
     try {
+      const resolvedUid = (await resolveProfileUuid(uid)) || uid;
+      const isAdm = await verifyAdminServerRole();
+
       const dbPayload = {};
       if (updates.caption !== undefined) dbPayload.caption = `[STORY] ${updates.caption}`.trim();
       if (updates.mediaUrl || updates.media_url || updates.imageUrl) {
         dbPayload.image_url = updates.mediaUrl || updates.media_url || updates.imageUrl;
       }
       if (Object.keys(dbPayload).length > 0) {
-        await supabase.from('posts').update(dbPayload).eq('id', storyId);
+        let query = supabase.from('posts').update(dbPayload).eq('id', storyId);
+        if (!isAdm) {
+          query = query.eq('user_id', resolvedUid);
+        }
+        const { error } = await query;
+        if (error) return { success: false, error: error.message };
       }
       return { success: true };
     } catch (e) {
-      return { success: true };
+      return { success: false, error: e.message };
     }
   },
 
@@ -4159,6 +4292,11 @@ export const apiAdmin = {
           status: 'Completed',
           description: `Admin Adjustment: ${reason || 'Manual Correction'}`
         }]).catch(() => {});
+      }
+
+      // Broadcast user update event across all components
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vlive_user_updated', { detail: { userId: matchedUserId, coins: newCoins, userCoins: newCoins } }));
       }
 
       // If this is the current active user in the app, sync local storage & broadcast event
