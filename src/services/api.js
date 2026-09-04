@@ -12,6 +12,97 @@ export const getStoredToken = () => localStorage.getItem('vlive_token');
 export const getUserId = () => localStorage.getItem('vlive_user_id');
 
 // ==========================================
+// CORE HELPERS (RESOLVER & ADMIN SECURITY)
+// ==========================================
+// Helper to resolve profile UUID from id, username, or telegram_id
+export async function resolveProfileUuid(identifier) {
+  if (!identifier) return null;
+  const str = String(identifier).trim().replace(/^@/, '');
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) {
+    return str;
+  }
+  try {
+    const isNumeric = /^\d+$/.test(str);
+    let query = supabase.from('profiles').select('id, username, name');
+    if (isNumeric) {
+      query = query.or(`id.eq.${str},username.ilike.${str}`);
+    } else {
+      query = query.or(`username.ilike.${str},name.ilike.${str}`);
+    }
+    const { data } = await query.limit(1).maybeSingle();
+    return data?.id || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function verifyAdminServerRole(inputTelegramId = null) {
+  try {
+    // 1. Check local admin session first
+    const activeAdminSession = safeStorage.getItem('vlive_admin_session');
+    if (activeAdminSession) {
+      const sessStr = typeof activeAdminSession === 'object' ? JSON.stringify(activeAdminSession) : String(activeAdminSession);
+      if (
+        sessStr.toLowerCase().includes('rayan') || 
+        sessStr.toLowerCase().includes('admin') || 
+        sessStr.includes('8933698119') ||
+        sessStr.toLowerCase().includes('super')
+      ) {
+        return true;
+      }
+    }
+
+    const adminPinAuthed = safeStorage.getItem('vlive_admin_pin_authed');
+    if (adminPinAuthed === 'true' || adminPinAuthed === true) return true;
+
+    const { data: authData, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !authData?.user?.id) {
+      // If we have input telegram ID matching admin
+      if (inputTelegramId && String(inputTelegramId).trim() === '8933698119') return true;
+      // Also check if current stored telegram id is admin
+      const storedTg = safeStorage.getItem('vlive_telegram_id');
+      if (storedTg && String(storedTg).trim() === '8933698119') return true;
+      return false;
+    }
+    const userId = authData.user.id;
+    const userEmail = String(authData.user.email || '').toLowerCase();
+    
+    // Super admin email bypass
+    if (userEmail === 'tattoo.rayan2015@gmail.com' || userEmail.includes('rayan')) {
+      return true;
+    }
+
+    const { data: profile, error: profErr } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    if (profErr || !profile) {
+      if (userEmail === 'tattoo.rayan2015@gmail.com') return true;
+      return false;
+    }
+    
+    // Server-side verification
+    const tgFromMeta = authData.user.user_metadata?.telegram_id;
+    const tgFromEmail = authData.user.email?.startsWith('tg_') ? authData.user.email.replace('tg_', '').replace('@vlive.app', '') : '';
+    const cleanTg = String(profile.telegram_id || tgFromMeta || tgFromEmail || inputTelegramId || '').trim();
+    const cleanUserType = String(profile.user_type || '').toUpperCase();
+    const cleanRole = String(profile.role || '').toLowerCase();
+    const cleanUsername = String(profile.username || '').toLowerCase();
+    
+    const isAdmRole = cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN' || cleanUsername === 'rayan' || cleanUsername === 'rayan_super_admin' || profile.is_admin === true;
+    const isAdmTg = cleanTg === '8933698119' || isAdmRole || userEmail === 'tattoo.rayan2015@gmail.com';
+    
+    if (isAdmRole || isAdmTg) {
+      return true;
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
+// ==========================================
 // 1. STORAGE SERVICE (Real Supabase Storage)
 // ==========================================
 export const apiStorage = {
@@ -1364,28 +1455,6 @@ export const apiHome = {
 // ==========================================
 // 5. MESSAGES & CHAT SERVICE
 // ==========================================
-// Helper to resolve profile UUID from id, username, or telegram_id
-export async function resolveProfileUuid(identifier) {
-  if (!identifier) return null;
-  const str = String(identifier).trim().replace(/^@/, '');
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) {
-    return str;
-  }
-  try {
-    const isNumeric = /^\d+$/.test(str);
-    let query = supabase.from('profiles').select('id, username, name');
-    if (isNumeric) {
-      query = query.or(`id.eq.${str},username.ilike.${str}`);
-    } else {
-      query = query.or(`username.ilike.${str},name.ilike.${str}`);
-    }
-    const { data } = await query.limit(1).maybeSingle();
-    return data?.id || null;
-  } catch (e) {
-    return null;
-  }
-}
-
 // Find or Create real conversation record between two profiles
 export async function getOrCreateConversation(userAId, userBId) {
   if (!userAId || !userBId) {
@@ -4117,72 +4186,6 @@ export const apiNotifications = {
 // ==========================================
 // 12. ADMIN SERVICE (Real DB Management)
 // ==========================================
-async function verifyAdminServerRole(inputTelegramId = null) {
-  try {
-    // 1. Check local admin session first
-    const activeAdminSession = safeStorage.getItem('vlive_admin_session');
-    if (activeAdminSession) {
-      const sessStr = typeof activeAdminSession === 'object' ? JSON.stringify(activeAdminSession) : String(activeAdminSession);
-      if (
-        sessStr.toLowerCase().includes('rayan') || 
-        sessStr.toLowerCase().includes('admin') || 
-        sessStr.includes('8933698119') ||
-        sessStr.toLowerCase().includes('super')
-      ) {
-        return true;
-      }
-    }
-
-    const adminPinAuthed = safeStorage.getItem('vlive_admin_pin_authed');
-    if (adminPinAuthed === 'true' || adminPinAuthed === true) return true;
-
-    const { data: authData, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !authData?.user?.id) {
-      // If we have input telegram ID matching admin
-      if (inputTelegramId && String(inputTelegramId).trim() === '8933698119') return true;
-      // Also check if current stored telegram id is admin
-      const storedTg = safeStorage.getItem('vlive_telegram_id');
-      if (storedTg && String(storedTg).trim() === '8933698119') return true;
-      return false;
-    }
-    const userId = authData.user.id;
-    const userEmail = String(authData.user.email || '').toLowerCase();
-    
-    // Super admin email bypass
-    if (userEmail === 'tattoo.rayan2015@gmail.com' || userEmail.includes('rayan')) {
-      return true;
-    }
-
-    const { data: profile, error: profErr } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    if (profErr || !profile) {
-      if (userEmail === 'tattoo.rayan2015@gmail.com') return true;
-      return false;
-    }
-    
-    // Server-side verification
-    const tgFromMeta = authData.user.user_metadata?.telegram_id;
-    const tgFromEmail = authData.user.email?.startsWith('tg_') ? authData.user.email.replace('tg_', '').replace('@vlive.app', '') : '';
-    const cleanTg = String(profile.telegram_id || tgFromMeta || tgFromEmail || inputTelegramId || '').trim();
-    const cleanUserType = String(profile.user_type || '').toUpperCase();
-    const cleanRole = String(profile.role || '').toLowerCase();
-    const cleanUsername = String(profile.username || '').toLowerCase();
-    
-    const isAdmRole = cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN' || cleanUsername === 'rayan' || cleanUsername === 'rayan_super_admin' || profile.is_admin === true;
-    const isAdmTg = cleanTg === '8933698119' || isAdmRole || userEmail === 'tattoo.rayan2015@gmail.com';
-    
-    if (isAdmRole || isAdmTg) {
-      return true;
-    }
-    return false;
-  } catch (e) {
-    return false;
-  }
-}
-
 export const apiAdmin = {
   verifyAdminServerRole,
   async getAllTransactions() {

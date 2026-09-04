@@ -40,6 +40,7 @@ export default function HostLiveModal({
 }) {
   const [facingMode, setFacingMode] = useState('user'); // 'user' | 'environment'
   const [cameraStream, setCameraStream] = useState(null);
+  const [isCameraPreviewActive, setIsCameraPreviewActive] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
 
@@ -81,7 +82,7 @@ export default function HostLiveModal({
 
   const isAuthorizedStreamer = Boolean(isUserAdmin || (isFemaleUser && isManagementApproved));
 
-  // Initialize and start live camera preview
+  // Initialize and start live camera preview (ONLY on explicit user toggle, NEVER auto-prompt)
   const startCamera = async (mode = facingMode) => {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
@@ -89,6 +90,7 @@ export default function HostLiveModal({
       // Re-use active stream if available
       if (streamRef.current && streamRef.current.active && streamRef.current.getVideoTracks().some(t => t.readyState === 'live')) {
         setCameraStream(streamRef.current);
+        setIsCameraPreviewActive(true);
         if (videoRef.current) {
           videoRef.current.srcObject = streamRef.current;
           videoRef.current.play().catch(() => {});
@@ -115,6 +117,7 @@ export default function HostLiveModal({
 
       streamRef.current = stream;
       setCameraStream(stream);
+      setIsCameraPreviewActive(true);
       cameraPermissionService.setActiveStream(stream);
 
       if (videoRef.current) {
@@ -123,6 +126,7 @@ export default function HostLiveModal({
       }
     } catch (err) {
       console.warn('HostLiveModal camera preview error:', err);
+      setIsCameraPreviewActive(false);
     }
   };
 
@@ -132,6 +136,7 @@ export default function HostLiveModal({
       streamRef.current = null;
     }
     setCameraStream(null);
+    setIsCameraPreviewActive(false);
   };
 
   // Flip Camera between Front & Back
@@ -142,7 +147,6 @@ export default function HostLiveModal({
     const oldStream = streamRef.current;
     const oldVideoTrack = oldStream ? oldStream.getVideoTracks()[0] : null;
 
-    // 1. Try applyConstraints on existing active track first
     if (oldVideoTrack && typeof oldVideoTrack.applyConstraints === 'function') {
       try {
         await oldVideoTrack.applyConstraints({
@@ -152,11 +156,10 @@ export default function HostLiveModal({
         });
         return;
       } catch (e) {
-        // Fallback to seamless stream replacement
+        // Fallback
       }
     }
 
-    // 2. Acquire new stream BEFORE stopping old stream so permission session stays open
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
 
@@ -177,13 +180,13 @@ export default function HostLiveModal({
         });
       }
 
-      // Stop old tracks AFTER new stream is acquired
       if (oldStream) {
         oldStream.getTracks().forEach(t => t.stop());
       }
 
       streamRef.current = newStream;
       setCameraStream(newStream);
+      setIsCameraPreviewActive(true);
 
       if (videoRef.current) {
         videoRef.current.srcObject = newStream;
@@ -194,16 +197,15 @@ export default function HostLiveModal({
     }
   };
 
+  // Clean up stream on modal close (NEVER auto-request on open)
   useEffect(() => {
-    if (isOpen && isAuthorizedStreamer && isCamEnabled) {
-      startCamera(facingMode);
-    } else {
+    if (!isOpen) {
       stopCamera();
     }
     return () => {
       stopCamera();
     };
-  }, [isOpen, isAuthorizedStreamer, isCamEnabled]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -337,7 +339,7 @@ export default function HostLiveModal({
 
         {/* Real Live Camera Preview Box */}
         <div className="relative w-full h-52 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-xl group">
-          {isCamEnabled ? (
+          {isCameraPreviewActive && cameraStream ? (
             <div className="relative w-full h-full">
               <video 
                 ref={videoRef}
@@ -371,10 +373,12 @@ export default function HostLiveModal({
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    onClick={() => setIsCamEnabled(!isCamEnabled)}
-                    className={`p-2 rounded-xl border backdrop-blur-md transition ${
-                      isCamEnabled ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' : 'bg-rose-500/20 text-rose-400 border-rose-500/40'
-                    }`}
+                    onClick={() => {
+                      stopCamera();
+                      setIsCamEnabled(false);
+                    }}
+                    className="p-2 rounded-xl border backdrop-blur-md transition bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                    title={loc('خاموش کردن دوربین پیش‌نمایش', 'Turn off preview camera')}
                   >
                     <Camera className="w-4 h-4" />
                   </button>
@@ -395,15 +399,69 @@ export default function HostLiveModal({
               </div>
             </div>
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-slate-500 gap-2">
-              <Camera className="w-8 h-8 opacity-40" />
-              <button
-                type="button"
-                onClick={() => setIsCamEnabled(true)}
-                className="px-3 py-1 rounded-xl bg-slate-800 text-xs text-slate-300 font-bold border border-slate-700"
-              >
-                {loc('فعال‌سازی دوربین', 'Turn Camera On')}
-              </button>
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 p-4 relative overflow-hidden">
+              {/* Background ambient glow */}
+              <div className="absolute -top-10 -right-10 w-36 h-36 bg-pink-500/15 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none" />
+
+              {/* Streamer Avatar & Live Badge */}
+              <div className="relative mb-2">
+                <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-lg">
+                  {userAvatar || currentUser?.avatar ? (
+                    <img 
+                      src={userAvatar || currentUser?.avatar} 
+                      alt={userName} 
+                      className="w-full h-full rounded-full object-cover border-2 border-slate-950" 
+                    />
+                  ) : (
+                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-lg font-black text-white border-2 border-slate-950">
+                      {(userName || currentUsername || 'S').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-rose-600 text-white font-black text-[8px] px-2 py-0.2 rounded-full border border-slate-950 shadow">
+                  READY
+                </div>
+              </div>
+
+              <span className="text-xs font-black text-white tracking-wide">
+                @{currentUsername || userName}
+              </span>
+              <p className="text-[10px] text-slate-400 mt-0.5 mb-2">
+                {hostLiveCategory || 'Live Stream'} • {hostLiveType === 'adult' ? '🔞 18+ VIP' : (hostLiveType === 'private' ? '🔒 Private' : '🌐 Public')}
+              </p>
+
+              {/* Optional Camera Test Button */}
+              <div className="flex items-center gap-2 z-10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCamEnabled(true);
+                    startCamera(facingMode);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-cyan-300 font-bold text-[10px] border border-cyan-500/30 flex items-center gap-1.5 transition shadow active:scale-95"
+                >
+                  <Camera className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{loc('پیش‌نمایش دوربین (اختیاری)', 'Preview Camera (Optional)')}</span>
+                </button>
+              </div>
+
+              {/* Bottom Quick Mic Toggle & Quality Badge */}
+              <div className="absolute bottom-2.5 inset-x-3 flex items-center justify-between z-10">
+                <button
+                  type="button"
+                  onClick={() => setIsMicEnabled(!isMicEnabled)}
+                  className={`px-2 py-1 rounded-lg border backdrop-blur-md text-[10px] font-bold flex items-center gap-1 transition ${
+                    isMicEnabled ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' : 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                  }`}
+                >
+                  {isMicEnabled ? <Mic className="w-3 h-3" /> : <MicOff className="w-3 h-3" />}
+                  <span>{isMicEnabled ? loc('میکروفون فعال', 'Mic On') : loc('میکروفون قطع', 'Mic Muted')}</span>
+                </button>
+                <span className="text-[9px] bg-slate-900/90 border border-slate-800 px-2 py-0.5 rounded-full text-slate-400 font-mono">
+                  720p HD Ready
+                </span>
+              </div>
             </div>
           )}
         </div>
