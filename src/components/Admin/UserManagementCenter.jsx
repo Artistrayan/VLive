@@ -73,28 +73,41 @@ export default function UserManagementCenter({
   };
 
   const handleToggleVerify = async (user) => {
-    const nextVerified = !(user.isVerified || user.verified);
+    const nextVerified = !(user.isVerified || user.verified || user.is_verified);
+    setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isVerified: nextVerified, verified: nextVerified, is_verified: nextVerified } : u));
+    if (selectedUserDetail?.id === user.id) {
+      setSelectedUserDetail(prev => ({ ...prev, isVerified: nextVerified, verified: nextVerified, is_verified: nextVerified }));
+    }
     if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') { 
        await apiAdmin.updateUserFields(user.id, { is_verified: nextVerified });
     }
-    setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isVerified: nextVerified, verified: nextVerified } : u));
-    if (selectedUserDetail?.id === user.id) {
-      setSelectedUserDetail(prev => ({ ...prev, isVerified: nextVerified, verified: nextVerified }));
-    }
-    addAdminAuditLog(`Admin Action: ${nextVerified ? 'Granted' : 'Removed'} verification for @${user.username}`);
+    addAdminAuditLog(`Admin Action: ${nextVerified ? 'Granted Verification' : 'Revoked Verification'} for @${user.username || user.name}`);
     showToast(nextVerified ? window.loc(`✅ نشان تایید آبی به @${user.username} اعطا شد`, `✅ Verification granted to @${user.username}`) : window.loc(`نشان تایید @${user.username} لغو شد`, `Verification removed from @${user.username}`));
   };
 
+  const handleToggleVip = async (user) => {
+    const nextVip = !(user.isVip || user.vip || user.is_vip);
+    setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isVip: nextVip, vip: nextVip, is_vip: nextVip } : u));
+    if (selectedUserDetail?.id === user.id) {
+      setSelectedUserDetail(prev => ({ ...prev, isVip: nextVip, vip: nextVip, is_vip: nextVip }));
+    }
+    if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') { 
+       await apiAdmin.updateUserFields(user.id, { is_vip: nextVip, vip_plan: nextVip ? 'VIP_PREMIUM' : null });
+    }
+    addAdminAuditLog(`Admin Action: ${nextVip ? 'Granted VIP Status' : 'Revoked VIP Status'} for @${user.username || user.name}`);
+    showToast(nextVip ? window.loc(`👑 عضویت VIP به @${user.username} فعال شد`, `👑 VIP status activated for @${user.username}`) : window.loc(`عضویت VIP @${user.username} لغو شد`, `VIP status revoked for @${user.username}`));
+  };
+
   const handleToggleStreamer = async (user) => {
-    const nextStreamer = !(user.isStreamer || user.isHost);
+    const nextStreamer = !(user.isStreamer || user.isHost || user.is_streamer);
+    setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isStreamer: nextStreamer, isHost: nextStreamer, is_streamer: nextStreamer } : u));
+    if (selectedUserDetail?.id === user.id) {
+      setSelectedUserDetail(prev => ({ ...prev, isStreamer: nextStreamer, isHost: nextStreamer, is_streamer: nextStreamer }));
+    }
     if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') { 
        await apiAdmin.updateUserFields(user.id, { is_streamer: nextStreamer, role: nextStreamer ? 'streamer' : 'user', user_type: nextStreamer ? 'STREAMER' : 'VIEWER' });
     }
-    setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isStreamer: nextStreamer, isHost: nextStreamer } : u));
-    if (selectedUserDetail?.id === user.id) {
-      setSelectedUserDetail(prev => ({ ...prev, isStreamer: nextStreamer, isHost: nextStreamer }));
-    }
-    addAdminAuditLog(`Admin Action: ${nextStreamer ? 'Promoted to Streamer' : 'Demoted Streamer'} @${user.username}`);
+    addAdminAuditLog(`Admin Action: ${nextStreamer ? 'Promoted to Streamer' : 'Demoted Streamer'} @${user.username || user.name}`);
     showToast(nextStreamer ? window.loc(`🎥 مقام استریمر به @${user.username} داده شد`, `🎥 Streamer status granted to @${user.username}`) : window.loc(`مقام استریمر @${user.username} لغو شد`, `Streamer status removed from @${user.username}`));
   };
 
@@ -283,15 +296,60 @@ export default function UserManagementCenter({
                     </td>
 
                     <td className="p-3.5">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Details Modal Trigger */}
                         <button
                           onClick={() => setSelectedUserDetail(u)}
-                          className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-[10px] flex items-center gap-1 transition"
+                          className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-[10px] flex items-center gap-1 transition shadow"
+                          title={window.loc('مشاهده جزئیات کامل', 'View full details')}
                         >
-                          <Eye className="w-3 h-3" />
+                          <Eye className="w-3.5 h-3.5" />
                           <span>{window.loc('جزئیات', 'Details')}</span>
                         </button>
 
+                        {/* Verification Toggle */}
+                        <button
+                          onClick={() => handleToggleVerify(u)}
+                          className={`p-1.5 rounded-xl border transition flex items-center gap-1 font-bold text-[10px] ${
+                            (u.isVerified || u.verified || u.is_verified)
+                              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-sm shadow-cyan-500/20'
+                              : 'bg-slate-800/80 text-slate-500 border-slate-700/60 hover:text-cyan-300 hover:border-cyan-500/40'
+                          }`}
+                          title={(u.isVerified || u.verified || u.is_verified) ? window.loc('نشان تایید آبی: فعال (کلیک برای لغو)', 'Blue badge: Active (click to disable)') : window.loc('نشان تایید آبی: غیرفعال (کلیک برای اعطا)', 'Blue badge: Inactive (click to grant)')}
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span className="hidden xl:inline">{window.loc('تایید', 'Verified')}</span>
+                        </button>
+
+                        {/* VIP Toggle */}
+                        <button
+                          onClick={() => handleToggleVip(u)}
+                          className={`p-1.5 rounded-xl border transition flex items-center gap-1 font-bold text-[10px] ${
+                            (u.isVip || u.vip || u.is_vip)
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/20'
+                              : 'bg-slate-800/80 text-slate-500 border-slate-700/60 hover:text-amber-300 hover:border-amber-500/40'
+                          }`}
+                          title={(u.isVip || u.vip || u.is_vip) ? window.loc('عضویت VIP: فعال (کلیک برای لغو)', 'VIP: Active (click to disable)') : window.loc('عضویت VIP: غیرفعال (کلیک برای فعال‌سازی)', 'VIP: Inactive (click to enable)')}
+                        >
+                          <Crown className="w-3.5 h-3.5" />
+                          <span className="hidden xl:inline">VIP</span>
+                        </button>
+
+                        {/* Streamer Toggle */}
+                        <button
+                          onClick={() => handleToggleStreamer(u)}
+                          className={`p-1.5 rounded-xl border transition flex items-center gap-1 font-bold text-[10px] ${
+                            (u.isStreamer || u.isHost || u.is_streamer)
+                              ? 'bg-pink-500/20 text-pink-300 border-pink-500/50 shadow-sm shadow-pink-500/20'
+                              : 'bg-slate-800/80 text-slate-500 border-slate-700/60 hover:text-pink-300 hover:border-pink-500/40'
+                          }`}
+                          title={(u.isStreamer || u.isHost || u.is_streamer) ? window.loc('استریمر: فعال (کلیک برای لغو)', 'Streamer: Active (click to revoke)') : window.loc('استریمر: غیرفعال (کلیک برای اعطا)', 'Streamer: Inactive (click to grant)')}
+                        >
+                          <Video className="w-3.5 h-3.5" />
+                          <span className="hidden xl:inline">{window.loc('استریمر', 'Streamer')}</span>
+                        </button>
+
+                        {/* Ban Action */}
                         <button
                           onClick={() => handleToggleBan(u)}
                           className={`p-1.5 rounded-xl border transition ${
@@ -299,17 +357,9 @@ export default function UserManagementCenter({
                               ? 'bg-emerald-600/20 text-emerald-300 border-emerald-500/30' 
                               : 'bg-rose-600/20 text-rose-300 border-rose-500/30 hover:bg-rose-600 hover:text-white'
                           }`}
-                          title={u.isBanned ? window.loc('رفع مسدودی', 'Unblock') : window.loc('مسدود کردن', 'blocking')}
+                          title={u.isBanned ? window.loc('رفع مسدودی', 'Unblock') : window.loc('مسدود کردن', 'Block user')}
                         >
                           <Ban className="w-3.5 h-3.5" />
-                        </button>
-
-                        <button
-                          onClick={() => handleToggleVerify(u)}
-                          className="p-1.5 rounded-xl bg-slate-800 text-cyan-300 hover:bg-cyan-600 hover:text-white transition"
-                          title={window.loc('تغییر تایید هویت', 'Change authentication')}
-                        >
-                          <ShieldCheck className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
@@ -349,9 +399,45 @@ export default function UserManagementCenter({
               <p className="text-[10px] text-slate-400">{window.loc('پیام‌ها: 1,420 • لایوها: 14', 'Messages: 1,420 • Lives: 14')}</p>
             </div>
 
-            <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-[10px] text-slate-400 font-bold block">{window.loc('اقدامات مدیریتی:', 'Management measures:')}</span>
-              <div className="flex items-center gap-1.5 pt-1">
+            <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+              <span className="text-[10px] text-slate-400 font-bold block">{window.loc('اقدامات و نشان‌های کاربر:', 'User actions and badges:')}</span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  onClick={() => handleToggleVerify(selectedUserDetail)}
+                  className={`px-2.5 py-1 rounded-xl border font-bold text-[10px] flex items-center gap-1 transition ${
+                    (selectedUserDetail.isVerified || selectedUserDetail.verified || selectedUserDetail.is_verified)
+                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
+                      : 'bg-slate-800 text-slate-400 border-slate-700'
+                  }`}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>{(selectedUserDetail.isVerified || selectedUserDetail.verified || selectedUserDetail.is_verified) ? window.loc('تایید هویت: فعال', 'Verified: Active') : window.loc('تایید هویت: غیرفعال', 'Verified: Inactive')}</span>
+                </button>
+
+                <button
+                  onClick={() => handleToggleVip(selectedUserDetail)}
+                  className={`px-2.5 py-1 rounded-xl border font-bold text-[10px] flex items-center gap-1 transition ${
+                    (selectedUserDetail.isVip || selectedUserDetail.vip || selectedUserDetail.is_vip)
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                      : 'bg-slate-800 text-slate-400 border-slate-700'
+                  }`}
+                >
+                  <Crown className="w-3.5 h-3.5" />
+                  <span>{(selectedUserDetail.isVip || selectedUserDetail.vip || selectedUserDetail.is_vip) ? window.loc('VIP: فعال', 'VIP: Active') : window.loc('VIP: غیرفعال', 'VIP: Inactive')}</span>
+                </button>
+
+                <button
+                  onClick={() => handleToggleStreamer(selectedUserDetail)}
+                  className={`px-2.5 py-1 rounded-xl border font-bold text-[10px] flex items-center gap-1 transition ${
+                    (selectedUserDetail.isStreamer || selectedUserDetail.isHost || selectedUserDetail.is_streamer)
+                      ? 'bg-pink-500/20 text-pink-300 border-pink-500/50'
+                      : 'bg-slate-800 text-slate-400 border-slate-700'
+                  }`}
+                >
+                  <Video className="w-3.5 h-3.5" />
+                  <span>{(selectedUserDetail.isStreamer || selectedUserDetail.isHost || selectedUserDetail.is_streamer) ? window.loc('استریمر: فعال', 'Streamer: Active') : window.loc('استریمر: غیرفعال', 'Streamer: Inactive')}</span>
+                </button>
+
                 <button onClick={() => handleToggleBan(selectedUserDetail)} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-bold text-[10px]">
                   {selectedUserDetail.isBanned ? window.loc('رفع Ban', 'Fix Ban') : window.loc('Ban کاربر', 'Ban the user')}
                 </button>

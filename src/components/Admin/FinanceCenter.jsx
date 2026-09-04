@@ -48,6 +48,53 @@ export default function FinanceCenter({
   const [adjustmentAmount, setAdjustmentAmount] = useState('');
   const [adjustmentReason, setAdjustmentReason] = useState('');
 
+  // Extended Economy Settings State
+  const economyConfig = economyService.getConfig();
+  const [callAudioRate, setCallAudioRate] = useState(economyConfig.callRates?.audioCostPerMin || 15);
+  const [callVideoRate, setCallVideoRate] = useState(economyConfig.callRates?.videoCostPerMin || 30);
+  const [diamondUsdRate, setDiamondUsdRate] = useState(economyConfig.commissionRules?.diamondToUsdRate || 0.005);
+
+  const handleSaveFinanceSettings = async () => {
+    try {
+      const pFee = Number(adminPlatformFee) || 30;
+      const streamerShare = Math.max(0, 100 - pFee);
+      const dRate = Number(diamondUsdRate) || 0.005;
+      const minW = Number(adminMinWithdrawal) || 50;
+
+      economyService.updateConfig({
+        commissionRules: {
+          platformCommissionPercent: pFee,
+          coinToDiamondPercent: streamerShare,
+          diamondToUsdRate: dRate,
+          minWithdrawalDiamonds: Math.round(minW / dRate),
+          maxWithdrawalUsdt: Number(adminMaxWithdrawal) || 10000
+        },
+        callRates: {
+          ...economyConfig.callRates,
+          audioCostPerMin: Number(callAudioRate) || 15,
+          videoCostPerMin: Number(callVideoRate) || 30
+        }
+      }, 'SuperAdmin');
+
+      await apiAdmin.saveFinanceSettings({
+        platformFee: pFee,
+        networkFee: Number(adminNetworkFee) || 1.5,
+        minWithdrawal: minW,
+        maxWithdrawal: Number(adminMaxWithdrawal) || 5000,
+        callAudioRate: Number(callAudioRate) || 15,
+        callVideoRate: Number(callVideoRate) || 30,
+        diamondUsdRate: dRate,
+        isPayoutFrozen
+      });
+
+      addAdminAuditLog(`Finance Settings updated: Commission=${pFee}%, MinWithdrawal=${minW} USDT, Call Rates=${callAudioRate}/${callVideoRate} coins/min`);
+      showToast(window.loc('✅ تنظیمات جدید مالی و نرخ‌های کمیسیون با موفقیت ذخیره و در کل سیستم اعمال شد', 'New financial settings and commission rates successfully saved and applied system-wide'));
+    } catch (e) {
+      console.error('Save finance settings error:', e);
+      showToast(window.loc('❌ خطا در ذخیره تنظیمات مالی', '❌ Error saving financial settings'));
+    }
+  };
+
   // AI Assistant State
   const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
   const [aiFinanceReport, setAiFinanceReport] = useState(null);
@@ -963,56 +1010,137 @@ export default function FinanceCenter({
       {financeSubTab === 'settings' && (
         <div className="space-y-4 animate-fadeIn">
           <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-            <h3 className="font-bold text-white text-sm border-b border-slate-800 pb-2 flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-emerald-400" />
-              <span>{window.loc('تنظیمات عمومی نرخ کمیسیون و حد نصاب تسویه‌حساب (Platform Financial Settings)', 'General settings of commission rate and settlement quorum (Platform Financial Settings)')}</span>
-            </h3>
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-emerald-400" />
+                <span>{window.loc('تنظیمات عمومی نرخ کمیسیون، تعرفه‌ها و تسویه‌حساب (Platform Financial & Commission Settings)', 'Platform Financial & Commission Settings')}</span>
+              </h3>
+              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono">
+                {window.loc('متصل به سیستم مرکزی اقتصاد', 'Connected to Central Economy Engine')}
+              </span>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="text-xs text-slate-300 font-bold block mb-1">{window.loc('درصد کمیسیون پلتفرم (٪)', 'Platform commission percentage (%)')}</label>
-                <input
-                  type="number"
-                  value={adminPlatformFee}
-                  onChange={e => {
-                    const v = parseInt(e.target.value, 10) || 0;
-                    setAdminPlatformFee(v);
-                    addAdminAuditLog(`Platform Fee updated to ${v}%`);
-                  }}
-                  className="w-full p-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-amber-300 font-mono font-bold text-xs outline-none focus:border-amber-500"
-                />
+                <label className="text-xs text-slate-300 font-bold block mb-1">
+                  {window.loc('درصد کمیسیون پلتفرم (٪)', 'Platform commission percentage (%)')}
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={adminPlatformFee}
+                    onChange={e => {
+                      const v = parseInt(e.target.value, 10) || 0;
+                      setAdminPlatformFee(v);
+                    }}
+                    className="w-full p-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-amber-300 font-mono font-bold text-xs outline-none focus:border-amber-500"
+                  />
+                  <span className="absolute left-3 top-2.5 text-slate-500 text-xs font-mono">%</span>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  {window.loc(`سهم استریمر از هدایا: ${Math.max(0, 100 - (Number(adminPlatformFee) || 0))}%`, `Streamer gift share: ${Math.max(0, 100 - (Number(adminPlatformFee) || 0))}%`)}
+                </p>
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 font-bold block mb-1">{window.loc('حداقل سقف درخواست برداشت (USDT)', 'Minimum Withdrawal Request Limit (USDT)')}</label>
+                <label className="text-xs text-slate-300 font-bold block mb-1">
+                  {window.loc('حداقل سقف درخواست برداشت (USDT)', 'Minimum Withdrawal Request Limit (USDT)')}
+                </label>
                 <input
                   type="text"
                   value={adminMinWithdrawal}
                   onChange={e => setAdminMinWithdrawal(e.target.value)}
                   className="w-full p-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-white font-mono font-bold text-xs outline-none focus:border-amber-500"
                 />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  {window.loc(`معادل ${Math.round((Number(adminMinWithdrawal) || 50) / (Number(diamondUsdRate) || 0.005)).toLocaleString()} الماس`, `Equivalent to ${Math.round((Number(adminMinWithdrawal) || 50) / (Number(diamondUsdRate) || 0.005)).toLocaleString()} Diamonds`)}
+                </p>
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 font-bold block mb-1">{window.loc('کارمزد انتقال شبکه ترون ($)', 'Tron network transfer fee ($)')}</label>
+                <label className="text-xs text-slate-300 font-bold block mb-1">
+                  {window.loc('کارمزد انتقال شبکه ترون ($)', 'Tron network transfer fee ($)')}
+                </label>
                 <input
                   type="number"
+                  step="0.1"
                   value={adminNetworkFee}
                   onChange={e => setAdminNetworkFee(parseFloat(e.target.value) || 0)}
                   className="w-full p-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-white font-mono font-bold text-xs outline-none focus:border-amber-500"
                 />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  {window.loc('کسر از هر تراکنش تسویه TRC20', 'Deducted from each TRC20 payout')}
+                </p>
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end">
+            {/* Additional Core Rates */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-800/60">
+              <div>
+                <label className="text-xs text-slate-300 font-bold block mb-1">
+                  {window.loc('تعرفه تماس صوتی (سکه/دقیقه)', 'Audio Call Rate (Coins/min)')}
+                </label>
+                <input
+                  type="number"
+                  value={callAudioRate}
+                  onChange={e => setCallAudioRate(parseInt(e.target.value, 10) || 0)}
+                  className="w-full p-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-cyan-300 font-mono font-bold text-xs outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-300 font-bold block mb-1">
+                  {window.loc('تعرفه تماس تصویری (سکه/دقیقه)', 'Video Call Rate (Coins/min)')}
+                </label>
+                <input
+                  type="number"
+                  value={callVideoRate}
+                  onChange={e => setCallVideoRate(parseInt(e.target.value, 10) || 0)}
+                  className="w-full p-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-pink-300 font-mono font-bold text-xs outline-none focus:border-pink-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-300 font-bold block mb-1">
+                  {window.loc('نرخ تبدیل هر الماس به دلار ($)', 'Diamond to USD Rate ($)')}
+                </label>
+                <input
+                  type="number"
+                  step="0.001"
+                  value={diamondUsdRate}
+                  onChange={e => setDiamondUsdRate(parseFloat(e.target.value) || 0.005)}
+                  className="w-full p-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-emerald-300 font-mono font-bold text-xs outline-none focus:border-emerald-500"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  {window.loc(`هر ۱۰۰ الماس = $${((Number(diamondUsdRate) || 0.005) * 100).toFixed(2)}`, `100 Diamonds = $${((Number(diamondUsdRate) || 0.005) * 100).toFixed(2)}`)}
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-3 flex items-center justify-between border-t border-slate-800">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPayoutFrozen(!isPayoutFrozen)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 ${
+                    isPayoutFrozen 
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/50' 
+                      : 'bg-slate-800 text-slate-400 border-slate-700'
+                  }`}
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>{isPayoutFrozen ? window.loc('سیستم تسویه: مسدود و قفل', 'Payout: Frozen') : window.loc('سیستم تسویه: فعال و عادی', 'Payout: Active')}</span>
+                </button>
+              </div>
+
               <button
-                onClick={() => {
-                  showToast(window.loc('✅ تنظیمات جدید مالی با موفقیت ذخیره شد', 'New financial settings have been successfully saved'));
-                  addAdminAuditLog('Finance Settings updated');
-                }}
-                className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-xs shadow-lg"
+                onClick={handleSaveFinanceSettings}
+                className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs shadow-lg transition flex items-center gap-2 cursor-pointer"
               >
-                {window.loc('ذخیره تغییرات مالی', 'Save financial changes')}
+                <Sliders className="w-4 h-4" />
+                <span>{window.loc('ذخیره و اعمال تغییرات مالی در کل پلتفرم', 'Save & Apply Financial Changes System-Wide')}</span>
               </button>
             </div>
           </div>
