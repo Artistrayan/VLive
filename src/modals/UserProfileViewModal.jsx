@@ -49,6 +49,26 @@ export default function UserProfileViewModal({
   const [isStreamer, setIsStreamer] = useState(user?.isStreamer || user?.is_streamer || user?.isHost || false);
   const [adminNote, setAdminNote] = useState('');
 
+  // Sample User Media
+  const [fetchedPhotos, setFetchedPhotos] = useState([]);
+  const [fetchedPosts, setFetchedPosts] = useState([]);
+
+  // Fetch posts and photos for user profile
+  useEffect(() => {
+    if (user && isOpen && typeof apiSocial !== 'undefined' && apiSocial.getUserPosts) {
+      const targetId = user.id || user.username;
+      apiSocial.getUserPosts(targetId).then(posts => {
+        if (posts && Array.isArray(posts)) {
+          setFetchedPosts(posts);
+          const mediaUrls = posts.map(p => p.imageUrl || p.videoUrl).filter(Boolean);
+          if (mediaUrls.length > 0) {
+            setFetchedPhotos(mediaUrls);
+          }
+        }
+      }).catch(() => {});
+    }
+  }, [user, isOpen]);
+
   // Sync states whenever a new user object is passed
   useEffect(() => {
     if (user && isOpen) {
@@ -114,25 +134,6 @@ export default function UserProfileViewModal({
   const isVip = user?.isVip || user?.is_vip || user?.vip || false;
   const matchScore = user?.matchScore || '';
   const distance = user?.distance || '';
-
-  // Sample User Media
-  const [fetchedPhotos, setFetchedPhotos] = useState([]);
-  const [fetchedPosts, setFetchedPosts] = useState([]);
-  
-  useEffect(() => {
-    if (user && isOpen && typeof apiSocial !== 'undefined' && apiSocial.getUserPosts) {
-      const targetId = user.id || user.username;
-      apiSocial.getUserPosts(targetId).then(posts => {
-        if (posts && Array.isArray(posts)) {
-          setFetchedPosts(posts);
-          const mediaUrls = posts.map(p => p.imageUrl || p.videoUrl).filter(Boolean);
-          if (mediaUrls.length > 0) {
-            setFetchedPhotos(mediaUrls);
-          }
-        }
-      }).catch(() => {});
-    }
-  }, [user, isOpen]);
 
   const publicPhotos = fetchedPhotos.length > 0 ? fetchedPhotos : (user?.photos || []);
 
