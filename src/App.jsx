@@ -304,12 +304,11 @@ export default function App() {
   const [matchState, setMatchState] = useState('idle');
   const [matchCallSeconds, setMatchCallSeconds] = useState(30);
   const [matchedMatchUser, setMatchedMatchUser] = useState(null);
-  const [matchDeckProfiles, setMatchDeckProfiles] = useState([]);
   const [matchCardIndex, setMatchCardIndex] = useState(0);
   const [matchFilterVerifiedOnly, setMatchFilterVerifiedOnly] = useState(false);
-  const [matchFilterOnlineOnly, setMatchFilterOnlineOnly] = useState(false);
+  const [matchFilterOnlineOnly, setMatchFilterOnlineOnly] = useState(true);
   const [matchFilterMaxDistance, setMatchFilterMaxDistance] = useState(50);
-  const [matchGenderFilter, setMatchGenderFilter] = useState('all');
+  const [matchGenderFilter, setMatchGenderFilter] = useState('female');
   const [freeMatchCallsLeft, setFreeMatchCallsLeft] = useState(3);
   const [isMatchFilterOpen, setIsMatchFilterOpen] = useState(false);
   const [isSmartMatchModalOpen, setIsSmartMatchModalOpen] = useState(false);
@@ -318,6 +317,32 @@ export default function App() {
   const [matchResultPopup, setMatchResultPopup] = useState(null);
   const [matchAnimationEffect, setMatchAnimationEffect] = useState(null);
   const [swipeDragPos, setSwipeDragPos] = useState({ x: 0, y: 0 });
+
+  // Match deck strictly filtered: Only Female users, Only Online users, Excluding current user
+  const matchDeckProfiles = useMemo(() => {
+    if (!Array.isArray(usersList)) return [];
+    return usersList.filter(u => {
+      if (!u || u.status === 'banned' || u.isBanned) return false;
+      if (u.id === currentUser?.id || u.username === currentUsername || (authUsername && u.username === authUsername)) return false;
+      
+      // Filter 1: Strictly Female users only
+      const g = String(u.gender || '').trim().toLowerCase();
+      const isFemale = g === 'female' || g === 'خانم' || g === 'زن' || g === 'f';
+      if (!isFemale) return false;
+
+      // Filter 2: Strictly Online users only
+      const isOnline = Boolean(u.online || u.online_status === 'online' || u.status === 'online' || u.isOnline);
+      if (!isOnline) return false;
+
+      return true;
+    }).map(u => ({
+      ...u,
+      distance: u.distance || `${Math.floor(Math.random() * 8) + 1} km`,
+      city: u.city || u.location || 'تهران',
+      interests: u.interests || ['Music', 'Art', 'Travel'],
+      isOnline: true
+    }));
+  }, [usersList, currentUser?.id, currentUsername, authUsername]);
 
   // Direct Messages & Chat State
   const [conversations, setConversations] = useState([]);
@@ -1392,9 +1417,10 @@ export default function App() {
     setTimeout(() => {
       // Find a random online female user
       const realPartners = Array.isArray(usersList) && usersList.length > 0 ? usersList.filter(u => {
-        if (!u || u.username === currentUsername) return false;
+        if (!u || u.status === 'banned' || u.isBanned) return false;
+        if (u.id === currentUser?.id || u.username === currentUsername || (authUsername && u.username === authUsername)) return false;
         // Strictly online
-        if (!(u.online || u.online_status === 'online' || u.status === 'online')) return false;
+        if (!(u.online || u.online_status === 'online' || u.status === 'online' || u.isOnline)) return false;
         // Strictly female
         const g = String(u.gender || '').trim().toLowerCase();
         const isFemale = g === 'female' || g === 'خانم' || g === 'زن' || g === 'f';
@@ -1404,14 +1430,14 @@ export default function App() {
 
       if (realPartners.length === 0) {
         setMatchState('idle');
-        showToast(window.loc('در حال حاضر هیچ کاربری آنلاین نیست', 'No users available right now'));
+        showToast(window.loc('در حال حاضر هیچ کاربر خانمی آنلاین نیست', 'No online female users available right now'));
         return;
       }
       const randomUser = realPartners[Math.floor(Math.random() * realPartners.length)];
       setMatchedMatchUser(randomUser);
       setMatchState('connected'); // we use 'connected' state to show the found user profile in Radar
     }, 2000);
-  }, [usersList, currentUsername, isUserAdmin, showToast]);
+  }, [usersList, currentUser?.id, currentUsername, authUsername, showToast]);
 
   const handleSwipeLikeAction = useCallback((targetProfile) => {
     const target = targetProfile || (matchDeckProfiles && matchDeckProfiles[matchCardIndex]);
@@ -1643,6 +1669,20 @@ export default function App() {
 
   const handleDeleteStory = useCallback(async (storyId) => {
     if (!storyId) return;
+    const targetStory = (advancedStories || []).find(s => s.id === storyId);
+    // Strict ownership verification: only creator can delete
+    const isOwner = targetStory && (
+      (targetStory.userId && currentUser?.id && String(targetStory.userId) === String(currentUser.id)) ||
+      (targetStory.user_id && currentUser?.id && String(targetStory.user_id) === String(currentUser.id)) ||
+      (targetStory.username && currentUsername && String(targetStory.username).toLowerCase() === String(currentUsername).toLowerCase()) ||
+      (targetStory.username && authUsername && String(targetStory.username).toLowerCase() === String(authUsername).toLowerCase())
+    );
+
+    if (!isOwner) {
+      showToast(loc('شما فقط مجاز به حذف استوری خود هستید.', 'You can only delete your own stories.'));
+      return;
+    }
+
     try {
       if (typeof apiSocial !== 'undefined' && apiSocial.deleteStory) {
         await apiSocial.deleteStory(storyId);
@@ -1660,10 +1700,24 @@ export default function App() {
       showToast(loc('استوری حذف شد 🗑️', 'Story deleted 🗑️'));
       handleCloseStory();
     }
-  }, [handleCloseStory, showToast, loc]);
+  }, [advancedStories, currentUser?.id, currentUsername, authUsername, handleCloseStory, showToast, loc]);
 
   const handleEditStory = useCallback(async (storyId, currentCaption) => {
     if (!storyId) return;
+    const targetStory = (advancedStories || []).find(s => s.id === storyId);
+    // Strict ownership verification: only creator can edit
+    const isOwner = targetStory && (
+      (targetStory.userId && currentUser?.id && String(targetStory.userId) === String(currentUser.id)) ||
+      (targetStory.user_id && currentUser?.id && String(targetStory.user_id) === String(currentUser.id)) ||
+      (targetStory.username && currentUsername && String(targetStory.username).toLowerCase() === String(currentUsername).toLowerCase()) ||
+      (targetStory.username && authUsername && String(targetStory.username).toLowerCase() === String(authUsername).toLowerCase())
+    );
+
+    if (!isOwner) {
+      showToast(loc('شما فقط مجاز به ویرایش استوری خود هستید.', 'You can only edit your own stories.'));
+      return;
+    }
+
     const newCaption = prompt(loc('ویرایش متن/کپشن استوری:', 'Edit story caption:'), currentCaption || '');
     if (newCaption === null) return;
     try {
@@ -1690,7 +1744,7 @@ export default function App() {
       console.warn('Edit story error:', e);
       showToast(loc('ویرایش انجام شد', 'Updated'));
     }
-  }, [showToast, loc]);
+  }, [advancedStories, currentUser?.id, currentUsername, authUsername, showToast, loc]);
 
   const handleToggleLikeUserCard = useCallback(async (e, targetUser) => {
     if (e && e.stopPropagation) e.stopPropagation();
@@ -2577,7 +2631,6 @@ export default function App() {
     apiHome.getApprovedUsers().then(users => {
       if (users) {
         setUsersList(users);
-        setMatchDeckProfiles(users);
       }
     }).catch(err => console.warn('Users load err:', err));
     if (typeof apiSocial !== "undefined" && apiSocial.getPosts) {
@@ -3104,33 +3157,42 @@ export default function App() {
                     )}
 
                     {/* Stories List from Supabase / advancedStories */}
-                    {(advancedStories || []).map((story, i) => (
-                      <div
-                        key={story.id || i}
-                        onClick={() => {
-                          setActiveStoryView({
-                            group: {
-                              user: {
-                                name: story.username || 'User',
-                                avatar: story.userAvatar || '',
-                                isVip: true
+                    {(advancedStories || []).map((story, i) => {
+                      const isMyStory = Boolean(
+                        (story.userId && currentUser?.id && String(story.userId) === String(currentUser.id)) ||
+                        (story.user_id && currentUser?.id && String(story.user_id) === String(currentUser.id)) ||
+                        (story.username && currentUsername && String(story.username).toLowerCase() === String(currentUsername).toLowerCase()) ||
+                        (story.username && authUsername && String(story.username).toLowerCase() === String(authUsername).toLowerCase())
+                      );
+
+                      return (
+                        <div
+                          key={story.id || i}
+                          onClick={() => {
+                            setActiveStoryView({
+                              group: {
+                                user: {
+                                  name: story.username || 'User',
+                                  avatar: story.userAvatar || '',
+                                  isVip: true
+                                },
+                                items: [
+                                  {
+                                    id: story.id,
+                                    url: story.imageUrl || story.videoUrl,
+                                    duration: 5,
+                                    time: loc('هم‌اکنون', 'Right now'),
+                                    caption: story.caption || ''
+                                  }
+                                ],
+                                isMe: isMyStory
                               },
-                              items: [
-                                {
-                                  id: story.id,
-                                  url: story.imageUrl || story.videoUrl,
-                                  duration: 5,
-                                  time: loc('هم‌اکنون', 'Right now')
-                                }
-                              ],
-                              isMe: story.username === currentUsername
-                            },
-                            currentIndex: 0,
-                            progress: 0
-                          });
-                        }}
-                        className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
-                      >
+                              currentIndex: 0,
+                              progress: 0
+                            });
+                          }}
+                          className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                        >
                         <div className="relative w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-lg">
                           <img
                             src={story.userAvatar || story.imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
@@ -3140,7 +3202,8 @@ export default function App() {
                         </div>
                         <span className="text-[10px] font-bold text-slate-200 max-w-[60px] truncate">{story.username}</span>
                       </div>
-                    ))}
+                    );
+                  })}
                   </div>
                 </div>
 
@@ -3898,8 +3961,8 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-2">
-                {/* Story Owner or Admin Actions: Edit & Delete */}
-                {(activeStoryView.group.isMe || isUserAdmin || activeStoryView.group.user?.name === userName || activeStoryView.group.user?.username === currentUsername) && (
+                {/* Story Owner Actions: Edit & Delete (Strictly for story owner) */}
+                {Boolean(activeStoryView.group.isMe) && (
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => {
@@ -4428,14 +4491,37 @@ export default function App() {
               </div>
             </div>
 
-            {/* Match Mode Switcher Tabs */}
-            <div className="flex items-center justify-center gap-6 p-2 shrink-0">
-              <button onClick={() => setMatchSubTab('swipe')} className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full transition flex items-center justify-center border ${matchSubTab === 'swipe' ? 'bg-gradient-to-tr from-pink-500 to-purple-600 border-pink-400 text-white shadow-[0_0_25px_rgba(236,72,153,0.6)] scale-110' : 'bg-slate-900/40 border-slate-700 text-slate-500 hover:text-pink-400 hover:scale-105'}`} title="Swipe">
-                <Flame className="w-7 h-7 sm:w-8 sm:h-8" />
-              </button>
-              <button onClick={() => setMatchSubTab('roulette')} className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full transition flex items-center justify-center border ${matchSubTab === 'roulette' ? 'bg-gradient-to-tr from-cyan-400 to-emerald-400 border-cyan-300 text-slate-950 shadow-[0_0_25px_rgba(34,211,238,0.6)] scale-110' : 'bg-slate-900/40 border-slate-700 text-slate-500 hover:text-cyan-400 hover:scale-105'}`} title="Radar">
-                <Radio className="w-7 h-7 sm:w-8 sm:h-8" />
-              </button>
+            {/* OVAL 3D MODE SELECTOR (RADAR vs SWIPE) IN ONE ROW WITH SOFT SHADOW & EMBOSSED ACTIVE STATE */}
+            <div className="flex items-center justify-center w-full z-30 pt-1 pb-1 shrink-0">
+              <div className="inline-flex items-center p-1.5 rounded-full bg-slate-900/90 border border-slate-800/90 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.08)] gap-2">
+                {/* 1. Radar Button */}
+                <button
+                  onClick={() => setMatchSubTab('roulette')}
+                  className={`relative flex items-center justify-center gap-2 px-5 py-2.5 rounded-full transition-all duration-300 ${
+                    matchSubTab === 'roulette'
+                      ? 'bg-gradient-to-b from-cyan-400 via-cyan-500 to-teal-600 text-slate-950 font-black shadow-[0_6px_20px_rgba(34,211,238,0.45),inset_0_2px_3px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.3)] border-t border-cyan-200/90 -translate-y-0.5 scale-105'
+                      : 'text-slate-400 hover:text-cyan-300 hover:bg-slate-800/60 shadow-sm'
+                  }`}
+                  title={loc('رادار', 'Radar')}
+                >
+                  <Radio className={`w-5 h-5 ${matchSubTab === 'roulette' ? 'stroke-[2.5] drop-shadow-[0_2px_3px_rgba(0,0,0,0.3)]' : 'opacity-70'}`} />
+                  <span className="text-xs font-bold">{loc('رادار', 'Radar')}</span>
+                </button>
+
+                {/* 2. Swipe Button */}
+                <button
+                  onClick={() => setMatchSubTab('swipe')}
+                  className={`relative flex items-center justify-center gap-2 px-5 py-2.5 rounded-full transition-all duration-300 ${
+                    matchSubTab === 'swipe'
+                      ? 'bg-gradient-to-b from-pink-500 via-rose-500 to-purple-600 text-white font-black shadow-[0_6px_20px_rgba(236,72,153,0.45),inset_0_2px_3px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.3)] border-t border-pink-200/90 -translate-y-0.5 scale-105'
+                      : 'text-slate-400 hover:text-pink-300 hover:bg-slate-800/60 shadow-sm'
+                  }`}
+                  title={loc('سوایپ', 'Swipe')}
+                >
+                  <Flame className={`w-5 h-5 ${matchSubTab === 'swipe' ? 'fill-current drop-shadow-[0_2px_3px_rgba(0,0,0,0.3)]' : 'opacity-70'}`} />
+                  <span className="text-xs font-bold">{loc('سوایپ', 'Swipe')}</span>
+                </button>
+              </div>
             </div>
 
             {/* TAB 1: SWIPE MATCH DECK */}
@@ -4478,55 +4564,33 @@ export default function App() {
                           </span>)}
                       </div>
 
-                      {/* Action Buttons Bar */}
-                      <div className="grid grid-cols-4 gap-2 pt-2">
-                        {/* Reject */}
-                        <button onClick={() => {
-                      setMatchAnimationEffect('reject');
-                      setTimeout(() => {
-                        setMatchCardIndex(prev => prev + 1);
-                        setMatchAnimationEffect(null);
-                      }, 300);
-                    }} className="py-3 rounded-2xl bg-slate-900/90 border border-slate-700 text-red-400 hover:bg-red-500/20 font-bold flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition" title="Reject">
-                          <span className="text-lg">❌</span>
-                          <span className="text-[9px]">Pass</span>
+                      {/* Clean 2-Button Action Bar: Cross (Reject) & Heart (Like) Only */}
+                      <div className="flex items-center justify-center gap-8 pt-3">
+                        {/* Cross (Reject) */}
+                        <button
+                          onClick={() => {
+                            setMatchAnimationEffect('reject');
+                            setTimeout(() => {
+                              setMatchCardIndex(prev => prev + 1);
+                              setMatchAnimationEffect(null);
+                            }, 300);
+                          }}
+                          className="w-16 h-16 rounded-full bg-slate-900/90 border-2 border-rose-500/50 flex items-center justify-center text-rose-400 shadow-[0_8px_25px_rgba(244,63,94,0.35),inset_0_2px_4px_rgba(255,255,255,0.15)] hover:scale-110 hover:border-rose-400 hover:text-rose-300 active:scale-95 transition-all duration-200"
+                          title={loc('رد کردن', 'Pass')}
+                        >
+                          <X className="w-8 h-8 stroke-[3]" />
                         </button>
 
-                        {/* Super Like */}
-                        <button onClick={() => {
-                      setMatchAnimationEffect('superlike');
-                      showToast(`⭐ Super Liked @${matchDeckProfiles[matchCardIndex].name}!`);
-                      setTimeout(() => {
-                        setMatchCardIndex(prev => prev + 1);
-                        setMatchAnimationEffect(null);
-                      }, 300);
-                    }} className="py-3 rounded-2xl bg-slate-900/90 border border-slate-700 text-amber-400 hover:bg-amber-500/20 font-bold flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition" title="Super Like">
-                          <span className="text-lg">⭐</span>
-                          <span className="text-[9px]">Super</span>
-                        </button>
-
-                        {/* Like */}
-                        <button onClick={() => {
-                      setMatchAnimationEffect('like');
-                      const target = matchDeckProfiles[matchCardIndex];
-                      setTimeout(() => {
-                        showToast(`❤️ Liked @${target.name}!`);
-                        setMatchCardIndex(prev => prev + 1);
-                        setMatchAnimationEffect(null);
-                      }, 300);
-                    }} className="py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold flex flex-col items-center justify-center gap-0.5 shadow-lg shadow-pink-500/30 active:scale-95 transition" title="Like">
-                          <span className="text-lg">❤️</span>
-                          <span className="text-[9px]">Like</span>
-                        </button>
-
-                        {/* Video Call */}
-                        <button onClick={() => {
-                      const target = matchDeckProfiles[matchCardIndex];
-                      setIsMatchModalOpen(false);
-                      handleInitiateCall(target, 'video');
-                    }} className="py-3 rounded-2xl bg-slate-900/90 border border-slate-700 text-cyan-400 hover:bg-cyan-500/20 font-bold flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition" title="Video Call">
-                          <span className="text-lg">📹</span>
-                          <span className="text-[9px]">Video</span>
+                        {/* Heart (Like & Video Call) */}
+                        <button
+                          onClick={() => {
+                            const target = matchDeckProfiles[matchCardIndex];
+                            handleSwipeLikeAction(target);
+                          }}
+                          className="w-18 h-18 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-pink-500 via-rose-500 to-purple-600 flex items-center justify-center text-white shadow-[0_10px_35px_rgba(236,72,153,0.55),inset_0_2px_6px_rgba(255,255,255,0.4)] border-2 border-pink-300/80 hover:scale-110 active:scale-95 transition-all duration-200"
+                          title={loc('لایک و تماس', 'Like & Call')}
+                        >
+                          <Heart className="w-9 h-9 sm:w-10 sm:h-10 fill-current drop-shadow-md" />
                         </button>
                       </div>
 
