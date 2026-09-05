@@ -925,9 +925,13 @@ export default function UserManagementCenter({
                     <button
                       key={r.id}
                       type="button"
-                      onClick={() => setPermForm(p => ({ ...p, role: r.id }))}
+                      onClick={() => setPermForm(p => ({
+                        ...p,
+                        role: r.id,
+                        isStreamer: r.id === 'streamer' ? true : (r.id === 'user' ? false : p.isStreamer)
+                      }))}
                       className={`py-2 px-2 rounded-xl border text-center font-bold text-[11px] transition ${
-                        permForm.role === r.id
+                        permForm.role === r.id || (r.id === 'user' && !permForm.isStreamer && permForm.role !== 'admin' && permForm.role !== 'super_admin')
                           ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-sm'
                           : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
                       }`}

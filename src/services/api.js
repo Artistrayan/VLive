@@ -4673,9 +4673,12 @@ export const apiAdmin = {
       if (typeof updates.status === 'string') safeProfilePayload.status = updates.status;
       if (typeof updates.is_vip !== 'undefined') safeProfilePayload.is_vip = Boolean(updates.is_vip);
       if (typeof updates.is_verified !== 'undefined') safeProfilePayload.is_verified = Boolean(updates.is_verified);
+      if (typeof updates.is_streamer !== 'undefined') safeProfilePayload.is_streamer = Boolean(updates.is_streamer);
 
       if (isStreamerExplicit || updates.user_type || updates.role) {
         safeProfilePayload.user_type = isStreamerVal ? 'STREAMER' : (updates.user_type && updates.user_type !== 'STREAMER' ? updates.user_type : 'REAL_USER');
+        safeProfilePayload.role = isStreamerVal ? 'streamer' : (updates.role || 'user');
+        safeProfilePayload.is_streamer = isStreamerVal;
       }
 
       let isSuccess = false;

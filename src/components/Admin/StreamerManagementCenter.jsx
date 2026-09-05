@@ -305,6 +305,50 @@ export default function StreamerManagementCenter({
     showToast(nextFrozen ? window.loc(`🧊 درآمد و تسویه‌حساب @${streamer.username} مسدود شد`, `🧊 Income and settlement of @${streamer.username} frozen`) : window.loc(`رفع مسدودی درآمد @${streamer.username}`, `Income of @${streamer.username} unfrozen`));
   };
 
+  const handleDemoteStreamerToNormalUser = async (streamer) => {
+    const targetId = streamer.id || streamer.user_id || streamer.username;
+    const username = streamer.username || streamer.name || targetId;
+
+    if (!window.confirm(window.loc(`آیا از تبدیل استریمر @${username} به «کاربر عادی» اطمینان دارید؟ (دسترسی پخش زنده لغو می‌گردد)`, `Are you sure you want to convert streamer @${username} to Normal User?`))) {
+      return;
+    }
+
+    try {
+      const updates = {
+        is_streamer: false,
+        user_type: 'REAL_USER',
+        role: 'user',
+        is_verified: false
+      };
+
+      if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') {
+        await apiAdmin.updateUserFields(targetId, updates);
+      }
+
+      setUsersList(prev => prev.map(u => {
+        if (u.id === streamer.id || u.id === streamer.user_id || u.username === streamer.username) {
+          return {
+            ...u,
+            isStreamer: false,
+            isHost: false,
+            is_streamer: false,
+            user_type: 'REAL_USER',
+            role: 'user',
+            wantToBeStreamer: false,
+            isStreamerRequested: false,
+            kyc_status: 'none'
+          };
+        }
+        return u;
+      }));
+
+      addAdminAuditLog(`Admin Action: Demoted streamer @${username} to normal user`);
+      showToast(window.loc(`✅ نقش کاربر @${username} با موفقیت به «کاربر عادی» تغییر یافت و دسترسی استریمر لغو شد`, `✅ User @${username} converted to Normal User successfully`));
+    } catch (err) {
+      showToast(window.loc(`❌ خطا در تغییر نقش کاربر: ${err.message}`, `❌ Failed to demote user: ${err.message}`));
+    }
+  };
+
   // Handle manual score/level updates by admin
   const handleSaveStreamerScores = async () => {
     if (!editingStreamer) return;
@@ -437,16 +481,26 @@ export default function StreamerManagementCenter({
 
                     <div className="text-right space-y-1">
                       <span className="block font-mono font-bold text-emerald-400 text-xs">$1,450.00 USDT</span>
-                      <button
-                        onClick={() => handleToggleFreezeIncome(s)}
-                        className={`px-3 py-1 rounded-xl text-[10px] font-bold border transition ${
-                          s.incomeFrozen
-                            ? 'bg-rose-600 text-white border-rose-400'
-                            : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-rose-900'
-                        }`}
-                      >
-                        {s.incomeFrozen ? window.loc('🧊 درآمد توقیف‌شده', '🧊 Forfeited income') : window.loc('توقیف واریز تسویه', 'Seizure of settlement deposit')}
-                      </button>
+                      <div className="flex items-center gap-1 justify-end flex-wrap">
+                        <button
+                          onClick={() => handleToggleFreezeIncome(s)}
+                          className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border transition ${
+                            s.incomeFrozen
+                              ? 'bg-rose-600 text-white border-rose-400'
+                              : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-rose-900'
+                          }`}
+                        >
+                          {s.incomeFrozen ? window.loc('🧊 درآمد توقیف‌شده', '🧊 Forfeited income') : window.loc('توقیف واریز تسویه', 'Seizure of settlement deposit')}
+                        </button>
+                        <button
+                          onClick={() => handleDemoteStreamerToNormalUser(s)}
+                          className="px-2.5 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold transition flex items-center gap-1"
+                          title={window.loc('تبدیل به کاربر عادی و سلب دسترسی استریمر', 'Convert to normal user and revoke streamer access')}
+                        >
+                          <User className="w-3 h-3 text-amber-400" />
+                          <span>{window.loc('🔄 تغییر به کاربر عادی', '🔄 Demote to Normal User')}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
