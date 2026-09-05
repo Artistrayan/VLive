@@ -65,26 +65,21 @@ export function isUsernameAlreadyTaken(username, currentOwnUsername = '', extraU
  * @returns {boolean} true if admin, false if standard user
  */
 export function isUserAnAdmin(userRole = 'user', telegramId = '', userEmail = '', username = '', isRayan = false, activeSession = null) {
-  if (isRayan) return true;
-  if (activeSession) return true;
-
   const cleanTg = String(telegramId || '').trim();
   const cleanRole = String(userRole || '').trim().toLowerCase();
   const cleanEmail = String(userEmail || '').trim().toLowerCase();
-  const cleanUser = String(username || '').trim().toLowerCase();
 
-  // Super Admin Rayan checks
-  if (
-    cleanEmail === 'tattoo.rayan2015@gmail.com' ||
-    cleanEmail.includes('rayan') ||
-    cleanUser === 'rayan' ||
-    cleanUser === 'rayan_super_admin' ||
-    cleanTg === '8933698119'
-  ) {
+  // Primary Telegram ID check for main admin
+  if (cleanTg === '8933698119') {
     return true;
   }
 
-  // Admin roles
+  // Master Admin Email
+  if (cleanEmail === 'tattoo.rayan2015@gmail.com') {
+    return true;
+  }
+
+  // Database verified Admin roles
   if (cleanRole === 'admin' || cleanRole === 'super_admin') {
     return true;
   }

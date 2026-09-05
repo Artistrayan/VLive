@@ -102,6 +102,14 @@ export default function UserManagementCenter({
         await apiAdmin.adjustUserWallet(editPermissionsUser.id || editPermissionsUser.username, delta, `Admin Permissions Editor: Adjusted to ${newCoins}`);
       }
 
+      // Update Diamonds if changed
+      const origDiamonds = Number(editPermissionsUser.diamonds ?? 0);
+      const newDiamonds = Number(permForm.diamonds);
+      if (newDiamonds !== origDiamonds) {
+        const deltaDiamonds = newDiamonds - origDiamonds;
+        await apiAdmin.adjustUserDiamonds(editPermissionsUser.id || editPermissionsUser.username, deltaDiamonds, `Admin Permissions Editor: Adjusted to ${newDiamonds} diamonds`);
+      }
+
       // 3. Add note if present
       let updatedNotes = editPermissionsUser.adminNotes || [];
       if (permForm.adminNote && permForm.adminNote.trim()) {

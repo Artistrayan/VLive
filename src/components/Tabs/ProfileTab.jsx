@@ -722,12 +722,20 @@ export default function ProfileTab(props) {
         <VisualSectionWrapper pageId="profile" sectionId="profile_header_card" defaultLabel="User Avatar, Name & Bio Card">
           <div className="relative rounded-[2rem] overflow-hidden bg-gradient-to-br from-slate-900/95 via-slate-950 to-slate-900/95 border border-slate-800/80 shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
             {/* Cover Banner */}
-            <div className="h-32 sm:h-44 relative overflow-hidden bg-slate-900">
-              <img 
-                src={coverPhoto} 
-                alt="Cover" 
-                className="w-full h-full object-cover opacity-85 hover:scale-105 transition duration-700" 
-              />
+            <div className="h-32 sm:h-44 relative overflow-hidden bg-gradient-to-r from-pink-900/50 via-purple-900/50 via-slate-900 to-cyan-900/50">
+              {coverPhoto ? (
+                <img 
+                  src={coverPhoto} 
+                  alt="Cover" 
+                  className="w-full h-full object-cover opacity-85 hover:scale-105 transition duration-700" 
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              ) : (
+                <div className="w-full h-full relative flex items-center justify-center overflow-hidden">
+                  <div className="absolute -inset-10 bg-gradient-to-r from-pink-500/20 via-purple-600/20 to-cyan-500/20 blur-xl animate-pulse" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(236,72,153,0.2),transparent_70%)]" />
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
               
               {/* Top Quick Action Buttons */}

@@ -539,8 +539,8 @@ export default function App() {
 
   // Derived / Computed Properties
   const isUserSuperAdmin = useMemo(() => {
-    return isUserAnAdmin(userRole, currentTelegramId);
-  }, [userRole, currentTelegramId]);
+    return isUserAnAdmin(userRole, currentTelegramId, authEmail, currentUsername);
+  }, [userRole, currentTelegramId, authEmail, currentUsername]);
 
   const isUserRayan = isUserSuperAdmin;
 
@@ -554,14 +554,7 @@ export default function App() {
     userGenderVal === 'f'
   );
 
-  const isUserAdmin = Boolean(
-    isUserRayan ||
-    isUserSuperAdmin ||
-    userRole === 'admin' ||
-    userRole === 'super_admin' ||
-    String(currentTelegramId || '').trim() === '8933698119' ||
-    String(currentUsername || userName || '').toLowerCase() === 'rayan'
-  );
+  const isUserAdmin = isUserSuperAdmin;
 
   // Can user create stories, publish posts, and broadcast live?
   // Strictly permitted for female users and admins only! Male users are viewers/audience.
@@ -3173,14 +3166,16 @@ export default function App() {
                 </button>
 
                 {/* 3. اجرای زنده (Start Live Broadcast) */}
-                <button 
-                  onClick={handleOpenLiveBroadcast}
-                  className="py-2 px-2 sm:px-3 rounded-xl bg-gradient-to-r from-rose-600 via-purple-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white shadow-md shadow-rose-500/25 flex items-center justify-center gap-1.5 hover:scale-102 active:scale-95 transition-all duration-300 border border-amber-400/40 group"
-                  title={loc('اجرای زنده (استودیو)', 'Start Live Broadcast')}
-                >
-                  <Video className="w-5 h-5 text-amber-300 animate-pulse transition-transform duration-300 group-hover:scale-110" />
-                  <span className="text-xs font-black">{loc('شروع لایو', 'Go Live')}</span>
-                </button>
+                {isApprovedStreamerOrAdmin && (
+                  <button 
+                    onClick={handleOpenLiveBroadcast}
+                    className="py-2 px-2 sm:px-3 rounded-xl bg-gradient-to-r from-rose-600 via-purple-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white shadow-md shadow-rose-500/25 flex items-center justify-center gap-1.5 hover:scale-102 active:scale-95 transition-all duration-300 border border-amber-400/40 group"
+                    title={loc('اجرای زنده (استودیو)', 'Start Live Broadcast')}
+                  >
+                    <Video className="w-5 h-5 text-amber-300 animate-pulse transition-transform duration-300 group-hover:scale-110" />
+                    <span className="text-xs font-black">{loc('شروع لایو', 'Go Live')}</span>
+                  </button>
+                )}
 
               </div>
             </div>
@@ -3682,7 +3677,7 @@ export default function App() {
         {/* TAB 2: MESSAGES & CHAT TAB */}
         <ChatTab currentUser={currentUser} currentUsername={currentUsername} vipPlan={vipPlan} setIsVipModalOpen={setIsVipModalOpen} userRole={userRole} isUserRayan={isUserRayan} activeTab={activeTab} usersList={usersList} txHistoryList={txHistoryList} userAvatar={userAvatar} userName={userName} totalUnreadMessages={totalUnreadMessages} msgSearchQuery={msgSearchQuery} setMsgSearchQuery={setMsgSearchQuery} msgSearchField={msgSearchField} setMsgSearchField={setMsgSearchField} msgFilterTab={msgFilterTab} setMsgFilterTab={setMsgFilterTab} isCreateGroupModalOpen={isCreateGroupModalOpen} setIsCreateGroupModalOpen={setIsCreateGroupModalOpen} newGroupName={newGroupName} setNewGroupName={setNewGroupName} newGroupDesc={newGroupDesc} setNewGroupDesc={setNewGroupDesc} isNewChatModalOpen={isNewChatModalOpen} setIsNewChatModalOpen={setIsNewChatModalOpen} isChatGalleryOpen={isChatGalleryOpen} setIsChatGalleryOpen={setIsChatGalleryOpen} isSendGiftInChatOpen={isSendGiftInChatOpen} setIsSendGiftInChatOpen={setIsSendGiftInChatOpen} conversations={conversations} setConversations={setConversations} activeConversationId={activeConversationId} setActiveConversationId={setActiveConversationId} chatSearchQuery={chatSearchQuery} setChatSearchQuery={setChatSearchQuery} isChatSearchOpen={isChatSearchOpen} setIsChatSearchOpen={setIsChatSearchOpen} activeChatCall={activeChatCall} setActiveChatCall={setActiveChatCall} isAutoTranslateActive={isAutoTranslateActive} setIsAutoTranslateActive={setIsAutoTranslateActive} handleTranslateChatMessage={handleTranslateChatMessage} handleSendDirectMessage={handleSendDirectMessage} handleInitiateCall={handleInitiateCall} userCoins={userCoins} setUserCoins={setUserCoins} langCode={currentAppLang} t={t} showToast={showToast} loc={loc} isRtl={isRtl} />
         {/* TAB 3: WALLET & EARNINGS TAB */}
-        <WalletTab currentUser={currentUser} userRole={userRole} currentUsername={currentUsername} isUserRayan={isUserRayan} handleBuyService={handleBuyService} activeTab={activeTab} txHistoryList={txHistoryList} userCoins={userCoins} setUserCoins={setUserCoins} userDiamonds={userDiamonds} setUserDiamonds={setUserDiamonds} userCashBalance={userCashBalance} setUserCashBalance={setUserCashBalance} walletSubTab={walletSubTab} setWalletSubTab={setWalletSubTab} referralCode={referralCode} setIsVipModalOpen={setIsVipModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} showToast={showToast} isVerified={isVerified} isUserSuperAdmin={isUserSuperAdmin} loc={loc} isRtl={isRtl} />
+        <WalletTab currentUser={currentUser} userRole={userRole} currentUsername={currentUsername} isUserRayan={isUserRayan} handleBuyService={handleBuyService} activeTab={activeTab} txHistoryList={txHistoryList} userCoins={userCoins} setUserCoins={setUserCoins} userDiamonds={userDiamonds} setUserDiamonds={setUserDiamonds} userCashBalance={userCashBalance} setUserCashBalance={setUserCashBalance} walletSubTab={walletSubTab} setWalletSubTab={setWalletSubTab} referralCode={referralCode} setIsVipModalOpen={setIsVipModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} showToast={showToast} isVerified={isVerified} isUserSuperAdmin={isUserSuperAdmin} loc={loc} isRtl={isRtl} isStreamerUser={isStreamerUser} />
         {/* TAB 4: PROFILE TAB */}
         <ProfileTab currentUser={currentUser} userRole={userRole} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsKycModalOpen={setIsKycModalOpen} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={isVerified} isStreamerUser={isStreamerUser} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} advancedStories={advancedStories} setIsAddStoryModalOpen={setIsAddStoryModalOpen} setActiveStoryView={setActiveStoryView} />
         </main>

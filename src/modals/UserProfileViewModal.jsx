@@ -209,8 +209,20 @@ export default function UserProfileViewModal({
       <div className="w-full max-w-xl mx-auto bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 rounded-t-3xl sm:rounded-3xl border border-slate-800/80 shadow-2xl overflow-hidden my-0 sm:my-auto max-h-[92vh] flex flex-col">
         
         {/* ================= HEADER COVER & PROFILE PHOTO ================= */}
-        <div className="relative h-44 sm:h-52 shrink-0 bg-slate-900 overflow-hidden">
-          <img src={cover} alt="Cover" className="w-full h-full object-cover opacity-85" />
+        <div className="relative h-44 sm:h-52 shrink-0 bg-gradient-to-r from-pink-900/50 via-purple-900/50 via-slate-900 to-cyan-900/50 overflow-hidden">
+          {cover ? (
+            <img 
+              src={cover} 
+              alt="Cover" 
+              className="w-full h-full object-cover opacity-85" 
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          ) : (
+            <div className="w-full h-full relative flex items-center justify-center overflow-hidden">
+              <div className="absolute -inset-10 bg-gradient-to-r from-pink-500/20 via-purple-600/20 to-cyan-500/20 blur-xl animate-pulse" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(236,72,153,0.2),transparent_70%)]" />
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
           
           {/* Close & Share Buttons */}

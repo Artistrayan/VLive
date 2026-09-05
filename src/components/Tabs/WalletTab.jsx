@@ -25,7 +25,8 @@ export default function WalletTab(props) {
     setIsVipModalOpen, setIsReferralRulesModalOpen,
     txHistoryList = [], setTxHistoryList = (() => {}),
     showToast, loc, isRtl, isUserSuperAdmin,
-    currentUser, userRole, currentUsername, isUserRayan, 
+    currentUser, userRole, currentUsername, isUserRayan,
+    isStreamerUser
   } = props;
 
   const userGenderVal = String(currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
@@ -50,8 +51,7 @@ export default function WalletTab(props) {
   );
 
   const isManagementApproved = Boolean(
-    isUserAdmin ||
-    
+    isUserAdmin ||    
     userRole === 'streamer' ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||
@@ -59,8 +59,8 @@ export default function WalletTab(props) {
     currentUser?.is_streamer
   );
 
-  // STRICT RULE: Female users and admins can withdraw.
-  const canWithdraw = Boolean(isUserAdmin || isFemaleUser);
+  // STRICT RULE: Streamers and admins can withdraw. Normal users cannot.
+  const canWithdraw = Boolean(isUserAdmin || isStreamerUser || isManagementApproved);
 
   React.useEffect(() => {
     if (!canWithdraw && (walletSubTab === 'withdraw' || walletSubTab === 'convert' || walletSubTab === 'creator')) {
@@ -227,13 +227,15 @@ export default function WalletTab(props) {
                     {window.loc('➕ خرید سکه', '➕ Buy coins')}
                   </button>
 
-                  <button 
-                    onClick={() => setWalletSubTab('withdraw')}
-                    className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 active:scale-95 transition"
-                  >
-                    <ArrowUpRight className="w-4 h-4" />
-                    {window.loc('💸 برداشت درآمد', '💸 Income withdrawal')}
-                  </button>
+                  {canWithdraw && (
+                    <button 
+                      onClick={() => setWalletSubTab('withdraw')}
+                      className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 active:scale-95 transition"
+                    >
+                      <ArrowUpRight className="w-4 h-4" />
+                      {window.loc('💸 برداشت درآمد', '💸 Income withdrawal')}
+                    </button>
+                  )}
 
                   <button 
                     onClick={() => setWalletSubTab('history')}

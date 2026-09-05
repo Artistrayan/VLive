@@ -4,6 +4,7 @@ import { calculateAge } from './businessRules';
 import { fetchLiveKitToken } from './livekitService';
 import { safeStorage } from '../utils/safeStorage';
 import { getStoredToken, getUserId } from '../utils/authSession';
+import { verifyAdminAccess, recordAdminAuditLog, ADMIN_TELEGRAM_ID } from './adminGuard';
 
 export { presenceService, calculateAge, getStoredToken, getUserId };
 
@@ -36,69 +37,7 @@ export async function resolveProfileUuid(identifier) {
 }
 
 export async function verifyAdminServerRole(inputTelegramId = null) {
-  try {
-    // 1. Check local admin session first
-    const activeAdminSession = safeStorage.getItem('vlive_admin_session');
-    if (activeAdminSession) {
-      const sessStr = typeof activeAdminSession === 'object' ? JSON.stringify(activeAdminSession) : String(activeAdminSession);
-      if (
-        sessStr.toLowerCase().includes('rayan') || 
-        sessStr.toLowerCase().includes('admin') || 
-        sessStr.includes('8933698119') ||
-        sessStr.toLowerCase().includes('super')
-      ) {
-        return true;
-      }
-    }
-
-    const adminPinAuthed = safeStorage.getItem('vlive_admin_pin_authed');
-    if (adminPinAuthed === 'true' || adminPinAuthed === true) return true;
-
-    const { data: authData, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !authData?.user?.id) {
-      // If we have input telegram ID matching admin
-      if (inputTelegramId && String(inputTelegramId).trim() === '8933698119') return true;
-      // Also check if current stored telegram id is admin
-      const storedTg = safeStorage.getItem('vlive_telegram_id');
-      if (storedTg && String(storedTg).trim() === '8933698119') return true;
-      return false;
-    }
-    const userId = authData.user.id;
-    const userEmail = String(authData.user.email || '').toLowerCase();
-    
-    // Super admin email bypass
-    if (userEmail === 'tattoo.rayan2015@gmail.com' || userEmail.includes('rayan')) {
-      return true;
-    }
-
-    const { data: profile, error: profErr } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    if (profErr || !profile) {
-      if (userEmail === 'tattoo.rayan2015@gmail.com') return true;
-      return false;
-    }
-    
-    // Server-side verification
-    const tgFromMeta = authData.user.user_metadata?.telegram_id;
-    const tgFromEmail = authData.user.email?.startsWith('tg_') ? authData.user.email.replace('tg_', '').replace('@vlive.app', '') : '';
-    const cleanTg = String(profile.telegram_id || tgFromMeta || tgFromEmail || inputTelegramId || '').trim();
-    const cleanUserType = String(profile.user_type || '').toUpperCase();
-    const cleanRole = String(profile.role || '').toLowerCase();
-    const cleanUsername = String(profile.username || '').toLowerCase();
-    
-    const isAdmRole = cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN' || cleanUsername === 'rayan' || cleanUsername === 'rayan_super_admin' || profile.is_admin === true;
-    const isAdmTg = cleanTg === '8933698119' || isAdmRole || userEmail === 'tattoo.rayan2015@gmail.com';
-    
-    if (isAdmRole || isAdmTg) {
-      return true;
-    }
-    return false;
-  } catch (e) {
-    return false;
-  }
+  return await verifyAdminAccess();
 }
 
 // ==========================================
@@ -1883,8 +1822,8 @@ export const apiMessages = {
       let targetConvId = null;
 
       if (conversationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(conversationId))) {
-        const { data: isConv } = await supabase.from('conversations').select('id').eq('id', conversationId).maybeSingle();
-        if (isConv?.id) {
+        const { data: isConv } = await supabase.from('conversations').select('id, user1_id, user2_id').eq('id', conversationId).maybeSingle();
+        if (isConv?.id && (isConv.user1_id === userUuid || isConv.user2_id === userUuid || isConv.user1_id === uid || isConv.user2_id === uid)) {
           targetConvId = isConv.id;
         }
       }
@@ -1973,10 +1912,13 @@ export const apiMessages = {
       }
       const userUuid = uid ? ((await resolveProfileUuid(uid)) || uid) : uid;
 
-      // Permanently delete messages and conversation record from Supabase
+      // Permanently delete messages and conversation record from Supabase if user is a participant
       try {
-        await supabase.from('messages').delete().eq('conversation_id', conversationId);
-        await supabase.from('conversations').delete().eq('id', conversationId);
+        const { data: isConv } = await supabase.from('conversations').select('user1_id, user2_id').eq('id', conversationId).maybeSingle();
+        if (isConv && (isConv.user1_id === userUuid || isConv.user2_id === userUuid || isConv.user1_id === uid || isConv.user2_id === uid)) {
+          await supabase.from('messages').delete().eq('conversation_id', conversationId);
+          await supabase.from('conversations').delete().eq('id', conversationId);
+        }
       } catch (dbDelErr) {
         console.warn('DB delete conversation error:', dbDelErr);
       }
@@ -4388,7 +4330,79 @@ export const apiAdmin = {
     }
   },
 
+  async adjustUserDiamonds(userId, amountDiamonds, reason) {
+    if (!(await verifyAdminServerRole())) {
+      const activeAdminSession = safeStorage.getItem('vlive_admin_session');
+      if (!activeAdminSession) return { success: false, error: 'Unauthorized' };
+    }
+    try {
+      const val = parseInt(amountDiamonds, 10);
+      if (isNaN(val)) return { success: false, error: 'Invalid diamond amount' };
+
+      // Resolve UUID or username
+      let targetUuid = userId;
+      if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId))) {
+        targetUuid = (await resolveProfileUuid(userId)) || userId;
+      }
+
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUuid))) {
+        const cleanUname = String(userId).replace(/^@/, '');
+        const { data: prof } = await supabase.from('profiles').select('id').eq('username', cleanUname).maybeSingle();
+        if (prof?.id) targetUuid = prof.id;
+      }
+
+      const { data: profData } = await supabase
+        .from('profiles')
+        .select('diamonds')
+        .eq('id', targetUuid)
+        .maybeSingle()
+        .catch(() => ({ data: null }));
+
+      const currentDiamonds = Number(profData?.diamonds || 0);
+      const newDiamonds = Math.max(0, currentDiamonds + val);
+
+      await supabase.from('profiles').update({
+        diamonds: newDiamonds
+      }).eq('id', targetUuid).catch(() => {});
+
+      // Record audit transaction log in Supabase
+      await supabase.from('support_tickets').insert([{
+        user_id: targetUuid,
+        subject: `TRANSACTION_LOG:${targetUuid}`,
+        message: JSON.stringify({
+          tx_type: val >= 0 ? 'deposit_diamonds' : 'deduct_diamonds',
+          amount_diamonds: Math.abs(val),
+          new_diamonds: newDiamonds,
+          old_diamonds: currentDiamonds,
+          reason: reason || 'Admin Manual Diamond Adjustment',
+          created_at: new Date().toISOString()
+        }),
+        status: 'closed'
+      }]).catch(() => {});
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vlive_user_updated', {
+          detail: { userId: targetUuid, diamonds: newDiamonds }
+        }));
+      }
+
+      const currentUid = getUserId();
+      if (currentUid === targetUuid || safeStorage.getItem('vlive_user_id') === targetUuid || safeStorage.getItem('vlive_current_username') === String(userId).replace(/^@/, '')) {
+        safeStorage.setItem('vlive_user_diamonds', String(newDiamonds));
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('vlive_diamonds_updated', { detail: { diamonds: newDiamonds } }));
+        }
+      }
+
+      return { success: true, new_diamonds: newDiamonds, old_diamonds: currentDiamonds };
+    } catch (e) {
+      console.error('adjustUserDiamonds error:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
   async getFinanceSettings() {
+    if (!(await verifyAdminServerRole())) return null;
     try {
       const { data, error } = await supabase.from('app_settings').select('*').eq('key', 'finance_settings').maybeSingle();
       if (!error && data?.value) {
@@ -4404,6 +4418,7 @@ export const apiAdmin = {
   },
 
   async saveFinanceSettings(settings) {
+    if (!(await verifyAdminServerRole())) return { success: false, error: "Unauthorized" };
     try {
       safeStorage.setItem('vlive_finance_settings', JSON.stringify(settings));
       if (typeof window !== 'undefined') {
@@ -4487,8 +4502,8 @@ export const apiAdmin = {
       return null;
     }
   },
-  
   async getAIAdminSuggestions() {
+    if (!(await verifyAdminServerRole())) return [];
     return [
       {
         title: 'بهینه‌سازی دیتابیس (Database Optimization)',
@@ -4505,6 +4520,7 @@ export const apiAdmin = {
     ];
   },
   async getAllUsers() {
+    if (!(await verifyAdminServerRole())) return [];
     try {
       const { data: profs, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
       
@@ -4787,8 +4803,8 @@ export const apiAdmin = {
       return { success: false };
     }
   },
-
   async getKycApplications() {
+    if (!(await verifyAdminServerRole())) return [];
     try {
       const { data, error } = await supabase
         .from('kyc_applications')
@@ -4947,8 +4963,8 @@ export const apiAdmin = {
       return localApps;
     }
   },
-
   async updateKycStatus(id, status, userId = null, notes = '', username = '') {
+    if (!(await verifyAdminServerRole())) return { success: false, error: 'Unauthorized' };
     try {
       const sLower = String(status || '').toLowerCase();
       let normalizedStatus = 'Pending';

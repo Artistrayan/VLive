@@ -211,6 +211,32 @@ export default function AdminDashboardModal(props) {
   const isAuthorizedAdmin = isUserAnAdmin(userRole, cleanTgId, userEmail, currentUserName, props.isUserRayan, activeAdminSession);
 
   if (!isAuthorizedAdmin) {
+    if (isAdminPanelOpen || isAdminPinModalOpen) {
+      return (
+        <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+          <div className="w-full max-w-md p-6 bg-slate-900 border border-rose-500/50 rounded-3xl text-center space-y-4 shadow-[0_0_50px_rgba(244,63,94,0.3)]">
+            <div className="w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center mx-auto">
+              <ShieldAlert className="w-8 h-8 text-rose-400 animate-bounce" />
+            </div>
+            <h3 className="text-xl font-black text-white">
+              {window.loc('دسترسی غیرمجاز (Access Denied)', 'Access Denied')}
+            </h3>
+            <p className="text-xs text-slate-300">
+              {window.loc('شما مجوزهای لازم برای دسترسی به پنل مدیریت را ندارید. این تلاش گزارش خواهد شد.', 'You do not have the required permissions to access the Admin Panel.')}
+            </p>
+            <button
+              onClick={() => {
+                if (setIsAdminPanelOpen) setIsAdminPanelOpen(false);
+                if (setIsAdminPinModalOpen) setIsAdminPinModalOpen(false);
+              }}
+              className="w-full py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-pink-600 text-white font-black text-xs shadow-lg hover:scale-102 transition"
+            >
+              {window.loc('بازگشت به برنامه', 'Return to App')}
+            </button>
+          </div>
+        </div>
+      );
+    }
     return null;
   }
 
