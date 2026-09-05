@@ -4236,21 +4236,29 @@ export const apiAdmin = {
         } catch (e) {}
       }
 
-      // 2. Read current balance from wallet table or persistent state
+      // 2. Read current balance from wallets table, profiles table, or persistent state
+      const { data: walData } = await supabase
+        .from('wallets')
+        .select('coins, usdt_balance, user_id')
+        .eq('user_id', targetUuid)
+        .maybeSingle()
+        .catch(() => ({ data: null }));
+
+      const { data: profData } = await supabase
+        .from('profiles')
+        .select('coins, user_coins')
+        .eq('id', targetUuid)
+        .maybeSingle()
+        .catch(() => ({ data: null }));
+
+      const walletCoins = walData && typeof walData.coins !== 'undefined' && walData.coins !== null ? Number(walData.coins || 0) : null;
+      const profileCoins = profData && (typeof profData.coins !== 'undefined' || typeof profData.user_coins !== 'undefined') ? Number(profData.coins ?? profData.user_coins ?? 0) : null;
+      const stateCoins = typeof existingState.coins === 'number' ? existingState.coins : null;
+
       let currentCoins = 0;
-      if (typeof existingState.coins === 'number') {
-        currentCoins = existingState.coins;
-      } else {
-        const { data: walData } = await supabase
-          .from('wallets')
-          .select('coins, usdt_balance, user_id')
-          .eq('user_id', targetUuid)
-          .maybeSingle()
-          .catch(() => ({ data: null }));
-        if (walData && typeof walData.coins !== 'undefined') {
-          currentCoins = Number(walData.coins || 0);
-        }
-      }
+      if (walletCoins !== null) currentCoins = walletCoins;
+      else if (profileCoins !== null) currentCoins = profileCoins;
+      else if (stateCoins !== null) currentCoins = stateCoins;
 
       const newCoins = Math.max(0, currentCoins + val);
 

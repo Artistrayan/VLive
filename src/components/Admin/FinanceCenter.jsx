@@ -151,11 +151,22 @@ export default function FinanceCenter({
     }
     
     const adjustmentValue = isCredit ? val : -val;
-    const res = await apiAdmin.adjustUserWallet(selectedUserForAdjustment.id, adjustmentValue, adjustmentReason || 'Admin Manual Action');
+    const targetUserId = selectedUserForAdjustment.id || selectedUserForAdjustment.user_id || selectedUserForAdjustment.username;
     
-    if (res && res.success) {
+    if (!targetUserId) {
+      showToast(window.loc('❌ شناسایی کاربر امکان‌پذیر نیست', '❌ Could not identify target user'));
+      return;
+    }
+
+    const res = await apiAdmin.adjustUserWallet(targetUserId, adjustmentValue, adjustmentReason || 'Admin Manual Action');
+    
+    if (res && (res.success || typeof res.new_coins === 'number')) {
+      const uname = selectedUserForAdjustment.username || selectedUserForAdjustment.name || 'user';
       setUsersList(prev => prev.map(u => {
-        if (u.id === selectedUserForAdjustment.id) {
+        if (
+          (u.id && u.id === selectedUserForAdjustment.id) ||
+          (u.username && u.username === selectedUserForAdjustment.username)
+        ) {
           const currentCoins = Number(u.coins || u.userCoins || 0);
           const calculatedCoins = isCredit ? currentCoins + val : Math.max(0, currentCoins - val);
           const finalCoins = typeof res.new_coins === 'number' ? res.new_coins : calculatedCoins;
@@ -163,13 +174,13 @@ export default function FinanceCenter({
         }
         return u;
       }));
-      addAdminAuditLog(`Wallet ${isCredit ? 'Credit' : 'Debit'}: ${isCredit ? '+' : '-'}${val} coins for @${selectedUserForAdjustment.username}. Reason: ${adjustmentReason || 'Admin Manual Action'}`);
-      showToast(window.loc(`✅ کیف پول ${selectedUserForAdjustment.username} با موفقیت ${isCredit ? window.loc('شارژ', 'charging') : window.loc('کسر', 'deduction')} شد`, `✅ Wallet updated successfully`));
+      addAdminAuditLog(`Wallet ${isCredit ? 'Credit' : 'Debit'}: ${isCredit ? '+' : '-'}${val} coins for @${uname}. Reason: ${adjustmentReason || 'Admin Manual Action'}`);
+      showToast(window.loc(`✅ کیف پول @${uname} با موفقیت ${isCredit ? window.loc('شارژ', 'charging') : window.loc('کسر', 'deduction')} شد`, `✅ Wallet updated successfully`));
       setSelectedUserForAdjustment(null);
       setAdjustmentAmount('');
       setAdjustmentReason('');
     } else {
-      showToast(window.loc('❌ خطا در ارتباط با دیتابیس', '❌ Database error'));
+      showToast(window.loc(`❌ خطا در ارتباط با دیتابیس: ${res?.error || ''}`, `❌ Database error: ${res?.error || ''}`));
     }
   };
 
