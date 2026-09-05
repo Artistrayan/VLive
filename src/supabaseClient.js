@@ -13,13 +13,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 try {
   const query = supabase.from('__fake_table_for_patching__').select('*');
   let proto = Object.getPrototypeOf(query);
-  while (proto && proto.constructor.name !== 'PostgrestBuilder') {
+  while (proto && proto.constructor !== Object) {
+    if (proto.then && !proto.catch) {
+      proto.catch = function (onRejected) {
+        return this.then(null, onRejected);
+      };
+    }
     proto = Object.getPrototypeOf(proto);
-  }
-  if (proto && !proto.catch) {
-    proto.catch = function (onRejected) {
-      return this.then(null, onRejected);
-    };
   }
 } catch (e) {
   console.warn("Could not patch PostgrestBuilder", e);

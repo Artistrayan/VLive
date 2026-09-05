@@ -40,8 +40,18 @@ export const PLATFORM_RULES = {
   },
 
   // 14. WITHDRAWAL & COMMISSION RULES
-  MIN_WITHDRAWAL_USDT: 50,
-  PLATFORM_COMMISSION_PERCENT: 29, // 29% platform fee, 71% streamer share
+  get MIN_WITHDRAWAL_USDT() {
+    try { return Number(localStorage.getItem('vlive_admin_min_withdrawal')) || 50; } catch (e) { return 50; }
+  },
+  get MAX_WITHDRAWAL_USDT() {
+    try { return Number(localStorage.getItem('vlive_admin_max_withdrawal')) || 5000; } catch (e) { return 5000; }
+  },
+  get PLATFORM_COMMISSION_PERCENT() {
+    try { return Number(localStorage.getItem('vlive_admin_platform_fee')) || 29; } catch (e) { return 29; }
+  },
+  get NETWORK_FEE() {
+    try { return Number(localStorage.getItem('vlive_admin_network_fee')) || 1.50; } catch (e) { return 1.50; }
+  },
 
   // 16 & 17. TIMEOUT RULES
   CALL_RECONNECT_GRACE_SECONDS: 30,
