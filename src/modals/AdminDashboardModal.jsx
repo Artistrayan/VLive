@@ -188,6 +188,19 @@ export default function AdminDashboardModal(props) {
     return unique.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
   }, [props.kycApplications, props.usersList, props.adminUsersList]);
 
+  const effectiveUsersList = React.useMemo(() => {
+    if (adminUsersList && adminUsersList.length > 0) return adminUsersList;
+    if (usersList && usersList.length > 0) return usersList;
+    return [];
+  }, [adminUsersList, usersList]);
+
+  const handleSetUsersList = React.useCallback((updater) => {
+    const currentBase = (adminUsersList && adminUsersList.length > 0) ? adminUsersList : (usersList || []);
+    const nextVal = typeof updater === 'function' ? updater(currentBase) : updater;
+    if (setAdminUsersList) setAdminUsersList(nextVal);
+    if (setUsersList) setUsersList(nextVal);
+  }, [adminUsersList, usersList, setAdminUsersList, setUsersList]);
+
   // Auto-fetch fresh real-time data for all metrics on panel open
   React.useEffect(() => {
     if (isAdminPanelOpen) {
@@ -386,6 +399,9 @@ export default function AdminDashboardModal(props) {
 
                     if (matchedAdmin) {
                       setActiveAdminSession(matchedAdmin);
+                      try {
+                        safeStorage.setItem('vlive_admin_session', JSON.stringify(matchedAdmin));
+                      } catch (e) {}
                       setIsAdminPinModalOpen(false);
                       setIsAdminPanelOpen(true);
                       setEnteredAdminUsername('');
@@ -618,7 +634,7 @@ export default function AdminDashboardModal(props) {
                       <span className="text-[10px] text-slate-400 group-hover:text-cyan-300 flex items-center gap-1 transition">
                         <Users className="w-3.5 h-3.5 text-cyan-400" /> {window.loc('کل کاربران', 'Total users')}
                       </span>
-                      <p className="text-base font-black text-white group-hover:text-cyan-300 transition">{(adminUsersList || []).length}</p>
+                      <p className="text-base font-black text-white group-hover:text-cyan-300 transition">{(effectiveUsersList || []).length}</p>
                       <span className="text-[9px] text-slate-400 truncate block">{window.loc('مشاهده کامل لیست کاربران 👈', 'View full users list 👈')}</span>
                     </button>
 
@@ -630,7 +646,7 @@ export default function AdminDashboardModal(props) {
                       <span className="text-[10px] text-slate-400 group-hover:text-emerald-300 flex items-center gap-1 transition">
                         <Activity className="w-3.5 h-3.5 text-emerald-400" /> {window.loc('کاربران آنلاین', 'Online users')}
                       </span>
-                      <p className="text-base font-black text-emerald-400">{(adminUsersList || []).filter(u => u.status === 'Online' || u.isOnline || u.online).length} {window.loc('نفر', 'people')}</p>
+                      <p className="text-base font-black text-emerald-400">{(effectiveUsersList || []).filter(u => u.status === 'Online' || u.isOnline || u.online).length} {window.loc('نفر', 'people')}</p>
                       <span className="text-[9px] text-slate-400 truncate block">{window.loc('هم‌اکنون فعال - جزئیات 👈', 'Active now - details 👈')}</span>
                     </button>
 
@@ -777,8 +793,8 @@ export default function AdminDashboardModal(props) {
               {/* 2. USER MANAGEMENT CENTER */}
               {adminActiveTab === 'users' && (
                 <UserManagementCenter
-                  usersList={adminUsersList.length > 0 ? adminUsersList : usersList}
-                  setUsersList={setAdminUsersList}
+                  usersList={effectiveUsersList}
+                  setUsersList={handleSetUsersList}
                   addAdminAuditLog={addAdminAuditLog}
                   showToast={showToast}
                   loc={loc}
@@ -1033,8 +1049,8 @@ export default function AdminDashboardModal(props) {
               {/* CENTRALIZED FINANCE & ECONOMY CENTER */}
               {(adminActiveTab === 'finance' || adminActiveTab === 'wallet' || adminActiveTab === 'economy') && (
                 <FinanceCenter
-                  usersList={adminUsersList.length > 0 ? adminUsersList : usersList}
-                  setUsersList={setUsersList}
+                  usersList={effectiveUsersList}
+                  setUsersList={handleSetUsersList}
                   adminWithdrawalsList={adminWithdrawalsList}
                   setAdminWithdrawalsList={setAdminWithdrawalsList}
                   financialTransactionsList={financialTransactionsList}
@@ -1373,7 +1389,7 @@ export default function AdminDashboardModal(props) {
               {/* 12. ANALYTICS CENTER & STATISTICS */}
               {adminActiveTab === 'statistics' && (
                 <AnalyticsCenter
-                  usersList={adminUsersList.length > 0 ? adminUsersList : usersList}
+                  usersList={effectiveUsersList}
                   adminWithdrawalsList={adminWithdrawalsList}
                   financialTransactionsList={financialTransactionsList}
                   addAdminAuditLog={addAdminAuditLog}
@@ -1531,8 +1547,8 @@ export default function AdminDashboardModal(props) {
               {/* 14. STREAMER MANAGEMENT CENTER & VERIFICATION */}
               {adminActiveTab === 'verification' && (
                 <StreamerManagementCenter
-                  usersList={adminUsersList.length > 0 ? adminUsersList : usersList}
-                  setUsersList={setAdminUsersList}
+                  usersList={effectiveUsersList}
+                  setUsersList={handleSetUsersList}
                   adminWithdrawalsList={adminWithdrawalsList}
                   setAdminWithdrawalsList={setAdminWithdrawalsList}
                   addAdminAuditLog={addAdminAuditLog}
@@ -2079,7 +2095,7 @@ export default function AdminDashboardModal(props) {
               {/* 17.5 AI ADMIN COPILOT */}
               {adminActiveTab === 'aicopilot' && (
                 <AiAdminCopilot
-                  usersList={adminUsersList.length > 0 ? adminUsersList : usersList}
+                  usersList={effectiveUsersList}
                   adminWithdrawalsList={adminWithdrawalsList}
                   financialTransactionsList={financialTransactionsList}
                   addAdminAuditLog={addAdminAuditLog}

@@ -4254,13 +4254,19 @@ export const apiAdmin = {
 
       const newCoins = Math.max(0, currentCoins + val);
 
-      // 3. Upsert into wallets table in PostgreSQL
+      // 3. Upsert into wallets table in PostgreSQL & update profiles
       if (targetUuid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUuid))) {
         await supabase.from('wallets').upsert({
           user_id: targetUuid,
           coins: newCoins,
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' }).catch(() => {});
+
+        await supabase.from('profiles').update({
+          coins: newCoins,
+          user_coins: newCoins,
+          updated_at: new Date().toISOString()
+        }).eq('id', targetUuid).catch(() => {});
       }
 
       // 4. Save state permanently in Supabase
