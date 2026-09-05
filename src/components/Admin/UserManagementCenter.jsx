@@ -541,88 +541,26 @@ export default function UserManagementCenter({
                     </td>
 
                     <td className="p-3.5">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {/* Details Modal Trigger */}
-                        <button
-                          onClick={() => setSelectedUserDetail(u)}
-                          className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-[10px] flex items-center gap-1 transition shadow"
-                          title={window.loc('مشاهده جزئیات کامل', 'View full details')}
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>{window.loc('جزئیات', 'Details')}</span>
-                        </button>
-
-                        {/* Dedicated Permissions & Quick Save Button */}
+                      <div className="flex items-center gap-2">
+                        {/* Unified Single Management Button */}
                         <button
                           onClick={() => handleOpenPermissionsModal(u)}
-                          className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 border border-cyan-500/40 text-cyan-300 font-black text-[10px] flex items-center gap-1.5 transition shadow-md active:scale-95"
-                          title={window.loc('ویرایش کامل دسترسی‌ها، نقش، سکه و ذخیره تغییرات کاربر', 'Edit permissions, role, coins and save changes')}
+                          className="px-3.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 hover:text-white font-bold text-xs flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+                          title={window.loc('مدیریت کامل نقش، دسترسی‌ها، سکه‌ها و وضعیت کاربر', 'Manage role, permissions, coins and user status')}
                         >
-                          <Save className="w-3.5 h-3.5 text-cyan-400" />
-                          <span>{window.loc('دسترسی‌ها و ذخیره', 'Access & Save')}</span>
+                          <Sliders className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>{window.loc('✏️ مدیریت کاربر', '✏️ Manage User')}</span>
                         </button>
 
-                        {/* Verification Toggle */}
-                        <button
-                          onClick={() => handleToggleVerify(u)}
-                          className={`p-1.5 rounded-xl border transition flex items-center gap-1 font-bold text-[10px] ${
-                            (u.isVerified || u.verified || u.is_verified)
-                              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-sm shadow-cyan-500/20'
-                              : 'bg-slate-800/80 text-slate-500 border-slate-700/60 hover:text-cyan-300 hover:border-cyan-500/40'
-                          }`}
-                          title={(u.isVerified || u.verified || u.is_verified) ? window.loc('نشان تایید آبی: فعال (کلیک برای لغو)', 'Blue badge: Active (click to disable)') : window.loc('نشان تایید آبی: غیرفعال (کلیک برای اعطا)', 'Blue badge: Inactive (click to grant)')}
-                        >
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          <span className="hidden xl:inline">{window.loc('تایید', 'Verified')}</span>
-                        </button>
-
-                        {/* VIP Toggle */}
-                        <button
-                          onClick={() => handleToggleVip(u)}
-                          className={`p-1.5 rounded-xl border transition flex items-center gap-1 font-bold text-[10px] ${
-                            (u.isVip || u.vip || u.is_vip)
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/20'
-                              : 'bg-slate-800/80 text-slate-500 border-slate-700/60 hover:text-amber-300 hover:border-amber-500/40'
-                          }`}
-                          title={(u.isVip || u.vip || u.is_vip) ? window.loc('عضویت VIP: فعال (کلیک برای لغو)', 'VIP: Active (click to disable)') : window.loc('عضویت VIP: غیرفعال (کلیک برای فعال‌سازی)', 'VIP: Inactive (click to enable)')}
-                        >
-                          <Crown className="w-3.5 h-3.5" />
-                          <span className="hidden xl:inline">VIP</span>
-                        </button>
-
-                        {/* Streamer Toggle */}
-                        <button
-                          onClick={() => handleToggleStreamer(u)}
-                          className={`p-1.5 rounded-xl border transition flex items-center gap-1 font-bold text-[10px] ${
-                            (u.isStreamer || u.isHost || u.is_streamer)
-                              ? 'bg-pink-500/20 text-pink-300 border-pink-500/50 shadow-sm shadow-pink-500/20'
-                              : 'bg-slate-800/80 text-slate-500 border-slate-700/60 hover:text-pink-300 hover:border-pink-500/40'
-                          }`}
-                          title={(u.isStreamer || u.isHost || u.is_streamer) ? window.loc('استریمر: فعال (کلیک برای لغو)', 'Streamer: Active (click to revoke)') : window.loc('استریمر: غیرفعال (کلیک برای اعطا)', 'Streamer: Inactive (click to grant)')}
-                        >
-                          <Video className="w-3.5 h-3.5" />
-                          <span className="hidden xl:inline">{window.loc('استریمر', 'Streamer')}</span>
-                        </button>
-
-                        {/* Coin Adjustment Button */}
-                        <button
-                          onClick={() => handleOpenAdjustCoins(u)}
-                          className="p-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500 hover:text-slate-950 transition flex items-center gap-1 font-bold text-[10px]"
-                          title={window.loc('اصلاح موجودی سکه کاربر', 'Adjust user coin balance')}
-                        >
-                          <DollarSign className="w-3.5 h-3.5" />
-                          <span className="hidden xl:inline">{window.loc('موجودی', 'Coins')}</span>
-                        </button>
-
-                        {/* Ban Action */}
+                        {/* Quick Ban / Unban Toggle */}
                         <button
                           onClick={() => handleToggleBan(u)}
                           className={`p-1.5 rounded-xl border transition ${
                             u.isBanned 
-                              ? 'bg-emerald-600/20 text-emerald-300 border-emerald-500/30' 
-                              : 'bg-rose-600/20 text-rose-300 border-rose-500/30 hover:bg-rose-600 hover:text-white'
+                              ? 'bg-emerald-600/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-600 hover:text-white' 
+                              : 'bg-rose-600/10 text-rose-300 border-rose-500/20 hover:bg-rose-600 hover:text-white'
                           }`}
-                          title={u.isBanned ? window.loc('رفع مسدودی', 'Unblock') : window.loc('مسدود کردن', 'Block user')}
+                          title={u.isBanned ? window.loc('رفع مسدودی کاربر', 'Unblock User') : window.loc('مسدود کردن کاربر', 'Block User')}
                         >
                           <Ban className="w-3.5 h-3.5" />
                         </button>
@@ -636,122 +574,7 @@ export default function UserManagementCenter({
         </div>
       </div>
 
-      {/* ================= USER DETAIL DRAWER / MODAL ================= */}
-      {selectedUserDetail && (
-        <div className="p-5 rounded-3xl bg-slate-950 border border-cyan-500/40 space-y-4 shadow-2xl animate-fadeIn">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-3">
-              <img src={selectedUserDetail.avatar || ''} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-cyan-400" />
-              <div>
-                <h3 className="font-bold text-white text-sm">{selectedUserDetail.name || selectedUserDetail.username}</h3>
-                <span className="text-xs text-cyan-400 font-mono">@{selectedUserDetail.username} • ID: {selectedUserDetail.id || 'N/A'}</span>
-              </div>
-            </div>
 
-            <button onClick={() => setSelectedUserDetail(null)} className="text-slate-400 hover:text-white font-bold">{window.loc('✕ بستن', '✕ Close')}</button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-[10px] text-slate-400 font-bold block">{window.loc('دستگاه و IP ثبت‌شده:', 'Registered device and IP:')}</span>
-              <p className="font-mono text-slate-200 text-xs">IP: 185.102.40.12</p>
-              <p className="text-[10px] text-slate-400">Device: iPhone 14 Pro / iOS 17</p>
-            </div>
-
-            <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-[10px] text-slate-400 font-bold block">{window.loc('کیف پول و فعالیت:', 'Wallet and Activity:')}</span>
-              <p className="font-mono text-amber-400 font-bold text-xs">{(selectedUserDetail.coins || 0).toLocaleString()} Coins</p>
-              <p className="text-[10px] text-slate-400">{window.loc('پیام‌ها: 1,420 • لایوها: 14', 'Messages: 1,420 • Lives: 14')}</p>
-            </div>
-
-            <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
-              <span className="text-[10px] text-slate-400 font-bold block">{window.loc('اقدامات و نشان‌های کاربر:', 'User actions and badges:')}</span>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <button
-                  onClick={() => handleToggleVerify(selectedUserDetail)}
-                  className={`px-2.5 py-1 rounded-xl border font-bold text-[10px] flex items-center gap-1 transition ${
-                    (selectedUserDetail.isVerified || selectedUserDetail.verified || selectedUserDetail.is_verified)
-                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
-                      : 'bg-slate-800 text-slate-400 border-slate-700'
-                  }`}
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>{(selectedUserDetail.isVerified || selectedUserDetail.verified || selectedUserDetail.is_verified) ? window.loc('تایید هویت: فعال', 'Verified: Active') : window.loc('تایید هویت: غیرفعال', 'Verified: Inactive')}</span>
-                </button>
-
-                <button
-                  onClick={() => handleToggleVip(selectedUserDetail)}
-                  className={`px-2.5 py-1 rounded-xl border font-bold text-[10px] flex items-center gap-1 transition ${
-                    (selectedUserDetail.isVip || selectedUserDetail.vip || selectedUserDetail.is_vip)
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
-                      : 'bg-slate-800 text-slate-400 border-slate-700'
-                  }`}
-                >
-                  <Crown className="w-3.5 h-3.5" />
-                  <span>{(selectedUserDetail.isVip || selectedUserDetail.vip || selectedUserDetail.is_vip) ? window.loc('VIP: فعال', 'VIP: Active') : window.loc('VIP: غیرفعال', 'VIP: Inactive')}</span>
-                </button>
-
-                <button
-                  onClick={() => handleToggleStreamer(selectedUserDetail)}
-                  className={`px-2.5 py-1 rounded-xl border font-bold text-[10px] flex items-center gap-1 transition ${
-                    (selectedUserDetail.isStreamer || selectedUserDetail.isHost || selectedUserDetail.is_streamer)
-                      ? 'bg-pink-500/20 text-pink-300 border-pink-500/50'
-                      : 'bg-slate-800 text-slate-400 border-slate-700'
-                  }`}
-                >
-                  <Video className="w-3.5 h-3.5" />
-                  <span>{(selectedUserDetail.isStreamer || selectedUserDetail.isHost || selectedUserDetail.is_streamer) ? window.loc('استریمر: فعال', 'Streamer: Active') : window.loc('استریمر: غیرفعال', 'Streamer: Inactive')}</span>
-                </button>
-
-                <button
-                  onClick={() => handleOpenAdjustCoins(selectedUserDetail)}
-                  className="px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/50 font-bold text-[10px] flex items-center gap-1 hover:bg-amber-500 hover:text-slate-950 transition"
-                >
-                  <DollarSign className="w-3.5 h-3.5" />
-                  <span>{window.loc('اصلاح موجودی', 'Adjust Balance')}</span>
-                </button>
-
-                <button onClick={() => handleToggleBan(selectedUserDetail)} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-bold text-[10px]">
-                  {selectedUserDetail.isBanned ? window.loc('رفع Ban', 'Fix Ban') : window.loc('Ban کاربر', 'Ban the user')}
-                </button>
-                <button onClick={() => handleToggleMute(selectedUserDetail)} className="px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold text-[10px]">
-                  {selectedUserDetail.isMuted ? window.loc('رفع Mute', 'Fix Mute') : window.loc('Mute کاربر', 'Mute the user')}
-                </button>
-                <button onClick={() => handleResetPassword(selectedUserDetail)} className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold text-[10px]">
-                  {window.loc('ریست رمز', 'password reset')}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Admin Notes Section */}
-          <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
-            <h4 className="font-bold text-slate-300 text-xs">{window.loc('یادداشت‌ها و اخطارهای ادمین:', 'Admin notes and warnings:')}</h4>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={adminNoteInput}
-                onChange={e => setAdminNoteInput(e.target.value)}
-                placeholder={window.loc('افزودن یادداشت جدید درباره این کاربر...', 'Add new note about this user...')}
-                className="flex-1 p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none"
-              />
-              <button
-                onClick={() => handleSaveAdminNote(selectedUserDetail)}
-                className="px-4 py-2 rounded-xl bg-cyan-600 text-slate-950 font-bold text-xs"
-              >
-                {window.loc('ذخیره یادداشت', 'Save note')}
-              </button>
-            </div>
-
-            {selectedUserDetail.adminNotes?.map((note, i) => (
-              <div key={i} className="text-[11px] text-slate-300 p-2 rounded-xl bg-slate-950 border border-slate-800/60 flex items-center justify-between">
-                <span>{note.text}</span>
-                <span className="text-[9px] text-slate-500 font-mono">{note.date}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ================= MODAL: DIRECT WALLET COIN ADJUSTMENT ================= */}
       {adjustCoinModalUser && (
@@ -1022,6 +845,25 @@ export default function UserManagementCenter({
                     </span>
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${permForm.isBanned ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
                       {permForm.isBanned ? 'BANNED' : 'ACTIVE'}
+                    </span>
+                  </button>
+
+                  {/* Mute Chat Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setPermForm(p => ({ ...p, isMuted: !p.isMuted }))}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between transition ${
+                      permForm.isMuted
+                        ? 'bg-amber-600/20 border-amber-500 text-amber-300 font-bold'
+                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <MessageSquare className="w-4 h-4 text-amber-400" />
+                      <span>{window.loc('توقیف چت (Muted)', 'Mute Chat')}</span>
+                    </span>
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${permForm.isMuted ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                      {permForm.isMuted ? 'MUTED' : 'OFF'}
                     </span>
                   </button>
                 </div>

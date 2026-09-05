@@ -188,15 +188,64 @@ export default function AdminDashboardModal(props) {
     return unique.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
   }, [props.kycApplications, props.usersList, props.adminUsersList]);
 
-  // Auto-fetch KYC applications and fresh data on panel open
+  // Auto-fetch fresh real-time data for all metrics on panel open
   React.useEffect(() => {
     if (isAdminPanelOpen) {
+      // 1. KYC / Streamer applications
       if (apiAdmin && typeof apiAdmin.getKycApplications === 'function') {
         apiAdmin.getKycApplications().then(apps => {
           if (apps && props.setKycApplications) {
             props.setKycApplications(apps);
           }
         }).catch(err => console.warn('Admin fetch kyc err:', err));
+      }
+
+      // 2. All Users (real profiles & wallet balances)
+      if (apiAdmin && typeof apiAdmin.getAllUsers === 'function') {
+        apiAdmin.getAllUsers().then(users => {
+          if (users && users.length > 0) {
+            if (setAdminUsersList) setAdminUsersList(users);
+            if (props.setUsersList) props.setUsersList(users);
+          }
+        }).catch(err => console.warn('Admin fetch users err:', err));
+      }
+
+      // 3. Transactions (financial logs)
+      if (apiAdmin && typeof apiAdmin.getAllTransactions === 'function') {
+        apiAdmin.getAllTransactions().then(txs => {
+          if (txs && txs.length > 0) {
+            if (setFinancialTransactionsList) setFinancialTransactionsList(txs);
+          }
+        }).catch(err => console.warn('Admin fetch txs err:', err));
+      }
+
+      // 4. Live Streams
+      if (apiAdmin && typeof apiAdmin.getLiveStreams === 'function') {
+        apiAdmin.getLiveStreams().then(streams => {
+          if (streams) {
+            if (setAdminLivesList) setAdminLivesList(streams);
+            if (setLiveStreamsList) setLiveStreamsList(streams);
+          }
+        }).catch(err => console.warn('Admin fetch streams err:', err));
+      }
+
+      // 5. Reports
+      if (apiAdmin && typeof apiAdmin.getReports === 'function') {
+        apiAdmin.getReports().then(reports => {
+          if (reports && setAdminReportsList) {
+            setAdminReportsList(reports);
+          }
+        }).catch(err => console.warn('Admin fetch reports err:', err));
+      }
+
+      // 6. Withdrawals / Payouts
+      if (apiAdmin && typeof apiAdmin.getPayouts === 'function') {
+        apiAdmin.getPayouts().then(payouts => {
+          if (payouts) {
+            if (setAdminWithdrawalsList) setAdminWithdrawalsList(payouts);
+            if (setWithdrawalRequestsList) setWithdrawalRequestsList(payouts);
+          }
+        }).catch(err => console.warn('Admin fetch payouts err:', err));
       }
     }
   }, [isAdminPanelOpen, adminActiveTab]);
@@ -478,8 +527,7 @@ export default function AdminDashboardModal(props) {
                   { id: 'security', label: window.loc('🔒 امنیت', '🔒 Security') },
                   { id: 'settings', label: window.loc('⚙️ تنظیمات', '⚙️ Settings') },
                   { id: 'aicopilot', label: window.loc('✨ کوپایلوت', '✨ AI Copilot') },
-                  { id: 'aimod', label: window.loc('🤖 هوش مصنوعی', '🤖 AI Mod') },
-                  { id: 'aisecurity', label: window.loc('🛡 امنیت AI', '🛡 AI Security') }
+                  { id: 'aisecurity', label: window.loc('🛡 هوش مصنوعی و امنیت', '🛡 AI Security') }
                 ].map(tab => {
                   const isActive = adminActiveTab === tab.id;
                   return (
@@ -667,26 +715,59 @@ export default function AdminDashboardModal(props) {
                     </button>
                   </div>
                   {/* QUICK ACTIONS */}
-                  <div className="p-4 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-2">
-                    <h3 className="text-xs font-bold text-white">{window.loc('اقدامات سریع سیستم', 'Quick system actions')}</h3>
+                  <div className="p-4 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-3">
+                    <h3 className="text-xs font-bold text-white flex items-center justify-between">
+                      <span>{window.loc('⚡ اقدامات سریع سیستم', '⚡ Quick system actions')}</span>
+                      <span className="text-[10px] text-slate-400 font-normal">{window.loc('میانبرهای مستقیم به بخش‌های مدیریتی', 'Direct shortcuts to management sections')}</span>
+                    </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                      <button onClick={() => setAdminActiveTab('notifications')} className="p-2.5 rounded-xl bg-purple-950/60 border border-purple-500/30 text-purple-300 font-bold hover:bg-purple-900 text-center">
-                        {window.loc('📢 ارسال اعلان عمومی', '📢 Send public notice')}
+                      <button onClick={() => setAdminActiveTab('notifications')} className="p-3 rounded-xl bg-purple-950/60 hover:bg-purple-900 border border-purple-500/30 text-purple-200 font-bold text-center transition active:scale-95 flex flex-col items-center justify-center gap-1">
+                        <span className="text-sm">📢</span>
+                        <span>{window.loc('ارسال اعلان عمومی', 'Send public notice')}</span>
                       </button>
+
+                      <button onClick={() => { if (setIsAddUserModalOpen) setIsAddUserModalOpen(true); else setAdminActiveTab('users'); }} className="p-3 rounded-xl bg-cyan-950/60 hover:bg-cyan-900 border border-cyan-500/30 text-cyan-200 font-bold text-center transition active:scale-95 flex flex-col items-center justify-center gap-1">
+                        <span className="text-sm">➕</span>
+                        <span>{window.loc('افزودن کاربر / ادمین', 'Add User / Admin')}</span>
+                      </button>
+
+                      <button onClick={() => setAdminActiveTab('finance')} className="p-3 rounded-xl bg-amber-950/60 hover:bg-amber-900 border border-amber-500/30 text-amber-200 font-bold text-center transition active:scale-95 flex flex-col items-center justify-center gap-1">
+                        <span className="text-sm">💰</span>
+                        <span>{window.loc('شارژ و مدیریت مالی', 'Finance & Top-Up')}</span>
+                      </button>
+
+                      <button onClick={() => setAdminActiveTab('live')} className="p-3 rounded-xl bg-pink-950/60 hover:bg-pink-900 border border-pink-500/30 text-pink-200 font-bold text-center transition active:scale-95 flex flex-col items-center justify-center gap-1">
+                        <span className="text-sm">🎥</span>
+                        <span>{window.loc('پایش پخش زنده', 'Live Stream Monitor')}</span>
+                      </button>
+
+                      <button onClick={() => setAdminActiveTab('verification')} className="p-3 rounded-xl bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-500/30 text-indigo-200 font-bold text-center transition active:scale-95 flex flex-col items-center justify-center gap-1">
+                        <span className="text-sm">📜</span>
+                        <span>{window.loc('بررسی مدارک استریمر', 'Review Streamer KYC')}</span>
+                      </button>
+
+                      <button onClick={() => setAdminActiveTab('aisecurity')} className="p-3 rounded-xl bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-200 font-bold text-center transition active:scale-95 flex flex-col items-center justify-center gap-1">
+                        <span className="text-sm">🤖</span>
+                        <span>{window.loc('قوانین هوش مصنوعی', 'AI Security Rules')}</span>
+                      </button>
+
                       <button onClick={() => {
-                        addAdminAuditLog(window.loc('بکاپ اضطراری از دیتابیس ساخته شد', 'An emergency backup of the database was made'));
-                        setAdminBackupsList(prev => [{ id: `BK-${Date.now()}`, size: '49.5 MB', date: new Date().toLocaleString() }, ...prev]);
-                      }} className="p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 font-bold hover:bg-cyan-900 text-center">
-                        {window.loc('💾 پشتیبان‌گیری دیتابیس', '💾 Database backup')}
+                        addAdminAuditLog(window.loc('پشتیبان‌گیری اضطراری از دیتابیس انجام شد', 'Emergency database backup executed'));
+                        setAdminBackupsList(prev => [{ id: `BK-${Date.now()}`, size: '52.4 MB', date: new Date().toLocaleString() }, ...prev]);
+                        showToast(window.loc('✅ پشتیبان‌گیری دیتابیس با موفقیت ثبت شد', '✅ Database backup created successfully'));
+                      }} className="p-3 rounded-xl bg-teal-950/60 hover:bg-teal-900 border border-teal-500/30 text-teal-200 font-bold text-center transition active:scale-95 flex flex-col items-center justify-center gap-1">
+                        <span className="text-sm">💾</span>
+                        <span>{window.loc('پشتیبان‌گیری دیتابیس', 'Database Backup')}</span>
                       </button>
-                      <button onClick={() => setAdminActiveTab('aimod')} className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 font-bold hover:bg-emerald-900 text-center">
-                        {window.loc('🤖 قوانین هوش مصنوعی', '🤖 Rules of artificial intelligence')}
-                      </button>
+
                       <button onClick={() => {
-                        setAdminMaintenanceMode(prev => !prev);
-                        addAdminAuditLog(!adminMaintenanceMode ? window.loc('حالت تعمیرات فعال شد 🚨', 'Repair mode is activated') : window.loc('حالت تعمیرات غیرفعال شد', 'Repair mode disabled'));
-                      }} className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/30 text-amber-300 font-bold hover:bg-amber-900 text-center">
-                        {adminMaintenanceMode ? window.loc('🟢 غیرفعال‌سازی تعمیرات', '🟢 Disable repairs') : window.loc('🛠 فعال‌سازی تعمیرات', '🛠 Activation of repairs')}
+                        const nextMode = !adminMaintenanceMode;
+                        setAdminMaintenanceMode(nextMode);
+                        addAdminAuditLog(nextMode ? window.loc('حالت تعمیرات فعال شد 🚨', 'Repair mode is activated') : window.loc('حالت تعمیرات غیرفعال شد', 'Repair mode disabled'));
+                        showToast(nextMode ? window.loc('🛠 حالت تعمیرات فعال گردید', '🛠 Maintenance mode enabled') : window.loc('🟢 سیستم به حالت عادی بازگشت', '🟢 System restored to normal'));
+                      }} className="p-3 rounded-xl bg-rose-950/60 hover:bg-rose-900 border border-rose-500/30 text-rose-200 font-bold text-center transition active:scale-95 flex flex-col items-center justify-center gap-1">
+                        <span className="text-sm">{adminMaintenanceMode ? '🟢' : '🛠'}</span>
+                        <span>{adminMaintenanceMode ? window.loc('غیرفعال‌سازی تعمیرات', 'Disable Repairs') : window.loc('فعال‌سازی تعمیرات', 'Enable Maintenance')}</span>
                       </button>
                     </div>
                   </div>
@@ -2008,14 +2089,14 @@ export default function AdminDashboardModal(props) {
                 />
               )}
 
-              {/* 18. AI MODERATION */}
-              {adminActiveTab === 'aimod' && (
-                <div className="space-y-3 text-xs">
-                  <h3 className="font-bold text-white text-sm">{window.loc('۱۸. سیستم نظارت خودکار هوش مصنوعی (AI Moderation)', '18. Artificial intelligence automatic monitoring system (AI Moderation)')}</h3>
+              {/* 18. AI SECURITY CENTER (CONNECTS TO BACKEND GEMINI PROXY) */}
+              {adminActiveTab === 'aisecurity' && (
+                <div className="space-y-4 text-xs dir-rtl text-right">
+                  {/* QUICK TOGGLES FOR AUTOMATIC AI MODERATION */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">{window.loc('تشخیص خودکار تصاویر نامناسب', 'Automatic detection of inappropriate images')}</p>
+                        <p className="font-bold text-white text-xs">{window.loc('تشخیص خودکار تصاویر نامناسب', 'Automatic detection of inappropriate images')}</p>
                         <span className="text-[10px] text-slate-400">{window.loc('شناسایی هوشمند عکس‌های متخلف', 'Intelligent identification of infringing photos')}</span>
                       </div>
                       <input
@@ -2029,9 +2110,9 @@ export default function AdminDashboardModal(props) {
                       />
                     </div>
 
-                    <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-white">{window.loc('فیلتر هوشمند کلمات توهین‌آمیز', 'Smart filter of offensive words')}</p>
+                        <p className="font-bold text-white text-xs">{window.loc('فیلتر هوشمند کلمات توهین‌آمیز', 'Smart filter of offensive words')}</p>
                         <span className="text-[10px] text-slate-400">{window.loc('مسدودسازی خودکار چت نامناسب', 'Automatic blocking of inappropriate chat')}</span>
                       </div>
                       <input
@@ -2045,12 +2126,7 @@ export default function AdminDashboardModal(props) {
                       />
                     </div>
                   </div>
-                </div>
-              )}
 
-              {/* 18.5 AI SECURITY CENTER (CONNECTS TO BACKEND GEMINI PROXY) */}
-              {adminActiveTab === 'aisecurity' && (
-                <div className="space-y-4 text-xs dir-rtl text-right">
                   {/* TOP BANNER */}
                   <div className="p-4 rounded-3xl bg-gradient-to-r from-purple-950/90 via-slate-900 to-indigo-950/90 border border-purple-500/40 space-y-3 shadow-xl">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

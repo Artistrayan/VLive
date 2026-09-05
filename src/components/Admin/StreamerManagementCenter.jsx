@@ -475,12 +475,12 @@ export default function StreamerManagementCenter({
                           <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
                         </h4>
                         <span className="text-[10px] text-pink-400 font-mono block">@{s.username}</span>
-                        <span className="text-[10px] text-slate-400">{window.loc('دنبال‌کنندگان:', 'Followers:')} {(s.followers || 1200).toLocaleString()}</span>
+                        <span className="text-[10px] text-slate-400">{window.loc('دنبال‌کنندگان:', 'Followers:')} {(s.followers_count || s.followers || 0).toLocaleString()}</span>
                       </div>
                     </div>
 
                     <div className="text-right space-y-1">
-                      <span className="block font-mono font-bold text-emerald-400 text-xs">$1,450.00 USDT</span>
+                      <span className="block font-mono font-bold text-emerald-400 text-xs">${Number(s.usdt_balance || s.earnings_usdt || 0).toFixed(2)} USDT</span>
                       <div className="flex items-center gap-1 justify-end flex-wrap">
                         <button
                           onClick={() => handleToggleFreezeIncome(s)}
