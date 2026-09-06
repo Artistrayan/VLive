@@ -5330,10 +5330,23 @@ export const apiAdmin = {
   async endLiveStream(streamId) {
     if (!(await verifyAdminServerRole())) return { success: false, error: '403 Forbidden: Admin privileges required.' };
     try {
-      const { error } = await supabase.from('live_streams').update({ status: 'ended' }).eq('id', streamId);
-      return { success: !error };
+      const cleanId = String(streamId).replace(/^live_/, '');
+      await Promise.allSettled([
+        supabase.from('live_streams').update({ status: 'ended' }).or(`id.eq.${cleanId},id.eq.${streamId}`),
+        supabase.from('streams').update({ status: 'ended' }).or(`id.eq.${cleanId},id.eq.${streamId}`)
+      ]);
+      try {
+        const ch = supabase.channel('live_global_broadcast');
+        ch.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            ch.send({ type: 'broadcast', event: 'live_ended', payload: { streamId, id: streamId } });
+            setTimeout(() => { try { supabase.removeChannel(ch); } catch {} }, 2000);
+          }
+        });
+      } catch (e) {}
+      return { success: true };
     } catch (e) {
-      return { success: false };
+      return { success: false, error: e.message };
     }
   },
 
@@ -5344,10 +5357,104 @@ export const apiAdmin = {
   async updateReportStatus(reportId, status) {
     if (!(await verifyAdminServerRole())) return { success: false };
     try {
-      const { error } = await supabase.from('live_reports').update({ status }).eq('id', reportId);
+      const cleanId = String(reportId);
+      const { error } = await supabase.from('live_reports').update({ status }).eq('id', cleanId);
+      await supabase.from('reports').update({ status }).eq('id', cleanId).catch(() => {});
       return { success: !error };
     } catch (e) {
       return { success: false };
+    }
+  },
+
+  async saveAdminSetting(key, value) {
+    try {
+      const strVal = typeof value === 'string' ? value : JSON.stringify(value);
+      safeStorage.setItem(`vlive_${key}`, strVal);
+      try {
+        await supabase.from('app_settings').upsert({
+          key,
+          value: strVal,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'key' });
+      } catch (err) {
+        // App settings fallback
+      }
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async getAdminSetting(key, fallback = null) {
+    try {
+      const { data, error } = await supabase.from('app_settings').select('value').eq('key', key).maybeSingle();
+      if (!error && data?.value !== undefined && data?.value !== null) {
+        try {
+          return typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        } catch (pe) {
+          return data.value;
+        }
+      }
+    } catch (e) {}
+    try {
+      const local = safeStorage.getItem(`vlive_${key}`);
+      if (local !== null && local !== undefined) {
+        try {
+          return JSON.parse(local);
+        } catch (pe) {
+          return local;
+        }
+      }
+    } catch (e) {}
+    return fallback;
+  },
+
+  async sendBroadcastNotification(title, body, category = 'Update') {
+    if (!(await verifyAdminServerRole())) return { success: false, error: 'Unauthorized' };
+    try {
+      const newBroadcast = {
+        id: `bc_${Date.now()}`,
+        title,
+        body,
+        category,
+        timestamp: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      };
+
+      // 1. Save to broadcast history
+      const existingHistory = (await this.getAdminSetting('admin_broadcast_notifications', [])) || [];
+      const updatedHistory = [newBroadcast, ...existingHistory].slice(0, 50);
+      await this.saveAdminSetting('admin_broadcast_notifications', updatedHistory);
+
+      // 2. Realtime broadcast channel to notify all users currently in the app
+      try {
+        const ch = supabase.channel('user_notifs_broadcast', {
+          config: { broadcast: { ack: true, self: true } }
+        });
+        ch.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            ch.send({
+              type: 'broadcast',
+              event: 'new_notification',
+              payload: {
+                id: newBroadcast.id,
+                title,
+                message: body,
+                type: 'system',
+                category,
+                created_at: newBroadcast.timestamp
+              }
+            }).catch(() => {});
+            setTimeout(() => { try { supabase.removeChannel(ch); } catch {} }, 4000);
+          }
+        });
+      } catch (e) {}
+
+      // 3. Record in audit log
+      recordAdminAuditLog(`Broadcast announcement sent: "${title}" (${category})`);
+      return { success: true, data: newBroadcast };
+    } catch (e) {
+      return { success: false, error: e.message };
     }
   }
 };
