@@ -1073,7 +1073,7 @@ export const apiProfile = {
     }
   },
 
-  async likeUserProfile(targetUserId) {
+  async likeUserProfile(targetUserId, likerData = null) {
     if (!targetUserId) return { success: false };
     try {
       let likedProfiles = [];
@@ -1086,6 +1086,26 @@ export const apiProfile = {
 
       const isAlreadyLiked = likedProfiles.includes(String(targetUserId));
       let currentLikes = this.getDirectProfileLikes(targetUserId);
+
+      const likerUser = likerData || {
+        id: getUserId() || `liker_${Date.now()}`,
+        name: localStorage.getItem('vlive_user_name') || 'کاربر کاربردی',
+        username: localStorage.getItem('vlive_username') || 'user',
+        avatar: localStorage.getItem('vlive_user_avatar') || '',
+        level: Number(localStorage.getItem('vlive_user_level') || 1),
+        time: new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString('fa-IR'),
+        timestamp: Date.now()
+      };
+
+      const storageKey = `vlive_profile_likers_${targetUserId}`;
+      let likers = [];
+      try {
+        const st = localStorage.getItem(storageKey);
+        if (st) likers = JSON.parse(st);
+      } catch (e) {
+        likers = [];
+      }
 
       if (!isAlreadyLiked) {
         likedProfiles.push(String(targetUserId));
@@ -1098,23 +1118,28 @@ export const apiProfile = {
           counts[String(targetUserId)] = currentLikes;
           localStorage.setItem('vlive_profile_likes_counts', JSON.stringify(counts));
         } catch (e) {}
+
+        likers = likers.filter(l => l.id !== likerUser.id && l.username !== likerUser.username);
+        likers.unshift(likerUser);
+        localStorage.setItem(storageKey, JSON.stringify(likers.slice(0, 50)));
+        localStorage.setItem('vlive_profile_likers_me', JSON.stringify(likers.slice(0, 50)));
       }
 
       const totalLikes = await this.getProfileLikesCount(targetUserId);
 
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('vlive_profile_liked', {
-          detail: { targetUserId, isLiked: true, likesCount: totalLikes }
+          detail: { targetUserId, isLiked: true, likesCount: totalLikes, likers }
         }));
       }
 
-      return { success: true, isLiked: true, likesCount: totalLikes };
+      return { success: true, isLiked: true, likesCount: totalLikes, likers };
     } catch (e) {
       return { success: false };
     }
   },
 
-  async unlikeUserProfile(targetUserId) {
+  async unlikeUserProfile(targetUserId, unlikerId = null) {
     if (!targetUserId) return { success: false };
     try {
       let likedProfiles = [];
@@ -1128,6 +1153,16 @@ export const apiProfile = {
       const isAlreadyLiked = likedProfiles.includes(String(targetUserId));
       let currentLikes = this.getDirectProfileLikes(targetUserId);
 
+      const targetLikerId = unlikerId || getUserId();
+      const storageKey = `vlive_profile_likers_${targetUserId}`;
+      let likers = [];
+      try {
+        const st = localStorage.getItem(storageKey);
+        if (st) likers = JSON.parse(st);
+      } catch (e) {
+        likers = [];
+      }
+
       if (isAlreadyLiked) {
         const updated = likedProfiles.filter(id => id !== String(targetUserId));
         localStorage.setItem('vlive_liked_user_profiles', JSON.stringify(updated));
@@ -1139,19 +1174,45 @@ export const apiProfile = {
           counts[String(targetUserId)] = currentLikes;
           localStorage.setItem('vlive_profile_likes_counts', JSON.stringify(counts));
         } catch (e) {}
+
+        if (targetLikerId) {
+          likers = likers.filter(l => String(l.id) !== String(targetLikerId));
+          localStorage.setItem(storageKey, JSON.stringify(likers));
+          localStorage.setItem('vlive_profile_likers_me', JSON.stringify(likers));
+        }
       }
 
       const totalLikes = await this.getProfileLikesCount(targetUserId);
 
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('vlive_profile_liked', {
-          detail: { targetUserId, isLiked: false, likesCount: totalLikes }
+          detail: { targetUserId, isLiked: false, likesCount: totalLikes, likers }
         }));
       }
 
-      return { success: true, isLiked: false, likesCount: totalLikes };
+      return { success: true, isLiked: false, likesCount: totalLikes, likers };
     } catch (e) {
       return { success: false };
+    }
+  },
+
+  getProfileLikers(targetUserId) {
+    if (!targetUserId) return [];
+    try {
+      const storageKey = `vlive_profile_likers_${targetUserId}`;
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      const generalStored = localStorage.getItem('vlive_profile_likers_me');
+      if (generalStored) {
+        const parsed = JSON.parse(generalStored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+      return [];
+    } catch (e) {
+      return [];
     }
   },
 

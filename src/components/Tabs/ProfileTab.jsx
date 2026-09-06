@@ -480,55 +480,35 @@ export default function ProfileTab(props) {
     }).catch(() => {});
   }, [currentUsername]);
 
-  // --- LOCAL & REAL POSTS STATE WITH REAL LIKES & COMMENTS ---
-  const [profilePosts, setProfilePosts] = useState(() => {
+  // --- LOCAL & REAL GALLERY (PHOTOS & VIDEOS) & LIKERS STATE ---
+  const [galleryPhotos, setGalleryPhotos] = useState(() => {
     try {
-      const stored = safeStorage.getItem(`vlive_user_posts_${currentUsername || 'me'}`);
+      const stored = safeStorage.getItem(`vlive_user_photos_${currentUsername || 'me'}`);
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
     }
   });
 
-  // Fetch real posts from apiSocial and sync on mount / event
+  const [galleryVideos, setGalleryVideos] = useState(() => {
+    try {
+      const stored = safeStorage.getItem(`vlive_user_videos_${currentUsername || 'me'}`);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [profileLikers, setProfileLikers] = useState(() => {
+    const uid = props.currentUser?.id || getUserId() || currentUsername || 'me';
+    return apiProfile.getProfileLikers(uid);
+  });
+
+  // Sync real profile likes count and likers from database and API
   useEffect(() => {
     let isMounted = true;
-    const loadRealPosts = async () => {
-      try {
-        const allPosts = await apiSocial.getPosts();
-        if (isMounted && Array.isArray(allPosts) && allPosts.length > 0) {
-          const myPosts = allPosts.filter(p => 
-            p.username === currentUsername || 
-            p.author === userName || 
-            p.userId === getUserId()
-          );
-          if (myPosts.length > 0) {
-            setProfilePosts(myPosts);
-            safeStorage.setItem(`vlive_user_posts_${currentUsername || 'me'}`, JSON.stringify(myPosts));
-          }
-        }
-      } catch (err) {
-        console.warn('Load posts error:', err);
-      }
-    };
-    loadRealPosts();
-
-    const handlePostCreated = (e) => {
-      if (e?.detail) {
-        setProfilePosts(prev => [e.detail, ...prev]);
-      }
-    };
-    window.addEventListener('vlive_post_created', handlePostCreated);
-    return () => {
-      isMounted = false;
-      window.removeEventListener('vlive_post_created', handlePostCreated);
-    };
-  }, [currentUsername, userName]);
-
-  // Sync real profile likes count from database and API
-  useEffect(() => {
-    let isMounted = true;
-    const uid = getUserId() || currentUsername;
+    const uid = props.currentUser?.id || getUserId() || currentUsername || 'me';
+    
     if (uid && apiProfile && typeof apiProfile.getProfileLikesCount === 'function') {
       apiProfile.getProfileLikesCount(uid).then(cnt => {
         if (isMounted && typeof cnt === 'number') {
@@ -537,10 +517,17 @@ export default function ProfileTab(props) {
       });
     }
 
+    setProfileLikers(apiProfile.getProfileLikers(uid));
+
     const handleProfileLiked = (e) => {
-      if (e?.detail && (String(e.detail.targetUserId) === String(uid) || String(e.detail.targetUserId) === String(currentUsername))) {
+      if (e?.detail) {
         if (typeof e.detail.likesCount === 'number') {
           setExtraLikes(e.detail.likesCount);
+        }
+        if (Array.isArray(e.detail.likers)) {
+          setProfileLikers(e.detail.likers);
+        } else {
+          setProfileLikers(apiProfile.getProfileLikers(uid));
         }
       }
     };
@@ -549,18 +536,10 @@ export default function ProfileTab(props) {
       isMounted = false;
       window.removeEventListener('vlive_profile_liked', handleProfileLiked);
     };
-  }, [currentUsername]);
+  }, [currentUsername, props.currentUser]);
 
-  useEffect(() => {
-    try {
-      safeStorage.setItem(`vlive_user_posts_${currentUsername || 'me'}`, JSON.stringify(profilePosts));
-    } catch {
-      // suppressed
-    }
-  }, [profilePosts, currentUsername]);
-
-  // Real total likes calculation across posts + persistent likes
-  const userTotalLikes = Math.max(extraLikes, profilePosts.reduce((sum, post) => sum + (post.likes || 0), 0));
+  // Real total likes calculation
+  const userTotalLikes = Math.max(extraLikes, profileLikers.length);
 
   // Dynamic Profile Completion % based on filled details
   const profileCompletionPercent = (() => {
@@ -568,10 +547,6 @@ export default function ProfileTab(props) {
     const filled = fields.filter(f => f && String(f).trim().length > 0).length;
     return Math.round((filled / fields.length) * 100);
   })();
-  const [newPostText, setNewPostText] = useState('');
-  const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
-  const [newPostType, setNewPostType] = useState('photo');
-  const [newPostImage, setNewPostImage] = useState('');
 
   // Save changes to safeStorage and sync to database immediately
   const handleSaveProfile = async () => {
@@ -644,53 +619,6 @@ export default function ProfileTab(props) {
       console.warn('ProfileTab backend sync note:', e);
       setIsEditModalOpen(false);
       showToast(window.loc('پروفایل شما ذخیره شد ✨', 'Profile saved successfully ✨'));
-    }
-  };
-
-  const handleAddPost = async () => {
-    if (!newPostText.trim() && !newPostImage.trim()) {
-      showToast(window.loc('لطفاً متنی بنویسید یا تصویری/ویدیویی از گالری انتخاب نمایید', 'Please write text or select a photo/video from gallery'));
-      return;
-    }
-    const isVid = newPostType === 'video' || (newPostImage && (newPostImage.startsWith('data:video') || newPostImage.includes('.mp4')));
-    const mediaUrl = newPostImage.trim() || null;
-    const newPost = {
-      id: Date.now(),
-      isPinned: false,
-      author: userName || props.currentUser?.name || 'User',
-      username: currentUsername || props.currentUser?.username || 'user',
-      avatar: userAvatar || props.currentUser?.avatar || PRESET_AVATARS[0],
-      time: window.loc('هم‌اکنون', 'Just now'),
-      content: newPostText,
-      caption: newPostText,
-      image: isVid ? null : mediaUrl,
-      video: isVid ? mediaUrl : null,
-      mediaType: isVid ? 'video' : 'photo',
-      likes: 0,
-      comments: 0,
-      shares: 0,
-      liked: false
-    };
-
-    // Save to local state
-    setProfilePosts(prev => [newPost, ...prev]);
-    setNewPostText('');
-    setNewPostImage('');
-    setNewPostType('photo');
-    setIsCreatePostModalOpen(false);
-    showToast(window.loc('پست جدید با موفقیت منتشر شد 🎉', 'New post published successfully 🎉'));
-
-    // Real backend sync via apiSocial
-    try {
-      const res = await apiSocial.createPost(mediaUrl, newPostText);
-      if (res && res.data) {
-        newPost.id = res.data.id;
-      }
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('vlive_post_created', { detail: newPost }));
-      }
-    } catch (err) {
-      console.warn('apiSocial createPost error:', err);
     }
   };
 
@@ -806,10 +734,22 @@ export default function ProfileTab(props) {
                     </div>
                   </div>
 
-                  {/* Username under profile photo */}
-                  <span className="font-mono text-cyan-400 font-bold text-xs sm:text-sm mt-2 text-center bg-cyan-950/40 px-3 py-0.5 rounded-full border border-cyan-500/30">
-                    @{currentUsername || authUsername || 'user'}
-                  </span>
+                  {/* Username & Likes Counter under profile photo (Inside profile picture card without any card) */}
+                  <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
+                    <span className="font-mono text-cyan-400 font-bold text-xs sm:text-sm text-center bg-cyan-950/40 px-3 py-0.5 rounded-full border border-cyan-500/30">
+                      @{currentUsername || authUsername || 'user'}
+                    </span>
+                    <button
+                      onClick={() => setActiveSeparateModal('likes')}
+                      className="flex items-center gap-1.5 text-pink-400 hover:text-pink-300 transition active:scale-95 cursor-pointer bg-transparent border-0 p-0 shadow-none group"
+                      title={window.loc('مشاهده لایک‌کنندگان پروفایل', 'View Profile Likers')}
+                    >
+                      <Heart className="w-4 h-4 fill-pink-500 text-pink-500 group-hover:scale-125 transition-transform duration-200" />
+                      <span className="text-xs sm:text-sm font-black font-mono tracking-tight text-white group-hover:text-pink-300">
+                        {formatNum(userTotalLikes)}
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Right / Side Details (Name & VIP Badge) */}
@@ -915,232 +855,110 @@ export default function ProfileTab(props) {
         </VisualSectionWrapper>
 
         {/* ========================================== */}
-        {/* SEPARATE PAGES & FEATURES HUB */}
+        {/* 2. PHOTOS & VIDEOS CARD (UNDER STORY)      */}
         {/* ========================================== */}
-        <VisualSectionWrapper pageId="profile" sectionId="profile_separate_pages_hub" defaultLabel="Separate Pages Hub">
-          <div className="p-4 bg-gradient-to-br from-slate-900/90 via-slate-950 to-slate-900/90 rounded-[2rem] border border-slate-800/80 shadow-[0_10px_30px_rgba(0,0,0,0.4)] backdrop-blur-xl space-y-3">
-            {/* 6 Grid Tiles for Dedicated Pages */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              
-              {/* 1. Followers */}
-              <button
-                onClick={() => setActiveSeparateModal('followers')}
-                className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-slate-950 to-slate-950 border border-indigo-500/30 hover:border-indigo-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2.5 shadow-lg hover:shadow-[0_0_25px_rgba(99,102,241,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
-              >
-                <div className="flex items-center justify-between w-full">
-                  <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 group-hover:scale-110 transition-transform shrink-0">
-                    <Users className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-black text-indigo-300 font-mono bg-indigo-950 px-2.5 py-0.5 rounded-full border border-indigo-500/40 shadow-inner">
-                    {formatNum(followersList.length || userFollowersCount)}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="text-xs font-black text-white group-hover:text-indigo-300 transition">{window.loc('فالوورها', 'Followers')}</h4>
-                </div>
-              </button>
-
-              {/* 2. Following */}
-              <button
-                onClick={() => setActiveSeparateModal('following')}
-                className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-950/40 via-slate-950 to-slate-950 border border-blue-500/30 hover:border-blue-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2.5 shadow-lg hover:shadow-[0_0_25px_rgba(59,130,246,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
-              >
-                <div className="flex items-center justify-between w-full">
-                  <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/40 group-hover:scale-110 transition-transform shrink-0">
-                    <UserCheck className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-black text-blue-300 font-mono bg-blue-950 px-2.5 py-0.5 rounded-full border border-blue-500/40 shadow-inner">
-                    {formatNum(userFollowingCount)}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="text-xs font-black text-white group-hover:text-blue-300 transition">{window.loc('فالووینگ', 'Following')}</h4>
-                </div>
-              </button>
-
-              {/* 3. Likes */}
-              <button
-                onClick={() => setActiveSeparateModal('likes')}
-                className="p-3.5 rounded-2xl bg-gradient-to-br from-pink-950/40 via-slate-950 to-slate-950 border border-pink-500/30 hover:border-pink-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2.5 shadow-lg hover:shadow-[0_0_25px_rgba(236,72,153,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
-              >
-                <div className="flex items-center justify-between w-full">
-                  <div className="p-2 rounded-xl bg-pink-500/20 text-pink-400 border border-pink-500/40 group-hover:scale-110 transition-transform shrink-0">
-                    <Heart className="w-4 h-4 fill-pink-500/40" />
-                  </div>
-                  <span className="text-xs font-black text-pink-300 font-mono bg-pink-950 px-2.5 py-0.5 rounded-full border border-pink-500/40 shadow-inner">
-                    {formatNum(userTotalLikes)}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="text-xs font-black text-white group-hover:text-pink-300 transition">{window.loc('لایک‌ها', 'Likes')}</h4>
-                </div>
-              </button>
-
-              {/* 4. Views */}
-              <button
-                onClick={() => setActiveSeparateModal('views')}
-                className="p-3.5 rounded-2xl bg-gradient-to-br from-cyan-950/40 via-slate-950 to-slate-950 border border-cyan-500/30 hover:border-cyan-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2.5 shadow-lg hover:shadow-[0_0_25px_rgba(6,182,212,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
-              >
-                <div className="flex items-center justify-between w-full">
-                  <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 group-hover:scale-110 transition-transform shrink-0">
-                    <Eye className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-black text-cyan-300 font-mono bg-cyan-950 px-2.5 py-0.5 rounded-full border border-cyan-500/40 shadow-inner">
-                    {formatNum(userViewsCount)}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="text-xs font-black text-white group-hover:text-cyan-300 transition">{window.loc('بازدیدها', 'Views')}</h4>
-                </div>
-              </button>
-
-              {/* 5. Photos */}
+        <VisualSectionWrapper pageId="profile" sectionId="profile_media_card" defaultLabel="Photos & Videos Card">
+          <div className="p-3 bg-gradient-to-r from-slate-900/95 via-slate-950 to-slate-900/95 rounded-2xl sm:rounded-3xl border border-slate-800/80 shadow-lg backdrop-blur-xl">
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* Photo Option */}
               <button
                 onClick={() => setActiveSeparateModal('photos')}
-                className="p-3.5 rounded-2xl bg-gradient-to-br from-purple-950/40 via-slate-950 to-slate-950 border border-purple-500/30 hover:border-purple-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2.5 shadow-lg hover:shadow-[0_0_25px_rgba(168,85,247,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
+                className="p-3 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-950/40 via-slate-950 to-slate-950 border border-purple-500/30 hover:border-purple-500/80 transition-all duration-300 flex items-center justify-between group shadow-md hover:-translate-y-0.5 cursor-pointer"
               >
-                <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <Image className="w-4 h-4" />
                   </div>
-                  <span className="text-xs font-black text-purple-300 font-mono bg-purple-950 px-2.5 py-0.5 rounded-full border border-purple-500/40 shadow-inner">
-                    {formatNum(profilePosts.filter(p => !p.video).length)}
-                  </span>
+                  <div className="text-right">
+                    <h4 className="text-xs font-black text-white group-hover:text-purple-300 transition">{window.loc('عکس‌ها', 'Photos')}</h4>
+                    <span className="text-[10px] text-slate-400">{window.loc('گالری تصاویر', 'Image Gallery')}</span>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-xs font-black text-white group-hover:text-purple-300 transition">{window.loc('عکس‌ها', 'Photos')}</h4>
-                </div>
+                <span className="text-xs font-black text-purple-300 font-mono bg-purple-950/80 px-2.5 py-0.5 rounded-full border border-purple-500/40 shadow-inner">
+                  {formatNum(galleryPhotos.length)}
+                </span>
               </button>
 
-              {/* 6. Videos */}
+              {/* Video Option */}
               <button
                 onClick={() => setActiveSeparateModal('videos')}
-                className="p-3.5 rounded-2xl bg-gradient-to-br from-rose-950/40 via-slate-950 to-slate-950 border border-rose-500/30 hover:border-rose-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2.5 shadow-lg hover:shadow-[0_0_25px_rgba(244,63,94,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
+                className="p-3 rounded-xl sm:rounded-2xl bg-gradient-to-br from-rose-950/40 via-slate-950 to-slate-950 border border-rose-500/30 hover:border-rose-500/80 transition-all duration-300 flex items-center justify-between group shadow-md hover:-translate-y-0.5 cursor-pointer"
               >
-                <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <Video className="w-4 h-4" />
                   </div>
-                  <span className="text-xs font-black text-rose-300 font-mono bg-rose-950 px-2.5 py-0.5 rounded-full border border-rose-500/40 shadow-inner">
-                    {formatNum(profilePosts.filter(p => p.video).length)}
-                  </span>
+                  <div className="text-right">
+                    <h4 className="text-xs font-black text-white group-hover:text-rose-300 transition">{window.loc('ویدیوها', 'Videos')}</h4>
+                    <span className="text-[10px] text-slate-400">{window.loc('ویدیوهای کوتاه', 'Short Videos')}</span>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-xs font-black text-white group-hover:text-rose-300 transition">{window.loc('ویدیوها', 'Videos')}</h4>
-                </div>
+                <span className="text-xs font-black text-rose-300 font-mono bg-rose-950/80 px-2.5 py-0.5 rounded-full border border-rose-500/40 shadow-inner">
+                  {formatNum(galleryVideos.length)}
+                </span>
               </button>
-
             </div>
           </div>
         </VisualSectionWrapper>
 
         {/* ========================================== */}
-        {/* MAIN PROFILE DETAILS & TIMELINE           */}
+        {/* 3. FOLLOWERS, FOLLOWING, VIEWS ROW (SHARED RECTANGULAR CARD) */}
         {/* ========================================== */}
-        <div className="space-y-4 animate-fadeIn">
-          
-
-
-          {/* User Posts Timeline Card */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-black text-white text-base flex items-center gap-2">
-                <Camera className="w-5 h-5 text-pink-400" />
-                <span>{window.loc('پست‌ها و محتوای منتشرشده', 'Published Posts & Timeline')}</span>
-              </h3>
-              {canCreateContent && (
-                <button
-                  onClick={() => {
-                    setNewPostType('photo');
-                    setIsCreatePostModalOpen(true);
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-xs shadow-md hover:scale-105 active:scale-95 transition flex items-center gap-1"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>{window.loc('ایجاد پست جدید', 'New Post')}</span>
-                </button>
-              )}
-            </div>
-
-            {profilePosts.length === 0 ? (
-              <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-3">
-                <Camera className="w-10 h-10 text-slate-600 mx-auto" />
-                <h4 className="text-sm font-bold text-white">{window.loc('هنوز پستی منتشر نشده است', 'No posts published yet')}</h4>
-                <p className="text-xs text-slate-400">{window.loc('پست‌ها و محتوای تصویری منتشرشده در این قسمت نمایش داده می‌شوند.', 'Published photos and videos will appear here.')}</p>
-                {canCreateContent && (
-                  <button
-                    onClick={() => setIsCreatePostModalOpen(true)}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-bold shadow-lg shadow-pink-500/25 active:scale-95 transition"
-                  >
-                    {window.loc('➕ ایجاد اولین پست', '➕ Create First Post')}
-                  </button>
-                )}
-              </div>
-            ) : (
-              profilePosts.map(post => (
-                <div key={post.id} className="p-4 sm:p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <img src={post.avatar} alt={post.author} className="w-9 h-9 rounded-full object-cover border border-purple-500/40" />
-                      <div>
-                        <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
-                          <span>{post.author}</span>
-                          {post.isPinned && (
-                            <span className="bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
-                              📌 Pinned
-                            </span>
-                          )}
-                        </h4>
-                        <span className="text-[10px] text-slate-400">@{post.username} • {post.time}</span>
-                      </div>
-                    </div>
-
-                    <button className="text-slate-500 hover:text-white text-xs font-bold">•••</button>
-                  </div>
-
-                  <p className="text-xs text-slate-200 leading-relaxed font-medium dir-rtl">{post.content}</p>
-
-                  {post.image && (
-                    <div className="rounded-2xl overflow-hidden aspect-video border border-slate-800 bg-slate-950">
-                      <img src={post.image} alt="Post Attachment" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-
-                  {post.video && (
-                    <div className="rounded-2xl overflow-hidden aspect-video border border-slate-800 bg-slate-950">
-                      <video src={post.video} controls className="w-full h-full object-cover" />
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between pt-2.5 border-t border-slate-800/80 text-xs text-slate-400">
-                    <button
-                      onClick={() => {
-                        setProfilePosts(prev => prev.map(p => p.id === post.id ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p));
-                      }}
-                      className={`flex items-center gap-1.5 font-bold transition ${post.liked ? 'text-pink-500' : 'hover:text-white'}`}
-                    >
-                      <Heart className={`w-4 h-4 ${post.liked ? 'fill-pink-500' : ''}`} />
-                      <span>{post.likes}</span>
-                    </button>
-
-                    <button className="flex items-center gap-1.5 font-bold hover:text-white transition">
-                      <MessageSquare className="w-4 h-4" />
-                      <span>{post.comments} {window.loc('نظر', 'Comments')}</span>
-                    </button>
-
-                    <button 
-                      onClick={() => showToast(window.loc('لینک پست کپی شد 🔗', 'Post link copied!'))}
-                      className="flex items-center gap-1.5 font-bold hover:text-white transition"
-                    >
-                      <Share2 className="w-4 h-4" />
-                      <span>{post.shares}</span>
-                    </button>
-                  </div>
+        <VisualSectionWrapper pageId="profile" sectionId="profile_stats_shared_card" defaultLabel="Followers, Following, Views Card">
+          <div className="p-3.5 bg-gradient-to-r from-slate-900/95 via-slate-950 to-slate-900/95 rounded-2xl sm:rounded-3xl border border-slate-800/80 shadow-lg backdrop-blur-xl">
+            <div className="grid grid-cols-3 divide-x divide-slate-800/80 dir-ltr">
+              
+              {/* Followers */}
+              <button
+                onClick={() => setActiveSeparateModal('followers')}
+                className="px-2 py-1.5 flex flex-col items-center justify-center gap-1 group hover:bg-indigo-950/20 rounded-xl transition cursor-pointer"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-indigo-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-black text-white font-mono group-hover:text-indigo-300 transition">
+                    {formatNum(followersList.length || userFollowersCount)}
+                  </span>
                 </div>
-              ))
-            )}
+                <span className="text-[11px] font-bold text-slate-400 group-hover:text-slate-200 transition">
+                  {window.loc('فالوورها', 'Followers')}
+                </span>
+              </button>
+
+              {/* Following */}
+              <button
+                onClick={() => setActiveSeparateModal('following')}
+                className="px-2 py-1.5 flex flex-col items-center justify-center gap-1 group hover:bg-blue-950/20 rounded-xl transition cursor-pointer"
+              >
+                <div className="flex items-center gap-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-blue-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-black text-white font-mono group-hover:text-blue-300 transition">
+                    {formatNum(userFollowingCount)}
+                  </span>
+                </div>
+                <span className="text-[11px] font-bold text-slate-400 group-hover:text-slate-200 transition">
+                  {window.loc('فالووینگ', 'Following')}
+                </span>
+              </button>
+
+              {/* Views */}
+              <button
+                onClick={() => setActiveSeparateModal('views')}
+                className="px-2 py-1.5 flex flex-col items-center justify-center gap-1 group hover:bg-cyan-950/20 rounded-xl transition cursor-pointer"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Eye className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-black text-white font-mono group-hover:text-cyan-300 transition">
+                    {formatNum(userViewsCount)}
+                  </span>
+                </div>
+                <span className="text-[11px] font-bold text-slate-400 group-hover:text-slate-200 transition">
+                  {window.loc('بازدیدها', 'Views')}
+                </span>
+              </button>
+
+            </div>
           </div>
-        </div>
+        </VisualSectionWrapper>
 
       </div>
 
@@ -1334,58 +1152,45 @@ export default function ProfileTab(props) {
               </div>
             )}
 
-            {/* 3. SEPARATE LIKES PAGE */}
+            {/* 3. SEPARATE LIKES PAGE (USERS WHO LIKED THE PROFILE) */}
             {activeSeparateModal === 'likes' && (
               <div className="p-5 rounded-3xl bg-slate-900 border border-pink-500/30 space-y-4 shadow-2xl">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <h3 className="font-black text-white text-base">{window.loc('لایک‌ها', 'Likes')}</h3>
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-pink-500 fill-pink-500" />
+                    <h3 className="font-black text-white text-base">{window.loc('لایک‌کنندگان پروفایل', 'Profile Likers')}</h3>
+                  </div>
                   <span className="text-xs font-black text-pink-400 bg-pink-950 px-3 py-1 rounded-full border border-pink-500/40 font-mono">
                     ❤️ {formatNum(userTotalLikes)}
                   </span>
                 </div>
 
                 <div className="space-y-3">
-                  {profilePosts.filter(p => p.liked || p.likes > 0).length === 0 ? (
+                  {profileLikers.length === 0 ? (
                     <div className="p-12 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-2">
                       <Heart className="w-10 h-10 text-slate-600 mx-auto" />
-                      <p className="text-xs text-slate-400 font-bold">{window.loc('هنوز پستی لایک نشده', 'No liked posts yet')}</p>
+                      <p className="text-xs text-slate-400 font-bold">{window.loc('هنوز کاربری پروفایل شما را لایک نکرده است.', 'No users have liked your profile yet.')}</p>
                     </div>
                   ) : (
-                    profilePosts.filter(p => p.liked || p.likes > 0).map(post => (
-                      <div key={`liked-${post.id}`} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5 hover:border-pink-500/30 transition">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2.5">
-                            {post.avatar ? (
-                              <img src={post.avatar} alt={post.author} className="w-9 h-9 rounded-full object-cover border border-slate-700" />
-                            ) : (
-                              <div className="w-9 h-9 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
-                                <User className="w-4 h-4" />
-                              </div>
-                            )}
-                            <div>
-                              <h4 className="font-bold text-white text-xs">{post.author}</h4>
-                              <span className="text-[9.5px] text-slate-400">@{post.username} • {post.time}</span>
+                    profileLikers.map((liker, idx) => (
+                      <div key={liker.id || idx} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3 hover:border-pink-500/30 transition">
+                        <div className="flex items-center gap-3">
+                          {liker.avatar ? (
+                            <img src={liker.avatar} alt={liker.name || liker.username} className="w-10 h-10 rounded-full object-cover border border-pink-500/30" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-slate-900 border border-pink-500/30 flex items-center justify-center text-slate-400">
+                              <User className="w-5 h-5 text-pink-400" />
                             </div>
+                          )}
+                          <div>
+                            <h5 className="font-bold text-white text-xs">{liker.name || liker.username || 'User'}</h5>
+                            <span className="text-[10px] text-slate-400">@{liker.username || 'user'}</span>
                           </div>
-                          <button
-                            onClick={async () => {
-                              const nextLiked = !post.liked;
-                              if (nextLiked) {
-                                await apiSocial.likePost(post.id);
-                              } else {
-                                await apiSocial.unlikePost(post.id);
-                              }
-                              setProfilePosts(prev => prev.map(p => p.id === post.id ? { ...p, liked: nextLiked, likes: Math.max(0, p.likes + (nextLiked ? 1 : -1)) } : p));
-                            }}
-                            className={`text-xs font-black flex items-center gap-1 px-3 py-1 rounded-full border transition active:scale-95 ${
-                              post.liked ? 'bg-pink-600 text-white border-pink-500' : 'bg-pink-950/60 text-pink-400 border-pink-500/30 hover:bg-pink-900/60'
-                            }`}
-                          >
-                            <Heart className={`w-4 h-4 ${post.liked ? 'fill-white' : 'fill-pink-400'}`} />
-                            <span>{formatNum(post.likes)}</span>
-                          </button>
                         </div>
-                        <p className="text-xs text-slate-300 leading-relaxed dir-rtl">{post.content}</p>
+                        <div className="flex items-center gap-1.5 text-pink-400 text-xs font-bold font-mono">
+                          <Heart className="w-4 h-4 fill-pink-500" />
+                          <span>{liker.time || window.loc('لایک کرد', 'Liked')}</span>
+                        </div>
                       </div>
                     ))
                   )}
@@ -1437,33 +1242,69 @@ export default function ProfileTab(props) {
             {activeSeparateModal === 'photos' && (
               <div className="p-5 rounded-3xl bg-slate-900 border border-purple-500/30 space-y-4 shadow-2xl">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <h3 className="font-black text-white text-base">{window.loc('عکس‌ها', 'Photos')}</h3>
-                  <button
-                    onClick={() => {
-                      setNewPostType('photo');
-                      setIsCreatePostModalOpen(true);
-                    }}
-                    className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow transition flex items-center gap-1.5"
-                  >
+                  <div className="flex items-center gap-2">
+                    <Image className="w-5 h-5 text-purple-400" />
+                    <h3 className="font-black text-white text-base">{window.loc('عکس‌های من', 'My Photos')}</h3>
+                  </div>
+                  <label className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow transition flex items-center gap-1.5 cursor-pointer">
                     <Plus className="w-4 h-4" />
-                    <span>{window.loc('عکس جدید', 'Add Photo')}</span>
-                  </button>
+                    <span>{window.loc('افزودن عکس', 'Add Photo')}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          let mediaUrl = '';
+                          if (typeof compressImageFile === 'function') {
+                            mediaUrl = await compressImageFile(file, 1080, 1080, 0.85);
+                          } else {
+                            const reader = new FileReader();
+                            mediaUrl = await new Promise((res) => {
+                              reader.onloadend = () => res(reader.result);
+                              reader.readAsDataURL(file);
+                            });
+                          }
+                          const newPhoto = { id: Date.now(), url: mediaUrl, created_at: new Date().toISOString() };
+                          setGalleryPhotos(prev => {
+                            const updated = [newPhoto, ...prev];
+                            safeStorage.setItem(`vlive_user_photos_${currentUsername || 'me'}`, JSON.stringify(updated));
+                            return updated;
+                          });
+                          showToast(window.loc('عکس با موفقیت افزوده شد 📸', 'Photo added successfully 📸'));
+                        } catch (err) {
+                          showToast(window.loc('خطا در بارگذاری عکس', 'Error uploading photo'));
+                        }
+                      }}
+                    />
+                  </label>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {profilePosts.filter(p => !p.video && p.image).length === 0 ? (
+                  {galleryPhotos.length === 0 ? (
                     <div className="col-span-full py-12 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-2">
                       <Image className="w-10 h-10 text-slate-600 mx-auto" />
                       <p className="text-xs text-slate-400 font-bold">{window.loc('عکسی ثبت نشده است', 'No photos yet')}</p>
                     </div>
                   ) : (
-                    profilePosts.filter(p => !p.video && p.image).map(p => (
+                    galleryPhotos.map(p => (
                       <div key={p.id} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-800 group bg-slate-950">
-                        <img src={p.image} alt="Photo" className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent opacity-0 group-hover:opacity-100 transition p-2 flex items-end justify-between text-white text-[11px] font-bold">
-                          <span>❤️ {p.likes}</span>
-                          <span>💬 {p.comments}</span>
-                        </div>
+                        <img src={p.url || p.image} alt="Photo" className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                        <button
+                          onClick={() => {
+                            setGalleryPhotos(prev => {
+                              const updated = prev.filter(item => item.id !== p.id);
+                              safeStorage.setItem(`vlive_user_photos_${currentUsername || 'me'}`, JSON.stringify(updated));
+                              return updated;
+                            });
+                            showToast(window.loc('عکس حذف شد 🗑️', 'Photo removed 🗑️'));
+                          }}
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-rose-400 hover:text-white opacity-0 group-hover:opacity-100 transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     ))
                   )}
@@ -1475,29 +1316,63 @@ export default function ProfileTab(props) {
             {activeSeparateModal === 'videos' && (
               <div className="p-5 rounded-3xl bg-slate-900 border border-rose-500/30 space-y-4 shadow-2xl">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <h3 className="font-black text-white text-base">{window.loc('ویدیوها', 'Videos')}</h3>
-                  <button
-                    onClick={() => {
-                      setNewPostType('video');
-                      setIsCreatePostModalOpen(true);
-                    }}
-                    className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow transition flex items-center gap-1.5"
-                  >
+                  <div className="flex items-center gap-2">
+                    <Video className="w-5 h-5 text-rose-400" />
+                    <h3 className="font-black text-white text-base">{window.loc('ویدیوهای من', 'My Videos')}</h3>
+                  </div>
+                  <label className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow transition flex items-center gap-1.5 cursor-pointer">
                     <Plus className="w-4 h-4" />
-                    <span>{window.loc('ویدیوی جدید', 'Add Video')}</span>
-                  </button>
+                    <span>{window.loc('افزودن ویدیو', 'Add Video')}</span>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            const newVid = { id: Date.now(), url: reader.result, created_at: new Date().toISOString() };
+                            setGalleryVideos(prev => {
+                              const updated = [newVid, ...prev];
+                              safeStorage.setItem(`vlive_user_videos_${currentUsername || 'me'}`, JSON.stringify(updated));
+                              return updated;
+                            });
+                            showToast(window.loc('ویدیو با موفقیت بارگذاری شد 📹', 'Video uploaded successfully 📹'));
+                          };
+                          reader.readAsDataURL(file);
+                        } catch (err) {
+                          showToast(window.loc('خطا در بارگذاری ویدیو', 'Error uploading video'));
+                        }
+                      }}
+                    />
+                  </label>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {profilePosts.filter(p => p.video).length === 0 ? (
+                  {galleryVideos.length === 0 ? (
                     <div className="col-span-full py-12 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-2">
                       <Video className="w-10 h-10 text-slate-600 mx-auto" />
                       <p className="text-xs text-slate-400 font-bold">{window.loc('ویدیویی ثبت نشده است', 'No videos yet')}</p>
                     </div>
                   ) : (
-                    profilePosts.filter(p => p.video).map(p => (
-                      <div key={p.id} className="relative aspect-video rounded-2xl overflow-hidden border border-slate-800 bg-slate-950">
-                        <video src={p.video} controls className="w-full h-full object-cover" />
+                    galleryVideos.map(p => (
+                      <div key={p.id} className="relative aspect-video rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 group">
+                        <video src={p.url || p.video} controls className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => {
+                            setGalleryVideos(prev => {
+                              const updated = prev.filter(item => item.id !== p.id);
+                              safeStorage.setItem(`vlive_user_videos_${currentUsername || 'me'}`, JSON.stringify(updated));
+                              return updated;
+                            });
+                            showToast(window.loc('ویدیو حذف شد 🗑️', 'Video removed 🗑️'));
+                          }}
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-rose-400 hover:text-white opacity-0 group-hover:opacity-100 transition z-10"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     ))
                   )}
@@ -1834,7 +1709,7 @@ export default function ProfileTab(props) {
         </div>
       )}
       
-<InterestsModal
+      <InterestsModal
         isOpen={isInterestsModalOpen}
         onClose={(selectedIds) => {
           setIsInterestsModalOpen(false);
@@ -1847,158 +1722,6 @@ export default function ProfileTab(props) {
         userId={getUserId()}
         showToast={typeof showToast !== 'undefined' ? showToast : undefined}
       />
-    
-      {/* CREATE POST MODAL */}
-      
-{isCreatePostModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4 relative">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                {newPostType === 'video' ? (
-                  <Video className="w-5 h-5 text-cyan-400" />
-                ) : (
-                  <Image className="w-5 h-5 text-pink-400" />
-                )}
-                <h3 className="font-black text-white text-sm">
-                  {newPostType === 'video' 
-                    ? window.loc('ارسال ویدیوی جدید', 'New Video Post')
-                    : window.loc('ارسال عکس یا پست جدید', 'New Photo Post')}
-                </h3>
-              </div>
-              <button
-                onClick={() => setIsCreatePostModalOpen(false)}
-                className="p-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-white transition"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* User Info Row */}
-            <div className="flex items-center gap-3">
-              {(userAvatar || authAvatar) ? (
-                <img
-                  src={userAvatar || authAvatar}
-                  alt={userName}
-                  className="w-10 h-10 rounded-full object-cover border border-pink-500/40"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-slate-900 border border-pink-500/40 flex items-center justify-center text-slate-400">
-                  <User className="w-5 h-5 text-pink-400" />
-                </div>
-              )}
-              <div>
-                <h4 className="font-bold text-white text-xs">{userName || authFullName || 'User'}</h4>
-                <span className="text-[10px] text-slate-400">@{currentUsername || authUsername || 'user'}</span>
-              </div>
-            </div>
-
-            {/* Textarea */}
-            <textarea
-              value={newPostText}
-              onChange={(e) => setNewPostText(e.target.value)}
-              placeholder={window.loc('امروز چه خبر؟ متن خود را بنویسید...', 'Share a moment or thoughts...')}
-              rows={3}
-              className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-pink-500 resize-none dir-rtl"
-            />
-
-            {/* Direct Gallery Upload (Photos & Videos) */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-[11px] font-bold text-slate-300">
-                <span>{window.loc('انتخاب عکس یا ویدیو از گالری گوشی:', 'Select Photo or Video from Phone Gallery:')}</span>
-                {newPostImage && (
-                  <span className="text-[10px] text-pink-400 font-normal">
-                    {newPostType === 'video' ? '📹 ' + window.loc('ویدیو انتخاب شد', 'Video selected') : '🖼️ ' + window.loc('عکس انتخاب شد', 'Photo selected')}
-                  </span>
-                )}
-              </div>
-
-              <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-pink-500/40 hover:border-pink-500 bg-slate-950/80 hover:bg-slate-950 rounded-2xl cursor-pointer transition group text-center">
-                <div className="w-10 h-10 rounded-2xl bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-pink-400 group-hover:scale-110 transition mb-1.5">
-                  <Upload className="w-5 h-5" />
-                </div>
-                <p className="text-xs font-bold text-slate-200">
-                  {window.loc('انتخاب فایل از گالری گوشی 📱', 'Select File from Gallery 📱')}
-                </p>
-                <p className="text-[10px] text-slate-400 mt-0.5">
-                  {window.loc('پشتیبانی کامل از تصاویر و ویدیوها (JPG, PNG, MP4, MOV)', 'Full support for photos & videos (JPG, PNG, MP4, MOV)')}
-                </p>
-                <input
-                  type="file"
-                  accept="image/*,video/*"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const isVid = file.type.startsWith('video');
-                    setNewPostType(isVid ? 'video' : 'photo');
-
-                    try {
-                      if (!isVid && typeof compressImageFile === 'function') {
-                        const compressed = await compressImageFile(file, 1080, 1080, 0.85);
-                        setNewPostImage(compressed);
-                      } else {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setNewPostImage(reader.result);
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                      showToast(window.loc(isVid ? 'ویدیو با موفقیت بارگذاری شد 📹' : 'تصویر با موفقیت بارگذاری شد 📸', isVid ? 'Video uploaded successfully 📹' : 'Photo uploaded successfully 📸'));
-                    } catch (err) {
-                      showToast(window.loc('خطا در انتخاب فایل از گالری', 'Error selecting file from gallery'));
-                    }
-                  }}
-                />
-              </label>
-
-              {/* Preview Selected Media */}
-              {newPostImage && (
-                <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-pink-500/40 max-h-52 flex items-center justify-center shadow-inner">
-                  {newPostType === 'video' || newPostImage.startsWith('data:video') ? (
-                    <video src={newPostImage} controls className="w-full max-h-52 object-cover rounded-2xl" />
-                  ) : (
-                    <img src={newPostImage} alt="Gallery preview" className="w-full max-h-52 object-cover rounded-2xl" />
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNewPostImage('');
-                      setNewPostType('photo');
-                    }}
-                    className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-900/90 text-rose-400 hover:text-white border border-rose-500/50 shadow-md transition"
-                    title={window.loc('حذف رسانه', 'Remove media')}
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
-              <button
-                onClick={() => setIsCreatePostModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 transition"
-              >
-                {window.loc('انصراف', 'Cancel')}
-              </button>
-              <button
-                onClick={() => {
-                  handleAddPost();
-                  setIsCreatePostModalOpen(false);
-                }}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white font-bold text-xs shadow-lg hover:scale-105 active:scale-95 transition flex items-center gap-1.5"
-              >
-                <Plus className="w-4 h-4" />
-                <span>{window.loc('انتشار پست', 'Publish')}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
         </>
       )}
     </>

@@ -64,6 +64,9 @@ export default function SettingsModal(props) {
   const [privacyWhoCall, setPrivacyWhoCall] = React.useState(() => safeStorage.getItem('vlive_privacy_who_call') || 'Everyone');
   const [privacyShowCity, setPrivacyShowCity] = React.useState(() => safeStorage.getItem('vlive_privacy_show_city') !== 'false');
   const [privacyShowAge, setPrivacyShowAge] = React.useState(() => safeStorage.getItem('vlive_privacy_show_age') !== 'false');
+  const [privacyShowFollowers, setPrivacyShowFollowers] = React.useState(() => safeStorage.getItem('vlive_privacy_show_followers') !== 'false');
+  const [privacyShowFollowing, setPrivacyShowFollowing] = React.useState(() => safeStorage.getItem('vlive_privacy_show_following') !== 'false');
+  const [privacyShowLikes, setPrivacyShowLikes] = React.useState(() => safeStorage.getItem('vlive_privacy_show_likes') !== 'false');
   const [privacyGhostMode, setPrivacyGhostMode] = React.useState(() => safeStorage.getItem('vlive_privacy_ghost_mode') === 'true');
 
   const updatePrivacySetting = (key, val) => {
@@ -374,6 +377,9 @@ export default function SettingsModal(props) {
       safeStorage.setItem('vlive_privacy_who_call', privacyWhoCall);
       safeStorage.setItem('vlive_privacy_show_city', String(privacyShowCity));
       safeStorage.setItem('vlive_privacy_show_age', String(privacyShowAge));
+      safeStorage.setItem('vlive_privacy_show_followers', String(privacyShowFollowers));
+      safeStorage.setItem('vlive_privacy_show_following', String(privacyShowFollowing));
+      safeStorage.setItem('vlive_privacy_show_likes', String(privacyShowLikes));
       safeStorage.setItem('vlive_privacy_ghost_mode', String(privacyGhostMode));
 
       // Security
@@ -824,6 +830,60 @@ export default function SettingsModal(props) {
                         setPrivacyShowAge(val);
                         updatePrivacySetting('show_age', val);
                         showToast(val ? safeLoc('نمایش سن فعال شد', 'Age display enabled') : safeLoc('نمایش سن غیرفعال شد', 'Age display disabled'));
+                      }}
+                      className="accent-cyan-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">{safeLoc('نمایش فالوورها به سایر کاربران', 'Show Followers')}</p>
+                      <span className="text-[10px] text-slate-400">{safeLoc('نمایش آمار و لیست دنبال‌کنندگان', 'Display followers count & list')}</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={privacyShowFollowers}
+                      onChange={e => {
+                        const val = e.target.checked;
+                        setPrivacyShowFollowers(val);
+                        updatePrivacySetting('show_followers', val);
+                        showToast(val ? safeLoc('نمایش فالوورها فعال شد ✅', 'Followers visible to others ✅') : safeLoc('فالوورها از دید سایر کاربران مخفی شد 🔒', 'Followers hidden from others 🔒'));
+                      }}
+                      className="accent-cyan-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">{safeLoc('نمایش فالویینگ‌ها به سایر کاربران', 'Show Following')}</p>
+                      <span className="text-[10px] text-slate-400">{safeLoc('نمایش افراد دنبال‌شده', 'Display following count & list')}</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={privacyShowFollowing}
+                      onChange={e => {
+                        const val = e.target.checked;
+                        setPrivacyShowFollowing(val);
+                        updatePrivacySetting('show_following', val);
+                        showToast(val ? safeLoc('نمایش فالویینگ فعال شد ✅', 'Following visible to others ✅') : safeLoc('فالویینگ از دید سایر کاربران مخفی شد 🔒', 'Following hidden from others 🔒'));
+                      }}
+                      className="accent-cyan-500 w-4 h-4 rounded cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">{safeLoc('نمایش تعداد لایک‌ها به سایر کاربران', 'Show Likes')}</p>
+                      <span className="text-[10px] text-slate-400">{safeLoc('نمایش تعداد و لیست لایک‌های پروفایل', 'Display likes count & likers list')}</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={privacyShowLikes}
+                      onChange={e => {
+                        const val = e.target.checked;
+                        setPrivacyShowLikes(val);
+                        updatePrivacySetting('show_likes', val);
+                        showToast(val ? safeLoc('نمایش لایک‌ها فعال شد ✅', 'Likes visible to others ✅') : safeLoc('لایک‌ها از دید سایر کاربران مخفی شد 🔒', 'Likes hidden from others 🔒'));
                       }}
                       className="accent-cyan-500 w-4 h-4 rounded cursor-pointer"
                     />

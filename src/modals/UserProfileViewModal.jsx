@@ -134,6 +134,8 @@ export default function UserProfileViewModal({
   const isVip = user?.isVip || user?.is_vip || user?.vip || false;
   const matchScore = user?.matchScore || '';
   const distance = user?.distance || '';
+  const showFollowers = user?.privacy_show_followers !== false && user?.show_followers !== false;
+  const showLikes = user?.privacy_show_likes !== false && user?.show_likes !== false;
 
   const publicPhotos = fetchedPhotos.length > 0 ? fetchedPhotos : (user?.photos || []);
 
@@ -406,11 +408,15 @@ export default function UserProfileViewModal({
           {/* Stats Bar with Real Statistics */}
           <div className="grid grid-cols-4 gap-2 p-3 bg-slate-950/80 rounded-2xl border border-slate-800 text-center text-xs">
             <div>
-              <span className="block font-black text-white text-sm">{followersCount.toLocaleString()}</span>
+              <span className="block font-black text-white text-sm">
+                {showFollowers ? followersCount.toLocaleString() : '🔒'}
+              </span>
               <span className="text-[10px] text-slate-400">{window.loc('دنبال‌کننده', 'Followers')}</span>
             </div>
             <div>
-              <span className="block font-black text-pink-400 text-sm">{likesCount.toLocaleString()}</span>
+              <span className="block font-black text-pink-400 text-sm">
+                {showLikes ? likesCount.toLocaleString() : '🔒'}
+              </span>
               <span className="text-[10px] text-slate-400">{window.loc('لایک‌ها', 'Likes')}</span>
             </div>
             <div>
