@@ -423,29 +423,24 @@ export default function UserProfileViewModal({
             </div>
           </div>
 
-          {/* STREAMER LIVE BANNER (IF STREAMER) */}
+          {/* STREAMER LIVE BADGE (IF STREAMER) */}
           {isStreamer && (
-            <div className="p-4 rounded-3xl bg-gradient-to-r from-pink-950/80 via-slate-900 to-slate-900 border border-pink-500/40 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-pink-300 font-black text-xs">
-                  <span className="w-2.5 h-2.5 rounded-full bg-pink-500 animate-ping" />
-                  <span>{window.loc('میزبان فعال استریم و تماس ویدئویی', 'Active Live Streamer')}</span>
-                </span>
-                <span className="text-amber-400 text-xs font-black">10 🪙 / min</span>
-              </div>
-              <p className="text-[11px] text-slate-300 dir-rtl">
-                {window.loc('امکان برقراری تماس تصویری مستقیم یا شرکت در روم‌های اختصاصی و لایواستریم این استریمر.', 'The possibility of making a direct video call or participating in the dedicated rooms and live stream of this streamer.')}
-              </p>
+            <div className="p-3 rounded-2xl bg-pink-950/40 border border-pink-500/40 flex items-center justify-between">
+              <span className="flex items-center gap-2 text-pink-300 font-bold text-xs">
+                <span className="w-2 h-2 rounded-full bg-pink-500 animate-ping" />
+                <span>{window.loc('میزبان استریم', 'Streamer Host')}</span>
+              </span>
+              <span className="text-amber-400 text-xs font-mono font-bold">10 🪙 / min</span>
             </div>
           )}
 
           {/* DEDICATED ADMIN CONTROL CARD FOR ADMIN USERS */}
           {isAdminUser && (
-            <div className="p-4 rounded-3xl bg-rose-950/60 border border-rose-500/50 space-y-3">
+            <div className="p-3.5 rounded-2xl bg-rose-950/60 border border-rose-500/50 space-y-2.5">
               <div className="flex items-center justify-between border-b border-rose-500/30 pb-2">
-                <span className="text-xs font-black text-rose-300 flex items-center gap-1.5">
-                  <ShieldAlert className="w-4 h-4 text-rose-400 animate-pulse" />
-                  <span>{window.loc('ابزارهای نظارت مدیر (Super Admin Tools)', 'Super Admin Tools')}</span>
+                <span className="text-xs font-bold text-rose-300 flex items-center gap-1.5">
+                  <ShieldAlert className="w-4 h-4 text-rose-400" />
+                  <span>{window.loc('پنل مدیریت', 'Admin Panel')}</span>
                 </span>
                 <span className="text-[10px] bg-rose-500 text-white font-bold px-2 py-0.5 rounded-full">ADMIN</span>
               </div>
@@ -460,7 +455,7 @@ export default function UserProfileViewModal({
                   }`}
                 >
                   <Ban className="w-3.5 h-3.5" />
-                  <span>{isBanned ? window.loc('رفع مسدودی', 'Unblock') : window.loc('مسدود کردن', 'blocking')}</span>
+                  <span>{isBanned ? window.loc('رفع مسدودی', 'Unblock') : window.loc('مسدود', 'Block')}</span>
                 </button>
 
                 <button
@@ -472,7 +467,7 @@ export default function UserProfileViewModal({
                   }`}
                 >
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>{isVerified ? window.loc('لغو نشان', 'cancel badge') : window.loc('اعطای تایید', 'Grant approval')}</span>
+                  <span>{isVerified ? window.loc('لغو تایید', 'Unverify') : window.loc('تایید', 'Verify')}</span>
                 </button>
 
                 <button
@@ -484,18 +479,19 @@ export default function UserProfileViewModal({
                   }`}
                 >
                   <Video className="w-3.5 h-3.5" />
-                  <span>{isStreamer ? window.loc('لغو دسترسی لایو', 'Revoke Live') : window.loc('اعطای دسترسی لایو', 'Grant Live')}</span>
+                  <span>{isStreamer ? window.loc('لغو لایو', 'Revoke Live') : window.loc('لایو', 'Grant Live')}</span>
                 </button>
               </div>
             </div>
           )}
 
-          {/* SUB-TABS: OVERVIEW & MEDIA */}
+          {/* SUB-TABS */}
           <div className="space-y-3 pt-1">
             <div className="flex items-center gap-2 p-1 bg-slate-900 rounded-2xl border border-slate-800">
               {[
-                { id: 'overview', label: window.loc('آلبوم تصاویر', 'Photos') }, { id: 'posts', label: window.loc('پست‌ها', 'Posts') },
-                { id: 'about', label: window.loc('درباره و علاقه‌ها', 'About') }
+                { id: 'overview', label: window.loc('عکس‌ها', 'Photos') },
+                { id: 'posts', label: window.loc('پست‌ها', 'Posts') },
+                { id: 'about', label: window.loc('درباره', 'About') }
               ].map(t => (
                 <button
                   key={t.id}

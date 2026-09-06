@@ -434,19 +434,14 @@ export default function SettingsModal(props) {
       <div className="w-full max-w-2xl card-3d p-4 sm:p-6 border border-pink-500/40 bg-slate-900/95 rounded-3xl space-y-5 max-h-[92vh] overflow-y-auto shadow-[0_0_60px_rgba(236,72,153,0.2)]">
         
         {/* 1. TOP HEADER & SEARCH */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-pink-600 to-purple-600 text-white shadow-md">
-              <Settings className="w-6 h-6 animate-spin-slow" />
+            <div className="p-2 rounded-xl bg-gradient-to-tr from-pink-600 to-purple-600 text-white shadow-md">
+              <Settings className="w-5 h-5 animate-spin-slow" />
             </div>
-            <div>
-              <h2 className="text-lg font-black text-white tracking-wide flex items-center gap-2">
-                <span>⚙️ {safeLoc('تنظیمات و مرکز کنترل', 'Settings & Control Center')}</span>
-              </h2>
-              <p className="text-[11px] text-slate-400">
-                {safeLoc('مدیریت کامل حساب کاربری، حریم خصوصی، استریم و دسترسی‌ها', 'Configure account, privacy, streaming & system permissions')}
-              </p>
-            </div>
+            <h2 className="text-base font-black text-white tracking-wide">
+              {safeLoc('تنظیمات', 'Settings')}
+            </h2>
           </div>
           
           <div className="flex items-center gap-2">
@@ -456,7 +451,7 @@ export default function SettingsModal(props) {
                 type="text"
                 value={settingsSearchQuery}
                 onChange={e => setSettingsSearchQuery(e.target.value)}
-                placeholder={safeLoc('جستجو در تنظیمات...', 'Search settings...')}
+                placeholder={safeLoc('جستجو...', 'Search...')}
                 className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-pink-500 transition"
               />
             </div>
@@ -473,25 +468,25 @@ export default function SettingsModal(props) {
         {/* CATEGORY NAV CHIPS */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar text-xs">
           {[
-            { id: 'all', label: safeLoc('همه بخش‌ها', 'All Settings') },
-            { id: 'telegram', label: safeLoc('🚀 تلگرام', '🚀 Telegram') },
-            { id: 'account', label: safeLoc('👤 حساب', '👤 Account') },
-            { id: 'privacy', label: safeLoc('🛡 حریم خصوصی', '🛡 Privacy') },
-            { id: 'security', label: safeLoc('🔒 امنیت', '🔒 Security') },
-            { id: 'notifications', label: safeLoc('🔔 اعلان‌ها', '🔔 Notifications') },
-            { id: 'appearance', label: safeLoc('🎨 ظاهر', '🎨 Appearance') },
-            { id: 'language', label: safeLoc('🌐 زبان', '🌐 Language') },
-            { id: 'live', label: safeLoc('🎥 لایو', '🎥 Live') },
-            { id: 'chat', label: safeLoc('💬 چت', '💬 Chat') },
-            { id: 'wallet', label: safeLoc('👛 کیف پول', '👛 Wallet') },
-            { id: 'storage', label: safeLoc('💾 حافظه', '💾 Storage') },
-            { id: 'data', label: safeLoc('📶 اینترنت', '📶 Data') },
-            { id: 'blocked', label: safeLoc('🚫 مسدودها', '🚫 Blocked') },
-            { id: 'permissions', label: safeLoc('🔑 مجوزها', '🔑 Permissions') },
-            { id: 'help', label: safeLoc('❓ پشتیبانی', '❓ Help') },
-            { id: 'about', label: safeLoc('ℹ️ درباره', 'ℹ️ About') },
-            { id: 'invite', label: safeLoc('🔗 دعوت دوستان', '🔗 Invite') },
-            { id: 'danger', label: safeLoc('🚪 خروج و حذف', '🚪 Logout & Delete') }
+            { id: 'all', label: safeLoc('همه', 'All') },
+            { id: 'telegram', label: safeLoc('تلگرام', 'Telegram') },
+            { id: 'account', label: safeLoc('حساب', 'Account') },
+            { id: 'privacy', label: safeLoc('حریم خصوصی', 'Privacy') },
+            { id: 'security', label: safeLoc('امنیت', 'Security') },
+            { id: 'notifications', label: safeLoc('اعلان‌ها', 'Notifications') },
+            { id: 'appearance', label: safeLoc('ظاهر', 'Appearance') },
+            { id: 'language', label: safeLoc('زبان', 'Language') },
+            { id: 'live', label: safeLoc('لایو', 'Live') },
+            { id: 'chat', label: safeLoc('چت', 'Chat') },
+            { id: 'wallet', label: safeLoc('کیف پول', 'Wallet') },
+            { id: 'storage', label: safeLoc('حافظه', 'Storage') },
+            { id: 'data', label: safeLoc('اینترنت', 'Data') },
+            { id: 'blocked', label: safeLoc('مسدودها', 'Blocked') },
+            { id: 'permissions', label: safeLoc('مجوزها', 'Permissions') },
+            { id: 'help', label: safeLoc('پشتیبانی', 'Help') },
+            { id: 'about', label: safeLoc('درباره', 'About') },
+            { id: 'invite', label: safeLoc('دعوت', 'Invite') },
+            { id: 'danger', label: safeLoc('خروج و حذف', 'Logout & Delete') }
           ].map(cat => (
             <button
               key={cat.id}

@@ -915,33 +915,20 @@ export default function ProfileTab(props) {
         </VisualSectionWrapper>
 
         {/* ========================================== */}
-        {/* SEPARATE PAGES & FEATURES HUB (صفحات مجزا) */}
+        {/* SEPARATE PAGES & FEATURES HUB */}
         {/* ========================================== */}
         <VisualSectionWrapper pageId="profile" sectionId="profile_separate_pages_hub" defaultLabel="Separate Pages Hub">
-          <div className="p-5 bg-gradient-to-br from-slate-900/90 via-slate-950 to-slate-900/90 rounded-[2rem] border border-slate-800/80 shadow-[0_10px_30px_rgba(0,0,0,0.4)] backdrop-blur-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3 px-1">
-              <h3 className="text-xs font-black text-white flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-pink-400 animate-spin" style={{ animationDuration: '6s' }} />
-                <span>{window.loc('صفحات و بخش‌های مجزای پروفایل', 'Dedicated Profile Pages')}</span>
-              </h3>
-              <span className="text-[10px] text-pink-400 font-mono font-bold bg-pink-500/10 px-2.5 py-1 rounded-full border border-pink-500/20 shadow-sm">
-                {window.loc('۶ صفحه مجزا', '6 Standalone Pages')}
-              </span>
-            </div>
-
+          <div className="p-4 bg-gradient-to-br from-slate-900/90 via-slate-950 to-slate-900/90 rounded-[2rem] border border-slate-800/80 shadow-[0_10px_30px_rgba(0,0,0,0.4)] backdrop-blur-xl space-y-3">
             {/* 6 Grid Tiles for Dedicated Pages */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               
-              {/* 1. Followers Dedicated Page */}
+              {/* 1. Followers */}
               <button
-                onClick={() => {
-                  setActiveSeparateModal('followers');
-                  showToast(window.loc('ورود به صفحه مجزای فالوورها 👥', 'Opened Followers Page 👥'));
-                }}
-                className="p-4 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-slate-950 to-slate-950 border border-indigo-500/30 hover:border-indigo-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-3 shadow-lg hover:shadow-[0_0_25px_rgba(99,102,241,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
+                onClick={() => setActiveSeparateModal('followers')}
+                className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-slate-950 to-slate-950 border border-indigo-500/30 hover:border-indigo-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2.5 shadow-lg hover:shadow-[0_0_25px_rgba(99,102,241,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 group-hover:scale-110 transition-transform shrink-0">
+                  <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <Users className="w-4 h-4" />
                   </div>
                   <span className="text-xs font-black text-indigo-300 font-mono bg-indigo-950 px-2.5 py-0.5 rounded-full border border-indigo-500/40 shadow-inner">
@@ -949,20 +936,17 @@ export default function ProfileTab(props) {
                   </span>
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-white group-hover:text-indigo-300 transition">{window.loc('صفحه فالوورها', 'Followers Page')}</h4>
+                  <h4 className="text-xs font-black text-white group-hover:text-indigo-300 transition">{window.loc('فالوورها', 'Followers')}</h4>
                 </div>
               </button>
 
-              {/* 2. Following Dedicated Page */}
+              {/* 2. Following */}
               <button
-                onClick={() => {
-                  setActiveSeparateModal('following');
-                  showToast(window.loc('ورود به صفحه مجزای فالووینگ 🤝', 'Opened Following Page 🤝'));
-                }}
-                className="p-4 rounded-2xl bg-gradient-to-br from-blue-950/40 via-slate-950 to-slate-950 border border-blue-500/30 hover:border-blue-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-3 shadow-lg hover:shadow-[0_0_25px_rgba(59,130,246,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
+                onClick={() => setActiveSeparateModal('following')}
+                className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-950/40 via-slate-950 to-slate-950 border border-blue-500/30 hover:border-blue-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2.5 shadow-lg hover:shadow-[0_0_25px_rgba(59,130,246,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="p-2.5 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/40 group-hover:scale-110 transition-transform shrink-0">
+                  <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <UserCheck className="w-4 h-4" />
                   </div>
                   <span className="text-xs font-black text-blue-300 font-mono bg-blue-950 px-2.5 py-0.5 rounded-full border border-blue-500/40 shadow-inner">
@@ -970,20 +954,17 @@ export default function ProfileTab(props) {
                   </span>
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-white group-hover:text-blue-300 transition">{window.loc('صفحه فالووینگ', 'Following Page')}</h4>
+                  <h4 className="text-xs font-black text-white group-hover:text-blue-300 transition">{window.loc('فالووینگ', 'Following')}</h4>
                 </div>
               </button>
 
-              {/* 3. Likes Dedicated Page */}
+              {/* 3. Likes */}
               <button
-                onClick={() => {
-                  setActiveSeparateModal('likes');
-                  showToast(window.loc('ورود به صفحه مجزای لایک‌ها ❤️', 'Opened Likes Page ❤️'));
-                }}
-                className="p-4 rounded-2xl bg-gradient-to-br from-pink-950/40 via-slate-950 to-slate-950 border border-pink-500/30 hover:border-pink-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-3 shadow-lg hover:shadow-[0_0_25px_rgba(236,72,153,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
+                onClick={() => setActiveSeparateModal('likes')}
+                className="p-3.5 rounded-2xl bg-gradient-to-br from-pink-950/40 via-slate-950 to-slate-950 border border-pink-500/30 hover:border-pink-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2.5 shadow-lg hover:shadow-[0_0_25px_rgba(236,72,153,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="p-2.5 rounded-xl bg-pink-500/20 text-pink-400 border border-pink-500/40 group-hover:scale-110 transition-transform shrink-0">
+                  <div className="p-2 rounded-xl bg-pink-500/20 text-pink-400 border border-pink-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <Heart className="w-4 h-4 fill-pink-500/40" />
                   </div>
                   <span className="text-xs font-black text-pink-300 font-mono bg-pink-950 px-2.5 py-0.5 rounded-full border border-pink-500/40 shadow-inner">
@@ -991,20 +972,17 @@ export default function ProfileTab(props) {
                   </span>
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-white group-hover:text-pink-300 transition">{window.loc('صفحه لایک‌ها', 'Likes Page')}</h4>
+                  <h4 className="text-xs font-black text-white group-hover:text-pink-300 transition">{window.loc('لایک‌ها', 'Likes')}</h4>
                 </div>
               </button>
 
-              {/* 4. Views Dedicated Page */}
+              {/* 4. Views */}
               <button
-                onClick={() => {
-                  setActiveSeparateModal('views');
-                  showToast(window.loc('ورود به صفحه مجزای بازدیدها 👁️', 'Opened Views Page 👁️'));
-                }}
-                className="p-4 rounded-2xl bg-gradient-to-br from-cyan-950/40 via-slate-950 to-slate-950 border border-cyan-500/30 hover:border-cyan-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-3 shadow-lg hover:shadow-[0_0_25px_rgba(6,182,212,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
+                onClick={() => setActiveSeparateModal('views')}
+                className="p-3.5 rounded-2xl bg-gradient-to-br from-cyan-950/40 via-slate-950 to-slate-950 border border-cyan-500/30 hover:border-cyan-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2.5 shadow-lg hover:shadow-[0_0_25px_rgba(6,182,212,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 group-hover:scale-110 transition-transform shrink-0">
+                  <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <Eye className="w-4 h-4" />
                   </div>
                   <span className="text-xs font-black text-cyan-300 font-mono bg-cyan-950 px-2.5 py-0.5 rounded-full border border-cyan-500/40 shadow-inner">
@@ -1012,20 +990,17 @@ export default function ProfileTab(props) {
                   </span>
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-white group-hover:text-cyan-300 transition">{window.loc('صفحه بازدیدها', 'Views Page')}</h4>
+                  <h4 className="text-xs font-black text-white group-hover:text-cyan-300 transition">{window.loc('بازدیدها', 'Views')}</h4>
                 </div>
               </button>
 
-              {/* 5. Photos Gallery Dedicated Page */}
+              {/* 5. Photos */}
               <button
-                onClick={() => {
-                  setActiveSeparateModal('photos');
-                  showToast(window.loc('ورود به صفحه مجزای گالری عکس‌ها 🖼️', 'Opened Photos Page 🖼️'));
-                }}
-                className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-slate-950 to-slate-950 border border-purple-500/30 hover:border-purple-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-3 shadow-lg hover:shadow-[0_0_25px_rgba(168,85,247,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
+                onClick={() => setActiveSeparateModal('photos')}
+                className="p-3.5 rounded-2xl bg-gradient-to-br from-purple-950/40 via-slate-950 to-slate-950 border border-purple-500/30 hover:border-purple-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2.5 shadow-lg hover:shadow-[0_0_25px_rgba(168,85,247,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="p-2.5 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/40 group-hover:scale-110 transition-transform shrink-0">
+                  <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <Image className="w-4 h-4" />
                   </div>
                   <span className="text-xs font-black text-purple-300 font-mono bg-purple-950 px-2.5 py-0.5 rounded-full border border-purple-500/40 shadow-inner">
@@ -1033,20 +1008,17 @@ export default function ProfileTab(props) {
                   </span>
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-white group-hover:text-purple-300 transition">{window.loc('گالری عکس‌ها', 'Photos Gallery')}</h4>
+                  <h4 className="text-xs font-black text-white group-hover:text-purple-300 transition">{window.loc('عکس‌ها', 'Photos')}</h4>
                 </div>
               </button>
 
-              {/* 6. Videos Gallery Dedicated Page */}
+              {/* 6. Videos */}
               <button
-                onClick={() => {
-                  setActiveSeparateModal('videos');
-                  showToast(window.loc('ورود به صفحه مجزای گالری ویدیوها 📹', 'Opened Videos Page 📹'));
-                }}
-                className="p-4 rounded-2xl bg-gradient-to-br from-rose-950/40 via-slate-950 to-slate-950 border border-rose-500/30 hover:border-rose-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-3 shadow-lg hover:shadow-[0_0_25px_rgba(244,63,94,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
+                onClick={() => setActiveSeparateModal('videos')}
+                className="p-3.5 rounded-2xl bg-gradient-to-br from-rose-950/40 via-slate-950 to-slate-950 border border-rose-500/30 hover:border-rose-500/80 transition-all duration-300 flex flex-col justify-between items-start gap-2.5 shadow-lg hover:shadow-[0_0_25px_rgba(244,63,94,0.25)] hover:-translate-y-0.5 group text-right cursor-pointer"
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/40 group-hover:scale-110 transition-transform shrink-0">
+                  <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <Video className="w-4 h-4" />
                   </div>
                   <span className="text-xs font-black text-rose-300 font-mono bg-rose-950 px-2.5 py-0.5 rounded-full border border-rose-500/40 shadow-inner">
@@ -1054,7 +1026,7 @@ export default function ProfileTab(props) {
                   </span>
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-white group-hover:text-rose-300 transition">{window.loc('گالری ویدیوها', 'Videos Gallery')}</h4>
+                  <h4 className="text-xs font-black text-white group-hover:text-rose-300 transition">{window.loc('ویدیوها', 'Videos')}</h4>
                 </div>
               </button>
 
@@ -1192,37 +1164,37 @@ export default function ProfileTab(props) {
               {activeSeparateModal === 'followers' && (
                 <>
                   <Users className="w-5 h-5 text-indigo-400" />
-                  <h2 className="text-base font-black text-white">{window.loc('صفحه مجزای دنبال‌کنندگان', 'Followers Dedicated Page')}</h2>
+                  <h2 className="text-base font-black text-white">{window.loc('دنبال‌کنندگان', 'Followers')}</h2>
                 </>
               )}
               {activeSeparateModal === 'following' && (
                 <>
                   <UserCheck className="w-5 h-5 text-blue-400" />
-                  <h2 className="text-base font-black text-white">{window.loc('صفحه مجزای دنبال‌شوندگان', 'Following Dedicated Page')}</h2>
+                  <h2 className="text-base font-black text-white">{window.loc('دنبال‌شوندگان', 'Following')}</h2>
                 </>
               )}
               {activeSeparateModal === 'likes' && (
                 <>
                   <Heart className="w-5 h-5 text-pink-400 fill-pink-500/30" />
-                  <h2 className="text-base font-black text-white">{window.loc('صفحه مجزای لایک‌ها', 'Likes Dedicated Page')}</h2>
+                  <h2 className="text-base font-black text-white">{window.loc('لایک‌ها', 'Likes')}</h2>
                 </>
               )}
               {activeSeparateModal === 'views' && (
                 <>
                   <Eye className="w-5 h-5 text-cyan-400" />
-                  <h2 className="text-base font-black text-white">{window.loc('صفحه مجزای بازدیدکنندگان', 'Visitors Dedicated Page')}</h2>
+                  <h2 className="text-base font-black text-white">{window.loc('بازدیدها', 'Views')}</h2>
                 </>
               )}
               {activeSeparateModal === 'photos' && (
                 <>
                   <Image className="w-5 h-5 text-purple-400" />
-                  <h2 className="text-base font-black text-white">{window.loc('صفحه مجزای گالری عکس‌ها', 'Photos Gallery Dedicated Page')}</h2>
+                  <h2 className="text-base font-black text-white">{window.loc('عکس‌ها', 'Photos')}</h2>
                 </>
               )}
               {activeSeparateModal === 'videos' && (
                 <>
                   <Video className="w-5 h-5 text-rose-400" />
-                  <h2 className="text-base font-black text-white">{window.loc('صفحه مجزای گالری ویدیوها', 'Videos Gallery Dedicated Page')}</h2>
+                  <h2 className="text-base font-black text-white">{window.loc('ویدیوها', 'Videos')}</h2>
                 </>
               )}
             </div>
@@ -1242,10 +1214,7 @@ export default function ProfileTab(props) {
             {activeSeparateModal === 'followers' && (
               <div className="p-5 rounded-3xl bg-slate-900 border border-indigo-500/30 space-y-4 shadow-2xl">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div>
-                    <h3 className="font-black text-white text-base">{window.loc('لیست کامل دنبال‌کنندگان شما', 'Your Complete Followers List')}</h3>
-                    <p className="text-xs text-slate-400">{window.loc('کاربران و اعضایی که پروفایل شما را دنبال می‌کنند', 'Users and members following your profile')}</p>
-                  </div>
+                  <h3 className="font-black text-white text-base">{window.loc('دنبال‌کنندگان', 'Followers')}</h3>
                   <span className="text-xs font-black text-indigo-400 bg-indigo-950 px-3 py-1 rounded-full border border-indigo-500/40 font-mono">
                     👥 {formatNum(followersList.length || userFollowersCount)}
                   </span>
@@ -1277,7 +1246,7 @@ export default function ProfileTab(props) {
                         <button
                           onClick={async () => {
                             await apiProfile.followUser(u);
-                            showToast(`${window.loc('شما با موفقیت دنبال کردید:', 'You successfully followed:')} @${u.username}`);
+                            showToast(`${window.loc('دنبال شد:', 'Followed:')} @${u.username}`);
                           }}
                           className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow transition active:scale-95 flex items-center gap-1.5"
                         >
@@ -1290,7 +1259,6 @@ export default function ProfileTab(props) {
                     <div className="text-center py-12 px-4 rounded-2xl bg-slate-950 border border-dashed border-slate-800 space-y-3">
                       <Users className="w-10 h-10 text-slate-600 mx-auto" />
                       <p className="text-slate-300 text-xs font-bold">{window.loc('هنوز کاربری شما را دنبال نکرده است.', 'No followers yet.')}</p>
-                      <p className="text-slate-500 text-[11px]">{window.loc('با فعالیت در استریم‌ها و انتشار عکس/ویدیو، فالوور جدید جذب کنید.', 'Gain followers by hosting streams and publishing content.')}</p>
                     </div>
                   )}
                 </div>
@@ -1301,10 +1269,7 @@ export default function ProfileTab(props) {
             {activeSeparateModal === 'following' && (
               <div className="p-5 rounded-3xl bg-slate-900 border border-blue-500/30 space-y-4 shadow-2xl">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div>
-                    <h3 className="font-black text-white text-base">{window.loc('افراد دنبال‌شده توسط شما', 'Users You Follow')}</h3>
-                    <p className="text-xs text-slate-400">{window.loc('استریمرها و کاربرانی که دنبال می‌کنید', 'Streamers & members you are following')}</p>
-                  </div>
+                  <h3 className="font-black text-white text-base">{window.loc('دنبال‌شوندگان', 'Following')}</h3>
                   <span className="text-xs font-black text-blue-400 bg-blue-950 px-3 py-1 rounded-full border border-blue-500/40 font-mono">
                     🤝 {formatNum(userFollowingCount)}
                   </span>
@@ -1339,7 +1304,7 @@ export default function ProfileTab(props) {
                               onClick={() => {
                                 setActiveSeparateModal(null);
                                 if (props.setActiveTab) props.setActiveTab('home');
-                                showToast(`${window.loc('ورود به لایواستریم', 'Joining livestream of')} @${u.username}`);
+                                showToast(`${window.loc('لایو', 'Live')} @${u.username}`);
                               }}
                               className="px-3 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-xs border border-rose-500/40 transition flex items-center gap-1"
                             >
@@ -1350,11 +1315,11 @@ export default function ProfileTab(props) {
                           <button
                             onClick={async () => {
                               await apiProfile.unfollowUser(u.id || u.username);
-                              showToast(`${window.loc('لغو دنبال‌کردن', 'Unfollowed')} @${u.username}`);
+                              showToast(`${window.loc('لغو شد', 'Unfollowed')}`);
                             }}
                             className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-red-950/60 hover:text-red-300 text-slate-300 font-bold text-xs border border-slate-800 transition"
                           >
-                            {window.loc('دنبال‌شده (لغو)', 'Following (Unfollow)')}
+                            {window.loc('لغو دنبال کردن', 'Unfollow')}
                           </button>
                         </div>
                       </div>
@@ -1373,10 +1338,7 @@ export default function ProfileTab(props) {
             {activeSeparateModal === 'likes' && (
               <div className="p-5 rounded-3xl bg-slate-900 border border-pink-500/30 space-y-4 shadow-2xl">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div>
-                    <h3 className="font-black text-white text-base">{window.loc('آمار و لیست لایک‌ها', 'Likes & Favorites History')}</h3>
-                    <p className="text-xs text-slate-400">{window.loc('پست‌ها و محتوای پسندیده‌شده توسط شما', 'Liked posts and content by you')}</p>
-                  </div>
+                  <h3 className="font-black text-white text-base">{window.loc('لایک‌ها', 'Likes')}</h3>
                   <span className="text-xs font-black text-pink-400 bg-pink-950 px-3 py-1 rounded-full border border-pink-500/40 font-mono">
                     ❤️ {formatNum(userTotalLikes)}
                   </span>
@@ -1386,7 +1348,7 @@ export default function ProfileTab(props) {
                   {profilePosts.filter(p => p.liked || p.likes > 0).length === 0 ? (
                     <div className="p-12 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-2">
                       <Heart className="w-10 h-10 text-slate-600 mx-auto" />
-                      <p className="text-xs text-slate-400 font-bold">{window.loc('هنوز پستی را لایک نکرده‌اید', 'No liked posts yet')}</p>
+                      <p className="text-xs text-slate-400 font-bold">{window.loc('هنوز پستی لایک نشده', 'No liked posts yet')}</p>
                     </div>
                   ) : (
                     profilePosts.filter(p => p.liked || p.likes > 0).map(post => (
@@ -1435,10 +1397,7 @@ export default function ProfileTab(props) {
             {activeSeparateModal === 'views' && (
               <div className="p-5 rounded-3xl bg-slate-900 border border-cyan-500/30 space-y-4 shadow-2xl">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div>
-                    <h3 className="font-black text-white text-base">{window.loc('آمار و بازدیدکنندگان پروفایل', 'Profile Views & Visitors')}</h3>
-                    <p className="text-xs text-slate-400">{window.loc('لیست آخرین افرادی که از صفحه شما دیدن کرده‌اند', 'Recent visitors of your profile')}</p>
-                  </div>
+                  <h3 className="font-black text-white text-base">{window.loc('بازدیدها', 'Views')}</h3>
                   <span className="text-xs font-black text-cyan-400 bg-cyan-950 px-3 py-1 rounded-full border border-cyan-500/40 font-mono">
                     👁️ {formatNum(userViewsCount)}
                   </span>
@@ -1467,7 +1426,7 @@ export default function ProfileTab(props) {
                   ) : (
                     <div className="text-center py-12 px-4 rounded-2xl bg-slate-950 border border-dashed border-slate-800 space-y-2">
                       <Eye className="w-10 h-10 text-slate-600 mx-auto" />
-                      <p className="text-slate-300 text-xs font-bold">{window.loc('هنوز بازدیدی از پروفایل ثبت نشده است.', 'No profile visits recorded yet.')}</p>
+                      <p className="text-slate-300 text-xs font-bold">{window.loc('هنوز بازدیدی ثبت نشده است.', 'No profile visits recorded yet.')}</p>
                     </div>
                   )}
                 </div>
@@ -1478,10 +1437,7 @@ export default function ProfileTab(props) {
             {activeSeparateModal === 'photos' && (
               <div className="p-5 rounded-3xl bg-slate-900 border border-purple-500/30 space-y-4 shadow-2xl">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div>
-                    <h3 className="font-black text-white text-base">{window.loc('گالری عکس‌های شما', 'Your Photo Gallery')}</h3>
-                    <p className="text-xs text-slate-400">{window.loc('تصاویر منتشرشده در پروفایل', 'Published photos on profile')}</p>
-                  </div>
+                  <h3 className="font-black text-white text-base">{window.loc('عکس‌ها', 'Photos')}</h3>
                   <button
                     onClick={() => {
                       setNewPostType('photo');
@@ -1490,7 +1446,7 @@ export default function ProfileTab(props) {
                     className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow transition flex items-center gap-1.5"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>{window.loc('افزودن عکس جدید', 'Add Photo')}</span>
+                    <span>{window.loc('عکس جدید', 'Add Photo')}</span>
                   </button>
                 </div>
 
@@ -1498,7 +1454,7 @@ export default function ProfileTab(props) {
                   {profilePosts.filter(p => !p.video && p.image).length === 0 ? (
                     <div className="col-span-full py-12 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-2">
                       <Image className="w-10 h-10 text-slate-600 mx-auto" />
-                      <p className="text-xs text-slate-400 font-bold">{window.loc('هنوز عکسی در گالری ثبت نشده است', 'No photos in gallery yet')}</p>
+                      <p className="text-xs text-slate-400 font-bold">{window.loc('عکسی ثبت نشده است', 'No photos yet')}</p>
                     </div>
                   ) : (
                     profilePosts.filter(p => !p.video && p.image).map(p => (
@@ -1519,10 +1475,7 @@ export default function ProfileTab(props) {
             {activeSeparateModal === 'videos' && (
               <div className="p-5 rounded-3xl bg-slate-900 border border-rose-500/30 space-y-4 shadow-2xl">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div>
-                    <h3 className="font-black text-white text-base">{window.loc('گالری ویدیوهای شما', 'Your Video Gallery')}</h3>
-                    <p className="text-xs text-slate-400">{window.loc('ویدیوها و کلیپ‌های کوتاه منتشرشده', 'Published videos & clips')}</p>
-                  </div>
+                  <h3 className="font-black text-white text-base">{window.loc('ویدیوها', 'Videos')}</h3>
                   <button
                     onClick={() => {
                       setNewPostType('video');
@@ -1531,7 +1484,7 @@ export default function ProfileTab(props) {
                     className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow transition flex items-center gap-1.5"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>{window.loc('افزودن ویدیوی جدید', 'Add Video')}</span>
+                    <span>{window.loc('ویدیوی جدید', 'Add Video')}</span>
                   </button>
                 </div>
 
@@ -1539,7 +1492,7 @@ export default function ProfileTab(props) {
                   {profilePosts.filter(p => p.video).length === 0 ? (
                     <div className="col-span-full py-12 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-2">
                       <Video className="w-10 h-10 text-slate-600 mx-auto" />
-                      <p className="text-xs text-slate-400 font-bold">{window.loc('هنوز ویدیویی در گالری ثبت نشده است', 'No videos in gallery yet')}</p>
+                      <p className="text-xs text-slate-400 font-bold">{window.loc('ویدیویی ثبت نشده است', 'No videos yet')}</p>
                     </div>
                   ) : (
                     profilePosts.filter(p => p.video).map(p => (

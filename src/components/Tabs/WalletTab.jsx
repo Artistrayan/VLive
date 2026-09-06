@@ -255,19 +255,21 @@ export default function WalletTab(props) {
                 <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-950/80 via-amber-900/40 to-slate-950 border border-amber-500/50 shadow-[0_0_25px_rgba(245,158,11,0.2)] flex flex-col justify-between space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                      <Coins className="w-4 h-4 text-amber-400" /> {window.loc('🪙 Coins (سکه)', '🪙 Coins')}
+                      <Coins className="w-4 h-4 text-amber-400" /> {window.loc('سکه', 'Coins')}
                     </span>
-                    <span className="text-xs bg-amber-500/25 text-amber-200 border border-amber-400/40 font-bold px-2 py-0.5 rounded-full border border-amber-500/30">{window.loc('ارز مصرفی', 'Consumer currency')}</span>
+                    <span className="text-xs bg-amber-500/25 text-amber-200 border border-amber-400/40 font-bold px-2 py-0.5 rounded-full border border-amber-500/30 font-mono">
+                      {userCoins.toLocaleString()}
+                    </span>
                   </div>
                   <div>
                     <p className="text-2xl font-black text-white font-mono">{userCoins.toLocaleString()}</p>
-                    <span className="text-xs text-slate-200 block mt-0.5">{window.loc('معادل تقریبی: ≈ $', 'Approximate equivalent: ≈ $')}{(userCoins / 500).toFixed(2)} USDT</span>
+                    <span className="text-xs text-slate-400 block mt-0.5 font-mono">≈ ${(userCoins / 500).toFixed(2)} USDT</span>
                   </div>
                   <button 
                     onClick={() => setWalletSubTab('buy')}
                     className="w-full py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md font-bold"
                   >
-                    {window.loc('➕ Buy Coins (خرید سکه)', '➕ Buy Coins')}
+                    {window.loc('خرید سکه', 'Buy Coins')}
                   </button>
                 </div>
 
@@ -277,19 +279,21 @@ export default function WalletTab(props) {
                     <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-950/80 via-blue-900/40 to-slate-950 border border-cyan-500/50 shadow-[0_0_25px_rgba(6,182,212,0.2)] flex flex-col justify-between space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
-                          <Sparkles className="w-4 h-4 text-cyan-400" /> {window.loc('💎 Diamonds (الماس)', '💎 Diamonds')}
+                          <Sparkles className="w-4 h-4 text-cyan-400" /> {window.loc('الماس', 'Diamonds')}
                         </span>
-                        <span className="text-xs bg-cyan-500/25 text-cyan-200 border border-cyan-400/40 font-bold px-2 py-0.5 rounded-full border border-cyan-500/30">{window.loc('درآمد استریمر', 'Streamer income')}</span>
+                        <span className="text-xs bg-cyan-500/25 text-cyan-200 border border-cyan-400/40 font-bold px-2 py-0.5 rounded-full border border-cyan-500/30 font-mono">
+                          {userDiamonds.toLocaleString()}
+                        </span>
                       </div>
                       <div>
                         <p className="text-2xl font-black text-white font-mono">{userDiamonds.toLocaleString()}</p>
-                        <span className="text-xs text-slate-200 block mt-0.5">{window.loc('ارزش تبدیل نقد: ≈ $', 'Cash conversion value: ≈ $')}{(userDiamonds / 100).toFixed(2)} USDT</span>
+                        <span className="text-xs text-slate-400 block mt-0.5 font-mono">≈ ${(userDiamonds / 100).toFixed(2)} USDT</span>
                       </div>
                       <button 
                         onClick={() => setWalletSubTab('convert')}
                         className="w-full py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs transition shadow-md"
                       >
-                        {window.loc('🔄 Convert (تبدیل درآمد)', '🔄 Convert')}
+                        {window.loc('تبدیل به نقد', 'Convert')}
                       </button>
                     </div>
 
@@ -297,19 +301,19 @@ export default function WalletTab(props) {
                     <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-950/80 via-teal-900/40 to-slate-950 border border-emerald-500/50 shadow-[0_0_25px_rgba(16,185,129,0.2)] flex flex-col justify-between space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                          <DollarSign className="w-4 h-4 text-emerald-400" /> {window.loc('💵 Cash Balance (موجودی نقد)', '💵 Cash Balance')}
+                          <DollarSign className="w-4 h-4 text-emerald-400" /> {window.loc('موجودی نقد', 'Cash Balance')}
                         </span>
-                        <span className="text-xs bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">{window.loc('قابل برداشت', 'removable')}</span>
+                        <span className="text-xs bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30 font-mono">USDT</span>
                       </div>
                       <div>
                         <p className="text-2xl font-black text-emerald-400 font-mono">${userCashBalance.toFixed(2)} <span className="text-xs font-bold text-slate-300">USDT</span></p>
-                        <span className="text-xs text-slate-200 block mt-0.5">{window.loc('آماده واریز مستقیم به TRC20', 'Ready to direct deposit to TRC20')}</span>
+                        <span className="text-xs text-slate-400 block mt-0.5">TRC20</span>
                       </div>
                       <button 
                         onClick={() => setWalletSubTab('withdraw')}
                         className="w-full py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-md"
                       >
-                        {window.loc('💸 Withdraw (برداشت وجه)', '💸 Withdraw')}
+                        {window.loc('برداشت وجه', 'Withdraw')}
                       </button>
                     </div>
                   </>
@@ -328,8 +332,7 @@ export default function WalletTab(props) {
                 <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-400 group-hover:scale-110 transition">
                   <Plus className="w-6 h-6" />
                 </div>
-                <span className="font-black text-sm">➕ Buy Coins</span>
-                <span className="text-xs text-slate-200">{window.loc('خرید سکه برای هدیه و خدمات', 'Buy coins for gifts and services')}</span>
+                <span className="font-black text-sm">{window.loc('خرید سکه', 'Buy Coins')}</span>
               </button>
 
               <button
@@ -339,8 +342,7 @@ export default function WalletTab(props) {
                 <div className="p-3 rounded-2xl bg-pink-500/20 text-pink-400 group-hover:scale-110 transition">
                   <Gift className="w-6 h-6" />
                 </div>
-                <span className="font-black text-sm">🎁 Send Gift</span>
-                <span className="text-xs text-slate-200">{window.loc('ارسال هدیه به استریمرها', 'Send gifts to streamers')}</span>
+                <span className="font-black text-sm">{window.loc('ارسال هدیه', 'Send Gift')}</span>
               </button>
 
               {canWithdraw && (
@@ -351,8 +353,7 @@ export default function WalletTab(props) {
                   <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition">
                     <ArrowUpRight className="w-6 h-6" />
                   </div>
-                  <span className="font-black text-sm">💸 Withdraw</span>
-                  <span className="text-xs text-slate-200">{window.loc('تسویه و برداشت درآمد به TRC20', 'Settlement and withdrawal of income to TRC20')}</span>
+                  <span className="font-black text-sm">{window.loc('برداشت', 'Withdraw')}</span>
                 </button>
               )}
 
@@ -363,24 +364,23 @@ export default function WalletTab(props) {
                 <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-400 group-hover:scale-110 transition">
                   <Clock className="w-6 h-6" />
                 </div>
-                <span className="font-black text-sm">📜 History</span>
-                <span className="text-xs text-slate-200">{window.loc('تاریخچه کامل تراکنش‌ها', 'Full history of transactions')}</span>
+                <span className="font-black text-sm">{window.loc('تراکنش‌ها', 'History')}</span>
               </button>
             </div>
 
             {/* WALLET SUB-NAVIGATION CHIPS BAR */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs border-b border-slate-800">
               {[
-                { id: 'overview', label: window.loc('💰 Balance (نمای کلی)', '💰 Balance (Overview)') },
-                { id: 'buy', label: window.loc('🪙 Buy Coins (خرید سکه)', '🪙 Buy Coins') },
-                { id: 'convert', label: window.loc('💎 Convert (تبدیل درآمد)', '💎 Convert'), streamerOnly: true },
-                { id: 'withdraw', label: window.loc('💸 Withdraw (برداشت)', '💸 Withdraw'), streamerOnly: true },
-                { id: 'history', label: window.loc('📜 Transactions (تاریخچه)', '📜 Transactions (History)') },
-                { id: 'creator', label: window.loc('🏆 Creator Earnings (درآمد)', '🏆 Creator Earnings'), streamerOnly: true },
-                { id: 'referral', label: window.loc('👥 Referral (دعوت دوستان)', '👥 Referral') },
-                { id: 'vip', label: window.loc('👑 VIP Premium (اشتراک VIP)', '👑 VIP Premium (VIP membership)') },
-                { id: 'security', label: window.loc('🔒 Security (امنیت)', '🔒 Security') },
-                { id: 'giftshop', label: window.loc('🎁 Gift Shop (فروشگاه)', '🎁 Gift Shop') }
+                { id: 'overview', label: window.loc('نمای کلی', 'Overview') },
+                { id: 'buy', label: window.loc('خرید سکه', 'Buy Coins') },
+                { id: 'convert', label: window.loc('تبدیل درآمد', 'Convert'), streamerOnly: true },
+                { id: 'withdraw', label: window.loc('برداشت', 'Withdraw'), streamerOnly: true },
+                { id: 'history', label: window.loc('تراکنش‌ها', 'History') },
+                { id: 'creator', label: window.loc('درآمد', 'Earnings'), streamerOnly: true },
+                { id: 'referral', label: window.loc('دعوت دوستان', 'Referral') },
+                { id: 'vip', label: window.loc('VIP', 'VIP') },
+                { id: 'security', label: window.loc('امنیت', 'Security') },
+                { id: 'giftshop', label: window.loc('فروشگاه', 'Gift Shop') }
               ]
               .filter(tab => !tab.streamerOnly || canWithdraw)
               .map(tab => (
