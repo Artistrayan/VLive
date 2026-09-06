@@ -42,6 +42,7 @@ import TermsModal from './modals/TermsModal';
 import SettingsModal from './modals/SettingsModal';
 import HostLiveModal from './modals/HostLiveModal';
 import UserProfileViewModal from './modals/UserProfileViewModal';
+import QrCodeModal from './modals/QrCodeModal';
 
 // Visual UI Editor & Context
 import { VisualUiEditorProvider } from './context/VisualUiEditorContext';
@@ -3822,6 +3823,23 @@ export default function App() {
         compressImageFile={compressImageFile} 
         showToast={showToast} 
         loc={loc} 
+      />
+
+      {/* MODAL: PROFILE QR CODE & SCANNER */}
+      <QrCodeModal
+        isOpen={isQrCodeModalOpen}
+        onClose={() => setIsQrCodeModalOpen(false)}
+        currentUser={currentUser}
+        userName={userName}
+        currentUsername={currentUsername}
+        authUsername={authUsername}
+        userAvatar={userAvatar}
+        userRole={userRole}
+        userLevel={userLevel}
+        vipPlan={vipPlan}
+        showToast={showToast}
+        loc={loc}
+        isRtl={isRtl}
       />
 
       {/* MODAL: VIP & REWARD SYSTEM MODALS */}

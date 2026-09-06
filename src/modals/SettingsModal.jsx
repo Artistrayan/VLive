@@ -57,7 +57,7 @@ export default function SettingsModal(props) {
   const [showEditPasswordNew, setShowEditPasswordNew] = React.useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = React.useState(false);
 
-  // 2. Privacy states
+  // 2. Privacy states (Instant Auto-Save)
   const [privacyLastSeen, setPrivacyLastSeen] = React.useState(() => safeStorage.getItem('vlive_privacy_last_seen') || 'Everyone');
   const [privacyOnlineStatus, setPrivacyOnlineStatus] = React.useState(() => safeStorage.getItem('vlive_privacy_online_status') !== 'false');
   const [privacyWhoMessage, setPrivacyWhoMessage] = React.useState(() => safeStorage.getItem('vlive_privacy_who_message') || 'Everyone');
@@ -65,6 +65,11 @@ export default function SettingsModal(props) {
   const [privacyShowCity, setPrivacyShowCity] = React.useState(() => safeStorage.getItem('vlive_privacy_show_city') !== 'false');
   const [privacyShowAge, setPrivacyShowAge] = React.useState(() => safeStorage.getItem('vlive_privacy_show_age') !== 'false');
   const [privacyGhostMode, setPrivacyGhostMode] = React.useState(() => safeStorage.getItem('vlive_privacy_ghost_mode') === 'true');
+
+  const updatePrivacySetting = (key, val) => {
+    safeStorage.setItem(`vlive_privacy_${key}`, typeof val === 'boolean' ? String(val) : val);
+    apiProfile.syncProfileState({ [`privacy_${key}`]: val }).catch(() => {});
+  };
 
   // 3. Security states
   const [is2FAEnabled, setIs2FAEnabled] = React.useState(() => safeStorage.getItem('vlive_2fa_enabled') === 'true');
@@ -77,6 +82,13 @@ export default function SettingsModal(props) {
     } catch {}
     return notifSettings || { messages: true, calls: true, live: true, follow: true, gifts: true, earnings: true, promotions: true, system: true };
   });
+
+  const updateNotificationToggle = (key, val) => {
+    const updated = { ...notifSettingsDetailed, [key]: val };
+    setNotifSettingsDetailed(updated);
+    if (setNotifSettings) setNotifSettings(updated);
+    safeStorage.setItem('vlive_notif_settings', JSON.stringify(updated));
+  };
 
   // 5. Appearance states
   const [appAccentColor, setAppAccentColorState] = React.useState(() => externalAppAccentColor || safeStorage.getItem('vlive_app_accent_color') || 'pink');
@@ -713,8 +725,10 @@ export default function SettingsModal(props) {
                     <select
                       value={privacyLastSeen}
                       onChange={e => {
-                        setPrivacyLastSeen(e.target.value);
-                        safeStorage.setItem('vlive_privacy_last_seen', e.target.value);
+                        const val = e.target.value;
+                        setPrivacyLastSeen(val);
+                        updatePrivacySetting('last_seen', val);
+                        showToast(safeLoc('تنظیم آخرین بازدید ذخیره شد ✅', 'Last seen privacy saved ✅'));
                       }}
                       className="bg-slate-950 border border-slate-800 text-white text-[11px] rounded-xl px-2 py-1 outline-none"
                     >
@@ -733,8 +747,10 @@ export default function SettingsModal(props) {
                       type="checkbox"
                       checked={privacyOnlineStatus}
                       onChange={e => {
-                        setPrivacyOnlineStatus(e.target.checked);
-                        safeStorage.setItem('vlive_privacy_online_status', String(e.target.checked));
+                        const val = e.target.checked;
+                        setPrivacyOnlineStatus(val);
+                        updatePrivacySetting('online_status', val);
+                        showToast(val ? safeLoc('نمایش وضعیت آنلاین فعال شد', 'Online status visible') : safeLoc('وضعیت آنلاین مخفی شد', 'Online status hidden'));
                       }}
                       className="accent-cyan-500 w-4 h-4 rounded cursor-pointer"
                     />
@@ -748,8 +764,10 @@ export default function SettingsModal(props) {
                     <select
                       value={privacyWhoMessage}
                       onChange={e => {
-                        setPrivacyWhoMessage(e.target.value);
-                        safeStorage.setItem('vlive_privacy_who_message', e.target.value);
+                        const val = e.target.value;
+                        setPrivacyWhoMessage(val);
+                        updatePrivacySetting('who_message', val);
+                        showToast(safeLoc('دسترسی پیام خصوصی ذخیره شد ✅', 'Message privacy saved ✅'));
                       }}
                       className="bg-slate-950 border border-slate-800 text-white text-[11px] rounded-xl px-2 py-1 outline-none"
                     >
@@ -767,8 +785,10 @@ export default function SettingsModal(props) {
                     <select
                       value={privacyWhoCall}
                       onChange={e => {
-                        setPrivacyWhoCall(e.target.value);
-                        safeStorage.setItem('vlive_privacy_who_call', e.target.value);
+                        const val = e.target.value;
+                        setPrivacyWhoCall(val);
+                        updatePrivacySetting('who_call', val);
+                        showToast(safeLoc('دسترسی برقراری تماس ذخیره شد ✅', 'Call privacy saved ✅'));
                       }}
                       className="bg-slate-950 border border-slate-800 text-white text-[11px] rounded-xl px-2 py-1 outline-none"
                     >
@@ -787,8 +807,10 @@ export default function SettingsModal(props) {
                       type="checkbox"
                       checked={privacyShowCity}
                       onChange={e => {
-                        setPrivacyShowCity(e.target.checked);
-                        safeStorage.setItem('vlive_privacy_show_city', String(e.target.checked));
+                        const val = e.target.checked;
+                        setPrivacyShowCity(val);
+                        updatePrivacySetting('show_city', val);
+                        showToast(val ? safeLoc('نمایش شهر فعال شد', 'City display enabled') : safeLoc('نمایش شهر غیرفعال شد', 'City display disabled'));
                       }}
                       className="accent-cyan-500 w-4 h-4 rounded cursor-pointer"
                     />
@@ -803,8 +825,10 @@ export default function SettingsModal(props) {
                       type="checkbox"
                       checked={privacyShowAge}
                       onChange={e => {
-                        setPrivacyShowAge(e.target.checked);
-                        safeStorage.setItem('vlive_privacy_show_age', String(e.target.checked));
+                        const val = e.target.checked;
+                        setPrivacyShowAge(val);
+                        updatePrivacySetting('show_age', val);
+                        showToast(val ? safeLoc('نمایش سن فعال شد', 'Age display enabled') : safeLoc('نمایش سن غیرفعال شد', 'Age display disabled'));
                       }}
                       className="accent-cyan-500 w-4 h-4 rounded cursor-pointer"
                     />
@@ -822,9 +846,10 @@ export default function SettingsModal(props) {
                       type="checkbox"
                       checked={privacyGhostMode}
                       onChange={e => {
-                        setPrivacyGhostMode(e.target.checked);
-                        safeStorage.setItem('vlive_privacy_ghost_mode', String(e.target.checked));
-                        showToast(e.target.checked ? safeLoc('حالت روح فعال شد 👻', 'Ghost Mode enabled 👻') : safeLoc('حالت روح غیرفعال شد', 'Ghost Mode disabled'));
+                        const val = e.target.checked;
+                        setPrivacyGhostMode(val);
+                        updatePrivacySetting('ghost_mode', val);
+                        showToast(val ? safeLoc('حالت روح فعال شد 👻', 'Ghost Mode enabled 👻') : safeLoc('حالت روح غیرفعال شد', 'Ghost Mode disabled'));
                       }}
                       className="accent-cyan-500 w-4 h-4 rounded cursor-pointer"
                     />
