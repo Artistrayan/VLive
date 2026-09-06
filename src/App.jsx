@@ -5132,7 +5132,7 @@ export default function App() {
   
 </div>
       </DevicePreviewFrame>
-      <InspectorPanel />
-      <ThemeManagerModal />
+      {isUserSuperAdmin && <InspectorPanel />}
+      {isUserSuperAdmin && <ThemeManagerModal />}
     </VisualUiEditorProvider>;
 }

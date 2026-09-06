@@ -3,13 +3,10 @@ import { presenceService } from './presenceService';
 import { calculateAge } from './businessRules';
 import { fetchLiveKitToken } from './livekitService';
 import { safeStorage } from '../utils/safeStorage';
-import { getStoredToken, getUserId } from '../utils/authSession';
+import { getStoredToken, setStoredToken, getUserId, setStoredSession } from '../utils/authSession';
 import { verifyAdminAccess, recordAdminAuditLog, ADMIN_TELEGRAM_ID } from './adminGuard';
 
-export { presenceService, calculateAge, getStoredToken, getUserId };
-
-export const setStoredToken = (token) => safeStorage.setItem('vlive_token', token);
-export const setStoredSession = (session) => safeStorage.setItem('vlive_session', JSON.stringify(session));
+export { presenceService, calculateAge, getStoredToken, setStoredToken, getUserId, setStoredSession };
 
 // ==========================================
 // CORE HELPERS (RESOLVER & ADMIN SECURITY)

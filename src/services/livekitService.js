@@ -36,6 +36,9 @@ export async function fetchLiveKitToken({
       tgInitData = window.Telegram.WebApp.initData;
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
     const response = await fetch('/api/livekit/token', {
       method: 'POST',
       headers: {
@@ -46,7 +49,10 @@ export async function fetchLiveKitToken({
       body: JSON.stringify({
         roomName: cleanRoom,
         metadata
-      })
+      }),
+      signal: controller.signal
+    }).finally(() => {
+      clearTimeout(timeoutId);
     });
 
     if (!response.ok) {
