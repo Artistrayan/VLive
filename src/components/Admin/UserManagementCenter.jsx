@@ -43,9 +43,9 @@ export default function UserManagementCenter({
   const handleOpenPermissionsModal = (user) => {
     const isVip = Boolean(user.isVip || user.vip || user.is_vip || (user.vip_plan && user.vip_plan !== 'none'));
     const isVerified = Boolean(user.isVerified || user.verified || user.is_verified);
-    const isStreamer = Boolean(user.isStreamer || user.isHost || user.is_streamer);
-    const isBanned = Boolean(user.isBanned || user.status === 'banned');
-    const isMuted = Boolean(user.isMuted);
+    const isStreamer = Boolean(user.isStreamer || user.isHost || user.is_streamer || user.user_type === 'STREAMER');
+    const isBanned = Boolean(user.isBanned || user.is_banned || user.status === 'banned');
+    const isMuted = Boolean(user.isMuted || user.is_muted);
     const coins = Number(user.coins ?? user.userCoins ?? 0);
     const diamonds = Number(user.diamonds ?? 0);
 
@@ -250,26 +250,28 @@ export default function UserManagementCenter({
 
   // Action handlers
   const handleToggleBan = async (user) => {
-    const nextBanned = !user.isBanned;
-    setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isBanned: nextBanned, status: nextBanned ? 'banned' : 'approved' } : u));
+    const isCurrentlyBanned = Boolean(user.isBanned || user.is_banned || user.status === 'banned');
+    const nextBanned = !isCurrentlyBanned;
+    setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isBanned: nextBanned, is_banned: nextBanned, status: nextBanned ? 'banned' : 'approved' } : u));
     if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') {
        await apiAdmin.updateUserFields(user.id, { is_banned: nextBanned, status: nextBanned ? 'banned' : 'approved' });
     }
     if (selectedUserDetail?.id === user.id) {
-      setSelectedUserDetail(prev => ({ ...prev, isBanned: nextBanned }));
+      setSelectedUserDetail(prev => ({ ...prev, isBanned: nextBanned, is_banned: nextBanned, status: nextBanned ? 'banned' : 'approved' }));
     }
     addAdminAuditLog(`Admin Action: ${nextBanned ? 'Banned' : 'Unbanned'} user @${user.username || user.name}`);
     showToast(nextBanned ? window.loc(`🚫 کاربر @${user.username} مسدود شد`, `🚫 User @${user.username} banned`) : window.loc(`انسداد کاربر @${user.username} لغو شد`, `User @${user.username} unbanned`));
   };
 
   const handleToggleMute = async (user) => {
-    const nextMuted = !user.isMuted;
-    setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isMuted: nextMuted } : u));
+    const isCurrentlyMuted = Boolean(user.isMuted || user.is_muted);
+    const nextMuted = !isCurrentlyMuted;
+    setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, isMuted: nextMuted, is_muted: nextMuted } : u));
     if (apiAdmin && typeof apiAdmin.updateUserFields === 'function') {
        await apiAdmin.updateUserFields(user.id, { is_muted: nextMuted });
     }
     if (selectedUserDetail?.id === user.id) {
-      setSelectedUserDetail(prev => ({ ...prev, isMuted: nextMuted }));
+      setSelectedUserDetail(prev => ({ ...prev, isMuted: nextMuted, is_muted: nextMuted }));
     }
     addAdminAuditLog(`Admin Action: ${nextMuted ? 'Muted' : 'Unmuted'} user @${user.username}`);
     showToast(nextMuted ? window.loc(`🔇 کاربر @${user.username} بی صدا شد`, `🔇 User @${user.username} muted`) : window.loc(`صدای کاربر @${user.username} فعال شد`, `User @${user.username} unmuted`));

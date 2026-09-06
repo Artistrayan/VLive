@@ -85,7 +85,13 @@ export default function App() {
 
   // User Profile & Authentication State (Strict Real Identity - No Mock/Fallback)
   const [authStatus, setAuthStatus] = useState('loading'); // 'loading' | 'authenticated' | 'unauthenticated' | 'error'
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    try {
+      return safeStorage.getItem('vlive_user_logged_in') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [authUserRecord, setAuthUserRecord] = useState(null);
   const [userName, setUserName] = useState('Guest User');
   const [currentUsername, setCurrentUsername] = useState('guest');
@@ -2534,6 +2540,33 @@ export default function App() {
       }
     }
     initAuth();
+  }, []);
+
+  // Immediate Initial Data Fetch on App Mount (Ensures feeds, streams, stories, and users are loaded immediately on first visit)
+  useEffect(() => {
+    // 1. Approved Users
+    apiHome.getApprovedUsers().then(users => {
+      if (users && users.length > 0) setUsersList(users);
+    }).catch(err => console.warn('Users initial load notice:', err));
+
+    // 2. Active Streams
+    apiHome.getActiveStreams().then(streams => {
+      setStreamsList(Array.isArray(streams) ? streams : []);
+    }).catch(err => console.warn('Streams initial load notice:', err));
+
+    // 3. Posts
+    if (typeof apiSocial !== "undefined" && apiSocial.getPosts) {
+      apiSocial.getPosts().then(res => {
+        if (res && res.length > 0) setPosts(res);
+      }).catch(() => {});
+    }
+
+    // 4. Stories
+    if (typeof apiSocial !== "undefined" && apiSocial.getStories) {
+      apiSocial.getStories().then(res => {
+        if (Array.isArray(res) && res.length > 0) setAdvancedStories(res);
+      }).catch(err => console.warn('Stories initial load notice:', err));
+    }
   }, []);
 
   // API Data Sync Effect for Steps 3-14 (Home, Wallet, Live, Notifications, Admin)

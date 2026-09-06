@@ -1265,65 +1265,68 @@ export const apiHome = {
     try {
       const streamsMap = new Map();
 
-      // 1. Fetch from streams table (status = 'active')
-      try {
-        const { data: sData } = await supabase
+      // Parallel fetch from streams and live_streams tables for maximum speed
+      const [
+        { data: sData },
+        { data: lsData }
+      ] = await Promise.all([
+        supabase
           .from('streams')
           .select('*')
           .eq('status', 'active')
-          .order('created_at', { ascending: false });
-        if (Array.isArray(sData)) {
-          sData.forEach(s => {
-            if (s && s.id) {
-              streamsMap.set(s.id, {
-                id: s.id,
-                title: s.title || 'پخش زنده',
-                host: s.host || 'Streamer',
-                host_id: s.host_id,
-                avatar: s.avatar || '',
-                thumbnail: s.thumbnail || '',
-                category: s.category || 'General',
-                live_type: s.live_type || 'standard',
-                viewers: s.viewers || 1,
-                status: 'active',
-                is_live: true,
-                created_at: s.created_at
-              });
-            }
-          });
-        }
-      } catch (e) {}
-
-      // 2. Fetch from live_streams table (is_live = true)
-      try {
-        const { data: lsData } = await supabase
+          .order('created_at', { ascending: false })
+          .catch(() => ({ data: [] })),
+        supabase
           .from('live_streams')
           .select('*')
           .eq('is_live', true)
-          .order('created_at', { ascending: false });
-        if (Array.isArray(lsData)) {
-          lsData.forEach(ls => {
-            if (ls && ls.id && !streamsMap.has(ls.id)) {
-              streamsMap.set(ls.id, {
-                id: ls.id,
-                title: ls.title || 'پخش زنده',
-                host: ls.host || `User_${ls.host_id || 'streamer'}`,
-                host_id: ls.host_id,
-                avatar: ls.avatar || '',
-                thumbnail: ls.thumbnail || '',
-                category: ls.category || 'General',
-                live_type: ls.live_type || 'standard',
-                viewers: ls.viewer_count || 1,
-                status: 'active',
-                is_live: true,
-                created_at: ls.created_at
-              });
-            }
-          });
-        }
-      } catch (e) {}
+          .order('created_at', { ascending: false })
+          .catch(() => ({ data: [] }))
+      ]);
 
-      // 3. Clear stale local storage streams if not active in Supabase
+      if (Array.isArray(sData)) {
+        sData.forEach(s => {
+          if (s && s.id) {
+            streamsMap.set(s.id, {
+              id: s.id,
+              title: s.title || 'پخش زنده',
+              host: s.host || 'Streamer',
+              host_id: s.host_id,
+              avatar: s.avatar || '',
+              thumbnail: s.thumbnail || '',
+              category: s.category || 'General',
+              live_type: s.live_type || 'standard',
+              viewers: s.viewers || 1,
+              status: 'active',
+              is_live: true,
+              created_at: s.created_at
+            });
+          }
+        });
+      }
+
+      if (Array.isArray(lsData)) {
+        lsData.forEach(ls => {
+          if (ls && ls.id && !streamsMap.has(ls.id)) {
+            streamsMap.set(ls.id, {
+              id: ls.id,
+              title: ls.title || 'پخش زنده',
+              host: ls.host || `User_${ls.host_id || 'streamer'}`,
+              host_id: ls.host_id,
+              avatar: ls.avatar || '',
+              thumbnail: ls.thumbnail || '',
+              category: ls.category || 'General',
+              live_type: ls.live_type || 'standard',
+              viewers: ls.viewer_count || 1,
+              status: 'active',
+              is_live: true,
+              created_at: ls.created_at
+            });
+          }
+        });
+      }
+
+      // Clear stale local storage streams if not active in Supabase
       try {
         if (streamsMap.size === 0) {
           safeStorage.removeItem('vlive_active_live_streams');
@@ -1349,19 +1352,31 @@ export const apiHome = {
 
   async getApprovedUsers() {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .neq('status', 'banned')
-        .order('created_at', { ascending: false });
-      if (error) return [];
+      // Parallel fetch for speed
+      const [
+        { data, error },
+        { data: adminStates },
+        { data: approvedKycs }
+      ] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*')
+          .neq('status', 'banned')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('support_tickets')
+          .select('user_id, subject, message')
+          .like('subject', 'ADMIN_USER_STATE:%')
+          .catch(() => ({ data: [] })),
+        supabase
+          .from('kyc_applications')
+          .select('user_id')
+          .eq('status', 'Approved')
+          .catch(() => ({ data: [] }))
+      ]);
 
-      // Fetch persistent admin states from Supabase
-      const { data: adminStates } = await supabase
-        .from('support_tickets')
-        .select('user_id, subject, message')
-        .like('subject', 'ADMIN_USER_STATE:%')
-        .catch(() => ({ data: [] }));
+      if (error || !Array.isArray(data)) return [];
+
       const adminStateMap = new Map();
       if (Array.isArray(adminStates)) {
         adminStates.forEach(item => {
@@ -1373,63 +1388,73 @@ export const apiHome = {
         });
       }
 
-      // Fetch approved KYC applications
-      const { data: approvedKycs } = await supabase
-        .from('kyc_applications')
-        .select('user_id')
-        .eq('status', 'Approved')
-        .catch(() => ({ data: [] }));
       const approvedKycSet = new Set((approvedKycs || []).map(k => k.user_id));
 
-      return (data || []).map(u => {
-        const isOnline = presenceService.isUserOnline(u);
-        const override = adminStateMap.get(u.id);
-        const isApprovedKyc = approvedKycSet.has(u.id);
+      return data
+        .filter(u => {
+          const override = adminStateMap.get(u.id);
+          const isBanned = typeof override?.is_banned === 'boolean'
+            ? override.is_banned
+            : (override?.status === 'banned' || u.status === 'banned');
+          return !isBanned;
+        })
+        .map(u => {
+          const isOnline = presenceService.isUserOnline(u);
+          const override = adminStateMap.get(u.id);
+          const isApprovedKyc = approvedKycSet.has(u.id);
 
-        const birthDateVal = u.birth_date || u.birthdate || u.birthday;
-        const calculatedAge = birthDateVal ? calculateAge(birthDateVal) : (u.age || null);
-        const isVipVal = typeof override?.is_vip === 'boolean'
-          ? override.is_vip
-          : Boolean(u.is_vip || u.vip || u.isVip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null'));
-        const isVerifiedVal = typeof override?.is_verified === 'boolean'
-          ? override.is_verified
-          : Boolean(u.is_verified || u.verified || u.isVerified);
-        const isStreamerVal = Boolean(
-          override?.is_streamer ||
-          override?.user_type === 'STREAMER' ||
-          isApprovedKyc ||
-          u.user_type === 'STREAMER' ||
-          u.role === 'streamer' ||
-          u.is_streamer ||
-          u.isStreamer ||
-          u.isHost
-        );
-        const userCoinsVal = typeof override?.coins === 'number'
-          ? override.coins
-          : Number(u.coins ?? u.userCoins ?? 0);
+          const birthDateVal = u.birth_date || u.birthdate || u.birthday;
+          const calculatedAge = birthDateVal ? calculateAge(birthDateVal) : (u.age || null);
 
-        return {
-          ...u,
-          age: calculatedAge !== null ? calculatedAge : u.age,
-          birth_date: birthDateVal || '',
-          city: u.location || u.city || '',
-          is_streamer: isStreamerVal,
-          isStreamer: isStreamerVal,
-          isHost: isStreamerVal,
-          user_type: isStreamerVal ? 'STREAMER' : (override?.user_type || u.user_type || 'REAL_USER'),
-          is_vip: isVipVal,
-          isVip: isVipVal,
-          vip: isVipVal,
-          is_verified: isVerifiedVal,
-          isVerified: isVerifiedVal,
-          verified: isVerifiedVal,
-          coins: userCoinsVal,
-          userCoins: userCoinsVal,
-          online: isOnline,
-          isOnline: isOnline,
-          last_seen: u.updated_at || u.created_at
-        };
-      });
+          // Streamer logic: explicit boolean override has highest priority
+          const isStreamerVal = typeof override?.is_streamer === 'boolean'
+            ? override.is_streamer
+            : (override?.user_type === 'STREAMER' || u.user_type === 'STREAMER' || isApprovedKyc || Boolean(u.is_streamer || u.isStreamer || u.isHost));
+
+          // Mute logic: explicit boolean override has highest priority
+          const isMutedVal = typeof override?.is_muted === 'boolean'
+            ? override.is_muted
+            : Boolean(u.is_muted || u.isMuted);
+
+          const isVipVal = typeof override?.is_vip === 'boolean'
+            ? override.is_vip
+            : Boolean(u.is_vip || u.vip || u.isVip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null'));
+
+          const isVerifiedVal = typeof override?.is_verified === 'boolean'
+            ? override.is_verified
+            : Boolean(u.is_verified || u.verified || u.isVerified);
+
+          const userCoinsVal = typeof override?.coins === 'number'
+            ? override.coins
+            : Number(u.coins ?? u.userCoins ?? 0);
+
+          return {
+            ...u,
+            age: calculatedAge !== null ? calculatedAge : u.age,
+            birth_date: birthDateVal || '',
+            city: u.location || u.city || '',
+            is_streamer: isStreamerVal,
+            isStreamer: isStreamerVal,
+            isHost: isStreamerVal,
+            user_type: isStreamerVal ? 'STREAMER' : (override?.user_type || u.user_type || 'REAL_USER'),
+            is_vip: isVipVal,
+            isVip: isVipVal,
+            vip: isVipVal,
+            is_verified: isVerifiedVal,
+            isVerified: isVerifiedVal,
+            verified: isVerifiedVal,
+            is_muted: isMutedVal,
+            isMuted: isMutedVal,
+            is_banned: false,
+            isBanned: false,
+            status: override?.status || u.status || 'approved',
+            coins: userCoinsVal,
+            userCoins: userCoinsVal,
+            online: isOnline,
+            isOnline: isOnline,
+            last_seen: u.updated_at || u.created_at
+          };
+        });
     } catch (e) {
       return [];
     }
@@ -4536,18 +4561,20 @@ export const apiAdmin = {
   async getAllUsers() {
     if (!(await verifyAdminServerRole())) return [];
     try {
-      const { data: profs, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-      
-      // Fetch wallets to ensure accurate real coin and USDT balances for all users
-      const { data: walData } = await supabase.from('wallets').select('user_id, coins, usdt_balance');
-      const walMap = new Map((walData || []).map(w => [w.user_id, w]));
+      // Parallelize DB queries with Promise.all for high speed and instant loading
+      const [
+        { data: profs, error },
+        { data: walData },
+        { data: adminStates },
+        { data: approvedKycs }
+      ] = await Promise.all([
+        supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+        supabase.from('wallets').select('user_id, coins, usdt_balance').catch(() => ({ data: [] })),
+        supabase.from('support_tickets').select('user_id, subject, message').like('subject', 'ADMIN_USER_STATE:%').catch(() => ({ data: [] })),
+        supabase.from('kyc_applications').select('user_id').eq('status', 'Approved').catch(() => ({ data: [] }))
+      ]);
 
-      // Fetch persistent admin states from Supabase
-      const { data: adminStates } = await supabase
-        .from('support_tickets')
-        .select('user_id, subject, message')
-        .like('subject', 'ADMIN_USER_STATE:%')
-        .catch(() => ({ data: [] }));
+      const walMap = new Map((walData || []).map(w => [w.user_id, w]));
       const adminStateMap = new Map();
       if (Array.isArray(adminStates)) {
         adminStates.forEach(item => {
@@ -4559,12 +4586,6 @@ export const apiAdmin = {
         });
       }
 
-      // Fetch approved KYC applications
-      const { data: approvedKycs } = await supabase
-        .from('kyc_applications')
-        .select('user_id')
-        .eq('status', 'Approved')
-        .catch(() => ({ data: [] }));
       const approvedKycSet = new Set((approvedKycs || []).map(k => k.user_id));
 
       const processUsers = (list) => (list || []).map(u => {
@@ -4573,16 +4594,20 @@ export const apiAdmin = {
         const override = adminStateMap.get(u.id);
         const isApprovedKyc = approvedKycSet.has(u.id);
 
-        const isStreamerVal = Boolean(
-          override?.is_streamer ||
-          override?.user_type === 'STREAMER' ||
-          isApprovedKyc ||
-          u.user_type === 'STREAMER' ||
-          u.role === 'streamer' ||
-          u.is_streamer ||
-          u.isStreamer ||
-          u.isHost
-        );
+        // Streamer logic: explicit boolean override has highest priority
+        const isStreamerVal = typeof override?.is_streamer === 'boolean'
+          ? override.is_streamer
+          : (override?.user_type === 'STREAMER' || u.user_type === 'STREAMER' || isApprovedKyc || Boolean(u.is_streamer || u.isStreamer || u.isHost));
+
+        // Ban logic: explicit boolean override has highest priority
+        const isBannedVal = typeof override?.is_banned === 'boolean'
+          ? override.is_banned
+          : (override?.status === 'banned' || u.status === 'banned');
+
+        // Mute logic: explicit boolean override has highest priority
+        const isMutedVal = typeof override?.is_muted === 'boolean'
+          ? override.is_muted
+          : Boolean(u.is_muted || u.isMuted);
 
         const realCoins = typeof override?.coins === 'number'
           ? override.coins
@@ -4597,7 +4622,7 @@ export const apiAdmin = {
           ? override.is_verified
           : Boolean(u.is_verified || u.verified || u.isVerified);
 
-        const statusVal = override?.status || u.status || 'approved';
+        const statusVal = isBannedVal ? 'banned' : (override?.status || u.status || 'approved');
         const userTypeVal = isStreamerVal ? 'STREAMER' : (override?.user_type || u.user_type || 'REAL_USER');
 
         let adminNotesList = [];
@@ -4619,13 +4644,17 @@ export const apiAdmin = {
           isStreamer: isStreamerVal,
           isHost: isStreamerVal,
           user_type: userTypeVal,
+          is_banned: isBannedVal,
+          isBanned: isBannedVal,
+          is_muted: isMutedVal,
+          isMuted: isMutedVal,
+          status: statusVal,
           is_vip: isVipVal,
           isVip: isVipVal,
           vip: isVipVal,
           is_verified: isVerifiedVal,
           isVerified: isVerifiedVal,
           verified: isVerifiedVal,
-          status: statusVal,
           adminNotes: adminNotesList.length > 0 ? adminNotesList : (u.adminNotes || []),
           online: isOnline,
           isOnline: isOnline,
@@ -4675,7 +4704,14 @@ export const apiAdmin = {
       const isStreamerExplicit = typeof updates.is_streamer !== 'undefined';
       const isStreamerVal = isStreamerExplicit ? Boolean(updates.is_streamer) : (updates.user_type === 'STREAMER' || updates.role === 'streamer');
 
-      // 1. Sanitize payload for PostgreSQL public.profiles table (ONLY columns that exist in DB)
+      const isBannedExplicit = typeof updates.is_banned !== 'undefined' || updates.status === 'banned';
+      const isBannedVal = typeof updates.is_banned !== 'undefined' ? Boolean(updates.is_banned) : (updates.status === 'banned');
+
+      const isMutedExplicit = typeof updates.is_muted !== 'undefined';
+      const isMutedVal = isMutedExplicit ? Boolean(updates.is_muted) : false;
+
+      // 1. Sanitize payload for PostgreSQL public.profiles table (ONLY columns that exist in DB!)
+      // CRITICAL: DO NOT add is_streamer, role, is_banned, or is_muted here as they do not exist in profiles table
       const safeProfilePayload = { updated_at: new Date().toISOString() };
       if (typeof updates.name === 'string') safeProfilePayload.name = updates.name;
       if (typeof updates.bio === 'string') safeProfilePayload.bio = updates.bio;
@@ -4684,15 +4720,20 @@ export const apiAdmin = {
       if (typeof updates.location === 'string') safeProfilePayload.location = updates.location;
       if (typeof updates.city === 'string') safeProfilePayload.location = updates.city;
       if (typeof updates.language === 'string') safeProfilePayload.language = updates.language;
-      if (typeof updates.status === 'string') safeProfilePayload.status = updates.status;
       if (typeof updates.is_vip !== 'undefined') safeProfilePayload.is_vip = Boolean(updates.is_vip);
+      if (typeof updates.vip_plan === 'string') safeProfilePayload.vip_plan = updates.vip_plan;
       if (typeof updates.is_verified !== 'undefined') safeProfilePayload.is_verified = Boolean(updates.is_verified);
-      if (typeof updates.is_streamer !== 'undefined') safeProfilePayload.is_streamer = Boolean(updates.is_streamer);
 
-      if (isStreamerExplicit || updates.user_type || updates.role) {
-        safeProfilePayload.user_type = isStreamerVal ? 'STREAMER' : (updates.user_type && updates.user_type !== 'STREAMER' ? updates.user_type : 'REAL_USER');
-        safeProfilePayload.role = isStreamerVal ? 'streamer' : (updates.role || 'user');
-        safeProfilePayload.is_streamer = isStreamerVal;
+      // Status in profiles table: 'banned', 'approved', 'suspended', etc.
+      if (typeof updates.is_banned !== 'undefined') {
+        safeProfilePayload.status = updates.is_banned ? 'banned' : 'approved';
+      } else if (typeof updates.status === 'string') {
+        safeProfilePayload.status = updates.status;
+      }
+
+      // user_type in profiles table: 'STREAMER', 'REAL_USER', 'ADMIN'
+      if (isStreamerExplicit || updates.user_type) {
+        safeProfilePayload.user_type = isStreamerVal ? 'STREAMER' : (updates.user_type === 'ADMIN' ? 'ADMIN' : 'REAL_USER');
       }
 
       let isSuccess = false;
@@ -4731,7 +4772,7 @@ export const apiAdmin = {
         }
       }
 
-      // 4. Save state permanently in Supabase support_tickets table
+      // 4. Save state permanently in Supabase support_tickets table (ADMIN_USER_STATE)
       if (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) {
         const subjectKey = `ADMIN_USER_STATE:${matchedId}`;
         const { data: existingTicket } = await supabase
@@ -4751,12 +4792,31 @@ export const apiAdmin = {
         const mergedState = {
           ...existingState,
           user_id: matchedId,
-          is_streamer: isStreamerVal,
-          user_type: isStreamerVal ? 'STREAMER' : (updates.user_type || existingState.user_type || 'REAL_USER'),
-          status: updates.status || existingState.status || 'approved',
           updated_at: new Date().toISOString()
         };
+
+        if (isStreamerExplicit) {
+          mergedState.is_streamer = isStreamerVal;
+          mergedState.user_type = isStreamerVal ? 'STREAMER' : (updates.user_type || existingState.user_type || 'REAL_USER');
+        } else if (updates.user_type) {
+          mergedState.user_type = updates.user_type;
+          mergedState.is_streamer = updates.user_type === 'STREAMER';
+        }
+
+        if (typeof updates.is_banned !== 'undefined') {
+          mergedState.is_banned = Boolean(updates.is_banned);
+          mergedState.status = updates.is_banned ? 'banned' : 'approved';
+        } else if (updates.status) {
+          mergedState.status = updates.status;
+          mergedState.is_banned = updates.status === 'banned';
+        }
+
+        if (typeof updates.is_muted !== 'undefined') {
+          mergedState.is_muted = Boolean(updates.is_muted);
+        }
+
         if (typeof updates.is_vip !== 'undefined') mergedState.is_vip = Boolean(updates.is_vip);
+        if (typeof updates.vip_plan === 'string') mergedState.vip_plan = updates.vip_plan;
         if (typeof updates.is_verified !== 'undefined') mergedState.is_verified = Boolean(updates.is_verified);
         if (typeof updates.coins === 'number') mergedState.coins = updates.coins;
         if (typeof updates.diamonds === 'number') mergedState.diamonds = updates.diamonds;
@@ -4801,7 +4861,22 @@ export const apiAdmin = {
       }
 
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('vlive_user_updated', { detail: { userId: matchedId || userId, updates: { ...updates, is_streamer: isStreamerVal, isStreamer: isStreamerVal, isHost: isStreamerVal, user_type: isStreamerVal ? 'STREAMER' : 'REAL_USER' } } }));
+        window.dispatchEvent(new CustomEvent('vlive_user_updated', {
+          detail: {
+            userId: matchedId || userId,
+            updates: {
+              ...updates,
+              is_streamer: isStreamerVal,
+              isStreamer: isStreamerVal,
+              isHost: isStreamerVal,
+              is_banned: isBannedVal,
+              isBanned: isBannedVal,
+              is_muted: isMutedVal,
+              isMuted: isMutedVal,
+              user_type: isStreamerVal ? 'STREAMER' : 'REAL_USER'
+            }
+          }
+        }));
       }
 
       return { success: isSuccess };
