@@ -648,14 +648,14 @@ export default function ProfileTab(props) {
         {/* 1. HERO COVER & PROFILE CARD               */}
         {/* ========================================== */}
         <VisualSectionWrapper pageId="profile" sectionId="profile_header_card" defaultLabel="User Avatar, Name & Bio Card">
-          <div className="relative rounded-[2rem] overflow-hidden bg-gradient-to-br from-slate-900/95 via-slate-950 to-slate-900/95 border border-slate-800/80 shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
-            {/* Cover Banner */}
-            <div className="h-32 sm:h-44 relative overflow-hidden bg-gradient-to-r from-pink-900/50 via-purple-900/50 via-slate-900 to-cyan-900/50">
+          <div className="relative rounded-[1.75rem] overflow-hidden bg-gradient-to-br from-slate-900/95 via-slate-950 to-slate-900/95 border border-slate-800/80 shadow-[0_10px_35px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+            {/* Cover Banner (Slim & Compact) */}
+            <div className="h-20 sm:h-24 relative overflow-hidden bg-gradient-to-r from-pink-900/40 via-purple-900/40 via-slate-900 to-cyan-900/40">
               {coverPhoto ? (
                 <img 
                   src={coverPhoto} 
                   alt="Cover" 
-                  className="w-full h-full object-cover opacity-85 hover:scale-105 transition duration-700" 
+                  className="w-full h-full object-cover opacity-80 hover:scale-105 transition duration-700" 
                   onError={(e) => { e.target.style.display = 'none'; }}
                 />
               ) : (
@@ -667,39 +667,39 @@ export default function ProfileTab(props) {
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
               
               {/* Top Quick Action Buttons */}
-              <div className="absolute top-4 right-4 flex items-center gap-2.5 z-10">
+              <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
                 {isAdminUser && (
                   <button
                     onClick={() => setIsAdminPanelOpen && setIsAdminPanelOpen(true)}
-                    className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white backdrop-blur-xl transition-all duration-300 border border-rose-400/40 shadow-[0_0_20px_rgba(225,29,72,0.4)] flex items-center gap-1.5 text-xs font-black cursor-pointer group"
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white backdrop-blur-xl transition-all duration-300 border border-rose-400/40 shadow-[0_0_15px_rgba(225,29,72,0.4)] flex items-center gap-1.5 text-xs font-black cursor-pointer group"
                     title={window.loc('پنل مدیریت', 'Admin Panel')}
                   >
-                    <Shield className="w-4 h-4 text-white group-hover:rotate-12 transition-transform" />
+                    <Shield className="w-3.5 h-3.5 text-white group-hover:rotate-12 transition-transform" />
                     <span className="hidden sm:inline">{window.loc('مدیریت', 'Admin')}</span>
                   </button>
                 )}
 
                 <button
                   onClick={() => setIsQrCodeModalOpen(true)}
-                  className="p-2.5 rounded-2xl bg-slate-950/70 hover:bg-slate-900 text-white backdrop-blur-xl transition-all duration-300 border border-white/20 shadow-lg hover:border-cyan-500/50 group cursor-pointer"
+                  className="p-2 rounded-xl bg-slate-950/70 hover:bg-slate-900 text-white backdrop-blur-xl transition-all duration-300 border border-white/20 shadow-md hover:border-cyan-500/50 group cursor-pointer"
                   title="Share QR Code"
                 >
-                  <QrCode className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+                  <QrCode className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
                 </button>
               </div>
             </div>
 
-            {/* Profile Info & Avatar */}
-            <div className="px-5 sm:px-8 pb-5 relative space-y-5">
-              <div className="flex items-start justify-between gap-4">
-                {/* Avatar on Top-Left + Username under photo */}
-                <div className="flex flex-col items-center -mt-14 sm:-mt-20 shrink-0">
+            {/* Profile Info & Avatar (Brought up in line with actions) */}
+            <div className="px-4 sm:px-6 pb-3.5 relative space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                {/* Avatar on Top-Left + Username and Likes under photo */}
+                <div className="flex flex-col items-center -mt-12 sm:-mt-14 shrink-0">
                   <div 
                     onClick={() => setIsEditModalOpen(true)}
                     className="relative group cursor-pointer"
                     title={window.loc('کلیک برای ویرایش پروفایل', 'Click to edit profile')}
                   >
-                    <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full p-1 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_40px_rgba(236,72,153,0.4)] overflow-hidden">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_25px_rgba(236,72,153,0.4)] overflow-hidden">
                       {(userAvatar || authAvatar) ? (
                         <img
                           src={userAvatar || authAvatar}
@@ -708,75 +708,79 @@ export default function ProfileTab(props) {
                         />
                       ) : (
                         <div className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center text-slate-400">
-                          <User className="w-14 h-14 sm:w-18 sm:h-18 text-pink-400" />
+                          <User className="w-10 h-10 sm:w-12 sm:h-12 text-pink-400" />
                         </div>
                       )}
                     </div>
                     
                     {/* Online Status Badge */}
                     {showOnlineStatus && (
-                      <span className="absolute top-2 right-2 w-5 h-5 bg-emerald-500 border-2 border-slate-950 rounded-full shadow-lg" title="Online Status" />
+                      <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-950 rounded-full shadow-md" title="Online Status" />
                     )}
 
                     {/* Level & Verified Badge together at bottom right of Avatar */}
-                    <div className="absolute bottom-1 right-1 z-10 flex items-center gap-1 bg-slate-950/90 backdrop-blur-xl p-1 rounded-full border border-slate-800 shadow-xl">
-                      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white font-black text-xs px-2.5 py-0.5 rounded-full flex items-center gap-0.5">
-                        <span className="text-[10px] text-purple-200 uppercase font-bold">Lv</span>
+                    <div className="absolute bottom-0.5 right-0.5 z-10 flex items-center gap-0.5 bg-slate-950/90 backdrop-blur-xl p-0.5 rounded-full border border-slate-800 shadow-lg">
+                      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white font-black text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                        <span className="text-[8px] text-purple-200 uppercase font-bold">Lv</span>
                         <span>{userLevel}</span>
                       </div>
-                      {isVerified && <VerifiedBadge showLabel={false} className="w-4 h-4 shrink-0" />}
+                      {isVerified && <VerifiedBadge showLabel={false} className="w-3.5 h-3.5 shrink-0" />}
                     </div>
 
                     {/* Change Avatar Overlay */}
                     <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition duration-300 text-white font-bold text-xs gap-1 z-20 backdrop-blur-sm">
-                      <Camera className="w-6 h-6 text-pink-400 animate-pulse" />
-                      <span className="text-[10px]">{window.loc('ویرایش', 'Edit')}</span>
+                      <Camera className="w-5 h-5 text-pink-400 animate-pulse" />
+                      <span className="text-[9px]">{window.loc('ویرایش', 'Edit')}</span>
                     </div>
                   </div>
 
-                  {/* Username & Likes Counter under profile photo (Inside profile picture card without any card) */}
-                  <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
-                    <span className="font-mono text-cyan-400 font-bold text-xs sm:text-sm text-center bg-cyan-950/40 px-3 py-0.5 rounded-full border border-cyan-500/30">
+                  {/* Username & Likes Counter under profile photo */}
+                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap justify-center">
+                    <span className="font-mono text-cyan-400 font-bold text-[11px] sm:text-xs text-center bg-cyan-950/40 px-2 py-0.5 rounded-full border border-cyan-500/30">
                       @{currentUsername || authUsername || 'user'}
                     </span>
                     <button
                       onClick={() => setActiveSeparateModal('likes')}
-                      className="flex items-center gap-1.5 text-pink-400 hover:text-pink-300 transition active:scale-95 cursor-pointer bg-transparent border-0 p-0 shadow-none group"
+                      className="flex items-center gap-1 text-pink-400 hover:text-pink-300 transition active:scale-95 cursor-pointer bg-transparent border-0 p-0 shadow-none group"
                       title={window.loc('مشاهده لایک‌کنندگان پروفایل', 'View Profile Likers')}
                     >
-                      <Heart className="w-4 h-4 fill-pink-500 text-pink-500 group-hover:scale-125 transition-transform duration-200" />
-                      <span className="text-xs sm:text-sm font-black font-mono tracking-tight text-white group-hover:text-pink-300">
+                      <Heart className="w-3.5 h-3.5 fill-pink-500 text-pink-500 group-hover:scale-125 transition-transform duration-200" />
+                      <span className="text-[11px] sm:text-xs font-black font-mono tracking-tight text-white group-hover:text-pink-300">
                         {formatNum(userTotalLikes)}
                       </span>
                     </button>
                   </div>
                 </div>
 
-                {/* Right / Side Details (Name & VIP Badge) */}
-                <div className="pt-4 sm:pt-6 flex-1 space-y-2">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                {/* Right / Side Details (Name, VIP Badge & Bio) */}
+                <div className="pt-1 sm:pt-2 flex-1 space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
                       {userName || authFullName || 'User'}
                     </h1>
-                    <VipStatusBadge size="normal" showText={true} />
+                    <VipStatusBadge size="small" showText={true} />
                   </div>
-                  <p className="text-xs text-slate-400 font-medium line-clamp-2 max-w-md">
+                  <p className="text-[11px] text-slate-400 font-medium line-clamp-2 max-w-md">
                     {userBio || window.loc('به پروفایل من خوش آمدید ✨', 'Welcome to my profile ✨')}
                   </p>
                 </div>
               </div>
 
-              {/* STORIES SECTION INSIDE PROFILE CARD UNDER AVATAR */}
-              <div className="pt-4 border-t border-slate-800/80 space-y-3">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-xs font-black text-slate-200 flex items-center gap-2">
-                    <Flame className="w-4 h-4 text-pink-400 animate-bounce" />
-                    <span>{window.loc('استوری‌ها و هایلایت‌ها', 'Stories & Highlights')}</span>
+              {/* STORIES SECTION INSIDE PROFILE CARD (WITHOUT TITLE, ONLY 'ALL') */}
+              <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                <div className="flex items-center justify-end px-1">
+                  <span 
+                    onClick={() => {
+                      if (props.setActiveStoryView) props.setActiveStoryView('all');
+                    }}
+                    className="text-[10px] text-pink-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    <Flame className="w-3 h-3 text-pink-400" />
+                    <span>{window.loc('همه', 'All')}</span>
                   </span>
-                  <span className="text-[10px] text-pink-400 font-bold hover:underline cursor-pointer">{window.loc('مشاهده همه', 'View All')}</span>
                 </div>
                 
-                <div className="flex items-center gap-3 overflow-x-auto pb-1.5 scrollbar-none px-0.5">
+                <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none px-0.5">
                   {/* Add Story Button (For female users & admins) */}
                   {canCreateContent && (
                     <button
@@ -786,16 +790,17 @@ export default function ProfileTab(props) {
                       }}
                       className="flex flex-col items-center gap-1 shrink-0 group cursor-pointer"
                     >
-                      <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-slate-950/80 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 group-hover:border-pink-400 transition shadow-inner shrink-0">
-                        <Plus className="w-4 h-4" />
+                      <div className="w-11 h-11 rounded-full bg-slate-950/80 border-2 border-dashed border-pink-500/60 flex items-center justify-center text-pink-400 group-hover:scale-105 group-hover:border-pink-400 transition shadow-inner shrink-0">
+                        <Plus className="w-3.5 h-3.5" />
                       </div>
-                      <span className="text-[10px] font-bold text-slate-300">{window.loc('افزودن', 'Add')}</span>
+                      <span className="text-[9px] font-bold text-slate-300">{window.loc('افزودن', 'Add')}</span>
                     </button>
                   )}
 
-                  {/* User Active Stories */}
-                  {(props.advancedStories || props.userStoriesList || []).map((story, i) => {
-                    const isMyStory = Boolean(
+                  {/* User Profile Stories & Highlights (Permanent in Profile) */}
+                  {(props.advancedStories || props.userStoriesList || []).filter(story => {
+                    if (!story) return false;
+                    return Boolean(
                       (story.userId && props.currentUser?.id && String(story.userId) === String(props.currentUser.id)) ||
                       (story.user_id && props.currentUser?.id && String(story.user_id) === String(props.currentUser.id)) ||
                       (story.userId && props.currentUserId && String(story.userId) === String(props.currentUserId)) ||
@@ -804,6 +809,7 @@ export default function ProfileTab(props) {
                       (story.username && authUsername && String(story.username).toLowerCase() === String(authUsername).toLowerCase()) ||
                       (story.username && userName && String(story.username).toLowerCase() === String(userName).toLowerCase())
                     );
+                  }).map((story, i) => {
 
                     return (
                       <div 

@@ -3244,8 +3244,14 @@ export default function App() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
-                    {/* Stories List from Supabase / advancedStories */}
-                    {(advancedStories || []).map((story, i) => {
+                    {/* Stories List from Supabase (Only active stories within 24 hours on Home) */}
+                    {(advancedStories || []).filter(story => {
+                      if (!story) return false;
+                      const createdTime = story.created_at ? new Date(story.created_at).getTime() : 0;
+                      if (!createdTime) return true;
+                      const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+                      return (Date.now() - createdTime) < TWENTY_FOUR_HOURS;
+                    }).map((story, i) => {
                       const isMyStory = Boolean(
                         (story.userId && currentUser?.id && String(story.userId) === String(currentUser.id)) ||
                         (story.user_id && currentUser?.id && String(story.user_id) === String(currentUser.id)) ||

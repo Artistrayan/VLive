@@ -3744,20 +3744,23 @@ export const apiSocial = {
 
   async getStories() {
     try {
-      const oneDayAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      // Fetch stories from the database (posts with [STORY] tag or stories table)
+      const maxArchiveTime = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
       const { data: storyPosts, error: postErr } = await supabase
         .from('posts')
         .select('*, profiles(username, avatar, name)')
         .ilike('caption', '[STORY]%')
-        .gte('created_at', oneDayAgo)
+        .gte('created_at', maxArchiveTime)
         .order('created_at', { ascending: false });
 
       let sharedStories = [];
       if (!postErr && Array.isArray(storyPosts)) {
         sharedStories = storyPosts.map(s => {
           const cleanCaption = (s.caption || '').replace(/^\[STORY\]\s*/i, '');
-          const createdAt = s.created_at;
-          const expiresAt = new Date(new Date(createdAt).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+          const createdAt = s.created_at || new Date().toISOString();
+          const createdTs = new Date(createdAt).getTime();
+          const expiresAt = new Date(createdTs + 24 * 60 * 60 * 1000).toISOString();
+          const isExpiredFromHome = (Date.now() - createdTs) >= 24 * 60 * 60 * 1000;
           return {
             id: s.id,
             userId: s.user_id,
@@ -3769,7 +3772,8 @@ export const apiSocial = {
             caption: cleanCaption,
             created_at: createdAt,
             expires_at: expiresAt,
-            hasRing: true
+            isExpiredFromHome,
+            hasRing: !isExpiredFromHome
           };
         });
       }
@@ -3779,11 +3783,15 @@ export const apiSocial = {
         const { data: rawStories } = await supabase
           .from('stories')
           .select('*')
-          .gt('expires_at', new Date().toISOString())
+          .gte('created_at', maxArchiveTime)
           .order('created_at', { ascending: false });
         if (Array.isArray(rawStories) && rawStories.length > 0) {
           rawStories.forEach(rs => {
             if (!sharedStories.some(s => s.id === rs.id || s.media_url === rs.media_url)) {
+              const createdAt = rs.created_at || new Date().toISOString();
+              const createdTs = new Date(createdAt).getTime();
+              const expiresAt = rs.expires_at || new Date(createdTs + 24 * 60 * 60 * 1000).toISOString();
+              const isExpiredFromHome = (Date.now() - createdTs) >= 24 * 60 * 60 * 1000;
               sharedStories.push({
                 id: rs.id,
                 userId: rs.user_id,
@@ -3793,9 +3801,10 @@ export const apiSocial = {
                 videoUrl: rs.media_url,
                 media_url: rs.media_url,
                 caption: rs.caption || '',
-                created_at: rs.created_at,
-                expires_at: rs.expires_at,
-                hasRing: true
+                created_at: createdAt,
+                expires_at: expiresAt,
+                isExpiredFromHome,
+                hasRing: !isExpiredFromHome
               });
             }
           });
