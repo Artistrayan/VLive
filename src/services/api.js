@@ -913,9 +913,14 @@ export const apiProfile = {
     const targetId = targetUser.id || targetUser.username;
     if (!targetId) return { success: false };
     const uid = getUserId();
+    const myUid = uid || `user_${Date.now()}`;
+    const myName = localStorage.getItem('vlive_user_name') || 'کاربر';
+    const myUsername = localStorage.getItem('vlive_username') || localStorage.getItem('vlive_current_username') || 'user';
+    const myAvatar = localStorage.getItem('vlive_user_avatar') || '';
+    const myLevel = Number(localStorage.getItem('vlive_user_level') || 1);
 
     try {
-      // 1. Get existing following list
+      // 1. Add to current user's following list
       let following = [];
       try {
         const stored = localStorage.getItem('vlive_user_following_list');
@@ -942,25 +947,66 @@ export const apiProfile = {
         localStorage.setItem('vlive_user_following', String(following.length));
       }
 
-      // 2. Increment target user followers count in Supabase
+      // 2. Add follower entry to TARGET user's followers list
+      const followerEntry = {
+        id: myUid,
+        username: myUsername,
+        name: myName,
+        avatar: myAvatar,
+        level: myLevel,
+        followedAt: new Date().toISOString(),
+        time: new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString('fa-IR'),
+        timestamp: Date.now()
+      };
+
+      const targetFollowersKey = `vlive_user_followers_${targetId}`;
+      let targetFollowers = [];
+      try {
+        const st = localStorage.getItem(targetFollowersKey);
+        if (st) targetFollowers = JSON.parse(st);
+      } catch (e) {
+        targetFollowers = [];
+      }
+      targetFollowers = targetFollowers.filter(u => String(u.id) !== String(myUid) && String(u.username).toLowerCase() !== String(myUsername).toLowerCase());
+      targetFollowers.unshift(followerEntry);
+      localStorage.setItem(targetFollowersKey, JSON.stringify(targetFollowers.slice(0, 100)));
+
+      // Also if target is current profile, keep followers list updated
+      localStorage.setItem('vlive_user_followers_list', JSON.stringify(targetFollowers.slice(0, 100)));
+
+      // 3. Increment target user followers count in Supabase
       if (targetUser.id) {
         const { data: targetProfile } = await supabase.from('profiles').select('followers_count').eq('id', targetUser.id).maybeSingle();
         const nextFollowers = (targetProfile?.followers_count || 0) + 1;
         await supabase.from('profiles').update({ followers_count: nextFollowers }).eq('id', targetUser.id);
       }
 
-      // 3. Increment current user following count in Supabase
+      // 4. Increment current user following count in Supabase
       if (uid) {
         const { data: myProfile } = await supabase.from('profiles').select('following_count').eq('id', uid).maybeSingle();
         const nextFollowing = (myProfile?.following_count || 0) + 1;
         await supabase.from('profiles').update({ following_count: nextFollowing }).eq('id', uid);
       }
 
+      // 5. Persist follow record permanently in Supabase support_tickets closed log
+      try {
+        const targetUuid = (await resolveProfileUuid(targetId)) || targetId;
+        if (targetUuid && myUid) {
+          await supabase.from('support_tickets').insert([{
+            user_id: myUid,
+            subject: `FOLLOW:${myUid}:${targetUuid}`,
+            message: JSON.stringify(followerEntry),
+            status: 'closed'
+          }]);
+        }
+      } catch (dbErr) {}
+
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('vlive_follow_changed', { detail: { targetId, isFollowing: true, user: cleanTarget } }));
+        window.dispatchEvent(new CustomEvent('vlive_follow_changed', { detail: { targetId, isFollowing: true, user: cleanTarget, follower: followerEntry } }));
       }
 
-      return { success: true, isFollowing: true, followingCount: following.length };
+      return { success: true, isFollowing: true, followingCount: following.length, followers: targetFollowers };
     } catch (e) {
       console.warn('apiProfile.followUser error:', e);
       return { success: false, isFollowing: false };
@@ -970,6 +1016,8 @@ export const apiProfile = {
   async unfollowUser(targetId) {
     if (!targetId) return { success: false };
     const uid = getUserId();
+    const myUid = uid || getUserId();
+    const myUsername = localStorage.getItem('vlive_username') || localStorage.getItem('vlive_current_username') || 'user';
 
     try {
       let following = [];
@@ -983,6 +1031,16 @@ export const apiProfile = {
       const updated = following.filter(u => String(u.id) !== String(targetId) && String(u.username).toLowerCase() !== String(targetId).toLowerCase());
       localStorage.setItem('vlive_user_following_list', JSON.stringify(updated));
       localStorage.setItem('vlive_user_following', String(updated.length));
+
+      // Remove from target user followers list
+      const targetFollowersKey = `vlive_user_followers_${targetId}`;
+      let targetFollowers = [];
+      try {
+        const st = localStorage.getItem(targetFollowersKey);
+        if (st) targetFollowers = JSON.parse(st);
+      } catch (e) {}
+      targetFollowers = targetFollowers.filter(u => String(u.id) !== String(myUid) && String(u.username).toLowerCase() !== String(myUsername).toLowerCase());
+      localStorage.setItem(targetFollowersKey, JSON.stringify(targetFollowers));
 
       // Decrement target user followers count in Supabase
       const { data: targetProfile } = await supabase.from('profiles').select('followers_count').eq('id', targetId).maybeSingle();
@@ -1020,13 +1078,50 @@ export const apiProfile = {
     }
   },
 
-  getFollowersList() {
+  getFollowersList(targetUserId = null) {
+    const tid = targetUserId || getUserId() || 'me';
     try {
-      const stored = localStorage.getItem('vlive_user_followers_list');
-      return stored ? JSON.parse(stored) : [];
+      const specificKey = `vlive_user_followers_${tid}`;
+      const stored = localStorage.getItem(specificKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      const generalStored = localStorage.getItem('vlive_user_followers_list');
+      if (generalStored) {
+        const parsed = JSON.parse(generalStored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+      return [];
     } catch (e) {
       return [];
     }
+  },
+
+  async fetchFollowersList(targetUserId = null) {
+    const tid = targetUserId || getUserId() || 'me';
+    try {
+      const targetUuid = (await resolveProfileUuid(tid)) || tid;
+      if (targetUuid) {
+        const { data: records } = await supabase
+          .from('support_tickets')
+          .select('message')
+          .like('subject', `FOLLOW:%:${targetUuid}`);
+        
+        if (records && records.length > 0) {
+          const fetchedFollowers = records.map(r => {
+            try { return JSON.parse(r.message); } catch (e) { return null; }
+          }).filter(Boolean);
+
+          if (fetchedFollowers.length > 0) {
+            const specificKey = `vlive_user_followers_${tid}`;
+            localStorage.setItem(specificKey, JSON.stringify(fetchedFollowers.slice(0, 100)));
+            return fetchedFollowers;
+          }
+        }
+      }
+    } catch (e) {}
+    return this.getFollowersList(tid);
   },
 
   isUserFollowed(targetId) {
@@ -1125,6 +1220,19 @@ export const apiProfile = {
         likers.unshift(likerUser);
         localStorage.setItem(storageKey, JSON.stringify(likers.slice(0, 50)));
         localStorage.setItem('vlive_profile_likers_me', JSON.stringify(likers.slice(0, 50)));
+
+        // Persist profile like record in Supabase support_tickets closed log
+        try {
+          const targetUuid = (await resolveProfileUuid(targetUserId)) || targetUserId;
+          if (targetUuid && likerUser.id) {
+            await supabase.from('support_tickets').insert([{
+              user_id: likerUser.id,
+              subject: `PROFILE_LIKE:${likerUser.id}:${targetUuid}`,
+              message: JSON.stringify(likerUser),
+              status: 'closed'
+            }]);
+          }
+        } catch (dbErr) {}
       }
 
       const totalLikes = await this.getProfileLikesCount(targetUserId);
@@ -1216,6 +1324,32 @@ export const apiProfile = {
     } catch (e) {
       return [];
     }
+  },
+
+  async fetchProfileLikers(targetUserId) {
+    if (!targetUserId) return [];
+    try {
+      const targetUuid = (await resolveProfileUuid(targetUserId)) || targetUserId;
+      if (targetUuid) {
+        const { data: records } = await supabase
+          .from('support_tickets')
+          .select('message')
+          .like('subject', `PROFILE_LIKE:%:${targetUuid}`);
+        
+        if (records && records.length > 0) {
+          const fetchedLikers = records.map(r => {
+            try { return JSON.parse(r.message); } catch (e) { return null; }
+          }).filter(Boolean);
+
+          if (fetchedLikers.length > 0) {
+            const storageKey = `vlive_profile_likers_${targetUserId}`;
+            localStorage.setItem(storageKey, JSON.stringify(fetchedLikers.slice(0, 50)));
+            return fetchedLikers;
+          }
+        }
+      }
+    } catch (e) {}
+    return this.getProfileLikers(targetUserId);
   },
 
   isUserProfileLiked(targetUserId) {

@@ -443,8 +443,9 @@ export default function ProfileTab(props) {
   const [showLocation, setShowLocation] = useState(() => safeStorage.getItem('vlive_priv_loc') !== 'false');
 
   // --- REAL PROFILE STATISTICS & PERSISTENCE ---
+  const targetProfileId = props.currentUser?.id || getUserId() || currentUsername || 'me';
   const [followingList, setFollowingList] = useState(() => apiProfile.getFollowingList());
-  const [followersList, setFollowersList] = useState(() => apiProfile.getFollowersList());
+  const [followersList, setFollowersList] = useState(() => apiProfile.getFollowersList(targetProfileId));
   const [profileVisitors, setProfileVisitors] = useState(() => apiProfile.getProfileVisitors(currentUsername || 'me'));
   const [userFollowersCount, setUserFollowersCount] = useState(() => {
     return Number(safeStorage.getItem('vlive_user_followers') || 0);
@@ -459,13 +460,27 @@ export default function ProfileTab(props) {
   const userFollowingCount = followingList.length;
 
   useEffect(() => {
+    let isMounted = true;
     const syncFollow = () => {
       setFollowingList(apiProfile.getFollowingList());
-      setFollowersList(apiProfile.getFollowersList());
+      setFollowersList(apiProfile.getFollowersList(targetProfileId));
     };
     window.addEventListener('vlive_follow_changed', syncFollow);
-    return () => window.removeEventListener('vlive_follow_changed', syncFollow);
-  }, []);
+
+    // Initial sync from local & remote Supabase
+    if (apiProfile && typeof apiProfile.fetchFollowersList === 'function') {
+      apiProfile.fetchFollowersList(targetProfileId).then(list => {
+        if (isMounted && Array.isArray(list) && list.length > 0) {
+          setFollowersList(list);
+        }
+      }).catch(() => {});
+    }
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('vlive_follow_changed', syncFollow);
+    };
+  }, [targetProfileId]);
 
   // Load real profile visitors and persistent views count without counting self visits
   useEffect(() => {
@@ -505,7 +520,6 @@ export default function ProfileTab(props) {
     return apiProfile.getProfileLikers(uid);
   });
 
-  const targetProfileId = props.currentUser?.id || getUserId() || currentUsername || 'me';
   const [isProfileLiked, setIsProfileLiked] = useState(() => apiProfile.isUserProfileLiked(targetProfileId));
   const [isUserFollowedState, setIsUserFollowedState] = useState(() => apiProfile.isUserFollowed(targetProfileId));
 
@@ -528,6 +542,14 @@ export default function ProfileTab(props) {
     }
 
     setProfileLikers(apiProfile.getProfileLikers(uid));
+
+    if (apiProfile && typeof apiProfile.fetchProfileLikers === 'function') {
+      apiProfile.fetchProfileLikers(uid).then(likers => {
+        if (isMounted && Array.isArray(likers) && likers.length > 0) {
+          setProfileLikers(likers);
+        }
+      }).catch(() => {});
+    }
 
     const handleProfileLiked = (e) => {
       if (e?.detail) {
@@ -552,6 +574,25 @@ export default function ProfileTab(props) {
       window.removeEventListener('vlive_profile_liked', handleProfileLiked);
     };
   }, [currentUsername, props.currentUser, targetProfileId]);
+
+  // Refresh lists when modal opens
+  useEffect(() => {
+    if (!activeSeparateModal) return;
+    const uid = props.currentUser?.id || getUserId() || currentUsername || 'me';
+    if (activeSeparateModal === 'followers') {
+      apiProfile.fetchFollowersList(uid).then(list => {
+        if (Array.isArray(list)) setFollowersList(list);
+      }).catch(() => {});
+    } else if (activeSeparateModal === 'following') {
+      setFollowingList(apiProfile.getFollowingList());
+    } else if (activeSeparateModal === 'likes') {
+      apiProfile.fetchProfileLikers(uid).then(likers => {
+        if (Array.isArray(likers)) setProfileLikers(likers);
+      }).catch(() => {});
+    } else if (activeSeparateModal === 'views') {
+      setProfileVisitors(apiProfile.getProfileVisitors(currentUsername || 'me'));
+    }
+  }, [activeSeparateModal, currentUsername, props.currentUser]);
 
   const handleToggleLike = async () => {
     try {
@@ -890,6 +931,64 @@ export default function ProfileTab(props) {
                 </div>
               </div>
 
+              {/* STATS ROW (FOLLOWERS, FOLLOWING, VIEWS) INSIDE PROFILE CARD ABOVE STORIES */}
+              <div className="pt-2 pb-1 border-t border-slate-800/80">
+                <div className="grid grid-cols-3 divide-x divide-slate-800/90 dir-ltr bg-slate-950/70 border border-slate-800/80 rounded-2xl py-2 px-1 shadow-inner backdrop-blur-md">
+                  
+                  {/* Followers */}
+                  <button
+                    onClick={() => setActiveSeparateModal('followers')}
+                    className="py-1 px-1.5 flex flex-col sm:flex-row items-center justify-center gap-1.5 group hover:bg-indigo-950/40 rounded-xl transition cursor-pointer active:scale-95"
+                    title={window.loc('مشاهده دنبال‌کنندگان', 'View Followers')}
+                  >
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 group-hover:scale-110 transition-transform shrink-0" />
+                    <div className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5">
+                      <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-indigo-300 transition">
+                        {formatNum(followersList.length || userFollowersCount)}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium">
+                        {window.loc('فالور', 'Followers')}
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Following */}
+                  <button
+                    onClick={() => setActiveSeparateModal('following')}
+                    className="py-1 px-1.5 flex flex-col sm:flex-row items-center justify-center gap-1.5 group hover:bg-blue-950/40 rounded-xl transition cursor-pointer active:scale-95"
+                    title={window.loc('مشاهده دنبال‌شوندگان', 'View Following')}
+                  >
+                    <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 group-hover:scale-110 transition-transform shrink-0" />
+                    <div className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5">
+                      <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-blue-300 transition">
+                        {formatNum(userFollowingCount)}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium">
+                        {window.loc('فالوئینگ', 'Following')}
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Views */}
+                  <button
+                    onClick={() => setActiveSeparateModal('views')}
+                    className="py-1 px-1.5 flex flex-col sm:flex-row items-center justify-center gap-1.5 group hover:bg-cyan-950/40 rounded-xl transition cursor-pointer active:scale-95"
+                    title={window.loc('مشاهده بازدیدها', 'View Visitors')}
+                  >
+                    <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400 group-hover:scale-110 transition-transform shrink-0" />
+                    <div className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5">
+                      <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-cyan-300 transition">
+                        {formatNum(userViewsCount)}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium">
+                        {window.loc('بازدید', 'Views')}
+                      </span>
+                    </div>
+                  </button>
+
+                </div>
+              </div>
+
               {/* STORIES SECTION INSIDE PROFILE CARD (WITHOUT TITLE, ONLY 'ALL') */}
               <div className="pt-2 border-t border-slate-800/80 space-y-2">
                 <div className="flex items-center justify-end px-1">
@@ -1020,54 +1119,7 @@ export default function ProfileTab(props) {
         </VisualSectionWrapper>
 
         {/* ========================================== */}
-        {/* 2. FOLLOWERS, FOLLOWING, VIEWS ROW (SHARED SLIM RECTANGULAR CARD ABOVE MEDIA) */}
-        {/* ========================================== */}
-        <VisualSectionWrapper pageId="profile" sectionId="profile_stats_shared_card" defaultLabel="Followers, Following, Views Card">
-          <div className="py-2 px-3 bg-gradient-to-r from-slate-900/95 via-slate-950 to-slate-900/95 rounded-2xl border border-slate-800/80 shadow-md backdrop-blur-xl">
-            <div className="grid grid-cols-3 divide-x divide-slate-800/80 dir-ltr">
-              
-              {/* Followers (Icon + Count Only) */}
-              <button
-                onClick={() => setActiveSeparateModal('followers')}
-                className="py-1 px-2 flex items-center justify-center gap-2 group hover:bg-indigo-950/30 rounded-xl transition cursor-pointer"
-                title={window.loc('دنبال‌کنندگان', 'Followers')}
-              >
-                <Users className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform shrink-0" />
-                <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-indigo-300 transition">
-                  {formatNum(followersList.length || userFollowersCount)}
-                </span>
-              </button>
-
-              {/* Following (Icon + Count Only) */}
-              <button
-                onClick={() => setActiveSeparateModal('following')}
-                className="py-1 px-2 flex items-center justify-center gap-2 group hover:bg-blue-950/30 rounded-xl transition cursor-pointer"
-                title={window.loc('دنبال‌شوندگان', 'Following')}
-              >
-                <UserCheck className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform shrink-0" />
-                <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-blue-300 transition">
-                  {formatNum(userFollowingCount)}
-                </span>
-              </button>
-
-              {/* Views (Icon + Count Only) */}
-              <button
-                onClick={() => setActiveSeparateModal('views')}
-                className="py-1 px-2 flex items-center justify-center gap-2 group hover:bg-cyan-950/30 rounded-xl transition cursor-pointer"
-                title={window.loc('بازدیدها', 'Views')}
-              >
-                <Eye className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform shrink-0" />
-                <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-cyan-300 transition">
-                  {formatNum(userViewsCount)}
-                </span>
-              </button>
-
-            </div>
-          </div>
-        </VisualSectionWrapper>
-
-        {/* ========================================== */}
-        {/* 3. PHOTOS & VIDEOS CARD (UNDER STATS)      */}
+        {/* 2. PHOTOS & VIDEOS CARD (UNDER PROFILE CARD) */}
         {/* ========================================== */}
         <VisualSectionWrapper pageId="profile" sectionId="profile_media_card" defaultLabel="Photos & Videos Card">
           <div className="p-3 bg-gradient-to-r from-slate-900/95 via-slate-950 to-slate-900/95 rounded-2xl sm:rounded-3xl border border-slate-800/80 shadow-lg backdrop-blur-xl">
@@ -1214,16 +1266,35 @@ export default function ProfileTab(props) {
                             <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level || 1)}</span>
                           </div>
                         </div>
-                        <button
-                          onClick={async () => {
-                            await apiProfile.followUser(u);
-                            showToast(`${window.loc('دنبال شد:', 'Followed:')} @${u.username}`);
-                          }}
-                          className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow transition active:scale-95 flex items-center gap-1.5"
-                        >
-                          <UserCheck className="w-4 h-4" />
-                          <span>{window.loc('فالو متقابل', 'Follow Back')}</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {followingList.some(item => (item.id && u.id && item.id === u.id) || (item.username && u.username && item.username === u.username)) ? (
+                            <button
+                              onClick={async () => {
+                                await apiProfile.unfollowUser(u.id || u.username);
+                                setFollowingList(prev => prev.filter(item => (item.id || item.username) !== (u.id || u.username)));
+                                setUserFollowingCount(prev => Math.max(0, prev - 1));
+                                showToast(`${window.loc('لغو دنبال کردن:', 'Unfollowed:')} @${u.username}`);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-950/60 hover:text-rose-300 text-slate-300 font-bold text-xs border border-slate-700 transition active:scale-95 flex items-center gap-1.5"
+                            >
+                              <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>{window.loc('دنبال می‌کنید', 'Following')}</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={async () => {
+                                await apiProfile.followUser(u);
+                                setFollowingList(prev => [...prev, u]);
+                                setUserFollowingCount(prev => prev + 1);
+                                showToast(`${window.loc('دنبال شد:', 'Followed:')} @${u.username}`);
+                              }}
+                              className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow transition active:scale-95 flex items-center gap-1.5"
+                            >
+                              <UserPlus className="w-3.5 h-3.5" />
+                              <span>{window.loc('فالو متقابل', 'Follow Back')}</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))
                   ) : (
@@ -1286,6 +1357,8 @@ export default function ProfileTab(props) {
                           <button
                             onClick={async () => {
                               await apiProfile.unfollowUser(u.id || u.username);
+                              setFollowingList(prev => prev.filter(item => (item.id || item.username) !== (u.id || u.username)));
+                              setUserFollowingCount(prev => Math.max(0, prev - 1));
                               showToast(`${window.loc('لغو شد', 'Unfollowed')}`);
                             }}
                             className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-red-950/60 hover:text-red-300 text-slate-300 font-bold text-xs border border-slate-800 transition"
