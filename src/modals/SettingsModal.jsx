@@ -17,6 +17,7 @@ export default function SettingsModal(props) {
     isSettingsModalOpen, setIsSettingsModalOpen,
     userAvatar, setUserAvatar,
     userName, setUserName,
+    userNickname: externalUserNickname, setUserNickname: externalSetUserNickname,
     userBio, setUserBio,
     currentUsername, authUsername, authEmail,
     currentTelegramId, userGender, setUserGender, setIsBecomeStreamerModalOpen, isVerified, verificationsList,
@@ -50,7 +51,9 @@ export default function SettingsModal(props) {
     return keywords.some(k => k && String(k).toLowerCase().includes(q));
   };
 
-  // 1. Account / Password state
+  // 1. Account / Nickname / Password state
+  const userNickname = externalUserNickname !== undefined ? externalUserNickname : (props.userNickname || safeStorage.getItem('vlive_user_nickname') || '');
+  const setUserNickname = externalSetUserNickname || props.setUserNickname || (() => {});
   const [editPasswordOld, setEditPasswordOld] = React.useState('');
   const [editPasswordNew, setEditPasswordNew] = React.useState('');
   const [showEditPasswordOld, setShowEditPasswordOld] = React.useState(false);
@@ -597,35 +600,107 @@ export default function SettingsModal(props) {
           )}
 
           {/* CARD 1: 👤 ACCOUNT */}
-          {(settingsCategoryFilter === 'all' || settingsCategoryFilter === 'account') && matchesSearch(['account', 'حساب', 'نام', 'username', 'gender', 'جنسیت', 'bio', 'بیوگرافی', 'password', 'رمز']) && (
-            <div className="p-4 rounded-3xl bg-slate-950/80 border border-pink-500/30 backdrop-blur-xl space-y-3 shadow-lg">
-              <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
-                <User className="w-5 h-5 text-pink-400" />
-                <h3 className="text-sm font-bold text-white">{safeLoc('۱. مشخصات حساب کاربری (Account)', '1. Account Settings')}</h3>
+          {(settingsCategoryFilter === 'all' || settingsCategoryFilter === 'account') && matchesSearch(['account', 'حساب', 'نام', 'مستعار', 'nickname', 'username', 'gender', 'جنسیت', 'bio', 'بیوگرافی', 'password', 'رمز', 'شناسایی']) && (
+            <div className="p-4 rounded-3xl bg-slate-950/80 border border-pink-500/30 backdrop-blur-xl space-y-4 shadow-lg">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <User className="w-5 h-5 text-pink-400" />
+                  <h3 className="text-sm font-bold text-white">{safeLoc('۱. مشخصات حساب کاربری (Account)', '1. Account Settings')}</h3>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-bold">
+                  {safeLoc('امنیت هویت و حریم خصوصی', 'Identity & Privacy')}
+                </span>
+              </div>
+
+              {/* پنل شناسایی کاربری - مشخص‌شده توسط سیستم برنامه */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 border border-cyan-500/40 space-y-2 shadow-inner">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                    <span className="text-xs font-bold text-white">
+                      {safeLoc('پنل شناسایی کاربری (تولید و ثبت خودکار توسط سامانه)', 'User Identification Panel (System Assigned)')}
+                    </span>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold">
+                    {safeLoc('مشخص‌شده توسط خود برنامه', 'Defined by App System')}
+                  </span>
+                </div>
+                
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  {safeLoc('هویت و شناسه‌های اصلی کاربری شما مستقیماً توسط هسته برنامه صادر و کنترل می‌شوند تا بالاترین سطح امنیت و ثبات حفظ گردد.', 'Your primary identity and user identifiers are determined directly by the app core.')}
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-xs">
+                  <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-white">
+                    <span className="text-slate-400 text-[11px] font-sans font-medium">{safeLoc('نام کاربری سیستمی:', 'System Username:')}</span>
+                    <span className="text-cyan-400 font-bold">@{currentUsername || 'user'}</span>
+                  </div>
+                  <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-white">
+                    <span className="text-slate-400 text-[11px] font-sans font-medium">{safeLoc('کد یکتای شناسه (UID):', 'User ID (UID):')}</span>
+                    <span className="text-amber-400 font-bold truncate max-w-[140px]">{props.currentUser?.id || getUserId() || 'UID-104928'}</span>
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div>
-                  <label className="text-slate-300 font-semibold mb-1 block">{safeLoc('نام و نام خانوادگی', 'Full Name')}</label>
+                {/* نام و نام خانوادگی واقعی - فقط رویت ادمین */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
+                    <label className="text-slate-300 font-bold block flex items-center gap-1">
+                      <Shield className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{safeLoc('نام و نام خانوادگی واقعی', 'Real Full Name')}</span>
+                    </label>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                      {safeLoc('🔒 فقط برای ادمین در پنل مدیریت', '🔒 Admin Only in Admin Panel')}
+                    </span>
+                  </div>
                   <input
                     type="text"
                     value={userName}
-                    onChange={e => setUserName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-2xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500"
+                    onChange={e => {
+                      const val = e.target.value;
+                      setUserName(val);
+                      safeStorage.setItem('vlive_user_name', val);
+                      apiProfile.syncProfileState({ name: val });
+                    }}
+                    placeholder={safeLoc('نام و نام خانوادگی شما...', 'Your real full name...')}
+                    className="w-full px-3 py-2 rounded-2xl bg-slate-900 border border-amber-500/30 text-white outline-none focus:border-amber-400"
                   />
+                  <p className="text-[10px] text-amber-300/80 leading-tight">
+                    {safeLoc('این مشخصات صرفاً توسط ادمین در پنل مدیریت قابل دیدن است و برای سایر کاربران کاملاً غیرقابل تشخیص می‌باشد.', 'Visible only to admins in admin panel; completely hidden from other users.')}
+                  </p>
                 </div>
 
-                <div>
-                  <label className="text-slate-300 font-semibold mb-1 block">{safeLoc('شناسه کاربری دائمی (Username)', 'Username Handle')}</label>
-                  <div className="flex items-center justify-between px-3 py-2 rounded-2xl bg-slate-900 border border-slate-800/80 text-white font-mono text-xs cursor-not-allowed">
-                    <span className="text-pink-400 font-bold">@{currentUsername || 'user'}</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
-                      {safeLoc('دائمی و غیرقابل تغییر', 'Permanent')}
+                {/* تنظیمات نام مستعار - نمایش در پروفایل */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
+                    <label className="text-slate-300 font-bold block flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                      <span>{safeLoc('تنظیمات نام مستعار (Nickname)', 'Nickname Setting')}</span>
+                    </label>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">
+                      {safeLoc('✨ نمایش در پروفایل شما', '✨ Visible in Profile')}
                     </span>
                   </div>
+                  <input
+                    type="text"
+                    value={userNickname}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setUserNickname(val);
+                      safeStorage.setItem('vlive_user_nickname', val);
+                      apiProfile.syncProfileState({ nickname: val });
+                    }}
+                    placeholder={safeLoc('نام مستعار دلخواه خود را وارد کنید...', 'Enter your nickname...')}
+                    className="w-full px-3 py-2 rounded-2xl bg-slate-900 border border-purple-500/40 text-white outline-none focus:border-purple-400 font-bold"
+                  />
+                  <p className="text-[10px] text-purple-300/80 leading-tight">
+                    {safeLoc('نام مستعار فقط در صفحه پروفایل کاربری شما به عموم بازدیدکنندگان نشان داده می‌شود.', 'Nickname is shown on your profile page to visitors.')}
+                  </p>
                 </div>
 
-                <div>
+                {/* جنسیت */}
+                <div className="sm:col-span-2">
                   <label className="text-slate-300 font-semibold mb-1 block">{safeLoc('جنسیت', 'Gender')}</label>
                   <select 
                     value={userGender} 
@@ -648,12 +723,18 @@ export default function SettingsModal(props) {
                   </select>
                 </div>
 
+                {/* بیوگرافی */}
                 <div className="sm:col-span-2">
                   <label className="text-slate-300 font-semibold mb-1 block">{safeLoc('بیوگرافی و توضیحات (Bio)', 'Bio / Description')}</label>
                   <textarea
                     rows="2"
                     value={userBio || ''}
-                    onChange={e => setUserBio && setUserBio(e.target.value)}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (setUserBio) setUserBio(val);
+                      safeStorage.setItem('vlive_user_bio', val);
+                      apiProfile.syncProfileState({ bio: val });
+                    }}
                     placeholder={safeLoc('متن بیوگرافی شما...', 'Your bio description...')}
                     className="w-full px-3 py-2 rounded-2xl bg-slate-900 border border-slate-800 text-white outline-none focus:border-pink-500 resize-none text-xs"
                   />

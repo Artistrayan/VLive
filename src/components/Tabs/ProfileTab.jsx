@@ -44,6 +44,7 @@ export default function ProfileTab(props) {
     setIsKycModalOpen = (() => {}),
     userAvatar, setUserAvatar,
     userName, setUserName,
+    userNickname = '', setUserNickname = (() => {}),
     userBio, setUserBio,
     userCoins = 0, userDiamonds = 0, userCashBalance = 0,
     activeProfileTab = 'photos', setActiveProfileTab = (() => {}),
@@ -805,15 +806,21 @@ export default function ProfileTab(props) {
                     </div>
                   </div>
 
-                  {/* Username under profile photo */}
-                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap justify-center">
-                    <span className="font-mono text-cyan-400 font-bold text-[11px] sm:text-xs text-center bg-cyan-950/40 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                  {/* Username & Nickname under profile photo */}
+                  <div className="flex flex-col items-center gap-1 mt-1.5 text-center">
+                    <span className="font-mono text-cyan-400 font-bold text-[11px] sm:text-xs text-center bg-cyan-950/60 px-2.5 py-0.5 rounded-full border border-cyan-500/40 shadow-sm">
                       @{currentUsername || authUsername || 'user'}
                     </span>
+                    {(userNickname || safeStorage.getItem('vlive_user_nickname')) && (
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-950/60 border border-purple-500/40 text-purple-300 text-[10px] sm:text-[11px] font-bold shadow-sm">
+                        <Sparkles className="w-3 h-3 text-purple-400" />
+                        <span>{userNickname || safeStorage.getItem('vlive_user_nickname')}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Right / Side Details (Actions above Name: Heart Like + Follow, then Name, VIP Badge & Bio) */}
+                {/* Right / Side Details (Actions above: Heart Like + Follow, and Bio in front of photo) */}
                 <div className="pt-0.5 sm:pt-1 flex-1 space-y-1.5">
                   {/* Heart Icon (Larger, Off/On State) & Follow Button above User Name */}
                   <div className="flex items-center gap-2 flex-wrap pb-0.5">
@@ -872,14 +879,14 @@ export default function ProfileTab(props) {
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
-                      {userName || authFullName || 'User'}
-                    </h1>
+                  {/* Bio placed prominently in front of photo instead of Full Name */}
+                  <div className="pt-1">
+                    <div className="p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800/80 shadow-sm">
+                      <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed max-w-md select-text">
+                        {userBio || window.loc('به پروفایل من خوش آمدید ✨', 'Welcome to my profile ✨')}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-slate-400 font-medium line-clamp-2 max-w-md">
-                    {userBio || window.loc('به پروفایل من خوش آمدید ✨', 'Welcome to my profile ✨')}
-                  </p>
                 </div>
               </div>
 
@@ -888,7 +895,42 @@ export default function ProfileTab(props) {
                 <div className="flex items-center justify-end px-1">
                   <span 
                     onClick={() => {
-                      if (props.setActiveStoryView) props.setActiveStoryView('all');
+                      const userStories = (props.advancedStories || props.userStoriesList || []).filter(story => {
+                        if (!story) return false;
+                        return Boolean(
+                          (story.userId && props.currentUser?.id && String(story.userId) === String(props.currentUser.id)) ||
+                          (story.user_id && props.currentUser?.id && String(story.user_id) === String(props.currentUser.id)) ||
+                          (story.userId && props.currentUserId && String(story.userId) === String(props.currentUserId)) ||
+                          (story.user_id && props.currentUserId && String(story.user_id) === String(props.currentUserId)) ||
+                          (story.username && currentUsername && String(story.username).toLowerCase() === String(currentUsername).toLowerCase()) ||
+                          (story.username && authUsername && String(story.username).toLowerCase() === String(authUsername).toLowerCase()) ||
+                          (story.username && userName && String(story.username).toLowerCase() === String(userName).toLowerCase())
+                        );
+                      });
+
+                      if (userStories.length > 0 && props.setActiveStoryView) {
+                        props.setActiveStoryView({
+                          group: {
+                            user: {
+                              name: userName || authFullName || 'User',
+                              avatar: userAvatar || authAvatar || '',
+                              isVip: true
+                            },
+                            items: userStories.map(s => ({
+                              id: s.id,
+                              url: s.media_url || s.imageUrl || s.videoUrl,
+                              duration: 5,
+                              time: window.loc('هم‌اکنون', 'Right now'),
+                              caption: s.caption || s.title || ''
+                            })),
+                            isMe: true
+                          },
+                          currentIndex: 0,
+                          progress: 0
+                        });
+                      } else {
+                        showToast(window.loc('استوری فعالی برای نمایش وجود ندارد', 'No active stories to display'));
+                      }
                     }}
                     className="text-[10px] text-pink-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
                   >

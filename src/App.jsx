@@ -96,6 +96,7 @@ export default function App() {
   });
   const [authUserRecord, setAuthUserRecord] = useState(null);
   const [userName, setUserName] = useState('Guest User');
+  const [userNickname, setUserNickname] = useState(() => safeStorage.getItem('vlive_user_nickname') || '');
   const [currentUsername, setCurrentUsername] = useState('guest');
   const [currentTelegramId, setCurrentTelegramId] = useState('');
   const [userCoins, setUserCoins] = useState(0);
@@ -573,6 +574,7 @@ export default function App() {
     return {
       id: getUserId() || authUserRecord?.id || '',
       name: userName,
+      nickname: userNickname || authUserRecord?.user_metadata?.nickname || safeStorage.getItem('vlive_user_nickname') || '',
       username: currentUsername,
       avatar: userAvatar,
       coins: userCoins,
@@ -586,13 +588,14 @@ export default function App() {
       role: userRole,
       telegram_id: currentTelegramId || authUserRecord?.telegram_id || authUserRecord?.telegramId
     };
-  }, [isLoggedIn, userName, currentUsername, userAvatar, userCoins, userDiamonds, userGender, userRole, isVerified, vipPlan, userBio, currentTelegramId, authUserRecord]);
+  }, [isLoggedIn, userName, userNickname, currentUsername, userAvatar, userCoins, userDiamonds, userGender, userRole, isVerified, vipPlan, userBio, currentTelegramId, authUserRecord]);
 
   const setCurrentUser = useCallback((updater) => {
     setAuthUserRecord(prev => {
       const currentObj = {
         id: getUserId() || prev?.id || '',
         name: userName,
+        nickname: userNickname,
         username: currentUsername,
         avatar: userAvatar,
         coins: userCoins,
@@ -609,6 +612,7 @@ export default function App() {
       const next = typeof updater === 'function' ? updater(currentObj) : updater;
       if (!next) return null;
       if (next.name && next.name !== userName) setUserName(next.name);
+      if (next.nickname !== undefined && next.nickname !== userNickname) setUserNickname(next.nickname);
       if (next.username && next.username !== currentUsername) setCurrentUsername(next.username);
       if (next.avatar && next.avatar !== userAvatar) setUserAvatar(next.avatar);
       if (next.bio !== undefined && next.bio !== userBio) setUserBio(next.bio);
@@ -617,7 +621,7 @@ export default function App() {
       if (next.role && next.role !== userRole) setUserRole(next.role);
       return { ...prev, ...next };
     });
-  }, [userName, currentUsername, userAvatar, userCoins, userDiamonds, userGender, isVerified, vipPlan, userBio, currentTelegramId, userRole]);
+  }, [userName, userNickname, currentUsername, userAvatar, userCoins, userDiamonds, userGender, isVerified, vipPlan, userBio, currentTelegramId, userRole]);
 
   const filteredUsersList = useMemo(() => {
     if (!Array.isArray(usersList)) return [];
@@ -716,6 +720,7 @@ export default function App() {
       if (myProfile && (myProfile.success || myProfile.data || myProfile.id)) {
         const p = myProfile.data || myProfile;
         if (p.name) setUserName(p.name);
+        if (p.nickname) setUserNickname(p.nickname);
         if (p.username) setCurrentUsername(p.username);
         if (p.avatar_url || p.avatar) setUserAvatar(p.avatar_url || p.avatar);
         if (p.bio) setUserBio(p.bio);
@@ -2595,6 +2600,7 @@ export default function App() {
     apiProfile.getProfile().then(profile => {
       if (profile) {
         setUserName(profile.name || profile.username);
+        if (profile.nickname) setUserNickname(profile.nickname);
         setCurrentUsername(profile.username);
         setUserAvatar(profile.avatar || profile.avatar_url || '');
         setUserBio(profile.bio || '');
@@ -2944,6 +2950,7 @@ export default function App() {
       const detail = e.detail;
       if (!detail) return;
       if (detail.name) setUserName(detail.name);
+      if (detail.nickname !== undefined) setUserNickname(detail.nickname);
       if (detail.username) setCurrentUsername(detail.username);
       if (detail.avatar || detail.avatar_url) setUserAvatar(detail.avatar || detail.avatar_url);
       if (detail.bio !== undefined) setUserBio(detail.bio);
@@ -2989,28 +2996,30 @@ export default function App() {
   // Live Timer for Story Progress
   useEffect(() => {
     let timer;
-    if (activeStoryView && !isStoryViewersOpen) {
-      const currentItem = activeStoryView.group.items[activeStoryView.currentIndex];
-      const duration = currentItem.duration * 1000;
-      const step = 50; // update every 50ms
-      const increment = step / duration * 100;
-      timer = setInterval(() => {
-        setActiveStoryView(prev => {
-          if (!prev) return null;
-          if (prev.progress >= 100) {
-            clearInterval(timer);
-            setTimeout(handleNextStoryItem, 0);
-            return prev;
-          }
-          return {
-            ...prev,
-            progress: prev.progress + increment
-          };
-        });
-      }, step);
+    if (activeStoryView && activeStoryView.group && Array.isArray(activeStoryView.group.items) && activeStoryView.group.items.length > 0 && !isStoryViewersOpen) {
+      const currentItem = activeStoryView.group.items[activeStoryView.currentIndex || 0];
+      if (currentItem) {
+        const duration = (currentItem.duration || 5) * 1000;
+        const step = 50; // update every 50ms
+        const increment = step / duration * 100;
+        timer = setInterval(() => {
+          setActiveStoryView(prev => {
+            if (!prev || !prev.group || !Array.isArray(prev.group.items)) return null;
+            if (prev.progress >= 100) {
+              clearInterval(timer);
+              setTimeout(handleNextStoryItem, 0);
+              return prev;
+            }
+            return {
+              ...prev,
+              progress: (prev.progress || 0) + increment
+            };
+          });
+        }, step);
+      }
     }
     return () => clearInterval(timer);
-  }, [activeStoryView, isStoryViewersOpen]);
+  }, [activeStoryView, isStoryViewersOpen, handleNextStoryItem]);
   useEffect(() => {
     let interval = null;
     if (activePrivateCallHost) {
@@ -3711,7 +3720,7 @@ export default function App() {
         {/* TAB 3: WALLET & EARNINGS TAB */}
         <WalletTab currentUser={currentUser} userRole={userRole} currentUsername={currentUsername} isUserRayan={isUserRayan} handleBuyService={handleBuyService} activeTab={activeTab} txHistoryList={txHistoryList} userCoins={userCoins} setUserCoins={setUserCoins} userDiamonds={userDiamonds} setUserDiamonds={setUserDiamonds} userCashBalance={userCashBalance} setUserCashBalance={setUserCashBalance} walletSubTab={walletSubTab} setWalletSubTab={setWalletSubTab} referralCode={referralCode} setIsVipModalOpen={setIsVipModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} showToast={showToast} isVerified={isVerified} isUserSuperAdmin={isUserSuperAdmin} loc={loc} isRtl={isRtl} isStreamerUser={isStreamerUser} />
         {/* TAB 4: PROFILE TAB */}
-        <ProfileTab currentUser={currentUser} userRole={userRole} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsKycModalOpen={setIsKycModalOpen} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={isVerified} isStreamerUser={isStreamerUser} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} advancedStories={advancedStories} setIsAddStoryModalOpen={setIsAddStoryModalOpen} setActiveStoryView={setActiveStoryView} />
+        <ProfileTab currentUser={currentUser} userRole={userRole} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsKycModalOpen={setIsKycModalOpen} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userNickname={userNickname} setUserNickname={setUserNickname} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={isVerified} isStreamerUser={isStreamerUser} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} advancedStories={advancedStories} setIsAddStoryModalOpen={setIsAddStoryModalOpen} setActiveStoryView={setActiveStoryView} />
         </main>
       <nav className="fixed bottom-0 w-full max-w-[800px] z-40 bg-slate-900/95 backdrop-blur-2xl border-t border-slate-800/80 p-2 sm:px-6 flex justify-between items-center shadow-[0_-5px_30px_rgba(0,0,0,0.5)]">
         
@@ -3782,6 +3791,8 @@ export default function App() {
         setUserAvatar={setUserAvatar} 
         userName={userName} 
         setUserName={setUserName} 
+        userNickname={userNickname}
+        setUserNickname={setUserNickname}
         userBio={userBio} 
         setUserBio={setUserBio} 
         currentUsername={currentUsername} 

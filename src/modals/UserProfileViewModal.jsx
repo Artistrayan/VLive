@@ -121,8 +121,11 @@ export default function UserProfileViewModal({
 
   if (!isOpen || !user) return null;
 
-  const userName = user?.name || user?.fullName || user?.hostName || 'User';
+  const realFullName = user?.name || user?.fullName || user?.hostName || '';
+  const nickname = user?.nickname || user?.user_metadata?.nickname || '';
   const username = user?.username || user?.host || user?.id || 'user_vlive';
+  const displayName = nickname || username || 'User';
+  const userName = (isAdminUser || isSuperAdmin) ? (realFullName || displayName) : displayName;
   const avatar = user?.avatar || user?.thumbnail || '';
   const cover = user?.cover || '';
   const birthDateVal = user?.birth_date || user?.birthdate || user?.birthday;
@@ -330,6 +333,15 @@ export default function UserProfileViewModal({
                 </span>
               )}
             </div>
+
+            {/* Admin-only full name visibility indicator */}
+            {(isAdminUser || isSuperAdmin) && realFullName && (
+              <div className="flex items-center gap-1.5 py-1 px-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs w-fit">
+                <Shield className="w-3.5 h-3.5 text-amber-400" />
+                <span className="font-bold">{loc('نام و نام خانوادگی واقعی (فقط رویت ادمین):', 'Real Full Name (Admin Only):')}</span>
+                <span className="text-white font-black">{realFullName}</span>
+              </div>
+            )}
 
             <div className="flex items-center gap-2 text-xs text-slate-400 flex-wrap">
               <span className="text-cyan-400 font-mono">@{username}</span>

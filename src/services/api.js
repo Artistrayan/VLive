@@ -704,6 +704,7 @@ export const apiProfile = {
 
     // Local Storage & Cross-tab sync
     if (safeUpdates.name) localStorage.setItem('vlive_user_name', safeUpdates.name);
+    if (safeUpdates.nickname !== undefined) localStorage.setItem('vlive_user_nickname', safeUpdates.nickname);
     if (safeUpdates.username) localStorage.setItem('vlive_current_username', safeUpdates.username);
     if (safeUpdates.avatar) localStorage.setItem('vlive_user_avatar', safeUpdates.avatar);
     if (safeUpdates.gender) localStorage.setItem('vlive_user_gender', safeUpdates.gender);
@@ -733,6 +734,7 @@ export const apiProfile = {
 
     // 1. Immediately persist to localStorage
     if (updates.name) localStorage.setItem('vlive_user_name', updates.name);
+    if (updates.nickname !== undefined) localStorage.setItem('vlive_user_nickname', updates.nickname);
     if (updates.bio) localStorage.setItem('vlive_user_bio', updates.bio);
     if (updates.avatar) localStorage.setItem('vlive_user_avatar', updates.avatar);
     if (updates.gender) localStorage.setItem('vlive_user_gender', updates.gender);

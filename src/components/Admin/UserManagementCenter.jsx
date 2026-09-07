@@ -52,6 +52,7 @@ export default function UserManagementCenter({
     setEditPermissionsUser(user);
     setPermForm({
       name: user.name || user.fullName || user.username || '',
+      nickname: user.nickname || '',
       username: user.username || '',
       role: user.role || (user.user_type === 'ADMIN' ? 'admin' : (isStreamer ? 'streamer' : 'user')),
       isVerified,
@@ -74,6 +75,7 @@ export default function UserManagementCenter({
     try {
       const updates = {
         name: permForm.name,
+        nickname: permForm.nickname || '',
         role: permForm.role,
         is_verified: permForm.isVerified,
         is_vip: permForm.isVip,
@@ -491,8 +493,13 @@ export default function UserManagementCenter({
                           className="w-9 h-9 rounded-full object-cover border border-slate-700" 
                         />
                         <div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-bold text-white">{u.name || u.fullName || 'User'}</span>
+                            {u.nickname && (
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-medium">
+                                ~{u.nickname}
+                              </span>
+                            )}
                             {u.isBanned && <span className="bg-rose-500/20 text-rose-300 text-[9px] px-1.5 rounded font-bold">BANNED</span>}
                           </div>
                           <span className="text-[10px] text-cyan-400 font-mono">@{u.username}</span>
@@ -708,16 +715,28 @@ export default function UserManagementCenter({
             {/* Form Sections */}
             <div className="space-y-3.5 text-xs">
               {/* User Identity & Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-2xl bg-slate-950 border border-slate-800/80">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-2xl bg-slate-950 border border-slate-800/80">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 block mb-1">
-                    {window.loc('نام نمایشی:', 'Display Name:')}
+                  <label className="text-[10px] font-bold text-amber-400 block mb-1">
+                    {window.loc('نام و نام خانوادگی واقعی (فقط ادمین):', 'Real Full Name (Admin Only):')}
                   </label>
                   <input
                     type="text"
                     value={permForm.name}
                     onChange={e => setPermForm(p => ({ ...p, name: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs outline-none focus:border-cyan-400"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-amber-500/30 text-white text-xs outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-purple-400 block mb-1">
+                    {window.loc('نام مستعار کاربر (Nickname):', 'User Nickname:')}
+                  </label>
+                  <input
+                    type="text"
+                    value={permForm.nickname || ''}
+                    onChange={e => setPermForm(p => ({ ...p, nickname: e.target.value }))}
+                    placeholder={window.loc('بدون نام مستعار', 'No Nickname')}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-purple-500/30 text-purple-300 text-xs outline-none focus:border-purple-400"
                   />
                 </div>
                 <div>
