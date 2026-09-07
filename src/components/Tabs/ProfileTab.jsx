@@ -65,8 +65,40 @@ export default function ProfileTab(props) {
     authBio = '', dailyStreak = 5,
     usersList = [], setUsersList = (() => {}),
     adminReportsList = [],
-    addAdminAuditLog = (() => {})
+    addAdminAuditLog = (() => {}),
+    setSelectedUser = (() => {}),
+    setIsUserProfileModalOpen = (() => {}),
+    onOpenUserProfile = (() => {})
   } = props;
+
+  const handleOpenUserProfile = (u) => {
+    if (!u) return;
+    const userObj = {
+      id: u.id || u.userId || u.user_id || u.username,
+      username: u.username ? String(u.username).replace(/^@/, '') : (u.name || 'user'),
+      name: u.name || u.fullName || u.username || 'User',
+      fullName: u.fullName || u.name || u.username || 'User',
+      nickname: u.nickname || '',
+      avatar: u.avatar || u.userAvatar || u.avatar_url || '',
+      level: u.level || u.user_level || 1,
+      isVIP: Boolean(u.isVIP || u.vip || u.is_vip || (u.vipPlan && u.vipPlan !== 'none')),
+      vip: Boolean(u.isVIP || u.vip || u.is_vip || (u.vipPlan && u.vipPlan !== 'none')),
+      bio: u.bio || '',
+      gender: u.gender || '',
+      city: u.city || '',
+      photos: u.photos || [],
+      ...u
+    };
+    if (typeof setSelectedUser === 'function' && typeof setIsUserProfileModalOpen === 'function') {
+      setSelectedUser(userObj);
+      setIsUserProfileModalOpen(true);
+    } else if (typeof props.setSelectedUser === 'function' && typeof props.setIsUserProfileModalOpen === 'function') {
+      props.setSelectedUser(userObj);
+      props.setIsUserProfileModalOpen(true);
+    } else if (typeof onOpenUserProfile === 'function') {
+      onOpenUserProfile(userObj);
+    }
+  };
 
   const userGenderVal = String(userGender || currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
   const isFemaleUser = Boolean(
@@ -1246,9 +1278,13 @@ export default function ProfileTab(props) {
                 <div className="space-y-2.5">
                   {followersList.length > 0 ? (
                     followersList.map((u, idx) => (
-                      <div key={u.id || u.username || idx} className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-indigo-500/40 transition flex items-center gap-3.5 shadow-sm">
+                      <div 
+                        key={u.id || u.username || idx} 
+                        onClick={() => handleOpenUserProfile(u)}
+                        className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-indigo-500/60 hover:bg-slate-900/90 transition flex items-center gap-3.5 shadow-sm cursor-pointer group active:scale-[0.99]"
+                      >
                         {/* Profile Avatar with Tilted VIP Crown and Bottom-Right Level Badge */}
-                        <div className="relative w-12 h-12 flex-shrink-0">
+                        <div className="relative w-12 h-12 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
                           {/* Tilted VIP Crown (Top-Left) */}
                           {Boolean(u.isVIP || u.vip || u.is_vip || (u.vipPlan && u.vipPlan !== 'none')) && (
                             <div className="absolute -top-2.5 -left-2 z-10 transform -rotate-[22deg] pointer-events-none">
@@ -1261,10 +1297,10 @@ export default function ProfileTab(props) {
                             <img 
                               src={u.avatar || u.userAvatar || u.avatar_url} 
                               alt={u.username || 'User'} 
-                              className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900" 
+                              className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900 group-hover:border-indigo-400/80 transition-colors" 
                             />
                           ) : (
-                            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
+                            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 group-hover:border-indigo-400/80 flex items-center justify-center text-slate-400 transition-colors">
                               <User className="w-6 h-6" />
                             </div>
                           )}
@@ -1277,7 +1313,7 @@ export default function ProfileTab(props) {
 
                         {/* Username Only */}
                         <div className="flex flex-col justify-center min-w-0 flex-1">
-                          <span className="font-bold text-white text-sm truncate" dir="ltr">
+                          <span className="font-bold text-white text-sm truncate group-hover:text-indigo-300 transition-colors" dir="ltr">
                             @{u.username ? u.username.replace(/^@/, '') : (u.name || 'user')}
                           </span>
                         </div>
@@ -1306,9 +1342,13 @@ export default function ProfileTab(props) {
                 <div className="space-y-2.5">
                   {followingList.length > 0 ? (
                     followingList.map((u, idx) => (
-                      <div key={u.id || u.username || idx} className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-blue-500/40 transition flex items-center gap-3.5 shadow-sm">
+                      <div 
+                        key={u.id || u.username || idx} 
+                        onClick={() => handleOpenUserProfile(u)}
+                        className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-blue-500/60 hover:bg-slate-900/90 transition flex items-center gap-3.5 shadow-sm cursor-pointer group active:scale-[0.99]"
+                      >
                         {/* Profile Avatar with Tilted VIP Crown and Bottom-Right Level Badge */}
-                        <div className="relative w-12 h-12 flex-shrink-0">
+                        <div className="relative w-12 h-12 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
                           {/* Tilted VIP Crown (Top-Left) */}
                           {Boolean(u.isVIP || u.vip || u.is_vip || (u.vipPlan && u.vipPlan !== 'none')) && (
                             <div className="absolute -top-2.5 -left-2 z-10 transform -rotate-[22deg] pointer-events-none">
@@ -1321,10 +1361,10 @@ export default function ProfileTab(props) {
                             <img 
                               src={u.avatar || u.userAvatar || u.avatar_url} 
                               alt={u.username || 'User'} 
-                              className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900" 
+                              className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900 group-hover:border-blue-400/80 transition-colors" 
                             />
                           ) : (
-                            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
+                            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 group-hover:border-blue-400/80 flex items-center justify-center text-slate-400 transition-colors">
                               <User className="w-6 h-6" />
                             </div>
                           )}
@@ -1337,7 +1377,7 @@ export default function ProfileTab(props) {
 
                         {/* Username Only */}
                         <div className="flex flex-col justify-center min-w-0 flex-1">
-                          <span className="font-bold text-white text-sm truncate" dir="ltr">
+                          <span className="font-bold text-white text-sm truncate group-hover:text-blue-300 transition-colors" dir="ltr">
                             @{u.username ? u.username.replace(/^@/, '') : (u.name || 'user')}
                           </span>
                         </div>
@@ -1374,9 +1414,13 @@ export default function ProfileTab(props) {
                     </div>
                   ) : (
                     profileLikers.map((liker, idx) => (
-                      <div key={liker.id || idx} className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-pink-500/40 transition flex items-center gap-3.5 shadow-sm">
+                      <div 
+                        key={liker.id || idx} 
+                        onClick={() => handleOpenUserProfile(liker)}
+                        className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-pink-500/60 hover:bg-slate-900/90 transition flex items-center gap-3.5 shadow-sm cursor-pointer group active:scale-[0.99]"
+                      >
                         {/* Profile Avatar with Tilted VIP Crown and Bottom-Right Level Badge */}
-                        <div className="relative w-12 h-12 flex-shrink-0">
+                        <div className="relative w-12 h-12 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
                           {/* Tilted VIP Crown (Top-Left) */}
                           {Boolean(liker.isVIP || liker.vip || liker.is_vip || (liker.vipPlan && liker.vipPlan !== 'none')) && (
                             <div className="absolute -top-2.5 -left-2 z-10 transform -rotate-[22deg] pointer-events-none">
@@ -1389,10 +1433,10 @@ export default function ProfileTab(props) {
                             <img 
                               src={liker.avatar || liker.userAvatar || liker.avatar_url} 
                               alt={liker.username || 'User'} 
-                              className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900" 
+                              className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900 group-hover:border-pink-400/80 transition-colors" 
                             />
                           ) : (
-                            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
+                            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 group-hover:border-pink-400/80 flex items-center justify-center text-slate-400 transition-colors">
                               <User className="w-6 h-6 text-pink-400" />
                             </div>
                           )}
@@ -1405,7 +1449,7 @@ export default function ProfileTab(props) {
 
                         {/* Username Only */}
                         <div className="flex flex-col justify-center min-w-0 flex-1">
-                          <span className="font-bold text-white text-sm truncate" dir="ltr">
+                          <span className="font-bold text-white text-sm truncate group-hover:text-pink-300 transition-colors" dir="ltr">
                             @{liker.username ? liker.username.replace(/^@/, '') : (liker.name || 'user')}
                           </span>
                         </div>
@@ -1429,9 +1473,13 @@ export default function ProfileTab(props) {
                 <div className="space-y-2.5">
                   {profileVisitors.length > 0 ? (
                     profileVisitors.map((v, i) => (
-                      <div key={v.id || i} className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-cyan-500/40 transition flex items-center gap-3.5 shadow-sm">
+                      <div 
+                        key={v.id || i} 
+                        onClick={() => handleOpenUserProfile(v)}
+                        className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-cyan-500/60 hover:bg-slate-900/90 transition flex items-center gap-3.5 shadow-sm cursor-pointer group active:scale-[0.99]"
+                      >
                         {/* Profile Avatar with Tilted VIP Crown and Bottom-Right Level Badge */}
-                        <div className="relative w-12 h-12 flex-shrink-0">
+                        <div className="relative w-12 h-12 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
                           {/* Tilted VIP Crown (Top-Left) */}
                           {Boolean(v.isVIP || v.vip || v.is_vip || (v.vipPlan && v.vipPlan !== 'none')) && (
                             <div className="absolute -top-2.5 -left-2 z-10 transform -rotate-[22deg] pointer-events-none">
@@ -1444,10 +1492,10 @@ export default function ProfileTab(props) {
                             <img 
                               src={v.avatar || v.userAvatar || v.avatar_url} 
                               alt={v.username || 'User'} 
-                              className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900" 
+                              className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900 group-hover:border-cyan-400/80 transition-colors" 
                             />
                           ) : (
-                            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
+                            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 group-hover:border-cyan-400/80 flex items-center justify-center text-slate-400 transition-colors">
                               <User className="w-6 h-6 text-cyan-400" />
                             </div>
                           )}
@@ -1460,7 +1508,7 @@ export default function ProfileTab(props) {
 
                         {/* Username Only */}
                         <div className="flex flex-col justify-center min-w-0 flex-1">
-                          <span className="font-bold text-white text-sm truncate" dir="ltr">
+                          <span className="font-bold text-white text-sm truncate group-hover:text-cyan-300 transition-colors" dir="ltr">
                             @{v.username ? v.username.replace(/^@/, '') : (v.name || 'user')}
                           </span>
                         </div>
