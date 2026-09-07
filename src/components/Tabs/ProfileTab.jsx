@@ -1245,55 +1245,41 @@ export default function ProfileTab(props) {
 
                 <div className="space-y-2.5">
                   {followersList.length > 0 ? (
-                    followersList.map(u => (
-                      <div key={u.id || u.username} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 transition flex items-center justify-between gap-3 shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="relative">
-                            {(u.avatar || u.userAvatar) ? (
-                              <img src={u.avatar || u.userAvatar} alt={u.name || u.username} className="w-11 h-11 rounded-full object-cover border border-slate-700" />
-                            ) : (
-                              <div className="w-11 h-11 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
-                                <User className="w-5 h-5" />
-                              </div>
-                            )}
-                            {(u.isOnline || u.online) && <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-950 animate-pulse" />}
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
-                              <span>{u.name || u.username}</span>
-                              {u.isVIP && <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-black border border-amber-500/40">VIP</span>}
-                            </h4>
-                            <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level || 1)}</span>
+                    followersList.map((u, idx) => (
+                      <div key={u.id || u.username || idx} className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-indigo-500/40 transition flex items-center gap-3.5 shadow-sm">
+                        {/* Profile Avatar with Tilted VIP Crown and Bottom-Right Level Badge */}
+                        <div className="relative w-12 h-12 flex-shrink-0">
+                          {/* Tilted VIP Crown (Top-Left) */}
+                          {Boolean(u.isVIP || u.vip || u.is_vip || (u.vipPlan && u.vipPlan !== 'none')) && (
+                            <div className="absolute -top-2.5 -left-2 z-10 transform -rotate-[22deg] pointer-events-none">
+                              <Crown className="w-5 h-5 text-amber-400 fill-amber-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                            </div>
+                          )}
+
+                          {/* Avatar Image */}
+                          {(u.avatar || u.userAvatar || u.avatar_url) ? (
+                            <img 
+                              src={u.avatar || u.userAvatar || u.avatar_url} 
+                              alt={u.username || 'User'} 
+                              className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900" 
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
+                              <User className="w-6 h-6" />
+                            </div>
+                          )}
+
+                          {/* User Level Number (Bottom-Right) */}
+                          <div className="absolute -bottom-1 -right-1 z-10 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-[10px] min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center border-2 border-slate-950 shadow-md font-mono">
+                            {formatNum(u.level || u.user_level || 1)}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {followingList.some(item => (item.id && u.id && item.id === u.id) || (item.username && u.username && item.username === u.username)) ? (
-                            <button
-                              onClick={async () => {
-                                await apiProfile.unfollowUser(u.id || u.username);
-                                setFollowingList(prev => prev.filter(item => (item.id || item.username) !== (u.id || u.username)));
-                                setUserFollowingCount(prev => Math.max(0, prev - 1));
-                                showToast(`${window.loc('لغو دنبال کردن:', 'Unfollowed:')} @${u.username}`);
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-950/60 hover:text-rose-300 text-slate-300 font-bold text-xs border border-slate-700 transition active:scale-95 flex items-center gap-1.5"
-                            >
-                              <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-                              <span>{window.loc('دنبال می‌کنید', 'Following')}</span>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={async () => {
-                                await apiProfile.followUser(u);
-                                setFollowingList(prev => [...prev, u]);
-                                setUserFollowingCount(prev => prev + 1);
-                                showToast(`${window.loc('دنبال شد:', 'Followed:')} @${u.username}`);
-                              }}
-                              className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow transition active:scale-95 flex items-center gap-1.5"
-                            >
-                              <UserPlus className="w-3.5 h-3.5" />
-                              <span>{window.loc('فالو متقابل', 'Follow Back')}</span>
-                            </button>
-                          )}
+
+                        {/* Username Only */}
+                        <div className="flex flex-col justify-center min-w-0 flex-1">
+                          <span className="font-bold text-white text-sm truncate" dir="ltr">
+                            @{u.username ? u.username.replace(/^@/, '') : (u.name || 'user')}
+                          </span>
                         </div>
                       </div>
                     ))
@@ -1319,52 +1305,41 @@ export default function ProfileTab(props) {
 
                 <div className="space-y-2.5">
                   {followingList.length > 0 ? (
-                    followingList.map(u => (
-                      <div key={u.id || u.username} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between gap-3 shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="relative">
-                            {u.avatar ? (
-                              <img src={u.avatar} alt={u.name || u.username} className="w-11 h-11 rounded-full object-cover border border-slate-700" />
-                            ) : (
-                              <div className="w-11 h-11 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
-                                <User className="w-5 h-5" />
-                              </div>
-                            )}
-                            {u.isLive && <span className="absolute -top-1 -right-1 text-[8px] font-black bg-rose-600 text-white px-1.5 rounded-full border border-slate-950 animate-pulse">LIVE</span>}
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
-                              <span>{u.name || u.username}</span>
-                              {u.role && <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.2 rounded font-black border border-blue-500/40">{u.role}</span>}
-                            </h4>
-                            <span className="text-[10px] text-slate-400">@{u.username} • {window.loc('سطح', 'Lvl')} {formatNum(u.level || 1)}</span>
+                    followingList.map((u, idx) => (
+                      <div key={u.id || u.username || idx} className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-blue-500/40 transition flex items-center gap-3.5 shadow-sm">
+                        {/* Profile Avatar with Tilted VIP Crown and Bottom-Right Level Badge */}
+                        <div className="relative w-12 h-12 flex-shrink-0">
+                          {/* Tilted VIP Crown (Top-Left) */}
+                          {Boolean(u.isVIP || u.vip || u.is_vip || (u.vipPlan && u.vipPlan !== 'none')) && (
+                            <div className="absolute -top-2.5 -left-2 z-10 transform -rotate-[22deg] pointer-events-none">
+                              <Crown className="w-5 h-5 text-amber-400 fill-amber-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                            </div>
+                          )}
+
+                          {/* Avatar Image */}
+                          {(u.avatar || u.userAvatar || u.avatar_url) ? (
+                            <img 
+                              src={u.avatar || u.userAvatar || u.avatar_url} 
+                              alt={u.username || 'User'} 
+                              className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900" 
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
+                              <User className="w-6 h-6" />
+                            </div>
+                          )}
+
+                          {/* User Level Number (Bottom-Right) */}
+                          <div className="absolute -bottom-1 -right-1 z-10 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-[10px] min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center border-2 border-slate-950 shadow-md font-mono">
+                            {formatNum(u.level || u.user_level || 1)}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {u.isLive && (
-                            <button
-                              onClick={() => {
-                                setActiveSeparateModal(null);
-                                if (props.setActiveTab) props.setActiveTab('home');
-                                showToast(`${window.loc('لایو', 'Live')} @${u.username}`);
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-xs border border-rose-500/40 transition flex items-center gap-1"
-                            >
-                              <Video className="w-3.5 h-3.5" />
-                              <span>{window.loc('لایو', 'Live')}</span>
-                            </button>
-                          )}
-                          <button
-                            onClick={async () => {
-                              await apiProfile.unfollowUser(u.id || u.username);
-                              setFollowingList(prev => prev.filter(item => (item.id || item.username) !== (u.id || u.username)));
-                              setUserFollowingCount(prev => Math.max(0, prev - 1));
-                              showToast(`${window.loc('لغو شد', 'Unfollowed')}`);
-                            }}
-                            className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-red-950/60 hover:text-red-300 text-slate-300 font-bold text-xs border border-slate-800 transition"
-                          >
-                            {window.loc('لغو دنبال کردن', 'Unfollow')}
-                          </button>
+
+                        {/* Username Only */}
+                        <div className="flex flex-col justify-center min-w-0 flex-1">
+                          <span className="font-bold text-white text-sm truncate" dir="ltr">
+                            @{u.username ? u.username.replace(/^@/, '') : (u.name || 'user')}
+                          </span>
                         </div>
                       </div>
                     ))
@@ -1391,7 +1366,7 @@ export default function ProfileTab(props) {
                   </span>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {profileLikers.length === 0 ? (
                     <div className="p-12 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-2">
                       <Heart className="w-10 h-10 text-slate-600 mx-auto" />
@@ -1399,23 +1374,40 @@ export default function ProfileTab(props) {
                     </div>
                   ) : (
                     profileLikers.map((liker, idx) => (
-                      <div key={liker.id || idx} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3 hover:border-pink-500/30 transition">
-                        <div className="flex items-center gap-3">
-                          {liker.avatar ? (
-                            <img src={liker.avatar} alt={liker.name || liker.username} className="w-10 h-10 rounded-full object-cover border border-pink-500/30" />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-slate-900 border border-pink-500/30 flex items-center justify-center text-slate-400">
-                              <User className="w-5 h-5 text-pink-400" />
+                      <div key={liker.id || idx} className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-pink-500/40 transition flex items-center gap-3.5 shadow-sm">
+                        {/* Profile Avatar with Tilted VIP Crown and Bottom-Right Level Badge */}
+                        <div className="relative w-12 h-12 flex-shrink-0">
+                          {/* Tilted VIP Crown (Top-Left) */}
+                          {Boolean(liker.isVIP || liker.vip || liker.is_vip || (liker.vipPlan && liker.vipPlan !== 'none')) && (
+                            <div className="absolute -top-2.5 -left-2 z-10 transform -rotate-[22deg] pointer-events-none">
+                              <Crown className="w-5 h-5 text-amber-400 fill-amber-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
                             </div>
                           )}
-                          <div>
-                            <h5 className="font-bold text-white text-xs">{liker.name || liker.username || 'User'}</h5>
-                            <span className="text-[10px] text-slate-400">@{liker.username || 'user'}</span>
+
+                          {/* Avatar Image */}
+                          {(liker.avatar || liker.userAvatar || liker.avatar_url) ? (
+                            <img 
+                              src={liker.avatar || liker.userAvatar || liker.avatar_url} 
+                              alt={liker.username || 'User'} 
+                              className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900" 
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
+                              <User className="w-6 h-6 text-pink-400" />
+                            </div>
+                          )}
+
+                          {/* User Level Number (Bottom-Right) */}
+                          <div className="absolute -bottom-1 -right-1 z-10 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-[10px] min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center border-2 border-slate-950 shadow-md font-mono">
+                            {formatNum(liker.level || liker.user_level || 1)}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 text-pink-400 text-xs font-bold font-mono">
-                          <Heart className="w-4 h-4 fill-pink-500" />
-                          <span>{liker.time || window.loc('لایک کرد', 'Liked')}</span>
+
+                        {/* Username Only */}
+                        <div className="flex flex-col justify-center min-w-0 flex-1">
+                          <span className="font-bold text-white text-sm truncate" dir="ltr">
+                            @{liker.username ? liker.username.replace(/^@/, '') : (liker.name || 'user')}
+                          </span>
                         </div>
                       </div>
                     ))
@@ -1437,21 +1429,41 @@ export default function ProfileTab(props) {
                 <div className="space-y-2.5">
                   {profileVisitors.length > 0 ? (
                     profileVisitors.map((v, i) => (
-                      <div key={v.id || i} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          {v.avatar ? (
-                            <img src={v.avatar} alt={v.name || v.username} className="w-10 h-10 rounded-full object-cover border border-cyan-500/30" />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-slate-900 border border-cyan-500/30 flex items-center justify-center text-slate-400">
-                              <User className="w-5 h-5 text-cyan-400" />
+                      <div key={v.id || i} className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-cyan-500/40 transition flex items-center gap-3.5 shadow-sm">
+                        {/* Profile Avatar with Tilted VIP Crown and Bottom-Right Level Badge */}
+                        <div className="relative w-12 h-12 flex-shrink-0">
+                          {/* Tilted VIP Crown (Top-Left) */}
+                          {Boolean(v.isVIP || v.vip || v.is_vip || (v.vipPlan && v.vipPlan !== 'none')) && (
+                            <div className="absolute -top-2.5 -left-2 z-10 transform -rotate-[22deg] pointer-events-none">
+                              <Crown className="w-5 h-5 text-amber-400 fill-amber-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
                             </div>
                           )}
-                          <div>
-                            <h5 className="font-bold text-white text-xs">{v.name || v.username}</h5>
-                            <span className="text-[10px] text-slate-400">@{v.username}</span>
+
+                          {/* Avatar Image */}
+                          {(v.avatar || v.userAvatar || v.avatar_url) ? (
+                            <img 
+                              src={v.avatar || v.userAvatar || v.avatar_url} 
+                              alt={v.username || 'User'} 
+                              className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900" 
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
+                              <User className="w-6 h-6 text-cyan-400" />
+                            </div>
+                          )}
+
+                          {/* User Level Number (Bottom-Right) */}
+                          <div className="absolute -bottom-1 -right-1 z-10 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-[10px] min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center border-2 border-slate-950 shadow-md font-mono">
+                            {formatNum(v.level || v.user_level || 1)}
                           </div>
                         </div>
-                        <span className="text-[10px] text-slate-400 font-mono">{v.time || window.loc('به تازگی', 'Recently')}</span>
+
+                        {/* Username Only */}
+                        <div className="flex flex-col justify-center min-w-0 flex-1">
+                          <span className="font-bold text-white text-sm truncate" dir="ltr">
+                            @{v.username ? v.username.replace(/^@/, '') : (v.name || 'user')}
+                          </span>
+                        </div>
                       </div>
                     ))
                   ) : (
