@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   AlertTriangle, ArrowRight, BadgeCheck, Ban, Bell, Calendar, Check, CheckCircle, CheckCircle2,
   Clock, Coins as CoinsIcon, Compass, Crown, Edit3, Eye, FileText, Filter,
-  Flag, Flame, Gift, Headphones, Heart, Home, Languages, LogIn,
+  Flag, Flame, Gift, Globe, Headphones, Heart, Home, Languages, LogIn,
   MessageSquare, Plus, Radio, Send, Settings, Shield, ShieldCheck, Sliders,
   Smartphone, Sparkles, Star, Swords, ThumbsUp, Trash2, User, Users, Video, X, Zap
 } from 'lucide-react';
@@ -20,6 +20,7 @@ import VipEntranceBanner from './components/Overlays/VipEntranceBanner';
 import PreCallConfirmModal from './components/Overlays/PreCallConfirmModal';
 import { EntranceRibbonOverlay } from './components/Overlays/AvatarFramesAndRibbons';
 import VLiveEntrySplashLoader from './components/Overlays/VLiveEntrySplashLoader';
+import FloatingDailyGift from './components/FloatingDailyGift';
 import LiveStreamSystem from './components/LiveStreamSystem';
 import LiveStudioModal from './components/LiveStudioModal';
 import StreamerDashboardModal from './components/StreamerDashboardModal';
@@ -1359,9 +1360,15 @@ export default function App() {
     try {
       const res = await apiWallet.claimDailyBonus();
       if (res && res.success) {
+        const now = Date.now();
+        setLastRewardClaimTimestamp(now);
+        setDailyStreak(prev => prev + 1);
         setUserCoins(prev => prev + (res.bonusCoins || 50));
-        setUnlockedRewardData({ coins: res.bonusCoins || 50, streak: dailyStreak + 1 });
+        setUnlockedRewardData({ title: loc('پاداش روزانه ورود', 'Daily Login Reward'), coins: res.bonusCoins || 50, streak: dailyStreak + 1 });
         setIsRewardOpeningModalOpen(true);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('vlive_daily_reward_claimed', { detail: { timestamp: now, bonusCoins: res.bonusCoins || 50 } }));
+        }
         showToast(loc(('🎁 جایزه روزانه ' + (res.bonusCoins || 50) + ' سکه دریافت شد!'), '🎁 Daily reward claimed!'));
       } else {
         showToast(loc('جایزه روزانه امروز را قبلاً دریافت کرده‌اید', 'Daily reward already claimed today'));
@@ -3138,10 +3145,21 @@ export default function App() {
             <h1 className="font-black text-base tracking-wider text-white">V.LIVE</h1>
           </div>
 
-          {/* Right Controls: Gifts, Messages, Notifications, Settings */}
-          <div className="flex items-center gap-1">
-            <button onClick={() => setIsRewardOpeningModalOpen(true)} className="p-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 transition" title="Daily Rewards">
-              <Gift className="w-3.5 h-3.5" />
+          {/* Right Controls: Language Switcher, Notifications, Settings */}
+          <div className="flex items-center gap-1.5">
+            {/* Language Switch Button next to Bell */}
+            <button 
+              onClick={() => {
+                const nextLang = langCode === 'fa' ? 'en' : 'fa';
+                handleSelectLanguage(nextLang);
+              }} 
+              className="p-1.5 px-2 rounded-full bg-slate-900 border border-slate-800 hover:border-pink-500/50 text-slate-300 hover:text-white transition flex items-center gap-1 group shadow-sm active:scale-95 cursor-pointer" 
+              title={langCode === 'fa' ? 'English' : 'فارسی'}
+            >
+              <Globe className="w-3.5 h-3.5 text-cyan-400 group-hover:rotate-45 transition-transform" />
+              <span className="text-[10px] font-mono font-black text-pink-400 uppercase tracking-tighter">
+                {langCode === 'fa' ? 'FA' : 'EN'}
+              </span>
             </button>
 
             <button onClick={() => {
@@ -3823,6 +3841,12 @@ export default function App() {
         compressImageFile={compressImageFile} 
         showToast={showToast} 
         loc={loc} 
+      />
+
+      {/* FLOATING DRAGGABLE ANIMATED DAILY GIFT */}
+      <FloatingDailyGift 
+        onClick={() => setIsRewardOpeningModalOpen(true)} 
+        userId={currentUser?.id || getUserId?.() || 'me'} 
       />
 
       {/* MODAL: PROFILE QR CODE & SCANNER */}

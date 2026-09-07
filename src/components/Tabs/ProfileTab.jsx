@@ -855,7 +855,54 @@ export default function ProfileTab(props) {
         </VisualSectionWrapper>
 
         {/* ========================================== */}
-        {/* 2. PHOTOS & VIDEOS CARD (UNDER STORY)      */}
+        {/* 2. FOLLOWERS, FOLLOWING, VIEWS ROW (SHARED SLIM RECTANGULAR CARD ABOVE MEDIA) */}
+        {/* ========================================== */}
+        <VisualSectionWrapper pageId="profile" sectionId="profile_stats_shared_card" defaultLabel="Followers, Following, Views Card">
+          <div className="py-2 px-3 bg-gradient-to-r from-slate-900/95 via-slate-950 to-slate-900/95 rounded-2xl border border-slate-800/80 shadow-md backdrop-blur-xl">
+            <div className="grid grid-cols-3 divide-x divide-slate-800/80 dir-ltr">
+              
+              {/* Followers (Icon + Count Only) */}
+              <button
+                onClick={() => setActiveSeparateModal('followers')}
+                className="py-1 px-2 flex items-center justify-center gap-2 group hover:bg-indigo-950/30 rounded-xl transition cursor-pointer"
+                title={window.loc('دنبال‌کنندگان', 'Followers')}
+              >
+                <Users className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform shrink-0" />
+                <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-indigo-300 transition">
+                  {formatNum(followersList.length || userFollowersCount)}
+                </span>
+              </button>
+
+              {/* Following (Icon + Count Only) */}
+              <button
+                onClick={() => setActiveSeparateModal('following')}
+                className="py-1 px-2 flex items-center justify-center gap-2 group hover:bg-blue-950/30 rounded-xl transition cursor-pointer"
+                title={window.loc('دنبال‌شوندگان', 'Following')}
+              >
+                <UserCheck className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform shrink-0" />
+                <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-blue-300 transition">
+                  {formatNum(userFollowingCount)}
+                </span>
+              </button>
+
+              {/* Views (Icon + Count Only) */}
+              <button
+                onClick={() => setActiveSeparateModal('views')}
+                className="py-1 px-2 flex items-center justify-center gap-2 group hover:bg-cyan-950/30 rounded-xl transition cursor-pointer"
+                title={window.loc('بازدیدها', 'Views')}
+              >
+                <Eye className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform shrink-0" />
+                <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-cyan-300 transition">
+                  {formatNum(userViewsCount)}
+                </span>
+              </button>
+
+            </div>
+          </div>
+        </VisualSectionWrapper>
+
+        {/* ========================================== */}
+        {/* 3. PHOTOS & VIDEOS CARD (UNDER STATS)      */}
         {/* ========================================== */}
         <VisualSectionWrapper pageId="profile" sectionId="profile_media_card" defaultLabel="Photos & Videos Card">
           <div className="p-3 bg-gradient-to-r from-slate-900/95 via-slate-950 to-slate-900/95 rounded-2xl sm:rounded-3xl border border-slate-800/80 shadow-lg backdrop-blur-xl">
@@ -897,65 +944,6 @@ export default function ProfileTab(props) {
                   {formatNum(galleryVideos.length)}
                 </span>
               </button>
-            </div>
-          </div>
-        </VisualSectionWrapper>
-
-        {/* ========================================== */}
-        {/* 3. FOLLOWERS, FOLLOWING, VIEWS ROW (SHARED RECTANGULAR CARD) */}
-        {/* ========================================== */}
-        <VisualSectionWrapper pageId="profile" sectionId="profile_stats_shared_card" defaultLabel="Followers, Following, Views Card">
-          <div className="p-3.5 bg-gradient-to-r from-slate-900/95 via-slate-950 to-slate-900/95 rounded-2xl sm:rounded-3xl border border-slate-800/80 shadow-lg backdrop-blur-xl">
-            <div className="grid grid-cols-3 divide-x divide-slate-800/80 dir-ltr">
-              
-              {/* Followers */}
-              <button
-                onClick={() => setActiveSeparateModal('followers')}
-                className="px-2 py-1.5 flex flex-col items-center justify-center gap-1 group hover:bg-indigo-950/20 rounded-xl transition cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-indigo-400 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-black text-white font-mono group-hover:text-indigo-300 transition">
-                    {formatNum(followersList.length || userFollowersCount)}
-                  </span>
-                </div>
-                <span className="text-[11px] font-bold text-slate-400 group-hover:text-slate-200 transition">
-                  {window.loc('فالوورها', 'Followers')}
-                </span>
-              </button>
-
-              {/* Following */}
-              <button
-                onClick={() => setActiveSeparateModal('following')}
-                className="px-2 py-1.5 flex flex-col items-center justify-center gap-1 group hover:bg-blue-950/20 rounded-xl transition cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5">
-                  <UserCheck className="w-3.5 h-3.5 text-blue-400 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-black text-white font-mono group-hover:text-blue-300 transition">
-                    {formatNum(userFollowingCount)}
-                  </span>
-                </div>
-                <span className="text-[11px] font-bold text-slate-400 group-hover:text-slate-200 transition">
-                  {window.loc('فالووینگ', 'Following')}
-                </span>
-              </button>
-
-              {/* Views */}
-              <button
-                onClick={() => setActiveSeparateModal('views')}
-                className="px-2 py-1.5 flex flex-col items-center justify-center gap-1 group hover:bg-cyan-950/20 rounded-xl transition cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5">
-                  <Eye className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-black text-white font-mono group-hover:text-cyan-300 transition">
-                    {formatNum(userViewsCount)}
-                  </span>
-                </div>
-                <span className="text-[11px] font-bold text-slate-400 group-hover:text-slate-200 transition">
-                  {window.loc('بازدیدها', 'Views')}
-                </span>
-              </button>
-
             </div>
           </div>
         </VisualSectionWrapper>

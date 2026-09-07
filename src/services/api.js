@@ -6,7 +6,7 @@ import { safeStorage } from '../utils/safeStorage';
 import { getStoredToken, setStoredToken, getUserId, setStoredSession } from '../utils/authSession';
 import { verifyAdminAccess, recordAdminAuditLog, ADMIN_TELEGRAM_ID } from './adminGuard';
 
-export { presenceService, calculateAge, getStoredToken, setStoredToken, getUserId, setStoredSession };
+export { safeStorage, presenceService, calculateAge, getStoredToken, setStoredToken, getUserId, setStoredSession };
 
 // ==========================================
 // CORE HELPERS (RESOLVER & ADMIN SECURITY)
@@ -2743,6 +2743,67 @@ export const apiWallet = {
     // Deposits in production are validated via server-side payment webhooks.
     const current = await this.getBalance();
     return { success: true, newCoins: current.coins };
+  },
+
+  async claimDailyBonus() {
+    const uid = getUserId() || 'me';
+    const now = Date.now();
+    const storageKey = `vlive_last_daily_gift_${uid}`;
+    const lastClaim = parseInt(safeStorage.getItem(storageKey) || '0', 10);
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+    if (lastClaim && (now - lastClaim) < TWENTY_FOUR_HOURS) {
+      const remainingMs = TWENTY_FOUR_HOURS - (now - lastClaim);
+      return { success: false, error: 'Already claimed today', remainingMs };
+    }
+
+    const bonusCoins = 50;
+    safeStorage.setItem(storageKey, String(now));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('vlive_daily_reward_claimed', { detail: { timestamp: now, bonusCoins } }));
+    }
+
+    try {
+      if (uid && uid !== 'me') {
+        const { data: prof } = await supabase.from('profiles').select('coins').eq('id', uid).maybeSingle();
+        const currentCoins = Number(prof?.coins || 0);
+        const newCoins = currentCoins + bonusCoins;
+        await supabase.from('profiles').update({ coins: newCoins }).eq('id', uid);
+        await supabase.from('wallets').update({ coins: newCoins }).eq('user_id', uid);
+        await supabase.from('transactions').insert({
+          user_id: uid,
+          tx_type: 'buy_coins',
+          amount_coins: bonusCoins,
+          amount_usdt: 0,
+          description: 'Daily login reward / هدیه ورود روزانه'
+        });
+      }
+    } catch (e) {
+      // Safe fallback
+    }
+
+    return { success: true, bonusCoins, nextClaimTs: now + TWENTY_FOUR_HOURS };
+  },
+
+  async spinWheel() {
+    const uid = getUserId() || 'me';
+    const prizes = [
+      { id: 1, text: '50 Coins', coins: 50, color: '#f59e0b' },
+      { id: 2, text: '100 Coins', coins: 100, color: '#ec4899' },
+      { id: 3, text: '20 Coins', coins: 20, color: '#8b5cf6' },
+      { id: 4, text: '200 Coins', coins: 200, color: '#10b981' },
+      { id: 5, text: '10 Coins', coins: 10, color: '#64748b' },
+      { id: 6, text: '500 Coins', coins: 500, color: '#06b6d4' }
+    ];
+    const prize = prizes[Math.floor(Math.random() * prizes.length)];
+    try {
+      if (uid && uid !== 'me' && prize.coins > 0) {
+        const { data: prof } = await supabase.from('profiles').select('coins').eq('id', uid).maybeSingle();
+        const newCoins = Number(prof?.coins || 0) + prize.coins;
+        await supabase.from('profiles').update({ coins: newCoins }).eq('id', uid);
+      }
+    } catch (e) {}
+    return { success: true, prize };
   },
 
   async convertCoinsToUsdt(coins) {
