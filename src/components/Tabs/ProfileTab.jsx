@@ -758,6 +758,18 @@ export default function ProfileTab(props) {
                     className="relative group cursor-pointer"
                     title={window.loc('کلیک برای ویرایش پروفایل', 'Click to edit profile')}
                   >
+                    {/* VIP CROWN ICON ABOVE AVATAR (NO TEXT, ONLY CROWN) */}
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (setIsVipModalOpen) setIsVipModalOpen(true);
+                      }}
+                      className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-500 border-2 border-slate-950 shadow-[0_0_14px_rgba(245,158,11,0.9)] hover:scale-115 active:scale-95 transition-all cursor-pointer group/crown"
+                      title={window.loc('عضویت ویژه VIP', 'VIP Membership')}
+                    >
+                      <Crown className="w-3.5 h-3.5 fill-slate-950 text-slate-950 shrink-0 group-hover/crown:rotate-12 transition-transform" />
+                    </div>
+
                     <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_25px_rgba(236,72,153,0.4)] overflow-hidden">
                       {(userAvatar || authAvatar) ? (
                         <img
@@ -864,7 +876,6 @@ export default function ProfileTab(props) {
                     <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
                       {userName || authFullName || 'User'}
                     </h1>
-                    <VipStatusBadge size="small" showText={true} />
                   </div>
                   <p className="text-[11px] text-slate-400 font-medium line-clamp-2 max-w-md">
                     {userBio || window.loc('به پروفایل من خوش آمدید ✨', 'Welcome to my profile ✨')}
