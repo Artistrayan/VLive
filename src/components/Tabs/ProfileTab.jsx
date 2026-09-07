@@ -9,7 +9,7 @@ import {
   CheckCircle, Plus, DollarSign, LogOut, ChevronRight, MapPin, Wallet, Flame, Video, Gift, PhoneCall, Image,
   User, Users, Eye, ThumbsUp, Heart, Share2, Award, Calendar, Globe, Briefcase, GraduationCap,
   MessageSquare, Shield, Activity, Radio, Check, X, Smartphone, Copy, ExternalLink, Zap, Star, ShieldCheck,
-  Filter, Play, AlertCircle, Trash2, Upload, UserCheck
+  Filter, Play, AlertCircle, Trash2, Upload, UserCheck, UserPlus
 } from 'lucide-react';
 import { interestService } from "../../services/interestService.js";
 import InterestsModal from "./InterestsModal.jsx";
@@ -504,6 +504,15 @@ export default function ProfileTab(props) {
     return apiProfile.getProfileLikers(uid);
   });
 
+  const targetProfileId = props.currentUser?.id || getUserId() || currentUsername || 'me';
+  const [isProfileLiked, setIsProfileLiked] = useState(() => apiProfile.isUserProfileLiked(targetProfileId));
+  const [isUserFollowedState, setIsUserFollowedState] = useState(() => apiProfile.isUserFollowed(targetProfileId));
+
+  useEffect(() => {
+    setIsProfileLiked(apiProfile.isUserProfileLiked(targetProfileId));
+    setIsUserFollowedState(apiProfile.isUserFollowed(targetProfileId));
+  }, [targetProfileId]);
+
   // Sync real profile likes count and likers from database and API
   useEffect(() => {
     let isMounted = true;
@@ -529,6 +538,11 @@ export default function ProfileTab(props) {
         } else {
           setProfileLikers(apiProfile.getProfileLikers(uid));
         }
+        if (e.detail.targetUserId === targetProfileId || e.detail.targetUserId === 'me') {
+          if (typeof e.detail.isLiked === 'boolean') {
+            setIsProfileLiked(e.detail.isLiked);
+          }
+        }
       }
     };
     window.addEventListener('vlive_profile_liked', handleProfileLiked);
@@ -536,7 +550,52 @@ export default function ProfileTab(props) {
       isMounted = false;
       window.removeEventListener('vlive_profile_liked', handleProfileLiked);
     };
-  }, [currentUsername, props.currentUser]);
+  }, [currentUsername, props.currentUser, targetProfileId]);
+
+  const handleToggleLike = async () => {
+    try {
+      const res = await apiProfile.toggleLikeProfile(targetProfileId);
+      if (res && res.success) {
+        setIsProfileLiked(res.isLiked);
+        if (typeof res.likesCount === 'number') {
+          setExtraLikes(res.likesCount);
+        }
+        if (res.isLiked) {
+          showToast(window.loc('❤️ پروفایل پسندیده شد', '❤️ Liked profile'));
+        } else {
+          showToast(window.loc('🤍 لایک پروفایل لغو شد', '🤍 Profile like removed'));
+        }
+      }
+    } catch (err) {
+      console.warn('handleToggleLike err:', err);
+    }
+  };
+
+  const handleToggleFollow = async () => {
+    try {
+      if (isUserFollowedState) {
+        const res = await apiProfile.unfollowUser(targetProfileId);
+        if (res && res.success) {
+          setIsUserFollowedState(false);
+          showToast(window.loc('لغو دنبال کردن انجام شد', 'Unfollowed'));
+        }
+      } else {
+        const targetObj = {
+          id: targetProfileId,
+          username: currentUsername || authUsername || 'user',
+          name: userName || authFullName || 'User',
+          avatar: userAvatar || authAvatar || ''
+        };
+        const res = await apiProfile.followUser(targetObj);
+        if (res && res.success) {
+          setIsUserFollowedState(true);
+          showToast(window.loc('✓ کاربر را دنبال کردید', '✓ Followed user'));
+        }
+      }
+    } catch (err) {
+      console.warn('handleToggleFollow err:', err);
+    }
+  };
 
   // Real total likes calculation
   const userTotalLikes = Math.max(extraLikes, profileLikers.length);
@@ -734,26 +793,73 @@ export default function ProfileTab(props) {
                     </div>
                   </div>
 
-                  {/* Username & Likes Counter under profile photo */}
+                  {/* Username under profile photo */}
                   <div className="flex items-center gap-1.5 mt-1.5 flex-wrap justify-center">
                     <span className="font-mono text-cyan-400 font-bold text-[11px] sm:text-xs text-center bg-cyan-950/40 px-2 py-0.5 rounded-full border border-cyan-500/30">
                       @{currentUsername || authUsername || 'user'}
                     </span>
-                    <button
-                      onClick={() => setActiveSeparateModal('likes')}
-                      className="flex items-center gap-1 text-pink-400 hover:text-pink-300 transition active:scale-95 cursor-pointer bg-transparent border-0 p-0 shadow-none group"
-                      title={window.loc('مشاهده لایک‌کنندگان پروفایل', 'View Profile Likers')}
-                    >
-                      <Heart className="w-3.5 h-3.5 fill-pink-500 text-pink-500 group-hover:scale-125 transition-transform duration-200" />
-                      <span className="text-[11px] sm:text-xs font-black font-mono tracking-tight text-white group-hover:text-pink-300">
-                        {formatNum(userTotalLikes)}
-                      </span>
-                    </button>
                   </div>
                 </div>
 
-                {/* Right / Side Details (Name, VIP Badge & Bio) */}
-                <div className="pt-1 sm:pt-2 flex-1 space-y-1">
+                {/* Right / Side Details (Actions above Name: Heart Like + Follow, then Name, VIP Badge & Bio) */}
+                <div className="pt-0.5 sm:pt-1 flex-1 space-y-1.5">
+                  {/* Heart Icon (Larger, Off/On State) & Follow Button above User Name */}
+                  <div className="flex items-center gap-2 flex-wrap pb-0.5">
+                    {/* LIKE BUTTON (Larger, Off = Muted outline, On = Glowing Pink/Red Heart) */}
+                    <button
+                      onClick={handleToggleLike}
+                      className={`p-1.5 px-3 rounded-full border transition-all duration-300 flex items-center gap-1.5 active:scale-95 cursor-pointer shadow-sm ${
+                        isProfileLiked
+                          ? 'bg-rose-500/20 border-rose-500/60 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.35)]'
+                          : 'bg-slate-900/90 border-slate-700/80 text-slate-400 hover:text-slate-200 hover:border-slate-600'
+                      }`}
+                      title={isProfileLiked ? window.loc('لایک شده (کلیک برای لغو)', 'Liked (Click to unlike)') : window.loc('لایک کردن پروفایل', 'Like Profile')}
+                    >
+                      <Heart
+                        className={`w-5 h-5 transition-transform duration-300 ${
+                          isProfileLiked 
+                            ? 'fill-rose-500 text-rose-500 scale-110' 
+                            : 'text-slate-400 stroke-2'
+                        }`}
+                      />
+                      <span 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveSeparateModal('likes');
+                        }}
+                        className={`text-xs font-black font-mono tracking-tight hover:underline cursor-pointer ${
+                          isProfileLiked ? 'text-rose-300' : 'text-slate-300'
+                        }`}
+                        title={window.loc('مشاهده لایک‌کنندگان', 'View Likers')}
+                      >
+                        {formatNum(userTotalLikes)}
+                      </span>
+                    </button>
+
+                    {/* FOLLOW BUTTON IN FRONT OF HEART */}
+                    <button
+                      onClick={handleToggleFollow}
+                      className={`px-3.5 py-1.5 rounded-full font-bold text-xs shadow-md transition-all duration-300 flex items-center gap-1.5 active:scale-95 cursor-pointer border ${
+                        isUserFollowedState
+                          ? 'bg-slate-900 border-slate-700 text-emerald-400 hover:border-rose-500/50 hover:text-rose-400'
+                          : 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 border-transparent text-white hover:opacity-95 shadow-[0_0_15px_rgba(236,72,153,0.3)]'
+                      }`}
+                      title={isUserFollowedState ? window.loc('لغو دنبال کردن', 'Unfollow') : window.loc('دنبال کردن کاربر', 'Follow User')}
+                    >
+                      {isUserFollowedState ? (
+                        <>
+                          <UserCheck className="w-4 h-4 text-emerald-400" />
+                          <span>{window.loc('دنبال می‌کنید', 'Following')}</span>
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4" />
+                          <span>{window.loc('دنبال کردن', 'Follow')}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
                       {userName || authFullName || 'User'}
