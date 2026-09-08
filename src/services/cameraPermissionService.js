@@ -155,22 +155,8 @@ class CameraPermissionService {
 
     this.currentFacingMode = facingMode;
 
-    // Strategy 1: Exact facingMode constraint
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { exact: facingMode },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      });
-      const track = stream.getVideoTracks()[0];
-      if (track) return { track, stream };
-    } catch (e1) {}
-
-    // Strategy 2: Ideal facingMode constraint
-    try {
+      // Use ideal constraints to avoid OverconstrainedError and repeated permission prompts
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: facingMode,
@@ -181,45 +167,11 @@ class CameraPermissionService {
       });
       const track = stream.getVideoTracks()[0];
       if (track) return { track, stream };
-    } catch (e2) {}
+    } catch (e1) {
+      console.warn('Failed with ideal facingMode constraints', e1);
+    }
 
-    // Strategy 3: Enumerate video devices and select matching deviceId
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(d => d.kind === 'videoinput');
-      
-      if (videoDevices.length > 1) {
-        let targetDevice = null;
-        if (facingMode === 'environment') {
-          targetDevice = videoDevices.find(d => 
-            d.label.toLowerCase().includes('back') || 
-            d.label.toLowerCase().includes('rear') || 
-            d.label.toLowerCase().includes('environment')
-          ) || videoDevices[1];
-        } else {
-          targetDevice = videoDevices.find(d => 
-            d.label.toLowerCase().includes('front') || 
-            d.label.toLowerCase().includes('user') || 
-            d.label.toLowerCase().includes('selfie')
-          ) || videoDevices[0];
-        }
-
-        if (targetDevice && targetDevice.deviceId) {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              deviceId: { exact: targetDevice.deviceId },
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
-            },
-            audio: false
-          });
-          const track = stream.getVideoTracks()[0];
-          if (track) return { track, stream };
-        }
-      }
-    } catch (e3) {}
-
-    // Strategy 4: Fallback generic video
+    // Fallback generic video if the above fails
     const fallbackStream = await navigator.mediaDevices.getUserMedia({
       video: true,
       audio: false

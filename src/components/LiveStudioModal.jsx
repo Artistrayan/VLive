@@ -326,70 +326,91 @@ export default function LiveStudioModal({
 
     try {
       const currentStream = mediaStreamRef.current;
-      const oldVideoTracks = currentStream ? currentStream.getVideoTracks() : [];
+      const videoTrack = currentStream ? currentStream.getVideoTracks()[0] : null;
 
-      // Acquire genuine video track for the new facingMode
-      const { track: newVideoTrack, stream: newVideoStream } = await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode);
-
-      if (newVideoTrack) {
-        newVideoTrack.enabled = isCamEnabled;
-      }
-
-      // Stop old video tracks
-      oldVideoTracks.forEach(t => {
-        try { t.stop(); } catch(e) {}
-      });
-
-      // Preserve existing audio track
-      const existingAudioTrack = currentStream ? currentStream.getAudioTracks()[0] : null;
-      const isAudioActive = existingAudioTrack && existingAudioTrack.readyState === 'live';
-
-      const newStream = new MediaStream();
-      if (newVideoTrack) newStream.addTrack(newVideoTrack);
-      if (isAudioActive) {
-        newStream.addTrack(existingAudioTrack);
-      } else {
-        const audioTracks = newVideoStream ? newVideoStream.getAudioTracks() : [];
-        if (audioTracks[0]) newStream.addTrack(audioTracks[0]);
-      }
-
-      mediaStreamRef.current = newStream;
-      setMediaStream(newStream);
-      cameraPermissionService.setActiveStream(newStream);
-
-      // Update both video elements immediately
-      if (previewVideoRef.current) {
-        previewVideoRef.current.srcObject = newStream;
-        previewVideoRef.current.play().catch(() => {});
-      }
-      if (liveVideoRef.current) {
-        liveVideoRef.current.srcObject = newStream;
-        liveVideoRef.current.play().catch(() => {});
-      }
-
-      if (newVideoTrack) {
-        setLocalVideoTrack({
-          id: newVideoTrack.id,
-          kind: 'video',
-          source: 'camera',
-          mediaStreamTrack: newVideoTrack,
-          isMuted: !isCamEnabled,
-          published: true
-        });
-      }
-
-      // Notify LiveKit if connected
-      try {
-        if (livekitManager) {
-          livekitManager.switchCamera(nextFacingMode).catch(() => {});
+      let switchedWithConstraints = false;
+      
+      // Try seamless hardware switch first without requesting new permissions
+      if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
+        try {
+          await videoTrack.applyConstraints({ facingMode: nextFacingMode });
+          switchedWithConstraints = true;
+          
+          if (livekitManager) {
+            livekitManager.switchCamera(nextFacingMode).catch(() => {});
+          }
+        } catch (e) {
+          console.warn('applyConstraints failed, falling back to full stream replacement', e);
         }
-      } catch (e) {}
+      }
+
+      // Fallback if applyConstraints fails or isn't supported
+      if (!switchedWithConstraints) {
+        const oldVideoTracks = currentStream ? currentStream.getVideoTracks() : [];
+        
+        // Stop old video tracks FIRST on mobile to release the hardware lock
+        oldVideoTracks.forEach(t => {
+          try { t.stop(); } catch(e) {}
+        });
+
+        // Acquire genuine video track for the new facingMode
+        const { track: newVideoTrack, stream: newVideoStream } = await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode);
+
+        if (newVideoTrack) {
+          newVideoTrack.enabled = isCamEnabled;
+        }
+
+        // Preserve existing audio track
+        const existingAudioTrack = currentStream ? currentStream.getAudioTracks()[0] : null;
+        const isAudioActive = existingAudioTrack && existingAudioTrack.readyState === 'live';
+
+        const newStream = new MediaStream();
+        if (newVideoTrack) newStream.addTrack(newVideoTrack);
+        
+        if (isAudioActive) {
+          newStream.addTrack(existingAudioTrack);
+        } else {
+          const audioTracks = newVideoStream ? newVideoStream.getAudioTracks() : [];
+          if (audioTracks[0]) newStream.addTrack(audioTracks[0]);
+        }
+
+        mediaStreamRef.current = newStream;
+        setMediaStream(newStream);
+        cameraPermissionService.setActiveStream(newStream);
+
+        // Update both video elements immediately
+        if (previewVideoRef.current) {
+          previewVideoRef.current.srcObject = newStream;
+          previewVideoRef.current.play().catch(() => {});
+        }
+        if (liveVideoRef.current) {
+          liveVideoRef.current.srcObject = newStream;
+          liveVideoRef.current.play().catch(() => {});
+        }
+
+        if (newVideoTrack) {
+          setLocalVideoTrack({
+            id: newVideoTrack.id,
+            kind: 'video',
+            source: 'camera',
+            mediaStreamTrack: newVideoTrack,
+            isMuted: !isCamEnabled,
+            published: true
+          });
+        }
+
+        // Notify LiveKit if connected
+        try {
+          if (livekitManager) {
+            livekitManager.switchCamera(nextFacingMode).catch(() => {});
+          }
+        } catch (e) {}
+      }
 
       showToast(window.loc(
         nextFacingMode === 'environment' ? '🔄 دوربین پشت فعال شد' : '🔄 دوربین جلو فعال شد',
         nextFacingMode === 'environment' ? '🔄 Back camera activated' : '🔄 Front camera activated'
       ));
-
     } catch (err) {
       console.error('Camera flip error:', err);
       showToast(window.loc('خطا در تغییر دوربین', 'Error switching camera'));
@@ -837,15 +858,15 @@ export default function LiveStudioModal({
                     autoPlay
                     playsInline
                     muted
-                    className={`w-full h-full object-cover ${isMirrored ? 'scale-x-[-1]' : ''} ${
-                      beautyFilter === 'smooth' ? 'brightness-110 contrast-95' :
-                      beautyFilter === 'glow' ? 'brightness-125 saturate-120' :
-                      beautyFilter === 'ultra' ? 'brightness-135 contrast-105 saturate-130' : ''
-                    }`}
+                    className={`w-full h-full object-cover transition-all duration-300 ${isMirrored ? 'scale-x-[-1]' : ''}`}
                     style={{
-                      filter: skinSmoothing > 0 
-                        ? `blur(${skinSmoothing * 0.015}px) brightness(${100 + skinSmoothing * 0.1}%) contrast(${100 - skinSmoothing * 0.05}%)`
-                        : ''
+                      filter: `
+                        brightness(${100 + skinSmoothing * 0.1 + (lightingEffect === 'studio' ? 8 : lightingEffect === 'warm' ? 4 : beautyFilter === 'smooth' ? 10 : beautyFilter === 'glow' ? 25 : beautyFilter === 'ultra' ? 35 : 0)}%) 
+                        contrast(${100 - skinSmoothing * 0.05 + (lightingEffect === 'studio' ? 2 : beautyFilter === 'smooth' ? -5 : beautyFilter === 'ultra' ? 5 : 0)}%) 
+                        saturate(${100 + (lightingEffect === 'warm' ? 8 : lightingEffect === 'neon' ? 12 : lightingEffect === 'sunset' ? 10 : beautyFilter === 'glow' ? 20 : beautyFilter === 'ultra' ? 30 : 0)}%)
+                        ${beautyFilter === 'rose' ? 'sepia(12%) hue-rotate(320deg)' : ''}
+                        ${beautyFilter === 'bronze' ? 'sepia(18%) saturate(115%)' : ''}
+                      `.trim()
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40 pointer-events-none" />
@@ -1044,10 +1065,9 @@ export default function LiveStudioModal({
                   muted
                   style={{
                     filter: `
-                      blur(${Math.max(0, skinSmoothing * 0.015)}px) 
-                      brightness(${100 + skinSmoothing * 0.1 + (lightingEffect === 'studio' ? 8 : lightingEffect === 'warm' ? 4 : 0)}%) 
-                      contrast(${100 - skinSmoothing * 0.05 + (lightingEffect === 'studio' ? 2 : 0)}%) 
-                      saturate(${100 + (lightingEffect === 'warm' ? 8 : lightingEffect === 'neon' ? 12 : lightingEffect === 'sunset' ? 10 : 0)}%)
+                      brightness(${100 + skinSmoothing * 0.1 + (lightingEffect === 'studio' ? 8 : lightingEffect === 'warm' ? 4 : beautyFilter === 'smooth' ? 10 : beautyFilter === 'glow' ? 25 : beautyFilter === 'ultra' ? 35 : 0)}%) 
+                      contrast(${100 - skinSmoothing * 0.05 + (lightingEffect === 'studio' ? 2 : beautyFilter === 'smooth' ? -5 : beautyFilter === 'ultra' ? 5 : 0)}%) 
+                      saturate(${100 + (lightingEffect === 'warm' ? 8 : lightingEffect === 'neon' ? 12 : lightingEffect === 'sunset' ? 10 : beautyFilter === 'glow' ? 20 : beautyFilter === 'ultra' ? 30 : 0)}%)
                       ${beautyFilter === 'rose' ? 'sepia(12%) hue-rotate(320deg)' : ''}
                       ${beautyFilter === 'bronze' ? 'sepia(18%) saturate(115%)' : ''}
                     `.trim()
