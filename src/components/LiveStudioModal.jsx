@@ -848,7 +848,7 @@ export default function LiveStudioModal({
 
             {/* Video Box */}
             <div className="relative w-full h-52 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center">
-              {isCamEnabled && cameraPermission === 'granted' && mediaStream ? (
+              {isCamEnabled && mediaStream ? (
                 <div className="relative w-full h-full">
                   <video
                     ref={(el) => {
@@ -891,21 +891,10 @@ export default function LiveStudioModal({
                     </div>
                   )}
                 </div>
-              ) : cameraPermission === 'denied' || cameraError ? (
-                <div className="text-center p-4 space-y-2 text-rose-400">
-                  <AlertTriangle className="w-8 h-8 mx-auto text-rose-500 animate-bounce" />
-                  <p className="text-xs font-bold text-white">{cameraError || window.loc('مجوز دسترسی به دوربین صادر نشده است', 'Camera permission not granted')}</p>
-                  <button
-                    onClick={initCameraAndStream}
-                    className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs transition shadow-lg"
-                  >
-                    {window.loc('تلاش مجدد / درخواست مجوز دوربین', 'Retry / Request Camera Permission')}
-                  </button>
-                </div>
               ) : (
                 <div className="text-center space-y-2 text-slate-500">
                   <Camera className="w-10 h-10 mx-auto opacity-40" />
-                  <p className="text-xs font-semibold">{window.loc('دوربین غیرفعال است', 'The camera is disabled')}</p>
+                  <p className="text-xs font-semibold">{window.loc('دوربین متصل نیست', 'Camera is disconnected')}</p>
                 </div>
               )}
             </div>

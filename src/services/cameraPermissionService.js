@@ -152,31 +152,51 @@ class CameraPermissionService {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('WebRTC mediaDevices is not supported');
     }
-
     this.currentFacingMode = facingMode;
 
     try {
-      // Use ideal constraints to avoid OverconstrainedError and repeated permission prompts
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: facingMode,
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
+      // Step 1: Enumerate devices to find the exact target camera ID to prevent OverconstrainedError and repeat prompts
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(d => d.kind === 'videoinput');
+      
+      let targetDeviceId = null;
+      if (videoDevices.length > 1) {
+        if (facingMode === 'environment') {
+          const backCam = videoDevices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('rear') || d.label.toLowerCase().includes('environment'));
+          if (backCam) targetDeviceId = backCam.deviceId;
+          else targetDeviceId = videoDevices[videoDevices.length - 1].deviceId; // Guess last is back
+        } else {
+          const frontCam = videoDevices.find(d => d.label.toLowerCase().includes('front') || d.label.toLowerCase().includes('user') || d.label.toLowerCase().includes('selfie') || d.label.toLowerCase().includes('face'));
+          if (frontCam) targetDeviceId = frontCam.deviceId;
+          else targetDeviceId = videoDevices[0].deviceId;
+        }
+      }
+
+      // Step 2: Use exact deviceId if found, otherwise fallback to generic facingMode
+      const constraints = {
+        video: targetDeviceId ? { deviceId: { exact: targetDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } } : { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false
-      });
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       const track = stream.getVideoTracks()[0];
       if (track) return { track, stream };
     } catch (e1) {
-      console.warn('Failed with ideal facingMode constraints', e1);
+      console.warn('Failed with strict constraints, attempting generic fallback...', e1);
+      
+      // Fallback generic video if the strict request fails
+      try {
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+        return { track: fallbackStream.getVideoTracks()[0], stream: fallbackStream };
+      } catch(e2) {
+        console.error('All camera requests failed', e2);
+        throw e2;
+      }
     }
-
-    // Fallback generic video if the above fails
-    const fallbackStream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: false
-    });
-    return { track: fallbackStream.getVideoTracks()[0], stream: fallbackStream };
+    return { track: null, stream: null };
   }
 
   /**
