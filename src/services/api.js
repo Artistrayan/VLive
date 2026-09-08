@@ -245,11 +245,23 @@ export const apiAuth = {
       const cleanUserType = String(profileData.user_type || '').toUpperCase();
       const isAdm = (cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN' || profileData.role === 'admin' || profileData.role === 'super_admin' || effectiveTelegramId === '8933698119');
       const mappedRole = isAdm ? 'admin' : (profileData.role || (profileData.user_type ? profileData.user_type.toLowerCase() : 'user'));
+      const resolvedAvatar = profileData.avatar_url || profileData.avatar || '';
+
+      if (authData.user.id) {
+        localStorage.setItem('vlive_user_id', authData.user.id);
+        if (resolvedAvatar) {
+          localStorage.setItem('vlive_user_avatar', resolvedAvatar);
+        } else {
+          localStorage.removeItem('vlive_user_avatar');
+        }
+      }
 
       return {
         success: true,
         user: {
           ...profileData,
+          avatar: resolvedAvatar,
+          avatar_url: resolvedAvatar,
           telegram_id: effectiveTelegramId,
           telegramId: effectiveTelegramId,
           role: mappedRole
@@ -299,9 +311,20 @@ export const apiAuth = {
     localStorage.removeItem('vlive_auth_telegram_id');
     localStorage.removeItem('vlive_current_username');
     localStorage.removeItem('vlive_user_name');
+    localStorage.removeItem('vlive_user_nickname');
     localStorage.removeItem('vlive_user_avatar');
     localStorage.removeItem('vlive_user_gender');
     localStorage.removeItem('vlive_profile_age');
+    localStorage.removeItem('vlive_profile_birthdate');
+    localStorage.removeItem('vlive_profile_city');
+    localStorage.removeItem('vlive_profile_cover');
+    localStorage.removeItem('vlive_profile_occupation');
+    localStorage.removeItem('vlive_profile_education');
+    localStorage.removeItem('vlive_profile_relationship');
+    localStorage.removeItem('vlive_profile_interests');
+    localStorage.removeItem('vlive_profile_languages');
+    localStorage.removeItem('vlive_profile_ig');
+    localStorage.removeItem('vlive_profile_tg');
     localStorage.removeItem('vlive_user_bio');
     localStorage.removeItem('vlive_is_verified');
     localStorage.removeItem('vlive_vip_plan');
@@ -536,9 +559,21 @@ export const apiProfile = {
       }
 
       const isVipStatus = Boolean(profile.is_vip || profile.vip || (profile.vip_plan && profile.vip_plan !== 'none' && profile.vip_plan !== 'null'));
+      const resolvedAvatar = profile.avatar_url || profile.avatar || '';
+
+      if (uid) {
+        localStorage.setItem('vlive_user_id', uid);
+        if (resolvedAvatar) {
+          localStorage.setItem('vlive_user_avatar', resolvedAvatar);
+        } else {
+          localStorage.removeItem('vlive_user_avatar');
+        }
+      }
 
       return {
         ...profile,
+        avatar: resolvedAvatar,
+        avatar_url: resolvedAvatar,
         role: mappedRole,
         telegram_id: effectiveTelegramId,
         telegramId: effectiveTelegramId,

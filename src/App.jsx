@@ -722,7 +722,13 @@ export default function App() {
         if (p.name) setUserName(p.name);
         if (p.nickname) setUserNickname(p.nickname);
         if (p.username) setCurrentUsername(p.username);
-        if (p.avatar_url || p.avatar) setUserAvatar(p.avatar_url || p.avatar);
+        const av = p.avatar_url || p.avatar || '';
+        setUserAvatar(av);
+        if (av) {
+          safeStorage.setItem('vlive_user_avatar', av);
+        } else {
+          safeStorage.removeItem('vlive_user_avatar');
+        }
         if (p.bio) setUserBio(p.bio);
         if (p.gender) {
           setUserGender(p.gender);
@@ -2469,7 +2475,13 @@ export default function App() {
             setAuthFullName(fullTgName);
             setAuthUsername(u.username);
             if (u.coins || u.wallet_stars) setUserCoins(u.coins || u.wallet_stars);
-            if (u.avatar_url || u.avatar) setUserAvatar(u.avatar_url || u.avatar);
+            const userAv = u.avatar_url || u.avatar || '';
+            setUserAvatar(userAv);
+            if (userAv) {
+              safeStorage.setItem('vlive_user_avatar', userAv);
+            } else {
+              safeStorage.removeItem('vlive_user_avatar');
+            }
             if (u.gender) {
               setUserGender(u.gender);
               setAuthGender(u.gender);
@@ -2505,7 +2517,13 @@ export default function App() {
           setAuthFullName(fullName);
           setAuthUsername(u.username);
           if (u.coins) setUserCoins(u.coins);
-          if (u.avatar) setUserAvatar(u.avatar);
+          const userAv = u.avatar || u.avatar_url || '';
+          setUserAvatar(userAv);
+          if (userAv) {
+            safeStorage.setItem('vlive_user_avatar', userAv);
+          } else {
+            safeStorage.removeItem('vlive_user_avatar');
+          }
           if (u.gender) {
             setUserGender(u.gender);
             setAuthGender(u.gender);
@@ -3246,12 +3264,6 @@ export default function App() {
                 
                 {/* Real Stories Tray (Connected to Database) */}
                 <div className="bg-slate-950/80 p-2.5 rounded-2xl border border-slate-800/80">
-                  <div className="flex items-center justify-between px-1 mb-2">
-                    <span className="text-xs font-black text-pink-400 flex items-center gap-1.5">
-                      <Flame className="w-4 h-4 text-pink-500 animate-bounce" />
-                      <span>{loc('استوری‌های کاربران', 'User Stories')}</span>
-                    </span>
-                  </div>
                   <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
                     {/* Stories List from Supabase (Only active stories within 24 hours on Home) */}
                     {(advancedStories || []).filter(story => {

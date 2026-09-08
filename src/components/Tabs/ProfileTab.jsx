@@ -219,6 +219,9 @@ export default function ProfileTab(props) {
           const av = profile.avatar || profile.avatar_url;
           setUserAvatar(av);
           safeStorage.setItem('vlive_user_avatar', av);
+        } else {
+          setUserAvatar('');
+          safeStorage.removeItem('vlive_user_avatar');
         }
         if (profile.gender) {
           if (typeof setUserGender === 'function') setUserGender(profile.gender);
@@ -394,7 +397,7 @@ export default function ProfileTab(props) {
     languages: userLanguages || safeStorage.getItem('vlive_profile_languages') || 'فارسی (Persian)',
     instagram: instagramLink || safeStorage.getItem('vlive_profile_ig') || '',
     telegram: telegramLink || safeStorage.getItem('vlive_profile_tg') || '',
-    avatar: userAvatar || authAvatar || safeStorage.getItem('vlive_user_avatar') || PRESET_AVATARS[0],
+    avatar: userAvatar || authAvatar || currentUser?.avatar || currentUser?.avatar_url || '',
     cover: coverPhoto || safeStorage.getItem('vlive_profile_cover') || ''
   });
 
@@ -415,11 +418,11 @@ export default function ProfileTab(props) {
         languages: userLanguages || safeStorage.getItem('vlive_profile_languages') || prev.languages,
         instagram: instagramLink || safeStorage.getItem('vlive_profile_ig') || prev.instagram,
         telegram: telegramLink || safeStorage.getItem('vlive_profile_tg') || prev.telegram,
-        avatar: userAvatar || safeStorage.getItem('vlive_user_avatar') || prev.avatar,
+        avatar: userAvatar || currentUser?.avatar || currentUser?.avatar_url || prev.avatar || '',
         cover: coverPhoto || safeStorage.getItem('vlive_profile_cover') || prev.cover
       }));
     }
-  }, [isEditModalOpen, userName, userBio, userGender, userCity, userBirthDate, userAge, userOccupation, userEducation, userRelationship, userInterests, userLanguages, instagramLink, telegramLink, userAvatar, coverPhoto]);
+  }, [isEditModalOpen, userName, userBio, userGender, userCity, userBirthDate, userAge, userOccupation, userEducation, userRelationship, userInterests, userLanguages, instagramLink, telegramLink, userAvatar, currentUser, coverPhoto]);
 
   // --- IMAGE UPLOAD HANDLERS ---
   const handleAvatarFileUpload = async (e) => {
@@ -845,9 +848,9 @@ export default function ProfileTab(props) {
                     </div>
 
                     <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_25px_rgba(236,72,153,0.4)] overflow-hidden">
-                      {(userAvatar || authAvatar) ? (
+                      {(userAvatar || authAvatar || currentUser?.avatar || currentUser?.avatar_url) ? (
                         <img
-                          src={userAvatar || authAvatar}
+                          src={userAvatar || authAvatar || currentUser?.avatar || currentUser?.avatar_url}
                           alt={userName}
                           className="w-full h-full object-cover rounded-full bg-slate-900"
                         />

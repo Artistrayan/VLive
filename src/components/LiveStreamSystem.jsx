@@ -266,7 +266,6 @@ export default function LiveStreamSystem({
                 <span>V.LIVE</span>
                 <span className="text-[10px] bg-pink-500/20 text-pink-400 px-2 py-0.5 rounded-full border border-pink-500/30">{window.loc('زنده', 'alive')}</span>
               </h2>
-              <p className="text-[11px] text-slate-400 font-semibold">{window.loc('پخش زنده استریمرهای تایید شده', 'Live streaming from verified streamers')}</p>
             </div>
           </div>
         </div>
@@ -417,16 +416,7 @@ export default function LiveStreamSystem({
       {/* 3. STREAMS GRID DISPLAY */}
       {(liveTypeTab === 'standard' || hasAdultAccess) && (
         <div>
-          {filteredStreams.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl bg-slate-900/90 border border-slate-800 space-y-3 dir-rtl">
-              <Video className="w-12 h-12 text-slate-600 mx-auto animate-pulse" />
-              <h4 className="text-sm font-black text-white">{window.loc('هیچ لایواستریمی در این بخش یافت نشد', 'No live streams were found in this section')}</h4>
-              <p className="text-xs text-slate-400">
-                {window.loc('در حال حاضر لایواستریم مستقیمی در دسته‌بندی', 'Currently livestreaming directly in the category')} {selectedSubCategory} {window.loc('قرار ندارد.', 'not supposed to')}
-              </p>
-
-            </div>
-          ) : (
+          {filteredStreams.length === 0 ? null : (
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {filteredStreams.map(stream => {
                 const isAdult = stream.live_type === 'adult' || stream.isVip18;

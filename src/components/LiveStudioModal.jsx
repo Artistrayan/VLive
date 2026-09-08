@@ -864,22 +864,6 @@ export default function LiveStudioModal({
               <span className="flex items-center gap-1.5">
                 <Camera className="w-4 h-4 text-pink-400" />
               </span>
-              <div className="flex items-center gap-1.5">
-                <span className={`text-[9px] px-2 py-0.5 rounded-full font-mono font-bold ${
-                  cameraPermission === 'granted' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-                }`}>
-                  Cam: {cameraPermission === 'granted' ? '✓ Granted' : '✕ Denied'}
-                </span>
-                <span className={`text-[9px] px-2 py-0.5 rounded-full font-mono font-bold ${
-                  isLiveKitConnected && broadcasterAuthorized
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                    : isLiveKitConnected
-                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                }`}>
-                  LiveKit: {isLiveKitConnected ? (broadcasterAuthorized ? '✓ Token Verified' : 'Connected') : 'Connecting'}
-                </span>
-              </div>
             </div>
 
             {/* Video Box */}
@@ -915,20 +899,6 @@ export default function LiveStudioModal({
                     lightingEffect={lightingEffect}
                     skinSmoothing={skinSmoothing}
                   />
-
-                  {/* LocalVideoTrack Status Badge */}
-                  <div className="absolute top-3 left-3 bg-slate-950/80 border border-slate-800 text-slate-300 text-[9px] font-mono font-bold px-2 py-0.5 rounded-full backdrop-blur-md flex items-center gap-1">
-                    <Wifi className="w-3 h-3 text-cyan-400" />
-                    <span>Track: {localVideoTrack ? 'LocalVideoTrack Active' : 'No Track'}</span>
-                  </div>
-
-                  {/* Beauty badge overlay */}
-                  {beautyFilter !== 'off' && (
-                    <div className="absolute top-3 right-3 bg-purple-950/80 border border-purple-500/40 text-purple-200 text-[10px] font-black px-2 py-0.5 rounded-full backdrop-blur-md flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-purple-400" />
-                      <span>{window.loc('فیلتر زیبایی:', 'beauty filter:')} {beautyFilter}</span>
-                    </div>
-                  )}
 
                   {/* Audio Level Bar Indicator */}
                   {isMicEnabled && (

@@ -684,17 +684,13 @@ export default function ChatTab(props) {
                     </div>
 
                     <div>
-                      <div className="flex items-center gap-1.5">
-                        <h2 className="text-sm font-black text-white tracking-tight flex items-center gap-1.5">
-                          {window.loc('💬 Messages (پیام‌ها)', '💬 Messages')}
-                        </h2>
-                        {totalUnreadMessages > 0 && (
+                      {totalUnreadMessages > 0 && (
+                        <div className="flex items-center gap-1.5">
                           <span className="px-2 py-0.5 rounded-full bg-pink-500 text-white font-black text-[10px] shadow-lg animate-pulse">
                             {totalUnreadMessages} New
                           </span>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-slate-400 font-medium">Secure Encrypted Chat & LiveKit Calls</p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -808,7 +804,6 @@ export default function ChatTab(props) {
               <div className={"w-full md:w-80 border-r border-slate-800/80 flex flex-col bg-slate-950 " + (activeConversationId ? "hidden md:flex" : "flex")}>
                 <div className="p-3 border-b border-slate-800/80 bg-slate-900/50 flex items-center justify-between text-xs font-bold text-slate-400">
                   <div className="flex items-center gap-2">
-                    <span>{window.loc('گفتگوها و پیام‌ها', 'Recent Conversations')}</span>
                     {conversations.filter(c => (c.unreadCount || 0) > 0).length > 0 && (
                       <span className="px-1.5 py-0.2 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/30 text-[10px]">
                         {conversations.filter(c => (c.unreadCount || 0) > 0).length} {window.loc('خوانده‌نشده', 'unread')}
@@ -831,10 +826,6 @@ export default function ChatTab(props) {
                         <span>{window.loc('خوانده شدن همه', 'Mark All Read')}</span>
                       </button>
                     )}
-                    <span className="text-[10px] text-emerald-400 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      Live
-                    </span>
                   </div>
                 </div>
 
@@ -867,21 +858,7 @@ export default function ChatTab(props) {
                     });
 
                     if (filteredConvs.length === 0) {
-                      return (
-                        <div className="py-12 text-center space-y-2 text-slate-500 px-4">
-                          <MessageSquare className="w-8 h-8 mx-auto text-slate-600 animate-pulse" />
-                          <p className="text-xs font-bold text-slate-400">
-                            {msgFilterTab === 'unread' 
-                              ? window.loc('هیچ پیام خوانده‌نشده‌ای وجود ندارد ✨', 'No unread messages ✨')
-                              : (msgFilterTab === 'read'
-                                ? window.loc('هیچ پیام خوانده‌شده‌ای وجود ندارد', 'No read messages found')
-                                : window.loc('هیچ گفتگویی یافت نشد', 'No conversation found'))}
-                          </p>
-                          <p className="text-[10px] text-slate-500">
-                            {window.loc('برای شروع گفتگو دکمه چت جدید را بزنید', 'Click New Chat to start a conversation')}
-                          </p>
-                        </div>
-                      );
+                      return null;
                     }
 
                     // Helper to render a single conversation item card
