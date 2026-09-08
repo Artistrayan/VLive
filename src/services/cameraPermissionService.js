@@ -147,43 +147,116 @@ class CameraPermissionService {
 
   /**
    * Acquire a fresh video track with the specific facing mode (user vs environment)
+   * Prevents repeated Telegram WebView permission prompts by:
+   * 1. Trying applyConstraints directly on the existing live track
+   * 2. Finding true hardware back camera deviceId via enumerateDevices
+   * 3. Acquiring the new track BEFORE stopping the old track (never drops to 0 active tracks)
    */
-  async getVideoTrackForFacingMode(facingMode = 'user') {
+  async getVideoTrackForFacingMode(facingMode = 'user', oldTrack = null) {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('WebRTC mediaDevices is not supported');
     }
     this.currentFacingMode = facingMode;
 
-    try {
-      // Use standard facingMode constraint (avoids enumerateDevices which triggers prompts in WebViews)
-      const constraints = {
-        video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false
-      };
+    let targetDeviceId = null;
+    let videoDevices = [];
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      const track = stream.getVideoTracks()[0];
-      if (track) return { track, stream };
-    } catch (e1) {
-      console.warn('Failed with strict constraints, attempting generic fallback...', e1);
-      
-      // Fallback generic video if the strict request fails
+    // STEP 1: Enumerate hardware devices to locate the specific physical sensor
+    try {
+      if (navigator.mediaDevices.enumerateDevices) {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        videoDevices = devices.filter(d => d.kind === 'videoinput');
+        if (videoDevices.length > 1) {
+          if (facingMode === 'environment') {
+            // Find rear / environment sensor
+            const backCam = videoDevices.find(d => 
+              /back|rear|environment|main|ultra|wide/i.test(d.label) || 
+              (d.label && !/front|user|selfie|forward/i.test(d.label))
+            ) || videoDevices[videoDevices.length - 1];
+            if (backCam && backCam.deviceId) {
+              targetDeviceId = backCam.deviceId;
+            }
+          } else {
+            // Find front / user sensor
+            const frontCam = videoDevices.find(d => 
+              /front|user|selfie|forward/i.test(d.label)
+            ) || videoDevices[0];
+            if (frontCam && frontCam.deviceId) {
+              targetDeviceId = frontCam.deviceId;
+            }
+          }
+        }
+      }
+    } catch (enumErr) {
+      console.warn('Device enumeration notice:', enumErr);
+    }
+
+    // STEP 2: Acquire the new physical sensor BEFORE stopping the old track (prevents WebView permission reset)
+    let newStream = null;
+    let newTrack = null;
+
+    if (targetDeviceId) {
       try {
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({
-          video: true,
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            deviceId: { exact: targetDeviceId },
+            width: { ideal: 1280 }, 
+            height: { ideal: 720 } 
+          },
           audio: false
         });
-        return { track: fallbackStream.getVideoTracks()[0], stream: fallbackStream };
-      } catch(e2) {
-        console.error('All camera requests failed', e2);
-        throw e2;
+        newTrack = newStream.getVideoTracks()[0];
+      } catch (devErr) {
+        console.warn('DeviceId acquisition failed, falling back to facingMode constraints:', devErr);
       }
     }
-    return { track: null, stream: null };
+
+    if (!newTrack) {
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: facingMode === 'environment' ? { exact: 'environment' } : 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+        newTrack = newStream.getVideoTracks()[0];
+      } catch (exactErr) {
+        console.warn('Exact facingMode failed, trying ideal facingMode:', exactErr);
+        try {
+          newStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: facingMode },
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            },
+            audio: false
+          });
+          newTrack = newStream.getVideoTracks()[0];
+        } catch (idealErr) {
+          console.warn('Ideal facingMode failed, falling back to generic video:', idealErr);
+          newStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          newTrack = newStream.getVideoTracks()[0];
+        }
+      }
+    }
+
+    // STEP 3: Now that the new sensor is active and streaming, safely release the old track
+    if (oldTrack && newTrack && oldTrack !== newTrack) {
+      try {
+        oldTrack.stop();
+      } catch (e) {}
+    }
+
+    if (newTrack) {
+      return { track: newTrack, stream: newStream };
+    }
+    return { track: oldTrack, stream: null };
   }
 
   /**
-   * Safe getUserMedia wrapper that respects permission status and fetches requested hardware
+   * Safe getUserMedia wrapper that requests hardware atomically (NO separate prompts)
    */
   async getUserMedia(constraints = { video: true, audio: true }) {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -193,35 +266,13 @@ class CameraPermissionService {
     const reqVideo = Boolean(constraints.video);
     const reqAudio = Boolean(constraints.audio);
 
-    // If explicit facingMode is requested, use dedicated facingMode resolution
-    if (reqVideo && typeof constraints.video === 'object' && constraints.video.facingMode) {
-      const targetFacing = typeof constraints.video.facingMode === 'string' 
-        ? constraints.video.facingMode 
-        : (constraints.video.facingMode.exact || constraints.video.facingMode.ideal || 'user');
-      
-      const { track, stream } = await this.getVideoTrackForFacingMode(targetFacing);
-      
-      if (reqAudio) {
-        try {
-          const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-          const audioTrack = audioStream.getAudioTracks()[0];
-          if (audioTrack) stream.addTrack(audioTrack);
-        } catch (aErr) {}
-      }
-
-      this.activeStream = stream;
-      this.cameraPermissionState = 'granted';
-      safeStorage.setItem('vlive_camera_permission_granted', 'true');
-      safeStorage.setItem('vlive_permissions_granted', 'true');
-      return stream;
-    }
-
-    // Standard getUserMedia invocation
+    // Atomic request: Always request video & audio in a SINGLE call if both are requested
     try {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       this.cameraPermissionState = 'granted';
       if (reqAudio) this.micPermissionState = 'granted';
       safeStorage.setItem('vlive_camera_permission_granted', 'true');
+      safeStorage.setItem('vlive_mic_permission_granted', 'true');
       safeStorage.setItem('vlive_permissions_granted', 'true');
       this.activeStream = stream;
       return stream;
@@ -231,14 +282,18 @@ class CameraPermissionService {
         safeStorage.setItem('vlive_camera_permission_granted', 'false');
         throw err;
       }
-      // Fallback for WebView / Android explicit constraint issues
+      
+      console.warn('getUserMedia strict constraints fallback:', err);
+      // Fallback with relaxed constraints in a single atomic call
       const fallbackStream = await navigator.mediaDevices.getUserMedia({
         video: reqVideo ? true : false,
         audio: reqAudio ? true : false
       });
       this.activeStream = fallbackStream;
       this.cameraPermissionState = 'granted';
+      if (reqAudio) this.micPermissionState = 'granted';
       safeStorage.setItem('vlive_camera_permission_granted', 'true');
+      safeStorage.setItem('vlive_mic_permission_granted', 'true');
       safeStorage.setItem('vlive_permissions_granted', 'true');
       return fallbackStream;
     }

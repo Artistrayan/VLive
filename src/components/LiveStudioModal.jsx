@@ -167,8 +167,7 @@ export default function LiveStudioModal({
   const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
 
   // Camera & Media Hardware Refs
-  const previewVideoRef = useRef(null);
-  const liveVideoRef = useRef(null);
+  const cameraVideoRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const roomServiceRef = useRef(null);
   const [activeStreamRecord, setActiveStreamRecord] = useState(null);
@@ -209,19 +208,16 @@ export default function LiveStudioModal({
         setMicPermission('granted');
         setMediaStream(stream);
       } else {
-        const { track, stream: freshStream } = await cameraPermissionService.getVideoTrackForFacingMode(targetFacing);
-        
-        let audioTrack = null;
-        try {
-          const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-          audioTrack = audioStream.getAudioTracks()[0];
-        } catch (aErr) {}
+        // Atomic acquisition: video + audio in a single call to prevent double permission prompts
+        stream = await cameraPermissionService.getUserMedia({
+          video: { 
+            facingMode: { ideal: targetFacing }, 
+            width: { ideal: 1280 }, 
+            height: { ideal: 720 } 
+          },
+          audio: true
+        });
 
-        const finalStream = new MediaStream();
-        if (track) finalStream.addTrack(track);
-        if (audioTrack) finalStream.addTrack(audioTrack);
-
-        stream = finalStream;
         setCameraPermission('granted');
         setMicPermission('granted');
         setMediaStream(stream);
@@ -326,86 +322,51 @@ export default function LiveStudioModal({
 
     try {
       const currentStream = mediaStreamRef.current;
-      const videoTrack = currentStream ? currentStream.getVideoTracks()[0] : null;
+      const oldVideoTracks = currentStream ? currentStream.getVideoTracks() : [];
+      const activeVideoTrack = oldVideoTracks[0];
 
-      let switchedWithConstraints = false;
-      
-      // Try seamless hardware switch first without requesting new permissions
-      if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
-        try {
-          await videoTrack.applyConstraints({ facingMode: nextFacingMode });
-          switchedWithConstraints = true;
-          
-          if (livekitManager) {
-            livekitManager.switchCamera(nextFacingMode).catch(() => {});
-          }
-        } catch (e) {
-          console.warn('applyConstraints failed, falling back to full stream replacement', e);
-        }
+      // Acquire genuine video track for the new facingMode (releasing old track so hardware sensor switches)
+      const { track: newVideoTrack } = await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode, activeVideoTrack);
+
+      if (newVideoTrack) {
+        newVideoTrack.enabled = isCamEnabled;
       }
 
-      // Fallback if applyConstraints fails or isn't supported
-      if (!switchedWithConstraints) {
-        const oldVideoTracks = currentStream ? currentStream.getVideoTracks() : [];
-        
-        // Acquire genuine video track for the new facingMode FIRST to hold permission lock in WebViews
-        const { track: newVideoTrack, stream: newVideoStream } = await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode);
+      // Preserve existing audio track without prompting
+      const existingAudioTrack = currentStream ? currentStream.getAudioTracks()[0] : null;
+      const isAudioActive = existingAudioTrack && existingAudioTrack.readyState === 'live';
 
-        if (newVideoTrack) {
-          newVideoTrack.enabled = isCamEnabled;
-        }
+      const newStream = new MediaStream();
+      if (newVideoTrack) newStream.addTrack(newVideoTrack);
+      if (isAudioActive) newStream.addTrack(existingAudioTrack);
 
-        // Now safe to stop old tracks
-        oldVideoTracks.forEach(t => {
-          try { t.stop(); } catch(e) {}
+      mediaStreamRef.current = newStream;
+      setMediaStream(newStream);
+      cameraPermissionService.setActiveStream(newStream);
+
+      // Update persistent camera video element immediately
+      if (cameraVideoRef.current) {
+        cameraVideoRef.current.srcObject = newStream;
+        cameraVideoRef.current.play().catch(() => {});
+      }
+
+      if (newVideoTrack) {
+        setLocalVideoTrack({
+          id: newVideoTrack.id,
+          kind: 'video',
+          source: 'camera',
+          mediaStreamTrack: newVideoTrack,
+          isMuted: !isCamEnabled,
+          published: true
         });
-
-        // Preserve existing audio track
-        const existingAudioTrack = currentStream ? currentStream.getAudioTracks()[0] : null;
-        const isAudioActive = existingAudioTrack && existingAudioTrack.readyState === 'live';
-
-        const newStream = new MediaStream();
-        if (newVideoTrack) newStream.addTrack(newVideoTrack);
-        
-        if (isAudioActive) {
-          newStream.addTrack(existingAudioTrack);
-        } else {
-          const audioTracks = newVideoStream ? newVideoStream.getAudioTracks() : [];
-          if (audioTracks[0]) newStream.addTrack(audioTracks[0]);
-        }
-
-        mediaStreamRef.current = newStream;
-        setMediaStream(newStream);
-        cameraPermissionService.setActiveStream(newStream);
-
-        // Update both video elements immediately
-        if (previewVideoRef.current) {
-          previewVideoRef.current.srcObject = newStream;
-          previewVideoRef.current.play().catch(() => {});
-        }
-        if (liveVideoRef.current) {
-          liveVideoRef.current.srcObject = newStream;
-          liveVideoRef.current.play().catch(() => {});
-        }
-
-        if (newVideoTrack) {
-          setLocalVideoTrack({
-            id: newVideoTrack.id,
-            kind: 'video',
-            source: 'camera',
-            mediaStreamTrack: newVideoTrack,
-            isMuted: !isCamEnabled,
-            published: true
-          });
-        }
-
-        // Notify LiveKit if connected
-        try {
-          if (livekitManager) {
-            livekitManager.switchCamera(nextFacingMode).catch(() => {});
-          }
-        } catch (e) {}
       }
+
+      // Notify LiveKit if connected
+      try {
+        if (livekitManager) {
+          livekitManager.switchCamera(nextFacingMode).catch(() => {});
+        }
+      } catch (e) {}
 
       showToast(window.loc(
         nextFacingMode === 'environment' ? '🔄 دوربین پشت فعال شد' : '🔄 دوربین جلو فعال شد',
@@ -473,19 +434,15 @@ export default function LiveStudioModal({
     }
   }, [isMicEnabled, mediaStream]);
 
-  // Bind Stream to PRE_LIVE Preview Video Ref
+  // Bind Stream to Persistent Camera Video Ref
   useEffect(() => {
-    if (studioPhase === 'PRE_LIVE' && previewVideoRef.current && mediaStream && isCamEnabled) {
-      attachStreamToVideo(previewVideoRef.current);
+    const video = cameraVideoRef.current;
+    if (video && mediaStream && isCamEnabled) {
+      if (video.srcObject !== mediaStream) {
+        attachStreamToVideo(video);
+      }
     }
-  }, [mediaStream, isCamEnabled, studioPhase]);
-
-  // Bind Stream to LIVE Broadcast Video Ref
-  useEffect(() => {
-    if (studioPhase === 'LIVE' && liveVideoRef.current && mediaStream && isCamEnabled) {
-      attachStreamToVideo(liveVideoRef.current);
-    }
-  }, [mediaStream, isCamEnabled, studioPhase]);
+  }, [mediaStream, isCamEnabled]);
 
   // Live Timer Effect
   useEffect(() => {
@@ -621,12 +578,14 @@ export default function LiveStudioModal({
     setLivekitServerUrl(effectiveServerUrl);
     setBroadcasterAuthorized(true);
 
-    // Connect to LiveKit Room via livekitManager
+    // Connect to LiveKit Room via livekitManager reusing existing media stream
     try {
       await livekitManager.connect({
         roomName: effectiveRoom,
         token: effectiveToken,
-        serverUrl: effectiveServerUrl
+        serverUrl: effectiveServerUrl,
+        mediaStream: mediaStreamRef.current,
+        stream: mediaStreamRef.current
       });
       setIsLiveKitConnected(true);
     } catch (lkErr) {
@@ -715,6 +674,9 @@ export default function LiveStudioModal({
     // Switch studio phase to LIVE broadcast
     setStudioPhase('LIVE');
     setIsStartingLive(false);
+    if (cameraVideoRef.current) {
+      cameraVideoRef.current.play().catch(() => {});
+    }
     showToast(window.loc(`🎥 پخش زنده استودیو با موفقیت شروع شد!`, `🎥 Live broadcast started successfully!`));
   };
 
@@ -776,10 +738,68 @@ export default function LiveStudioModal({
     <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col font-sans select-none overflow-hidden text-xs dir-rtl">
       
       {/* ========================================================================= */}
+      {/* PERSISTENT FULL BROADCAST CAMERA (NEVER UNMOUNTS THROUGHOUT LIFECYCLE) */}
+      {/* ========================================================================= */}
+      <div className={`fixed inset-0 z-0 bg-slate-950 overflow-hidden ${
+        studioPhase === 'SUMMARY' ? 'hidden' : 'block'
+      }`}>
+        {isCamEnabled && mediaStream ? (
+          <div className="relative w-full h-full">
+            <video
+              ref={cameraVideoRef}
+              autoPlay
+              playsInline
+              muted
+              style={{
+                filter: `
+                  brightness(${100 + skinSmoothing * 0.12 + (lightingEffect === 'studio' ? 12 : lightingEffect === 'warm' ? 6 : beautyFilter === 'smooth' ? 8 : beautyFilter === 'glow' ? 15 : beautyFilter === 'rose' ? 6 : beautyFilter === 'bronze' ? 4 : 0)}%) 
+                  contrast(${100 - skinSmoothing * 0.08 + (lightingEffect === 'studio' ? 4 : beautyFilter === 'smooth' ? -6 : beautyFilter === 'glow' ? -4 : beautyFilter === 'bronze' ? 4 : 0)}%) 
+                  saturate(${100 + (lightingEffect === 'warm' ? 10 : lightingEffect === 'neon' ? 15 : lightingEffect === 'sunset' ? 12 : beautyFilter === 'glow' ? 12 : beautyFilter === 'rose' ? 20 : beautyFilter === 'bronze' ? 25 : 0)}%)
+                  ${beautyFilter === 'rose' ? 'hue-rotate(345deg)' : ''}
+                  ${beautyFilter === 'bronze' ? 'sepia(20%)' : ''}
+                `.trim()
+              }}
+              className={`w-full h-full object-cover transition-all duration-300 ${isMirrored ? 'scale-x-[-1]' : ''}`}
+            />
+
+            {/* Real-time AI Face & AR Overlay */}
+            <AiFaceEffectOverlay
+              videoRef={cameraVideoRef}
+              isMirrored={isMirrored}
+              faceSticker={faceSticker}
+              lightingEffect={lightingEffect}
+              skinSmoothing={skinSmoothing}
+              eyeEnlarge={eyeEnlarge}
+              slimmingLevel={slimmingLevel}
+            />
+
+            {/* Studio Lighting atmosphere layers */}
+            {lightingEffect === 'warm' && (
+              <div className="absolute inset-0 bg-gradient-to-t from-amber-500/15 via-transparent to-amber-400/10 pointer-events-none" />
+            )}
+            {lightingEffect === 'neon' && (
+              <div className="absolute inset-0 bg-gradient-to-tr from-pink-500/20 via-transparent to-purple-600/20 pointer-events-none" />
+            )}
+            {lightingEffect === 'sunset' && (
+              <div className="absolute inset-0 bg-gradient-to-t from-orange-600/20 via-pink-600/10 to-transparent pointer-events-none" />
+            )}
+            {lightingEffect === 'studio' && (
+              <div className="absolute inset-0 bg-white/5 pointer-events-none backdrop-brightness-105" />
+            )}
+          </div>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-500 space-y-2">
+            <Camera className="w-12 h-12 opacity-30" />
+            <span className="text-xs">{window.loc('تصویر دوربین متوقف شد', 'The camera stopped')}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ========================================================================= */}
       {/* PHASE 1: PRE-LIVE STUDIO SETUP SCREEN */}
       {/* ========================================================================= */}
       {studioPhase === 'PRE_LIVE' && (
-        <div className="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full space-y-4 animate-fadeIn my-auto">
+        <div className="relative z-10 flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full space-y-4 animate-fadeIn my-auto bg-slate-950/60 backdrop-blur-md min-h-full">
           
           {/* Header Card */}
           <div className="flex items-center justify-between p-4 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl">
@@ -839,62 +859,47 @@ export default function LiveStudioModal({
           </div>
 
           {/* Camera Preview & Hardware Test Box */}
-          <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 shadow-xl">
+          <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-3 shadow-xl backdrop-blur-xl">
             <div className="flex items-center justify-between text-slate-300 font-bold">
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 text-xs">
                 <Camera className="w-4 h-4 text-pink-400" />
+                <span>{selectedCamera}</span>
               </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={toggleCameraFacing}
+                  className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold flex items-center gap-1 transition"
+                >
+                  <RefreshCw className="w-3 h-3 text-pink-400" />
+                  <span>{currentFacingMode === 'user' ? window.loc('چرخش به عقب', 'Switch to Back') : window.loc('چرخش به جلو', 'Switch to Front')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTabDrawer('beauty')}
+                  className="px-2.5 py-1 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/30 text-[10px] font-bold flex items-center gap-1 transition"
+                >
+                  <Sparkles className="w-3 h-3 text-pink-400" />
+                  <span>{window.loc('فیلتر زیبایی', 'Beauty Filter')}</span>
+                </button>
+              </div>
             </div>
 
-            {/* Video Box */}
-            <div className="relative w-full h-52 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center">
-              {isCamEnabled && mediaStream ? (
-                <div className="relative w-full h-full">
-                  <video
-                    ref={(el) => {
-                      previewVideoRef.current = el;
-                      attachStreamToVideo(el);
-                    }}
-                    autoPlay
-                    playsInline
-                    muted
-                    className={`w-full h-full object-cover transition-all duration-300 ${isMirrored ? 'scale-x-[-1]' : ''}`}
-                    style={{
-                      filter: `
-                        brightness(${100 + skinSmoothing * 0.1 + (lightingEffect === 'studio' ? 8 : lightingEffect === 'warm' ? 4 : beautyFilter === 'smooth' ? 10 : beautyFilter === 'glow' ? 25 : beautyFilter === 'ultra' ? 35 : 0)}%) 
-                        contrast(${100 - skinSmoothing * 0.05 + (lightingEffect === 'studio' ? 2 : beautyFilter === 'smooth' ? -5 : beautyFilter === 'ultra' ? 5 : 0)}%) 
-                        saturate(${100 + (lightingEffect === 'warm' ? 8 : lightingEffect === 'neon' ? 12 : lightingEffect === 'sunset' ? 10 : beautyFilter === 'glow' ? 20 : beautyFilter === 'ultra' ? 30 : 0)}%)
-                        ${beautyFilter === 'rose' ? 'sepia(12%) hue-rotate(320deg)' : ''}
-                        ${beautyFilter === 'bronze' ? 'sepia(18%) saturate(115%)' : ''}
-                      `.trim()
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40 pointer-events-none" />
+            {/* Viewfinder Window revealing live camera behind */}
+            <div className="relative w-full h-52 bg-slate-950/30 rounded-2xl overflow-hidden border-2 border-pink-500/30 flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.15)]">
+              <div className="absolute top-3 right-3 bg-black/60 px-2 py-1 rounded-lg border border-white/10 text-[9px] text-white flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>{window.loc('دوربین فعال است', 'Camera is Active')}</span>
+              </div>
 
-                  {/* Real-time AI Face & AR Overlay */}
-                  <AiFaceEffectOverlay
-                    videoRef={previewVideoRef}
-                    isMirrored={isMirrored}
-                    faceSticker={faceSticker}
-                    lightingEffect={lightingEffect}
-                    skinSmoothing={skinSmoothing}
-                  />
-
-                  {/* Audio Level Bar Indicator */}
-                  {isMicEnabled && (
-                    <div className="absolute bottom-3 right-3 left-3 bg-slate-950/80 p-2 rounded-xl border border-slate-800/80 flex items-center gap-2 backdrop-blur-md">
-                      <Mic className="w-3.5 h-3.5 text-emerald-400" />
-                      <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden flex">
-                        <div className="h-full bg-gradient-to-r from-emerald-500 via-amber-400 to-rose-500 w-3/4 animate-pulse rounded-full" />
-                      </div>
-                      <span className="text-[9px] font-mono text-emerald-400 font-bold">Good Level</span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center space-y-2 text-slate-500">
-                  <Camera className="w-10 h-10 mx-auto opacity-40" />
-                  <p className="text-xs font-semibold">{window.loc('دوربین متصل نیست', 'Camera is disconnected')}</p>
+              {/* Audio Level Bar Indicator */}
+              {isMicEnabled && (
+                <div className="absolute bottom-3 right-3 left-3 bg-slate-950/80 p-2 rounded-xl border border-slate-800/80 flex items-center gap-2 backdrop-blur-md">
+                  <Mic className="w-3.5 h-3.5 text-emerald-400" />
+                  <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden flex">
+                    <div className="h-full bg-gradient-to-r from-emerald-500 via-amber-400 to-rose-500 w-3/4 animate-pulse rounded-full" />
+                  </div>
+                  <span className="text-[9px] font-mono text-emerald-400 font-bold">HD Audio</span>
                 </div>
               )}
             </div>

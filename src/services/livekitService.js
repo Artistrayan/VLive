@@ -258,50 +258,18 @@ export class LiveKitManager {
     // Direct MediaStream replacement for WebRTC
     if (this.localMediaStream) {
       try {
-        const activeVideoTrack = this.localMediaStream.getVideoTracks()[0];
-        
-        // 1. Attempt applyConstraints on existing granted track first (Zero permission prompt)
-        if (activeVideoTrack && typeof activeVideoTrack.applyConstraints === 'function') {
-          try {
-            await activeVideoTrack.applyConstraints({
-              facingMode: { ideal: targetFacing },
-              width: { ideal: 1280, min: 640 },
-              height: { ideal: 720, min: 360 },
-              frameRate: { ideal: 30, min: 20, max: 30 }
-            });
-            this.emit('camera_switched', { facingMode: targetFacing, stream: this.localMediaStream, track: activeVideoTrack });
-            return { facingMode: targetFacing, track: activeVideoTrack, stream: this.localMediaStream };
-          } catch (constraintErr) {
-            // Continue to seamless replacement fallback
-          }
-        }
-
-        // 2. Seamless replacement fallback - Get new stream FIRST so browser permission session remains open
         const oldVideoTracks = this.localMediaStream.getVideoTracks();
+        const activeVideoTrack = oldVideoTracks[0];
 
-        let newStream;
-        try {
-          newStream = await cameraPermissionService.getUserMedia({
-            video: {
-              facingMode: { ideal: targetFacing },
-              width: { ideal: 1280, min: 640 },
-              height: { ideal: 720, min: 360 },
-              frameRate: { ideal: 30, min: 20, max: 30 }
-            }
-          });
-        } catch (strictErr) {
-          newStream = await cameraPermissionService.getUserMedia({
-            video: { facingMode: targetFacing }
-          });
-        }
+        // Release old track and acquire real camera track for new facingMode
+        const { track: newVideoTrack } = await cameraPermissionService.getVideoTrackForFacingMode(targetFacing, activeVideoTrack);
 
-        // Stop old video tracks AFTER acquiring new stream
+        // Remove old tracks from localMediaStream
         oldVideoTracks.forEach(t => {
           try { t.stop(); } catch(e) {}
           try { this.localMediaStream.removeTrack(t); } catch(e) {}
         });
 
-        const newVideoTrack = newStream.getVideoTracks()[0];
         if (newVideoTrack) {
           this.localMediaStream.addTrack(newVideoTrack);
 
@@ -409,15 +377,18 @@ export class LiveKitManager {
   /**
    * Connect to Real LiveKit Room with seamless media fallback
    */
-  async connect({
-    roomName,
-    identity,
-    name,
-    role = 'viewer',
-    metadata = {},
-    serverUrl,
-    token
-  }) {
+  async connect(options = {}) {
+    const {
+      roomName,
+      identity,
+      name,
+      role = 'viewer',
+      metadata = {},
+      serverUrl,
+      token,
+      stream,
+      mediaStream
+    } = options;
     let authToken = token;
     let wsUrl = serverUrl;
 
@@ -461,8 +432,13 @@ export class LiveKitManager {
       role === 'voice'
     );
 
-    // 1. Always request local media stream for publishers (Camera / Microphone)
-    if (isPublisher) {
+    // 1. Reuse existing media stream or provided stream; only acquire if none exists
+    const providedStream = stream || mediaStream || options.stream || options.mediaStream;
+    if (providedStream && providedStream.active && providedStream.getVideoTracks().some(t => t.readyState === 'live')) {
+      this.localMediaStream = providedStream;
+    } else if (this.localMediaStream && this.localMediaStream.active && this.localMediaStream.getVideoTracks().some(t => t.readyState === 'live')) {
+      // Keep existing active stream intact
+    } else if (isPublisher) {
       try {
         await this.requestMediaStream(this.currentFacingMode, true, !isAudioOnly);
       } catch (mediaErr) {

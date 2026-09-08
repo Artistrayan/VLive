@@ -27,12 +27,27 @@ export default function AiFaceEffectOverlay({
     trackerRef.current = new AiFaceTracker();
 
     let isRunning = true;
+    let lastTrackTime = 0;
+    let cachedFace = null;
 
     const renderLoop = async () => {
       if (!isRunning) return;
 
       const canvas = canvasRef.current;
       const video = videoRef?.current;
+
+      const hasStickers = faceSticker && faceSticker !== 'none';
+      const hasSmoothing = skinSmoothing > 0;
+      const hasLighting = lightingEffect && lightingEffect !== 'none' && lightingEffect !== 'off';
+
+      if (!hasStickers && !hasSmoothing && !hasLighting) {
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        animFrameRef.current = requestAnimationFrame(renderLoop);
+        return;
+      }
 
       if (canvas && video && video.readyState >= 2 && video.videoWidth > 0) {
         const dW = canvas.clientWidth || video.clientWidth || 640;
@@ -47,8 +62,18 @@ export default function AiFaceEffectOverlay({
         if (ctx) {
           ctx.clearRect(0, 0, dW, dH);
 
-          // Get tracked face landmarks
-          const face = await trackerRef.current.update(video);
+          // Track face every 100ms to maintain smooth 60fps on mobile
+          const now = performance.now();
+          if (hasStickers || hasSmoothing) {
+            if (now - lastTrackTime > 100) {
+              lastTrackTime = now;
+              cachedFace = await trackerRef.current.update(video);
+            }
+          } else {
+            cachedFace = null;
+          }
+
+          const face = cachedFace;
           const isFacePresent = face && face.detected;
           const { landmarks } = face || {};
 
