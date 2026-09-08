@@ -225,8 +225,26 @@ export default function UserManagementCenter({
     }
   };
 
+  // Safe deduplication of users list
+  const uniqueUsersList = React.useMemo(() => {
+    const raw = Array.isArray(usersList) ? usersList : [];
+    const unique = [];
+    const seenKeys = new Set();
+    for (const u of raw) {
+      if (!u) continue;
+      const uKey = (u.id || u.username || '').toString().trim().toLowerCase();
+      const usernameKey = u.username ? ('user_' + String(u.username).trim().toLowerCase()) : null;
+      if (uKey && seenKeys.has(uKey)) continue;
+      if (usernameKey && seenKeys.has(usernameKey)) continue;
+      if (uKey) seenKeys.add(uKey);
+      if (usernameKey) seenKeys.add(usernameKey);
+      unique.push(u);
+    }
+    return unique;
+  }, [usersList]);
+
   // Filtering users logic
-  const filteredUsers = (Array.isArray(usersList) ? usersList : []).filter(user => {
+  const filteredUsers = uniqueUsersList.filter(user => {
     if (!user) return false;
     const q = searchQuery.toLowerCase();
     const matchesQuery = 
@@ -394,7 +412,7 @@ export default function UserManagementCenter({
             <h2 className="text-base font-black text-white flex items-center gap-2">
               <span>{window.loc('مرکز تخصصی مدیریت کاربران (User Management Center)', 'User Management Center')}</span>
               <span className="text-[10px] bg-cyan-500/20 text-cyan-300 font-mono px-2 py-0.5 rounded-full border border-cyan-500/30">
-                {usersList.length} USERS
+                {uniqueUsersList.length} USERS
               </span>
             </h2>
             <p className="text-[11px] text-slate-400">
@@ -407,15 +425,15 @@ export default function UserManagementCenter({
         <div className="flex items-center gap-2 overflow-x-auto text-[11px]">
           <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-emerald-400 font-bold flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{window.loc('آنلاین:', 'Online:')} {usersList.filter(u => u.online).length}</span>
+            <span>{window.loc('آنلاین:', 'Online:')} {uniqueUsersList.filter(u => u.online).length}</span>
           </span>
           <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-amber-300 font-bold flex items-center gap-1">
             <Crown className="w-3.5 h-3.5" />
-            <span>VIP: {usersList.filter(u => u.isVip || u.vip).length}</span>
+            <span>VIP: {uniqueUsersList.filter(u => u.isVip || u.vip).length}</span>
           </span>
           <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-pink-400 font-bold flex items-center gap-1">
             <Video className="w-3.5 h-3.5" />
-            <span>{window.loc('استریمر:', 'Streamer:')} {usersList.filter(u => u.isStreamer || u.isHost).length}</span>
+            <span>{window.loc('استریمر:', 'Streamer:')} {uniqueUsersList.filter(u => u.isStreamer || u.isHost).length}</span>
           </span>
         </div>
       </div>

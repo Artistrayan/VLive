@@ -189,9 +189,20 @@ export default function AdminDashboardModal(props) {
   }, [props.kycApplications, props.usersList, props.adminUsersList]);
 
   const effectiveUsersList = React.useMemo(() => {
-    if (adminUsersList && adminUsersList.length > 0) return adminUsersList;
-    if (usersList && usersList.length > 0) return usersList;
-    return [];
+    const rawList = (adminUsersList && adminUsersList.length > 0) ? adminUsersList : (usersList || []);
+    const unique = [];
+    const seenKeys = new Set();
+    for (const u of rawList) {
+      if (!u) continue;
+      const uKey = (u.id || u.username || '').toString().trim().toLowerCase();
+      const usernameKey = u.username ? ('user_' + String(u.username).trim().toLowerCase()) : null;
+      if (uKey && seenKeys.has(uKey)) continue;
+      if (usernameKey && seenKeys.has(usernameKey)) continue;
+      if (uKey) seenKeys.add(uKey);
+      if (usernameKey) seenKeys.add(usernameKey);
+      unique.push(u);
+    }
+    return unique;
   }, [adminUsersList, usersList]);
 
   const handleSetUsersList = React.useCallback((updater) => {
@@ -433,11 +444,11 @@ export default function AdminDashboardModal(props) {
 
       {/* MODAL 8: 100% REAL & FULLY EXECUTABLE 20-SECTION ADMIN DASHBOARD */}
       {isAdminPanelOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4">
-          <div className="w-full max-w-7xl card-3d p-3.5 sm:p-6 border border-amber-500/50 bg-slate-900/98 rounded-3xl space-y-3.5 max-h-[96vh] flex flex-col shadow-[0_0_100px_rgba(245,158,11,0.25)] text-right" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 animate-fadeIn">
+          <div className="w-full max-w-7xl card-3d p-3.5 sm:p-6 border border-amber-500/50 bg-slate-900/98 rounded-3xl space-y-3.5 h-[94vh] max-h-[94dvh] flex flex-col shadow-[0_0_100px_rgba(245,158,11,0.25)] text-right overflow-hidden" dir={isRtl ? "rtl" : "ltr"}>
             
             {/* TOP HEADER - CLEAN RESPONSIVE FLEX LAYOUT */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-800/90 pb-3.5">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-800/90 pb-3.5 shrink-0">
               
               {/* Title & Badge */}
               <div className="flex items-center gap-3 shrink-0">
@@ -520,7 +531,7 @@ export default function AdminDashboardModal(props) {
             </div>
 
             {/* 23 CATEGORIZED NAV TABS - TOUCH-FRIENDLY & SCROLLABLE WITH SHRINK-0 */}
-            <div className="bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800/80 shadow-inner">
+            <div className="bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800/80 shadow-inner shrink-0">
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth text-xs">
                 {[
                   { id: 'dashboard', label: window.loc('📊 داشبورد', '📊 Dashboard') },
@@ -569,7 +580,7 @@ export default function AdminDashboardModal(props) {
             </div>
 
             {/* PANEL BODY CONTENT AREA */}
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1 pl-1">
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1.5 pl-1.5 custom-scrollbar">
 
               {/* 1. DASHBOARD OVERVIEW */}
               {adminActiveTab === 'dashboard' && (

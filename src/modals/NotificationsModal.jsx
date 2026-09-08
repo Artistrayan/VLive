@@ -52,33 +52,16 @@ export default function NotificationsModal(props) {
                   </div>
                 </div>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-base sm:text-lg font-black bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300 bg-clip-text text-transparent truncate">
-                      {window.loc('اعلان‌ها (Notifications)', 'Notifications')}
-                    </h2>
-                    {notificationsList.filter(n => n.unread).length > 0 && (
-                      <span className="px-2.5 py-0.5 rounded-full bg-pink-600 text-white font-black text-xs shadow-md animate-bounce shrink-0">
-                        {notificationsList.filter(n => n.unread).length} {window.loc('جدید', 'new')}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-300 font-medium truncate">{window.loc('هشدارها، هدایا، پیام‌ها و لایو استریم‌ها', 'Alerts, giveaways, messages and live streams')}</p>
+                  {notificationsList.filter(n => n.unread).length > 0 && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-pink-600 text-white font-black text-xs shadow-md animate-bounce shrink-0">
+                      {notificationsList.filter(n => n.unread).length} {window.loc('جدید', 'new')}
+                    </span>
+                  )}
                 </div>
               </div>
 
               {/* Header Right Action Buttons */}
               <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  onClick={() => {
-                    setIsNotificationsOpen(false);
-                    if (props.onSwitchMainTab) props.onSwitchMainTab('messages');
-                  }}
-                  className="px-2.5 py-2 rounded-2xl bg-pink-500/10 border border-pink-500/30 text-pink-400 hover:bg-pink-500 hover:text-white transition shadow-sm text-xs font-bold flex items-center gap-1"
-                  title="Open Messages"
-                >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span>{window.loc('پیام‌ها', 'Messages')}</span>
-                </button>
                 <button
                   onClick={() => setIsNotifSettingsOpen(true)}
                   className="p-2 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition shadow-sm"
@@ -318,12 +301,7 @@ export default function NotificationsModal(props) {
                 n.type === notificationFilterTab ||
                 (notificationFilterTab === 'call' && (n.type === 'incoming_call' || n.type === 'missed_call' || n.type === 'call_back' || n.type === 'call')) ||
                 (notificationFilterTab === 'message' && (n.type === 'chat' || n.type === 'new_message' || n.type === 'message'))
-              ).length === 0 && (
-                <div className="py-12 text-center space-y-3 bg-slate-950/80 rounded-3xl border border-slate-800">
-                  <Bell className="w-10 h-10 text-slate-600 mx-auto animate-bounce" />
-                  <p className="text-xs text-slate-300 font-bold">{window.loc('هیچ اعلانی در این دسته‌بندی یافت نشد', 'No announcements were found in this category')}</p>
-                </div>
-              )}
+              ).length === 0 && null}
             </div>
           </div>
         </div>

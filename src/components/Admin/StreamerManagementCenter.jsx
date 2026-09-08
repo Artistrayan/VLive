@@ -219,8 +219,25 @@ export default function StreamerManagementCenter({
     return () => window.removeEventListener('vlive_kyc_updated', handleKycEvent);
   }, []);
 
-  // Extract streamers & pending applicants
-  const streamersList = usersList.filter(u => u.isStreamer || u.isHost || u.is_streamer);
+  // Extract streamers & pending applicants safely deduplicated
+  const streamersList = React.useMemo(() => {
+    const raw = Array.isArray(usersList) ? usersList : [];
+    const unique = [];
+    const seenKeys = new Set();
+    for (const u of raw) {
+      if (!u) continue;
+      if (u.isStreamer || u.isHost || u.is_streamer || u.user_type === 'STREAMER') {
+        const uKey = (u.id || u.username || '').toString().trim().toLowerCase();
+        const usernameKey = u.username ? ('user_' + String(u.username).trim().toLowerCase()) : null;
+        if (uKey && seenKeys.has(uKey)) continue;
+        if (usernameKey && seenKeys.has(usernameKey)) continue;
+        if (uKey) seenKeys.add(uKey);
+        if (usernameKey) seenKeys.add(usernameKey);
+        unique.push(u);
+      }
+    }
+    return unique;
+  }, [usersList]);
   
   const handleApproveKyc = async (app) => {
     if (apiAdmin && apiAdmin.updateKycStatus) {

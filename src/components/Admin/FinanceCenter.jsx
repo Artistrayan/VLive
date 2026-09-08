@@ -48,6 +48,24 @@ export default function FinanceCenter({
   const [adjustmentAmount, setAdjustmentAmount] = useState('');
   const [adjustmentReason, setAdjustmentReason] = useState('');
 
+  // Safe deduplication of usersList
+  const uniqueUsersList = React.useMemo(() => {
+    const raw = Array.isArray(usersList) ? usersList : [];
+    const unique = [];
+    const seenKeys = new Set();
+    for (const u of raw) {
+      if (!u) continue;
+      const uKey = (u.id || u.username || '').toString().trim().toLowerCase();
+      const usernameKey = u.username ? ('user_' + String(u.username).trim().toLowerCase()) : null;
+      if (uKey && seenKeys.has(uKey)) continue;
+      if (usernameKey && seenKeys.has(usernameKey)) continue;
+      if (uKey) seenKeys.add(uKey);
+      if (usernameKey) seenKeys.add(usernameKey);
+      unique.push(u);
+    }
+    return unique;
+  }, [usersList]);
+
   // Extended Economy Settings State
   const economyConfig = economyService.getConfig();
   const [callAudioRate, setCallAudioRate] = useState(economyConfig.callRates?.audioCostPerMin || 15);
@@ -377,17 +395,17 @@ export default function FinanceCenter({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400">{window.loc('مجموع موجودی کاربران:', 'Total coins in wallets:')}</span>
-                    <span className="font-mono font-bold text-amber-400">{usersList.reduce((sum, u) => sum + (Number(u.coins || u.userCoins) || 0), 0).toLocaleString()} 🪙</span>
+                    <span className="font-mono font-bold text-amber-400">{uniqueUsersList.reduce((sum, u) => sum + (Number(u.coins || u.userCoins) || 0), 0).toLocaleString()} 🪙</span>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400">{window.loc('کاربران دارای VIP فعال:', 'Users with active VIP:')}</span>
-                    <span className="font-mono font-bold text-amber-300">{usersList.filter(u => u.isVip || u.is_vip || u.vip).length} {window.loc('نفر', 'people')}</span>
+                    <span className="font-mono font-bold text-amber-300">{uniqueUsersList.filter(u => u.isVip || u.is_vip || u.vip).length} {window.loc('نفر', 'people')}</span>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400">{window.loc('استریمرهای فعال:', 'Active Streamers:')}</span>
-                    <span className="font-mono font-bold text-pink-400">{usersList.filter(u => u.isStreamer || u.isHost || u.is_streamer).length} {window.loc('استریمر', 'streamers')}</span>
+                    <span className="font-mono font-bold text-pink-400">{uniqueUsersList.filter(u => u.isStreamer || u.isHost || u.is_streamer).length} {window.loc('استریمر', 'streamers')}</span>
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -535,7 +553,7 @@ export default function FinanceCenter({
                 <Wallet className="w-4 h-4 text-emerald-400" />
                 <span>{window.loc('مدیریت و اصلاح دستی کیف پول کاربران (User Wallets Balance)', 'Management and manual correction of user wallets (User Wallets Balance)')}</span>
               </span>
-              <span className="text-xs text-slate-400">{window.loc('تعداد کاربران:', 'Number of users:')} {usersList.length}</span>
+              <span className="text-xs text-slate-400">{window.loc('تعداد کاربران:', 'Number of users:')} {uniqueUsersList.length}</span>
             </h3>
 
             <div className="relative">
@@ -552,7 +570,7 @@ export default function FinanceCenter({
 
           {/* User Wallets Table */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {usersList
+            {uniqueUsersList
               .filter(u => !walletSearch || (u.name || u.username || '').toLowerCase().includes(walletSearch.toLowerCase()))
               .slice(0, 8)
               .map(u => (

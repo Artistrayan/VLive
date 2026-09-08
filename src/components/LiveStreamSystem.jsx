@@ -105,16 +105,55 @@ export default function LiveStreamSystem({
   const isFemaleApprovedStreamer = Boolean(isUserAdmin || (isFemaleUser && isManagementApproved));
   const isApprovedStreamer = isFemaleApprovedStreamer;
 
-  // Fetch / Sync streams from Supabase on load
+  // Fetch / Sync streams from Supabase on load and listen for real-time updates
   useEffect(() => {
+    let isMounted = true;
     const fetchStreams = async () => {
-      const dbStreams = await apiLive.getLiveStreams(liveTypeTab);
-      if (Array.isArray(dbStreams)) {
-        setStreamsList(dbStreams);
+      try {
+        const dbStreams = await apiHome.getActiveStreams();
+        if (isMounted && Array.isArray(dbStreams)) {
+          setStreamsList(dbStreams);
+        }
+      } catch (err) {
+        console.warn('LiveStreamSystem fetchStreams error:', err);
       }
     };
+
     fetchStreams();
-  }, [liveTypeTab]);
+
+    // Periodic sync every 8 seconds to catch any newly started lives from other devices/users
+    const syncInterval = setInterval(fetchStreams, 8000);
+
+    const handleStreamStarted = (e) => {
+      if (e?.detail) {
+        setStreamsList(prev => {
+          const list = Array.isArray(prev) ? prev : [];
+          const exists = list.some(s => s.id === e.detail.id);
+          if (exists) {
+            return list.map(s => s.id === e.detail.id ? { ...s, ...e.detail } : s);
+          }
+          return [e.detail, ...list];
+        });
+      }
+    };
+
+    const handleStreamEnded = (e) => {
+      const endedId = e?.detail?.streamId;
+      if (endedId) {
+        setStreamsList(prev => (Array.isArray(prev) ? prev.filter(s => s.id !== endedId && s.livekit_room !== endedId) : []));
+      }
+    };
+
+    window.addEventListener('vlive_stream_started', handleStreamStarted);
+    window.addEventListener('vlive_stream_ended', handleStreamEnded);
+
+    return () => {
+      isMounted = false;
+      clearInterval(syncInterval);
+      window.removeEventListener('vlive_stream_started', handleStreamStarted);
+      window.removeEventListener('vlive_stream_ended', handleStreamEnded);
+    };
+  }, []);
 
   // Handle Age 18 Verification save
   const handleVerifyAge18 = (verified) => {
