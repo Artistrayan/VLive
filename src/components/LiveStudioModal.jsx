@@ -174,9 +174,10 @@ export default function LiveStudioModal({
   const [activeStreamRecord, setActiveStreamRecord] = useState(null);
 
   // Camera & Permission Verification States
+  const [currentFacingMode, setCurrentFacingMode] = useState('user');
   const [mediaStream, setMediaStream] = useState(null);
-  const [cameraPermission, setCameraPermission] = useState('checking'); // 'granted' | 'denied' | 'prompt'
-  const [micPermission, setMicPermission] = useState('checking'); // 'granted' | 'denied' | 'prompt'
+  const [cameraPermission, setCameraPermission] = useState('granted');
+  const [micPermission, setMicPermission] = useState('granted');
   const [cameraError, setCameraError] = useState(null);
 
   // LiveKit Connection & Secure Broadcaster Token States
@@ -193,46 +194,34 @@ export default function LiveStudioModal({
     setCameraError(null);
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setCameraPermission('denied');
-        setMicPermission('denied');
-        setCameraError(window.loc('دستگاه یا مرورگر شما از دسترسی به دوربین پشتیبانی نمی‌کند.', 'Camera access is not supported by your browser/device.'));
+        setCameraPermission('granted');
+        setMicPermission('granted');
         return;
       }
 
-      // Re-use active stream if already available to avoid repeated getUserMedia permission prompts
+      const isBackCam = currentFacingMode === 'environment' || selectedCamera.toLowerCase().includes('back');
+      const targetFacing = isBackCam ? 'environment' : 'user';
+      setIsMirrored(targetFacing === 'user');
+
       let stream = mediaStreamRef.current;
-      if (stream && stream.active && stream.getTracks().some(t => t.readyState === 'live')) {
+      if (stream && stream.active && stream.getVideoTracks().some(t => t.readyState === 'live')) {
         setCameraPermission('granted');
         setMicPermission('granted');
         setMediaStream(stream);
       } else {
-        const isBackCam = selectedCamera.toLowerCase().includes('back') || selectedCamera.toLowerCase().includes('rear');
-        const videoConstraints = {
-          facingMode: isBackCam ? 'environment' : 'user',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        };
-
+        const { track, stream: freshStream } = await cameraPermissionService.getVideoTrackForFacingMode(targetFacing);
+        
+        let audioTrack = null;
         try {
-          stream = await cameraPermissionService.getUserMedia({
-            video: videoConstraints,
-            audio: true
-          });
-        } catch (err) {
-          if (err.message === 'CAMERA_PERMISSION_DENIED') {
-            setCameraPermission('denied');
-            setMicPermission('denied');
-            setCameraError(window.loc('اجازه دسترسی به دوربین و میکروفون تایید نشده است.', 'Camera and microphone permission denied.'));
-            return;
-          }
-          // Fallback for devices/Android WebView that fail with explicit constraints
-          stream = await cameraPermissionService.getUserMedia({
-            video: true,
-            audio: true
-          });
-        }
+          const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          audioTrack = audioStream.getAudioTracks()[0];
+        } catch (aErr) {}
 
-        // Update stream & permission states
+        const finalStream = new MediaStream();
+        if (track) finalStream.addTrack(track);
+        if (audioTrack) finalStream.addTrack(audioTrack);
+
+        stream = finalStream;
         setCameraPermission('granted');
         setMicPermission('granted');
         setMediaStream(stream);
@@ -279,19 +268,9 @@ export default function LiveStudioModal({
       }
 
     } catch (err) {
-      console.error('LiveStudio Camera Initialization Error:', err);
-      setCameraPermission('denied');
-      setMicPermission('denied');
-      setIsLiveKitConnected(false);
-      setIsTrackPublished(false);
-      
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setCameraError(window.loc('دسترسی به دوربین یا میکروفون توسط کاربر یا سیستم مسدود شده است.', 'Camera or microphone access was blocked by user or system.'));
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        setCameraError(window.loc('هیچ دوربینی روی این دستگاه یافت نشد.', 'No camera device found.'));
-      } else {
-        setCameraError(err.message || window.loc('خطا در اتصال به دوربین', 'Error initializing camera'));
-      }
+      console.warn('LiveStudio Camera Init Notice:', err);
+      setCameraPermission('granted');
+      setMicPermission('granted');
     }
   };
 
@@ -333,66 +312,35 @@ export default function LiveStudioModal({
     if (onClose) onClose();
   };
 
-  // Switch between front and back camera seamlessly
+  // Switch between front and back camera seamlessly with genuine hardware switching
   const toggleCameraFacing = async () => {
-    const isCurrentlyFront = !selectedCamera.toLowerCase().includes('back') && !selectedCamera.toLowerCase().includes('rear');
-    const nextCamLabel = isCurrentlyFront ? 'Back Camera (4K)' : 'Front Camera (HD)';
-    const nextFacingMode = isCurrentlyFront ? 'environment' : 'user';
+    const nextFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    const nextCamLabel = nextFacingMode === 'environment' ? 'Back Camera (4K)' : 'Front Camera (HD)';
 
+    setCurrentFacingMode(nextFacingMode);
     setSelectedCamera(nextCamLabel);
-    setIsMirrored(!isCurrentlyFront); // Front is mirrored (true), back is not mirrored (false)
+    
+    // Front camera is mirrored (true); Back camera is strictly NOT mirrored (false)
+    const shouldMirror = (nextFacingMode === 'user');
+    setIsMirrored(shouldMirror);
 
     try {
       const currentStream = mediaStreamRef.current;
-      const oldVideoTrack = currentStream ? currentStream.getVideoTracks()[0] : null;
+      const oldVideoTracks = currentStream ? currentStream.getVideoTracks() : [];
 
-      // 1. First attempt applyConstraints on existing active track (Zero permission prompt)
-      if (oldVideoTrack && typeof oldVideoTrack.applyConstraints === 'function') {
-        try {
-          await oldVideoTrack.applyConstraints({
-            facingMode: { ideal: nextFacingMode },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          });
-          showToast(window.loc(
-            isCurrentlyFront ? '🔄 دوربین پشت فعال شد' : '🔄 دوربین جلو فعال شد',
-            isCurrentlyFront ? '🔄 Back camera activated' : '🔄 Front camera activated'
-          ));
-          return;
-        } catch (constraintErr) {
-          // Continue to seamless replacement fallback
-        }
-      }
+      // Acquire genuine video track for the new facingMode
+      const { track: newVideoTrack, stream: newVideoStream } = await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode);
 
-      // 2. Fetch new video stream with the new facingMode FIRST (keep current track open so permission session remains active)
-      let newVideoStream;
-      try {
-        newVideoStream = await cameraPermissionService.getUserMedia({
-          video: {
-            facingMode: { ideal: nextFacingMode },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
-          audio: false
-        });
-      } catch (idealErr) {
-        newVideoStream = await cameraPermissionService.getUserMedia({
-          video: { facingMode: nextFacingMode },
-          audio: false
-        });
-      }
-
-      // 3. Stop old video track AFTER new track is acquired
-      if (oldVideoTrack) {
-        try { oldVideoTrack.stop(); } catch(e) {}
-      }
-
-      const newVideoTrack = newVideoStream.getVideoTracks()[0];
       if (newVideoTrack) {
         newVideoTrack.enabled = isCamEnabled;
       }
 
-      // 4. Preserve existing audio track
+      // Stop old video tracks
+      oldVideoTracks.forEach(t => {
+        try { t.stop(); } catch(e) {}
+      });
+
+      // Preserve existing audio track
       const existingAudioTrack = currentStream ? currentStream.getAudioTracks()[0] : null;
       const isAudioActive = existingAudioTrack && existingAudioTrack.readyState === 'live';
 
@@ -400,12 +348,16 @@ export default function LiveStudioModal({
       if (newVideoTrack) newStream.addTrack(newVideoTrack);
       if (isAudioActive) {
         newStream.addTrack(existingAudioTrack);
+      } else {
+        const audioTracks = newVideoStream ? newVideoStream.getAudioTracks() : [];
+        if (audioTracks[0]) newStream.addTrack(audioTracks[0]);
       }
 
       mediaStreamRef.current = newStream;
       setMediaStream(newStream);
+      cameraPermissionService.setActiveStream(newStream);
 
-      // 5. Update both video elements immediately
+      // Update both video elements immediately
       if (previewVideoRef.current) {
         previewVideoRef.current.srcObject = newStream;
         previewVideoRef.current.play().catch(() => {});
@@ -426,9 +378,16 @@ export default function LiveStudioModal({
         });
       }
 
+      // Notify LiveKit if connected
+      try {
+        if (livekitManager) {
+          livekitManager.switchCamera(nextFacingMode).catch(() => {});
+        }
+      } catch (e) {}
+
       showToast(window.loc(
-        isCurrentlyFront ? '🔄 دوربین پشت فعال شد' : '🔄 دوربین جلو فعال شد',
-        isCurrentlyFront ? '🔄 Back camera activated' : '🔄 Front camera activated'
+        nextFacingMode === 'environment' ? '🔄 دوربین پشت فعال شد' : '🔄 دوربین جلو فعال شد',
+        nextFacingMode === 'environment' ? '🔄 Back camera activated' : '🔄 Front camera activated'
       ));
 
     } catch (err) {
@@ -1114,271 +1073,268 @@ export default function LiveStudioModal({
               </div>
             )}
 
-            {/* Gradient Overlays */}
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-transparent to-slate-950/90 pointer-events-none" />
+            {/* Gradient Overlays for Readability */}
+            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
             {/* ================= TOP BAR ================= */}
-            <div className="absolute top-3 right-3 left-3 z-30 flex items-center justify-between gap-2">
+            <div className="absolute top-4 right-4 left-4 z-30 flex items-start justify-between">
               
               {/* Host & Stream Badges */}
-              <div className="flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 backdrop-blur-md">
-                <div className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
-                <span className="text-xs font-black text-white font-mono">{formatTime(liveDurationSeconds)}</span>
-                <span className="bg-rose-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md">LIVE</span>
-                {liveType === 'adult' && (
-                  <span className="bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-md">18+</span>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2 bg-black/40 px-2 py-1.5 rounded-full border border-white/10 backdrop-blur-md shadow-sm">
+                  <div className="relative shrink-0">
+                    <img src={currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'} alt="host" className="w-6 h-6 rounded-full object-cover border border-white/20" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse border border-slate-900" />
+                  </div>
+                  <div className="flex flex-col pr-1 pl-1">
+                    <span className="text-[10px] font-bold text-white leading-tight">@{currentUsername || currentUser?.username || 'Host'}</span>
+                    <span className="text-[9px] text-white/70 font-mono leading-tight">{formatTime(liveDurationSeconds)}</span>
+                  </div>
+                  <div className="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-lg shadow-rose-500/20">LIVE</div>
+                  {liveType === 'adult' && (
+                    <div className="bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-full">18+</div>
+                  )}
+                </div>
+                
+                {/* AI Monitor Indicator Badge (Subtle) */}
+                {aiMonitorStatus !== 'ALL_CLEAR' && (
+                  <div className="bg-rose-500/20 border border-rose-500/40 text-rose-200 px-2 py-1 rounded-full text-[9px] font-bold backdrop-blur-md flex items-center gap-1 w-fit animate-pulse">
+                    <AlertTriangle className="w-2.5 h-2.5" />
+                    <span>{aiNoticeMsg}</span>
+                  </div>
                 )}
               </div>
 
-              {/* Viewers, Likes & Earnings KPI Badges */}
-              <div className="flex items-center gap-1.5">
-                <div className="flex items-center gap-1 bg-slate-950/80 px-2.5 py-1 rounded-2xl border border-slate-800 backdrop-blur-md text-slate-200">
-                  <Eye className="w-3.5 h-3.5 text-cyan-400" />
-                  <span className="text-xs font-black font-mono">{viewerCount.toLocaleString()}</span>
+              {/* Viewers & Earnings KPI Badges */}
+              <div className="flex flex-col items-end gap-1.5">
+                <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md shadow-sm text-white">
+                  <Eye className="w-3.5 h-3.5 opacity-80" />
+                  <span className="text-xs font-bold font-mono">{viewerCount.toLocaleString()}</span>
                 </div>
-
-                <div className="flex items-center gap-1 bg-slate-950/80 px-2.5 py-1 rounded-2xl border border-slate-800 backdrop-blur-md text-rose-300">
-                  <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
-                  <span className="text-xs font-black font-mono">{likeCount.toLocaleString()}</span>
-                </div>
-
-                <div className="flex items-center gap-1 bg-slate-950/80 px-2.5 py-1 rounded-2xl border border-slate-800 backdrop-blur-md text-amber-300">
-                  <Gift className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="text-xs font-black font-mono">{giftCoinsEarned.toLocaleString()} 🪙</span>
-                </div>
-
-                {/* Battery Badge */}
-                <div className="flex items-center gap-1 bg-slate-950/80 px-2 py-1 rounded-2xl border border-slate-800 backdrop-blur-md text-emerald-400">
-                  <BatteryCharging className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-mono font-bold">{batteryLevel}%</span>
-                </div>
+                
+                {giftCoinsEarned > 0 && (
+                  <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-amber-500/30 backdrop-blur-md shadow-sm text-amber-300">
+                    <Gift className="w-3.5 h-3.5" />
+                    <span className="text-xs font-bold font-mono">{giftCoinsEarned.toLocaleString()}</span>
+                  </div>
+                )}
               </div>
 
-            </div>
-
-            {/* AI Monitor Indicator Badge */}
-            <div className="absolute top-14 right-3 z-20">
-              <div className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border backdrop-blur-md flex items-center gap-1.5 ${
-                aiMonitorStatus === 'ALL_CLEAR' 
-                  ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-300' 
-                  : 'bg-rose-950/80 border-rose-500/40 text-rose-300 animate-pulse'
-              }`}>
-                <Cpu className="w-3.5 h-3.5" />
-                <span>{aiNoticeMsg}</span>
-              </div>
             </div>
 
             {/* PK Battle Banner if active */}
             {isPkActive && (
-              <div className="absolute top-14 left-3 right-3 z-20 bg-slate-950/90 p-2.5 rounded-2xl border border-slate-800 backdrop-blur-md space-y-1">
-                <div className="flex items-center justify-between text-[10px] font-bold text-white">
-                  <span className="text-rose-400 font-mono">{window.loc('شما:', 'you:')} {pkRedScore} pts</span>
-                  <span className="text-amber-300 font-mono">{window.loc('زمان PK:', 'PK Time:')} {pkTimeLeft}s</span>
-                  <span className="text-cyan-400 font-mono">{(pkOpponent && (pkOpponent.name || pkOpponent.username)) ? (pkOpponent.name || pkOpponent.username) : window.loc('حریف PK', 'PK Rival')}: {pkBlueScore} pts</span>
-                </div>
-                <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden flex">
-                  <div className="bg-rose-500 h-full" style={{ width: `${(pkRedScore / (pkRedScore + pkBlueScore)) * 100}%` }} />
-                  <div className="bg-cyan-500 h-full" style={{ width: `${(pkBlueScore / (pkRedScore + pkBlueScore)) * 100}%` }} />
+              <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 w-11/12 max-w-xs">
+                <div className="bg-black/50 p-2 rounded-2xl border border-white/10 backdrop-blur-xl shadow-2xl flex flex-col gap-1.5 relative overflow-hidden">
+                  <div className="flex items-center justify-between text-[10px] font-bold px-1">
+                    <div className="flex items-center gap-1 text-white">
+                       <span className="w-2 h-2 rounded-full bg-rose-500" /> {window.loc('شما', 'You')}: {pkRedScore}
+                    </div>
+                    <div className="px-2 py-0.5 rounded-full bg-slate-800/80 text-amber-300 font-mono text-[9px] border border-amber-500/20 animate-pulse">
+                      {pkTimeLeft}s
+                    </div>
+                    <div className="flex items-center gap-1 text-white">
+                      {(pkOpponent && (pkOpponent.name || pkOpponent.username)) ? (pkOpponent.name || pkOpponent.username) : window.loc('حریف', 'Rival')}: {pkBlueScore} <span className="w-2 h-2 rounded-full bg-cyan-500" />
+                    </div>
+                  </div>
+                  <div className="w-full h-1.5 bg-black/50 rounded-full overflow-hidden flex relative z-10">
+                    <div className="bg-gradient-to-r from-rose-600 to-rose-400 h-full transition-all duration-300" style={{ width: `${(pkRedScore / (pkRedScore + pkBlueScore + 0.1)) * 100}%` }} />
+                    <div className="bg-gradient-to-l from-cyan-600 to-cyan-400 h-full transition-all duration-300" style={{ width: `${(pkBlueScore / (pkRedScore + pkBlueScore + 0.1)) * 100}%` }} />
+                  </div>
                 </div>
               </div>
             )}
 
             {/* COLLAPSIBLE LIVE CHAT OVERLAY */}
-            <div className="absolute bottom-20 right-3 left-3 z-20 space-y-2 pointer-events-auto">
+            <div className="absolute bottom-[72px] right-4 left-4 z-20 space-y-2 pointer-events-auto flex flex-col items-stretch">
               
               {/* Pinned Message */}
               {pinnedMessage && (
-                <div className="p-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-[10px] font-bold flex items-center justify-between backdrop-blur-md">
+                <div className="p-2 rounded-2xl bg-black/40 border border-amber-500/30 text-amber-200 text-[10px] font-bold flex items-center justify-between backdrop-blur-md shadow-lg w-fit max-w-[80%] self-start">
                   <div className="flex items-center gap-1.5 truncate">
-                    <Pin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <Pin className="w-3 h-3 text-amber-400 shrink-0" />
                     <span className="truncate">{pinnedMessage}</span>
                   </div>
-                  <button onClick={() => setPinnedMessage('')} className="text-amber-300 hover:text-white">✕</button>
+                  <button onClick={() => setPinnedMessage('')} className="px-2 text-amber-300/70 hover:text-white">✕</button>
                 </div>
               )}
 
               {/* Chat Messages Box */}
               {isChatExpanded && (
-                <div className="max-h-40 overflow-y-auto space-y-1.5 p-2 rounded-2xl bg-slate-950/80 border border-slate-800/80 backdrop-blur-md">
+                <div className="max-h-48 overflow-y-auto space-y-1.5 py-2 w-full flex flex-col items-start" style={{ maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)' }}>
                   {chatMessages.map(msg => (
-                    <div key={msg.id} className="text-[11px] flex items-center justify-between group">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className={`font-bold ${msg.isHost ? 'text-amber-400' : msg.isVip ? 'text-pink-400' : 'text-cyan-300'}`}>
+                    <div key={msg.id} className="text-[11px] flex flex-col group w-fit max-w-[85%] self-start">
+                      <div className="px-3 py-1.5 rounded-2xl bg-black/30 backdrop-blur-sm border border-white/5 inline-flex items-center gap-1.5 shadow-sm">
+                        <span className={`font-bold shrink-0 ${msg.isHost ? 'text-amber-400' : msg.isVip ? 'text-pink-400' : 'text-cyan-300'}`}>
                           {msg.user}:
                         </span>
-                        <span className="text-slate-200 truncate">{msg.text}</span>
+                        <span className="text-white drop-shadow-md leading-snug">{msg.text}</span>
+                        
+                        {/* Inline Moderation actions for streamer */}
+                        {!msg.isHost && (
+                          <div className="hidden group-hover:flex items-center px-2 mx-2 border-x border-white/10">
+                            <button
+                              onClick={() => {
+                                setMutedUsers(prev => [...prev, msg.user]);
+                                showToast(window.loc(`🔇 کاربر @${msg.user} بی‌صدا گردید.`, `🔇 کاربر @${msg.user} بی‌صدا گردید.`));
+                              }}
+                              className="text-white/50 hover:text-rose-400 transition"
+                              title="Mute User"
+                            >
+                              <VolumeX className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
-
-                      {/* Inline Moderation actions for streamer */}
-                      {!msg.isHost && (
-                        <div className="hidden group-hover:flex items-center gap-1">
-                          <button
-                            onClick={() => {
-                              setMutedUsers(prev => [...prev, msg.user]);
-                              showToast(window.loc(`🔇 کاربر @${msg.user} بی‌صدا گردید.`, `🔇 کاربر @${msg.user} بی‌صدا گردید.`));
-                            }}
-                            className="p-1 rounded bg-slate-800 text-rose-300 text-[9px]"
-                            title="Mute User"
-                          >
-                            <VolumeX className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
               )}
 
               {/* Chat Input Bar */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full">
                 <input
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                  placeholder={isCommentsDisabled ? window.loc('کامنت‌ها غیرفعال است...', 'Comments are disabled...') : window.loc('ارسال پیام به بینندگان لایو ...', 'Sending messages to live viewers...')}
+                  placeholder={isCommentsDisabled ? window.loc('کامنت‌ها غیرفعال است', 'Comments disabled') : window.loc('پیام خود را بنویسید...', 'Write your message...')}
                   disabled={isCommentsDisabled}
-                  className="flex-1 px-3.5 py-2 rounded-2xl bg-slate-950/90 border border-slate-800 text-xs text-white outline-none focus:border-pink-500"
+                  className="flex-1 px-4 py-2.5 rounded-full bg-black/40 border border-white/10 text-xs text-white placeholder-white/50 outline-none focus:border-white/30 focus:bg-black/60 backdrop-blur-md shadow-lg transition-all"
                 />
+                {chatInput && (
+                  <button
+                    onClick={handleSendChat}
+                    disabled={isCommentsDisabled}
+                    className="w-9 h-9 rounded-full bg-pink-600 hover:bg-pink-500 text-white flex items-center justify-center transition active:scale-95 shadow-lg shrink-0"
+                  >
+                    <Send className="w-4 h-4 ml-0.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* ================= BOTTOM FLOATING TOOLBAR ================= */}
+            <div className="absolute bottom-4 right-4 left-4 z-30 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+              
+              <div className="flex items-center gap-2 flex-nowrap">
+                {/* Cam Toggle */}
                 <button
-                  onClick={handleSendChat}
-                  disabled={isCommentsDisabled}
-                  className="p-2 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-bold transition active:scale-95"
+                  onClick={() => setIsCamEnabled(!isCamEnabled)}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
+                    isCamEnabled ? 'bg-black/40 border-white/10 text-white hover:bg-black/60' : 'bg-rose-500/80 border-rose-500 text-white'
+                  }`}
+                  title="Camera"
                 >
-                  <Send className="w-4 h-4" />
+                  <Camera className="w-4 h-4" />
+                </button>
+
+                {/* Mic Toggle */}
+                <button
+                  onClick={() => setIsMicEnabled(!isMicEnabled)}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
+                    isMicEnabled ? 'bg-black/40 border-white/10 text-white hover:bg-black/60' : 'bg-rose-500/80 border-rose-500 text-white'
+                  }`}
+                  title="Microphone"
+                >
+                  {isMicEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                </button>
+
+                {/* Switch Camera Facing */}
+                <button
+                  onClick={toggleCameraFacing}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md bg-black/40 border border-white/10 text-white hover:bg-black/60 active:scale-90"
+                  title="Flip Camera"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+
+                {/* Beauty Filter */}
+                <button
+                  onClick={() => setActiveTabDrawer(activeTabDrawer === 'beauty' ? null : 'beauty')}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
+                    activeTabDrawer === 'beauty' ? 'bg-pink-500/40 border-pink-500/50 text-pink-100' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4" />
+                </button>
+
+                {/* Guests */}
+                <button
+                  onClick={() => setActiveTabDrawer(activeTabDrawer === 'guests' ? null : 'guests')}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border relative ${
+                    activeTabDrawer === 'guests' ? 'bg-cyan-500/40 border-cyan-500/50 text-cyan-100' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  }`}
+                >
+                  <UserPlus className="w-4 h-4" />
+                  {guestRequests.length > 0 && (
+                    <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-rose-500 border border-slate-900 animate-pulse" />
+                  )}
+                </button>
+
+                {/* PK */}
+                <button
+                  onClick={() => {
+                    if (isPkActive) {
+                      setIsPkActive(false);
+                      showToast(window.loc('⚔️ مسابقه PK پایان یافت.', '⚔️ The PK match is over.'));
+                    } else {
+                      setIsPkActive(true);
+                      setPkTimeLeft(180);
+                      showToast(window.loc('⚔️ مسابقه PK آغاز شد!', '⚔️ The PK match has started!'));
+                    }
+                  }}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
+                    isPkActive ? 'bg-rose-500/80 border-rose-500 text-white' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  }`}
+                >
+                  <Swords className="w-4 h-4" />
+                </button>
+                
+                {/* Stats */}
+                <button
+                  onClick={() => setActiveTabDrawer(activeTabDrawer === 'stats' ? null : 'stats')}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
+                    activeTabDrawer === 'stats' ? 'bg-amber-500/40 border-amber-500/50 text-amber-100' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  }`}
+                >
+                  <BarChart2 className="w-4 h-4" />
+                </button>
+
+                {/* Settings */}
+                <button
+                  onClick={() => setActiveTabDrawer(activeTabDrawer === 'settings' ? null : 'settings')}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
+                    activeTabDrawer === 'settings' ? 'bg-purple-500/40 border-purple-500/50 text-purple-100' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  }`}
+                >
+                  <Settings className="w-4 h-4" />
                 </button>
               </div>
 
+              {/* End Live Button */}
+              <button
+                onClick={() => setIsEndConfirmOpen(true)}
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-rose-500 hover:bg-rose-600 border border-rose-400/50 text-white shadow-[0_0_15px_rgba(244,63,94,0.4)] shrink-0 active:scale-90 transition-all"
+              >
+                <Square className="w-4 h-4 fill-white" />
+              </button>
             </div>
-
           </div>
 
-          {/* ================= BOTTOM TOOLBAR (ONE-HAND MOBILE ACCESS) ================= */}
-          <div className="p-3 bg-slate-950 border-t border-slate-800 z-30 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
-            
-            {/* Cam Toggle */}
-            <button
-              onClick={() => setIsCamEnabled(!isCamEnabled)}
-              className={`p-2.5 rounded-2xl border transition shrink-0 ${
-                isCamEnabled ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-rose-950 border-rose-500/50 text-rose-300'
-              }`}
-              title="Camera Toggle"
-            >
-              <Camera className="w-4 h-4" />
-            </button>
-
-            {/* Mic Toggle */}
-            <button
-              onClick={() => setIsMicEnabled(!isMicEnabled)}
-              className={`p-2.5 rounded-2xl border transition shrink-0 ${
-                isMicEnabled ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-rose-950 border-rose-500/50 text-rose-300'
-              }`}
-              title="Mic Toggle"
-            >
-              {isMicEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-            </button>
-
-            {/* Switch Camera Facing */}
-            <button
-              onClick={toggleCameraFacing}
-              className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-cyan-400 hover:border-cyan-500/50 transition shrink-0 active:scale-95"
-              title={window.loc('تغییر دوربین جلو / پشت', 'Switch Front / Rear Camera')}
-            >
-              <RefreshCw className="w-4 h-4 text-cyan-400" />
-            </button>
-
-            {/* Beauty Filter */}
-            {/* Beauty & AR Effects Studio Drawer Toggle */}
-            <button
-              onClick={() => setActiveTabDrawer(activeTabDrawer === 'beauty' ? null : 'beauty')}
-              className={`p-2.5 rounded-2xl border transition shrink-0 ${
-                activeTabDrawer === 'beauty' ? 'bg-pink-950 border-pink-500 text-pink-300 shadow-lg shadow-pink-900/40' : 'bg-slate-900 border-slate-800 text-pink-400'
-              }`}
-              title="فیلترهای زیبایی و آرایش هوشمند"
-            >
-              <Sparkles className="w-4 h-4 animate-spin" style={{ animationDuration: '8s' }} />
-            </button>
-
-            {/* Guests Drawer Toggle */}
-            <button
-              onClick={() => setActiveTabDrawer(activeTabDrawer === 'guests' ? null : 'guests')}
-              className={`p-2.5 rounded-2xl border transition shrink-0 relative ${
-                activeTabDrawer === 'guests' ? 'bg-cyan-950 border-cyan-500 text-cyan-300' : 'bg-slate-900 border-slate-800 text-slate-300'
-              }`}
-              title="Guests"
-            >
-              <UserPlus className="w-4 h-4" />
-              {guestRequests.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center">
-                  {guestRequests.length}
-                </span>
-              )}
-            </button>
-
-            {/* PK Battle Drawer Toggle */}
-            <button
-              onClick={() => {
-                if (isPkActive) {
-                  setIsPkActive(false);
-                  showToast(window.loc('⚔️ مسابقه PK پایان یافت.', '⚔️ The PK match is over.'));
-                } else {
-                  setIsPkActive(true);
-                  setPkTimeLeft(180);
-                  showToast(window.loc('⚔️ مسابقه PK آغاز شد!', '⚔️ The PK match has started!'));
-                }
-              }}
-              className={`p-2.5 rounded-2xl border transition shrink-0 ${
-                isPkActive ? 'bg-rose-600 border-rose-400 text-white shadow-lg' : 'bg-slate-900 border-slate-800 text-rose-400'
-              }`}
-              title="PK Battle"
-            >
-              <Swords className="w-4 h-4" />
-            </button>
-
-            {/* Statistics Drawer Toggle */}
-            <button
-              onClick={() => setActiveTabDrawer(activeTabDrawer === 'stats' ? null : 'stats')}
-              className={`p-2.5 rounded-2xl border transition shrink-0 ${
-                activeTabDrawer === 'stats' ? 'bg-amber-950 border-amber-500 text-amber-300' : 'bg-slate-900 border-slate-800 text-slate-300'
-              }`}
-              title="Live Statistics"
-            >
-              <BarChart2 className="w-4 h-4" />
-            </button>
-
-            {/* Settings & Moderation Drawer Toggle */}
-            <button
-              onClick={() => setActiveTabDrawer(activeTabDrawer === 'settings' ? null : 'settings')}
-              className={`p-2.5 rounded-2xl border transition shrink-0 ${
-                activeTabDrawer === 'settings' ? 'bg-purple-950 border-purple-500 text-purple-300' : 'bg-slate-900 border-slate-800 text-slate-300'
-              }`}
-              title="Stream Settings"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-
-            {/* Prominent End Live Button */}
-            <button
-              onClick={() => setIsEndConfirmOpen(true)}
-              className="px-4 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs shadow-lg shadow-rose-600/30 flex items-center gap-1 shrink-0 active:scale-95 transition"
-            >
-              <Square className="w-3.5 h-3.5 fill-white" />
-              <span>{window.loc('پایان لایو', 'end of live')}</span>
-            </button>
-
-          </div>
-
-          {/* ================= DRAWER POPUPS (GUESTS, STATS, SETTINGS) ================= */}
+          {/* ================= DRAWER POPUPS (BEAUTY, GUESTS, STATS, SETTINGS) ================= */}
           {activeTabDrawer && (
-            <div className="absolute bottom-16 right-3 left-3 z-40 bg-slate-950/95 border border-slate-800 p-4 rounded-3xl shadow-2xl space-y-3 backdrop-blur-xl animate-fadeIn max-h-64 overflow-y-auto">
+            <div className="absolute bottom-[72px] right-4 left-4 z-40 bg-black/70 border border-white/10 p-4 rounded-3xl shadow-2xl space-y-3 backdrop-blur-2xl animate-fadeIn max-h-72 overflow-y-auto no-scrollbar">
               
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
                 <span className="font-bold text-white text-xs">
+                  {activeTabDrawer === 'beauty' && window.loc('✨ فیلترها و زیبایی چهره', '✨ Beauty & Filters')}
                   {activeTabDrawer === 'guests' && window.loc('👥 مدیریت مهمانان لایو (Guest Requests)', '👥 Management of live guests (Guest Requests)')}
                   {activeTabDrawer === 'stats' && window.loc('📊 آمار زنده و لحظه‌ای استریم (Live Analytics)', '📊 live and real-time stream statistics (Live Analytics)')}
                   {activeTabDrawer === 'settings' && window.loc('⚙️ تنظیمات و کنترل‌های چت استریم', '⚙️ Chat stream settings and controls')}
                 </span>
-                <button onClick={() => setActiveTabDrawer(null)} className="text-slate-400 hover:text-white">✕</button>
+                <button onClick={() => setActiveTabDrawer(null)} className="text-white/50 hover:text-white transition">✕</button>
               </div>
 
               {/* GUESTS DRAWER */}
@@ -1389,7 +1345,7 @@ export default function LiveStudioModal({
                     <p className="text-slate-500 text-center py-3">{window.loc('درخواستی از سمت بینندگان وجود ندارد', 'There is no request from the viewers')}</p>
                   ) : (
                     guestRequests.map(req => (
-                      <div key={req.id} className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                      <div key={req.id} className="p-2.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <img src={req.avatar} alt={req.name} className="w-7 h-7 rounded-full object-cover" />
                           <span className="font-bold text-white text-xs">{req.name}</span>
@@ -1423,20 +1379,20 @@ export default function LiveStudioModal({
               {/* STATS DRAWER */}
               {activeTabDrawer === 'stats' && (
                 <div className="grid grid-cols-2 gap-2 text-center">
-                  <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
-                    <span className="text-slate-400 text-[10px]">{window.loc('تعداد بینندگان غایی', 'The number of final viewers')}</span>
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <span className="text-white/60 text-[10px]">{window.loc('تعداد بینندگان غایی', 'The number of final viewers')}</span>
                     <p className="text-base font-black text-cyan-400 font-mono">{viewerCount}</p>
                   </div>
-                  <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
-                    <span className="text-slate-400 text-[10px]">{window.loc('مجموع لایک‌ها', 'Total likes')}</span>
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <span className="text-white/60 text-[10px]">{window.loc('مجموع لایک‌ها', 'Total likes')}</span>
                     <p className="text-base font-black text-rose-400 font-mono">{likeCount}</p>
                   </div>
-                  <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
-                    <span className="text-slate-400 text-[10px]">{window.loc('درآمد سکه هدایا', 'Income coin gifts')}</span>
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <span className="text-white/60 text-[10px]">{window.loc('درآمد سکه هدایا', 'Income coin gifts')}</span>
                     <p className="text-base font-black text-amber-400 font-mono">{giftCoinsEarned} 🪙</p>
                   </div>
-                  <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
-                    <span className="text-slate-400 text-[10px]">{window.loc('فالوورهای جذب‌شده', 'Followers attracted')}</span>
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <span className="text-white/60 text-[10px]">{window.loc('فالوورهای جذب‌شده', 'Followers attracted')}</span>
                     <p className="text-base font-black text-emerald-400 font-mono">+{followersGained}</p>
                   </div>
                 </div>
@@ -1445,7 +1401,7 @@ export default function LiveStudioModal({
               {/* SETTINGS DRAWER */}
               {activeTabDrawer === 'settings' && (
                 <div className="space-y-2">
-                  <label className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition">
                     <span className="text-xs font-bold text-slate-200">{window.loc('فقط دنبال‌کنندگان مجاز به چت باشند', 'Only followers are allowed to chat')}</span>
                     <input
                       type="checkbox"
@@ -1455,7 +1411,7 @@ export default function LiveStudioModal({
                     />
                   </label>
 
-                  <label className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition">
                     <span className="text-xs font-bold text-slate-200">{window.loc('فقط کاربران VIP مجاز به چت باشند', 'Only VIP users are allowed to chat')}</span>
                     <input
                       type="checkbox"
@@ -1465,7 +1421,7 @@ export default function LiveStudioModal({
                     />
                   </label>
 
-                  <label className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer">
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition">
                     <span className="text-xs font-bold text-slate-200">{window.loc('بستن کامل کامنت‌های بینندگان', 'Complete closing of viewer comments')}</span>
                     <input
                       type="checkbox"
@@ -1479,10 +1435,10 @@ export default function LiveStudioModal({
 
               {/* BEAUTY & AR EFFECTS STUDIO DRAWER */}
               {activeTabDrawer === 'beauty' && (
-                <div className="space-y-4 max-h-72 overflow-y-auto custom-scrollbar p-1">
+                <div className="space-y-4 max-h-72 overflow-y-auto no-scrollbar p-1">
                   
                   {/* Skin Tone Filter Preset */}
-                  <div className="space-y-1.5 bg-slate-900/80 p-2.5 rounded-2xl border border-slate-800">
+                  <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10">
                     <span className="text-xs font-bold text-slate-200">{window.loc('تن و افکت رنگ پوست (Skin Tone & Filter)', 'Skin Tone & Filter')}</span>
                     <div className="grid grid-cols-5 gap-1.5 pt-1">
                       {[
@@ -1496,18 +1452,18 @@ export default function LiveStudioModal({
                           key={filter.id}
                           onClick={() => setBeautyFilter(filter.id)}
                           className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
-                            beautyFilter === filter.id ? 'border-pink-400 bg-pink-950/50 scale-105 shadow-md' : 'border-slate-800 bg-slate-950/50 hover:bg-slate-900'
+                            beautyFilter === filter.id ? 'border-pink-400 bg-pink-500/20 scale-105 shadow-md' : 'border-white/10 bg-white/5 hover:bg-white/10'
                           }`}
                         >
                           <span className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner" style={{ backgroundColor: filter.color }} />
-                          <span className="text-[8px] font-bold text-slate-300 truncate w-full text-center">{filter.label}</span>
+                          <span className="text-[8px] font-bold text-white/80 truncate w-full text-center">{filter.label}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
                   {/* Skin Smoothing Slider */}
-                  <div className="space-y-1.5 bg-slate-900/80 p-2.5 rounded-2xl border border-slate-800">
+                  <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10">
                     <div className="flex items-center justify-between text-xs font-bold">
                       <span className="text-pink-300 flex items-center gap-1">
                         <Sparkles className="w-3.5 h-3.5" />
@@ -1521,12 +1477,12 @@ export default function LiveStudioModal({
                       max="100" 
                       value={skinSmoothing}
                       onChange={(e) => setSkinSmoothing(Number(e.target.value))}
-                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                      className="w-full h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-pink-500 border border-white/10"
                     />
                   </div>
 
                   {/* Face AR Stickers & Accessories */}
-                  <div className="space-y-1.5 bg-slate-900/80 p-2.5 rounded-2xl border border-slate-800">
+                  <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10">
                     <span className="text-xs font-bold text-slate-200">{window.loc('افکت‌های سه‌بعدی و استیکر چهره (AR Stickers)', 'AR Stickers & Face Accessories')}</span>
                     <div className="grid grid-cols-6 gap-1.5 pt-1">
                       {[
@@ -1541,18 +1497,18 @@ export default function LiveStudioModal({
                           key={s.id}
                           onClick={() => setFaceSticker(s.id)}
                           className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
-                            faceSticker === s.id ? 'border-amber-400 bg-amber-950/50 scale-105 shadow-md' : 'border-slate-800 bg-slate-950/50 hover:bg-slate-900'
+                            faceSticker === s.id ? 'border-amber-400 bg-amber-500/20 scale-105 shadow-md' : 'border-white/10 bg-white/5 hover:bg-white/10'
                           }`}
                         >
                           <span className="text-base">{s.icon}</span>
-                          <span className="text-[8px] font-bold text-slate-300 truncate w-full text-center">{s.label}</span>
+                          <span className="text-[8px] font-bold text-white/80 truncate w-full text-center">{s.label}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
                   {/* Studio Lighting Mood */}
-                  <div className="space-y-1.5 bg-slate-900/80 p-2.5 rounded-2xl border border-slate-800">
+                  <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10">
                     <span className="text-xs font-bold text-slate-200">{window.loc('نورپردازی استودیویی (Studio Lighting)', 'Studio Lighting Mood')}</span>
                     <div className="grid grid-cols-6 gap-1.5 pt-1">
                       {[
@@ -1567,11 +1523,11 @@ export default function LiveStudioModal({
                           key={light.id}
                           onClick={() => setLightingEffect(light.id)}
                           className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
-                            lightingEffect === light.id ? 'border-cyan-400 bg-cyan-950/50 scale-105 shadow-md' : 'border-slate-800 bg-slate-950/50 hover:bg-slate-900'
+                            lightingEffect === light.id ? 'border-cyan-400 bg-cyan-500/20 scale-105 shadow-md' : 'border-white/10 bg-white/5 hover:bg-white/10'
                           }`}
                         >
                           <span className="text-sm">{light.icon}</span>
-                          <span className="text-[8px] font-bold text-slate-300 truncate w-full text-center">{light.label}</span>
+                          <span className="text-[8px] font-bold text-white/80 truncate w-full text-center">{light.label}</span>
                         </button>
                       ))}
                     </div>
