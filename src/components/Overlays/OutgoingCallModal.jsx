@@ -35,7 +35,7 @@ export default function OutgoingCallModal({
   const isVideo = outgoingCall.callType === 'video' || outgoingCall.call_type === 'video';
   const targetUser = outgoingCall.user || {};
   const targetName = targetUser.name || targetUser.username || loc('کاربر', 'User');
-  const targetAvatar = targetUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+  const targetAvatar = targetUser.avatar || '';
   const tariff = outgoingCall.tariffPerMin || targetUser.tariffPerMin || 100;
 
   // Percentage for circular / linear timer

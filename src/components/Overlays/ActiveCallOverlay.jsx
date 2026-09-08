@@ -151,7 +151,7 @@ export default function ActiveCallOverlay({
   if (!activeCall) return null;
 
   const partnerName = activeCall.user?.name || activeCall.user?.username || loc('کاربر', 'User');
-  const partnerAvatar = activeCall.user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+  const partnerAvatar = activeCall.user?.avatar || '';
 
   return (
     <div 

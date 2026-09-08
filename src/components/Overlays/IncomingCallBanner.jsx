@@ -35,7 +35,7 @@ export default function IncomingCallBanner({
   const isVideo = incomingCall.callType === 'video' || incomingCall.call_type === 'video';
   const caller = incomingCall.caller || {};
   const callerName = caller.name || caller.username || loc('کاربر', 'User');
-  const callerAvatar = caller.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+  const callerAvatar = caller.avatar || '';
   const progressPercent = ((20 - timeLeft) / 20) * 100;
 
   return (

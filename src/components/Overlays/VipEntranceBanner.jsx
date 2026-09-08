@@ -41,7 +41,7 @@ export default function VipEntranceBanner({ vipUser, onComplete }) {
         <div className="relative">
           <div className="w-10 h-10 rounded-full p-0.5 bg-gradient-to-tr from-amber-300 via-yellow-100 to-amber-500 shadow-md">
             <img
-              src={avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+              src={avatar || ''}
               alt={name}
               className="w-full h-full rounded-full object-cover"
             />

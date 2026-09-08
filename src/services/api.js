@@ -2713,30 +2713,35 @@ export const apiLive = {
       const isUuid = (typeof streamRecord.id === 'string' && streamRecord.id.includes('-') && streamRecord.id.length >= 30);
       const hostUuid = (typeof uid === 'string' && uid.includes('-') && uid.length >= 30) ? uid : undefined;
 
+      const { data: dbStream } = await supabase.from('live_streams').insert([{
+        id: isUuid ? streamRecord.id : undefined,
+        title: streamRecord.title,
+        is_live: true,
+        status: 'active',
+        viewer_count: streamRecord.viewers,
+        user_id: hostUuid,
+        host_id: hostUuid,
+        host: streamRecord.host,
+        avatar: streamRecord.avatar,
+        thumbnail: streamRecord.thumbnail,
+        category: streamRecord.category,
+        live_type: streamRecord.live_type,
+        description: streamRecord.description,
+        tags: streamRecord.tags,
+        livekit_room: streamRecord.livekit_room,
+        room_name: streamRecord.livekit_room,
+        ticket_price: streamRecord.ticket_price,
+        is_ticketed: streamRecord.is_ticketed,
+        created_at: streamRecord.created_at
+      }]).select().single();
+
+      if (dbStream && dbStream.id) {
+        streamRecord.id = dbStream.id;
+      }
+
       await Promise.allSettled([
-        supabase.from('live_streams').insert([{
-          id: isUuid ? streamRecord.id : undefined,
-          title: streamRecord.title,
-          is_live: true,
-          status: 'active',
-          viewer_count: streamRecord.viewers,
-          user_id: hostUuid,
-          host_id: hostUuid,
-          host: streamRecord.host,
-          avatar: streamRecord.avatar,
-          thumbnail: streamRecord.thumbnail,
-          category: streamRecord.category,
-          live_type: streamRecord.live_type,
-          description: streamRecord.description,
-          tags: streamRecord.tags,
-          livekit_room: streamRecord.livekit_room,
-          room_name: streamRecord.livekit_room,
-          ticket_price: streamRecord.ticket_price,
-          is_ticketed: streamRecord.is_ticketed,
-          created_at: streamRecord.created_at
-        }]),
         supabase.from('streams').insert([{
-          id: isUuid ? streamRecord.id : undefined,
+          id: dbStream?.id || (isUuid ? streamRecord.id : undefined),
           title: streamRecord.title,
           status: 'active',
           is_live: true,
@@ -2749,7 +2754,8 @@ export const apiLive = {
           description: streamRecord.description,
           viewers: streamRecord.viewers,
           created_at: streamRecord.created_at
-        }])
+        }]),
+        hostUuid ? supabase.from('profiles').update({ is_live: true }).eq('id', hostUuid) : Promise.resolve()
       ]);
     } catch (e) {
       console.warn('DB stream insert catch:', e);
@@ -2818,9 +2824,13 @@ export const apiLive = {
 
     // 1. DB Updates across all live stream tables
     try {
+      const currentUid = getUserId();
+      const hostUuid = (typeof currentUid === 'string' && currentUid.includes('-') && currentUid.length >= 30) ? currentUid : undefined;
+
       await Promise.allSettled([
         supabase.from('streams').update({ status: 'ended', is_live: false }).or(`id.eq.${streamId},title.ilike.%${streamId}%`),
-        supabase.from('live_streams').update({ is_live: false, status: 'ended' }).or(`id.eq.${streamId},room_name.eq.${streamId},livekit_room.eq.${streamId}`)
+        supabase.from('live_streams').update({ is_live: false, status: 'ended' }).or(`id.eq.${streamId},room_name.eq.${streamId},livekit_room.eq.${streamId}`),
+        hostUuid ? supabase.from('profiles').update({ is_live: false }).eq('id', hostUuid) : Promise.resolve()
       ]);
     } catch (e) {}
 

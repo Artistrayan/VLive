@@ -72,7 +72,7 @@ export function AvatarWithFrame({
     >
       <div className={`rounded-full p-0.5 transition-transform duration-300 group-hover:scale-105 ${isVip ? selectedFrame.style : 'border border-slate-800'}`}>
         <img 
-          src={src || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150`} 
+          src={src || ""} 
           alt={alt} 
           className={`${sizeClasses[size] || sizeClasses.md} rounded-full object-cover bg-slate-950`}
         />

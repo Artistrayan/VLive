@@ -348,17 +348,17 @@ export default function LiveStudioModal({
       if (!switchedWithConstraints) {
         const oldVideoTracks = currentStream ? currentStream.getVideoTracks() : [];
         
-        // Stop old video tracks FIRST on mobile to release the hardware lock
-        oldVideoTracks.forEach(t => {
-          try { t.stop(); } catch(e) {}
-        });
-
-        // Acquire genuine video track for the new facingMode
+        // Acquire genuine video track for the new facingMode FIRST to hold permission lock in WebViews
         const { track: newVideoTrack, stream: newVideoStream } = await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode);
 
         if (newVideoTrack) {
           newVideoTrack.enabled = isCamEnabled;
         }
+
+        // Now safe to stop old tracks
+        oldVideoTracks.forEach(t => {
+          try { t.stop(); } catch(e) {}
+        });
 
         // Preserve existing audio track
         const existingAudioTrack = currentStream ? currentStream.getAudioTracks()[0] : null;
@@ -1093,7 +1093,7 @@ export default function LiveStudioModal({
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-2 bg-black/40 px-2 py-1.5 rounded-full border border-white/10 backdrop-blur-md shadow-sm">
                   <div className="relative shrink-0">
-                    <img src={currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'} alt="host" className="w-6 h-6 rounded-full object-cover border border-white/20" />
+                    <img src={currentUser?.avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE5IDIxdi0yYTRgMCAwIDAtNC00SDlhNCA0IDAgMCAwLTQgNHYyIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSI3IiByPSI0Ii8+PC9zdmc+'} alt="host" className="w-6 h-6 rounded-full object-cover border border-white/20 bg-slate-800" />
                     <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse border border-slate-900" />
                   </div>
                   <div className="flex flex-col pr-1 pl-1">

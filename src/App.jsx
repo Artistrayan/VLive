@@ -1637,7 +1637,7 @@ export default function App() {
 
   // Stories
   const handlePublishStory = useCallback(async (storyData) => {
-    const mediaUrl = typeof storyData === 'string' ? storyData : (storyData?.mediaUrl || storyData?.url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600');
+    const mediaUrl = typeof storyData === 'string' ? storyData : (storyData?.mediaUrl || storyData?.url || '');
     const caption = typeof storyData === 'object' && storyData?.caption ? storyData.caption : '';
     const activeUsername = currentUsername || authUsername || currentUser?.username || 'User';
     const activeAvatar = userAvatar || currentUser?.avatar_url || currentUser?.avatar || '';
@@ -3310,7 +3310,7 @@ export default function App() {
                         >
                         <div className="relative w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-lg">
                           <img
-                            src={story.userAvatar || story.imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+                            src={story.userAvatar || story.imageUrl || ''}
                             alt={story.username}
                             className="w-full h-full object-cover rounded-full border border-slate-950"
                           />
@@ -4224,7 +4224,7 @@ export default function App() {
             score: 3800
           }} streamerB={{
             name: 'سارا لایو 🌟',
-            avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
+            avatar: '',
             score: 3200
           }} userCoins={userCoins} onSendGiftToPk={(side, amount) => {
             setUserCoins(prev => Math.max(0, prev - amount));

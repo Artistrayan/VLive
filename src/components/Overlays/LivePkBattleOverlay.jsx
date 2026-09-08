@@ -125,7 +125,7 @@ export default function LivePkBattleOverlay({
           <div className="p-2 rounded-2xl bg-rose-950/40 border border-rose-500/30 flex items-center gap-2">
             <div className="relative">
               <img 
-                src={streamerA.avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150`} 
+                src={streamerA.avatar || ""} 
                 alt="Streamer A" 
                 className="w-8 h-8 rounded-full object-cover border-2 border-rose-500"
               />
@@ -159,7 +159,7 @@ export default function LivePkBattleOverlay({
             </div>
             <div className="relative">
               <img 
-                src={streamerB.avatar || `https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150`} 
+                src={streamerB.avatar || ""} 
                 alt="Streamer B" 
                 className="w-8 h-8 rounded-full object-cover border-2 border-cyan-500"
               />

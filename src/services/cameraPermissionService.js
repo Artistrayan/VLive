@@ -155,26 +155,9 @@ class CameraPermissionService {
     this.currentFacingMode = facingMode;
 
     try {
-      // Step 1: Enumerate devices to find the exact target camera ID to prevent OverconstrainedError and repeat prompts
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(d => d.kind === 'videoinput');
-      
-      let targetDeviceId = null;
-      if (videoDevices.length > 1) {
-        if (facingMode === 'environment') {
-          const backCam = videoDevices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('rear') || d.label.toLowerCase().includes('environment'));
-          if (backCam) targetDeviceId = backCam.deviceId;
-          else targetDeviceId = videoDevices[videoDevices.length - 1].deviceId; // Guess last is back
-        } else {
-          const frontCam = videoDevices.find(d => d.label.toLowerCase().includes('front') || d.label.toLowerCase().includes('user') || d.label.toLowerCase().includes('selfie') || d.label.toLowerCase().includes('face'));
-          if (frontCam) targetDeviceId = frontCam.deviceId;
-          else targetDeviceId = videoDevices[0].deviceId;
-        }
-      }
-
-      // Step 2: Use exact deviceId if found, otherwise fallback to generic facingMode
+      // Use standard facingMode constraint (avoids enumerateDevices which triggers prompts in WebViews)
       const constraints = {
-        video: targetDeviceId ? { deviceId: { exact: targetDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } } : { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false
       };
 
