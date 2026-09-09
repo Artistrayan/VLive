@@ -93,9 +93,8 @@ export default function UserOnboardingModal({
   const [avatarPreview, setAvatarPreview] = useState('');
   const [avatarError, setAvatarError] = useState('');
 
-  // App System Permissions (Camera Front & Back, Mic, Gallery, Notifications - only once on onboarding)
+  // App System Permissions (Mic, Gallery, Notifications - only once on onboarding)
   const [permissions, setPermissions] = useState(() => ({
-    camera: safeStorage.getItem('vlive_camera_permission_granted') !== 'false',
     microphone: safeStorage.getItem('vlive_mic_permission_granted') !== 'false',
     gallery: safeStorage.getItem('vlive_perm_gallery_granted') !== 'false',
     notifications: safeStorage.getItem('vlive_notif_permission_granted') !== 'false'
@@ -127,13 +126,11 @@ export default function UserOnboardingModal({
 
   const handleGrantAllPermissions = async () => {
     setPermissions({
-      camera: true,
       microphone: true,
       gallery: true,
       notifications: true
     });
     setHasGalleryPermission(true);
-    safeStorage.setItem('vlive_camera_permission_granted', 'true');
     safeStorage.setItem('vlive_mic_permission_granted', 'true');
     safeStorage.setItem('vlive_perm_gallery_granted', 'true');
     safeStorage.setItem('vlive_notif_permission_granted', 'true');
@@ -141,7 +138,7 @@ export default function UserOnboardingModal({
     safeStorage.setItem('vlive_permissions_prompted_once', 'true');
 
     try {
-      await cameraPermissionService.ensurePermissions({ video: true, audio: true });
+      await cameraPermissionService.ensurePermissions({ video: false, audio: true });
     } catch (e) {}
 
     if (typeof Notification !== 'undefined' && Notification.requestPermission) {
@@ -633,31 +630,7 @@ export default function UserOnboardingModal({
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  {/* 1. Camera (Front & Back) */}
-                  <div 
-                    onClick={() => handleTogglePermission('camera')}
-                    className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition ${
-                      permissions.camera 
-                        ? 'bg-purple-500/10 border-purple-500/50 text-white' 
-                        : 'bg-slate-900 border-slate-800 text-slate-400'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Camera className={`w-4 h-4 ${permissions.camera ? 'text-purple-400' : 'text-slate-500'}`} />
-                      <div>
-                        <span className="font-bold text-[11px] block">{window.loc('دوربین (جلو و عقب)', 'Camera (Front & Rear)')}</span>
-                        <span className="text-[9px] text-slate-400 block">{window.loc('پخش زنده و تماس تصویری', 'Live stream & video call')}</span>
-                      </div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={permissions.camera}
-                      onChange={() => {}}
-                      className="w-4 h-4 rounded accent-purple-500 cursor-pointer pointer-events-none"
-                    />
-                  </div>
-
+                <div className="grid grid-cols-1 sm:grid-cols-1 gap-2 text-xs">
                   {/* 2. Microphone */}
                   <div 
                     onClick={() => handleTogglePermission('microphone')}
