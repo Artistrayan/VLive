@@ -12,7 +12,7 @@ import { AiFaceTracker } from '../../services/aiFaceTracker';
  */
 export default function AiFaceEffectOverlay({
   videoRef,
-  isMirrored = true,
+  isMirrored = false,
   faceSticker = 'none',
   lightingEffect = 'none',
   skinSmoothing = 0,

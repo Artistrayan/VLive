@@ -749,80 +749,49 @@ export default function UserOnboardingModal({
           {step === 'FEMALE_PHOTO' && (
             <div className="space-y-4 animate-fadeIn">
               <div className="p-3.5 rounded-2xl bg-pink-500/10 border border-pink-500/30 text-xs text-pink-200 leading-relaxed">
-                👩 کاربر گرامی، برای حفظ امنیت و کیفیت پلتفرم، بارگذاری عکس واقعی از گالری گوشی با اجازه دسترسی الزامی است.
-              </div>
-
-              {/* Gallery Access Permission Switch */}
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Image className="w-5 h-5 text-pink-400" />
-                    <div>
-                      <span className="font-bold text-xs text-white block">مجوز دسترسی به گالری تصاویر گوشی</span>
-                      <span className="text-[10px] text-slate-400 block">بدون این مجوز، ورود به برنامه مجاز نمی‌باشد.</span>
-                    </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={hasGalleryPermission}
-                    onChange={(e) => {
-    const val = e.target.checked;
-    setHasGalleryPermission(val);
-    safeStorage.setItem('vlive_perm_gallery_granted', val ? 'true' : 'false');
-  }}
-                    className="w-5 h-5 rounded text-pink-600 focus:ring-pink-500 bg-slate-900 border-slate-700 cursor-pointer"
-                  />
-                </div>
+                👩 کاربر گرامی، برای حفظ امنیت و کیفیت پلتفرم، لطفاً یک عکس واقعی و واضح برای پروفایل خود انتخاب کنید.
               </div>
 
               {/* Upload Box */}
-              {hasGalleryPermission ? (
-                <div className="space-y-3">
-                  <label className="block p-4 rounded-2xl bg-slate-950 border-2 border-dashed border-pink-500/40 hover:border-pink-400 transition cursor-pointer text-center group">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleGalleryFileSelect}
-                      className="hidden"
-                    />
-                    {avatarPreview ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <img src={avatarPreview} alt="Preview" className="w-24 h-24 rounded-full object-cover border-2 border-pink-500 shadow-lg" />
-                        <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
-                          <CheckCircle2 className="w-4 h-4" /> عکس انتخاب شد (برای تغییر کلیک کنید)
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2">
-                        <Image className="w-10 h-10 text-pink-400 group-hover:scale-110 transition-transform" />
-                        <span className="text-xs font-bold text-white">انتخاب عکس پروفایل از گالری گوشی 📁</span>
-                        <span className="text-[10px] text-slate-400">عکس با کیفیت و چهره واضح</span>
-                      </div>
-                    )}
-                  </label>
-
+              <div className="space-y-3">
+                <label className="block p-4 rounded-2xl bg-slate-950 border-2 border-dashed border-pink-500/40 hover:border-pink-400 transition cursor-pointer text-center group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleGalleryFileSelect}
+                    className="hidden"
+                  />
                   {avatarPreview ? (
-                    <button
-                      type="button"
-                      onClick={handleProceedToSelfie}
-                      className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg shadow-pink-500/30 hover:opacity-95 transition flex items-center justify-center gap-1.5"
-                    >
-                      <span>تایید عکس پروفایل و رفتن به گام سلفی با ژست 📸</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
+                    <div className="flex flex-col items-center gap-2">
+                      <img src={avatarPreview} alt="Preview" className="w-24 h-24 rounded-full object-cover border-2 border-pink-500 shadow-lg" />
+                      <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-4 h-4" /> عکس انتخاب شد (برای تغییر کلیک کنید)
+                      </span>
+                    </div>
                   ) : (
-                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
-                      <span className="text-[11px] text-slate-400">⚠️ لطفاً ابتدا یک عکس پروفایل از گالری بالا انتخاب کنید تا دکمه مرحله بعد فعال شود.</span>
+                    <div className="flex flex-col items-center gap-2">
+                      <Image className="w-10 h-10 text-pink-400 group-hover:scale-110 transition-transform" />
+                      <span className="text-xs font-bold text-white">انتخاب عکس پروفایل از گالری گوشی 📁</span>
+                      <span className="text-[10px] text-slate-400">عکس با کیفیت و چهره واضح</span>
                     </div>
                   )}
-                </div>
-              ) : (
-                <div className="p-4 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-center space-y-2">
-                  <AlertTriangle className="w-8 h-8 text-rose-400 mx-auto" />
-                  <p className="text-xs font-bold text-rose-200">دسترسی به گالری تایید نشده است.</p>
-                  <p className="text-[10px] text-slate-400">لطفاً برای ادامه، تیک مجوز دسترسی بالا را فعال کنید.</p>
-                </div>
-              )}
+                </label>
+
+                {avatarPreview ? (
+                  <button
+                    type="button"
+                    onClick={handleProceedToSelfie}
+                    className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg shadow-pink-500/30 hover:opacity-95 transition flex items-center justify-center gap-1.5"
+                  >
+                    <span>تایید عکس پروفایل و رفتن به گام سلفی با ژست 📸</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+                    <span className="text-[11px] text-slate-400">⚠️ لطفاً ابتدا یک عکس پروفایل از گالری بالا انتخاب کنید تا دکمه مرحله بعد فعال شود.</span>
+                  </div>
+                )}
+              </div>
 
               <button
                 type="button"

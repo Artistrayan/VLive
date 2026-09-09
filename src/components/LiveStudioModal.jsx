@@ -4,7 +4,8 @@ import {
   Crown, Users, Eye, Heart, Gift, MessageSquare, Settings, Flame, Lock, Zap, Clock, 
   ThumbsUp, Send, AlertTriangle, X, Check, ChevronUp, ChevronDown, Sliders, Volume2, 
   VolumeX, UserPlus, Swords, BarChart2, UserX, UserMinus, Pin, CornerUpLeft, Trash2, 
-  Cpu, BatteryCharging, Wifi, Play, Square, Award, Filter, ArrowRight, Share2, Info, Coins
+  Cpu, BatteryCharging, Wifi, Play, Square, Award, Filter, ArrowRight, Share2, Info, Coins,
+  FlipHorizontal
 } from 'lucide-react';
 import { apiLive, apiAdmin } from '../services/api';
 import { safeStorage } from '../utils/safeStorage';
@@ -106,7 +107,7 @@ export default function LiveStudioModal({
   const [isCamEnabled, setIsCamEnabled] = useState(true);
   const [isMicEnabled, setIsMicEnabled] = useState(true);
   const [isFlashOn, setIsFlashOn] = useState(false);
-  const [isMirrored, setIsMirrored] = useState(true);
+  const [isMirrored, setIsMirrored] = useState(false);
   const [beautyFilter, setBeautyFilter] = useState('smooth'); // 'off' | 'smooth' | 'glow' | 'ultra' | 'rose' | 'bronze' | 'fair' | 'tan'
   const [skinSmoothing, setSkinSmoothing] = useState(50); // 0 - 100
   const [skinTonePreset, setSkinTonePreset] = useState('natural'); // 'natural' | 'fair' | 'warm' | 'bronze' | 'porcelain'
@@ -198,10 +199,7 @@ export default function LiveStudioModal({
         return;
       }
 
-      const isBackCam = currentFacingMode === 'environment' || selectedCamera.toLowerCase().includes('back');
-      const targetFacing = isBackCam ? 'environment' : 'user';
-      setIsMirrored(targetFacing === 'user');
-
+      // Strictly use Front Camera without force-mirroring
       let stream = mediaStreamRef.current;
       if (stream && stream.active && stream.getVideoTracks().some(t => t.readyState === 'live')) {
         setCameraPermission('granted');
@@ -211,7 +209,7 @@ export default function LiveStudioModal({
         // Atomic acquisition: video + audio in a single call to prevent double permission prompts
         stream = await cameraPermissionService.getUserMedia({
           video: { 
-            facingMode: { ideal: targetFacing }, 
+            facingMode: { ideal: 'user' }, 
             width: { ideal: 1280 }, 
             height: { ideal: 720 } 
           },
@@ -308,74 +306,17 @@ export default function LiveStudioModal({
     if (onClose) onClose();
   };
 
-  // Switch between front and back camera seamlessly with genuine hardware switching
-  const toggleCameraFacing = async () => {
-    const nextFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-    const nextCamLabel = nextFacingMode === 'environment' ? 'Back Camera (4K)' : 'Front Camera (HD)';
-
-    setCurrentFacingMode(nextFacingMode);
-    setSelectedCamera(nextCamLabel);
-    
-    // Front camera is mirrored (true); Back camera is strictly NOT mirrored (false)
-    const shouldMirror = (nextFacingMode === 'user');
-    setIsMirrored(shouldMirror);
-
-    try {
-      const currentStream = mediaStreamRef.current;
-      const oldVideoTracks = currentStream ? currentStream.getVideoTracks() : [];
-      const activeVideoTrack = oldVideoTracks[0];
-
-      // Acquire genuine video track for the new facingMode (releasing old track so hardware sensor switches)
-      const { track: newVideoTrack } = await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode, activeVideoTrack);
-
-      if (newVideoTrack) {
-        newVideoTrack.enabled = isCamEnabled;
-      }
-
-      // Preserve existing audio track without prompting
-      const existingAudioTrack = currentStream ? currentStream.getAudioTracks()[0] : null;
-      const isAudioActive = existingAudioTrack && existingAudioTrack.readyState === 'live';
-
-      const newStream = new MediaStream();
-      if (newVideoTrack) newStream.addTrack(newVideoTrack);
-      if (isAudioActive) newStream.addTrack(existingAudioTrack);
-
-      mediaStreamRef.current = newStream;
-      setMediaStream(newStream);
-      cameraPermissionService.setActiveStream(newStream);
-
-      // Update persistent camera video element immediately
-      if (cameraVideoRef.current) {
-        cameraVideoRef.current.srcObject = newStream;
-        cameraVideoRef.current.play().catch(() => {});
-      }
-
-      if (newVideoTrack) {
-        setLocalVideoTrack({
-          id: newVideoTrack.id,
-          kind: 'video',
-          source: 'camera',
-          mediaStreamTrack: newVideoTrack,
-          isMuted: !isCamEnabled,
-          published: true
-        });
-      }
-
-      // Notify LiveKit if connected
-      try {
-        if (livekitManager) {
-          livekitManager.switchCamera(nextFacingMode).catch(() => {});
-        }
-      } catch (e) {}
-
-      showToast(window.loc(
-        nextFacingMode === 'environment' ? '🔄 دوربین پشت فعال شد' : '🔄 دوربین جلو فعال شد',
-        nextFacingMode === 'environment' ? '🔄 Back camera activated' : '🔄 Front camera activated'
-      ));
-    } catch (err) {
-      console.error('Camera flip error:', err);
-      showToast(window.loc('خطا در تغییر دوربین', 'Error switching camera'));
-    }
+  // Toggle horizontal mirror flip (Left <-> Right) on front camera without reconnecting or interrupting stream
+  const toggleMirrorMode = () => {
+    setIsMirrored(prev => {
+      const nextState = !prev;
+      showToast(
+        nextState 
+          ? window.loc('🪞 حالت آینه فعال شد (تصویر معکوس)', '🪞 Mirror mode enabled (Flipped)') 
+          : window.loc('✨ تصویر به حالت طبیعی تغییر کرد (غیر آینه‌ای)', '✨ Normal orientation (Direct)')
+      );
+      return nextState;
+    });
   };
 
   // Helper to attach mediaStream to video element reliably (fixes Android / WebView black screen)
@@ -746,7 +687,10 @@ export default function LiveStudioModal({
         {isCamEnabled && mediaStream ? (
           <div className="relative w-full h-full">
             <video
-              ref={cameraVideoRef}
+              ref={(el) => {
+                cameraVideoRef.current = el;
+                attachStreamToVideo(el);
+              }}
               autoPlay
               playsInline
               muted
@@ -868,11 +812,14 @@ export default function LiveStudioModal({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={toggleCameraFacing}
-                  className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold flex items-center gap-1 transition"
+                  onClick={toggleMirrorMode}
+                  className={`px-2.5 py-1 rounded-xl text-white text-[10px] font-bold flex items-center gap-1 transition ${
+                    isMirrored ? 'bg-pink-600/40 border border-pink-500/50 text-pink-200' : 'bg-white/10 hover:bg-white/20'
+                  }`}
+                  title={window.loc('آینه کردن تصویر (چپ و راست)', 'Flip / Mirror Image')}
                 >
-                  <RefreshCw className="w-3 h-3 text-pink-400" />
-                  <span>{currentFacingMode === 'user' ? window.loc('چرخش به عقب', 'Switch to Back') : window.loc('چرخش به جلو', 'Switch to Front')}</span>
+                  <FlipHorizontal className="w-3.5 h-3.5 text-pink-400" />
+                  <span>{isMirrored ? window.loc('آینه: فعال', 'Mirror: ON') : window.loc('آینه: خاموش', 'Mirror: OFF')}</span>
                 </button>
                 <button
                   type="button"
@@ -889,7 +836,7 @@ export default function LiveStudioModal({
             <div className="relative w-full h-52 bg-slate-950/30 rounded-2xl overflow-hidden border-2 border-pink-500/30 flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.15)]">
               <div className="absolute top-3 right-3 bg-black/60 px-2 py-1 rounded-lg border border-white/10 text-[9px] text-white flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>{window.loc('دوربین فعال است', 'Camera is Active')}</span>
+                <span>{window.loc('دوربین جلو فعال است', 'Front Camera is Active')}</span>
               </div>
 
               {/* Audio Level Bar Indicator */}
@@ -927,11 +874,13 @@ export default function LiveStudioModal({
               </button>
 
               <button
-                onClick={toggleCameraFacing}
-                className="py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-bold flex items-center justify-center hover:text-white transition active:scale-95"
-                title={window.loc('تغییر بین دوربین جلو و پشت', 'Switch front and back camera')}
+                onClick={toggleMirrorMode}
+                className={`py-2 rounded-xl border font-bold flex items-center justify-center transition active:scale-95 ${
+                  isMirrored ? 'bg-pink-600/30 border-pink-500/50 text-pink-300' : 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white'
+                }`}
+                title={window.loc('آینه کردن تصویر (چپ و راست)', 'Flip / Mirror Image')}
               >
-                <RefreshCw className="w-5 h-5 text-cyan-400" />
+                <FlipHorizontal className="w-5 h-5 text-pink-400" />
               </button>
 
               <button
@@ -1045,48 +994,8 @@ export default function LiveStudioModal({
             />
           )}
 
-          {/* CENTER LARGE CAMERA PREVIEW AREA */}
-          <div className="relative flex-1 bg-slate-900 overflow-hidden">
-            {isCamEnabled && mediaStream ? (
-              <div className="relative w-full h-full">
-                <video
-                  ref={(el) => {
-                    liveVideoRef.current = el;
-                    attachStreamToVideo(el);
-                  }}
-                  autoPlay
-                  playsInline
-                  muted
-                  style={{
-                    filter: `
-                      brightness(${100 + skinSmoothing * 0.1 + (lightingEffect === 'studio' ? 8 : lightingEffect === 'warm' ? 4 : beautyFilter === 'smooth' ? 10 : beautyFilter === 'glow' ? 25 : beautyFilter === 'ultra' ? 35 : 0)}%) 
-                      contrast(${100 - skinSmoothing * 0.05 + (lightingEffect === 'studio' ? 2 : beautyFilter === 'smooth' ? -5 : beautyFilter === 'ultra' ? 5 : 0)}%) 
-                      saturate(${100 + (lightingEffect === 'warm' ? 8 : lightingEffect === 'neon' ? 12 : lightingEffect === 'sunset' ? 10 : beautyFilter === 'glow' ? 20 : beautyFilter === 'ultra' ? 30 : 0)}%)
-                      ${beautyFilter === 'rose' ? 'sepia(12%) hue-rotate(320deg)' : ''}
-                      ${beautyFilter === 'bronze' ? 'sepia(18%) saturate(115%)' : ''}
-                    `.trim()
-                  }}
-                  className={`w-full h-full object-cover transition-all duration-300 ${isMirrored ? 'scale-x-[-1]' : ''}`}
-                />
-
-                {/* Real-time AI Face & AR Overlay with Facial Tracking */}
-                <AiFaceEffectOverlay
-                  videoRef={liveVideoRef}
-                  isMirrored={isMirrored}
-                  faceSticker={faceSticker}
-                  lightingEffect={lightingEffect}
-                  skinSmoothing={skinSmoothing}
-                  eyeEnlarge={eyeEnlarge}
-                  slimmingLevel={slimmingLevel}
-                />
-              </div>
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-500 space-y-2">
-                <Camera className="w-12 h-12 opacity-30" />
-                <span className="text-xs">{window.loc('تصویر دوربین متوقف شد', 'The camera stopped')}</span>
-              </div>
-            )}
-
+          {/* CENTER LARGE CAMERA PREVIEW AREA (Uses Persistent Root Camera behind) */}
+          <div className="relative flex-1 bg-transparent overflow-hidden">
             {/* Gradient Overlays for Readability */}
             <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
             <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
@@ -1255,13 +1164,15 @@ export default function LiveStudioModal({
                   {isMicEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
                 </button>
 
-                {/* Switch Camera Facing */}
+                {/* Flip / Mirror Camera Horizontal (Left <-> Right) */}
                 <button
-                  onClick={toggleCameraFacing}
-                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md bg-black/40 border border-white/10 text-white hover:bg-black/60 active:scale-90"
-                  title="Flip Camera"
+                  onClick={toggleMirrorMode}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border active:scale-90 ${
+                    isMirrored ? 'bg-pink-600/60 border-pink-400 text-white' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  }`}
+                  title={window.loc('آینه کردن تصویر (چپ و راست)', 'Flip / Mirror Image')}
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <FlipHorizontal className="w-4 h-4 text-pink-300" />
                 </button>
 
                 {/* Beauty Filter */}
