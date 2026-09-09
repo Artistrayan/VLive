@@ -5,7 +5,7 @@ import {
   ThumbsUp, Send, AlertTriangle, X, Check, ChevronUp, ChevronDown, Sliders, Volume2, 
   VolumeX, UserPlus, Swords, BarChart2, UserX, UserMinus, Pin, CornerUpLeft, Trash2, 
   Cpu, BatteryCharging, Wifi, Play, Square, Award, Filter, ArrowRight, Share2, Info, Coins,
-  FlipHorizontal
+  FlipHorizontal, RefreshCcw
 } from 'lucide-react';
 import { apiLive, apiAdmin } from '../services/api';
 import { safeStorage } from '../utils/safeStorage';
@@ -102,6 +102,7 @@ export default function LiveStudioModal({
 
 
   // Hardware / Device States
+  const [facingMode, setFacingMode] = useState('user'); // 'user' | 'environment'
   const [selectedCamera, setSelectedCamera] = useState('Front Camera (HD)');
   const [selectedMic, setSelectedMic] = useState('Default Internal Microphone');
   const [isCamEnabled, setIsCamEnabled] = useState(true);
@@ -209,7 +210,7 @@ export default function LiveStudioModal({
         // Atomic acquisition: video + audio in a single call to prevent double permission prompts
         stream = await cameraPermissionService.getUserMedia({
           video: { 
-            facingMode: { ideal: 'user' }, 
+            facingMode: { ideal: facingMode }, 
             width: { ideal: 1280 }, 
             height: { ideal: 720 } 
           },
@@ -320,6 +321,40 @@ export default function LiveStudioModal({
   };
 
   // Helper to attach mediaStream to video element reliably (fixes Android / WebView black screen)
+  const toggleCameraFacingMode = async () => {
+    const nextFacingMode = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(nextFacingMode);
+    
+    // Stop current track
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+    }
+    
+    try {
+      const stream = await cameraPermissionService.getUserMedia({
+        video: { 
+          facingMode: { ideal: nextFacingMode }, 
+          width: { ideal: 1280 }, 
+          height: { ideal: 720 } 
+        },
+        audio: true
+      });
+      setMediaStream(stream);
+      mediaStreamRef.current = stream;
+      if (cameraVideoRef.current) {
+        attachStreamToVideo(cameraVideoRef.current);
+      }
+      
+      // If we are LIVE, we need to tell LiveKit to switch camera
+      if (studioPhase === 'LIVE' && isLiveKitConnected) {
+        await livekitManager.switchCamera(nextFacingMode);
+      }
+    } catch (e) {
+      console.warn('Failed to switch camera:', e);
+      showToast(window.loc('تغییر دوربین با خطا مواجه شد', 'Failed to switch camera'));
+    }
+  };
+
   const attachStreamToVideo = (el) => {
     if (el && mediaStream && isCamEnabled) {
       if (el.srcObject !== mediaStream) {
@@ -807,6 +842,15 @@ export default function LiveStudioModal({
 
           {/* Right Floating Studio Tools (TikTok / Instagram Live Style) */}
           <div className="self-end flex flex-col gap-3 my-auto">
+            {/* Switch Camera */}
+            <button
+              onClick={toggleCameraFacingMode}
+              className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-xl transition hover:bg-black/70 active:scale-90"
+              title={window.loc('چرخش دوربین', 'Switch Camera')}
+            >
+              <RefreshCcw className="w-5 h-5" />
+            </button>
+            
             {/* Toggle Camera */}
             <button
               onClick={() => setIsCamEnabled(!isCamEnabled)}
@@ -1110,6 +1154,14 @@ export default function LiveStudioModal({
             <div className="absolute bottom-4 right-4 left-4 z-30 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
               
               <div className="flex items-center gap-2 flex-nowrap">
+                {/* Switch Camera */}
+                <button
+                  onClick={toggleCameraFacingMode}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border bg-black/40 border-white/10 text-white hover:bg-black/60"
+                  title="Switch Camera"
+                >
+                  <RefreshCcw className="w-4 h-4" />
+                </button>
                 {/* Cam Toggle */}
                 <button
                   onClick={() => setIsCamEnabled(!isCamEnabled)}

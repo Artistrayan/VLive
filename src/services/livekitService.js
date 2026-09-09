@@ -509,27 +509,45 @@ export class LiveKitManager {
     }
 
     try {
-      const tracks = await createLocalTracks({
-        audio: withAudio ? {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        } : false,
-        video: withVideo ? {
-          facingMode: this.currentFacingMode,
-          resolution: VideoPresets.h720.resolution
-        } : false
-      });
+      let tracks = [];
+      
+      // If we already have a stream, wrap its tracks using LiveKit's createLocalTracks
+      if (this.localMediaStream && this.localMediaStream.active) {
+        const vTrack = this.localMediaStream.getVideoTracks()[0];
+        const aTrack = this.localMediaStream.getAudioTracks()[0];
+        
+        if (withVideo && vTrack && vTrack.readyState === 'live') {
+          tracks.push(vTrack);
+        }
+        if (withAudio && aTrack && aTrack.readyState === 'live') {
+          tracks.push(aTrack);
+        }
+      } else {
+        // Otherwise request new ones from hardware
+        tracks = await createLocalTracks({
+          audio: withAudio ? {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          } : false,
+          video: withVideo ? {
+            facingMode: this.currentFacingMode,
+            resolution: VideoPresets.h720.resolution
+          } : false
+        });
+      }
 
       for (const track of tracks) {
-        if (track.kind === Track.Kind.Video) {
+        // track could be a native MediaStreamTrack or a LiveKit LocalTrack
+        const kind = track.kind || track.source;
+        if (kind === 'video' || track.kind === Track.Kind.Video) {
           this.localVideoTrack = track;
           await this.room.localParticipant.publishTrack(track, {
             simulcast: true,
             videoEncoding: VideoPresets.h720.encoding,
             videoCodec: 'vp8'
           });
-        } else if (track.kind === Track.Kind.Audio) {
+        } else if (kind === 'audio' || track.kind === Track.Kind.Audio) {
           this.localAudioTrack = track;
           await this.room.localParticipant.publishTrack(track, {
             audioPreset: { maxBitrate: 32000 }

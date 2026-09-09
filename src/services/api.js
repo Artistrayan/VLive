@@ -2743,6 +2743,17 @@ export const apiLive = {
             event: 'live_started',
             payload: { stream: streamRecord }
           }).catch(() => {});
+          
+          if (window._vliveStreamPingInterval) {
+            clearInterval(window._vliveStreamPingInterval);
+          }
+          window._vliveStreamPingInterval = setInterval(async () => {
+            await ch.send({
+              type: 'broadcast',
+              event: 'live_started',
+              payload: { stream: streamRecord }
+            }).catch(() => {});
+          }, 8000);
         }
       });
     } catch (e) {}
@@ -2757,6 +2768,11 @@ export const apiLive = {
 
   async endLiveStream(streamId) {
     if (!streamId) return { success: false };
+
+    if (window._vliveStreamPingInterval) {
+      clearInterval(window._vliveStreamPingInterval);
+      window._vliveStreamPingInterval = null;
+    }
 
     // 1. DB Updates across all live stream tables
     try {

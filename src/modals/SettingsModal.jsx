@@ -189,8 +189,9 @@ export default function SettingsModal(props) {
     }
   }, [props.blockedUsers]);
 
-  // 13. System Permissions (Mic, Gallery, Notifications)
+  // 13. System Permissions (Camera, Mic, Gallery, Notifications)
   const [systemPerms, setSystemPerms] = React.useState(() => ({
+    camera: safeStorage.getItem('vlive_camera_permission_granted') !== 'false',
     microphone: safeStorage.getItem('vlive_mic_permission_granted') !== 'false',
     gallery: safeStorage.getItem('vlive_perm_gallery_granted') !== 'false',
     notifications: safeStorage.getItem('vlive_notif_permission_granted') !== 'false'
@@ -199,6 +200,7 @@ export default function SettingsModal(props) {
   React.useEffect(() => {
     if (isSettingsModalOpen) {
       setSystemPerms({
+        camera: safeStorage.getItem('vlive_camera_permission_granted') !== 'false',
         microphone: safeStorage.getItem('vlive_mic_permission_granted') !== 'false',
         gallery: safeStorage.getItem('vlive_perm_gallery_granted') !== 'false',
         notifications: safeStorage.getItem('vlive_notif_permission_granted') !== 'false'
@@ -210,7 +212,13 @@ export default function SettingsModal(props) {
     const nextVal = !systemPerms[key];
     setSystemPerms(prev => ({ ...prev, [key]: nextVal }));
 
-    if (key === 'microphone') {
+    if (key === 'camera') {
+      safeStorage.setItem('vlive_camera_permission_granted', nextVal ? 'true' : 'false');
+      if (nextVal) {
+        try { await cameraPermissionService.ensurePermissions({ video: true, audio: false }); } catch (e) {}
+      }
+      showToast(nextVal ? safeLoc('دسترسی دوربین فعال شد 📷', 'Camera access enabled 📷') : safeLoc('دسترسی دوربین غیرفعال شد', 'Camera access disabled'));
+    } else if (key === 'microphone') {
       safeStorage.setItem('vlive_mic_permission_granted', nextVal ? 'true' : 'false');
       if (nextVal) {
         try { await cameraPermissionService.ensurePermissions({ video: false, audio: true }); } catch (e) {}
@@ -1634,6 +1642,13 @@ export default function SettingsModal(props) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                 {[
+                  { 
+                    key: 'camera', 
+                    label: safeLoc('دوربین (جلو و عقب)', 'Camera (Front & Rear)'), 
+                    desc: safeLoc('پخش زنده و تماس ویدیویی', 'Live stream & video calls'), 
+                    icon: Camera, 
+                    color: 'text-purple-400' 
+                  },
                   { 
                     key: 'microphone', 
                     label: safeLoc('میکروفون', 'Microphone'), 
