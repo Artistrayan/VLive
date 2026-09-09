@@ -412,12 +412,24 @@ export default function LiveStudioModal({
 
   // Bind Stream to Persistent Camera Video Ref
   useEffect(() => {
-    const video = cameraVideoRef.current;
-    if (video && mediaStream && isCamEnabled) {
-      if (video.srcObject !== mediaStream) {
-        attachStreamToVideo(video);
+    const attachInterval = setInterval(() => {
+      const video = cameraVideoRef.current;
+      if (video && mediaStream && isCamEnabled) {
+        if (video.srcObject !== mediaStream) {
+          attachStreamToVideo(video);
+        } else if (video.paused) {
+          video.play().catch(() => {});
+        }
       }
+    }, 1000);
+
+    // Initial immediate attach
+    const video = cameraVideoRef.current;
+    if (video && mediaStream && isCamEnabled && video.srcObject !== mediaStream) {
+      attachStreamToVideo(video);
     }
+
+    return () => clearInterval(attachInterval);
   }, [mediaStream, isCamEnabled]);
 
   // Live Timer Effect
@@ -722,10 +734,7 @@ export default function LiveStudioModal({
         {isCamEnabled && mediaStream ? (
           <div className="relative w-full h-full">
             <video
-              ref={(el) => {
-                cameraVideoRef.current = el;
-                attachStreamToVideo(el);
-              }}
+              ref={cameraVideoRef}
               autoPlay
               playsInline
               muted

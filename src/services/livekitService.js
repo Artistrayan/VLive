@@ -260,10 +260,9 @@ export class LiveKitManager {
       try {
         const oldVideoTracks = this.localMediaStream.getVideoTracks();
         const activeVideoTrack = oldVideoTracks[0];
-
         // Release old track and acquire real camera track for new facingMode
         const { track: newVideoTrack } = await cameraPermissionService.getVideoTrackForFacingMode(targetFacing, activeVideoTrack);
-
+        
         // Remove old tracks from localMediaStream
         oldVideoTracks.forEach(t => {
           try { t.stop(); } catch(e) {}
@@ -272,40 +271,48 @@ export class LiveKitManager {
 
         if (newVideoTrack) {
           this.localMediaStream.addTrack(newVideoTrack);
-
           // Replace track on WebRTC PeerConnection if active
           if (this.peerConnection) {
             const senders = this.peerConnection.getSenders();
             const videoSender = senders.find(s => s.track && s.track.kind === 'video') || senders.find(s => !s.track || s.track?.kind === 'video');
             if (videoSender) {
               await videoSender.replaceTrack(newVideoTrack);
-              try {
-                const params = videoSender.getParameters();
-                if (!params.encodings || params.encodings.length === 0) {
-                  params.encodings = [{}];
-                }
-                params.encodings[0].maxBitrate = 1800000;
-                params.encodings[0].maxFramerate = 30;
-                params.degradationPreference = 'maintain-framerate';
-                videoSender.setParameters(params).catch(() => {});
-              } catch (paramErr) {}
             }
           }
-
-          this.emit('camera_switched', { facingMode: targetFacing, stream: this.localMediaStream, track: newVideoTrack });
-          this.emit('local_tracks_published', {
-            videoTrack: newVideoTrack,
-            audioTrack: this.localMediaStream.getAudioTracks()[0],
-            stream: this.localMediaStream
-          });
-          return { facingMode: targetFacing, track: newVideoTrack, stream: this.localMediaStream };
         }
       } catch (err) {
-        console.error('Failed to switch camera device:', err);
-        throw err;
+        console.warn('WebRTC fallback switch error:', err);
       }
     }
+    this.emit('camera_switched', { facingMode: targetFacing });
     return { facingMode: targetFacing };
+  }
+
+  /**
+   * Replaces the currently published video track in the LiveKit room with a new one.
+   * Useful when the application manually re-acquires a new MediaStream (e.g. for switching cameras)
+   */
+  async replaceVideoTrack(newNativeTrack, facingMode) {
+    this.currentFacingMode = facingMode || this.currentFacingMode;
+    if (this.room && this.room.localParticipant) {
+      try {
+        const videoPub = Array.from(this.room.localParticipant.videoTrackPublications.values())[0];
+        if (videoPub && videoPub.videoTrack) {
+          await this.room.localParticipant.unpublishTrack(videoPub.videoTrack);
+        }
+        
+        this.localVideoTrack = newNativeTrack;
+        if (newNativeTrack && newNativeTrack.readyState === 'live') {
+          await this.room.localParticipant.publishTrack(newNativeTrack, {
+            simulcast: true,
+            videoEncoding: VideoPresets.h720.encoding,
+            videoCodec: 'vp8'
+          });
+        }
+      } catch (err) {
+        console.warn('Error replacing video track:', err);
+      }
+    }
   }
 
   /**
