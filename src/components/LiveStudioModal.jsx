@@ -177,9 +177,12 @@ export default function LiveStudioModal({
   // Camera & Permission Verification States
   const [currentFacingMode, setCurrentFacingMode] = useState('user');
   const [mediaStream, setMediaStream] = useState(null);
-  const [cameraPermission, setCameraPermission] = useState('granted');
+  const [cameraPermission, setCameraPermission] = useState('prompt');
   const [micPermission, setMicPermission] = useState('granted');
   const [cameraError, setCameraError] = useState(null);
+  const [isSwitchingCamera, setIsSwitchingCamera] = useState(false);
+  const cameraOperationIdRef = useRef(0);
+  const isSwitchingCameraRef = useRef(false);
 
   // LiveKit Connection & Secure Broadcaster Token States
   const [isLiveKitConnected, setIsLiveKitConnected] = useState(false);
@@ -193,41 +196,104 @@ export default function LiveStudioModal({
   // Initialize Camera, Microphone, LocalVideoTrack and LiveKit Connection
   const initCameraAndStream = async () => {
     setCameraError(null);
+    const opId = ++cameraOperationIdRef.current;
+    console.log(`[Camera:${opId}] CAMERA_PERMISSION_CHECK starting initialization`);
+
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setCameraPermission('granted');
-        setMicPermission('granted');
+        setCameraError('MEDIA_NOT_SUPPORTED');
         return;
       }
 
-      // Strictly use Front Camera without force-mirroring
+      // 1. Separate permission check - request once if needed, never repeat if granted
+      let perm = await cameraPermissionService.checkCameraPermission();
+      if (perm === 'denied') {
+        console.log(`[Camera:${opId}] Camera permission is denied`);
+        setCameraPermission('denied');
+        setCameraError('CAMERA_DENIED');
+        showToast(window.loc('دسترسی به دوربین مسدود است. لطفاً از تنظیمات دسترسی را فعال کنید.', 'Camera permission denied. Please allow it in settings.'));
+        return;
+      }
+
+      if (perm === 'prompt') {
+        console.log(`[Camera:${opId}] CAMERA_PERMISSION_REQUEST prompting user`);
+        try {
+          perm = await cameraPermissionService.requestCameraPermission(opId);
+          if (opId !== cameraOperationIdRef.current) return;
+          if (perm !== 'granted') {
+            setCameraPermission('denied');
+            setCameraError('CAMERA_DENIED');
+            showToast(window.loc('دسترسی به دوربین رد شد.', 'Camera permission was denied.'));
+            return;
+          }
+        } catch (permErr) {
+          console.warn(`[Camera:${opId}] Camera permission error:`, permErr);
+          setCameraPermission('denied');
+          setCameraError('CAMERA_DENIED');
+          return;
+        }
+      }
+
+      setCameraPermission('granted');
+
+      // 2. Camera Stream Acquisition (Reuse live active stream if available, otherwise acquire single stream)
+      console.log(`[Camera:${opId}] CAMERA_STREAM_CREATE`);
       let stream = mediaStreamRef.current || cameraPermissionService.activeStream;
       if (stream && stream.active && stream.getVideoTracks().some(t => t.readyState === 'live')) {
-        setCameraPermission('granted');
-        setMicPermission('granted');
+        console.log(`[Camera:${opId}] Reusing existing live active stream`);
         setMediaStream(stream);
         mediaStreamRef.current = stream;
       } else {
-        // Atomic acquisition: video + audio in a single call to prevent double permission prompts
-        stream = await cameraPermissionService.getUserMedia({
-          video: { 
-            facingMode: { ideal: facingMode }, 
-            width: { ideal: 1280 }, 
-            height: { ideal: 720 } 
-          },
-          audio: true
-        });
+        try {
+          stream = await cameraPermissionService.getUserMedia({
+            video: { 
+              facingMode: { ideal: facingMode }, 
+              width: { ideal: 1280 }, 
+              height: { ideal: 720 } 
+            },
+            audio: true
+          }, opId);
+        } catch (primaryErr) {
+          console.warn(`[Camera:${opId}] Primary getUserMedia failed:`, primaryErr.message);
+          try {
+            stream = await cameraPermissionService.getUserMedia({
+              video: { facingMode: facingMode },
+              audio: true
+            }, opId);
+          } catch (audioErr) {
+            console.warn(`[Camera:${opId}] Audio failed, falling back to video-only stream:`, audioErr.message);
+            stream = await cameraPermissionService.getUserMedia({
+              video: true,
+              audio: false
+            }, opId);
+          }
+        }
 
-        setCameraPermission('granted');
-        setMicPermission('granted');
+        if (opId !== cameraOperationIdRef.current) {
+          console.warn(`[Camera:${opId}] Stream acquisition superseded by operation ${cameraOperationIdRef.current}`);
+          if (stream) stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+
+        // Release prior stream safely if different
+        if (mediaStreamRef.current && mediaStreamRef.current !== stream) {
+          mediaStreamRef.current.getTracks().forEach(t => {
+            try { t.stop(); } catch(e) {}
+          });
+        }
+
         setMediaStream(stream);
         mediaStreamRef.current = stream;
         cameraPermissionService.setActiveStream(stream);
       }
 
-      // Extract LocalVideoTrack for LiveKit publishing
+      console.log(`[Camera:${opId}] CAMERA_STREAM_CREATED`);
+
+      // Extract and verify LocalVideoTrack
       const vTrack = stream.getVideoTracks()[0];
       if (vTrack) {
+        console.log(`[Camera:${opId}] CAMERA_TRACK_CREATED id=${vTrack.id}, readyState=${vTrack.readyState}`);
+        console.log(`[Camera:${opId}] CAMERA_TRACK_READY_STATE ${vTrack.readyState}`);
         vTrack.enabled = isCamEnabled;
         const trackObj = {
           id: vTrack.id,
@@ -244,6 +310,11 @@ export default function LiveStudioModal({
       const aTrack = stream.getAudioTracks()[0];
       if (aTrack) {
         aTrack.enabled = isMicEnabled;
+      }
+
+      // Attach stream to video element
+      if (cameraVideoRef.current) {
+        await attachStreamToVideo(cameraVideoRef.current, opId);
       }
 
       // Establish LiveKit connection state & broadcaster authorization verification
@@ -264,9 +335,8 @@ export default function LiveStudioModal({
       }
 
     } catch (err) {
-      console.warn('LiveStudio Camera Init Notice:', err);
-      setCameraPermission('granted');
-      setMicPermission('granted');
+      console.warn(`[Camera:${opId}] LiveStudio Camera Init Error:`, err);
+      setCameraError('CAMERA_INIT_FAILED');
     }
   };
 
@@ -283,22 +353,23 @@ export default function LiveStudioModal({
       setFollowersGained(0);
       setActiveStreamRecord(null);
       initCameraAndStream();
-    } else {
-      setStudioPhase('PRE_LIVE');
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
-        mediaStreamRef.current = null;
-      }
-      setMediaStream(null);
-      setLocalVideoTrack(null);
-      setIsLiveKitConnected(false);
-      setIsTrackPublished(false);
     }
 
     return () => {
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
-        mediaStreamRef.current = null;
+      // ONLY clean up resources if the studio modal is genuinely closing
+      if (!isOpen) {
+        const opId = ++cameraOperationIdRef.current;
+        console.log(`[Camera:${opId}] CAMERA_CLEANUP closing LiveStudio modal`);
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach(track => {
+            try { track.stop(); } catch (e) {}
+          });
+          mediaStreamRef.current = null;
+        }
+        setMediaStream(null);
+        setLocalVideoTrack(null);
+        setIsLiveKitConnected(false);
+        setIsTrackPublished(false);
       }
     };
   }, [isOpen, isAuthorizedStreamer]);
@@ -321,78 +392,130 @@ export default function LiveStudioModal({
     });
   };
 
-  // Helper to attach mediaStream to video element reliably (fixes Android / WebView black screen)
+  // Atomic Camera Switch between Front and Back with concurrency lock
   const toggleCameraFacingMode = async () => {
+    if (isSwitchingCameraRef.current) {
+      console.warn('Camera switch already in progress, ignoring duplicate trigger');
+      return;
+    }
+    isSwitchingCameraRef.current = true;
+    setIsSwitchingCamera(true);
+
+    const opId = ++cameraOperationIdRef.current;
     const nextFacingMode = facingMode === 'user' ? 'environment' : 'user';
-    setFacingMode(nextFacingMode);
-    
+    console.log(`[Camera:${opId}] CAMERA_SWITCH_START nextFacingMode: ${nextFacingMode}`);
+
     try {
       if (mediaStreamRef.current) {
         const oldVideoTracks = mediaStreamRef.current.getVideoTracks();
         const activeVideoTrack = oldVideoTracks[0];
-        
-        // Use atomic track replacement to avoid WebView permission loss
-        const { track: newVideoTrack } = await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode, activeVideoTrack);
-        
-        if (newVideoTrack) {
-          // Remove old tracks
-          oldVideoTracks.forEach(t => {
-            try { t.stop(); } catch(e) {}
-            try { mediaStreamRef.current.removeTrack(t); } catch(e) {}
-          });
-          
-          // Add new track
-          mediaStreamRef.current.addTrack(newVideoTrack);
-          
-          // Force a state update with a cloned MediaStream so React re-renders if necessary
-          setMediaStream(new MediaStream(mediaStreamRef.current.getTracks()));
-          
-          if (cameraVideoRef.current) {
-            attachStreamToVideo(cameraVideoRef.current);
+
+        // 1. Request facing mode update (checks applyConstraints first)
+        const { track: newVideoTrack, isNewTrack } = 
+          await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode, activeVideoTrack, opId);
+
+        if (opId !== cameraOperationIdRef.current) {
+          console.warn(`[Camera:${opId}] Switch operation superseded by operation ${cameraOperationIdRef.current}`);
+          if (isNewTrack && newVideoTrack) {
+            try { newVideoTrack.stop(); } catch(e) {}
           }
-          
+          return;
+        }
+
+        if (newVideoTrack) {
+          if (isNewTrack) {
+            // Remove old track references from mediaStreamRef (do NOT stop yet!)
+            oldVideoTracks.forEach(t => {
+              try { mediaStreamRef.current.removeTrack(t); } catch(e) {}
+            });
+
+            // Add new video track
+            newVideoTrack.enabled = isCamEnabled;
+            mediaStreamRef.current.addTrack(newVideoTrack);
+            setMediaStream(mediaStreamRef.current);
+
+            // Attach to video element and verify play BEFORE stopping old track
+            if (cameraVideoRef.current) {
+              await attachStreamToVideo(cameraVideoRef.current, opId);
+            }
+
+            // ONLY AFTER successful attach and play, stop old tracks safely!
+            console.log(`[Camera:${opId}] CAMERA_SWITCH_OLD_TRACK_STOP`);
+            oldVideoTracks.forEach(t => {
+              if (t !== newVideoTrack) {
+                try { t.stop(); } catch(e) {}
+              }
+            });
+          } else {
+            // Track was updated in-place via applyConstraints - DO NOT stop it!
+            console.log(`[Camera:${opId}] Kept existing track via applyConstraints`);
+            if (cameraVideoRef.current) {
+              await attachStreamToVideo(cameraVideoRef.current, opId);
+            }
+          }
+
+          setFacingMode(nextFacingMode);
+
+          // Update localVideoTrack state
+          const trackObj = {
+            id: newVideoTrack.id,
+            kind: 'video',
+            source: 'camera',
+            mediaStreamTrack: newVideoTrack,
+            isMuted: !newVideoTrack.enabled,
+            published: true
+          };
+          setLocalVideoTrack(trackObj);
+
           // If we are LIVE, tell LiveKit to replace its published track
-          if (studioPhase === 'LIVE' && isLiveKitConnected) {
-            await livekitManager.replaceVideoTrack(newVideoTrack, nextFacingMode);
+          if (studioPhase === 'LIVE' && isLiveKitConnected && typeof livekitManager?.replaceVideoTrack === 'function') {
+            await livekitManager.replaceVideoTrack(newVideoTrack, nextFacingMode).catch(() => {});
           }
         }
       }
     } catch (e) {
-      console.warn('Failed to switch camera:', e);
+      console.warn(`[Camera:${opId}] Failed to switch camera:`, e);
       showToast(window.loc('تغییر دوربین با خطا مواجه شد', 'Failed to switch camera'));
+    } finally {
+      isSwitchingCameraRef.current = false;
+      setIsSwitchingCamera(false);
     }
   };
 
-  const attachStreamToVideo = (el) => {
+  const attachStreamToVideo = async (el, opId = cameraOperationIdRef.current) => {
     const streamToAttach = mediaStreamRef.current || mediaStream;
-    if (el && streamToAttach && isCamEnabled) {
-      if (el.srcObject !== streamToAttach) {
-        el.srcObject = streamToAttach;
-      }
-      el.muted = true;
-      el.defaultMuted = true;
-      el.volume = 0;
-      el.playsInline = true;
-      el.setAttribute('playsinline', 'true');
-      el.setAttribute('webkit-playsinline', 'true');
-      el.setAttribute('autoplay', 'true');
-      el.setAttribute('muted', 'true');
-      
-      const attemptPlay = () => {
-        if (el.paused || el.ended) {
-          el.play().catch(e => {
-            console.warn('Video element play retry warning:', e);
-            // Secondary retry on user interaction or next frame
-            setTimeout(() => {
-              el.play().catch(() => {});
-            }, 200);
-          });
-        }
-      };
+    if (!el || !streamToAttach || !isCamEnabled) return;
 
-      el.onloadedmetadata = attemptPlay;
-      el.oncanplay = attemptPlay;
-      attemptPlay();
+    const vTrack = streamToAttach.getVideoTracks()[0];
+    if (vTrack) {
+      console.log(`[Camera:${opId}] CAMERA_TRACK_READY_STATE: ${vTrack.readyState}, enabled: ${vTrack.enabled}, muted: ${vTrack.muted}`);
+    }
+
+    console.log(`[Camera:${opId}] CAMERA_VIDEO_ATTACH`);
+    if (el.srcObject !== streamToAttach) {
+      el.srcObject = streamToAttach;
+    }
+    el.muted = true;
+    el.defaultMuted = true;
+    el.volume = 0;
+    el.playsInline = true;
+    el.setAttribute('playsinline', 'true');
+    el.setAttribute('webkit-playsinline', 'true');
+    el.setAttribute('autoplay', 'true');
+    el.setAttribute('muted', 'true');
+
+    try {
+      if (el.paused || el.ended) {
+        await el.play();
+        console.log(`[Camera:${opId}] CAMERA_VIDEO_PLAY success (${el.videoWidth}x${el.videoHeight}, readyState: ${el.readyState})`);
+      }
+    } catch (e) {
+      console.warn(`[Camera:${opId}] CAMERA_VIDEO_PLAY initial attempt:`, e.message);
+      setTimeout(() => {
+        if (el && (el.paused || el.ended)) {
+          el.play().catch(retryErr => console.warn(`[Camera:${opId}] CAMERA_VIDEO_PLAY retry notice:`, retryErr.message));
+        }
+      }, 150);
     }
   };
 
@@ -742,7 +865,21 @@ export default function LiveStudioModal({
       <div className={`fixed inset-0 z-0 bg-slate-950 overflow-hidden ${
         studioPhase === 'SUMMARY' ? 'hidden' : 'block'
       }`}>
-        {isCamEnabled && mediaStream ? (
+        {cameraPermission === 'denied' || cameraError === 'CAMERA_DENIED' ? (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-300 p-6 text-center space-y-3 z-10">
+            <CameraOff className="w-14 h-14 text-rose-500/80 mb-2 animate-bounce" />
+            <span className="text-sm font-bold text-white">{window.loc('دسترسی به دوربین مسدود است', 'Camera permission is denied')}</span>
+            <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
+              {window.loc('برای استریم زنده نیاز به دسترسی دوربین است. لطفاً در تنظیمات دسترسی دوربین را مجاز کنید.', 'Camera access is required for streaming. Please allow camera access in your settings.')}
+            </p>
+            <button
+              onClick={() => initCameraAndStream()}
+              className="mt-2 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-bold text-xs shadow-lg active:scale-95 transition-all"
+            >
+              {window.loc('تلاش مجدد', 'Try Again')}
+            </button>
+          </div>
+        ) : isCamEnabled && (mediaStream || mediaStreamRef.current) ? (
           <div className="relative w-full h-full">
             <video
               ref={cameraVideoRef}
@@ -788,8 +925,8 @@ export default function LiveStudioModal({
           </div>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-500 space-y-2">
-            <Camera className="w-12 h-12 opacity-30" />
-            <span className="text-xs">{window.loc('تصویر دوربین متوقف شد', 'The camera stopped')}</span>
+            <CameraOff className="w-12 h-12 opacity-30" />
+            <span className="text-xs">{window.loc('دوربین خاموش است', 'Camera is disabled')}</span>
           </div>
         )}
       </div>
@@ -1009,7 +1146,7 @@ export default function LiveStudioModal({
       {/* PHASE 3: LIVE STUDIO BROADCAST SCREEN */}
       {/* ========================================================================= */}
       {studioPhase === 'LIVE' && (
-        <div className="flex-1 relative bg-slate-950 flex flex-col overflow-hidden">
+        <div className="flex-1 relative bg-transparent flex flex-col overflow-hidden">
           
           {/* LUXURY GIFT OVERLAY & VIP ENTRANCE FX */}
           {activeLuxuryGift && (
