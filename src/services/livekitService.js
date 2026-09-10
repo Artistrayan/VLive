@@ -469,7 +469,7 @@ export class LiveKitManager {
     if (authToken && wsUrl) {
       try {
         if (this.room) {
-          await this.disconnect();
+          await this.disconnect(true);
         }
 
         this.room = new Room({
@@ -1097,20 +1097,22 @@ export class LiveKitManager {
   /**
    * Leave and Disconnect from Room
    */
-  async disconnect() {
-    if (this.localVideoTrack) {
-      try { this.localVideoTrack.stop(); } catch (e) {}
-      this.localVideoTrack = null;
-    }
-    if (this.localAudioTrack) {
-      try { this.localAudioTrack.stop(); } catch (e) {}
-      this.localAudioTrack = null;
-    }
-    if (this.localMediaStream) {
-      try {
-        this.localMediaStream.getTracks().forEach(t => t.stop());
-      } catch (e) {}
-      this.localMediaStream = null;
+  async disconnect(keepMediaStream = false) {
+    if (!keepMediaStream) {
+      if (this.localVideoTrack) {
+        try { this.localVideoTrack.stop(); } catch (e) {}
+        this.localVideoTrack = null;
+      }
+      if (this.localAudioTrack) {
+        try { this.localAudioTrack.stop(); } catch (e) {}
+        this.localAudioTrack = null;
+      }
+      if (this.localMediaStream) {
+        try {
+          this.localMediaStream.getTracks().forEach(t => t.stop());
+        } catch (e) {}
+        this.localMediaStream = null;
+      }
     }
 
     if (this.room) {

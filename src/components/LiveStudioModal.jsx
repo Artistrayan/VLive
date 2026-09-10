@@ -364,9 +364,10 @@ export default function LiveStudioModal({
   };
 
   const attachStreamToVideo = (el) => {
-    if (el && mediaStream && isCamEnabled) {
-      if (el.srcObject !== mediaStream) {
-        el.srcObject = mediaStream;
+    const streamToAttach = mediaStreamRef.current || mediaStream;
+    if (el && streamToAttach && isCamEnabled) {
+      if (el.srcObject !== streamToAttach) {
+        el.srcObject = streamToAttach;
       }
       el.muted = true;
       el.defaultMuted = true;
@@ -384,7 +385,7 @@ export default function LiveStudioModal({
             // Secondary retry on user interaction or next frame
             setTimeout(() => {
               el.play().catch(() => {});
-            }, 300);
+            }, 200);
           });
         }
       };
@@ -397,8 +398,9 @@ export default function LiveStudioModal({
 
   // Toggle Camera Track Mute/Unmute
   useEffect(() => {
-    if (mediaStream) {
-      const vTrack = mediaStream.getVideoTracks()[0];
+    const currentStream = mediaStreamRef.current || mediaStream;
+    if (currentStream) {
+      const vTrack = currentStream.getVideoTracks()[0];
       if (vTrack) {
         vTrack.enabled = isCamEnabled;
         if (localVideoTrack) {
@@ -410,35 +412,36 @@ export default function LiveStudioModal({
 
   // Toggle Microphone Mute/Unmute
   useEffect(() => {
-    if (mediaStream) {
-      const aTrack = mediaStream.getAudioTracks()[0];
+    const currentStream = mediaStreamRef.current || mediaStream;
+    if (currentStream) {
+      const aTrack = currentStream.getAudioTracks()[0];
       if (aTrack) {
         aTrack.enabled = isMicEnabled;
       }
     }
   }, [isMicEnabled, mediaStream]);
 
-  // Bind Stream to Persistent Camera Video Ref
+  // Bind Stream to Persistent Camera Video Ref on render and phase changes
   useEffect(() => {
-    const attachInterval = setInterval(() => {
-      const video = cameraVideoRef.current;
-      if (video && mediaStream && isCamEnabled) {
-        if (video.srcObject !== mediaStream) {
-          attachStreamToVideo(video);
-        } else if (video.paused) {
-          video.play().catch(() => {});
-        }
-      }
-    }, 1000);
-
-    // Initial immediate attach
     const video = cameraVideoRef.current;
-    if (video && mediaStream && isCamEnabled && video.srcObject !== mediaStream) {
+    if (video && (mediaStream || mediaStreamRef.current) && isCamEnabled) {
       attachStreamToVideo(video);
     }
 
+    const attachInterval = setInterval(() => {
+      const vid = cameraVideoRef.current;
+      const actStream = mediaStreamRef.current || mediaStream;
+      if (vid && actStream && isCamEnabled) {
+        if (vid.srcObject !== actStream) {
+          attachStreamToVideo(vid);
+        } else if (vid.paused) {
+          vid.play().catch(() => {});
+        }
+      }
+    }, 800);
+
     return () => clearInterval(attachInterval);
-  }, [mediaStream, isCamEnabled]);
+  }, [mediaStream, isCamEnabled, studioPhase]);
 
   // Live Timer Effect
   useEffect(() => {

@@ -149,8 +149,8 @@ class CameraPermissionService {
    * Acquire a fresh video track with the specific facing mode (user vs environment)
    * Prevents repeated Telegram WebView permission prompts by:
    * 1. Trying applyConstraints directly on the existing live track
-   * 2. Finding true hardware back camera deviceId via enumerateDevices
-   * 3. Acquiring the new track BEFORE stopping the old track (never drops to 0 active tracks)
+   * 2. Acquiring the new track BEFORE stopping the old track (never drops to 0 active tracks)
+   * 3. Single clean atomic getUserMedia without throwing OverconstrainedError
    */
   async getVideoTrackForFacingMode(facingMode = 'user', oldTrack = null) {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -158,87 +158,45 @@ class CameraPermissionService {
     }
     this.currentFacingMode = facingMode;
 
-    let targetDeviceId = null;
-    let videoDevices = [];
-
-    // STEP 1: Enumerate hardware devices to locate the specific physical sensor
-    try {
-      if (navigator.mediaDevices.enumerateDevices) {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        videoDevices = devices.filter(d => d.kind === 'videoinput');
-        if (videoDevices.length > 1) {
-          if (facingMode === 'environment') {
-            // Find rear / environment sensor
-            const backCam = videoDevices.find(d => 
-              /back|rear|environment|main|ultra|wide/i.test(d.label) || 
-              (d.label && !/front|user|selfie|forward/i.test(d.label))
-            ) || videoDevices[videoDevices.length - 1];
-            if (backCam && backCam.deviceId) {
-              targetDeviceId = backCam.deviceId;
-            }
-          } else {
-            // Find front / user sensor
-            const frontCam = videoDevices.find(d => 
-              /front|user|selfie|forward/i.test(d.label)
-            ) || videoDevices[0];
-            if (frontCam && frontCam.deviceId) {
-              targetDeviceId = frontCam.deviceId;
-            }
-          }
+    // STEP 1: Attempt seamless in-place constraint switch on the existing track if possible
+    if (oldTrack && oldTrack.readyState === 'live' && typeof oldTrack.applyConstraints === 'function') {
+      try {
+        await oldTrack.applyConstraints({
+          facingMode: { ideal: facingMode }
+        });
+        const currentSettings = typeof oldTrack.getSettings === 'function' ? oldTrack.getSettings() : {};
+        if (currentSettings.facingMode === facingMode) {
+          return { track: oldTrack, stream: null };
         }
+      } catch (applyErr) {
+        // applyConstraints not supported on this platform/browser, continue to atomic acquisition
       }
-    } catch (enumErr) {
-      console.warn('Device enumeration notice:', enumErr);
     }
 
-    // STEP 2: Acquire the new physical sensor BEFORE stopping the old track (prevents WebView permission reset)
+    // STEP 2: Atomic acquisition of the new camera track BEFORE stopping the old track
     let newStream = null;
     let newTrack = null;
 
-    if (targetDeviceId) {
+    try {
+      newStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: facingMode },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      });
+      newTrack = newStream.getVideoTracks()[0];
+    } catch (idealErr) {
       try {
         newStream = await navigator.mediaDevices.getUserMedia({
-          video: { 
-            deviceId: { exact: targetDeviceId },
-            width: { ideal: 1280 }, 
-            height: { ideal: 720 } 
-          },
+          video: { facingMode: facingMode },
           audio: false
         });
         newTrack = newStream.getVideoTracks()[0];
-      } catch (devErr) {
-        console.warn('DeviceId acquisition failed, falling back to facingMode constraints:', devErr);
-      }
-    }
-
-    if (!newTrack) {
-      try {
-        newStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: facingMode === 'environment' ? { exact: 'environment' } : 'user',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
-          audio: false
-        });
+      } catch (fallbackErr) {
+        newStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         newTrack = newStream.getVideoTracks()[0];
-      } catch (exactErr) {
-        console.warn('Exact facingMode failed, trying ideal facingMode:', exactErr);
-        try {
-          newStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { ideal: facingMode },
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
-            },
-            audio: false
-          });
-          newTrack = newStream.getVideoTracks()[0];
-        } catch (idealErr) {
-          console.warn('Ideal facingMode failed, falling back to generic video:', idealErr);
-          newStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-          newTrack = newStream.getVideoTracks()[0];
-        }
       }
     }
 
@@ -250,6 +208,9 @@ class CameraPermissionService {
     }
 
     if (newTrack) {
+      this.cameraPermissionState = 'granted';
+      safeStorage.setItem('vlive_camera_permission_granted', 'true');
+      safeStorage.setItem('vlive_permissions_granted', 'true');
       return { track: newTrack, stream: newStream };
     }
     return { track: oldTrack, stream: null };

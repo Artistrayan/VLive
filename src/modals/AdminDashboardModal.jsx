@@ -945,14 +945,22 @@ export default function AdminDashboardModal(props) {
                                   {l.live_type === 'adult' ? 'ADULT 18+' : 'Standard'} #{l.id}
                                 </span>
                               </div>
-                              <span className="text-[10px] text-slate-400 block font-mono mt-0.5">{window.loc('استریمر:', 'Streamer:')} {l.streamer} • {l.viewers} {window.loc('بیننده زنده • دسته‌بندی:', 'Live viewer • Category:')} {l.category} {window.loc('• مدت:', 'Duration:')} {l.duration || window.loc('۱۰ دقیقه', '10 minutes')}</span>
+                              <span className="text-[10px] text-slate-400 block font-mono mt-0.5">{window.loc('استریمر:', 'Streamer:')} {l.streamer || l.host || 'Streamer'} • {l.viewers || 0} {window.loc('بیننده زنده • دسته‌بندی:', 'Live viewer • Category:')} {l.category || 'General'} {window.loc('• مدت:', 'Duration:')} {l.duration || window.loc('۱۰ دقیقه', '10 minutes')}</span>
                             </div>
 
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <button
-                                onClick={() => {
+                                onClick={async () => {
+                                  const streamerName = l.streamer || l.host || 'Streamer';
                                   setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
-                                  setStreamsList(prev => prev.filter(item => item.host !== l.streamer && item.id !== `live_${l.id}`));
+                                  setStreamsList(prev => prev.filter(item => item.host !== streamerName && item.id !== l.id && item.id !== `live_${l.id}`));
+                                  try {
+                                    if (apiAdmin && typeof apiAdmin.endLiveStream === 'function') {
+                                      await apiAdmin.endLiveStream(l.id);
+                                    } else if (apiLive && typeof apiLive.endLiveStream === 'function') {
+                                      await apiLive.endLiveStream(l.id);
+                                    }
+                                  } catch (e) {}
                                   addAdminAuditLog(window.loc(`لایو استریم شماره #${l.id} (${l.title}) متوقف و از سیستم حذف شد`, `لایو استریم شماره #${l.id} (${l.title}) متوقف و از سیستم حذف شد`));
                                 }}
                                 className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold"
@@ -968,19 +976,25 @@ export default function AdminDashboardModal(props) {
                               </button>
 
                               <button
-                                onClick={() => addAdminAuditLog(window.loc(`اخطار انضباطی به استریمر ${l.streamer} ارسال شد`, `اخطار انضباطی به استریمر ${l.streamer} ارسال شد`))}
+                                onClick={() => addAdminAuditLog(window.loc(`اخطار انضباطی به استریمر ${l.streamer || l.host || 'Streamer'} ارسال شد`, `اخطار انضباطی به استریمر ${l.streamer || l.host || 'Streamer'} ارسال شد`))}
                                 className="px-2.5 py-1 rounded-xl bg-purple-950 border border-purple-500/40 text-purple-300 text-[10px] font-bold"
                               >
                                 {window.loc('اخطار به استریمر', 'Warning to the streamer')}
                               </button>
 
                               <button
-                                onClick={() => {
+                                onClick={async () => {
+                                  const streamerName = l.streamer || l.host || 'Streamer';
                                   setAdminLivesList(prev => prev.filter(item => item.id !== l.id));
-                                  setStreamsList(prev => prev.filter(item => item.host !== l.streamer));
-                                  setAdminUsersList(prev => prev.map(u => (u.name === l.streamer || u.username === l.streamer) ? { ...u, status: 'Banned' } : u));
-                                  setUsersList(prev => prev.map(u => (u.name === l.streamer || u.username === l.streamer) ? { ...u, status: 'banned' } : u));
-                                  addAdminAuditLog(window.loc(`استریمر ${l.streamer} مسدود شد و لایو قطع گردید`, `استریمر ${l.streamer} مسدود شد و لایو قطع گردید`));
+                                  setStreamsList(prev => prev.filter(item => item.host !== streamerName));
+                                  setAdminUsersList(prev => prev.map(u => (u.name === streamerName || u.username === streamerName) ? { ...u, status: 'Banned' } : u));
+                                  setUsersList(prev => prev.map(u => (u.name === streamerName || u.username === streamerName) ? { ...u, status: 'banned' } : u));
+                                  try {
+                                    if (apiAdmin && typeof apiAdmin.endLiveStream === 'function') {
+                                      await apiAdmin.endLiveStream(l.id);
+                                    }
+                                  } catch (e) {}
+                                  addAdminAuditLog(window.loc(`استریمر ${streamerName} مسدود شد و لایو قطع گردید`, `استریمر ${streamerName} مسدود شد و لایو قطع گردید`));
                                 }}
                                 className="px-2.5 py-1 rounded-xl bg-red-950 border border-red-500/50 text-red-300 text-[10px] font-bold"
                               >
