@@ -187,6 +187,18 @@ export class LiveKitManager {
 
     this.currentFacingMode = facingMode;
 
+    // Fast path: Reuse existing active stream if it meets our requirements
+    if (this.localMediaStream && this.localMediaStream.active) {
+      const vTracks = this.localMediaStream.getVideoTracks();
+      const aTracks = this.localMediaStream.getAudioTracks();
+      const hasVideo = vTracks.length > 0 && vTracks[0].readyState === 'live';
+      const hasAudio = aTracks.length > 0 && aTracks[0].readyState === 'live';
+      
+      if ((!withVideo || hasVideo) && (!withAudio || hasAudio)) {
+        return this.localMediaStream;
+      }
+    }
+
     const videoConstraints = withVideo ? {
       facingMode: { ideal: facingMode },
       width: { ideal: 1280, min: 640 },

@@ -144,53 +144,29 @@ export default function HostLiveModal({
     const nextMode = facingMode === 'user' ? 'environment' : 'user';
     setFacingMode(nextMode);
 
-    const oldStream = streamRef.current;
-    const oldVideoTrack = oldStream ? oldStream.getVideoTracks()[0] : null;
-
-    if (oldVideoTrack && typeof oldVideoTrack.applyConstraints === 'function') {
-      try {
-        await oldVideoTrack.applyConstraints({
-          facingMode: { ideal: nextMode },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        });
-        return;
-      } catch (e) {
-        // Fallback
-      }
-    }
-
     try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
-
-      let newStream;
-      try {
-        newStream = await cameraPermissionService.getUserMedia({
-          video: {
-            facingMode: { ideal: nextMode },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
-          audio: false
-        });
-      } catch (e) {
-        newStream = await cameraPermissionService.getUserMedia({
-          video: { facingMode: nextMode },
-          audio: false
-        });
-      }
-
+      const oldStream = streamRef.current;
       if (oldStream) {
-        oldStream.getTracks().forEach(t => t.stop());
-      }
+        const oldVideoTracks = oldStream.getVideoTracks();
+        const activeVideoTrack = oldVideoTracks[0];
 
-      streamRef.current = newStream;
-      setCameraStream(newStream);
-      setIsCameraPreviewActive(true);
+        const { track: newVideoTrack } = await cameraPermissionService.getVideoTrackForFacingMode(nextMode, activeVideoTrack);
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = newStream;
-        videoRef.current.play().catch(() => {});
+        if (newVideoTrack) {
+          oldVideoTracks.forEach(t => {
+            try { t.stop(); } catch(e) {}
+            try { oldStream.removeTrack(t); } catch(e) {}
+          });
+
+          oldStream.addTrack(newVideoTrack);
+          setCameraStream(new MediaStream(oldStream.getTracks()));
+          
+          if (videoRef.current) {
+            videoRef.current.srcObject = null;
+            videoRef.current.srcObject = oldStream;
+            videoRef.current.play().catch(() => {});
+          }
+        }
       }
     } catch (err) {
       console.warn('HostLiveModal camera flip error:', err);

@@ -201,11 +201,12 @@ export default function LiveStudioModal({
       }
 
       // Strictly use Front Camera without force-mirroring
-      let stream = mediaStreamRef.current;
+      let stream = mediaStreamRef.current || cameraPermissionService.activeStream;
       if (stream && stream.active && stream.getVideoTracks().some(t => t.readyState === 'live')) {
         setCameraPermission('granted');
         setMicPermission('granted');
         setMediaStream(stream);
+        mediaStreamRef.current = stream;
       } else {
         // Atomic acquisition: video + audio in a single call to prevent double permission prompts
         stream = await cameraPermissionService.getUserMedia({
@@ -325,29 +326,36 @@ export default function LiveStudioModal({
     const nextFacingMode = facingMode === 'user' ? 'environment' : 'user';
     setFacingMode(nextFacingMode);
     
-    // Stop current track
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => track.stop());
-    }
-    
     try {
-      const stream = await cameraPermissionService.getUserMedia({
-        video: { 
-          facingMode: { ideal: nextFacingMode }, 
-          width: { ideal: 1280 }, 
-          height: { ideal: 720 } 
-        },
-        audio: true
-      });
-      setMediaStream(stream);
-      mediaStreamRef.current = stream;
-      if (cameraVideoRef.current) {
-        attachStreamToVideo(cameraVideoRef.current);
-      }
-      
-      // If we are LIVE, we need to tell LiveKit to switch camera
-      if (studioPhase === 'LIVE' && isLiveKitConnected) {
-        await livekitManager.switchCamera(nextFacingMode);
+      if (mediaStreamRef.current) {
+        const oldVideoTracks = mediaStreamRef.current.getVideoTracks();
+        const activeVideoTrack = oldVideoTracks[0];
+        
+        // Use atomic track replacement to avoid WebView permission loss
+        const { track: newVideoTrack } = await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode, activeVideoTrack);
+        
+        if (newVideoTrack) {
+          // Remove old tracks
+          oldVideoTracks.forEach(t => {
+            try { t.stop(); } catch(e) {}
+            try { mediaStreamRef.current.removeTrack(t); } catch(e) {}
+          });
+          
+          // Add new track
+          mediaStreamRef.current.addTrack(newVideoTrack);
+          
+          // Force a state update with a cloned MediaStream so React re-renders if necessary
+          setMediaStream(new MediaStream(mediaStreamRef.current.getTracks()));
+          
+          if (cameraVideoRef.current) {
+            attachStreamToVideo(cameraVideoRef.current);
+          }
+          
+          // If we are LIVE, tell LiveKit to replace its published track
+          if (studioPhase === 'LIVE' && isLiveKitConnected) {
+            await livekitManager.replaceVideoTrack(newVideoTrack, nextFacingMode);
+          }
+        }
       }
     } catch (e) {
       console.warn('Failed to switch camera:', e);
