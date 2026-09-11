@@ -174,11 +174,9 @@ export default function LiveStudioModal({
   const roomServiceRef = useRef(null);
   const [activeStreamRecord, setActiveStreamRecord] = useState(null);
 
-  // Camera & Permission Verification States
+  // Camera & Hardware States
   const [currentFacingMode, setCurrentFacingMode] = useState('user');
   const [mediaStream, setMediaStream] = useState(null);
-  const [cameraPermission, setCameraPermission] = useState('prompt');
-  const [micPermission, setMicPermission] = useState('granted');
   const [cameraError, setCameraError] = useState(null);
   const [isSwitchingCamera, setIsSwitchingCamera] = useState(false);
   const cameraOperationIdRef = useRef(0);
@@ -193,11 +191,11 @@ export default function LiveStudioModal({
   const [livekitServerUrl, setLivekitServerUrl] = useState('wss://livekit.vlive.app');
   const [broadcasterAuthorized, setBroadcasterAuthorized] = useState(false);
 
-  // Initialize Camera, Microphone, LocalVideoTrack and LiveKit Connection
+  // Direct Camera & Microphone Stream Initialization (No permission prompts or blocks)
   const initCameraAndStream = async () => {
     setCameraError(null);
     const opId = ++cameraOperationIdRef.current;
-    console.log(`[Camera:${opId}] CAMERA_PERMISSION_CHECK starting initialization`);
+    console.log(`[Camera:${opId}] Direct camera activation starting`);
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -205,39 +203,7 @@ export default function LiveStudioModal({
         return;
       }
 
-      // 1. Separate permission check - request once if needed, never repeat if granted
-      let perm = await cameraPermissionService.checkCameraPermission();
-      if (perm === 'denied') {
-        console.log(`[Camera:${opId}] Camera permission is denied`);
-        setCameraPermission('denied');
-        setCameraError('CAMERA_DENIED');
-        showToast(window.loc('دسترسی به دوربین مسدود است. لطفاً از تنظیمات دسترسی را فعال کنید.', 'Camera permission denied. Please allow it in settings.'));
-        return;
-      }
-
-      if (perm === 'prompt') {
-        console.log(`[Camera:${opId}] CAMERA_PERMISSION_REQUEST prompting user`);
-        try {
-          perm = await cameraPermissionService.requestCameraPermission(opId);
-          if (opId !== cameraOperationIdRef.current) return;
-          if (perm !== 'granted') {
-            setCameraPermission('denied');
-            setCameraError('CAMERA_DENIED');
-            showToast(window.loc('دسترسی به دوربین رد شد.', 'Camera permission was denied.'));
-            return;
-          }
-        } catch (permErr) {
-          console.warn(`[Camera:${opId}] Camera permission error:`, permErr);
-          setCameraPermission('denied');
-          setCameraError('CAMERA_DENIED');
-          return;
-        }
-      }
-
-      setCameraPermission('granted');
-
-      // 2. Camera Stream Acquisition (Reuse live active stream if available, otherwise acquire single stream)
-      console.log(`[Camera:${opId}] CAMERA_STREAM_CREATE`);
+      // Camera Stream Acquisition directly
       let stream = mediaStreamRef.current || cameraPermissionService.activeStream;
       if (stream && stream.active && stream.getVideoTracks().some(t => t.readyState === 'live')) {
         console.log(`[Camera:${opId}] Reusing existing live active stream`);
@@ -254,14 +220,12 @@ export default function LiveStudioModal({
             audio: true
           }, opId);
         } catch (primaryErr) {
-          console.warn(`[Camera:${opId}] Primary getUserMedia failed:`, primaryErr.message);
           try {
             stream = await cameraPermissionService.getUserMedia({
               video: { facingMode: facingMode },
               audio: true
             }, opId);
           } catch (audioErr) {
-            console.warn(`[Camera:${opId}] Audio failed, falling back to video-only stream:`, audioErr.message);
             stream = await cameraPermissionService.getUserMedia({
               video: true,
               audio: false
@@ -270,12 +234,10 @@ export default function LiveStudioModal({
         }
 
         if (opId !== cameraOperationIdRef.current) {
-          console.warn(`[Camera:${opId}] Stream acquisition superseded by operation ${cameraOperationIdRef.current}`);
           if (stream) stream.getTracks().forEach(t => t.stop());
           return;
         }
 
-        // Release prior stream safely if different
         if (mediaStreamRef.current && mediaStreamRef.current !== stream) {
           mediaStreamRef.current.getTracks().forEach(t => {
             try { t.stop(); } catch(e) {}
@@ -287,13 +249,9 @@ export default function LiveStudioModal({
         cameraPermissionService.setActiveStream(stream);
       }
 
-      console.log(`[Camera:${opId}] CAMERA_STREAM_CREATED`);
-
-      // Extract and verify LocalVideoTrack
+      // Extract LocalVideoTrack
       const vTrack = stream.getVideoTracks()[0];
       if (vTrack) {
-        console.log(`[Camera:${opId}] CAMERA_TRACK_CREATED id=${vTrack.id}, readyState=${vTrack.readyState}`);
-        console.log(`[Camera:${opId}] CAMERA_TRACK_READY_STATE ${vTrack.readyState}`);
         vTrack.enabled = isCamEnabled;
         const trackObj = {
           id: vTrack.id,
@@ -901,21 +859,7 @@ export default function LiveStudioModal({
       <div className={`fixed inset-0 z-0 bg-slate-950 overflow-hidden ${
         studioPhase === 'SUMMARY' ? 'hidden' : 'block'
       }`}>
-        {cameraPermission === 'denied' || cameraError === 'CAMERA_DENIED' ? (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-300 p-6 text-center space-y-3 z-10">
-            <CameraOff className="w-14 h-14 text-rose-500/80 mb-2 animate-bounce" />
-            <span className="text-sm font-bold text-white">{window.loc('دسترسی به دوربین مسدود است', 'Camera permission is denied')}</span>
-            <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
-              {window.loc('برای استریم زنده نیاز به دسترسی دوربین است. لطفاً در تنظیمات دسترسی دوربین را مجاز کنید.', 'Camera access is required for streaming. Please allow camera access in your settings.')}
-            </p>
-            <button
-              onClick={() => initCameraAndStream()}
-              className="mt-2 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-bold text-xs shadow-lg active:scale-95 transition-all"
-            >
-              {window.loc('تلاش مجدد', 'Try Again')}
-            </button>
-          </div>
-        ) : isCamEnabled && (mediaStream || mediaStreamRef.current) ? (
+        {isCamEnabled && (mediaStream || mediaStreamRef.current) ? (
           <div className="relative w-full h-full">
             <video
               ref={cameraVideoRef}
