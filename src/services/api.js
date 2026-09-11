@@ -1,7 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { presenceService } from './presenceService';
 import { calculateAge } from './businessRules';
-import { fetchLiveKitToken } from './livekitService';
+import { fetchLiveKitToken, getCanonicalLiveKitRoomName } from './livekitService';
 import { safeStorage } from '../utils/safeStorage';
 import { getStoredToken, setStoredToken, getUserId, setStoredSession } from '../utils/authSession';
 import { verifyAdminAccess, recordAdminAuditLog, ADMIN_TELEGRAM_ID } from './adminGuard';
@@ -1492,118 +1492,48 @@ export const apiProfile = {
 export const apiHome = {
   async getActiveStreams() {
     try {
-      const streamsMap = new Map();
+      const { data, error } = await supabase
+        .from('streams')
+        .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, profiles:host_id(id, username, name, avatar)')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
 
-      // Parallel fetch from streams and live_streams tables using their actual columns
-      const [
-        { data: sData },
-        { data: lsData }
-      ] = await Promise.all([
-        supabase
-          .from('streams')
-          .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, profiles:host_id(id, username, name, avatar)')
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .catch(() => ({ data: [] })),
-        supabase
-          .from('live_streams')
-          .select('id, host_id, title, is_live, created_at, viewer_count, profiles:host_id(id, username, name, avatar)')
-          .eq('is_live', true)
-          .order('created_at', { ascending: false })
-          .catch(() => ({ data: [] }))
-      ]);
-
-      // 1. Process streams table records
-      if (Array.isArray(sData)) {
-        sData.forEach(s => {
-          if (s && s.id && s.status === 'active') {
-            const hostProfile = s.profiles || {};
-            const hostName = hostProfile.name || hostProfile.username || 'Streamer';
-            const hostAvatar = hostProfile.avatar || '';
-            const existing = streamsMap.get(s.id) || {};
-            streamsMap.set(s.id, {
-              ...existing,
-              id: s.id,
-              title: s.title || existing.title || 'پخش زنده',
-              host: hostName,
-              host_id: s.host_id || existing.host_id,
-              avatar: hostAvatar,
-              thumbnail: s.thumbnail || hostAvatar || '',
-              category: s.category || existing.category || 'General',
-              live_type: s.is_vip ? 'vip' : 'standard',
-              viewers: Number(existing.viewers) || 1,
-              description: existing.description || '',
-              tags: existing.tags || '#vlive',
-              livekit_room: existing.livekit_room || `room_${s.id}`,
-              livekit_server_url: existing.livekit_server_url || 'wss://livekit.vlive.app',
-              is_ticketed: Boolean(s.is_vip),
-              ticket_price: Number(s.entry_fee) || 0,
-              status: 'active',
-              is_live: true,
-              created_at: s.created_at || existing.created_at || new Date().toISOString()
-            });
-          }
-        });
+      if (error) {
+        console.error('getActiveStreams Supabase query error:', error.message);
+        return [];
       }
 
-      // 2. Process live_streams table records
-      if (Array.isArray(lsData)) {
-        lsData.forEach(ls => {
-          if (ls && ls.id && ls.is_live === true) {
-            const hostProfile = ls.profiles || {};
-            const hostName = hostProfile.name || hostProfile.username || (ls.host_id ? `User_${ls.host_id.substring(0, 6)}` : 'Streamer');
-            const hostAvatar = hostProfile.avatar || '';
-            const streamId = ls.id;
-            const existing = streamsMap.get(streamId) || {};
-            streamsMap.set(streamId, {
-              ...existing,
-              id: streamId,
-              title: ls.title || existing.title || 'پخش زنده',
-              host: existing.host || hostName,
-              host_id: ls.host_id || existing.host_id,
-              avatar: existing.avatar || hostAvatar,
-              thumbnail: existing.thumbnail || hostAvatar || '',
-              category: existing.category || 'General',
-              live_type: existing.live_type || 'standard',
-              viewers: Number(ls.viewer_count || existing.viewers) || 1,
-              description: existing.description || '',
-              tags: existing.tags || '#vlive',
-              livekit_room: existing.livekit_room || `room_${streamId}`,
-              livekit_server_url: existing.livekit_server_url || 'wss://livekit.vlive.app',
-              is_ticketed: Boolean(existing.is_ticketed),
-              ticket_price: Number(existing.ticket_price) || 0,
-              status: 'active',
-              is_live: true,
-              created_at: ls.created_at || existing.created_at || new Date().toISOString()
-            });
-          }
-        });
+      if (!Array.isArray(data)) {
+        return [];
       }
 
-      // 3. Merge with local active streams cache for immediate responsiveness
-      try {
-        const cached = JSON.parse(safeStorage.getItem('vlive_active_live_streams') || '[]');
-        if (Array.isArray(cached)) {
-          cached.forEach(c => {
-            if (c && c.id && c.status === 'active' && !streamsMap.has(c.id)) {
-              streamsMap.set(c.id, {
-                ...c,
-                is_live: true,
-                status: 'active'
-              });
-            }
-          });
-        }
-      } catch (e) {}
+      return data.map(s => {
+        const hostProfile = s.profiles || {};
+        const hostName = hostProfile.name || hostProfile.username || 'Streamer';
+        const hostAvatar = hostProfile.avatar || '';
+        const canonicalRoom = getCanonicalLiveKitRoomName(s.id);
 
-      const allActiveStreams = Array.from(streamsMap.values());
-
-      // Save valid streams to safeStorage
-      try {
-        safeStorage.setItem('vlive_active_live_streams', JSON.stringify(allActiveStreams.slice(0, 50)));
-      } catch (e) {}
-
-      return allActiveStreams;
+        return {
+          id: s.id,
+          title: s.title || 'پخش زنده',
+          host: hostName,
+          host_id: s.host_id,
+          avatar: hostAvatar,
+          thumbnail: s.thumbnail || hostAvatar || '',
+          category: s.category || 'General',
+          live_type: s.is_vip ? 'vip' : 'standard',
+          viewers: 1,
+          description: '',
+          tags: '#vlive',
+          livekit_room: canonicalRoom,
+          livekit_server_url: 'wss://livekit.vlive.app',
+          is_ticketed: Boolean(s.is_vip),
+          ticket_price: Number(s.entry_fee) || 0,
+          status: 'active',
+          is_live: true,
+          created_at: s.created_at || new Date().toISOString()
+        };
+      });
     } catch (e) {
       console.warn('getActiveStreams catch:', e);
       return [];
@@ -2638,11 +2568,24 @@ export const apiLive = {
             callbacks.onStreamUpdated(payload.stream);
           }
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'live_streams' }, (payload) => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'streams' }, (payload) => {
           if (payload.eventType === 'INSERT' && payload.new && callbacks.onStreamStarted) {
-            callbacks.onStreamStarted(payload.new);
+            const canonical = {
+              id: payload.new.id,
+              title: payload.new.title || 'پخش زنده',
+              host_id: payload.new.host_id,
+              category: payload.new.category || 'General',
+              thumbnail: payload.new.thumbnail || '',
+              status: payload.new.status || 'active',
+              is_live: payload.new.status === 'active',
+              is_ticketed: Boolean(payload.new.is_vip),
+              ticket_price: Number(payload.new.entry_fee) || 0,
+              livekit_room: getCanonicalLiveKitRoomName(payload.new.id),
+              livekit_server_url: 'wss://livekit.vlive.app'
+            };
+            callbacks.onStreamStarted(canonical);
           } else if (payload.eventType === 'UPDATE' && payload.new) {
-            if (payload.new.is_live === false || payload.new.status === 'ended') {
+            if (payload.new.status === 'ended') {
               if (callbacks.onStreamEnded) callbacks.onStreamEnded(payload.new.id);
             } else if (callbacks.onStreamUpdated) {
               callbacks.onStreamUpdated(payload.new);
@@ -2661,77 +2604,69 @@ export const apiLive = {
   },
 
   async createLiveStream(streamPayload) {
-    const uid = getUserId() || streamPayload.host_id || 'streamer_user';
-    const streamId = streamPayload.id || `stream_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const { data: authData } = await supabase.auth.getUser();
+    const hostUuid = authData?.user?.id || (typeof streamPayload?.host_id === 'string' && streamPayload.host_id.includes('-') && streamPayload.host_id.length >= 30 ? streamPayload.host_id : null);
     
-    const streamRecord = {
-      id: streamId,
-      host: streamPayload.host || 'Streamer',
-      host_id: uid,
-      avatar: streamPayload.avatar || '',
-      title: (streamPayload.title || 'Live Stream').trim(),
-      category: streamPayload.category || 'General',
-      live_type: streamPayload.live_type || 'standard',
-      description: streamPayload.description || '',
-      thumbnail: streamPayload.thumbnail || '',
-      tags: streamPayload.tags || '#vlive',
-      viewers: Number(streamPayload.viewers) || 1,
-      status: 'active',
-      is_live: true,
-      is_ticketed: Boolean(streamPayload.is_ticketed),
-      ticket_price: Number(streamPayload.ticket_price) || 0,
-      livekit_token: streamPayload.livekit_token || null,
-      livekit_room: streamPayload.livekit_room || `room_${streamId}`,
-      livekit_server_url: streamPayload.livekit_server_url || 'wss://livekit.vlive.app',
-      is_broadcaster_authorized: true,
-      created_at: new Date().toISOString()
-    };
-
-    // 1. Synchronize to Supabase database tables with valid columns
-    try {
-      const { data: authData } = await supabase.auth.getUser();
-      const authUid = authData?.user?.id;
-      const hostUuid = (typeof uid === 'string' && uid.includes('-') && uid.length >= 30) ? uid : (authUid || undefined);
-
-      // Insert into streams table
-      const { data: dbStream } = await supabase.from('streams').insert([{
-        host_id: hostUuid,
-        title: streamRecord.title || 'پخش زنده',
-        status: 'active',
-        category: streamRecord.category || 'General',
-        thumbnail: streamRecord.thumbnail || streamRecord.avatar || '',
-        is_vip: Boolean(streamRecord.is_ticketed),
-        entry_fee: Number(streamRecord.ticket_price) || 0
-      }]).select().maybeSingle().catch(() => ({ data: null }));
-
-      if (dbStream && dbStream.id) {
-        streamRecord.id = dbStream.id;
-      }
-
-      // Also insert into live_streams table
-      await supabase.from('live_streams').insert([{
-        host_id: hostUuid,
-        title: streamRecord.title || 'پخش زنده',
-        is_live: true,
-        viewer_count: Math.max(1, Number(streamRecord.viewers) || 1)
-      }]).catch(() => {});
-
-      // Update host profile status to 'live'
-      if (hostUuid) {
-        await supabase.from('profiles').update({ status: 'live' }).eq('id', hostUuid).catch(() => {});
-      }
-    } catch (e) {
-      console.warn('DB stream insert notice:', e);
+    if (!hostUuid) {
+      throw new Error('AUTH_REQUIRED: Authenticated user UUID is required to start a live stream.');
     }
 
-    // 2. Persist in local storage cache
-    try {
-      const cached = JSON.parse(safeStorage.getItem('vlive_active_live_streams') || '[]');
-      const filtered = Array.isArray(cached) ? cached.filter(x => x.id !== streamRecord.id) : [];
-      safeStorage.setItem('vlive_active_live_streams', JSON.stringify([streamRecord, ...filtered].slice(0, 50)));
-    } catch (e) {}
+    const title = (streamPayload.title || 'پخش زنده').trim();
+    const category = streamPayload.category || 'General';
+    const thumbnail = streamPayload.thumbnail || streamPayload.avatar || '';
+    const isVip = Boolean(streamPayload.is_vip || streamPayload.is_ticketed);
+    const entryFee = Number(streamPayload.entry_fee || streamPayload.ticket_price) || 0;
 
-    // 3. Realtime global broadcast to all users across app
+    // 1. Insert directly into public.streams
+    const { data: dbStream, error: insertError } = await supabase
+      .from('streams')
+      .insert([{
+        host_id: hostUuid,
+        title: title,
+        status: 'active',
+        category: category,
+        thumbnail: thumbnail,
+        is_vip: isVip,
+        entry_fee: entryFee
+      }])
+      .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, profiles:host_id(id, username, name, avatar)')
+      .single();
+
+    if (insertError || !dbStream) {
+      console.error('Supabase streams insert error:', insertError);
+      throw new Error(insertError?.message || 'Failed to insert live stream record into database.');
+    }
+
+    const hostProfile = dbStream.profiles || {};
+    const canonicalRoom = getCanonicalLiveKitRoomName(dbStream.id);
+
+    const streamRecord = {
+      id: dbStream.id,
+      host: hostProfile.name || hostProfile.username || streamPayload.host || 'Streamer',
+      host_id: dbStream.host_id,
+      avatar: hostProfile.avatar || streamPayload.avatar || '',
+      title: dbStream.title,
+      category: dbStream.category,
+      live_type: isVip ? 'vip' : (streamPayload.live_type || 'standard'),
+      description: streamPayload.description || '',
+      thumbnail: dbStream.thumbnail || '',
+      tags: streamPayload.tags || '#vlive',
+      viewers: 1,
+      status: 'active',
+      is_live: true,
+      is_ticketed: Boolean(dbStream.is_vip),
+      ticket_price: Number(dbStream.entry_fee) || 0,
+      livekit_token: streamPayload.livekit_token || null,
+      livekit_room: canonicalRoom,
+      livekit_server_url: streamPayload.livekit_server_url || 'wss://livekit.vlive.app',
+      is_broadcaster_authorized: true,
+      created_at: dbStream.created_at || new Date().toISOString()
+    };
+
+    // Update host profile status to 'live'
+    await supabase.from('profiles').update({ status: 'live' }).eq('id', hostUuid).catch(() => {});
+
+    // Realtime global broadcast to all users across app
     try {
       const ch = supabase.channel('global_live_streams', {
         config: { broadcast: { ack: true, self: true } }
@@ -2743,22 +2678,11 @@ export const apiLive = {
             event: 'live_started',
             payload: { stream: streamRecord }
           }).catch(() => {});
-          
-          if (window._vliveStreamPingInterval) {
-            clearInterval(window._vliveStreamPingInterval);
-          }
-          window._vliveStreamPingInterval = setInterval(async () => {
-            await ch.send({
-              type: 'broadcast',
-              event: 'live_started',
-              payload: { stream: streamRecord }
-            }).catch(() => {});
-          }, 8000);
         }
       });
     } catch (e) {}
 
-    // 4. Dispatch local window event for instant same-tab response
+    // Dispatch local window event for instant same-tab response
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('vlive_stream_started', { detail: streamRecord }));
     }
@@ -2767,36 +2691,23 @@ export const apiLive = {
   },
 
   async endLiveStream(streamId) {
-    if (!streamId) return { success: false };
+    if (!streamId) return { success: false, error: 'No streamId provided' };
 
-    if (window._vliveStreamPingInterval) {
-      clearInterval(window._vliveStreamPingInterval);
-      window._vliveStreamPingInterval = null;
+    const { data: authData } = await supabase.auth.getUser();
+    const currentUid = authData?.user?.id || getUserId();
+    const hostUuid = (typeof currentUid === 'string' && currentUid.includes('-') && currentUid.length >= 30) ? currentUid : undefined;
+
+    // 1. Update public.streams table
+    const { error: endError } = await supabase
+      .from('streams')
+      .update({ status: 'ended' })
+      .eq('id', streamId);
+
+    if (hostUuid) {
+      await supabase.from('profiles').update({ status: 'online' }).eq('id', hostUuid).catch(() => {});
     }
 
-    // 1. DB Updates across all live stream tables
-    try {
-      const { data: authData } = await supabase.auth.getUser();
-      const currentUid = authData?.user?.id || getUserId();
-      const hostUuid = (typeof currentUid === 'string' && currentUid.includes('-') && currentUid.length >= 30) ? currentUid : undefined;
-
-      await Promise.allSettled([
-        supabase.from('streams').update({ status: 'ended' }).eq('id', streamId),
-        hostUuid ? supabase.from('streams').update({ status: 'ended' }).eq('host_id', hostUuid).eq('status', 'active') : Promise.resolve(),
-        supabase.from('live_streams').update({ is_live: false }).eq('id', streamId),
-        hostUuid ? supabase.from('live_streams').update({ is_live: false }).eq('host_id', hostUuid) : Promise.resolve(),
-        hostUuid ? supabase.from('profiles').update({ status: 'online' }).eq('id', hostUuid) : Promise.resolve()
-      ]);
-    } catch (e) {}
-
-    // 2. Remove from active cache
-    try {
-      const cached = JSON.parse(safeStorage.getItem('vlive_active_live_streams') || '[]');
-      const filtered = (Array.isArray(cached) ? cached : []).filter(x => x.id !== streamId && x.livekit_room !== streamId);
-      safeStorage.setItem('vlive_active_live_streams', JSON.stringify(filtered));
-    } catch (e) {}
-
-    // 3. Global realtime broadcast that stream has ended
+    // 2. Global realtime broadcast that stream has ended
     try {
       const ch = supabase.channel('global_live_streams', {
         config: { broadcast: { ack: true, self: true } }
@@ -2816,7 +2727,10 @@ export const apiLive = {
       window.dispatchEvent(new CustomEvent('vlive_stream_ended', { detail: { streamId } }));
     }
 
-    return { success: true };
+    if (endError) {
+      console.warn('endLiveStream Supabase error:', endError.message);
+    }
+    return { success: !endError };
   },
 
   async joinStream(streamId) {
@@ -5742,12 +5656,11 @@ export const apiAdmin = {
     if (!(await verifyAdminServerRole())) return { success: false, error: '403 Forbidden: Admin privileges required.' };
     try {
       const cleanId = String(streamId).replace(/^live_/, '');
-      await Promise.allSettled([
-        supabase.from('live_streams').update({ status: 'ended' }).or(`id.eq.${cleanId},id.eq.${streamId}`),
-        supabase.from('streams').update({ status: 'ended' }).or(`id.eq.${cleanId},id.eq.${streamId}`)
-      ]);
+      const { error } = await supabase.from('streams').update({ status: 'ended' }).or(`id.eq.${cleanId},id.eq.${streamId}`);
       try {
-        const ch = supabase.channel('live_global_broadcast');
+        const ch = supabase.channel('global_live_streams', {
+          config: { broadcast: { ack: true, self: true } }
+        });
         ch.subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             ch.send({ type: 'broadcast', event: 'live_ended', payload: { streamId, id: streamId } });
@@ -5755,7 +5668,7 @@ export const apiAdmin = {
           }
         });
       } catch (e) {}
-      return { success: true };
+      return { success: !error };
     } catch (e) {
       return { success: false, error: e.message };
     }

@@ -665,91 +665,112 @@ export default function LiveStudioModal({
     }, 1000);
   };
 
-  // Execute Live Start after Countdown
+  // Execute Live Start after Countdown - Strict Sequence: Camera -> Token -> LiveKit Connect & Publish -> DB Insert -> UI LIVE
   const executeLiveStart = async () => {
     setIsStartingLive(true);
-    // Generate room name
-    const roomName = `room_${currentUser?.id || 'broadcaster'}_${Date.now()}`;
-    let tokenRes = { success: false, token: null, roomName, serverUrl: 'wss://livekit.vlive.app' };
 
+    // 1. Verify Camera stream is active
+    const activeStream = mediaStreamRef.current;
+    const activeVideoTrack = activeStream?.getVideoTracks?.()?.find(t => t.readyState === 'live');
+    if (!activeStream || !activeVideoTrack) {
+      setIsStartingLive(false);
+      showToast(window.loc('❌ دوربین فعال نیست. لطفاً ابتدا دوربین را فعال کنید.', '❌ Camera is not active. Please start camera preview first.'));
+      return;
+    }
+
+    // 2. Request authentic LiveKit Token from server
+    const canonicalRoom = `room_${currentUser?.id || 'host'}_${Date.now()}`;
+    let tokenRes = null;
     try {
-      tokenRes = await apiLive.generateLiveKitToken({
-        roomName: roomName
+      tokenRes = await fetchLiveKitToken({
+        roomName: canonicalRoom,
+        identity: currentUser?.id,
+        name: currentUser?.name || currentUsername || 'Host',
+        role: 'host'
       });
-    } catch (e) {
-      console.error('LiveKit token request error:', e);
+    } catch (tokErr) {
+      console.error('Real LiveKit Token Request Failed:', tokErr);
     }
 
-    // Fallback token if server token is unavailable or endpoint returned error/no token
-    if (!tokenRes || !tokenRes.success || !tokenRes.token) {
-      const fallbackToken = `vlive_token_${currentUser?.id || 'streamer'}_${Date.now()}`;
-      tokenRes = { 
-        success: true, 
-        token: fallbackToken, 
-        roomName, 
-        serverUrl: 'wss://livekit.vlive.app' 
-      };
+    if (!tokenRes || !tokenRes.success || !tokenRes.token || !tokenRes.token.trim()) {
+      setIsStartingLive(false);
+      showToast(window.loc('❌ دریافت توکن زنده LiveKit از سرور ناموفق بود.', '❌ Failed to obtain authentic LiveKit broadcast token from server.'));
+      return;
     }
 
-    const effectiveToken = tokenRes.token;
-    const effectiveRoom = tokenRes.roomName || roomName;
+    const authenticToken = tokenRes.token.trim();
+    if (authenticToken.startsWith('vlive_token_') || authenticToken.startsWith('fake_') || authenticToken.startsWith('fallback_') || authenticToken.startsWith('test_') || authenticToken.startsWith('demo_')) {
+      setIsStartingLive(false);
+      showToast(window.loc('❌ توکن لایوکیت نامعتبر است.', '❌ Insecure or fake LiveKit token rejected.'));
+      return;
+    }
+
     const effectiveServerUrl = tokenRes.serverUrl || 'wss://livekit.vlive.app';
+    const effectiveRoom = tokenRes.roomName || canonicalRoom;
 
-    setLivekitToken(effectiveToken);
-    setLivekitRoom(effectiveRoom);
-    setLivekitServerUrl(effectiveServerUrl);
-    setBroadcasterAuthorized(true);
-
-    // Connect to LiveKit Room via livekitManager reusing existing media stream
+    // 3. Connect to LiveKit Room and publish media stream
     try {
       await livekitManager.connect({
         roomName: effectiveRoom,
-        token: effectiveToken,
+        token: authenticToken,
         serverUrl: effectiveServerUrl,
-        mediaStream: mediaStreamRef.current,
-        stream: mediaStreamRef.current
+        identity: currentUser?.id,
+        name: currentUser?.name || currentUsername || 'Host',
+        role: 'host',
+        mediaStream: activeStream,
+        stream: activeStream
       });
       setIsLiveKitConnected(true);
     } catch (lkErr) {
-      console.warn('LiveKit Room connection attempt:', lkErr);
+      console.error('LiveKit connection or publication failed:', lkErr);
+      setIsStartingLive(false);
+      showToast(window.loc(`❌ اتصال به سرور LiveKit ناموفق بود: ${lkErr.message}`, `❌ LiveKit connection failed: ${lkErr.message}`));
+      return;
     }
 
-    const newStreamObj = {
-      id: `stream_${Date.now()}`,
-      host: currentUser?.name || currentUsername || 'Verified Streamer',
-      host_id: currentUser?.id,
-      avatar: currentUser?.avatar || '',
-      title: liveTitle.trim(),
-      category: liveCategory,
-      live_type: liveType,
-      description: liveDesc,
-      thumbnail: thumbnailUrl,
-      viewers: 0,
-      isSelfStream: true,
-      status: 'active',
-      is_ticketed: isTicketedLive,
-      ticket_price: isTicketedLive ? Number(ticketPrice) : 0,
-      livekit_token: effectiveToken,
-      livekit_room: effectiveRoom,
-      livekit_server_url: effectiveServerUrl,
-      is_broadcaster_authorized: true
-    };
-
-    let createdStream = newStreamObj;
+    // 4. Save stream record directly to Supabase public.streams
+    let createdStream = null;
     try {
-      const res = await apiLive.createLiveStream(newStreamObj);
-      if (res.success && res.data) {
-        createdStream = res.data;
+      const newStreamPayload = {
+        host: currentUser?.name || currentUsername || 'Verified Streamer',
+        host_id: currentUser?.id,
+        avatar: currentUser?.avatar || '',
+        title: liveTitle.trim(),
+        category: liveCategory,
+        live_type: liveType,
+        description: liveDesc,
+        thumbnail: thumbnailUrl,
+        is_ticketed: isTicketedLive,
+        ticket_price: isTicketedLive ? Number(ticketPrice) : 0,
+        is_vip: isTicketedLive,
+        entry_fee: isTicketedLive ? Number(ticketPrice) : 0,
+        livekit_token: authenticToken,
+        livekit_room: effectiveRoom,
+        livekit_server_url: effectiveServerUrl
+      };
+
+      const res = await apiLive.createLiveStream(newStreamPayload);
+      if (!res || !res.success || !res.data) {
+        throw new Error(res?.error || 'Database rejected stream creation');
       }
-      if (setStreamsList) setStreamsList(prev => [createdStream, ...prev]);
-      if (setViewingStream) setViewingStream(null);
-    } catch (err) {
-      console.warn('createLiveStream catch:', err);
-      if (setStreamsList) setStreamsList(prev => [newStreamObj, ...prev]);
-      if (setViewingStream) setViewingStream(null);
+      createdStream = res.data;
+    } catch (dbErr) {
+      console.error('Database Live Stream Creation Failed:', dbErr);
+      await livekitManager.disconnect(true);
+      setIsLiveKitConnected(false);
+      setIsStartingLive(false);
+      showToast(window.loc(`❌ ثبت لایو در دیتابیس ناموفق بود: ${dbErr.message}`, `❌ Failed to save live stream to database: ${dbErr.message}`));
+      return;
     }
 
+    // 5. Success - Set state & transition UI to LIVE
+    setLivekitToken(authenticToken);
+    setLivekitRoom(effectiveRoom);
+    setLivekitServerUrl(effectiveServerUrl);
+    setBroadcasterAuthorized(true);
     setActiveStreamRecord(createdStream);
+    if (setStreamsList) setStreamsList(prev => [createdStream, ...(prev || []).filter(x => x.id !== createdStream.id)]);
+    if (setViewingStream) setViewingStream(null);
 
     // Initialize real-time Supabase presence and room sync for live stats & interactions
     try {
