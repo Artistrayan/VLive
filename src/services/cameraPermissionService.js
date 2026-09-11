@@ -85,7 +85,7 @@ class CameraPermissionService {
    * Request Camera permission specifically (isolated from microphone)
    */
   async requestCameraPermission(opId = 0) {
-    if (this.cameraPermissionState === 'granted') {
+    if (this.cameraPermissionState === 'granted' && this.activeStream && this.activeStream.active) {
       return 'granted';
     }
     if (this.cameraPermissionState === 'denied') {
@@ -97,22 +97,34 @@ class CameraPermissionService {
     }
 
     this.permissionRequestPromise = (async () => {
-      console.log(`[Camera:${opId}] CAMERA_PERMISSION_REQUEST requesting device camera permission`);
+      console.log(`[Camera:${opId}] CAMERA_PERMISSION_REQUEST single atomic request`);
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           throw new Error('MEDIA_NOT_SUPPORTED');
         }
 
-        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        // Permission successfully granted! Release temporary tracks immediately
-        tempStream.getTracks().forEach(track => {
-          try { track.stop(); } catch (e) {}
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: this.currentFacingMode || 'user' } },
+          audio: true
+        }).catch(async (audioErr) => {
+          console.warn(`[Camera:${opId}] Combined video+audio permission failed (${audioErr.message}), trying video only`);
+          return await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: this.currentFacingMode || 'user' } },
+            audio: false
+          });
         });
 
         this.cameraPermissionState = 'granted';
         safeStorage.setItem('vlive_camera_permission_state', 'granted');
         safeStorage.setItem('vlive_camera_permission_granted', 'true');
-        console.log(`[Camera:${opId}] CAMERA_PERMISSION_REQUEST result: GRANTED`);
+        if (stream.getAudioTracks().length > 0) {
+          this.micPermissionState = 'granted';
+          safeStorage.setItem('vlive_mic_permission_state', 'granted');
+          safeStorage.setItem('vlive_mic_permission_granted', 'true');
+        }
+
+        this.activeStream = stream;
+        console.log(`[Camera:${opId}] CAMERA_PERMISSION_REQUEST result: GRANTED, stream cached`);
         return 'granted';
       } catch (err) {
         console.warn(`[Camera:${opId}] CAMERA_PERMISSION_REQUEST error:`, err.name, err.message);

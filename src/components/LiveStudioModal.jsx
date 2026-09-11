@@ -343,16 +343,17 @@ export default function LiveStudioModal({
   // Camera Lifecycle & Device Switch Effect
   useEffect(() => {
     if (isOpen && isAuthorizedStreamer) {
-      setStudioPhase('PRE_LIVE');
-      setCountdownNum(3);
-      setIsStartingLive(false);
-      setLiveDurationSeconds(0);
-      setViewerCount(0);
-      setLikeCount(0);
-      setGiftCoinsEarned(0);
-      setFollowersGained(0);
-      setActiveStreamRecord(null);
-      initCameraAndStream();
+      if (studioPhase === 'PRE_LIVE') {
+        setCountdownNum(3);
+        setIsStartingLive(false);
+        setLiveDurationSeconds(0);
+        setViewerCount(0);
+        setLikeCount(0);
+        setGiftCoinsEarned(0);
+        setFollowersGained(0);
+        setActiveStreamRecord(null);
+        initCameraAndStream();
+      }
     }
 
     return () => {
@@ -360,6 +361,10 @@ export default function LiveStudioModal({
       if (!isOpen) {
         const opId = ++cameraOperationIdRef.current;
         console.log(`[Camera:${opId}] CAMERA_CLEANUP closing LiveStudio modal`);
+        if (roomServiceRef.current) {
+          try { roomServiceRef.current.unsubscribe(); } catch(e) {}
+          roomServiceRef.current = null;
+        }
         if (mediaStreamRef.current) {
           mediaStreamRef.current.getTracks().forEach(track => {
             try { track.stop(); } catch (e) {}
@@ -811,7 +816,7 @@ export default function LiveStudioModal({
             setFollowersGained(prev => prev + 1);
             showToast?.(window.loc(`🌟 کاربر @${followerData.username || ''} شما را دنبال کرد!`, `🌟 User followed you!`));
           }
-        });
+        }, currentUser?.id);
         roomService.subscribe({ ...currentUser, isBroadcaster: true, isHost: true });
         roomServiceRef.current = roomService;
       } catch (roomErr) {
