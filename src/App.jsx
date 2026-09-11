@@ -2296,6 +2296,16 @@ export default function App() {
           onViewerUpdate: (count) => {
             setViewingStream(prev => prev ? { ...prev, viewers: Math.max(0, count) } : null);
           },
+          onRemoteStream: (stream) => {
+            if (viewerLiveVideoRef.current && stream) {
+              try {
+                viewerLiveVideoRef.current.srcObject = stream;
+                viewerLiveVideoRef.current.play().catch(() => {});
+              } catch (e) {
+                console.warn('Error attaching WebRTC remote stream:', e);
+              }
+            }
+          },
           onLikeUpdate: (count) => {
             setStreamLikes(prev => prev + (count || 1));
             const colors = ['#ec4899', '#a855f7', '#ef4444', '#f59e0b', '#3b82f6'];
@@ -3465,7 +3475,7 @@ export default function App() {
                         
                         {/* Image Container with aspect ratio */}
                         <div className="aspect-[4/5] relative cursor-pointer overflow-hidden" onClick={() => {
-                          const activeStreamForUser = (streamsList || []).find(s => s && (
+                          const activeStreamForUser = (streamsList || []).find(s => s && s.status === 'active' && s.is_live !== false && (
                             (s.host_id && String(s.host_id) === String(user.id)) ||
                             (s.host && (s.host === user.name || s.host === user.username))
                           ));
@@ -3515,7 +3525,7 @@ export default function App() {
                           </button>
 
                           {/* Top Right LIVE Badge (if streamer has real active live) */}
-                          {Boolean((streamsList || []).some(s => s && ((s.host_id && String(s.host_id) === String(user.id)) || (s.host && (s.host === user.name || s.host === user.username))))) && (
+                          {Boolean((streamsList || []).some(s => s && s.status === 'active' && s.is_live !== false && ((s.host_id && String(s.host_id) === String(user.id)) || (s.host && (s.host === user.name || s.host === user.username))))) && (
                             <div className="absolute top-7 right-1.5 flex items-center gap-1 bg-rose-600/90 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-rose-400/60 z-10">
                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                                <span className="text-[8px] font-black text-white">LIVE</span>

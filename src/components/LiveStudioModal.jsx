@@ -775,6 +775,7 @@ export default function LiveStudioModal({
             showToast?.(window.loc(`🌟 کاربر @${followerData.username || ''} شما را دنبال کرد!`, `🌟 User followed you!`));
           }
         }, currentUser?.id);
+        roomService.setLocalMediaStream(activeStream);
         roomService.subscribe({ ...currentUser, isBroadcaster: true, isHost: true });
         roomServiceRef.current = roomService;
       } catch (roomErr) {
