@@ -1492,9 +1492,19 @@ export const apiProfile = {
 export const apiHome = {
   async getActiveStreams() {
     try {
+      // 1. Auto-cleanup: Mark stale active streams older than 3 hours as ended in Supabase
+      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+      supabase
+        .from('streams')
+        .update({ status: 'ended' })
+        .eq('status', 'active')
+        .lt('created_at', threeHoursAgo)
+        .then(() => {})
+        .catch(() => {});
+
       const { data, error } = await supabase
         .from('streams')
-        .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, profiles:host_id(id, username, name, avatar)')
+        .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, profiles:host_id(id, username, name, avatar, status)')
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
@@ -1507,7 +1517,37 @@ export const apiHome = {
         return [];
       }
 
-      return data.map(s => {
+      // Deduplicate: each host can only have ONE active live stream (the most recent one)
+      const seenHosts = new Set();
+      const validStreams = [];
+      const staleStreamIdsToClose = [];
+
+      for (const s of data) {
+        if (!s || s.status !== 'active') continue;
+
+        const hostKey = s.host_id || (s.profiles && (s.profiles.id || s.profiles.username)) || s.id;
+
+        if (seenHosts.has(hostKey)) {
+          // Stale duplicate stream from the same host - queue to mark ended
+          staleStreamIdsToClose.push(s.id);
+          continue;
+        }
+
+        seenHosts.add(hostKey);
+        validStreams.push(s);
+      }
+
+      // Asynchronously mark duplicate previous streams as ended in DB
+      if (staleStreamIdsToClose.length > 0) {
+        supabase
+          .from('streams')
+          .update({ status: 'ended' })
+          .in('id', staleStreamIdsToClose)
+          .then(() => {})
+          .catch(() => {});
+      }
+
+      return validStreams.map(s => {
         const hostProfile = s.profiles || {};
         const hostName = hostProfile.name || hostProfile.username || 'Streamer';
         const hostAvatar = hostProfile.avatar || '';
@@ -2616,6 +2656,14 @@ export const apiLive = {
     const thumbnail = streamPayload.thumbnail || streamPayload.avatar || '';
     const isVip = Boolean(streamPayload.is_vip || streamPayload.is_ticketed);
     const entryFee = Number(streamPayload.entry_fee || streamPayload.ticket_price) || 0;
+
+    // 0. End all previous active streams for this host
+    await supabase
+      .from('streams')
+      .update({ status: 'ended' })
+      .eq('host_id', hostUuid)
+      .eq('status', 'active')
+      .catch(() => {});
 
     // 1. Insert directly into public.streams
     const { data: dbStream, error: insertError } = await supabase

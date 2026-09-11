@@ -337,7 +337,23 @@ export default function LiveStudioModal({
     };
   }, [isOpen, isAuthorizedStreamer]);
 
-  const handleCloseStudio = () => {
+  const handleCloseStudio = async () => {
+    if (studioPhase === 'LIVE' || activeStreamRecord?.id) {
+      try {
+        if (roomServiceRef.current) {
+          roomServiceRef.current.unsubscribe();
+          roomServiceRef.current = null;
+        }
+        if (activeStreamRecord?.id) {
+          await apiLive.endLiveStream(activeStreamRecord.id);
+        }
+        if (livekitRoom) {
+          await livekitManager.endLiveStream(livekitRoom);
+        }
+      } catch (e) {
+        console.warn('Error ending live on studio close:', e);
+      }
+    }
     setStudioPhase('PRE_LIVE');
     if (onClose) onClose();
   };

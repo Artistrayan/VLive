@@ -4612,7 +4612,7 @@ export default function App() {
             <div className="space-y-3">
               <span className="text-xs font-black text-white block">{loc('🔥 لایواستریم‌های پیشنهادی مشابه:', '🔥 Recommended similar livestreams:')}</span>
               <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
-                {(streamsList || []).slice(0, 4).map(st => <div key={st.id} onClick={() => {
+                {(streamsList || []).filter(st => st && st.status === 'active' && st.is_live !== false).slice(0, 4).map(st => <div key={st.id} onClick={() => {
                   setIsExitLiveModalOpen(false);
                   setViewingStream(st);
                 }} className="p-2 rounded-2xl bg-slate-950 border border-slate-800 hover:border-pink-500 cursor-pointer space-y-1 transition">
