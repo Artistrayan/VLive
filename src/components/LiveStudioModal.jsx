@@ -11,7 +11,7 @@ import { apiLive, apiAdmin } from '../services/api';
 import { safeStorage } from '../utils/safeStorage';
 import { cameraPermissionService } from '../services/cameraPermissionService';
 import { LiveStreamRoomService } from '../services/liveStreamRoomService';
-import { livekitManager, fetchLiveKitToken } from '../services/livekitService';
+import { livekitManager, fetchLiveKitToken, getCanonicalLiveKitRoomName } from '../services/livekitService';
 import LuxuryGiftOverlay from './Overlays/LuxuryGiftOverlay';
 import VipEntranceBanner from './Overlays/VipEntranceBanner';
 import AiFaceEffectOverlay from './Overlays/AiFaceEffectOverlay';
