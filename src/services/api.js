@@ -2645,8 +2645,18 @@ export const apiLive = {
 
   async createLiveStream(streamPayload) {
     const { data: authData } = await supabase.auth.getUser();
-    const hostUuid = authData?.user?.id || (typeof streamPayload?.host_id === 'string' && streamPayload.host_id.includes('-') && streamPayload.host_id.length >= 30 ? streamPayload.host_id : null);
+    let hostUuid = authData?.user?.id || (typeof streamPayload?.host_id === 'string' && streamPayload.host_id.includes('-') && streamPayload.host_id.length >= 30 ? streamPayload.host_id : null);
     
+    if (!hostUuid && streamPayload?.host_id) {
+      hostUuid = await resolveProfileUuid(streamPayload.host_id);
+    }
+    if (!hostUuid) {
+      const storedUid = getUserId();
+      if (storedUid) {
+        hostUuid = await resolveProfileUuid(storedUid);
+      }
+    }
+
     if (!hostUuid) {
       throw new Error('AUTH_REQUIRED: Authenticated user UUID is required to start a live stream.');
     }
@@ -2666,7 +2676,10 @@ export const apiLive = {
       .catch(() => {});
 
     // 1. Insert directly into public.streams
-    const { data: dbStream, error: insertError } = await supabase
+    let dbStream = null;
+    let insertError = null;
+
+    const resWithProfile = await supabase
       .from('streams')
       .insert([{
         host_id: hostUuid,
@@ -2679,6 +2692,29 @@ export const apiLive = {
       }])
       .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, profiles:host_id(id, username, name, avatar)')
       .single();
+
+    if (resWithProfile.error) {
+      // Fallback without embedded profiles join if relation name differs
+      const resFallback = await supabase
+        .from('streams')
+        .insert([{
+          host_id: hostUuid,
+          title: title,
+          status: 'active',
+          category: category,
+          thumbnail: thumbnail,
+          is_vip: isVip,
+          entry_fee: entryFee
+        }])
+        .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at')
+        .single();
+
+      dbStream = resFallback.data;
+      insertError = resFallback.error;
+    } else {
+      dbStream = resWithProfile.data;
+      insertError = resWithProfile.error;
+    }
 
     if (insertError || !dbStream) {
       console.error('Supabase streams insert error:', insertError);

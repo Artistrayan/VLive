@@ -5,7 +5,7 @@ import {
   ThumbsUp, Send, AlertTriangle, X, Check, ChevronUp, ChevronDown, Sliders, Volume2, 
   VolumeX, UserPlus, Swords, BarChart2, UserX, UserMinus, Pin, CornerUpLeft, Trash2, 
   Cpu, BatteryCharging, Wifi, Play, Square, Award, Filter, ArrowRight, Share2, Info, Coins,
-  FlipHorizontal, RefreshCcw
+  FlipHorizontal, RefreshCcw, Loader2, AlertCircle, ArrowLeft
 } from 'lucide-react';
 import { apiLive, apiAdmin } from '../services/api';
 import { safeStorage } from '../utils/safeStorage';
@@ -80,8 +80,11 @@ export default function LiveStudioModal({
   // STRICT RULE: Streamer requires female gender & approval. ADMIN HAS UNRESTRICTED ACCESS!
   const isAuthorizedStreamer = Boolean(isUserAdmin || (isFemaleUser && isManagementApproved));
 
-  // Phase state: 'PRE_LIVE' | 'COUNTDOWN' | 'LIVE' | 'SUMMARY'
+  // Phase state: 'PRE_LIVE' | 'COUNTDOWN' | 'STARTING' | 'LIVE' | 'START_ERROR' | 'SUMMARY'
   const [studioPhase, setStudioPhase] = useState('PRE_LIVE');
+  const [startLiveError, setStartLiveError] = useState(null);
+  const startingLiveRef = useRef(false);
+  const countdownIntervalRef = useRef(null);
 
   // Pre-Live Form & Device Configuration States
   const [liveType, setLiveType] = useState('standard'); // 'standard' | 'adult'
@@ -191,7 +194,7 @@ export default function LiveStudioModal({
   const [livekitServerUrl, setLivekitServerUrl] = useState('wss://livekit.vlive.app');
   const [broadcasterAuthorized, setBroadcasterAuthorized] = useState(false);
 
-  // Direct Camera & Microphone Stream Initialization (No permission prompts or blocks)
+  // Direct Camera & Microphone Stream Initialization (No permission loops, checks permission status cleanly)
   const initCameraAndStream = async () => {
     setCameraError(null);
     const opId = ++cameraOperationIdRef.current;
@@ -203,35 +206,32 @@ export default function LiveStudioModal({
         return;
       }
 
-      // Camera Stream Acquisition directly
+      // Camera Stream Acquisition - Reuse active stream if already live
       let stream = mediaStreamRef.current || cameraPermissionService.activeStream;
-      if (stream && stream.active && stream.getVideoTracks().some(t => t.readyState === 'live')) {
-        console.log(`[Camera:${opId}] Reusing existing live active stream`);
+      const hasLiveTrack = stream?.active && stream?.getVideoTracks?.()?.some(t => t.readyState === 'live');
+      
+      if (stream && hasLiveTrack) {
+        console.log(`[Camera:${opId}] Reusing existing live active stream (${stream.id})`);
         setMediaStream(stream);
         mediaStreamRef.current = stream;
       } else {
-        try {
-          stream = await cameraPermissionService.getUserMedia({
-            video: { 
-              facingMode: { ideal: facingMode }, 
-              width: { ideal: 1280 }, 
-              height: { ideal: 720 } 
-            },
-            audio: true
-          }, opId);
-        } catch (primaryErr) {
-          try {
-            stream = await cameraPermissionService.getUserMedia({
-              video: { facingMode: facingMode },
-              audio: true
-            }, opId);
-          } catch (audioErr) {
-            stream = await cameraPermissionService.getUserMedia({
-              video: true,
-              audio: false
-            }, opId);
-          }
+        // Fast permission check - do NOT loop request if already denied
+        const camPerm = await cameraPermissionService.checkCameraPermission();
+        if (camPerm === 'denied') {
+          console.warn(`[Camera:${opId}] Camera permission is permanently denied in browser/system settings`);
+          setCameraError('PERMISSION_DENIED');
+          showToast(window.loc('❌ دسترسی به دوربین مسدود است. لطفاً در تنظیمات مرورگر آن را مجاز کنید.', '❌ Camera access is blocked. Please allow it in browser settings.'));
+          return;
         }
+
+        stream = await cameraPermissionService.getUserMedia({
+          video: { 
+            facingMode: { ideal: facingMode }, 
+            width: { ideal: 1280 }, 
+            height: { ideal: 720 } 
+          },
+          audio: true
+        }, opId);
 
         if (opId !== cameraOperationIdRef.current) {
           if (stream) stream.getTracks().forEach(t => t.stop());
@@ -294,7 +294,13 @@ export default function LiveStudioModal({
 
     } catch (err) {
       console.warn(`[Camera:${opId}] LiveStudio Camera Init Error:`, err);
-      setCameraError('CAMERA_INIT_FAILED');
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError' || err.message?.includes('PERMISSION_DENIED')) {
+        setCameraError('PERMISSION_DENIED');
+        showToast(window.loc('❌ مجوز دسترسی به دوربین داده نشد.', '❌ Camera permission was denied.'));
+      } else {
+        setCameraError('CAMERA_INIT_FAILED');
+        showToast(window.loc(`❌ خطا در راه‌اندازی دوربین: ${err.message}`, `❌ Camera initialization error: ${err.message}`));
+      }
     }
   };
 
@@ -310,11 +316,18 @@ export default function LiveStudioModal({
         setGiftCoinsEarned(0);
         setFollowersGained(0);
         setActiveStreamRecord(null);
+        setStartLiveError(null);
         initCameraAndStream();
       }
     }
 
     return () => {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      startingLiveRef.current = false;
+
       // ONLY clean up resources if the studio modal is genuinely closing
       if (!isOpen) {
         const opId = ++cameraOperationIdRef.current;
@@ -625,40 +638,84 @@ export default function LiveStudioModal({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Start Live Broadcast flow
+  // Start Live Broadcast flow - Validates camera stream before initiating countdown
   const handleInitiateStart = () => {
-    // Trigger Countdown
+    if (startingLiveRef.current || isStartingLive) {
+      console.warn('[LiveStudio] Live start is already in progress, ignoring duplicate trigger');
+      return;
+    }
+
+    // 1. Verify Camera stream before countdown begins
+    const activeStream = mediaStreamRef.current || cameraPermissionService.activeStream;
+    const activeVideoTrack = activeStream?.getVideoTracks?.()?.find(t => t.readyState === 'live');
+
+    console.log('[LiveStudio] Camera track status BEFORE countdown:', {
+      hasStream: Boolean(activeStream),
+      streamId: activeStream?.id,
+      trackId: activeVideoTrack?.id,
+      readyState: activeVideoTrack?.readyState,
+      enabled: activeVideoTrack?.enabled
+    });
+
+    if (!activeStream || !activeVideoTrack || activeVideoTrack.readyState !== 'live') {
+      showToast(window.loc('❌ دوربین هنوز آماده نیست. لطفاً چند لحظه صبر کنید.', '❌ Camera is not ready yet. Please wait a moment.'));
+      return;
+    }
+
+    // 2. Trigger Countdown phase
     setStudioPhase('COUNTDOWN');
     let currentCount = 3;
     setCountdownNum(3);
 
-    const interval = setInterval(() => {
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+
+    countdownIntervalRef.current = setInterval(() => {
       currentCount--;
       if (currentCount > 0) {
         setCountdownNum(currentCount);
       } else {
-        clearInterval(interval);
+        if (countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
+        }
         setCountdownNum(0);
         executeLiveStart();
       }
     }, 1000);
   };
 
-  // Execute Live Start after Countdown - Strict Sequence: Camera -> DB Record -> Room Name -> LiveKit Connect & Publish -> UI LIVE
+  // Execute Live Start after Countdown - Strict State Transition: PREVIEW -> COUNTDOWN -> STARTING -> LIVE (or START_ERROR)
   const executeLiveStart = async () => {
+    // Guard: Prevent concurrent executions
+    if (startingLiveRef.current) {
+      console.warn('[LiveStudio] executeLiveStart already executing, skipping duplicate trigger');
+      return;
+    }
+    startingLiveRef.current = true;
     setIsStartingLive(true);
+    setStudioPhase('STARTING');
+    setStartLiveError(null);
 
     let createdStream = null;
 
     try {
-      // 1. Verify Camera stream is active and track is live
-      const activeStream = mediaStreamRef.current;
+      // 1. Verify Camera stream is active and track is live (Reuses existing stream - NEVER calls getUserMedia here!)
+      const activeStream = mediaStreamRef.current || cameraPermissionService.activeStream;
       const activeVideoTrack = activeStream?.getVideoTracks?.()?.find(t => t.readyState === 'live');
-      if (!activeStream || !activeVideoTrack) {
-        setStudioPhase('PRE_LIVE');
-        setIsStartingLive(false);
-        showToast(window.loc('❌ دوربین فعال نیست. لطفاً ابتدا دوربین را فعال کنید.', '❌ Camera is not active. Please start camera preview first.'));
-        return;
+
+      console.log('[LiveStudio] Camera track status AFTER countdown / at STARTING:', {
+        hasStream: Boolean(activeStream),
+        streamId: activeStream?.id,
+        trackId: activeVideoTrack?.id,
+        readyState: activeVideoTrack?.readyState,
+        enabled: activeVideoTrack?.enabled
+      });
+
+      if (!activeStream || !activeVideoTrack || activeVideoTrack.readyState !== 'live') {
+        throw new Error(window.loc('سیگنال زنده دوربین در دسترس نیست. لطفاً دسترسی دوربین را بررسی کنید.', 'Camera live signal is not available. Please check camera access.'));
       }
 
       // 2. Save stream record directly to Supabase public.streams FIRST to obtain canonical Stream ID
@@ -769,22 +826,26 @@ export default function LiveStudioModal({
         console.warn('Live room real-time sync warning:', roomErr);
       }
 
-      // Switch studio phase to LIVE broadcast
+      // Switch studio phase to LIVE broadcast ONLY after all previous steps completed
       setStudioPhase('LIVE');
       setIsStartingLive(false);
+      startingLiveRef.current = false;
       if (cameraVideoRef.current) {
         cameraVideoRef.current.play().catch(() => {});
       }
       showToast(window.loc(`🎥 پخش زنده استودیو با موفقیت شروع شد!`, `🎥 Live broadcast started successfully!`));
     } catch (globalErr) {
-      console.error('executeLiveStart error:', globalErr);
+      console.error('[LiveStudio] executeLiveStart failed with real error:', globalErr);
       if (createdStream?.id) {
         try {
           await apiLive.endLiveStream(createdStream.id);
         } catch(e) {}
       }
-      setStudioPhase('PRE_LIVE');
+      // Section 4 & 11: DO NOT reset to PRE_LIVE! Keep real error surfaced in START_ERROR phase
+      setStartLiveError(globalErr.message || String(globalErr));
+      setStudioPhase('START_ERROR');
       setIsStartingLive(false);
+      startingLiveRef.current = false;
       showToast(window.loc(`❌ خطا در اجرای لایو: ${globalErr.message}`, `❌ Live execution error: ${globalErr.message}`));
     }
   };
@@ -1101,7 +1162,7 @@ export default function LiveStudioModal({
       {/* PHASE 2: COUNTDOWN SCREEN */}
       {/* ========================================================================= */}
       {studioPhase === 'COUNTDOWN' && (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-950 space-y-6 animate-fadeIn">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-950/60 backdrop-blur-sm space-y-6 animate-fadeIn z-20">
           <div className="relative flex items-center justify-center">
             <div className="w-40 h-40 rounded-full border-4 border-pink-500/30 animate-ping absolute" />
             <div className="w-36 h-36 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center shadow-[0_0_60px_rgba(236,72,153,0.8)] border-4 border-white">
@@ -1109,8 +1170,67 @@ export default function LiveStudioModal({
             </div>
           </div>
           <div className="text-center space-y-1">
-            <h3 className="text-xl font-black text-white">{window.loc('در حال پخش زنده ...', 'Streaming live...')}</h3>
-            <p className="text-xs text-slate-400">{window.loc('دوربین و صدا در حال اتصال به سرورهای LiveKit', 'Camera and audio connecting to LiveKit servers')}</p>
+            <h3 className="text-xl font-black text-white">{window.loc('در حال آغاز پخش زنده ...', 'Starting live stream...')}</h3>
+            <p className="text-xs text-slate-300">{window.loc('دوربین آماده، در حال برقراری ارتباط با سرورهای LiveKit', 'Camera ready, establishing connection to LiveKit servers')}</p>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PHASE 2.5: STARTING (LiveKit Connecting & Publishing) */}
+      {/* ========================================================================= */}
+      {studioPhase === 'STARTING' && (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-950/70 backdrop-blur-sm space-y-6 animate-fadeIn z-20">
+          <div className="relative flex items-center justify-center">
+            <div className="w-24 h-24 rounded-full border-4 border-pink-500/40 animate-ping absolute" />
+            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center shadow-[0_0_40px_rgba(236,72,153,0.7)]">
+              <Loader2 className="w-10 h-10 text-white animate-spin" />
+            </div>
+          </div>
+          <div className="text-center space-y-2 max-w-xs">
+            <h3 className="text-lg font-black text-white">{window.loc('در حال آغاز پخش زنده...', 'Starting live broadcast...')}</h3>
+            <p className="text-xs text-slate-300">{window.loc('اتصال به سرور LiveKit و ثبت در پایگاه داده...', 'Connecting to LiveKit and registering stream...')}</p>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PHASE 2.6: START_ERROR (Real Error Display - No silent return to Preview) */}
+      {/* ========================================================================= */}
+      {studioPhase === 'START_ERROR' && (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-950/90 backdrop-blur-md space-y-6 animate-fadeIn z-20">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-500/50 flex items-center justify-center shadow-lg shadow-rose-500/20">
+            <AlertCircle className="w-8 h-8 text-rose-400" />
+          </div>
+          <div className="text-center space-y-2 max-w-sm">
+            <h3 className="text-lg font-black text-white">{window.loc('شروع پخش زنده ناموفق بود', 'Failed to start broadcast')}</h3>
+            <div className="p-3 bg-rose-950/40 border border-rose-500/30 rounded-xl text-rose-200 text-xs font-mono break-words text-left dir-ltr">
+              {startLiveError || 'Unknown execution error'}
+            </div>
+          </div>
+          <div className="flex items-center gap-3 w-full max-w-xs pt-2">
+            <button
+              onClick={() => {
+                setStartLiveError(null);
+                executeLiveStart();
+              }}
+              className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-sm shadow-lg shadow-pink-600/30 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>{window.loc('تلاش مجدد', 'Retry')}</span>
+            </button>
+            <button
+              onClick={() => {
+                setStartLiveError(null);
+                setIsStartingLive(false);
+                startingLiveRef.current = false;
+                setStudioPhase('PRE_LIVE');
+              }}
+              className="flex-1 py-3 px-4 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 font-bold text-sm active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>{window.loc('پیش‌نمایش', 'Preview')}</span>
+            </button>
           </div>
         </div>
       )}
