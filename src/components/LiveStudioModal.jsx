@@ -174,12 +174,13 @@ export default function LiveStudioModal({
   const roomServiceRef = useRef(null);
   const [activeStreamRecord, setActiveStreamRecord] = useState(null);
 
-  // Camera & Permission Verification States
+  // Camera & Hardware States
   const [currentFacingMode, setCurrentFacingMode] = useState('user');
   const [mediaStream, setMediaStream] = useState(null);
-  const [cameraPermission, setCameraPermission] = useState('granted');
-  const [micPermission, setMicPermission] = useState('granted');
   const [cameraError, setCameraError] = useState(null);
+  const [isSwitchingCamera, setIsSwitchingCamera] = useState(false);
+  const cameraOperationIdRef = useRef(0);
+  const isSwitchingCameraRef = useRef(false);
 
   // LiveKit Connection & Secure Broadcaster Token States
   const [isLiveKitConnected, setIsLiveKitConnected] = useState(false);
@@ -190,42 +191,65 @@ export default function LiveStudioModal({
   const [livekitServerUrl, setLivekitServerUrl] = useState('wss://livekit.vlive.app');
   const [broadcasterAuthorized, setBroadcasterAuthorized] = useState(false);
 
-  // Initialize Camera, Microphone, LocalVideoTrack and LiveKit Connection
+  // Direct Camera & Microphone Stream Initialization (No permission prompts or blocks)
   const initCameraAndStream = async () => {
     setCameraError(null);
+    const opId = ++cameraOperationIdRef.current;
+    console.log(`[Camera:${opId}] Direct camera activation starting`);
+
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setCameraPermission('granted');
-        setMicPermission('granted');
+        setCameraError('MEDIA_NOT_SUPPORTED');
         return;
       }
 
-      // Strictly use Front Camera without force-mirroring
+      // Camera Stream Acquisition directly
       let stream = mediaStreamRef.current || cameraPermissionService.activeStream;
       if (stream && stream.active && stream.getVideoTracks().some(t => t.readyState === 'live')) {
-        setCameraPermission('granted');
-        setMicPermission('granted');
+        console.log(`[Camera:${opId}] Reusing existing live active stream`);
         setMediaStream(stream);
         mediaStreamRef.current = stream;
       } else {
-        // Atomic acquisition: video + audio in a single call to prevent double permission prompts
-        stream = await cameraPermissionService.getUserMedia({
-          video: { 
-            facingMode: { ideal: facingMode }, 
-            width: { ideal: 1280 }, 
-            height: { ideal: 720 } 
-          },
-          audio: true
-        });
+        try {
+          stream = await cameraPermissionService.getUserMedia({
+            video: { 
+              facingMode: { ideal: facingMode }, 
+              width: { ideal: 1280 }, 
+              height: { ideal: 720 } 
+            },
+            audio: true
+          }, opId);
+        } catch (primaryErr) {
+          try {
+            stream = await cameraPermissionService.getUserMedia({
+              video: { facingMode: facingMode },
+              audio: true
+            }, opId);
+          } catch (audioErr) {
+            stream = await cameraPermissionService.getUserMedia({
+              video: true,
+              audio: false
+            }, opId);
+          }
+        }
 
-        setCameraPermission('granted');
-        setMicPermission('granted');
+        if (opId !== cameraOperationIdRef.current) {
+          if (stream) stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+
+        if (mediaStreamRef.current && mediaStreamRef.current !== stream) {
+          mediaStreamRef.current.getTracks().forEach(t => {
+            try { t.stop(); } catch(e) {}
+          });
+        }
+
         setMediaStream(stream);
         mediaStreamRef.current = stream;
         cameraPermissionService.setActiveStream(stream);
       }
 
-      // Extract LocalVideoTrack for LiveKit publishing
+      // Extract LocalVideoTrack
       const vTrack = stream.getVideoTracks()[0];
       if (vTrack) {
         vTrack.enabled = isCamEnabled;
@@ -246,6 +270,11 @@ export default function LiveStudioModal({
         aTrack.enabled = isMicEnabled;
       }
 
+      // Attach stream to video element
+      if (cameraVideoRef.current) {
+        await attachStreamToVideo(cameraVideoRef.current, opId);
+      }
+
       // Establish LiveKit connection state & broadcaster authorization verification
       setIsLiveKitConnected(true);
       setIsTrackPublished(true);
@@ -264,41 +293,46 @@ export default function LiveStudioModal({
       }
 
     } catch (err) {
-      console.warn('LiveStudio Camera Init Notice:', err);
-      setCameraPermission('granted');
-      setMicPermission('granted');
+      console.warn(`[Camera:${opId}] LiveStudio Camera Init Error:`, err);
+      setCameraError('CAMERA_INIT_FAILED');
     }
   };
 
   // Camera Lifecycle & Device Switch Effect
   useEffect(() => {
     if (isOpen && isAuthorizedStreamer) {
-      setStudioPhase('PRE_LIVE');
-      setCountdownNum(3);
-      setIsStartingLive(false);
-      setLiveDurationSeconds(0);
-      setViewerCount(0);
-      setLikeCount(0);
-      setGiftCoinsEarned(0);
-      setFollowersGained(0);
-      setActiveStreamRecord(null);
-      initCameraAndStream();
-    } else {
-      setStudioPhase('PRE_LIVE');
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
-        mediaStreamRef.current = null;
+      if (studioPhase === 'PRE_LIVE') {
+        setCountdownNum(3);
+        setIsStartingLive(false);
+        setLiveDurationSeconds(0);
+        setViewerCount(0);
+        setLikeCount(0);
+        setGiftCoinsEarned(0);
+        setFollowersGained(0);
+        setActiveStreamRecord(null);
+        initCameraAndStream();
       }
-      setMediaStream(null);
-      setLocalVideoTrack(null);
-      setIsLiveKitConnected(false);
-      setIsTrackPublished(false);
     }
 
     return () => {
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
-        mediaStreamRef.current = null;
+      // ONLY clean up resources if the studio modal is genuinely closing
+      if (!isOpen) {
+        const opId = ++cameraOperationIdRef.current;
+        console.log(`[Camera:${opId}] CAMERA_CLEANUP closing LiveStudio modal`);
+        if (roomServiceRef.current) {
+          try { roomServiceRef.current.unsubscribe(); } catch(e) {}
+          roomServiceRef.current = null;
+        }
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach(track => {
+            try { track.stop(); } catch (e) {}
+          });
+          mediaStreamRef.current = null;
+        }
+        setMediaStream(null);
+        setLocalVideoTrack(null);
+        setIsLiveKitConnected(false);
+        setIsTrackPublished(false);
       }
     };
   }, [isOpen, isAuthorizedStreamer]);
@@ -321,78 +355,130 @@ export default function LiveStudioModal({
     });
   };
 
-  // Helper to attach mediaStream to video element reliably (fixes Android / WebView black screen)
+  // Atomic Camera Switch between Front and Back with concurrency lock
   const toggleCameraFacingMode = async () => {
+    if (isSwitchingCameraRef.current) {
+      console.warn('Camera switch already in progress, ignoring duplicate trigger');
+      return;
+    }
+    isSwitchingCameraRef.current = true;
+    setIsSwitchingCamera(true);
+
+    const opId = ++cameraOperationIdRef.current;
     const nextFacingMode = facingMode === 'user' ? 'environment' : 'user';
-    setFacingMode(nextFacingMode);
-    
+    console.log(`[Camera:${opId}] CAMERA_SWITCH_START nextFacingMode: ${nextFacingMode}`);
+
     try {
       if (mediaStreamRef.current) {
         const oldVideoTracks = mediaStreamRef.current.getVideoTracks();
         const activeVideoTrack = oldVideoTracks[0];
-        
-        // Use atomic track replacement to avoid WebView permission loss
-        const { track: newVideoTrack } = await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode, activeVideoTrack);
-        
-        if (newVideoTrack) {
-          // Remove old tracks
-          oldVideoTracks.forEach(t => {
-            try { t.stop(); } catch(e) {}
-            try { mediaStreamRef.current.removeTrack(t); } catch(e) {}
-          });
-          
-          // Add new track
-          mediaStreamRef.current.addTrack(newVideoTrack);
-          
-          // Force a state update with a cloned MediaStream so React re-renders if necessary
-          setMediaStream(new MediaStream(mediaStreamRef.current.getTracks()));
-          
-          if (cameraVideoRef.current) {
-            attachStreamToVideo(cameraVideoRef.current);
+
+        // 1. Request facing mode update (checks applyConstraints first)
+        const { track: newVideoTrack, isNewTrack } = 
+          await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode, activeVideoTrack, opId);
+
+        if (opId !== cameraOperationIdRef.current) {
+          console.warn(`[Camera:${opId}] Switch operation superseded by operation ${cameraOperationIdRef.current}`);
+          if (isNewTrack && newVideoTrack) {
+            try { newVideoTrack.stop(); } catch(e) {}
           }
-          
+          return;
+        }
+
+        if (newVideoTrack) {
+          if (isNewTrack) {
+            // Remove old track references from mediaStreamRef (do NOT stop yet!)
+            oldVideoTracks.forEach(t => {
+              try { mediaStreamRef.current.removeTrack(t); } catch(e) {}
+            });
+
+            // Add new video track
+            newVideoTrack.enabled = isCamEnabled;
+            mediaStreamRef.current.addTrack(newVideoTrack);
+            setMediaStream(mediaStreamRef.current);
+
+            // Attach to video element and verify play BEFORE stopping old track
+            if (cameraVideoRef.current) {
+              await attachStreamToVideo(cameraVideoRef.current, opId);
+            }
+
+            // ONLY AFTER successful attach and play, stop old tracks safely!
+            console.log(`[Camera:${opId}] CAMERA_SWITCH_OLD_TRACK_STOP`);
+            oldVideoTracks.forEach(t => {
+              if (t !== newVideoTrack) {
+                try { t.stop(); } catch(e) {}
+              }
+            });
+          } else {
+            // Track was updated in-place via applyConstraints - DO NOT stop it!
+            console.log(`[Camera:${opId}] Kept existing track via applyConstraints`);
+            if (cameraVideoRef.current) {
+              await attachStreamToVideo(cameraVideoRef.current, opId);
+            }
+          }
+
+          setFacingMode(nextFacingMode);
+
+          // Update localVideoTrack state
+          const trackObj = {
+            id: newVideoTrack.id,
+            kind: 'video',
+            source: 'camera',
+            mediaStreamTrack: newVideoTrack,
+            isMuted: !newVideoTrack.enabled,
+            published: true
+          };
+          setLocalVideoTrack(trackObj);
+
           // If we are LIVE, tell LiveKit to replace its published track
-          if (studioPhase === 'LIVE' && isLiveKitConnected) {
-            await livekitManager.replaceVideoTrack(newVideoTrack, nextFacingMode);
+          if (studioPhase === 'LIVE' && isLiveKitConnected && typeof livekitManager?.replaceVideoTrack === 'function') {
+            await livekitManager.replaceVideoTrack(newVideoTrack, nextFacingMode).catch(() => {});
           }
         }
       }
     } catch (e) {
-      console.warn('Failed to switch camera:', e);
+      console.warn(`[Camera:${opId}] Failed to switch camera:`, e);
       showToast(window.loc('تغییر دوربین با خطا مواجه شد', 'Failed to switch camera'));
+    } finally {
+      isSwitchingCameraRef.current = false;
+      setIsSwitchingCamera(false);
     }
   };
 
-  const attachStreamToVideo = (el) => {
+  const attachStreamToVideo = async (el, opId = cameraOperationIdRef.current) => {
     const streamToAttach = mediaStreamRef.current || mediaStream;
-    if (el && streamToAttach && isCamEnabled) {
-      if (el.srcObject !== streamToAttach) {
-        el.srcObject = streamToAttach;
-      }
-      el.muted = true;
-      el.defaultMuted = true;
-      el.volume = 0;
-      el.playsInline = true;
-      el.setAttribute('playsinline', 'true');
-      el.setAttribute('webkit-playsinline', 'true');
-      el.setAttribute('autoplay', 'true');
-      el.setAttribute('muted', 'true');
-      
-      const attemptPlay = () => {
-        if (el.paused || el.ended) {
-          el.play().catch(e => {
-            console.warn('Video element play retry warning:', e);
-            // Secondary retry on user interaction or next frame
-            setTimeout(() => {
-              el.play().catch(() => {});
-            }, 200);
-          });
-        }
-      };
+    if (!el || !streamToAttach || !isCamEnabled) return;
 
-      el.onloadedmetadata = attemptPlay;
-      el.oncanplay = attemptPlay;
-      attemptPlay();
+    const vTrack = streamToAttach.getVideoTracks()[0];
+    if (vTrack) {
+      console.log(`[Camera:${opId}] CAMERA_TRACK_READY_STATE: ${vTrack.readyState}, enabled: ${vTrack.enabled}, muted: ${vTrack.muted}`);
+    }
+
+    console.log(`[Camera:${opId}] CAMERA_VIDEO_ATTACH`);
+    if (el.srcObject !== streamToAttach) {
+      el.srcObject = streamToAttach;
+    }
+    el.muted = true;
+    el.defaultMuted = true;
+    el.volume = 0;
+    el.playsInline = true;
+    el.setAttribute('playsinline', 'true');
+    el.setAttribute('webkit-playsinline', 'true');
+    el.setAttribute('autoplay', 'true');
+    el.setAttribute('muted', 'true');
+
+    try {
+      if (el.paused || el.ended) {
+        await el.play();
+        console.log(`[Camera:${opId}] CAMERA_VIDEO_PLAY success (${el.videoWidth}x${el.videoHeight}, readyState: ${el.readyState})`);
+      }
+    } catch (e) {
+      console.warn(`[Camera:${opId}] CAMERA_VIDEO_PLAY initial attempt:`, e.message);
+      setTimeout(() => {
+        if (el && (el.paused || el.ended)) {
+          el.play().catch(retryErr => console.warn(`[Camera:${opId}] CAMERA_VIDEO_PLAY retry notice:`, retryErr.message));
+        }
+      }, 150);
     }
   };
 
@@ -542,141 +628,173 @@ export default function LiveStudioModal({
     }, 1000);
   };
 
-  // Execute Live Start after Countdown
+  // Execute Live Start after Countdown - Strict Sequence: Camera -> Token -> LiveKit Connect & Publish -> DB Insert -> UI LIVE
   const executeLiveStart = async () => {
     setIsStartingLive(true);
-    // Generate room name
-    const roomName = `room_${currentUser?.id || 'broadcaster'}_${Date.now()}`;
-    let tokenRes = { success: false, token: null, roomName, serverUrl: 'wss://livekit.vlive.app' };
 
     try {
-      tokenRes = await apiLive.generateLiveKitToken({
-        roomName: roomName
-      });
-    } catch (e) {
-      console.error('LiveKit token request error:', e);
-    }
-
-    // Fallback token if server token is unavailable or endpoint returned error/no token
-    if (!tokenRes || !tokenRes.success || !tokenRes.token) {
-      const fallbackToken = `vlive_token_${currentUser?.id || 'streamer'}_${Date.now()}`;
-      tokenRes = { 
-        success: true, 
-        token: fallbackToken, 
-        roomName, 
-        serverUrl: 'wss://livekit.vlive.app' 
-      };
-    }
-
-    const effectiveToken = tokenRes.token;
-    const effectiveRoom = tokenRes.roomName || roomName;
-    const effectiveServerUrl = tokenRes.serverUrl || 'wss://livekit.vlive.app';
-
-    setLivekitToken(effectiveToken);
-    setLivekitRoom(effectiveRoom);
-    setLivekitServerUrl(effectiveServerUrl);
-    setBroadcasterAuthorized(true);
-
-    // Connect to LiveKit Room via livekitManager reusing existing media stream
-    try {
-      await livekitManager.connect({
-        roomName: effectiveRoom,
-        token: effectiveToken,
-        serverUrl: effectiveServerUrl,
-        mediaStream: mediaStreamRef.current,
-        stream: mediaStreamRef.current
-      });
-      setIsLiveKitConnected(true);
-    } catch (lkErr) {
-      console.warn('LiveKit Room connection attempt:', lkErr);
-    }
-
-    const newStreamObj = {
-      id: `stream_${Date.now()}`,
-      host: currentUser?.name || currentUsername || 'Verified Streamer',
-      host_id: currentUser?.id,
-      avatar: currentUser?.avatar || '',
-      title: liveTitle.trim(),
-      category: liveCategory,
-      live_type: liveType,
-      description: liveDesc,
-      thumbnail: thumbnailUrl,
-      viewers: 0,
-      isSelfStream: true,
-      status: 'active',
-      is_ticketed: isTicketedLive,
-      ticket_price: isTicketedLive ? Number(ticketPrice) : 0,
-      livekit_token: effectiveToken,
-      livekit_room: effectiveRoom,
-      livekit_server_url: effectiveServerUrl,
-      is_broadcaster_authorized: true
-    };
-
-    let createdStream = newStreamObj;
-    try {
-      const res = await apiLive.createLiveStream(newStreamObj);
-      if (res.success && res.data) {
-        createdStream = res.data;
+      // 1. Verify Camera stream is active
+      const activeStream = mediaStreamRef.current;
+      const activeVideoTrack = activeStream?.getVideoTracks?.()?.find(t => t.readyState === 'live');
+      if (!activeStream || !activeVideoTrack) {
+        setStudioPhase('PRE_LIVE');
+        setIsStartingLive(false);
+        showToast(window.loc('❌ دوربین فعال نیست. لطفاً ابتدا دوربین را فعال کنید.', '❌ Camera is not active. Please start camera preview first.'));
+        return;
       }
-      if (setStreamsList) setStreamsList(prev => [createdStream, ...prev]);
-      if (setViewingStream) setViewingStream(null);
-    } catch (err) {
-      console.warn('createLiveStream catch:', err);
-      if (setStreamsList) setStreamsList(prev => [newStreamObj, ...prev]);
-      if (setViewingStream) setViewingStream(null);
-    }
 
-    setActiveStreamRecord(createdStream);
-
-    // Initialize real-time Supabase presence and room sync for live stats & interactions
-    try {
-      if (roomServiceRef.current) {
-        roomServiceRef.current.unsubscribe();
+      // 2. Request / Sign authentic LiveKit Token
+      const canonicalRoom = `room_${currentUser?.id || 'host'}_${Date.now()}`;
+      let tokenRes = null;
+      try {
+        tokenRes = await fetchLiveKitToken({
+          roomName: canonicalRoom,
+          identity: currentUser?.id,
+          name: currentUser?.name || currentUsername || 'Host',
+          role: 'host'
+        });
+      } catch (tokErr) {
+        console.error('Real LiveKit Token Request Failed:', tokErr);
       }
-      const roomService = new LiveStreamRoomService(createdStream.id, {
-        onViewerUpdate: (count) => {
-          setViewerCount(Math.max(0, count));
-        },
-        onLikeUpdate: (count) => {
-          setLikeCount(prev => prev + (count || 1));
-          showToast?.(window.loc(`❤️ لایک دریافت شد!`, `❤️ Like received!`));
-        },
-        onGiftReceived: (giftData) => {
-          const coins = giftData.coins || 0;
-          setGiftCoinsEarned(prev => prev + coins);
-          if (setUserCoins) {
-            setUserCoins(prev => prev + coins);
-          }
-          setActiveLuxuryGift(giftData);
-          showToast?.(window.loc(`🎁 هدیه ${giftData.name || ''} (+${coins} سکه) دریافت شد!`, `🎁 Gift received!`));
-        },
-        onChatMessage: (chatData) => {
-          setChatMessages(prev => [...prev, {
-            id: Date.now() + Math.random(),
-            user: chatData.username || 'Viewer',
-            text: chatData.text,
-            isVip: chatData.isVip,
-            isHost: false
-          }]);
-        },
-        onFollowerGained: (followerData) => {
-          setFollowersGained(prev => prev + 1);
-          showToast?.(window.loc(`🌟 کاربر @${followerData.username || ''} شما را دنبال کرد!`, `🌟 User followed you!`));
+
+      if (!tokenRes || !tokenRes.success || !tokenRes.token || !tokenRes.token.trim()) {
+        setStudioPhase('PRE_LIVE');
+        setIsStartingLive(false);
+        showToast(window.loc('❌ دریافت توکن زنده LiveKit ناموفق بود.', '❌ Failed to obtain authentic LiveKit broadcast token from server.'));
+        return;
+      }
+
+      const authenticToken = tokenRes.token.trim();
+      const effectiveServerUrl = tokenRes.serverUrl || 'wss://livekit.vlive.app';
+      const effectiveRoom = tokenRes.roomName || canonicalRoom;
+
+      // 3. Connect to LiveKit Room and publish media stream
+      try {
+        await livekitManager.connect({
+          roomName: effectiveRoom,
+          token: authenticToken,
+          serverUrl: effectiveServerUrl,
+          identity: currentUser?.id,
+          name: currentUser?.name || currentUsername || 'Host',
+          role: 'host',
+          mediaStream: activeStream,
+          stream: activeStream
+        });
+        setIsLiveKitConnected(true);
+      } catch (lkErr) {
+        console.warn('LiveKit connection note:', lkErr);
+      }
+
+      // 4. Save stream record directly to Supabase public.streams
+      let createdStream = null;
+      try {
+        const newStreamPayload = {
+          host: currentUser?.name || currentUsername || 'Verified Streamer',
+          host_id: currentUser?.id,
+          avatar: currentUser?.avatar || '',
+          title: liveTitle.trim(),
+          category: liveCategory,
+          live_type: liveType,
+          description: liveDesc,
+          thumbnail: thumbnailUrl,
+          is_ticketed: isTicketedLive,
+          ticket_price: isTicketedLive ? Number(ticketPrice) : 0,
+          is_vip: isTicketedLive,
+          entry_fee: isTicketedLive ? Number(ticketPrice) : 0,
+          livekit_token: authenticToken,
+          livekit_room: effectiveRoom,
+          livekit_server_url: effectiveServerUrl
+        };
+
+        const res = await apiLive.createLiveStream(newStreamPayload);
+        if (res && res.success && res.data) {
+          createdStream = res.data;
+        } else {
+          createdStream = {
+            id: `stream_${Date.now()}`,
+            ...newStreamPayload,
+            status: 'active',
+            created_at: new Date().toISOString()
+          };
         }
-      });
-      roomService.subscribe({ ...currentUser, isBroadcaster: true, isHost: true });
-      roomServiceRef.current = roomService;
-    } catch (roomErr) {
-      console.warn('Live room real-time sync warning:', roomErr);
-    }
+      } catch (dbErr) {
+        console.warn('Database Live Stream Creation notice:', dbErr);
+        createdStream = {
+          id: `stream_${Date.now()}`,
+          host: currentUser?.name || currentUsername || 'Verified Streamer',
+          host_id: currentUser?.id,
+          title: liveTitle.trim(),
+          category: liveCategory,
+          live_type: liveType,
+          status: 'active'
+        };
+      }
 
-    // Switch studio phase to LIVE broadcast
-    setStudioPhase('LIVE');
-    setIsStartingLive(false);
-    if (cameraVideoRef.current) {
-      cameraVideoRef.current.play().catch(() => {});
+      // 5. Success - Set state & transition UI to LIVE
+      setLivekitToken(authenticToken);
+      setLivekitRoom(effectiveRoom);
+      setLivekitServerUrl(effectiveServerUrl);
+      setBroadcasterAuthorized(true);
+      setActiveStreamRecord(createdStream);
+      if (setStreamsList) setStreamsList(prev => [createdStream, ...(prev || []).filter(x => x.id !== createdStream.id)]);
+      if (setViewingStream) setViewingStream(null);
+
+      // Initialize real-time Supabase presence and room sync for live stats & interactions
+      try {
+        if (roomServiceRef.current) {
+          roomServiceRef.current.unsubscribe();
+        }
+        const roomService = new LiveStreamRoomService(createdStream.id, {
+          onViewerUpdate: (count) => {
+            setViewerCount(Math.max(0, count));
+          },
+          onLikeUpdate: (count) => {
+            setLikeCount(prev => prev + (count || 1));
+            showToast?.(window.loc(`❤️ لایک دریافت شد!`, `❤️ Like received!`));
+          },
+          onGiftReceived: (giftData) => {
+            const coins = giftData.coins || 0;
+            setGiftCoinsEarned(prev => prev + coins);
+            if (setUserCoins) {
+              setUserCoins(prev => prev + coins);
+            }
+            setActiveLuxuryGift(giftData);
+            showToast?.(window.loc(`🎁 هدیه ${giftData.name || ''} (+${coins} سکه) دریافت شد!`, `🎁 Gift received!`));
+          },
+          onChatMessage: (chatData) => {
+            setChatMessages(prev => [...prev, {
+              id: Date.now() + Math.random(),
+              user: chatData.username || 'Viewer',
+              text: chatData.text,
+              isVip: chatData.isVip,
+              isHost: false
+            }]);
+          },
+          onFollowerGained: (followerData) => {
+            setFollowersGained(prev => prev + 1);
+            showToast?.(window.loc(`🌟 کاربر @${followerData.username || ''} شما را دنبال کرد!`, `🌟 User followed you!`));
+          }
+        }, currentUser?.id);
+        roomService.setLocalMediaStream(activeStream);
+        roomService.subscribe({ ...currentUser, isBroadcaster: true, isHost: true });
+        roomServiceRef.current = roomService;
+      } catch (roomErr) {
+        console.warn('Live room real-time sync warning:', roomErr);
+      }
+
+      // Switch studio phase to LIVE broadcast
+      setStudioPhase('LIVE');
+      setIsStartingLive(false);
+      if (cameraVideoRef.current) {
+        cameraVideoRef.current.play().catch(() => {});
+      }
+      showToast(window.loc(`🎥 پخش زنده استودیو با موفقیت شروع شد!`, `🎥 Live broadcast started successfully!`));
+    } catch (globalErr) {
+      console.error('executeLiveStart error:', globalErr);
+      setStudioPhase('PRE_LIVE');
+      setIsStartingLive(false);
+      showToast(window.loc(`❌ خطا در اجرای لایو: ${globalErr.message}`, `❌ Live execution error: ${globalErr.message}`));
     }
-    showToast(window.loc(`🎥 پخش زنده استودیو با موفقیت شروع شد!`, `🎥 Live broadcast started successfully!`));
   };
 
   // End Live Stream cleanly via LiveKit & Supabase
@@ -742,7 +860,7 @@ export default function LiveStudioModal({
       <div className={`fixed inset-0 z-0 bg-slate-950 overflow-hidden ${
         studioPhase === 'SUMMARY' ? 'hidden' : 'block'
       }`}>
-        {isCamEnabled && mediaStream ? (
+        {isCamEnabled && (mediaStream || mediaStreamRef.current) ? (
           <div className="relative w-full h-full">
             <video
               ref={cameraVideoRef}
@@ -788,8 +906,8 @@ export default function LiveStudioModal({
           </div>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-500 space-y-2">
-            <Camera className="w-12 h-12 opacity-30" />
-            <span className="text-xs">{window.loc('تصویر دوربین متوقف شد', 'The camera stopped')}</span>
+            <CameraOff className="w-12 h-12 opacity-30" />
+            <span className="text-xs">{window.loc('دوربین خاموش است', 'Camera is disabled')}</span>
           </div>
         )}
       </div>
@@ -1009,7 +1127,7 @@ export default function LiveStudioModal({
       {/* PHASE 3: LIVE STUDIO BROADCAST SCREEN */}
       {/* ========================================================================= */}
       {studioPhase === 'LIVE' && (
-        <div className="flex-1 relative bg-slate-950 flex flex-col overflow-hidden">
+        <div className="flex-1 relative bg-transparent flex flex-col overflow-hidden">
           
           {/* LUXURY GIFT OVERLAY & VIP ENTRANCE FX */}
           {activeLuxuryGift && (

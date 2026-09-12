@@ -1,7 +1,6 @@
 {
-  "name": "LuxeNeon Live",
-  "description": "Premium adult video-chat mini-app with 3D neon aesthetics, AI security, USDT payments, and exclusive female-led streaming monetization.",
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
+  "name": "V.Live",
+  "description": "V.Live Real-time Live Streaming Platform with Supabase and React - Camera Permission & Live Streams Updated",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

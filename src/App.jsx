@@ -64,7 +64,7 @@ import {
 import { startKeepAlivePing, compressImageFile } from './services/performance';
 import economyService from './services/economyService';
 import { LiveStreamRoomService } from './services/liveStreamRoomService';
-import livekitManager from './services/livekitService';
+import { livekitManager, fetchLiveKitToken } from './services/livekitService';
 import { supabase } from './supabaseClient';
 import { safeStorage } from './utils/safeStorage';
 import { loc } from './utils/i18n';
@@ -175,6 +175,7 @@ export default function App() {
   const [streamsList, setStreamsList] = useState([]);
   const [viewingStream, setViewingStream] = useState(null);
   const viewingRoomServiceRef = useRef(null);
+  const viewerLiveVideoRef = useRef(null);
   const [preStreamWarningStream, setPreStreamWarningStream] = useState(null);
   const [streamChatMessages, setStreamChatMessages] = useState([]);
   const [streamChatInput, setStreamChatInput] = useState('');
@@ -2293,7 +2294,17 @@ export default function App() {
         }
         roomService = new LiveStreamRoomService(viewingStream.id, {
           onViewerUpdate: (count) => {
-            setViewingStream(prev => prev ? { ...prev, viewers: count } : null);
+            setViewingStream(prev => prev ? { ...prev, viewers: Math.max(0, count) } : null);
+          },
+          onRemoteStream: (stream) => {
+            if (viewerLiveVideoRef.current && stream) {
+              try {
+                viewerLiveVideoRef.current.srcObject = stream;
+                viewerLiveVideoRef.current.play().catch(() => {});
+              } catch (e) {
+                console.warn('Error attaching WebRTC remote stream:', e);
+              }
+            }
           },
           onLikeUpdate: (count) => {
             setStreamLikes(prev => prev + (count || 1));
@@ -2321,18 +2332,74 @@ export default function App() {
               time: chatData.time || 'Just now'
             }]);
           }
-        });
+        }, viewingStream.host_id);
 
         roomService.subscribe({
-          id: getUserId(),
-          username: currentUsername,
-          name: userName,
-          avatar: userAvatar
+          id: getUserId() || currentUser?.id,
+          username: currentUsername || userName || 'Viewer',
+          name: userName || currentUsername || 'Viewer',
+          avatar: userAvatar,
+          is_host: false,
+          isBroadcaster: false
         });
         viewingRoomServiceRef.current = roomService;
       } catch (err) {
         console.warn('Live room sync initialization error:', err);
       }
+
+      // 3. Connect as Viewer to LiveKit to receive real broadcaster video/audio
+      let isLiveKitCancelled = false;
+      const initLiveKitViewer = async () => {
+        try {
+          const canonicalRoom = viewingStream.livekit_room || `room_${viewingStream.id}`;
+          const tokenRes = await fetchLiveKitToken({
+            roomName: canonicalRoom,
+            identity: getUserId() || currentUser?.id,
+            name: currentUsername || userName || 'Viewer',
+            role: 'viewer'
+          });
+
+          if (isLiveKitCancelled || !tokenRes?.token) return;
+
+          await livekitManager.connect({
+            roomName: canonicalRoom,
+            token: tokenRes.token,
+            serverUrl: tokenRes.serverUrl || viewingStream.livekit_server_url || 'wss://livekit.vlive.app',
+            identity: getUserId() || currentUser?.id,
+            name: currentUsername || userName || 'Viewer',
+            role: 'viewer'
+          });
+
+          // Function to attach video tracks to viewer video element
+          const attachRemoteTrack = (track) => {
+            if (track && (track.kind === 'video' || track.source === 'camera') && viewerLiveVideoRef.current) {
+              if (typeof track.attach === 'function') {
+                track.attach(viewerLiveVideoRef.current);
+              } else if (track.mediaStreamTrack) {
+                const stream = new MediaStream([track.mediaStreamTrack]);
+                viewerLiveVideoRef.current.srcObject = stream;
+              }
+              viewerLiveVideoRef.current.play?.().catch(() => {});
+            }
+          };
+
+          livekitManager.on('track_subscribed', attachRemoteTrack);
+          livekitManager.on('track_published', attachRemoteTrack);
+
+          // Check already existing tracks in room
+          if (livekitManager.room?.remoteParticipants) {
+            for (const [_, p] of livekitManager.room.remoteParticipants) {
+              for (const [__, pub] of p.videoTrackPublications) {
+                if (pub.track) attachRemoteTrack(pub.track);
+              }
+            }
+          }
+        } catch (lkErr) {
+          console.warn('LiveKit viewer connect note:', lkErr);
+        }
+      };
+
+      initLiveKitViewer();
     }
 
     try {
@@ -2401,6 +2468,9 @@ export default function App() {
         roomService.unsubscribe();
         viewingRoomServiceRef.current = null;
       }
+      try {
+        livekitManager.disconnect(true);
+      } catch (e) {}
       if (bc) bc.close();
       window.removeEventListener('storage', handleStorageChange);
     };
@@ -3405,7 +3475,7 @@ export default function App() {
                         
                         {/* Image Container with aspect ratio */}
                         <div className="aspect-[4/5] relative cursor-pointer overflow-hidden" onClick={() => {
-                          const activeStreamForUser = (streamsList || []).find(s => s && (
+                          const activeStreamForUser = (streamsList || []).find(s => s && s.status === 'active' && s.is_live !== false && (
                             (s.host_id && String(s.host_id) === String(user.id)) ||
                             (s.host && (s.host === user.name || s.host === user.username))
                           ));
@@ -3455,7 +3525,7 @@ export default function App() {
                           </button>
 
                           {/* Top Right LIVE Badge (if streamer has real active live) */}
-                          {Boolean((streamsList || []).some(s => s && ((s.host_id && String(s.host_id) === String(user.id)) || (s.host && (s.host === user.name || s.host === user.username))))) && (
+                          {Boolean((streamsList || []).some(s => s && s.status === 'active' && s.is_live !== false && ((s.host_id && String(s.host_id) === String(user.id)) || (s.host && (s.host === user.name || s.host === user.username))))) && (
                             <div className="absolute top-7 right-1.5 flex items-center gap-1 bg-rose-600/90 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-rose-400/60 z-10">
                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                                <span className="text-[8px] font-black text-white">LIVE</span>
@@ -4178,40 +4248,38 @@ export default function App() {
           
           {/* LIVE BROADCAST VIDEO / FEED CANVAS BACKGROUND */}
           <div className="absolute inset-0 z-0 bg-slate-950 flex items-center justify-center overflow-hidden">
-            {viewingStream.video_url || viewingStream.stream_url ? (
-              <video
-                src={viewingStream.video_url || viewingStream.stream_url}
-                autoPlay
-                playsInline
-                muted={false}
-                loop
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="relative w-full h-full flex items-center justify-center bg-slate-950">
-                {viewingStream.thumbnail || viewingStream.avatar ? (
-                  <img
-                    src={viewingStream.thumbnail || viewingStream.avatar}
-                    alt={viewingStream.title}
-                    className="w-full h-full object-cover filter brightness-75 scale-105 transition-transform duration-1000"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-slate-950 flex items-center justify-center text-slate-600 font-bold text-sm">
-                    {loc('پخش زنده صوتی/تصویری', 'Live Audio/Video Stream')}
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/60 pointer-events-none" />
-                {/* Live Stream Status Visualizer */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 pointer-events-none">
-                  <div className="w-16 h-16 rounded-full bg-pink-500/20 border border-pink-500/40 flex items-center justify-center backdrop-blur-md animate-pulse">
-                    <Radio className="w-8 h-8 text-pink-400 animate-spin" style={{ animationDuration: '8s' }} />
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-black/60 border border-white/20 text-white font-bold text-xs backdrop-blur-md">
-                    {loc('پخش زنده مستقیم استریمر 🔴', 'Streamer Live Broadcast 🔴')}
-                  </span>
+            <video
+              ref={viewerLiveVideoRef}
+              src={viewingStream.video_url || viewingStream.stream_url || undefined}
+              autoPlay
+              playsInline
+              muted={false}
+              className="w-full h-full object-cover z-10"
+            />
+            {/* Fallback & Poster when live stream is connecting or audio-only */}
+            <div className="absolute inset-0 z-0 bg-slate-950 flex items-center justify-center">
+              {viewingStream.thumbnail || viewingStream.avatar ? (
+                <img
+                  src={viewingStream.thumbnail || viewingStream.avatar}
+                  alt={viewingStream.title}
+                  className="w-full h-full object-cover filter brightness-50 scale-105"
+                />
+              ) : (
+                <div className="w-full h-full bg-slate-950 flex items-center justify-center text-slate-600 font-bold text-sm">
+                  {loc('پخش زنده صوتی/تصویری', 'Live Audio/Video Stream')}
                 </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/60 pointer-events-none" />
+              {/* Live Stream Status Visualizer */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 pointer-events-none">
+                <div className="w-16 h-16 rounded-full bg-pink-500/20 border border-pink-500/40 flex items-center justify-center backdrop-blur-md animate-pulse">
+                  <Radio className="w-8 h-8 text-pink-400 animate-spin" style={{ animationDuration: '8s' }} />
+                </div>
+                <span className="px-3 py-1 rounded-full bg-black/60 border border-white/20 text-white font-bold text-xs backdrop-blur-md">
+                  {loc('پخش زنده مستقیم استریمر 🔴', 'Streamer Live Broadcast 🔴')}
+                </span>
               </div>
-            )}
+            </div>
           </div>
 
           {/* FULL SCREEN LUXURY GIFT OVERLAY */}

@@ -43,6 +43,8 @@ export default function HostLiveModal({
   const [isCameraPreviewActive, setIsCameraPreviewActive] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const cameraOpIdRef = useRef(0);
+  const isSwitchingRef = useRef(false);
 
   const userGenderVal = String(currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
   const isFemaleUser = Boolean(
@@ -84,10 +86,11 @@ export default function HostLiveModal({
 
   // Initialize and start live camera preview (ONLY on explicit user toggle, NEVER auto-prompt)
   const startCamera = async (mode = facingMode) => {
+    const opId = ++cameraOpIdRef.current;
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
 
-      // Re-use active stream if available
+      // Re-use active stream if available and active
       if (streamRef.current && streamRef.current.active && streamRef.current.getVideoTracks().some(t => t.readyState === 'live')) {
         setCameraStream(streamRef.current);
         setIsCameraPreviewActive(true);
@@ -98,6 +101,7 @@ export default function HostLiveModal({
         return;
       }
 
+      console.log(`[Camera:${opId}] CAMERA_STREAM_CREATE mode: ${mode}`);
       let stream;
       try {
         stream = await cameraPermissionService.getUserMedia({
@@ -107,12 +111,17 @@ export default function HostLiveModal({
             height: { ideal: 720 }
           },
           audio: false
-        });
+        }, opId);
       } catch (e) {
         stream = await cameraPermissionService.getUserMedia({
           video: { facingMode: mode },
           audio: false
-        });
+        }, opId);
+      }
+
+      if (opId !== cameraOpIdRef.current) {
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        return;
       }
 
       streamRef.current = stream;
@@ -122,27 +131,40 @@ export default function HostLiveModal({
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.muted = true;
+        videoRef.current.playsInline = true;
         videoRef.current.play().catch(() => {});
       }
     } catch (err) {
-      console.warn('HostLiveModal camera preview error:', err);
+      console.warn(`[Camera:${opId}] HostLiveModal camera preview error:`, err);
       setIsCameraPreviewActive(false);
     }
   };
 
   const stopCamera = () => {
+    const opId = ++cameraOpIdRef.current;
+    console.log(`[Camera:${opId}] CAMERA_CLEANUP in HostLiveModal`);
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current.getTracks().forEach(t => {
+        try { t.stop(); } catch(e) {}
+      });
       streamRef.current = null;
     }
     setCameraStream(null);
     setIsCameraPreviewActive(false);
   };
 
-  // Flip Camera between Front & Back
+  // Flip Camera between Front & Back atomically without dropping preview
   const toggleCameraFacing = async () => {
+    if (isSwitchingRef.current) {
+      console.warn('HostLiveModal camera flip already in progress');
+      return;
+    }
+    isSwitchingRef.current = true;
+
+    const opId = ++cameraOpIdRef.current;
     const nextMode = facingMode === 'user' ? 'environment' : 'user';
-    setFacingMode(nextMode);
+    console.log(`[Camera:${opId}] CAMERA_SWITCH_START target mode: ${nextMode}`);
 
     try {
       const oldStream = streamRef.current;
@@ -150,26 +172,54 @@ export default function HostLiveModal({
         const oldVideoTracks = oldStream.getVideoTracks();
         const activeVideoTrack = oldVideoTracks[0];
 
-        const { track: newVideoTrack } = await cameraPermissionService.getVideoTrackForFacingMode(nextMode, activeVideoTrack);
+        const { track: newVideoTrack, isNewTrack } = 
+          await cameraPermissionService.getVideoTrackForFacingMode(nextMode, activeVideoTrack, opId);
+
+        if (opId !== cameraOpIdRef.current) {
+          if (isNewTrack && newVideoTrack) {
+            try { newVideoTrack.stop(); } catch(e) {}
+          }
+          return;
+        }
 
         if (newVideoTrack) {
-          oldVideoTracks.forEach(t => {
-            try { t.stop(); } catch(e) {}
-            try { oldStream.removeTrack(t); } catch(e) {}
-          });
+          if (isNewTrack) {
+            // Atomic switch: detach old track from stream first
+            oldVideoTracks.forEach(t => {
+              try { oldStream.removeTrack(t); } catch(e) {}
+            });
 
-          oldStream.addTrack(newVideoTrack);
-          setCameraStream(new MediaStream(oldStream.getTracks()));
-          
-          if (videoRef.current) {
-            videoRef.current.srcObject = null;
-            videoRef.current.srcObject = oldStream;
-            videoRef.current.play().catch(() => {});
+            oldStream.addTrack(newVideoTrack);
+            setCameraStream(oldStream);
+
+            if (videoRef.current) {
+              if (videoRef.current.srcObject !== oldStream) {
+                videoRef.current.srcObject = oldStream;
+              }
+              videoRef.current.play().catch(() => {});
+            }
+
+            // ONLY AFTER successful attach and play, stop old tracks
+            console.log(`[Camera:${opId}] CAMERA_SWITCH_OLD_TRACK_STOP`);
+            oldVideoTracks.forEach(t => {
+              if (t !== newVideoTrack) {
+                try { t.stop(); } catch(e) {}
+              }
+            });
+          } else {
+            console.log(`[Camera:${opId}] Kept existing track via applyConstraints`);
+            if (videoRef.current) {
+              videoRef.current.play().catch(() => {});
+            }
           }
+
+          setFacingMode(nextMode);
         }
       }
     } catch (err) {
-      console.warn('HostLiveModal camera flip error:', err);
+      console.warn(`[Camera:${opId}] HostLiveModal camera flip error:`, err);
+    } finally {
+      isSwitchingRef.current = false;
     }
   };
 
