@@ -275,23 +275,6 @@ export default function LiveStudioModal({
         await attachStreamToVideo(cameraVideoRef.current, opId);
       }
 
-      // Establish LiveKit connection state & broadcaster authorization verification
-      setIsLiveKitConnected(true);
-      setIsTrackPublished(true);
-
-      // Pre-generate LiveKit broadcaster auth token
-      const tokenRes = await apiLive.generateLiveKitToken({
-        hostId: currentUser?.id,
-        hostName: currentUser?.name || currentUsername || 'Verified Broadcaster',
-        isBroadcaster: true
-      });
-      if (tokenRes.success) {
-        setLivekitToken(tokenRes.token);
-        setLivekitRoom(tokenRes.roomName);
-        setLivekitServerUrl(tokenRes.serverUrl);
-        setBroadcasterAuthorized(true);
-      }
-
     } catch (err) {
       console.warn(`[Camera:${opId}] LiveStudio Camera Init Error:`, err);
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError' || err.message?.includes('PERMISSION_DENIED')) {

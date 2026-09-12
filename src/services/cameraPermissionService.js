@@ -1,104 +1,66 @@
+import { safeStorage } from '../utils/safeStorage';
+
 class CameraPermissionService {
   constructor() {
     this.activeStream = null;
     this.currentFacingMode = 'user';
-    this.isRequesting = false;
+    this.permissionRequestPromise = null;
   }
 
   /**
-   * Checks the actual camera permission state without triggering prompt
-   * Returns 'granted' | 'denied' | 'prompt'
+   * Check if camera permission is already granted.
    */
   async checkCameraPermission() {
-    // 1. Check native Capacitor/WebView plugin if available
-    if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.Camera?.checkPermissions) {
-      try {
-        const capStatus = await window.Capacitor.Plugins.Camera.checkPermissions();
-        if (capStatus?.camera === 'granted') return 'granted';
-        if (capStatus?.camera === 'denied') return 'denied';
-        if (capStatus?.camera === 'prompt' || capStatus?.camera === 'prompt-with-rationale') return 'prompt';
-      } catch (e) {}
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+      return 'prompt';
+    }
+    
+    // Fast path: if we have an active stream, permission is granted
+    if (this.activeStream && this.activeStream.active && this.activeStream.getVideoTracks().some(t => t.readyState === 'live')) {
+      return 'granted';
     }
 
-    // 2. Query Permissions API if supported by browser
-    if (typeof navigator !== 'undefined' && navigator.permissions?.query) {
-      try {
-        const perm = await navigator.permissions.query({ name: 'camera' });
-        if (perm?.state) {
-          // Listen for system permission changes
-          perm.onchange = () => {
-            try {
-              if (perm.state === 'granted') {
-                localStorage.setItem('vlive_camera_permission_granted', 'true');
-              } else if (perm.state === 'denied') {
-                localStorage.removeItem('vlive_camera_permission_granted');
-              }
-            } catch (e) {}
-          };
-          if (perm.state === 'granted') {
-            try { localStorage.setItem('vlive_camera_permission_granted', 'true'); } catch(e) {}
-            return 'granted';
-          }
-          if (perm.state === 'denied') {
-            try { localStorage.removeItem('vlive_camera_permission_granted'); } catch(e) {}
-            return 'denied';
-          }
-          return 'prompt';
-        }
-      } catch (e) {
-        // Some browsers (e.g. Firefox/Safari) may not support { name: 'camera' } in permissions.query
-      }
-    }
-
-    // 3. Check enumerateDevices - if user previously granted, device labels are exposed!
-    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.enumerateDevices) {
-      try {
+    // Secondary path: check local storage caching to avoid repeated loops
+    try {
+      const cachedStatus = safeStorage.getItem('vlive_camera_permission_granted') || localStorage.getItem('vlive_camera_permission_granted');
+      if (cachedStatus === 'true') {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(d => d.kind === 'videoinput');
+        
+        // If we see devices with real labels, the browser has already granted permission.
         if (videoDevices.length > 0 && videoDevices.some(d => Boolean(d.label && d.label.trim()))) {
-          try { localStorage.setItem('vlive_camera_permission_granted', 'true'); } catch(e) {}
           return 'granted';
         }
-      } catch (e) {}
-    }
-
-    // Do NOT blindly trust localStorage if real device query has no labels (avoids false-positive permissions)
+      }
+    } catch (e) {}
+    
     return 'prompt';
   }
 
   /**
-   * Checks the actual microphone permission state without triggering prompt
-   * Returns 'granted' | 'denied' | 'prompt'
+   * Check if mic permission is already granted.
    */
   async checkMicPermission() {
-    if (typeof navigator !== 'undefined' && navigator.permissions?.query) {
-      try {
-        const perm = await navigator.permissions.query({ name: 'microphone' });
-        if (perm?.state) {
-          if (perm.state === 'granted') {
-            try { localStorage.setItem('vlive_mic_permission_granted', 'true'); } catch(e) {}
-            return 'granted';
-          }
-          if (perm.state === 'denied') {
-            try { localStorage.removeItem('vlive_mic_permission_granted'); } catch(e) {}
-            return 'denied';
-          }
-          return 'prompt';
-        }
-      } catch (e) {}
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+      return 'prompt';
+    }
+    
+    // Fast path: if we have an active stream, permission is granted
+    if (this.activeStream && this.activeStream.active && this.activeStream.getAudioTracks().some(t => t.readyState === 'live')) {
+      return 'granted';
     }
 
-    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.enumerateDevices) {
-      try {
+    try {
+      const cachedStatus = safeStorage.getItem('vlive_mic_permission_granted') || localStorage.getItem('vlive_mic_permission_granted');
+      if (cachedStatus === 'true') {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const audioDevices = devices.filter(d => d.kind === 'audioinput');
         if (audioDevices.length > 0 && audioDevices.some(d => Boolean(d.label && d.label.trim()))) {
-          try { localStorage.setItem('vlive_mic_permission_granted', 'true'); } catch(e) {}
           return 'granted';
         }
-      } catch (e) {}
-    }
-
+      }
+    } catch (e) {}
+    
     return 'prompt';
   }
 
@@ -117,21 +79,31 @@ class CameraPermissionService {
       throw deniedErr;
     }
 
-    // Request permission once by opening stream
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      this.activeStream = stream;
+    if (this.permissionRequestPromise) return this.permissionRequestPromise;
+
+    this.permissionRequestPromise = (async () => {
       try {
-        localStorage.setItem('vlive_camera_permission_granted', 'true');
-      } catch (e) {}
-      return 'granted';
-    } catch (err) {
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        try { localStorage.removeItem('vlive_camera_permission_granted'); } catch(e) {}
-        return 'denied';
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        this.activeStream = stream;
+        try {
+          safeStorage.setItem('vlive_camera_permission_granted', 'true');
+          localStorage.setItem('vlive_camera_permission_granted', 'true');
+        } catch (e) {}
+        return 'granted';
+      } catch (err) {
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          try { 
+            safeStorage.removeItem('vlive_camera_permission_granted');
+            localStorage.removeItem('vlive_camera_permission_granted');
+          } catch(e) {}
+          return 'denied';
+        }
+        throw err;
+      } finally {
+        this.permissionRequestPromise = null;
       }
-      throw err;
-    }
+    })();
+    return this.permissionRequestPromise;
   }
 
   /**
@@ -142,7 +114,7 @@ class CameraPermissionService {
   async ensurePermissions({ video = true, audio = true } = {}) {
     const camState = video ? await this.checkCameraPermission() : 'granted';
     const micState = audio ? await this.checkMicPermission() : 'granted';
-
+    
     if (camState === 'denied' || micState === 'denied') {
       const deniedKind = camState === 'denied' && micState === 'denied' ? 'CAMERA_AND_MIC' : (camState === 'denied' ? 'CAMERA' : 'MIC');
       const deniedErr = new Error(`PERMISSION_DENIED_${deniedKind}`);
@@ -154,29 +126,49 @@ class CameraPermissionService {
       return { camera: 'granted', microphone: 'granted' };
     }
 
-    // Only invoke getUserMedia once when actual permission is pending ('prompt')
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: video && camState !== 'granted',
-        audio: audio && micState !== 'granted'
-      });
+    if (this.permissionRequestPromise) return this.permissionRequestPromise;
 
-      if (video) {
-        try { localStorage.setItem('vlive_camera_permission_granted', 'true'); } catch(e) {}
+    this.permissionRequestPromise = (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: video && camState !== 'granted',
+          audio: audio && micState !== 'granted'
+        });
+        if (video) {
+          try { 
+            safeStorage.setItem('vlive_camera_permission_granted', 'true');
+            localStorage.setItem('vlive_camera_permission_granted', 'true');
+          } catch(e) {}
+        }
+        if (audio) {
+          try { 
+            safeStorage.setItem('vlive_mic_permission_granted', 'true');
+            localStorage.setItem('vlive_mic_permission_granted', 'true');
+          } catch(e) {}
+        }
+        this.activeStream = stream;
+        return { camera: 'granted', microphone: 'granted' };
+      } catch (err) {
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          if (video) {
+            try { 
+              safeStorage.removeItem('vlive_camera_permission_granted');
+              localStorage.removeItem('vlive_camera_permission_granted'); 
+            } catch(e) {}
+          }
+          if (audio) {
+            try { 
+              safeStorage.removeItem('vlive_mic_permission_granted');
+              localStorage.removeItem('vlive_mic_permission_granted'); 
+            } catch(e) {}
+          }
+        }
+        throw err;
+      } finally {
+        this.permissionRequestPromise = null;
       }
-      if (audio) {
-        try { localStorage.setItem('vlive_mic_permission_granted', 'true'); } catch(e) {}
-      }
-
-      this.activeStream = stream;
-      return { camera: 'granted', microphone: 'granted' };
-    } catch (err) {
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        if (video) try { localStorage.removeItem('vlive_camera_permission_granted'); } catch(e) {}
-        if (audio) try { localStorage.removeItem('vlive_mic_permission_granted'); } catch(e) {}
-      }
-      throw err;
-    }
+    })();
+    return this.permissionRequestPromise;
   }
 
   /**
@@ -204,37 +196,51 @@ class CameraPermissionService {
       }
     }
 
-    // STEP 2: Directly acquire new stream with target facingMode
-    let newStream = null;
-    let newTrack = null;
+    if (this.permissionRequestPromise) await this.permissionRequestPromise;
 
-    try {
-      newStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: facingMode },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      });
-      newTrack = newStream.getVideoTracks()[0];
-    } catch (err1) {
+    // STEP 2: Directly acquire new stream with target facingMode
+    this.permissionRequestPromise = (async () => {
+      let newStream = null;
+      let newTrack = null;
       try {
         newStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: facingMode },
+          video: {
+            facingMode: { ideal: facingMode },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
           audio: false
         });
         newTrack = newStream.getVideoTracks()[0];
-      } catch (err2) {
-        newStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        newTrack = newStream.getVideoTracks()[0];
+      } catch (err1) {
+        if (err1.name === 'NotAllowedError' || err1.name === 'PermissionDeniedError') {
+          throw err1;
+        }
+        try {
+          newStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: facingMode },
+            audio: false
+          });
+          newTrack = newStream.getVideoTracks()[0];
+        } catch (err2) {
+          if (err2.name === 'NotAllowedError' || err2.name === 'PermissionDeniedError') {
+            throw err2;
+          }
+          newStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          newTrack = newStream.getVideoTracks()[0];
+        }
       }
-    }
+      return { track: newTrack, stream: newStream };
+    })().finally(() => {
+      this.permissionRequestPromise = null;
+    });
+
+    const { track: newTrack, stream: newStream } = await this.permissionRequestPromise;
 
     if (newTrack && newTrack.readyState === 'live') {
       return { track: newTrack, isNewTrack: true, stream: newStream };
     }
-
+    
     throw new Error('FAILED_TO_ACQUIRE_CAMERA_TRACK');
   }
 
@@ -252,49 +258,51 @@ class CameraPermissionService {
     if (this.activeStream && this.activeStream.active) {
       const vTracks = this.activeStream.getVideoTracks();
       const aTracks = this.activeStream.getAudioTracks();
+      
       const hasLiveVideo = !constraints.video || vTracks.some(t => t.readyState === 'live');
       const hasLiveAudio = !constraints.audio || aTracks.some(t => t.readyState === 'live');
-
+      
       if (hasLiveVideo && hasLiveAudio) {
         return this.activeStream;
       }
     }
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      this.activeStream = stream;
-      try { localStorage.setItem('vlive_camera_permission_granted', 'true'); } catch(e) {}
-      if (constraints.audio) {
-        try { localStorage.setItem('vlive_mic_permission_granted', 'true'); } catch(e) {}
-      }
-      return stream;
-    } catch (err) {
-      // If permission is denied by user or system, do NOT loop or retry!
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        try { localStorage.removeItem('vlive_camera_permission_granted'); } catch(e) {}
-        try { localStorage.removeItem('vlive_mic_permission_granted'); } catch(e) {}
-        throw err;
-      }
+    if (this.permissionRequestPromise) return this.permissionRequestPromise;
 
-      // Fallback with basic constraints ONLY for hardware resolution/constraint incompatibility
+    this.permissionRequestPromise = (async () => {
       try {
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({
-          video: typeof constraints.video === 'object' && constraints.video?.facingMode ? { facingMode: constraints.video.facingMode } : true,
-          audio: Boolean(constraints.audio)
-        });
-        this.activeStream = fallbackStream;
-        try { localStorage.setItem('vlive_camera_permission_granted', 'true'); } catch(e) {}
-        return fallbackStream;
-      } catch (fallbackErr) {
-        if (fallbackErr.name === 'NotAllowedError' || fallbackErr.name === 'PermissionDeniedError') {
-          throw fallbackErr;
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        this.activeStream = stream;
+        try { 
+          if (constraints.video) {
+            safeStorage.setItem('vlive_camera_permission_granted', 'true');
+            localStorage.setItem('vlive_camera_permission_granted', 'true');
+          }
+          if (constraints.audio) {
+            safeStorage.setItem('vlive_mic_permission_granted', 'true');
+            localStorage.setItem('vlive_mic_permission_granted', 'true');
+          }
+        } catch(e) {}
+        return stream;
+      } catch (err) {
+        // If permission is denied by user or system, do NOT loop or retry!
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          try { 
+            safeStorage.removeItem('vlive_camera_permission_granted');
+            localStorage.removeItem('vlive_camera_permission_granted');
+            safeStorage.removeItem('vlive_mic_permission_granted');
+            localStorage.removeItem('vlive_mic_permission_granted');
+          } catch(e) {}
+          throw err;
         }
-        const minimalStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        this.activeStream = minimalStream;
-        try { localStorage.setItem('vlive_camera_permission_granted', 'true'); } catch(e) {}
-        return minimalStream;
+        
+        throw err; // DO NOT RETRY IF THERE IS AN ERROR! SINGLE FLIGHT!
+      } finally {
+        this.permissionRequestPromise = null;
       }
-    }
+    })();
+
+    return this.permissionRequestPromise;
   }
 
   /**
