@@ -1,0 +1,31 @@
+// colors.scss
+$bg-dark: #070913;
+$bg-card: rgba(15, 23, 42, 0.75);
+$bg-card-hover: rgba(30, 41, 59, 0.85);
+
+$neon-cyan: #00f3ff;
+$neon-pink: #ff007f;
+$neon-purple: #9d4edd;
+$neon-gold: #ffb703;
+$neon-green: #00ff88;
+
+$text-main: #f8fafc;
+$text-muted: #94a3b8;
+$border-neon-cyan: rgba(0, 243, 255, 0.25);
+
+:root {
+  --bg-dark: #{$bg-dark};
+  --bg-card: #{$bg-card};
+  --bg-card-hover: #{$bg-card-hover};
+  
+  --neon-cyan: #{$neon-cyan};
+  --neon-pink: #{$neon-pink};
+  --neon-purple: #{$neon-purple};
+  --neon-gold: #{$neon-gold};
+  --neon-green: #{$neon-green};
+  
+  --text-main: #{$text-main};
+  --text-muted: #{$text-muted};
+  
+  --border-neon: #{$border-neon-cyan};
+}

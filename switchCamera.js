@@ -1,0 +1,3 @@
+export const toggleCamera = async (currentStream, nextFacingMode) => {
+    // ...
+}

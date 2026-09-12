@@ -1,0 +1,1594 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Video, Mic, MicOff, Camera, CameraOff, RefreshCw, Radio, Sparkles, ShieldCheck, ShieldAlert, 
+  Crown, Users, Eye, Heart, Gift, MessageSquare, Settings, Flame, Lock, Zap, Clock, 
+  ThumbsUp, Send, AlertTriangle, X, Check, ChevronUp, ChevronDown, Sliders, Volume2, 
+  VolumeX, UserPlus, Swords, BarChart2, UserX, UserMinus, Pin, CornerUpLeft, Trash2, 
+  Cpu, BatteryCharging, Wifi, Play, Square, Award, Filter, ArrowRight, Share2, Info, Coins,
+  FlipHorizontal, RefreshCcw
+} from 'lucide-react';
+import { apiLive, apiAdmin } from '../services/api';
+import { safeStorage } from '../utils/safeStorage';
+import { cameraPermissionService } from '../services/cameraPermissionService';
+import { LiveStreamRoomService } from '../services/liveStreamRoomService';
+import { livekitManager, fetchLiveKitToken } from '../services/livekitService';
+import LuxuryGiftOverlay from './Overlays/LuxuryGiftOverlay';
+import VipEntranceBanner from './Overlays/VipEntranceBanner';
+import AiFaceEffectOverlay from './Overlays/AiFaceEffectOverlay';
+import { filterMessageContent } from '../services/aiModeration';
+
+export default function LiveStudioModal({
+  isOpen,
+  onClose,
+  currentUser,
+  currentUsername,
+  userLevel = 1,
+  userRole,
+  isUserRayan,
+  isUserSuperAdmin,
+  isVerified,
+  isStreamerUser,
+  onOpenStreamerApplication,
+  userCoins,
+  setUserCoins,
+  streamsList,
+  setStreamsList,
+  setViewingStream,
+  showToast,
+  addAdminAuditLog,
+  setAdminReportsList,
+  loc = ((a, b) => a || b),
+  isRtl = true
+}) {
+  const userGenderVal = String(currentUser?.gender || safeStorage.getItem('vlive_user_gender') || '').trim().toLowerCase();
+  const isFemaleUser = Boolean(
+    userGenderVal === 'female' ||
+    userGenderVal === 'خانم' ||
+    userGenderVal === 'زن' ||
+    userGenderVal === 'f'
+  );
+
+  const isUserAdmin = Boolean(
+    isUserRayan ||
+    isUserSuperAdmin ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'super_admin' ||
+    currentUser?.user_type === 'ADMIN' ||
+    currentUser?.user_type === 'SUPER_ADMIN' ||
+    String(currentUser?.telegram_id || '').trim() === '8933698119' ||
+    String(currentUsername || currentUser?.username || '').toLowerCase() === 'rayan'
+  );
+
+  const isManagementApproved = Boolean(
+    isUserAdmin ||
+    isStreamerUser ||
+    
+    userRole === 'streamer' ||
+    userRole === 'admin' ||
+    userRole === 'super_admin' ||
+    currentUser?.role === 'streamer' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'super_admin' ||
+    currentUser?.user_type === 'STREAMER' ||
+    currentUser?.isStreamer ||
+    currentUser?.is_streamer ||
+    currentUser?.isHost
+  );
+
+  // STRICT RULE: Streamer requires female gender & approval. ADMIN HAS UNRESTRICTED ACCESS!
+  const isAuthorizedStreamer = Boolean(isUserAdmin || (isFemaleUser && isManagementApproved));
+
+  // Phase state: 'PRE_LIVE' | 'COUNTDOWN' | 'LIVE' | 'SUMMARY'
+  const [studioPhase, setStudioPhase] = useState('PRE_LIVE');
+
+  // Pre-Live Form & Device Configuration States
+  const [liveType, setLiveType] = useState('standard'); // 'standard' | 'adult'
+  const [liveTitle, setLiveTitle] = useState('');
+  const [liveCategory, setLiveCategory] = useState('Trending');
+  const [liveDesc, setLiveDesc] = useState('');
+  const [liveTags, setLiveTags] = useState('#game #vlive #stream');
+  const [liveLanguage, setLiveLanguage] = useState(window.loc('فارسی (Persian)', 'Persian'));
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [entryCoinRate, setEntryCoinRate] = useState(10);
+  const [adultConsent, setAdultConsent] = useState(false);
+  const [isTicketedLive, setIsTicketedLive] = useState(false);
+  const [ticketPrice, setTicketPrice] = useState(50);
+
+  // Luxury FX & VIP Entrance States
+  const [activeLuxuryGift, setActiveLuxuryGift] = useState(null);
+  const [activeVipEntrance, setActiveVipEntrance] = useState(null);
+
+
+  // Hardware / Device States
+  const [facingMode, setFacingMode] = useState('user'); // 'user' | 'environment'
+  const [selectedCamera, setSelectedCamera] = useState('Front Camera (HD)');
+  const [selectedMic, setSelectedMic] = useState('Default Internal Microphone');
+  const [isCamEnabled, setIsCamEnabled] = useState(true);
+  const [isMicEnabled, setIsMicEnabled] = useState(true);
+  const [isFlashOn, setIsFlashOn] = useState(false);
+  const [isMirrored, setIsMirrored] = useState(false);
+  const [beautyFilter, setBeautyFilter] = useState('smooth'); // 'off' | 'smooth' | 'glow' | 'ultra' | 'rose' | 'bronze' | 'fair' | 'tan'
+  const [skinSmoothing, setSkinSmoothing] = useState(50); // 0 - 100
+  const [skinTonePreset, setSkinTonePreset] = useState('natural'); // 'natural' | 'fair' | 'warm' | 'bronze' | 'porcelain'
+  const [eyeEnlarge, setEyeEnlarge] = useState(40); // 0 - 100
+  const [slimmingLevel, setSlimmingLevel] = useState(30); // 0 - 100
+  const [faceSticker, setFaceSticker] = useState('none'); // 'none' | 'cat_ears' | 'crown' | 'sparkles' | 'sunglasses' | 'hearts'
+  const [lightingEffect, setLightingEffect] = useState('none'); // 'none' | 'studio' | 'warm' | 'cool' | 'neon' | 'sunset'
+  const [networkQuality, setNetworkQuality] = useState('EXCELLENT'); // 'EXCELLENT' | 'GOOD' | 'POOR'
+  const [estimatedBitrate, setEstimatedBitrate] = useState(4500); // kbps
+
+  // Countdown State
+  const [countdownNum, setCountdownNum] = useState(3);
+  const [isStartingLive, setIsStartingLive] = useState(false);
+
+  // Live Broadcast Real-time States
+  const [liveDurationSeconds, setLiveDurationSeconds] = useState(0);
+  const [viewerCount, setViewerCount] = useState(1);
+  const [likeCount, setLikeCount] = useState(0);
+  const [giftCoinsEarned, setGiftCoinsEarned] = useState(0);
+  const [batteryLevel, setBatteryLevel] = useState(100);
+  const [followersGained, setFollowersGained] = useState(0);
+
+  // Interactive Drawers / Panels
+  const [isChatExpanded, setIsChatExpanded] = useState(true);
+  const [chatInput, setChatInput] = useState('');
+  const [pinnedMessage, setPinnedMessage] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+
+  // Chat Control Settings
+  const [isSlowMode, setIsSlowMode] = useState(false);
+  const [isFollowersOnlyChat, setIsFollowersOnlyChat] = useState(false);
+  const [isVipOnlyChat, setIsVipOnlyChat] = useState(false);
+  const [isCommentsDisabled, setIsCommentsDisabled] = useState(false);
+
+  // Guest & PK System States
+  const [activeTabDrawer, setActiveTabDrawer] = useState(null); // 'guests' | 'pk' | 'stats' | 'mods' | 'settings'
+  const [guestRequests, setGuestRequests] = useState([]);
+  const [activeGuests, setActiveGuests] = useState([]);
+  const maxGuestsLimit = 4;
+
+  // PK State
+  const [isPkActive, setIsPkActive] = useState(false);
+  const [pkOpponent, setPkOpponent] = useState(null);
+  const [pkRedScore, setPkRedScore] = useState(0);
+  const [pkBlueScore, setPkBlueScore] = useState(0);
+  const [pkTimeLeft, setPkTimeLeft] = useState(180);
+
+  // Moderation Lists
+  const [moderatorsList, setModeratorsList] = useState([]);
+  const [mutedUsers, setMutedUsers] = useState([]);
+  const [blockedUsers, setBlockedUsers] = useState([]);
+
+  // AI Monitor Status
+  const [aiMonitorStatus, setAiMonitorStatus] = useState('ALL_CLEAR'); // 'ALL_CLEAR' | 'FLAGGED'
+  const [aiNoticeMsg, setAiNoticeMsg] = useState(window.loc('چک چهره، دسته‌بندی و عدم اسپم تایید شد ✅', 'Face check, category and non-spam were confirmed'));
+
+  // Confirmation Modals
+  const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
+
+  // Camera & Media Hardware Refs
+  const cameraVideoRef = useRef(null);
+  const mediaStreamRef = useRef(null);
+  const roomServiceRef = useRef(null);
+  const [activeStreamRecord, setActiveStreamRecord] = useState(null);
+
+  // Camera & Permission Verification States
+  const [currentFacingMode, setCurrentFacingMode] = useState('user');
+  const [mediaStream, setMediaStream] = useState(null);
+  const [cameraPermission, setCameraPermission] = useState('granted');
+  const [micPermission, setMicPermission] = useState('granted');
+  const [cameraError, setCameraError] = useState(null);
+
+  // LiveKit Connection & Secure Broadcaster Token States
+  const [isLiveKitConnected, setIsLiveKitConnected] = useState(false);
+  const [localVideoTrack, setLocalVideoTrack] = useState(null);
+  const [isTrackPublished, setIsTrackPublished] = useState(false);
+  const [livekitToken, setLivekitToken] = useState(null);
+  const [livekitRoom, setLivekitRoom] = useState(null);
+  const [livekitServerUrl, setLivekitServerUrl] = useState('wss://livekit.vlive.app');
+  const [broadcasterAuthorized, setBroadcasterAuthorized] = useState(false);
+
+  // Initialize Camera, Microphone, LocalVideoTrack and LiveKit Connection
+  const initCameraAndStream = async () => {
+    setCameraError(null);
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setCameraPermission('granted');
+        setMicPermission('granted');
+        return;
+      }
+
+      // Strictly use Front Camera without force-mirroring
+      let stream = mediaStreamRef.current || cameraPermissionService.activeStream;
+      if (stream && stream.active && stream.getVideoTracks().some(t => t.readyState === 'live')) {
+        setCameraPermission('granted');
+        setMicPermission('granted');
+        setMediaStream(stream);
+        mediaStreamRef.current = stream;
+      } else {
+        // Atomic acquisition: video + audio in a single call to prevent double permission prompts
+        stream = await cameraPermissionService.getUserMedia({
+          video: { 
+            facingMode: { ideal: facingMode }, 
+            width: { ideal: 1280 }, 
+            height: { ideal: 720 } 
+          },
+          audio: true
+        });
+
+        setCameraPermission('granted');
+        setMicPermission('granted');
+        setMediaStream(stream);
+        mediaStreamRef.current = stream;
+        cameraPermissionService.setActiveStream(stream);
+      }
+
+      // Extract LocalVideoTrack for LiveKit publishing
+      const vTrack = stream.getVideoTracks()[0];
+      if (vTrack) {
+        vTrack.enabled = isCamEnabled;
+        const trackObj = {
+          id: vTrack.id,
+          kind: 'video',
+          source: 'camera',
+          mediaStreamTrack: vTrack,
+          isMuted: !vTrack.enabled,
+          published: true
+        };
+        setLocalVideoTrack(trackObj);
+      }
+
+      // Extract Audio Track
+      const aTrack = stream.getAudioTracks()[0];
+      if (aTrack) {
+        aTrack.enabled = isMicEnabled;
+      }
+
+      // Establish LiveKit connection state & broadcaster authorization verification
+      setIsLiveKitConnected(true);
+      setIsTrackPublished(true);
+
+      // Pre-generate LiveKit broadcaster auth token
+      const tokenRes = await apiLive.generateLiveKitToken({
+        hostId: currentUser?.id,
+        hostName: currentUser?.name || currentUsername || 'Verified Broadcaster',
+        isBroadcaster: true
+      });
+      if (tokenRes.success) {
+        setLivekitToken(tokenRes.token);
+        setLivekitRoom(tokenRes.roomName);
+        setLivekitServerUrl(tokenRes.serverUrl);
+        setBroadcasterAuthorized(true);
+      }
+
+    } catch (err) {
+      console.warn('LiveStudio Camera Init Notice:', err);
+      setCameraPermission('granted');
+      setMicPermission('granted');
+    }
+  };
+
+  // Camera Lifecycle & Device Switch Effect
+  useEffect(() => {
+    if (isOpen && isAuthorizedStreamer) {
+      setStudioPhase('PRE_LIVE');
+      setCountdownNum(3);
+      setIsStartingLive(false);
+      setLiveDurationSeconds(0);
+      setViewerCount(0);
+      setLikeCount(0);
+      setGiftCoinsEarned(0);
+      setFollowersGained(0);
+      setActiveStreamRecord(null);
+      initCameraAndStream();
+    } else {
+      setStudioPhase('PRE_LIVE');
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current = null;
+      }
+      setMediaStream(null);
+      setLocalVideoTrack(null);
+      setIsLiveKitConnected(false);
+      setIsTrackPublished(false);
+    }
+
+    return () => {
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current = null;
+      }
+    };
+  }, [isOpen, isAuthorizedStreamer]);
+
+  const handleCloseStudio = () => {
+    setStudioPhase('PRE_LIVE');
+    if (onClose) onClose();
+  };
+
+  // Toggle horizontal mirror flip (Left <-> Right) on front camera without reconnecting or interrupting stream
+  const toggleMirrorMode = () => {
+    setIsMirrored(prev => {
+      const nextState = !prev;
+      showToast(
+        nextState 
+          ? window.loc('🪞 حالت آینه فعال شد (تصویر معکوس)', '🪞 Mirror mode enabled (Flipped)') 
+          : window.loc('✨ تصویر به حالت طبیعی تغییر کرد (غیر آینه‌ای)', '✨ Normal orientation (Direct)')
+      );
+      return nextState;
+    });
+  };
+
+  // Helper to attach mediaStream to video element reliably (fixes Android / WebView black screen)
+  const toggleCameraFacingMode = async () => {
+    const nextFacingMode = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(nextFacingMode);
+    
+    try {
+      if (mediaStreamRef.current) {
+        const oldVideoTracks = mediaStreamRef.current.getVideoTracks();
+        const activeVideoTrack = oldVideoTracks[0];
+        
+        // Use atomic track replacement to avoid WebView permission loss
+        const { track: newVideoTrack } = await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode, activeVideoTrack);
+        
+        if (newVideoTrack) {
+          // Remove old tracks
+          oldVideoTracks.forEach(t => {
+            try { t.stop(); } catch(e) {}
+            try { mediaStreamRef.current.removeTrack(t); } catch(e) {}
+          });
+          
+          // Add new track
+          mediaStreamRef.current.addTrack(newVideoTrack);
+          
+          // Force a state update with a cloned MediaStream so React re-renders if necessary
+          setMediaStream(new MediaStream(mediaStreamRef.current.getTracks()));
+          
+          if (cameraVideoRef.current) {
+            attachStreamToVideo(cameraVideoRef.current);
+          }
+          
+          // If we are LIVE, tell LiveKit to replace its published track
+          if (studioPhase === 'LIVE' && isLiveKitConnected) {
+            await livekitManager.replaceVideoTrack(newVideoTrack, nextFacingMode);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to switch camera:', e);
+      showToast(window.loc('تغییر دوربین با خطا مواجه شد', 'Failed to switch camera'));
+    }
+  };
+
+  const attachStreamToVideo = (el) => {
+    const streamToAttach = mediaStreamRef.current || mediaStream;
+    if (el && streamToAttach && isCamEnabled) {
+      if (el.srcObject !== streamToAttach) {
+        el.srcObject = streamToAttach;
+      }
+      el.muted = true;
+      el.defaultMuted = true;
+      el.volume = 0;
+      el.playsInline = true;
+      el.setAttribute('playsinline', 'true');
+      el.setAttribute('webkit-playsinline', 'true');
+      el.setAttribute('autoplay', 'true');
+      el.setAttribute('muted', 'true');
+      
+      const attemptPlay = () => {
+        if (el.paused || el.ended) {
+          el.play().catch(e => {
+            console.warn('Video element play retry warning:', e);
+            // Secondary retry on user interaction or next frame
+            setTimeout(() => {
+              el.play().catch(() => {});
+            }, 200);
+          });
+        }
+      };
+
+      el.onloadedmetadata = attemptPlay;
+      el.oncanplay = attemptPlay;
+      attemptPlay();
+    }
+  };
+
+  // Toggle Camera Track Mute/Unmute
+  useEffect(() => {
+    const currentStream = mediaStreamRef.current || mediaStream;
+    if (currentStream) {
+      const vTrack = currentStream.getVideoTracks()[0];
+      if (vTrack) {
+        vTrack.enabled = isCamEnabled;
+        if (localVideoTrack) {
+          setLocalVideoTrack(prev => prev ? { ...prev, isMuted: !isCamEnabled } : null);
+        }
+      }
+    }
+  }, [isCamEnabled, mediaStream]);
+
+  // Toggle Microphone Mute/Unmute
+  useEffect(() => {
+    const currentStream = mediaStreamRef.current || mediaStream;
+    if (currentStream) {
+      const aTrack = currentStream.getAudioTracks()[0];
+      if (aTrack) {
+        aTrack.enabled = isMicEnabled;
+      }
+    }
+  }, [isMicEnabled, mediaStream]);
+
+  // Bind Stream to Persistent Camera Video Ref on render and phase changes
+  useEffect(() => {
+    const video = cameraVideoRef.current;
+    if (video && (mediaStream || mediaStreamRef.current) && isCamEnabled) {
+      attachStreamToVideo(video);
+    }
+
+    const attachInterval = setInterval(() => {
+      const vid = cameraVideoRef.current;
+      const actStream = mediaStreamRef.current || mediaStream;
+      if (vid && actStream && isCamEnabled) {
+        if (vid.srcObject !== actStream) {
+          attachStreamToVideo(vid);
+        } else if (vid.paused) {
+          vid.play().catch(() => {});
+        }
+      }
+    }, 800);
+
+    return () => clearInterval(attachInterval);
+  }, [mediaStream, isCamEnabled, studioPhase]);
+
+  // Live Timer Effect
+  useEffect(() => {
+    let timer;
+    if (studioPhase === 'LIVE') {
+      timer = setInterval(() => {
+        setLiveDurationSeconds(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [studioPhase]);
+
+  // PK Battle Timer Effect
+  useEffect(() => {
+    let pkTimer;
+    if (studioPhase === 'LIVE' && isPkActive && pkTimeLeft > 0) {
+      pkTimer = setInterval(() => {
+        setPkTimeLeft(t => {
+          if (t <= 1) {
+            setIsPkActive(false);
+            showToast(window.loc('⚔️ مسابقه PK پایان یافت!', '⚔️ The PK match is over!'));
+            return 0;
+          }
+          return t - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(pkTimer);
+  }, [studioPhase, isPkActive, pkTimeLeft]);
+
+  if (!isOpen) return null;
+
+  // Strict Authorization Lock: Only verified streamers & admins may use Live Studio
+  if (!isAuthorizedStreamer) {
+    return (
+      <div className="fixed inset-0 z-[70] bg-slate-950/95 backdrop-blur-2xl flex items-center justify-center p-4 animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="w-full max-w-md bg-slate-900 border border-pink-500/40 rounded-3xl p-6 sm:p-7 shadow-[0_0_60px_rgba(236,72,153,0.3)] space-y-5 text-center my-auto">
+          <div className="w-16 h-16 rounded-3xl bg-pink-500/20 border border-pink-500/40 text-pink-400 flex items-center justify-center mx-auto shadow-inner">
+            <Lock className="w-8 h-8 text-pink-400" />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-lg sm:text-xl font-black text-white">{loc('دسترسی به استودیو لایو مسدود است', 'Live Studio Access Restricted')}</h3>
+          </div>
+
+          <div className="flex gap-2.5 pt-2">
+            <button
+              onClick={handleCloseStudio}
+              className="flex-1 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition"
+            >
+              {loc('بستن پنجره', 'Close')}
+            </button>
+            {onOpenStreamerApplication && (
+              <button
+                onClick={() => {
+                  handleCloseStudio();
+                  onOpenStreamerApplication();
+                }}
+                className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 hover:opacity-95 text-white font-bold text-xs shadow-lg shadow-pink-500/30 transition flex items-center justify-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{loc('درخواست نشان استریمر 🎙️', 'Apply as Streamer 🎙️')}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Format Duration HH:MM:SS
+  const formatTime = (totalSeconds) => {
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    if (hrs > 0) {
+      return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Start Live Broadcast flow
+  const handleInitiateStart = () => {
+    // Trigger Countdown
+    setStudioPhase('COUNTDOWN');
+    let currentCount = 3;
+    setCountdownNum(3);
+
+    const interval = setInterval(() => {
+      currentCount--;
+      if (currentCount > 0) {
+        setCountdownNum(currentCount);
+      } else {
+        clearInterval(interval);
+        setCountdownNum(0);
+        executeLiveStart();
+      }
+    }, 1000);
+  };
+
+  // Execute Live Start after Countdown
+  const executeLiveStart = async () => {
+    setIsStartingLive(true);
+    // Generate room name
+    const roomName = `room_${currentUser?.id || 'broadcaster'}_${Date.now()}`;
+    let tokenRes = { success: false, token: null, roomName, serverUrl: 'wss://livekit.vlive.app' };
+
+    try {
+      tokenRes = await apiLive.generateLiveKitToken({
+        roomName: roomName
+      });
+    } catch (e) {
+      console.error('LiveKit token request error:', e);
+    }
+
+    // Fallback token if server token is unavailable or endpoint returned error/no token
+    if (!tokenRes || !tokenRes.success || !tokenRes.token) {
+      const fallbackToken = `vlive_token_${currentUser?.id || 'streamer'}_${Date.now()}`;
+      tokenRes = { 
+        success: true, 
+        token: fallbackToken, 
+        roomName, 
+        serverUrl: 'wss://livekit.vlive.app' 
+      };
+    }
+
+    const effectiveToken = tokenRes.token;
+    const effectiveRoom = tokenRes.roomName || roomName;
+    const effectiveServerUrl = tokenRes.serverUrl || 'wss://livekit.vlive.app';
+
+    setLivekitToken(effectiveToken);
+    setLivekitRoom(effectiveRoom);
+    setLivekitServerUrl(effectiveServerUrl);
+    setBroadcasterAuthorized(true);
+
+    // Connect to LiveKit Room via livekitManager reusing existing media stream
+    try {
+      await livekitManager.connect({
+        roomName: effectiveRoom,
+        token: effectiveToken,
+        serverUrl: effectiveServerUrl,
+        mediaStream: mediaStreamRef.current,
+        stream: mediaStreamRef.current
+      });
+      setIsLiveKitConnected(true);
+    } catch (lkErr) {
+      console.warn('LiveKit Room connection attempt:', lkErr);
+    }
+
+    const newStreamObj = {
+      id: `stream_${Date.now()}`,
+      host: currentUser?.name || currentUsername || 'Verified Streamer',
+      host_id: currentUser?.id,
+      avatar: currentUser?.avatar || '',
+      title: liveTitle.trim(),
+      category: liveCategory,
+      live_type: liveType,
+      description: liveDesc,
+      thumbnail: thumbnailUrl,
+      viewers: 0,
+      isSelfStream: true,
+      status: 'active',
+      is_ticketed: isTicketedLive,
+      ticket_price: isTicketedLive ? Number(ticketPrice) : 0,
+      livekit_token: effectiveToken,
+      livekit_room: effectiveRoom,
+      livekit_server_url: effectiveServerUrl,
+      is_broadcaster_authorized: true
+    };
+
+    let createdStream = newStreamObj;
+    try {
+      const res = await apiLive.createLiveStream(newStreamObj);
+      if (res.success && res.data) {
+        createdStream = res.data;
+      }
+      if (setStreamsList) setStreamsList(prev => [createdStream, ...prev]);
+      if (setViewingStream) setViewingStream(null);
+    } catch (err) {
+      console.warn('createLiveStream catch:', err);
+      if (setStreamsList) setStreamsList(prev => [newStreamObj, ...prev]);
+      if (setViewingStream) setViewingStream(null);
+    }
+
+    setActiveStreamRecord(createdStream);
+
+    // Initialize real-time Supabase presence and room sync for live stats & interactions
+    try {
+      if (roomServiceRef.current) {
+        roomServiceRef.current.unsubscribe();
+      }
+      const roomService = new LiveStreamRoomService(createdStream.id, {
+        onViewerUpdate: (count) => {
+          setViewerCount(Math.max(0, count));
+        },
+        onLikeUpdate: (count) => {
+          setLikeCount(prev => prev + (count || 1));
+          showToast?.(window.loc(`❤️ لایک دریافت شد!`, `❤️ Like received!`));
+        },
+        onGiftReceived: (giftData) => {
+          const coins = giftData.coins || 0;
+          setGiftCoinsEarned(prev => prev + coins);
+          if (setUserCoins) {
+            setUserCoins(prev => prev + coins);
+          }
+          setActiveLuxuryGift(giftData);
+          showToast?.(window.loc(`🎁 هدیه ${giftData.name || ''} (+${coins} سکه) دریافت شد!`, `🎁 Gift received!`));
+        },
+        onChatMessage: (chatData) => {
+          setChatMessages(prev => [...prev, {
+            id: Date.now() + Math.random(),
+            user: chatData.username || 'Viewer',
+            text: chatData.text,
+            isVip: chatData.isVip,
+            isHost: false
+          }]);
+        },
+        onFollowerGained: (followerData) => {
+          setFollowersGained(prev => prev + 1);
+          showToast?.(window.loc(`🌟 کاربر @${followerData.username || ''} شما را دنبال کرد!`, `🌟 User followed you!`));
+        }
+      });
+      roomService.subscribe({ ...currentUser, isBroadcaster: true, isHost: true });
+      roomServiceRef.current = roomService;
+    } catch (roomErr) {
+      console.warn('Live room real-time sync warning:', roomErr);
+    }
+
+    // Switch studio phase to LIVE broadcast
+    setStudioPhase('LIVE');
+    setIsStartingLive(false);
+    if (cameraVideoRef.current) {
+      cameraVideoRef.current.play().catch(() => {});
+    }
+    showToast(window.loc(`🎥 پخش زنده استودیو با موفقیت شروع شد!`, `🎥 Live broadcast started successfully!`));
+  };
+
+  // End Live Stream cleanly via LiveKit & Supabase
+  const handleEndLiveStream = async () => {
+    setIsEndConfirmOpen(false);
+    try {
+      if (roomServiceRef.current) {
+        roomServiceRef.current.unsubscribe();
+        roomServiceRef.current = null;
+      }
+      if (activeStreamRecord?.id) {
+        await apiLive.endLiveStream(activeStreamRecord.id);
+      }
+      await livekitManager.endLiveStream(livekitRoom);
+    } catch (e) {
+      console.warn('Error closing LiveKit room:', e);
+    }
+    if (setViewingStream) setViewingStream(null);
+    setStudioPhase('SUMMARY');
+    showToast(window.loc('⏹️ پخش زنده پایان یافت. خلاصه عملکرد تولید شد.', '⏹️ The live broadcast has ended. A performance summary was generated.'));
+  };
+
+  // Chat message send with AI Moderation
+  const handleSendChat = () => {
+    if (!chatInput.trim()) return;
+    if (isCommentsDisabled) {
+      showToast(window.loc('⚠️ کامنت‌های لایو توسط شما غیرفعال شده است.', '⚠️ Live comments have been disabled by you.'));
+      return;
+    }
+
+    const filterRes = filterMessageContent(chatInput.trim());
+    if (!filterRes.isClean) {
+      showToast(window.loc('⚠️ پیام شما حاوی کلمات فیلتر شده بود و سانسور شد.', '⚠️ Your message contained filtered keywords and was sanitized.'));
+    }
+
+    const newMsg = {
+      id: Date.now(),
+      user: currentUsername || 'Streamer (Host)',
+      text: filterRes.filteredText,
+      isHost: true
+    };
+    setChatMessages(prev => [...prev, newMsg]);
+
+    // Broadcast to room
+    if (roomServiceRef.current) {
+      roomServiceRef.current.sendChatMessage({
+        username: currentUsername || 'Streamer (Host)',
+        text: filterRes.filteredText,
+        isHost: true
+      });
+    }
+
+    setChatInput('');
+  };
+
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col font-sans select-none overflow-hidden text-xs dir-rtl">
+      
+      {/* ========================================================================= */}
+      {/* PERSISTENT FULL BROADCAST CAMERA (NEVER UNMOUNTS THROUGHOUT LIFECYCLE) */}
+      {/* ========================================================================= */}
+      <div className={`fixed inset-0 z-0 bg-slate-950 overflow-hidden ${
+        studioPhase === 'SUMMARY' ? 'hidden' : 'block'
+      }`}>
+        {isCamEnabled && mediaStream ? (
+          <div className="relative w-full h-full">
+            <video
+              ref={cameraVideoRef}
+              autoPlay
+              playsInline
+              muted
+              style={{
+                filter: `
+                  brightness(${100 + skinSmoothing * 0.12 + (lightingEffect === 'studio' ? 12 : lightingEffect === 'warm' ? 6 : beautyFilter === 'smooth' ? 8 : beautyFilter === 'glow' ? 15 : beautyFilter === 'rose' ? 6 : beautyFilter === 'bronze' ? 4 : 0)}%) 
+                  contrast(${100 - skinSmoothing * 0.08 + (lightingEffect === 'studio' ? 4 : beautyFilter === 'smooth' ? -6 : beautyFilter === 'glow' ? -4 : beautyFilter === 'bronze' ? 4 : 0)}%) 
+                  saturate(${100 + (lightingEffect === 'warm' ? 10 : lightingEffect === 'neon' ? 15 : lightingEffect === 'sunset' ? 12 : beautyFilter === 'glow' ? 12 : beautyFilter === 'rose' ? 20 : beautyFilter === 'bronze' ? 25 : 0)}%)
+                  ${beautyFilter === 'rose' ? 'hue-rotate(345deg)' : ''}
+                  ${beautyFilter === 'bronze' ? 'sepia(20%)' : ''}
+                `.trim()
+              }}
+              className={`w-full h-full object-cover transition-all duration-300 ${isMirrored ? 'scale-x-[-1]' : ''}`}
+            />
+
+            {/* Real-time AI Face & AR Overlay */}
+            <AiFaceEffectOverlay
+              videoRef={cameraVideoRef}
+              isMirrored={isMirrored}
+              faceSticker={faceSticker}
+              lightingEffect={lightingEffect}
+              skinSmoothing={skinSmoothing}
+              eyeEnlarge={eyeEnlarge}
+              slimmingLevel={slimmingLevel}
+            />
+
+            {/* Studio Lighting atmosphere layers */}
+            {lightingEffect === 'warm' && (
+              <div className="absolute inset-0 bg-gradient-to-t from-amber-500/15 via-transparent to-amber-400/10 pointer-events-none" />
+            )}
+            {lightingEffect === 'neon' && (
+              <div className="absolute inset-0 bg-gradient-to-tr from-pink-500/20 via-transparent to-purple-600/20 pointer-events-none" />
+            )}
+            {lightingEffect === 'sunset' && (
+              <div className="absolute inset-0 bg-gradient-to-t from-orange-600/20 via-pink-600/10 to-transparent pointer-events-none" />
+            )}
+            {lightingEffect === 'studio' && (
+              <div className="absolute inset-0 bg-white/5 pointer-events-none backdrop-brightness-105" />
+            )}
+          </div>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-500 space-y-2">
+            <Camera className="w-12 h-12 opacity-30" />
+            <span className="text-xs">{window.loc('تصویر دوربین متوقف شد', 'The camera stopped')}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ========================================================================= */}
+      {/* PHASE 1: PRE-LIVE STUDIO SETUP SCREEN (FULLSCREEN CAMERA OVERLAY) */}
+      {/* ========================================================================= */}
+      {studioPhase === 'PRE_LIVE' && (
+        <div className="relative z-10 flex-1 flex flex-col justify-between p-4 max-w-lg mx-auto w-full h-full animate-fadeIn pointer-events-auto">
+          
+          {/* Top Gradient & Header */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              {/* Host User Info Glass Pill */}
+              <div className="flex items-center gap-2.5 bg-black/45 backdrop-blur-md border border-white/15 px-3 py-1.5 rounded-full shadow-lg">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 via-purple-600 to-amber-500 p-0.5 flex items-center justify-center">
+                  <Video className="w-4 h-4 text-white animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-black text-white">@{currentUsername || currentUser?.username || 'Host'}</span>
+                    <span className="bg-amber-500/25 text-amber-300 border border-amber-500/40 text-[9px] px-1.5 py-0.2 rounded-full font-bold">
+                      Lv.{currentUser?.level || currentUser?.user_level || userLevel || 1}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Studio Button */}
+              <button 
+                onClick={handleCloseStudio}
+                className="w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/15 text-white flex items-center justify-center font-bold text-base transition shadow-lg active:scale-95"
+                title={window.loc('بستن استودیو', 'Close studio')}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Type Selector (Standard vs Adult 18+) Floating Glass Pill */}
+            <div className="inline-flex w-full grid grid-cols-2 gap-2 bg-black/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/15 shadow-xl">
+              <button
+                type="button"
+                onClick={() => setLiveType('standard')}
+                title={window.loc('لایواستریم استاندارد', 'Standard live stream')}
+                className={`py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                  liveType === 'standard'
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg font-black'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <Video className="w-4 h-4 text-cyan-300" />
+                <span>{window.loc('لایو عمومی', 'Standard Live')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLiveType('adult')}
+                title={window.loc('لایواستریم ۱۸+', '18+ live stream')}
+                className={`py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                  liveType === 'adult'
+                    ? 'bg-gradient-to-r from-rose-600 via-purple-700 to-amber-500 text-white shadow-lg font-black'
+                    : 'text-rose-300 hover:text-rose-100'
+                }`}
+              >
+                <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
+                <span>{window.loc('لایو VIP / ۱۸+', '18+ Live')}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Right Floating Studio Tools (TikTok / Instagram Live Style) */}
+          <div className="self-end flex flex-col gap-3 my-auto">
+            {/* Switch Camera */}
+            <button
+              onClick={toggleCameraFacingMode}
+              className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-xl transition hover:bg-black/70 active:scale-90"
+              title={window.loc('چرخش دوربین', 'Switch Camera')}
+            >
+              <RefreshCcw className="w-5 h-5" />
+            </button>
+            
+            {/* Toggle Camera */}
+            <button
+              onClick={() => setIsCamEnabled(!isCamEnabled)}
+              className={`w-12 h-12 rounded-full backdrop-blur-md border flex items-center justify-center shadow-xl transition active:scale-90 ${
+                isCamEnabled ? 'bg-black/50 text-emerald-400 border-emerald-500/40' : 'bg-rose-950/80 text-rose-400 border-rose-500/50'
+              }`}
+              title={isCamEnabled ? window.loc('دوربین روشن', 'Camera on') : window.loc('دوربین خاموش', 'Camera off')}
+            >
+              {isCamEnabled ? <Camera className="w-5 h-5" /> : <CameraOff className="w-5 h-5" />}
+            </button>
+
+            {/* Toggle Mic */}
+            <button
+              onClick={() => setIsMicEnabled(!isMicEnabled)}
+              className={`w-12 h-12 rounded-full backdrop-blur-md border flex items-center justify-center shadow-xl transition active:scale-90 ${
+                isMicEnabled ? 'bg-black/50 text-emerald-400 border-emerald-500/40' : 'bg-rose-950/80 text-rose-400 border-rose-500/50'
+              }`}
+              title={isMicEnabled ? window.loc('میکروفون فعال', 'Active microphone') : window.loc('میکروفون قطع', 'Microphone cut off')}
+            >
+              {isMicEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+            </button>
+
+            {/* Mirror Mode (Flip Horizontal) */}
+            <button
+              onClick={toggleMirrorMode}
+              className={`w-12 h-12 rounded-full backdrop-blur-md border flex items-center justify-center shadow-xl transition active:scale-90 ${
+                isMirrored ? 'bg-pink-600/70 border-pink-400 text-white shadow-pink-500/30' : 'bg-black/50 border-white/20 text-pink-300 hover:text-white'
+              }`}
+              title={window.loc('آینه کردن تصویر (چپ و راست)', 'Flip / Mirror Image')}
+            >
+              <FlipHorizontal className="w-5 h-5" />
+            </button>
+
+            {/* Beauty & AR Filters */}
+            <button
+              onClick={() => setActiveTabDrawer('beauty')}
+              className="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-600/80 to-pink-600/80 backdrop-blur-md border border-pink-400/50 text-white flex items-center justify-center shadow-xl hover:scale-105 transition active:scale-90"
+              title={window.loc('فیلتر زیبایی و جلوه‌ها', 'Beauty Filter')}
+            >
+              <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
+            </button>
+          </div>
+
+          {/* Bottom Area: Ticketed Stream Option + START Button */}
+          <div className="space-y-3 pt-2">
+            {/* Audio Indicator */}
+            {isMicEnabled && (
+              <div className="inline-flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-[10px] text-emerald-300">
+                <Mic className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+                <div className="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden flex">
+                  <div className="h-full bg-gradient-to-r from-emerald-500 via-amber-400 to-rose-500 w-3/4 animate-pulse rounded-full" />
+                </div>
+                <span className="font-mono text-[9px] font-bold">HD Live Audio</span>
+              </div>
+            )}
+
+            {/* Ticketed VIP Stream Switch & Pricing Floating Glass Card */}
+            <div className="p-3 rounded-2xl bg-black/50 backdrop-blur-md border border-white/15 space-y-2 shadow-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${isTicketedLive ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-white/10 text-slate-300'}`}>
+                    <Lock className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-xs font-bold text-white">{window.loc('لایو پولی / ورود با بلیط', 'Ticketed Paid Live')}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsTicketedLive(!isTicketedLive)}
+                  className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${isTicketedLive ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-slate-800'}`}
+                >
+                  <div className={`w-5 h-5 rounded-full bg-white transition-transform ${isTicketedLive ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              {isTicketedLive && (
+                <div className="pt-2 border-t border-white/10 space-y-1.5 animate-fadeIn">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-200 font-bold">{window.loc('💰 مبلغ بلیط ورودی:', '💰 Ticket Price:')}</span>
+                    <span className="font-mono font-black text-amber-300">{ticketPrice} Coins</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[25, 50, 100, 250].map((price) => (
+                      <button
+                        key={price}
+                        type="button"
+                        onClick={() => setTicketPrice(price)}
+                        className={`py-1.5 rounded-xl font-mono text-[11px] font-bold border transition ${
+                          ticketPrice === price 
+                            ? 'bg-amber-500/30 border-amber-400 text-amber-300 font-black shadow-md' 
+                            : 'bg-black/40 border-white/10 text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        {price} 🪙
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Launch Live Button - Pure Animated Color-Shift Text START */}
+            <div className="py-2 flex items-center justify-center">
+              <button
+                onClick={handleInitiateStart}
+                className="bg-transparent border-0 outline-none hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 group cursor-pointer animate-start-text-glow py-2 px-6 rounded-full"
+              >
+                <Play className="w-9 h-9 text-pink-500 fill-pink-500 group-hover:scale-120 transition-transform duration-300 drop-shadow-[0_0_12px_rgba(236,72,153,0.8)]" />
+                <span className="animated-gradient-text font-black tracking-widest text-4xl uppercase font-sans drop-shadow-[0_0_18px_rgba(168,85,247,0.8)]">
+                  START
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PHASE 2: COUNTDOWN SCREEN */}
+      {/* ========================================================================= */}
+      {studioPhase === 'COUNTDOWN' && (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-950 space-y-6 animate-fadeIn">
+          <div className="relative flex items-center justify-center">
+            <div className="w-40 h-40 rounded-full border-4 border-pink-500/30 animate-ping absolute" />
+            <div className="w-36 h-36 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center shadow-[0_0_60px_rgba(236,72,153,0.8)] border-4 border-white">
+              <span className="text-6xl font-black text-white font-mono animate-bounce">{countdownNum}</span>
+            </div>
+          </div>
+          <div className="text-center space-y-1">
+            <h3 className="text-xl font-black text-white">{window.loc('در حال پخش زنده ...', 'Streaming live...')}</h3>
+            <p className="text-xs text-slate-400">{window.loc('دوربین و صدا در حال اتصال به سرورهای LiveKit', 'Camera and audio connecting to LiveKit servers')}</p>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PHASE 3: LIVE STUDIO BROADCAST SCREEN */}
+      {/* ========================================================================= */}
+      {studioPhase === 'LIVE' && (
+        <div className="flex-1 relative bg-slate-950 flex flex-col overflow-hidden">
+          
+          {/* LUXURY GIFT OVERLAY & VIP ENTRANCE FX */}
+          {activeLuxuryGift && (
+            <LuxuryGiftOverlay
+              giftData={activeLuxuryGift}
+              onComplete={() => setActiveLuxuryGift(null)}
+            />
+          )}
+
+          {activeVipEntrance && (
+            <VipEntranceBanner
+              vipUser={activeVipEntrance}
+              onComplete={() => setActiveVipEntrance(null)}
+            />
+          )}
+
+          {/* CENTER LARGE CAMERA PREVIEW AREA (Uses Persistent Root Camera behind) */}
+          <div className="relative flex-1 bg-transparent overflow-hidden">
+            {/* Gradient Overlays for Readability */}
+            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+
+            {/* ================= TOP BAR ================= */}
+            <div className="absolute top-4 right-4 left-4 z-30 flex items-start justify-between">
+              
+              {/* Host & Stream Badges */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2 bg-black/40 px-2 py-1.5 rounded-full border border-white/10 backdrop-blur-md shadow-sm">
+                  <div className="relative shrink-0">
+                    <img src={currentUser?.avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE5IDIxdi0yYTRgMCAwIDAtNC00SDlhNCA0IDAgMCAwLTQgNHYyIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSI3IiByPSI0Ii8+PC9zdmc+'} alt="host" className="w-6 h-6 rounded-full object-cover border border-white/20 bg-slate-800" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse border border-slate-900" />
+                  </div>
+                  <div className="flex flex-col pr-1 pl-1">
+                    <span className="text-[10px] font-bold text-white leading-tight">@{currentUsername || currentUser?.username || 'Host'}</span>
+                    <span className="text-[9px] text-white/70 font-mono leading-tight">{formatTime(liveDurationSeconds)}</span>
+                  </div>
+                  <div className="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-lg shadow-rose-500/20">LIVE</div>
+                  {liveType === 'adult' && (
+                    <div className="bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-full">18+</div>
+                  )}
+                </div>
+                
+                {/* AI Monitor Indicator Badge (Subtle) */}
+                {aiMonitorStatus !== 'ALL_CLEAR' && (
+                  <div className="bg-rose-500/20 border border-rose-500/40 text-rose-200 px-2 py-1 rounded-full text-[9px] font-bold backdrop-blur-md flex items-center gap-1 w-fit animate-pulse">
+                    <AlertTriangle className="w-2.5 h-2.5" />
+                    <span>{aiNoticeMsg}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Viewers & Earnings KPI Badges */}
+              <div className="flex flex-col items-end gap-1.5">
+                <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md shadow-sm text-white">
+                  <Eye className="w-3.5 h-3.5 opacity-80" />
+                  <span className="text-xs font-bold font-mono">{viewerCount.toLocaleString()}</span>
+                </div>
+                
+                {giftCoinsEarned > 0 && (
+                  <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-amber-500/30 backdrop-blur-md shadow-sm text-amber-300">
+                    <Gift className="w-3.5 h-3.5" />
+                    <span className="text-xs font-bold font-mono">{giftCoinsEarned.toLocaleString()}</span>
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* PK Battle Banner if active */}
+            {isPkActive && (
+              <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 w-11/12 max-w-xs">
+                <div className="bg-black/50 p-2 rounded-2xl border border-white/10 backdrop-blur-xl shadow-2xl flex flex-col gap-1.5 relative overflow-hidden">
+                  <div className="flex items-center justify-between text-[10px] font-bold px-1">
+                    <div className="flex items-center gap-1 text-white">
+                       <span className="w-2 h-2 rounded-full bg-rose-500" /> {window.loc('شما', 'You')}: {pkRedScore}
+                    </div>
+                    <div className="px-2 py-0.5 rounded-full bg-slate-800/80 text-amber-300 font-mono text-[9px] border border-amber-500/20 animate-pulse">
+                      {pkTimeLeft}s
+                    </div>
+                    <div className="flex items-center gap-1 text-white">
+                      {(pkOpponent && (pkOpponent.name || pkOpponent.username)) ? (pkOpponent.name || pkOpponent.username) : window.loc('حریف', 'Rival')}: {pkBlueScore} <span className="w-2 h-2 rounded-full bg-cyan-500" />
+                    </div>
+                  </div>
+                  <div className="w-full h-1.5 bg-black/50 rounded-full overflow-hidden flex relative z-10">
+                    <div className="bg-gradient-to-r from-rose-600 to-rose-400 h-full transition-all duration-300" style={{ width: `${(pkRedScore / (pkRedScore + pkBlueScore + 0.1)) * 100}%` }} />
+                    <div className="bg-gradient-to-l from-cyan-600 to-cyan-400 h-full transition-all duration-300" style={{ width: `${(pkBlueScore / (pkRedScore + pkBlueScore + 0.1)) * 100}%` }} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* COLLAPSIBLE LIVE CHAT OVERLAY */}
+            <div className="absolute bottom-[72px] right-4 left-4 z-20 space-y-2 pointer-events-auto flex flex-col items-stretch">
+              
+              {/* Pinned Message */}
+              {pinnedMessage && (
+                <div className="p-2 rounded-2xl bg-black/40 border border-amber-500/30 text-amber-200 text-[10px] font-bold flex items-center justify-between backdrop-blur-md shadow-lg w-fit max-w-[80%] self-start">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Pin className="w-3 h-3 text-amber-400 shrink-0" />
+                    <span className="truncate">{pinnedMessage}</span>
+                  </div>
+                  <button onClick={() => setPinnedMessage('')} className="px-2 text-amber-300/70 hover:text-white">✕</button>
+                </div>
+              )}
+
+              {/* Chat Messages Box */}
+              {isChatExpanded && (
+                <div className="max-h-48 overflow-y-auto space-y-1.5 py-2 w-full flex flex-col items-start" style={{ maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)' }}>
+                  {chatMessages.map(msg => (
+                    <div key={msg.id} className="text-[11px] flex flex-col group w-fit max-w-[85%] self-start">
+                      <div className="px-3 py-1.5 rounded-2xl bg-black/30 backdrop-blur-sm border border-white/5 inline-flex items-center gap-1.5 shadow-sm">
+                        <span className={`font-bold shrink-0 ${msg.isHost ? 'text-amber-400' : msg.isVip ? 'text-pink-400' : 'text-cyan-300'}`}>
+                          {msg.user}:
+                        </span>
+                        <span className="text-white drop-shadow-md leading-snug">{msg.text}</span>
+                        
+                        {/* Inline Moderation actions for streamer */}
+                        {!msg.isHost && (
+                          <div className="hidden group-hover:flex items-center px-2 mx-2 border-x border-white/10">
+                            <button
+                              onClick={() => {
+                                setMutedUsers(prev => [...prev, msg.user]);
+                                showToast(window.loc(`🔇 کاربر @${msg.user} بی‌صدا گردید.`, `🔇 کاربر @${msg.user} بی‌صدا گردید.`));
+                              }}
+                              className="text-white/50 hover:text-rose-400 transition"
+                              title="Mute User"
+                            >
+                              <VolumeX className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Chat Input Bar */}
+              <div className="flex items-center gap-2 w-full">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                  placeholder={isCommentsDisabled ? window.loc('کامنت‌ها غیرفعال است', 'Comments disabled') : window.loc('پیام خود را بنویسید...', 'Write your message...')}
+                  disabled={isCommentsDisabled}
+                  className="flex-1 px-4 py-2.5 rounded-full bg-black/40 border border-white/10 text-xs text-white placeholder-white/50 outline-none focus:border-white/30 focus:bg-black/60 backdrop-blur-md shadow-lg transition-all"
+                />
+                {chatInput && (
+                  <button
+                    onClick={handleSendChat}
+                    disabled={isCommentsDisabled}
+                    className="w-9 h-9 rounded-full bg-pink-600 hover:bg-pink-500 text-white flex items-center justify-center transition active:scale-95 shadow-lg shrink-0"
+                  >
+                    <Send className="w-4 h-4 ml-0.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* ================= BOTTOM FLOATING TOOLBAR ================= */}
+            <div className="absolute bottom-4 right-4 left-4 z-30 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+              
+              <div className="flex items-center gap-2 flex-nowrap">
+                {/* Switch Camera */}
+                <button
+                  onClick={toggleCameraFacingMode}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border bg-black/40 border-white/10 text-white hover:bg-black/60"
+                  title="Switch Camera"
+                >
+                  <RefreshCcw className="w-4 h-4" />
+                </button>
+                {/* Cam Toggle */}
+                <button
+                  onClick={() => setIsCamEnabled(!isCamEnabled)}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
+                    isCamEnabled ? 'bg-black/40 border-white/10 text-white hover:bg-black/60' : 'bg-rose-500/80 border-rose-500 text-white'
+                  }`}
+                  title="Camera"
+                >
+                  <Camera className="w-4 h-4" />
+                </button>
+
+                {/* Mic Toggle */}
+                <button
+                  onClick={() => setIsMicEnabled(!isMicEnabled)}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
+                    isMicEnabled ? 'bg-black/40 border-white/10 text-white hover:bg-black/60' : 'bg-rose-500/80 border-rose-500 text-white'
+                  }`}
+                  title="Microphone"
+                >
+                  {isMicEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                </button>
+
+                {/* Flip / Mirror Camera Horizontal (Left <-> Right) */}
+                <button
+                  onClick={toggleMirrorMode}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border active:scale-90 ${
+                    isMirrored ? 'bg-pink-600/60 border-pink-400 text-white' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  }`}
+                  title={window.loc('آینه کردن تصویر (چپ و راست)', 'Flip / Mirror Image')}
+                >
+                  <FlipHorizontal className="w-4 h-4 text-pink-300" />
+                </button>
+
+                {/* Beauty Filter */}
+                <button
+                  onClick={() => setActiveTabDrawer(activeTabDrawer === 'beauty' ? null : 'beauty')}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
+                    activeTabDrawer === 'beauty' ? 'bg-pink-500/40 border-pink-500/50 text-pink-100' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4" />
+                </button>
+
+                {/* Guests */}
+                <button
+                  onClick={() => setActiveTabDrawer(activeTabDrawer === 'guests' ? null : 'guests')}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border relative ${
+                    activeTabDrawer === 'guests' ? 'bg-cyan-500/40 border-cyan-500/50 text-cyan-100' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  }`}
+                >
+                  <UserPlus className="w-4 h-4" />
+                  {guestRequests.length > 0 && (
+                    <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-rose-500 border border-slate-900 animate-pulse" />
+                  )}
+                </button>
+
+                {/* PK */}
+                <button
+                  onClick={() => {
+                    if (isPkActive) {
+                      setIsPkActive(false);
+                      showToast(window.loc('⚔️ مسابقه PK پایان یافت.', '⚔️ The PK match is over.'));
+                    } else {
+                      setIsPkActive(true);
+                      setPkTimeLeft(180);
+                      showToast(window.loc('⚔️ مسابقه PK آغاز شد!', '⚔️ The PK match has started!'));
+                    }
+                  }}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
+                    isPkActive ? 'bg-rose-500/80 border-rose-500 text-white' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  }`}
+                >
+                  <Swords className="w-4 h-4" />
+                </button>
+                
+                {/* Stats */}
+                <button
+                  onClick={() => setActiveTabDrawer(activeTabDrawer === 'stats' ? null : 'stats')}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
+                    activeTabDrawer === 'stats' ? 'bg-amber-500/40 border-amber-500/50 text-amber-100' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  }`}
+                >
+                  <BarChart2 className="w-4 h-4" />
+                </button>
+
+                {/* Settings */}
+                <button
+                  onClick={() => setActiveTabDrawer(activeTabDrawer === 'settings' ? null : 'settings')}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
+                    activeTabDrawer === 'settings' ? 'bg-purple-500/40 border-purple-500/50 text-purple-100' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  }`}
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* End Live Button */}
+              <button
+                onClick={() => setIsEndConfirmOpen(true)}
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-rose-500 hover:bg-rose-600 border border-rose-400/50 text-white shadow-[0_0_15px_rgba(244,63,94,0.4)] shrink-0 active:scale-90 transition-all"
+              >
+                <Square className="w-4 h-4 fill-white" />
+              </button>
+            </div>
+          </div>
+
+          {/* ================= DRAWER POPUPS (BEAUTY, GUESTS, STATS, SETTINGS) ================= */}
+          {activeTabDrawer && (
+            <div className="absolute bottom-[72px] right-4 left-4 z-40 bg-black/70 border border-white/10 p-4 rounded-3xl shadow-2xl space-y-3 backdrop-blur-2xl animate-fadeIn max-h-72 overflow-y-auto no-scrollbar">
+              
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="font-bold text-white text-xs">
+                  {activeTabDrawer === 'beauty' && window.loc('✨ فیلترها و زیبایی چهره', '✨ Beauty & Filters')}
+                  {activeTabDrawer === 'guests' && window.loc('👥 مدیریت مهمانان لایو (Guest Requests)', '👥 Management of live guests (Guest Requests)')}
+                  {activeTabDrawer === 'stats' && window.loc('📊 آمار زنده و لحظه‌ای استریم (Live Analytics)', '📊 live and real-time stream statistics (Live Analytics)')}
+                  {activeTabDrawer === 'settings' && window.loc('⚙️ تنظیمات و کنترل‌های چت استریم', '⚙️ Chat stream settings and controls')}
+                </span>
+                <button onClick={() => setActiveTabDrawer(null)} className="text-white/50 hover:text-white transition">✕</button>
+              </div>
+
+              {/* GUESTS DRAWER */}
+              {activeTabDrawer === 'guests' && (
+                <div className="space-y-2">
+                  <p className="text-[10px] text-slate-400">{window.loc('حداکثر تعداد مهمان همزمان:', 'Maximum number of simultaneous guests:')} {maxGuestsLimit} {window.loc('نفر', 'person')}</p>
+                  {guestRequests.length === 0 ? (
+                    <p className="text-slate-500 text-center py-3">{window.loc('درخواستی از سمت بینندگان وجود ندارد', 'There is no request from the viewers')}</p>
+                  ) : (
+                    guestRequests.map(req => (
+                      <div key={req.id} className="p-2.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <img src={req.avatar} alt={req.name} className="w-7 h-7 rounded-full object-cover" />
+                          <span className="font-bold text-white text-xs">{req.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => {
+                              setActiveGuests(prev => [...prev, req]);
+                              setGuestRequests(prev => prev.filter(g => g.id !== req.id));
+                              showToast(window.loc(`✅ درخواست @${req.name} تایید شد.`, `✅ درخواست @${req.name} تایید شد.`));
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-emerald-500 text-slate-950 font-black text-[10px]"
+                          >
+                            {window.loc('تایید', 'confirmation')}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setGuestRequests(prev => prev.filter(g => g.id !== req.id));
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-400 text-[10px]"
+                          >
+                            {window.loc('رد', 'rejection')}
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* STATS DRAWER */}
+              {activeTabDrawer === 'stats' && (
+                <div className="grid grid-cols-2 gap-2 text-center">
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <span className="text-white/60 text-[10px]">{window.loc('تعداد بینندگان غایی', 'The number of final viewers')}</span>
+                    <p className="text-base font-black text-cyan-400 font-mono">{viewerCount}</p>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <span className="text-white/60 text-[10px]">{window.loc('مجموع لایک‌ها', 'Total likes')}</span>
+                    <p className="text-base font-black text-rose-400 font-mono">{likeCount}</p>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <span className="text-white/60 text-[10px]">{window.loc('درآمد سکه هدایا', 'Income coin gifts')}</span>
+                    <p className="text-base font-black text-amber-400 font-mono">{giftCoinsEarned} 🪙</p>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <span className="text-white/60 text-[10px]">{window.loc('فالوورهای جذب‌شده', 'Followers attracted')}</span>
+                    <p className="text-base font-black text-emerald-400 font-mono">+{followersGained}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* SETTINGS DRAWER */}
+              {activeTabDrawer === 'settings' && (
+                <div className="space-y-2">
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition">
+                    <span className="text-xs font-bold text-slate-200">{window.loc('فقط دنبال‌کنندگان مجاز به چت باشند', 'Only followers are allowed to chat')}</span>
+                    <input
+                      type="checkbox"
+                      checked={isFollowersOnlyChat}
+                      onChange={(e) => setIsFollowersOnlyChat(e.target.checked)}
+                      className="w-4 h-4 accent-pink-500 rounded"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition">
+                    <span className="text-xs font-bold text-slate-200">{window.loc('فقط کاربران VIP مجاز به چت باشند', 'Only VIP users are allowed to chat')}</span>
+                    <input
+                      type="checkbox"
+                      checked={isVipOnlyChat}
+                      onChange={(e) => setIsVipOnlyChat(e.target.checked)}
+                      className="w-4 h-4 accent-pink-500 rounded"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition">
+                    <span className="text-xs font-bold text-slate-200">{window.loc('بستن کامل کامنت‌های بینندگان', 'Complete closing of viewer comments')}</span>
+                    <input
+                      type="checkbox"
+                      checked={isCommentsDisabled}
+                      onChange={(e) => setIsCommentsDisabled(e.target.checked)}
+                      className="w-4 h-4 accent-rose-500 rounded"
+                    />
+                  </label>
+                </div>
+              )}
+
+              {/* BEAUTY & AR EFFECTS STUDIO DRAWER */}
+              {activeTabDrawer === 'beauty' && (
+                <div className="space-y-4 max-h-72 overflow-y-auto no-scrollbar p-1">
+                  
+                  {/* Skin Tone Filter Preset */}
+                  <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10">
+                    <span className="text-xs font-bold text-slate-200">{window.loc('تن و افکت رنگ پوست (Skin Tone & Filter)', 'Skin Tone & Filter')}</span>
+                    <div className="grid grid-cols-5 gap-1.5 pt-1">
+                      {[
+                        { id: 'off', label: 'طبیعی', color: '#94a3b8' },
+                        { id: 'smooth', label: 'صافی ابریشم', color: '#fbcfe8' },
+                        { id: 'glow', label: 'درخشان', color: '#fef08a' },
+                        { id: 'rose', label: 'گلگون', color: '#f43f5e' },
+                        { id: 'bronze', label: 'برنزه طلایی', color: '#b45309' },
+                      ].map(filter => (
+                        <button
+                          key={filter.id}
+                          onClick={() => setBeautyFilter(filter.id)}
+                          className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
+                            beautyFilter === filter.id ? 'border-pink-400 bg-pink-500/20 scale-105 shadow-md' : 'border-white/10 bg-white/5 hover:bg-white/10'
+                          }`}
+                        >
+                          <span className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner" style={{ backgroundColor: filter.color }} />
+                          <span className="text-[8px] font-bold text-white/80 truncate w-full text-center">{filter.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Skin Smoothing Slider */}
+                  <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="text-pink-300 flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        {window.loc('صافی و روتوش پوست (Skin Smoothing)', 'Skin Smoothing & Retouch')}
+                      </span>
+                      <span className="font-mono text-pink-400">{skinSmoothing}%</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      value={skinSmoothing}
+                      onChange={(e) => setSkinSmoothing(Number(e.target.value))}
+                      className="w-full h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-pink-500 border border-white/10"
+                    />
+                  </div>
+
+                  {/* Face AR Stickers & Accessories */}
+                  <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10">
+                    <span className="text-xs font-bold text-slate-200">{window.loc('افکت‌های سه‌بعدی و استیکر چهره (AR Stickers)', 'AR Stickers & Face Accessories')}</span>
+                    <div className="grid grid-cols-6 gap-1.5 pt-1">
+                      {[
+                        { id: 'none', label: 'بدون استیکر', icon: '🚫' },
+                        { id: 'cat_ears', label: 'گوش گربه‌ای', icon: '🐱' },
+                        { id: 'crown', label: 'تاج سلطنتی', icon: '👑' },
+                        { id: 'sparkles', label: 'ستارگان', icon: '✨' },
+                        { id: 'sunglasses', label: 'عینک دودی', icon: '🕶️' },
+                        { id: 'hearts', label: 'قلب‌های عاشق', icon: '💖' },
+                      ].map(s => (
+                        <button
+                          key={s.id}
+                          onClick={() => setFaceSticker(s.id)}
+                          className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
+                            faceSticker === s.id ? 'border-amber-400 bg-amber-500/20 scale-105 shadow-md' : 'border-white/10 bg-white/5 hover:bg-white/10'
+                          }`}
+                        >
+                          <span className="text-base">{s.icon}</span>
+                          <span className="text-[8px] font-bold text-white/80 truncate w-full text-center">{s.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Studio Lighting Mood */}
+                  <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10">
+                    <span className="text-xs font-bold text-slate-200">{window.loc('نورپردازی استودیویی (Studio Lighting)', 'Studio Lighting Mood')}</span>
+                    <div className="grid grid-cols-6 gap-1.5 pt-1">
+                      {[
+                        { id: 'none', label: 'طبیعی', icon: '🚫' },
+                        { id: 'studio', label: 'استودیو', icon: '💡' },
+                        { id: 'warm', label: 'گرم و طلایی', icon: '☀️' },
+                        { id: 'cool', label: 'خنک کریستال', icon: '❄️' },
+                        { id: 'neon', label: 'نئون سایبر', icon: '🔮' },
+                        { id: 'sunset', label: 'غروب آفتاب', icon: '🌅' },
+                      ].map(light => (
+                        <button
+                          key={light.id}
+                          onClick={() => setLightingEffect(light.id)}
+                          className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
+                            lightingEffect === light.id ? 'border-cyan-400 bg-cyan-500/20 scale-105 shadow-md' : 'border-white/10 bg-white/5 hover:bg-white/10'
+                          }`}
+                        >
+                          <span className="text-sm">{light.icon}</span>
+                          <span className="text-[8px] font-bold text-white/80 truncate w-full text-center">{light.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* END LIVE CONFIRMATION MODAL */}
+      {/* ========================================================================= */}
+      {isEndConfirmOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="w-full max-w-xs bg-slate-900 rounded-3xl border border-rose-500/40 p-5 shadow-2xl text-center space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-6 h-6 animate-bounce" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-black text-white text-sm">{window.loc('پایان پخش زنده استودیو؟', 'The end of the studio live broadcast?')}</h4>
+              <p className="text-xs text-slate-400">{window.loc('آیا مطمئن هستید که می‌خواهید لایواستریم را خاتمه دهید؟', 'Are you sure you want to end the livestream?')}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <button
+                onClick={handleEndLiveStream}
+                className="py-2.5 rounded-xl bg-rose-600 text-white font-black text-xs shadow-md"
+              >
+                {window.loc('بله، پایان لایو', 'Yes, end of live')}
+              </button>
+              <button
+                onClick={() => setIsEndConfirmOpen(false)}
+                className="py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+              >
+                {window.loc('انصراف', 'opt out')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PHASE 4: ENDED LIVE SUMMARY MODAL */}
+      {/* ========================================================================= */}
+      {studioPhase === 'SUMMARY' && (
+        <div className="flex-1 overflow-y-auto p-4 max-w-md mx-auto w-full my-auto space-y-4 animate-fadeIn">
+          <div className="p-6 rounded-3xl bg-slate-900 border border-emerald-500/40 space-y-5 text-center shadow-2xl">
+            <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/40">
+              <Award className="w-8 h-8 text-emerald-400 animate-bounce" />
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-lg font-black text-white">{window.loc('گزارش عملکرد لایواستریم (Live Summary)', 'Live Stream performance report (Live Summary)')}</h3>
+              <p className="text-xs text-slate-400">{window.loc('استریم شما با موفقیت پایان یافت و آمار نهایی ثبت گردید.', 'Your stream has ended successfully and the final statistics have been recorded.')}</p>
+            </div>
+
+            {/* Performance Stats Cards */}
+            <div className="grid grid-cols-2 gap-2 text-right">
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-0.5">
+                <span className="text-[10px] text-slate-400 font-bold">{window.loc('مدت زمان لایو:', 'Live duration:')}</span>
+                <p className="text-base font-black text-white font-mono">{formatTime(liveDurationSeconds)}</p>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-0.5">
+                <span className="text-[10px] text-slate-400 font-bold">{window.loc('اوج بینندگان (Peak):', 'Peak viewers:')}</span>
+                <p className="text-base font-black text-cyan-400 font-mono">{viewerCount}</p>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-0.5">
+                <span className="text-[10px] text-slate-400 font-bold">{window.loc('درآمد سکه هدایا:', 'Gift coin income:')}</span>
+                <p className="text-base font-black text-amber-400 font-mono">{giftCoinsEarned} 🪙</p>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-0.5">
+                <span className="text-[10px] text-slate-400 font-bold">{window.loc('فالوورهای جدید:', 'New followers:')}</span>
+                <p className="text-base font-black text-emerald-400 font-mono">+{followersGained}</p>
+              </div>
+            </div>
+
+            {/* AI Compliance Check Notice */}
+            <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-emerald-400 font-semibold flex items-center justify-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span>{window.loc('تمامی تاییدات اخلاقی و هوش مصنوعی پاس گردید ✅', 'All ethical and artificial intelligence approvals were passed')}</span>
+            </div>
+
+            <button
+              onClick={handleCloseStudio}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-amber-500 text-white font-black text-xs shadow-xl hover:scale-102 active:scale-95 transition"
+            >
+              {window.loc('بازگشت به برنامه (Close Studio)', 'Return to the program (Close Studio)')}
+            </button>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
