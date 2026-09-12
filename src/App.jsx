@@ -64,7 +64,7 @@ import {
 import { startKeepAlivePing, compressImageFile } from './services/performance';
 import economyService from './services/economyService';
 import { LiveStreamRoomService } from './services/liveStreamRoomService';
-import { livekitManager, fetchLiveKitToken } from './services/livekitService';
+import { livekitManager, fetchLiveKitToken, getCanonicalLiveKitRoomName } from './services/livekitService';
 import { supabase } from './supabaseClient';
 import { safeStorage } from './utils/safeStorage';
 import { loc } from './utils/i18n';
@@ -176,6 +176,7 @@ export default function App() {
   const [viewingStream, setViewingStream] = useState(null);
   const viewingRoomServiceRef = useRef(null);
   const viewerLiveVideoRef = useRef(null);
+  const viewerRemoteTrackRef = useRef(null);
   const [preStreamWarningStream, setPreStreamWarningStream] = useState(null);
   const [streamChatMessages, setStreamChatMessages] = useState([]);
   const [streamChatInput, setStreamChatInput] = useState('');
@@ -2351,7 +2352,9 @@ export default function App() {
       let isLiveKitCancelled = false;
       const initLiveKitViewer = async () => {
         try {
-          const canonicalRoom = viewingStream.livekit_room || `room_${viewingStream.id}`;
+          const canonicalRoom = viewingStream.livekit_room || getCanonicalLiveKitRoomName(viewingStream.id);
+          console.log('[LiveKit Viewer] Connecting to canonical room:', canonicalRoom, 'Stream ID:', viewingStream.id);
+
           const tokenRes = await fetchLiveKitToken({
             roomName: canonicalRoom,
             identity: getUserId() || currentUser?.id,
@@ -2359,7 +2362,10 @@ export default function App() {
             role: 'viewer'
           });
 
-          if (isLiveKitCancelled || !tokenRes?.token) return;
+          if (isLiveKitCancelled || !tokenRes?.token) {
+            console.warn('[LiveKit Viewer] Aborted connection: missing token or cancelled');
+            return;
+          }
 
           await livekitManager.connect({
             roomName: canonicalRoom,
@@ -2370,32 +2376,53 @@ export default function App() {
             role: 'viewer'
           });
 
+          console.log('[LiveKit Viewer] Connected successfully to room:', canonicalRoom);
+
           // Function to attach video tracks to viewer video element
-          const attachRemoteTrack = (track) => {
-            if (track && (track.kind === 'video' || track.source === 'camera') && viewerLiveVideoRef.current) {
-              if (typeof track.attach === 'function') {
-                track.attach(viewerLiveVideoRef.current);
-              } else if (track.mediaStreamTrack) {
-                const stream = new MediaStream([track.mediaStreamTrack]);
-                viewerLiveVideoRef.current.srcObject = stream;
-              }
-              viewerLiveVideoRef.current.play?.().catch(() => {});
+          const attachRemoteTrack = (eventData) => {
+            const track = eventData?.track || (eventData?.kind === 'video' ? eventData : null);
+            if (!track) return;
+            const isVideo = track.kind === 'video' || track.source === 'camera';
+            if (!isVideo) return;
+
+            console.log('[LiveKit Viewer] Track received to attach:', {
+              trackSid: track.sid,
+              readyState: track.readyState || track.mediaStreamTrack?.readyState,
+              enabled: track.enabled
+            });
+
+            viewerRemoteTrackRef.current = track;
+
+            if (viewerLiveVideoRef.current) {
+              livekitManager.attachTrackToElement(track, viewerLiveVideoRef.current);
             }
           };
 
           livekitManager.on('track_subscribed', attachRemoteTrack);
           livekitManager.on('track_published', attachRemoteTrack);
+          livekitManager.on('participant_connected', () => {
+            if (livekitManager.room?.remoteParticipants) {
+              for (const [_, p] of livekitManager.room.remoteParticipants) {
+                for (const [__, pub] of p.videoTrackPublications) {
+                  if (pub.track) attachRemoteTrack(pub.track);
+                }
+              }
+            }
+          });
 
-          // Check already existing tracks in room
+          // Check already existing tracks in room (e.g. streamer was already live)
           if (livekitManager.room?.remoteParticipants) {
             for (const [_, p] of livekitManager.room.remoteParticipants) {
               for (const [__, pub] of p.videoTrackPublications) {
-                if (pub.track) attachRemoteTrack(pub.track);
+                if (pub.track) {
+                  console.log('[LiveKit Viewer] Attaching existing track from remote participant:', p.identity);
+                  attachRemoteTrack(pub.track);
+                }
               }
             }
           }
         } catch (lkErr) {
-          console.warn('LiveKit viewer connect note:', lkErr);
+          console.warn('[LiveKit Viewer] Connection error:', lkErr);
         }
       };
 
@@ -2464,6 +2491,7 @@ export default function App() {
     window.addEventListener('storage', handleStorageChange);
 
     return () => {
+      viewerRemoteTrackRef.current = null;
       if (roomService) {
         roomService.unsubscribe();
         viewingRoomServiceRef.current = null;
@@ -4249,11 +4277,16 @@ export default function App() {
           {/* LIVE BROADCAST VIDEO / FEED CANVAS BACKGROUND */}
           <div className="absolute inset-0 z-0 bg-slate-950 flex items-center justify-center overflow-hidden">
             <video
-              ref={viewerLiveVideoRef}
-              src={viewingStream.video_url || viewingStream.stream_url || undefined}
+              ref={(el) => {
+                viewerLiveVideoRef.current = el;
+                if (el && viewerRemoteTrackRef.current) {
+                  console.log('[LiveKit Viewer] Video ref callback: attaching cached remote track');
+                  livekitManager.attachTrackToElement(viewerRemoteTrackRef.current, el);
+                }
+              }}
               autoPlay
               playsInline
-              muted={false}
+              muted
               className="w-full h-full object-cover z-10"
             />
             {/* Fallback & Poster when live stream is connecting or audio-only */}

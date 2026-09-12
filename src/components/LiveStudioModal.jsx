@@ -644,12 +644,14 @@ export default function LiveStudioModal({
     }, 1000);
   };
 
-  // Execute Live Start after Countdown - Strict Sequence: Camera -> Token -> LiveKit Connect & Publish -> DB Insert -> UI LIVE
+  // Execute Live Start after Countdown - Strict Sequence: Camera -> DB Record -> Room Name -> LiveKit Connect & Publish -> UI LIVE
   const executeLiveStart = async () => {
     setIsStartingLive(true);
 
+    let createdStream = null;
+
     try {
-      // 1. Verify Camera stream is active
+      // 1. Verify Camera stream is active and track is live
       const activeStream = mediaStreamRef.current;
       const activeVideoTrack = activeStream?.getVideoTracks?.()?.find(t => t.readyState === 'live');
       if (!activeStream || !activeVideoTrack) {
@@ -659,96 +661,65 @@ export default function LiveStudioModal({
         return;
       }
 
-      // 2. Request / Sign authentic LiveKit Token
-      const canonicalRoom = `room_${currentUser?.id || 'host'}_${Date.now()}`;
-      let tokenRes = null;
-      try {
-        tokenRes = await fetchLiveKitToken({
-          roomName: canonicalRoom,
-          identity: currentUser?.id,
-          name: currentUser?.name || currentUsername || 'Host',
-          role: 'host'
-        });
-      } catch (tokErr) {
-        console.error('Real LiveKit Token Request Failed:', tokErr);
+      // 2. Save stream record directly to Supabase public.streams FIRST to obtain canonical Stream ID
+      const newStreamPayload = {
+        host: currentUser?.name || currentUsername || 'Verified Streamer',
+        host_id: currentUser?.id,
+        avatar: currentUser?.avatar || '',
+        title: liveTitle.trim(),
+        category: liveCategory,
+        live_type: liveType,
+        description: liveDesc,
+        thumbnail: thumbnailUrl,
+        is_ticketed: isTicketedLive,
+        ticket_price: isTicketedLive ? Number(ticketPrice) : 0,
+        is_vip: isTicketedLive,
+        entry_fee: isTicketedLive ? Number(ticketPrice) : 0,
+        status: 'active'
+      };
+
+      const res = await apiLive.createLiveStream(newStreamPayload);
+      if (!res || !res.success || !res.data) {
+        throw new Error(res?.error || 'Database Error: Failed to create live stream record in Supabase.');
       }
+      createdStream = res.data;
+
+      // Single source of truth for Room Name: derived directly from Supabase stream record
+      const canonicalRoom = getCanonicalLiveKitRoomName(createdStream.id);
+      console.log('[LiveKit Host] Starting broadcast with canonicalRoom:', canonicalRoom, 'Stream ID:', createdStream.id);
+
+      // 3. Request / Sign authentic LiveKit Token for this canonical room
+      const tokenRes = await fetchLiveKitToken({
+        roomName: canonicalRoom,
+        identity: currentUser?.id,
+        name: currentUser?.name || currentUsername || 'Host',
+        role: 'host'
+      });
 
       if (!tokenRes || !tokenRes.success || !tokenRes.token || !tokenRes.token.trim()) {
-        setStudioPhase('PRE_LIVE');
-        setIsStartingLive(false);
-        showToast(window.loc('❌ دریافت توکن زنده LiveKit ناموفق بود.', '❌ Failed to obtain authentic LiveKit broadcast token from server.'));
-        return;
+        throw new Error(tokenRes?.error || 'Failed to obtain authentic LiveKit broadcast token from server.');
       }
 
       const authenticToken = tokenRes.token.trim();
       const effectiveServerUrl = tokenRes.serverUrl || 'wss://livekit.vlive.app';
-      const effectiveRoom = tokenRes.roomName || canonicalRoom;
 
-      // 3. Connect to LiveKit Room and publish media stream
-      try {
-        await livekitManager.connect({
-          roomName: effectiveRoom,
-          token: authenticToken,
-          serverUrl: effectiveServerUrl,
-          identity: currentUser?.id,
-          name: currentUser?.name || currentUsername || 'Host',
-          role: 'host',
-          mediaStream: activeStream,
-          stream: activeStream
-        });
-        setIsLiveKitConnected(true);
-      } catch (lkErr) {
-        console.warn('LiveKit connection note:', lkErr);
-      }
+      // 4. Connect to LiveKit Room and publish media stream (Do NOT swallow errors!)
+      await livekitManager.connect({
+        roomName: canonicalRoom,
+        token: authenticToken,
+        serverUrl: effectiveServerUrl,
+        identity: currentUser?.id,
+        name: currentUser?.name || currentUsername || 'Host',
+        role: 'host',
+        mediaStream: activeStream,
+        stream: activeStream
+      });
 
-      // 4. Save stream record directly to Supabase public.streams
-      let createdStream = null;
-      try {
-        const newStreamPayload = {
-          host: currentUser?.name || currentUsername || 'Verified Streamer',
-          host_id: currentUser?.id,
-          avatar: currentUser?.avatar || '',
-          title: liveTitle.trim(),
-          category: liveCategory,
-          live_type: liveType,
-          description: liveDesc,
-          thumbnail: thumbnailUrl,
-          is_ticketed: isTicketedLive,
-          ticket_price: isTicketedLive ? Number(ticketPrice) : 0,
-          is_vip: isTicketedLive,
-          entry_fee: isTicketedLive ? Number(ticketPrice) : 0,
-          livekit_token: authenticToken,
-          livekit_room: effectiveRoom,
-          livekit_server_url: effectiveServerUrl
-        };
-
-        const res = await apiLive.createLiveStream(newStreamPayload);
-        if (res && res.success && res.data) {
-          createdStream = res.data;
-        } else {
-          createdStream = {
-            id: `stream_${Date.now()}`,
-            ...newStreamPayload,
-            status: 'active',
-            created_at: new Date().toISOString()
-          };
-        }
-      } catch (dbErr) {
-        console.warn('Database Live Stream Creation notice:', dbErr);
-        createdStream = {
-          id: `stream_${Date.now()}`,
-          host: currentUser?.name || currentUsername || 'Verified Streamer',
-          host_id: currentUser?.id,
-          title: liveTitle.trim(),
-          category: liveCategory,
-          live_type: liveType,
-          status: 'active'
-        };
-      }
+      setIsLiveKitConnected(true);
 
       // 5. Success - Set state & transition UI to LIVE
       setLivekitToken(authenticToken);
-      setLivekitRoom(effectiveRoom);
+      setLivekitRoom(canonicalRoom);
       setLivekitServerUrl(effectiveServerUrl);
       setBroadcasterAuthorized(true);
       setActiveStreamRecord(createdStream);
@@ -807,6 +778,11 @@ export default function LiveStudioModal({
       showToast(window.loc(`🎥 پخش زنده استودیو با موفقیت شروع شد!`, `🎥 Live broadcast started successfully!`));
     } catch (globalErr) {
       console.error('executeLiveStart error:', globalErr);
+      if (createdStream?.id) {
+        try {
+          await apiLive.endLiveStream(createdStream.id);
+        } catch(e) {}
+      }
       setStudioPhase('PRE_LIVE');
       setIsStartingLive(false);
       showToast(window.loc(`❌ خطا در اجرای لایو: ${globalErr.message}`, `❌ Live execution error: ${globalErr.message}`));

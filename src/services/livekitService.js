@@ -397,29 +397,46 @@ export class LiveKitManager {
    */
   async replaceVideoTrack(newNativeTrack, facingMode) {
     this.currentFacingMode = facingMode || this.currentFacingMode;
-    if (this.room && this.room.localParticipant) {
-      try {
-        const videoPub = Array.from(this.room.localParticipant.videoTrackPublications.values())[0];
-        if (videoPub && videoPub.videoTrack && typeof videoPub.videoTrack.replaceTrack === 'function') {
-          await videoPub.videoTrack.replaceTrack(newNativeTrack);
-          this.localVideoTrack = newNativeTrack;
-        } else {
-          // If replaceTrack is not directly supported on the track object, unpublish without stopping hardware
-          if (videoPub && videoPub.track) {
-            await this.room.localParticipant.unpublishTrack(videoPub.track, { stopOnUnpublish: false });
-          }
-          this.localVideoTrack = newNativeTrack;
-          if (newNativeTrack && newNativeTrack.readyState === 'live') {
-            await this.room.localParticipant.publishTrack(newNativeTrack, {
-              simulcast: true,
-              videoEncoding: VideoPresets.h720.encoding,
-              videoCodec: 'vp8'
-            });
-          }
-        }
-      } catch (err) {
-        console.warn('Error replacing video track in LiveKit:', err);
+    if (!this.room || !this.room.localParticipant) {
+      this.localVideoTrack = newNativeTrack;
+      return;
+    }
+
+    if (!newNativeTrack || newNativeTrack.readyState !== 'live') {
+      console.warn('[LiveKit] replaceVideoTrack skipped: new track is not live', newNativeTrack);
+      return;
+    }
+
+    try {
+      const videoPub = Array.from(this.room.localParticipant.videoTrackPublications.values())[0];
+
+      // Check if track is already the active one
+      if (videoPub?.videoTrack?.mediaStreamTrack === newNativeTrack || this.localVideoTrack === newNativeTrack) {
+        console.log('[LiveKit] Track is already active, skipping replacement');
+        return;
       }
+
+      if (videoPub && videoPub.videoTrack && typeof videoPub.videoTrack.replaceTrack === 'function') {
+        console.log('[LiveKit] Replacing track via LocalVideoTrack.replaceTrack()...');
+        await videoPub.videoTrack.replaceTrack(newNativeTrack);
+        this.localVideoTrack = newNativeTrack;
+        console.log('[LiveKit] Track successfully replaced seamlessly');
+      } else {
+        console.log('[LiveKit] Replacing track via unpublishTrack & publishTrack fallback...');
+        if (videoPub && videoPub.track) {
+          await this.room.localParticipant.unpublishTrack(videoPub.track, { stopOnUnpublish: false });
+        }
+        this.localVideoTrack = newNativeTrack;
+        const pub = await this.room.localParticipant.publishTrack(newNativeTrack, {
+          simulcast: true,
+          videoEncoding: VideoPresets.h720.encoding,
+          videoCodec: 'vp8'
+        });
+        console.log('[LiveKit] New track published after switch:', pub?.trackSid);
+      }
+    } catch (err) {
+      console.error('[LiveKit] Error replacing video track:', err);
+      throw err;
     }
   }
 
@@ -666,10 +683,16 @@ export class LiveKitManager {
         const kind = track.kind || track.source;
         if (kind === 'video' || track.kind === Track.Kind.Video) {
           this.localVideoTrack = track;
-          await this.room.localParticipant.publishTrack(track, {
+          const pub = await this.room.localParticipant.publishTrack(track, {
             simulcast: true,
             videoEncoding: VideoPresets.h720.encoding,
             videoCodec: 'vp8'
+          });
+          console.log('[LiveKit] Video track published:', {
+            trackSid: pub?.trackSid || pub?.sid,
+            kind: pub?.kind,
+            readyState: track.readyState || track.mediaStreamTrack?.readyState,
+            enabled: track.enabled
           });
         } else if (kind === 'audio' || track.kind === Track.Kind.Audio) {
           this.localAudioTrack = track;
@@ -677,6 +700,27 @@ export class LiveKitManager {
             audioPreset: { maxBitrate: 32000 }
           });
         }
+      }
+
+      // Strict verification of publication status
+      if (withVideo) {
+        const videoPubs = Array.from(this.room.localParticipant.videoTrackPublications.values());
+        const validPub = videoPubs.find(p => 
+          p && 
+          p.track && 
+          (p.track.readyState === 'live' || p.track.mediaStreamTrack?.readyState === 'live') &&
+          p.track.enabled !== false &&
+          (p.trackSid || p.sid)
+        );
+
+        if (!validPub) {
+          throw new Error('LiveKit Video Publication Failed: No active, live video track publication with valid SID found on local participant.');
+        }
+
+        console.log('[LiveKit] Video publication strictly verified on local participant:', {
+          trackSid: validPub.trackSid || validPub.sid,
+          readyState: validPub.track?.readyState || validPub.track?.mediaStreamTrack?.readyState
+        });
       }
 
       this.emit('local_tracks_published', {
@@ -967,41 +1011,67 @@ export class LiveKitManager {
   attachTrackToElement(trackOrStream, element) {
     if (!trackOrStream || !element) return;
     try {
-      if (typeof trackOrStream.attach === 'function') {
-        trackOrStream.attach(element);
-        return;
-      }
-      
-      let mediaStream = null;
-      if (typeof MediaStream !== 'undefined' && trackOrStream instanceof MediaStream) {
-        mediaStream = trackOrStream;
-      } else if (typeof MediaStreamTrack !== 'undefined' && trackOrStream instanceof MediaStreamTrack) {
-        mediaStream = new MediaStream([trackOrStream]);
-      } else if (trackOrStream.stream && trackOrStream.stream instanceof MediaStream) {
-        mediaStream = trackOrStream.stream;
-      } else if (trackOrStream.mediaStream && trackOrStream.mediaStream instanceof MediaStream) {
-        mediaStream = trackOrStream.mediaStream;
-      }
+      const raw = trackOrStream.track || trackOrStream;
+      const isVideo = raw.kind === 'video' || raw.kind === Track.Kind.Video || raw.source === 'camera';
 
-      if (mediaStream) {
-        if (element.srcObject !== mediaStream) {
+      console.log(`[LiveKit] ${isVideo ? 'Video' : 'Audio'} track attaching to element:`, {
+        trackSid: raw.sid || raw.trackSid,
+        readyState: raw.readyState || raw.mediaStreamTrack?.readyState,
+        enabled: raw.enabled
+      });
+
+      if (typeof raw.attach === 'function') {
+        raw.attach(element);
+      } else {
+        let mediaStream = null;
+        if (typeof MediaStream !== 'undefined' && raw instanceof MediaStream) {
+          mediaStream = raw;
+        } else if (typeof MediaStreamTrack !== 'undefined' && raw instanceof MediaStreamTrack) {
+          mediaStream = new MediaStream([raw]);
+        } else if (raw.mediaStreamTrack) {
+          mediaStream = new MediaStream([raw.mediaStreamTrack]);
+        } else if (raw.stream && raw.stream instanceof MediaStream) {
+          mediaStream = raw.stream;
+        }
+
+        if (mediaStream && element.srcObject !== mediaStream) {
           element.srcObject = mediaStream;
         }
-        element.onloadedmetadata = () => {
-          element.play().catch(() => {});
-        };
-        element.play().catch(() => {});
+      }
+
+      console.log(`[LiveKit] ${isVideo ? 'Video' : 'Audio'} track attached.`, {
+        videoTrackReadyState: raw.readyState || raw.mediaStreamTrack?.readyState,
+        videoElementReadyState: element.readyState,
+        videoElementPaused: element.paused
+      });
+
+      const playPromise = element.play?.();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('[LiveKit] Video element playback active. Video element paused:', element.paused);
+          })
+          .catch((err) => {
+            console.warn('[LiveKit] Direct playback blocked by policy, trying muted playback:', err);
+            element.muted = true;
+            element.play?.()
+              .then(() => {
+                console.log('[LiveKit] Muted video element playback active. Video element paused:', element.paused);
+              })
+              .catch(e => console.warn('[LiveKit] Muted video playback error:', e));
+          });
       }
     } catch (err) {
-      console.warn('Failed to attach track to element:', err);
+      console.warn('[LiveKit] Failed to attach track to element:', err);
     }
   }
 
   detachTrackFromElement(track, element) {
     if (!track || !element) return;
     try {
-      if (typeof track.detach === 'function') {
-        track.detach(element);
+      const raw = track.track || track;
+      if (typeof raw.detach === 'function') {
+        raw.detach(element);
       } else if (element.srcObject) {
         element.srcObject = null;
       }
@@ -1019,41 +1089,76 @@ export class LiveKitManager {
     this.room
       .on(RoomEvent.Connected, () => {
         this.connectionState = ConnectionState.Connected;
+        console.log('[LiveKit] Room connected successfully:', this.room.name);
         this.emit('connected', { room: this.room });
       })
       .on(RoomEvent.Disconnected, (reason) => {
         this.connectionState = ConnectionState.Disconnected;
+        console.log('[LiveKit] Room disconnected:', reason);
         this.emit('disconnected', { reason });
       })
       .on(RoomEvent.Reconnecting, () => {
         this.connectionState = ConnectionState.Reconnecting;
-        this.emit('reconnecting', { attempt: ++this.reconnectAttempts });
+        console.log('[LiveKit] Room reconnecting, attempt:', ++this.reconnectAttempts);
+        this.emit('reconnecting', { attempt: this.reconnectAttempts });
       })
       .on(RoomEvent.Reconnected, () => {
         this.connectionState = ConnectionState.Connected;
         this.reconnectAttempts = 0;
+        console.log('[LiveKit] Room reconnected successfully');
         this.emit('reconnected', { room: this.room });
+      })
+      .on(RoomEvent.TrackPublished, (publication, participant) => {
+        console.log('[LiveKit] Video publication created:', {
+          sid: publication?.trackSid || publication?.sid,
+          kind: publication?.kind,
+          participant: participant?.identity
+        });
+        this.emit('track_published', { publication, participant });
+      })
+      .on(RoomEvent.LocalTrackPublished, (publication, participant) => {
+        console.log('[LiveKit] Video track published by local participant:', {
+          sid: publication?.trackSid || publication?.sid,
+          kind: publication?.kind,
+          readyState: publication?.track?.readyState || publication?.track?.mediaStreamTrack?.readyState
+        });
+        this.emit('local_track_published', { publication, participant });
       })
       .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
         const kind = track?.kind || publication?.kind || 'video';
+        console.log('[LiveKit] Video track subscribed:', {
+          sid: track?.sid || publication?.trackSid,
+          kind,
+          participant: participant?.identity,
+          readyState: track?.readyState || track?.mediaStreamTrack?.readyState
+        });
         this.emit('track_subscribed', { track, publication, participant, kind });
       })
       .on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
         const kind = track?.kind || publication?.kind || 'video';
+        console.log('[LiveKit] Track unsubscribed:', {
+          sid: track?.sid,
+          kind,
+          participant: participant?.identity
+        });
         this.emit('track_unsubscribed', { track, publication, participant, kind });
       })
       .on(RoomEvent.TrackMuted, (publication, participant) => {
+        console.log('[LiveKit] Track muted:', publication?.trackSid);
         this.emit('track_muted', { publication, participant });
       })
       .on(RoomEvent.TrackUnmuted, (publication, participant) => {
+        console.log('[LiveKit] Track unmuted:', publication?.trackSid);
         this.emit('track_unmuted', { publication, participant });
       })
       .on(RoomEvent.ParticipantConnected, (participant) => {
         this.remoteParticipants.set(participant.identity, participant);
+        console.log('[LiveKit] Participant connected:', participant?.identity, 'Total:', this.room.numParticipants);
         this.emit('participant_connected', { participant, count: this.room.numParticipants });
       })
       .on(RoomEvent.ParticipantDisconnected, (participant) => {
         this.remoteParticipants.delete(participant.identity);
+        console.log('[LiveKit] Participant disconnected:', participant?.identity, 'Total:', this.room.numParticipants);
         this.emit('participant_disconnected', { participant, count: this.room.numParticipants });
       })
       .on(RoomEvent.DataReceived, (payload, participant, kind, topic) => {

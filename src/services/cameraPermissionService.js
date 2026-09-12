@@ -2,34 +2,180 @@ class CameraPermissionService {
   constructor() {
     this.activeStream = null;
     this.currentFacingMode = 'user';
+    this.isRequesting = false;
   }
 
   /**
-   * Always return granted without any permission prompts or blocker loops
+   * Checks the actual camera permission state without triggering prompt
+   * Returns 'granted' | 'denied' | 'prompt'
    */
   async checkCameraPermission() {
-    return 'granted';
+    // 1. Check native Capacitor/WebView plugin if available
+    if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.Camera?.checkPermissions) {
+      try {
+        const capStatus = await window.Capacitor.Plugins.Camera.checkPermissions();
+        if (capStatus?.camera === 'granted') return 'granted';
+        if (capStatus?.camera === 'denied') return 'denied';
+        if (capStatus?.camera === 'prompt' || capStatus?.camera === 'prompt-with-rationale') return 'prompt';
+      } catch (e) {}
+    }
+
+    // 2. Query Permissions API if supported by browser
+    if (typeof navigator !== 'undefined' && navigator.permissions?.query) {
+      try {
+        const perm = await navigator.permissions.query({ name: 'camera' });
+        if (perm?.state) {
+          // Listen for system permission changes
+          perm.onchange = () => {
+            try {
+              if (perm.state === 'granted') {
+                localStorage.setItem('vlive_camera_permission_granted', 'true');
+              } else if (perm.state === 'denied') {
+                localStorage.removeItem('vlive_camera_permission_granted');
+              }
+            } catch (e) {}
+          };
+          if (perm.state === 'granted') {
+            try { localStorage.setItem('vlive_camera_permission_granted', 'true'); } catch(e) {}
+            return 'granted';
+          }
+          if (perm.state === 'denied') {
+            try { localStorage.removeItem('vlive_camera_permission_granted'); } catch(e) {}
+            return 'denied';
+          }
+          return 'prompt';
+        }
+      } catch (e) {
+        // Some browsers (e.g. Firefox/Safari) may not support { name: 'camera' } in permissions.query
+      }
+    }
+
+    // 3. Check enumerateDevices - if user previously granted, device labels are exposed!
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.enumerateDevices) {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(d => d.kind === 'videoinput');
+        if (videoDevices.length > 0 && videoDevices.some(d => Boolean(d.label && d.label.trim()))) {
+          try { localStorage.setItem('vlive_camera_permission_granted', 'true'); } catch(e) {}
+          return 'granted';
+        }
+      } catch (e) {}
+    }
+
+    // 4. Check localStorage fallback flag
+    try {
+      const stored = localStorage.getItem('vlive_camera_permission_granted');
+      if (stored === 'true') {
+        return 'granted';
+      }
+    } catch (e) {}
+
+    return 'prompt';
   }
 
   /**
-   * Always return granted without any permission prompts or blocker loops
+   * Checks the actual microphone permission state without triggering prompt
+   * Returns 'granted' | 'denied' | 'prompt'
    */
   async checkMicPermission() {
-    return 'granted';
+    if (typeof navigator !== 'undefined' && navigator.permissions?.query) {
+      try {
+        const perm = await navigator.permissions.query({ name: 'microphone' });
+        if (perm?.state) {
+          if (perm.state === 'granted') {
+            try { localStorage.setItem('vlive_mic_permission_granted', 'true'); } catch(e) {}
+            return 'granted';
+          }
+          if (perm.state === 'denied') {
+            try { localStorage.removeItem('vlive_mic_permission_granted'); } catch(e) {}
+            return 'denied';
+          }
+          return 'prompt';
+        }
+      } catch (e) {}
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.enumerateDevices) {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioDevices = devices.filter(d => d.kind === 'audioinput');
+        if (audioDevices.length > 0 && audioDevices.some(d => Boolean(d.label && d.label.trim()))) {
+          try { localStorage.setItem('vlive_mic_permission_granted', 'true'); } catch(e) {}
+          return 'granted';
+        }
+      } catch (e) {}
+    }
+
+    try {
+      const stored = localStorage.getItem('vlive_mic_permission_granted');
+      if (stored === 'true') return 'granted';
+    } catch (e) {}
+
+    return 'prompt';
   }
 
   /**
-   * Direct resolution - no intermediate permission prompt
+   * Requests camera permission only if not already granted.
+   * If already granted, does not call getUserMedia.
    */
   async requestCameraPermission() {
-    return 'granted';
+    const currentState = await this.checkCameraPermission();
+    if (currentState === 'granted') {
+      return 'granted';
+    }
+
+    // Request permission once by opening stream
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      this.activeStream = stream;
+      try {
+        localStorage.setItem('vlive_camera_permission_granted', 'true');
+      } catch (e) {}
+      return 'granted';
+    } catch (err) {
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        try { localStorage.removeItem('vlive_camera_permission_granted'); } catch(e) {}
+        return 'denied';
+      }
+      throw err;
+    }
   }
 
   /**
-   * Direct resolution - no intermediate permission prompt
+   * Ensures permissions for video and/or audio.
+   * Only prompts if permissions are NOT already granted.
    */
   async ensurePermissions({ video = true, audio = true } = {}) {
-    return { camera: 'granted', microphone: 'granted' };
+    const camState = video ? await this.checkCameraPermission() : 'granted';
+    const micState = audio ? await this.checkMicPermission() : 'granted';
+
+    if (camState === 'granted' && micState === 'granted') {
+      return { camera: 'granted', microphone: 'granted' };
+    }
+
+    // Only invoke getUserMedia when actual permission is pending
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: video && camState !== 'granted',
+        audio: audio && micState !== 'granted'
+      });
+
+      if (video) {
+        try { localStorage.setItem('vlive_camera_permission_granted', 'true'); } catch(e) {}
+      }
+      if (audio) {
+        try { localStorage.setItem('vlive_mic_permission_granted', 'true'); } catch(e) {}
+      }
+
+      this.activeStream = stream;
+      return { camera: 'granted', microphone: 'granted' };
+    } catch (err) {
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        if (video) try { localStorage.removeItem('vlive_camera_permission_granted'); } catch(e) {}
+        if (audio) try { localStorage.removeItem('vlive_mic_permission_granted'); } catch(e) {}
+      }
+      throw err;
+    }
   }
 
   /**
