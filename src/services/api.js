@@ -2349,7 +2349,7 @@ export const apiMessages = {
               }).catch(() => {});
               
               setTimeout(() => {
-                supabase.removeChannel(ch).catch(() => {});
+                try { supabase.removeChannel(ch); } catch {}
               }, 2000);
             }
           });
@@ -2667,35 +2667,23 @@ export const apiLive = {
     const isVip = Boolean(streamPayload.is_vip || streamPayload.is_ticketed);
     const entryFee = Number(streamPayload.entry_fee || streamPayload.ticket_price) || 0;
 
-    // 0. End all previous active streams for this host
-    await supabase
-      .from('streams')
-      .update({ status: 'ended' })
-      .eq('host_id', hostUuid)
-      .eq('status', 'active')
-      .catch(() => {});
+    // 0. End all previous active streams for this host safely
+    try {
+      await supabase
+        .from('streams')
+        .update({ status: 'ended' })
+        .eq('host_id', hostUuid)
+        .eq('status', 'active');
+    } catch (e) {
+      console.warn('Notice ending previous streams:', e);
+    }
 
     // 1. Insert directly into public.streams
     let dbStream = null;
     let insertError = null;
 
-    const resWithProfile = await supabase
-      .from('streams')
-      .insert([{
-        host_id: hostUuid,
-        title: title,
-        status: 'active',
-        category: category,
-        thumbnail: thumbnail,
-        is_vip: isVip,
-        entry_fee: entryFee
-      }])
-      .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, profiles:host_id(id, username, name, avatar)')
-      .single();
-
-    if (resWithProfile.error) {
-      // Fallback without embedded profiles join if relation name differs
-      const resFallback = await supabase
+    try {
+      const resWithProfile = await supabase
         .from('streams')
         .insert([{
           host_id: hostUuid,
@@ -2706,14 +2694,33 @@ export const apiLive = {
           is_vip: isVip,
           entry_fee: entryFee
         }])
-        .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at')
+        .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, profiles:host_id(id, username, name, avatar)')
         .single();
 
-      dbStream = resFallback.data;
-      insertError = resFallback.error;
-    } else {
-      dbStream = resWithProfile.data;
-      insertError = resWithProfile.error;
+      if (resWithProfile.error) {
+        // Fallback without embedded profiles join if relation name differs
+        const resFallback = await supabase
+          .from('streams')
+          .insert([{
+            host_id: hostUuid,
+            title: title,
+            status: 'active',
+            category: category,
+            thumbnail: thumbnail,
+            is_vip: isVip,
+            entry_fee: entryFee
+          }])
+          .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at')
+          .single();
+
+        dbStream = resFallback.data;
+        insertError = resFallback.error;
+      } else {
+        dbStream = resWithProfile.data;
+        insertError = resWithProfile.error;
+      }
+    } catch (err) {
+      insertError = err;
     }
 
     if (insertError || !dbStream) {
@@ -2748,7 +2755,9 @@ export const apiLive = {
     };
 
     // Update host profile status to 'live'
-    await supabase.from('profiles').update({ status: 'live' }).eq('id', hostUuid).catch(() => {});
+    try {
+      await supabase.from('profiles').update({ status: 'live' }).eq('id', hostUuid);
+    } catch (e) {}
 
     // Realtime global broadcast to all users across app
     try {
@@ -2757,11 +2766,13 @@ export const apiLive = {
       });
       ch.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          await ch.send({
-            type: 'broadcast',
-            event: 'live_started',
-            payload: { stream: streamRecord }
-          }).catch(() => {});
+          try {
+            await ch.send({
+              type: 'broadcast',
+              event: 'live_started',
+              payload: { stream: streamRecord }
+            });
+          } catch (e) {}
         }
       });
     } catch (e) {}
@@ -2782,13 +2793,21 @@ export const apiLive = {
     const hostUuid = (typeof currentUid === 'string' && currentUid.includes('-') && currentUid.length >= 30) ? currentUid : undefined;
 
     // 1. Update public.streams table
-    const { error: endError } = await supabase
-      .from('streams')
-      .update({ status: 'ended' })
-      .eq('id', streamId);
+    let endError = null;
+    try {
+      const { error } = await supabase
+        .from('streams')
+        .update({ status: 'ended' })
+        .eq('id', streamId);
+      endError = error;
+    } catch (e) {
+      endError = e;
+    }
 
     if (hostUuid) {
-      await supabase.from('profiles').update({ status: 'online' }).eq('id', hostUuid).catch(() => {});
+      try {
+        await supabase.from('profiles').update({ status: 'online' }).eq('id', hostUuid);
+      } catch (e) {}
     }
 
     // 2. Global realtime broadcast that stream has ended
@@ -2798,11 +2817,13 @@ export const apiLive = {
       });
       ch.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          await ch.send({
-            type: 'broadcast',
-            event: 'live_ended',
-            payload: { streamId }
-          }).catch(() => {});
+          try {
+            await ch.send({
+              type: 'broadcast',
+              event: 'live_ended',
+              payload: { streamId }
+            });
+          } catch (e) {}
         }
       });
     } catch (e) {}
@@ -2821,7 +2842,7 @@ export const apiLive = {
     const uid = getUserId();
     if (!uid || !streamId) return;
     try {
-      await supabase.from('live_stream_viewers').insert([{ stream_id: streamId, user_id: uid }]).catch(() => {});
+      await supabase.from('live_stream_viewers').insert([{ stream_id: streamId, user_id: uid }]);
     } catch (e) {}
   },
 
@@ -2829,7 +2850,7 @@ export const apiLive = {
     const uid = getUserId();
     if (!uid || !streamId) return;
     try {
-      await supabase.from('live_stream_viewers').delete().eq('stream_id', streamId).eq('user_id', uid).catch(() => {});
+      await supabase.from('live_stream_viewers').delete().eq('stream_id', streamId).eq('user_id', uid);
     } catch (e) {}
   },
   async saveAdultAccess(payload) {
@@ -2869,7 +2890,11 @@ export const apiLive = {
         created_at: new Date().toISOString()
       };
       
-      const { data } = await supabase.from('live_comments').insert([payload]).select().catch(() => ({ data: null }));
+      let data = null;
+      try {
+        const res = await supabase.from('live_comments').insert([payload]).select();
+        data = res.data;
+      } catch (e) {}
       
       const channel = supabase.channel(`stream_room_${streamId}`);
       await channel.send({
@@ -3786,7 +3811,9 @@ export const apiCalls = {
         const { error } = await supabase.from('live_reports').insert([payload]);
         if (error) {
           // Fallback table name attempt
-          await supabase.from('reports').insert([payload]).catch(() => {});
+          try {
+            await supabase.from('reports').insert([payload]);
+          } catch (e) {}
         }
       } catch (dbErr) {
         console.warn('Report DB insert notice:', dbErr.message);
@@ -4568,7 +4595,7 @@ export const apiNotifications = {
     if (!uid) return;
     try {
       const userUuid = (await resolveProfileUuid(uid)) || uid;
-      await supabase.from('notifications').update({ is_read: true }).or(`user_id.eq.${userUuid},user_id.eq.${uid}`).catch(() => {});
+      await supabase.from('notifications').update({ is_read: true }).or(`user_id.eq.${userUuid},user_id.eq.${uid}`);
     } catch {}
     try {
       const cached = JSON.parse(safeStorage.getItem('vlive_user_notifs_v1') || '[]');
@@ -4582,7 +4609,7 @@ export const apiNotifications = {
     if (!uid) return;
     try {
       const userUuid = (await resolveProfileUuid(uid)) || uid;
-      await supabase.from('notifications').delete().eq('user_id', userUuid).catch(() => {});
+      await supabase.from('notifications').delete().eq('user_id', userUuid);
     } catch {}
     try {
       safeStorage.setItem('vlive_user_notifs_v1', '[]');
@@ -4642,12 +4669,15 @@ export const apiAdmin = {
 
       // 1. Read persistent admin state from Supabase
       const subjectKey = `ADMIN_USER_STATE:${targetUuid}`;
-      const { data: existingTicket } = await supabase
-        .from('support_tickets')
-        .select('id, message')
-        .eq('subject', subjectKey)
-        .maybeSingle()
-        .catch(() => ({ data: null }));
+      let existingTicket = null;
+      try {
+        const res = await supabase
+          .from('support_tickets')
+          .select('id, message')
+          .eq('subject', subjectKey)
+          .maybeSingle();
+        existingTicket = res.data;
+      } catch (e) {}
 
       let existingState = {};
       if (existingTicket?.message) {
@@ -4657,19 +4687,25 @@ export const apiAdmin = {
       }
 
       // 2. Read current balance from wallets table, profiles table, or persistent state
-      const { data: walData } = await supabase
-        .from('wallets')
-        .select('coins, usdt_balance, user_id')
-        .eq('user_id', targetUuid)
-        .maybeSingle()
-        .catch(() => ({ data: null }));
+      let walData = null;
+      try {
+        const res = await supabase
+          .from('wallets')
+          .select('coins, usdt_balance, user_id')
+          .eq('user_id', targetUuid)
+          .maybeSingle();
+        walData = res.data;
+      } catch (e) {}
 
-      const { data: profData } = await supabase
-        .from('profiles')
-        .select('coins, user_coins')
-        .eq('id', targetUuid)
-        .maybeSingle()
-        .catch(() => ({ data: null }));
+      let profData = null;
+      try {
+        const res = await supabase
+          .from('profiles')
+          .select('coins, user_coins')
+          .eq('id', targetUuid)
+          .maybeSingle();
+        profData = res.data;
+      } catch (e) {}
 
       const walletCoins = walData && typeof walData.coins !== 'undefined' && walData.coins !== null ? Number(walData.coins || 0) : null;
       const profileCoins = profData && (typeof profData.coins !== 'undefined' || typeof profData.user_coins !== 'undefined') ? Number(profData.coins ?? profData.user_coins ?? 0) : null;
@@ -4684,17 +4720,21 @@ export const apiAdmin = {
 
       // 3. Upsert into wallets table in PostgreSQL & update profiles
       if (targetUuid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUuid))) {
-        await supabase.from('wallets').upsert({
-          user_id: targetUuid,
-          coins: newCoins,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id' }).catch(() => {});
+        try {
+          await supabase.from('wallets').upsert({
+            user_id: targetUuid,
+            coins: newCoins,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+        } catch (e) {}
 
-        await supabase.from('profiles').update({
-          coins: newCoins,
-          user_coins: newCoins,
-          updated_at: new Date().toISOString()
-        }).eq('id', targetUuid).catch(() => {});
+        try {
+          await supabase.from('profiles').update({
+            coins: newCoins,
+            user_coins: newCoins,
+            updated_at: new Date().toISOString()
+          }).eq('id', targetUuid);
+        } catch (e) {}
       }
 
       // 4. Save state permanently in Supabase
@@ -4705,41 +4745,43 @@ export const apiAdmin = {
         updated_at: new Date().toISOString()
       };
 
-      if (existingTicket?.id) {
-        await supabase
-          .from('support_tickets')
-          .update({
-            message: JSON.stringify(mergedState),
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingTicket.id)
-          .catch(() => {});
-      } else {
-        await supabase
-          .from('support_tickets')
-          .insert([{
-            user_id: targetUuid,
-            subject: subjectKey,
-            message: JSON.stringify(mergedState),
-            status: 'closed'
-          }])
-          .catch(() => {});
-      }
+      try {
+        if (existingTicket?.id) {
+          await supabase
+            .from('support_tickets')
+            .update({
+              message: JSON.stringify(mergedState),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingTicket.id);
+        } else {
+          await supabase
+            .from('support_tickets')
+            .insert([{
+              user_id: targetUuid,
+              subject: subjectKey,
+              message: JSON.stringify(mergedState),
+              status: 'closed'
+            }]);
+        }
+      } catch (e) {}
 
       // 5. Record audit transaction log in Supabase
-      await supabase.from('support_tickets').insert([{
-        user_id: targetUuid,
-        subject: `TRANSACTION_LOG:${targetUuid}`,
-        message: JSON.stringify({
-          tx_type: val >= 0 ? 'deposit' : 'deduct',
-          amount_coins: Math.abs(val),
-          new_coins: newCoins,
-          old_coins: currentCoins,
-          reason: reason || 'Admin Manual Adjustment',
-          created_at: new Date().toISOString()
-        }),
-        status: 'closed'
-      }]).catch(() => {});
+      try {
+        await supabase.from('support_tickets').insert([{
+          user_id: targetUuid,
+          subject: `TRANSACTION_LOG:${targetUuid}`,
+          message: JSON.stringify({
+            tx_type: val >= 0 ? 'deposit' : 'deduct',
+            amount_coins: Math.abs(val),
+            new_coins: newCoins,
+            old_coins: currentCoins,
+            reason: reason || 'Admin Manual Adjustment',
+            created_at: new Date().toISOString()
+          }),
+          status: 'closed'
+        }]);
+      } catch (e) {}
 
       // 6. Broadcast user update event across all components
       if (typeof window !== 'undefined') {
@@ -4785,34 +4827,41 @@ export const apiAdmin = {
         if (prof?.id) targetUuid = prof.id;
       }
 
-      const { data: profData } = await supabase
-        .from('profiles')
-        .select('diamonds')
-        .eq('id', targetUuid)
-        .maybeSingle()
-        .catch(() => ({ data: null }));
+      let profData = null;
+      try {
+        const res = await supabase
+          .from('profiles')
+          .select('diamonds')
+          .eq('id', targetUuid)
+          .maybeSingle();
+        profData = res.data;
+      } catch (e) {}
 
       const currentDiamonds = Number(profData?.diamonds || 0);
       const newDiamonds = Math.max(0, currentDiamonds + val);
 
-      await supabase.from('profiles').update({
-        diamonds: newDiamonds
-      }).eq('id', targetUuid).catch(() => {});
+      try {
+        await supabase.from('profiles').update({
+          diamonds: newDiamonds
+        }).eq('id', targetUuid);
+      } catch (e) {}
 
       // Record audit transaction log in Supabase
-      await supabase.from('support_tickets').insert([{
-        user_id: targetUuid,
-        subject: `TRANSACTION_LOG:${targetUuid}`,
-        message: JSON.stringify({
-          tx_type: val >= 0 ? 'deposit_diamonds' : 'deduct_diamonds',
-          amount_diamonds: Math.abs(val),
-          new_diamonds: newDiamonds,
-          old_diamonds: currentDiamonds,
-          reason: reason || 'Admin Manual Diamond Adjustment',
-          created_at: new Date().toISOString()
-        }),
-        status: 'closed'
-      }]).catch(() => {});
+      try {
+        await supabase.from('support_tickets').insert([{
+          user_id: targetUuid,
+          subject: `TRANSACTION_LOG:${targetUuid}`,
+          message: JSON.stringify({
+            tx_type: val >= 0 ? 'deposit_diamonds' : 'deduct_diamonds',
+            amount_diamonds: Math.abs(val),
+            new_diamonds: newDiamonds,
+            old_diamonds: currentDiamonds,
+            reason: reason || 'Admin Manual Diamond Adjustment',
+            created_at: new Date().toISOString()
+          }),
+          status: 'closed'
+        }]);
+      } catch (e) {}
 
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('vlive_user_updated', {
@@ -4956,18 +5005,23 @@ export const apiAdmin = {
   async getAllUsers() {
     if (!(await verifyAdminServerRole())) return [];
     try {
-      // Parallelize DB queries with Promise.all for high speed and instant loading
+      // Parallelize DB queries safely without calling .catch on builder instances
       const [
-        { data: profs, error },
-        { data: walData },
-        { data: adminStates },
-        { data: approvedKycs }
+        profsRes,
+        walRes,
+        adminStatesRes,
+        kycRes
       ] = await Promise.all([
         supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-        supabase.from('wallets').select('user_id, coins, usdt_balance').catch(() => ({ data: [] })),
-        supabase.from('support_tickets').select('user_id, subject, message').like('subject', 'ADMIN_USER_STATE:%').catch(() => ({ data: [] })),
-        supabase.from('kyc_applications').select('user_id').eq('status', 'Approved').catch(() => ({ data: [] }))
+        supabase.from('wallets').select('user_id, coins, usdt_balance'),
+        supabase.from('support_tickets').select('user_id, subject, message').like('subject', 'ADMIN_USER_STATE:%'),
+        supabase.from('kyc_applications').select('user_id').eq('status', 'Approved')
       ]);
+
+      const profs = profsRes?.data || [];
+      const walData = walRes?.data || [];
+      const adminStates = adminStatesRes?.data || [];
+      const approvedKycs = kycRes?.data || [];
 
       const walMap = new Map((walData || []).map(w => [w.user_id, w]));
       const adminStateMap = new Map();
@@ -5162,35 +5216,44 @@ export const apiAdmin = {
       // 3. Sync streamer_profiles and kyc_applications tables if streamer status modified
       if (isStreamerVal) {
         if (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) {
-          await supabase.from('streamer_profiles').upsert([{
-            user_id: matchedId,
-            status: 'active',
-            updated_at: new Date().toISOString()
-          }], { onConflict: 'user_id' }).catch(() => {});
+          try {
+            await supabase.from('streamer_profiles').upsert([{
+              user_id: matchedId,
+              status: 'active',
+              updated_at: new Date().toISOString()
+            }], { onConflict: 'user_id' });
+          } catch (e) {}
 
-          await supabase.from('kyc_applications').update({
-            status: 'Approved',
-            updated_at: new Date().toISOString()
-          }).eq('user_id', matchedId).catch(() => {});
+          try {
+            await supabase.from('kyc_applications').update({
+              status: 'Approved',
+              updated_at: new Date().toISOString()
+            }).eq('user_id', matchedId);
+          } catch (e) {}
         }
       } else if (isStreamerExplicit && !isStreamerVal) {
         if (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) {
-          await supabase.from('streamer_profiles').update({
-            status: 'inactive',
-            updated_at: new Date().toISOString()
-          }).eq('user_id', matchedId).catch(() => {});
+          try {
+            await supabase.from('streamer_profiles').update({
+              status: 'inactive',
+              updated_at: new Date().toISOString()
+            }).eq('user_id', matchedId);
+          } catch (e) {}
         }
       }
 
       // 4. Save state permanently in Supabase support_tickets table (ADMIN_USER_STATE)
       if (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) {
         const subjectKey = `ADMIN_USER_STATE:${matchedId}`;
-        const { data: existingTicket } = await supabase
-          .from('support_tickets')
-          .select('id, message')
-          .eq('subject', subjectKey)
-          .maybeSingle()
-          .catch(() => ({ data: null }));
+        let existingTicket = null;
+        try {
+          const res = await supabase
+            .from('support_tickets')
+            .select('id, message')
+            .eq('subject', subjectKey)
+            .maybeSingle();
+          existingTicket = res.data;
+        } catch (e) {}
 
         let existingState = {};
         if (existingTicket?.message) {
@@ -5232,26 +5295,26 @@ export const apiAdmin = {
         if (typeof updates.diamonds === 'number') mergedState.diamonds = updates.diamonds;
         if (updates.admin_notes) mergedState.admin_notes = updates.admin_notes;
 
-        if (existingTicket?.id) {
-          await supabase
-            .from('support_tickets')
-            .update({
-              message: JSON.stringify(mergedState),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingTicket.id)
-            .catch(() => {});
-        } else {
-          await supabase
-            .from('support_tickets')
-            .insert([{
-              user_id: matchedId,
-              subject: subjectKey,
-              message: JSON.stringify(mergedState),
-              status: 'closed'
-            }])
-            .catch(() => {});
-        }
+        try {
+          if (existingTicket?.id) {
+            await supabase
+              .from('support_tickets')
+              .update({
+                message: JSON.stringify(mergedState),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingTicket.id);
+          } else {
+            await supabase
+              .from('support_tickets')
+              .insert([{
+                user_id: matchedId,
+                subject: subjectKey,
+                message: JSON.stringify(mergedState),
+                status: 'closed'
+              }]);
+          }
+        } catch (e) {}
         isSuccess = true;
       }
 
@@ -5767,7 +5830,9 @@ export const apiAdmin = {
     try {
       const cleanId = String(reportId);
       const { error } = await supabase.from('live_reports').update({ status }).eq('id', cleanId);
-      await supabase.from('reports').update({ status }).eq('id', cleanId).catch(() => {});
+      try {
+        await supabase.from('reports').update({ status }).eq('id', cleanId);
+      } catch (e) {}
       return { success: !error };
     } catch (e) {
       return { success: false };

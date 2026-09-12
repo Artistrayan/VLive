@@ -2601,15 +2601,17 @@ export default function App() {
           const u = sessionRes.user;
           const fullName = u.name || u.username;
           const tgIdStr = u.telegram_id ? String(u.telegram_id) : (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : '');
+          const emailStr = String(u.email || '').toLowerCase();
           const cleanRole = String(u.role || (u.user_type ? u.user_type.toLowerCase() : '')).toLowerCase();
           const cleanUserType = String(u.user_type || '').toUpperCase();
-          const Admin = (tgIdStr === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN'));
+          const Admin = (tgIdStr === '8933698119' || emailStr === 'tattoo.rayan2015@gmail.com' || cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN');
           const assignedRole = Admin ? 'admin' : (u.role || (u.user_type ? u.user_type.toLowerCase() : 'user'));
 
           setUserName(fullName);
           setCurrentUsername(u.username);
           setAuthUserRecord(u);
           setUserRole(assignedRole);
+          if (emailStr) setAuthEmail(emailStr);
           setCurrentTelegramId(tgIdStr);
           setAuthTelegramId(tgIdStr);
           setAuthFullName(fullName);
@@ -2736,11 +2738,13 @@ export default function App() {
 
         // Security Identity Sync directly from DB profile
         const effectiveTgId = profile.telegram_id ? String(profile.telegram_id) : (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : currentTelegramId || '');
+        const profileEmail = String(profile.email || authEmail || '').toLowerCase();
         const cleanRole = String(profile.role || (profile.user_type ? profile.user_type.toLowerCase() : '')).toLowerCase();
         const cleanUserType = String(profile.user_type || '').toUpperCase();
-        const Admin = (effectiveTgId === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN'));
+        const Admin = (effectiveTgId === '8933698119' || profileEmail === 'tattoo.rayan2015@gmail.com' || cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN');
         const assignedRole = Admin ? 'admin' : (profile.role || (profile.user_type ? profile.user_type.toLowerCase() : 'user'));
         setUserRole(assignedRole);
+        if (profileEmail) setAuthEmail(profileEmail);
         if (effectiveTgId) {
           setCurrentTelegramId(effectiveTgId);
           setAuthTelegramId(effectiveTgId);
