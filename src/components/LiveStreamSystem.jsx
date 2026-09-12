@@ -202,20 +202,8 @@ export default function LiveStreamSystem({
     { id: 'Private Live', label: window.loc('استریم خصوصی 💥', 'Private stream 💥') }
   ];
 
-  // Filter streams according to active tab, categories, and search query (Only ACTIVE streams, unique per host)
-  const seenHostIds = new Set();
+  // Filter streams according to active tab, categories, and search query
   const filteredStreams = (streamsList || []).filter(stream => {
-    // STRICT RULE: Only show active live streams (exclude ended ones)
-    if (!stream || stream.status === 'ended' || (stream.status && stream.status !== 'active') || stream.is_live === false) {
-      return false;
-    }
-
-    const hostKey = stream.host_id || stream.host || stream.id;
-    if (seenHostIds.has(hostKey)) {
-      return false;
-    }
-    seenHostIds.add(hostKey);
-
     const isAdultStream = stream.live_type === 'adult' || stream.isVip18 || stream.is18Plus;
     
     // STRICT RULE: Never mix Standard and Adult streams!

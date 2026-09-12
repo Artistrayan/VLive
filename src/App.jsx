@@ -64,7 +64,7 @@ import {
 import { startKeepAlivePing, compressImageFile } from './services/performance';
 import economyService from './services/economyService';
 import { LiveStreamRoomService } from './services/liveStreamRoomService';
-import { livekitManager, fetchLiveKitToken, getCanonicalLiveKitRoomName } from './services/livekitService';
+import livekitManager from './services/livekitService';
 import { supabase } from './supabaseClient';
 import { safeStorage } from './utils/safeStorage';
 import { loc } from './utils/i18n';
@@ -175,8 +175,6 @@ export default function App() {
   const [streamsList, setStreamsList] = useState([]);
   const [viewingStream, setViewingStream] = useState(null);
   const viewingRoomServiceRef = useRef(null);
-  const viewerLiveVideoRef = useRef(null);
-  const viewerRemoteTrackRef = useRef(null);
   const [preStreamWarningStream, setPreStreamWarningStream] = useState(null);
   const [streamChatMessages, setStreamChatMessages] = useState([]);
   const [streamChatInput, setStreamChatInput] = useState('');
@@ -2295,17 +2293,7 @@ export default function App() {
         }
         roomService = new LiveStreamRoomService(viewingStream.id, {
           onViewerUpdate: (count) => {
-            setViewingStream(prev => prev ? { ...prev, viewers: Math.max(0, count) } : null);
-          },
-          onRemoteStream: (stream) => {
-            if (viewerLiveVideoRef.current && stream) {
-              try {
-                viewerLiveVideoRef.current.srcObject = stream;
-                viewerLiveVideoRef.current.play().catch(() => {});
-              } catch (e) {
-                console.warn('Error attaching WebRTC remote stream:', e);
-              }
-            }
+            setViewingStream(prev => prev ? { ...prev, viewers: count } : null);
           },
           onLikeUpdate: (count) => {
             setStreamLikes(prev => prev + (count || 1));
@@ -2333,100 +2321,18 @@ export default function App() {
               time: chatData.time || 'Just now'
             }]);
           }
-        }, viewingStream.host_id);
+        });
 
         roomService.subscribe({
-          id: getUserId() || currentUser?.id,
-          username: currentUsername || userName || 'Viewer',
-          name: userName || currentUsername || 'Viewer',
-          avatar: userAvatar,
-          is_host: false,
-          isBroadcaster: false
+          id: getUserId(),
+          username: currentUsername,
+          name: userName,
+          avatar: userAvatar
         });
         viewingRoomServiceRef.current = roomService;
       } catch (err) {
         console.warn('Live room sync initialization error:', err);
       }
-
-      // 3. Connect as Viewer to LiveKit to receive real broadcaster video/audio
-      let isLiveKitCancelled = false;
-      const initLiveKitViewer = async () => {
-        try {
-          const canonicalRoom = viewingStream.livekit_room || getCanonicalLiveKitRoomName(viewingStream.id);
-          console.log('[LiveKit Viewer] Connecting to canonical room:', canonicalRoom, 'Stream ID:', viewingStream.id);
-
-          const tokenRes = await fetchLiveKitToken({
-            roomName: canonicalRoom,
-            identity: getUserId() || currentUser?.id,
-            name: currentUsername || userName || 'Viewer',
-            role: 'viewer'
-          });
-
-          if (isLiveKitCancelled || !tokenRes?.token) {
-            console.warn('[LiveKit Viewer] Aborted connection: missing token or cancelled');
-            return;
-          }
-
-          await livekitManager.connect({
-            roomName: canonicalRoom,
-            token: tokenRes.token,
-            serverUrl: tokenRes.serverUrl || viewingStream.livekit_server_url || 'wss://livekit.vlive.app',
-            identity: getUserId() || currentUser?.id,
-            name: currentUsername || userName || 'Viewer',
-            role: 'viewer'
-          });
-
-          console.log('[LiveKit Viewer] Connected successfully to room:', canonicalRoom);
-
-          // Function to attach video tracks to viewer video element
-          const attachRemoteTrack = (eventData) => {
-            const track = eventData?.track || (eventData?.kind === 'video' ? eventData : null);
-            if (!track) return;
-            const isVideo = track.kind === 'video' || track.source === 'camera';
-            if (!isVideo) return;
-
-            console.log('[LiveKit Viewer] Track received to attach:', {
-              trackSid: track.sid,
-              readyState: track.readyState || track.mediaStreamTrack?.readyState,
-              enabled: track.enabled
-            });
-
-            viewerRemoteTrackRef.current = track;
-
-            if (viewerLiveVideoRef.current) {
-              livekitManager.attachTrackToElement(track, viewerLiveVideoRef.current);
-            }
-          };
-
-          livekitManager.on('track_subscribed', attachRemoteTrack);
-          livekitManager.on('track_published', attachRemoteTrack);
-          livekitManager.on('participant_connected', () => {
-            if (livekitManager.room?.remoteParticipants) {
-              for (const [_, p] of livekitManager.room.remoteParticipants) {
-                for (const [__, pub] of p.videoTrackPublications) {
-                  if (pub.track) attachRemoteTrack(pub.track);
-                }
-              }
-            }
-          });
-
-          // Check already existing tracks in room (e.g. streamer was already live)
-          if (livekitManager.room?.remoteParticipants) {
-            for (const [_, p] of livekitManager.room.remoteParticipants) {
-              for (const [__, pub] of p.videoTrackPublications) {
-                if (pub.track) {
-                  console.log('[LiveKit Viewer] Attaching existing track from remote participant:', p.identity);
-                  attachRemoteTrack(pub.track);
-                }
-              }
-            }
-          }
-        } catch (lkErr) {
-          console.warn('[LiveKit Viewer] Connection error:', lkErr);
-        }
-      };
-
-      initLiveKitViewer();
     }
 
     try {
@@ -2491,14 +2397,10 @@ export default function App() {
     window.addEventListener('storage', handleStorageChange);
 
     return () => {
-      viewerRemoteTrackRef.current = null;
       if (roomService) {
         roomService.unsubscribe();
         viewingRoomServiceRef.current = null;
       }
-      try {
-        livekitManager.disconnect(true);
-      } catch (e) {}
       if (bc) bc.close();
       window.removeEventListener('storage', handleStorageChange);
     };
@@ -2601,17 +2503,15 @@ export default function App() {
           const u = sessionRes.user;
           const fullName = u.name || u.username;
           const tgIdStr = u.telegram_id ? String(u.telegram_id) : (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : '');
-          const emailStr = String(u.email || '').toLowerCase();
           const cleanRole = String(u.role || (u.user_type ? u.user_type.toLowerCase() : '')).toLowerCase();
           const cleanUserType = String(u.user_type || '').toUpperCase();
-          const Admin = (tgIdStr === '8933698119' || emailStr === 'tattoo.rayan2015@gmail.com' || cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN');
+          const Admin = (tgIdStr === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN'));
           const assignedRole = Admin ? 'admin' : (u.role || (u.user_type ? u.user_type.toLowerCase() : 'user'));
 
           setUserName(fullName);
           setCurrentUsername(u.username);
           setAuthUserRecord(u);
           setUserRole(assignedRole);
-          if (emailStr) setAuthEmail(emailStr);
           setCurrentTelegramId(tgIdStr);
           setAuthTelegramId(tgIdStr);
           setAuthFullName(fullName);
@@ -2738,13 +2638,11 @@ export default function App() {
 
         // Security Identity Sync directly from DB profile
         const effectiveTgId = profile.telegram_id ? String(profile.telegram_id) : (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id ? String(window.Telegram.WebApp.initDataUnsafe.user.id) : currentTelegramId || '');
-        const profileEmail = String(profile.email || authEmail || '').toLowerCase();
         const cleanRole = String(profile.role || (profile.user_type ? profile.user_type.toLowerCase() : '')).toLowerCase();
         const cleanUserType = String(profile.user_type || '').toUpperCase();
-        const Admin = (effectiveTgId === '8933698119' || profileEmail === 'tattoo.rayan2015@gmail.com' || cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN');
+        const Admin = (effectiveTgId === '8933698119' && (cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN'));
         const assignedRole = Admin ? 'admin' : (profile.role || (profile.user_type ? profile.user_type.toLowerCase() : 'user'));
         setUserRole(assignedRole);
-        if (profileEmail) setAuthEmail(profileEmail);
         if (effectiveTgId) {
           setCurrentTelegramId(effectiveTgId);
           setAuthTelegramId(effectiveTgId);
@@ -3507,7 +3405,7 @@ export default function App() {
                         
                         {/* Image Container with aspect ratio */}
                         <div className="aspect-[4/5] relative cursor-pointer overflow-hidden" onClick={() => {
-                          const activeStreamForUser = (streamsList || []).find(s => s && s.status === 'active' && s.is_live !== false && (
+                          const activeStreamForUser = (streamsList || []).find(s => s && (
                             (s.host_id && String(s.host_id) === String(user.id)) ||
                             (s.host && (s.host === user.name || s.host === user.username))
                           ));
@@ -3557,7 +3455,7 @@ export default function App() {
                           </button>
 
                           {/* Top Right LIVE Badge (if streamer has real active live) */}
-                          {Boolean((streamsList || []).some(s => s && s.status === 'active' && s.is_live !== false && ((s.host_id && String(s.host_id) === String(user.id)) || (s.host && (s.host === user.name || s.host === user.username))))) && (
+                          {Boolean((streamsList || []).some(s => s && ((s.host_id && String(s.host_id) === String(user.id)) || (s.host && (s.host === user.name || s.host === user.username))))) && (
                             <div className="absolute top-7 right-1.5 flex items-center gap-1 bg-rose-600/90 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-rose-400/60 z-10">
                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                                <span className="text-[8px] font-black text-white">LIVE</span>
@@ -4280,43 +4178,40 @@ export default function App() {
           
           {/* LIVE BROADCAST VIDEO / FEED CANVAS BACKGROUND */}
           <div className="absolute inset-0 z-0 bg-slate-950 flex items-center justify-center overflow-hidden">
-            <video
-              ref={(el) => {
-                viewerLiveVideoRef.current = el;
-                if (el && viewerRemoteTrackRef.current) {
-                  console.log('[LiveKit Viewer] Video ref callback: attaching cached remote track');
-                  livekitManager.attachTrackToElement(viewerRemoteTrackRef.current, el);
-                }
-              }}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover z-10"
-            />
-            {/* Fallback & Poster when live stream is connecting or audio-only */}
-            <div className="absolute inset-0 z-0 bg-slate-950 flex items-center justify-center">
-              {viewingStream.thumbnail || viewingStream.avatar ? (
-                <img
-                  src={viewingStream.thumbnail || viewingStream.avatar}
-                  alt={viewingStream.title}
-                  className="w-full h-full object-cover filter brightness-50 scale-105"
-                />
-              ) : (
-                <div className="w-full h-full bg-slate-950 flex items-center justify-center text-slate-600 font-bold text-sm">
-                  {loc('پخش زنده صوتی/تصویری', 'Live Audio/Video Stream')}
+            {viewingStream.video_url || viewingStream.stream_url ? (
+              <video
+                src={viewingStream.video_url || viewingStream.stream_url}
+                autoPlay
+                playsInline
+                muted={false}
+                loop
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="relative w-full h-full flex items-center justify-center bg-slate-950">
+                {viewingStream.thumbnail || viewingStream.avatar ? (
+                  <img
+                    src={viewingStream.thumbnail || viewingStream.avatar}
+                    alt={viewingStream.title}
+                    className="w-full h-full object-cover filter brightness-75 scale-105 transition-transform duration-1000"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-slate-950 flex items-center justify-center text-slate-600 font-bold text-sm">
+                    {loc('پخش زنده صوتی/تصویری', 'Live Audio/Video Stream')}
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/60 pointer-events-none" />
+                {/* Live Stream Status Visualizer */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 pointer-events-none">
+                  <div className="w-16 h-16 rounded-full bg-pink-500/20 border border-pink-500/40 flex items-center justify-center backdrop-blur-md animate-pulse">
+                    <Radio className="w-8 h-8 text-pink-400 animate-spin" style={{ animationDuration: '8s' }} />
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-black/60 border border-white/20 text-white font-bold text-xs backdrop-blur-md">
+                    {loc('پخش زنده مستقیم استریمر 🔴', 'Streamer Live Broadcast 🔴')}
+                  </span>
                 </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/60 pointer-events-none" />
-              {/* Live Stream Status Visualizer */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 pointer-events-none">
-                <div className="w-16 h-16 rounded-full bg-pink-500/20 border border-pink-500/40 flex items-center justify-center backdrop-blur-md animate-pulse">
-                  <Radio className="w-8 h-8 text-pink-400 animate-spin" style={{ animationDuration: '8s' }} />
-                </div>
-                <span className="px-3 py-1 rounded-full bg-black/60 border border-white/20 text-white font-bold text-xs backdrop-blur-md">
-                  {loc('پخش زنده مستقیم استریمر 🔴', 'Streamer Live Broadcast 🔴')}
-                </span>
               </div>
-            </div>
+            )}
           </div>
 
           {/* FULL SCREEN LUXURY GIFT OVERLAY */}
@@ -4649,7 +4544,7 @@ export default function App() {
             <div className="space-y-3">
               <span className="text-xs font-black text-white block">{loc('🔥 لایواستریم‌های پیشنهادی مشابه:', '🔥 Recommended similar livestreams:')}</span>
               <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
-                {(streamsList || []).filter(st => st && st.status === 'active' && st.is_live !== false).slice(0, 4).map(st => <div key={st.id} onClick={() => {
+                {(streamsList || []).slice(0, 4).map(st => <div key={st.id} onClick={() => {
                   setIsExitLiveModalOpen(false);
                   setViewingStream(st);
                 }} className="p-2 rounded-2xl bg-slate-950 border border-slate-800 hover:border-pink-500 cursor-pointer space-y-1 transition">

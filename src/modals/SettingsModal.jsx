@@ -308,9 +308,9 @@ export default function SettingsModal(props) {
     try {
       const uid = getUserId();
       if (uid) {
-        await supabase.from('profiles').update({ is_deleted: true, status: 'deleted' }).eq('id', uid);
+        await supabase.from('profiles').update({ is_deleted: true, status: 'deleted' }).eq('id', uid).catch(() => {});
       }
-      await supabase.auth.signOut();
+      await supabase.auth.signOut().catch(() => {});
     } catch (e) {}
 
     setIsDeleteConfirmOpen(false);

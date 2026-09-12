@@ -243,6 +243,11 @@ export default function UserOnboardingModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!hasGalleryPermission) {
+      showToast(window.loc('ابتدا باید تیک تایید اجازه دسترسی به گالری را فعال کنید ⚠️', 'You must first grant gallery access permission ⚠️'));
+      return;
+    }
+
     try {
       const compressed = await compressImageFile(file, 600, 600, 0.85);
       setAvatarPreview(compressed);
@@ -253,8 +258,12 @@ export default function UserOnboardingModal({
     }
   };
 
-  // Transition from Step 2 to Step 3
+  // Strict transition from Step 2 to Step 3
   const handleProceedToSelfie = () => {
+    if (!hasGalleryPermission) {
+      showToast(window.loc('لطفاً ابتدا تیک مجوز دسترسی به گالری را فعال کنید ⚠️', 'Please enable gallery permission first ⚠️'));
+      return;
+    }
     if (!avatarPreview || avatarPreview.trim().length === 0) {
       showToast(window.loc('انتخاب عکس پروفایل از گالری برای ادامه الزامی است 📸', 'Profile photo from gallery is required 📸'));
       return;
@@ -602,6 +611,124 @@ export default function UserOnboardingModal({
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* App Permissions Section (Strictly Once on First-Time Profile Completion) */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-purple-500/30 space-y-2.5 shadow-md">
+                <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-purple-400" />
+                    <span className="text-xs font-bold text-white">
+                      {window.loc('مجوزهای دسترسی برنامه (فقط یک‌بار در اولین ورود)', 'App System Permissions (Only Once)')}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleGrantAllPermissions}
+                    className="px-2.5 py-1 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/40 text-[11px] font-bold text-purple-300 hover:text-white transition flex items-center gap-1 cursor-pointer"
+                  >
+                    <Check className="w-3 h-3 text-purple-300" />
+                    <span>{window.loc('تایید همه', 'Grant All')}</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  {/* 1. Camera (Front & Back) */}
+                  <div 
+                    onClick={() => handleTogglePermission('camera')}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition ${
+                      permissions.camera 
+                        ? 'bg-purple-500/10 border-purple-500/50 text-white' 
+                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Camera className={`w-4 h-4 ${permissions.camera ? 'text-purple-400' : 'text-slate-500'}`} />
+                      <div>
+                        <span className="font-bold text-[11px] block">{window.loc('دوربین (جلو و عقب)', 'Camera (Front & Rear)')}</span>
+                        <span className="text-[9px] text-slate-400 block">{window.loc('پخش زنده و تماس تصویری', 'Live stream & video call')}</span>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={permissions.camera}
+                      onChange={() => {}}
+                      className="w-4 h-4 rounded accent-purple-500 cursor-pointer pointer-events-none"
+                    />
+                  </div>
+
+                  {/* 2. Microphone */}
+                  <div 
+                    onClick={() => handleTogglePermission('microphone')}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition ${
+                      permissions.microphone 
+                        ? 'bg-purple-500/10 border-purple-500/50 text-white' 
+                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Mic className={`w-4 h-4 ${permissions.microphone ? 'text-pink-400' : 'text-slate-500'}`} />
+                      <div>
+                        <span className="font-bold text-[11px] block">{window.loc('میکروفون', 'Microphone')}</span>
+                        <span className="text-[9px] text-slate-400 block">{window.loc('مکالمه صوتی و صدای لایو', 'Voice call & live audio')}</span>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={permissions.microphone}
+                      onChange={() => {}}
+                      className="w-4 h-4 rounded accent-pink-500 cursor-pointer pointer-events-none"
+                    />
+                  </div>
+
+                  {/* 3. Gallery & Media */}
+                  <div 
+                    onClick={() => handleTogglePermission('gallery')}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition ${
+                      permissions.gallery 
+                        ? 'bg-purple-500/10 border-purple-500/50 text-white' 
+                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Image className={`w-4 h-4 ${permissions.gallery ? 'text-cyan-400' : 'text-slate-500'}`} />
+                      <div>
+                        <span className="font-bold text-[11px] block">{window.loc('گالری و رسانه', 'Gallery & Media')}</span>
+                        <span className="text-[9px] text-slate-400 block">{window.loc('انتخاب عکس پروفایل و پست‌ها', 'Profile photo & posts')}</span>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={permissions.gallery}
+                      onChange={() => {}}
+                      className="w-4 h-4 rounded accent-cyan-500 cursor-pointer pointer-events-none"
+                    />
+                  </div>
+
+                  {/* 4. Notifications */}
+                  <div 
+                    onClick={() => handleTogglePermission('notifications')}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition ${
+                      permissions.notifications 
+                        ? 'bg-purple-500/10 border-purple-500/50 text-white' 
+                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Bell className={`w-4 h-4 ${permissions.notifications ? 'text-amber-400' : 'text-slate-500'}`} />
+                      <div>
+                        <span className="font-bold text-[11px] block">{window.loc('نمایش اعلان‌ها', 'Notifications')}</span>
+                        <span className="text-[9px] text-slate-400 block">{window.loc('پیام‌ها و هشدارهای برنامه', 'Messages & app alerts')}</span>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={permissions.notifications}
+                      onChange={() => {}}
+                      className="w-4 h-4 rounded accent-amber-500 cursor-pointer pointer-events-none"
+                    />
+                  </div>
                 </div>
               </div>
 

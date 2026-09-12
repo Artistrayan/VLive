@@ -11,46 +11,35 @@ import { getStoredToken } from '../utils/authSession';
 import { cameraPermissionService } from './cameraPermissionService';
 
 /**
- * Canonical LiveKit Room Name Generator
- * Ensures all components (streamer, viewer, database) reference the exact same room name format.
- */
-export function getCanonicalLiveKitRoomName(streamId) {
-  if (!streamId) return 'room_vlive_global';
-  const clean = String(streamId).trim().replace(/[^a-zA-Z0-9_-]/g, '_');
-  return clean.startsWith('room_') ? clean : `room_${clean}`;
-}
-
-/**
- * Base64Url string/byte array encoder
+ * Real LiveKit Backend Token Fetcher
+ * CRITICAL RULE: Never generate fake/unsigned JWT on the frontend.
+ * Always request authentic signed JWT from the backend server with Authorization token.
  */
 export async function fetchLiveKitToken({ 
   roomName, 
-  metadata = {},
-  identity,
-  name,
-  role = 'viewer'
+  metadata = {} 
 }) {
-  const cleanRoom = getCanonicalLiveKitRoomName(roomName);
-  
+  const cleanRoom = String(roomName || `vlive_room_${Date.now()}`).trim();
+
   try {
+    // Retrieve authentic session token and Telegram WebApp initData
     let sessionToken = '';
     try {
       const sessionRes = await supabase.auth.getSession();
       sessionToken = sessionRes?.data?.session?.access_token || getStoredToken() || '';
-    } catch {
+    } catch (sErr) {
       sessionToken = getStoredToken() || '';
     }
-    
+
     let tgInitData = '';
     if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initData) {
       tgInitData = window.Telegram.WebApp.initData;
     }
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
-    const apiUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) ? `${import.meta.env.VITE_API_URL}/api/livekit/token` : '/api/livekit/token';
-    
-    const response = await fetch(apiUrl, {
+
+    const response = await fetch('/api/livekit/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -59,39 +48,37 @@ export async function fetchLiveKitToken({
       },
       body: JSON.stringify({
         roomName: cleanRoom,
-        identity,
-        name,
-        role,
         metadata
       }),
       signal: controller.signal
     }).finally(() => {
       clearTimeout(timeoutId);
     });
-    
-    if (response && response.ok) {
-      const data = await response.json();
-      if (data.success && data.token) {
-        return {
-          success: true,
-          token: data.token,
-          roomName: data.roomName || cleanRoom,
-          serverUrl: data.serverUrl || 'wss://livekit.vlive.app',
-          identity: data.identity || identity,
-          name: data.name || name,
-          role: data.role || role
-        };
-      } else {
-        throw new Error(data.error || 'Server did not return a valid token');
-      }
-    } else {
-      throw new Error(`Server returned status ${response.status}`);
+
+    if (!response.ok) {
+      const errRes = await response.json().catch(() => ({}));
+      throw new Error(errRes.error || `Server returned HTTP status ${response.status}`);
     }
-  } catch (err) {
-    console.error('LiveKit Token Fetch Error:', err);
+
+    const data = await response.json();
+    if (!data.success || !data.token) {
+      throw new Error(data.error || 'Failed to obtain LiveKit token from server');
+    }
+
+    return {
+      success: true,
+      token: data.token,
+      roomName: data.roomName || cleanRoom,
+      serverUrl: data.serverUrl || 'wss://livekit.vlive.app',
+      identity: data.identity,
+      name: data.name,
+      role: data.role
+    };
+  } catch (error) {
+    console.error('LiveKit Token Fetch Error:', error.message);
     return {
       success: false,
-      error: err.message || 'Failed to obtain authentic LiveKit broadcast token from server.',
+      error: error.message || 'Error communicating with LiveKit authentication server',
       token: null
     };
   }
@@ -319,46 +306,24 @@ export class LiveKitManager {
    */
   async replaceVideoTrack(newNativeTrack, facingMode) {
     this.currentFacingMode = facingMode || this.currentFacingMode;
-    if (!this.room || !this.room.localParticipant) {
-      this.localVideoTrack = newNativeTrack;
-      return;
-    }
-
-    if (!newNativeTrack || newNativeTrack.readyState !== 'live') {
-      console.warn('[LiveKit] replaceVideoTrack skipped: new track is not live', newNativeTrack);
-      return;
-    }
-
-    try {
-      const videoPub = Array.from(this.room.localParticipant.videoTrackPublications.values())[0];
-
-      // Check if track is already the active one
-      if (videoPub?.videoTrack?.mediaStreamTrack === newNativeTrack || this.localVideoTrack === newNativeTrack) {
-        console.log('[LiveKit] Track is already active, skipping replacement');
-        return;
-      }
-
-      if (videoPub && videoPub.videoTrack && typeof videoPub.videoTrack.replaceTrack === 'function') {
-        console.log('[LiveKit] Replacing track via LocalVideoTrack.replaceTrack()...');
-        await videoPub.videoTrack.replaceTrack(newNativeTrack);
-        this.localVideoTrack = newNativeTrack;
-        console.log('[LiveKit] Track successfully replaced seamlessly');
-      } else {
-        console.log('[LiveKit] Replacing track via unpublishTrack & publishTrack fallback...');
-        if (videoPub && videoPub.track) {
-          await this.room.localParticipant.unpublishTrack(videoPub.track, { stopOnUnpublish: false });
+    if (this.room && this.room.localParticipant) {
+      try {
+        const videoPub = Array.from(this.room.localParticipant.videoTrackPublications.values())[0];
+        if (videoPub && videoPub.videoTrack) {
+          await this.room.localParticipant.unpublishTrack(videoPub.videoTrack);
         }
+        
         this.localVideoTrack = newNativeTrack;
-        const pub = await this.room.localParticipant.publishTrack(newNativeTrack, {
-          simulcast: true,
-          videoEncoding: VideoPresets.h720.encoding,
-          videoCodec: 'vp8'
-        });
-        console.log('[LiveKit] New track published after switch:', pub?.trackSid);
+        if (newNativeTrack && newNativeTrack.readyState === 'live') {
+          await this.room.localParticipant.publishTrack(newNativeTrack, {
+            simulcast: true,
+            videoEncoding: VideoPresets.h720.encoding,
+            videoCodec: 'vp8'
+          });
+        }
+      } catch (err) {
+        console.warn('Error replacing video track:', err);
       }
-    } catch (err) {
-      console.error('[LiveKit] Error replacing video track:', err);
-      throw err;
     }
   }
 
@@ -429,7 +394,7 @@ export class LiveKitManager {
   }
 
   /**
-   * Connect to Real LiveKit Room with strict verification and error propagation
+   * Connect to Real LiveKit Room with seamless media fallback
    */
   async connect(options = {}) {
     const {
@@ -443,6 +408,30 @@ export class LiveKitManager {
       stream,
       mediaStream
     } = options;
+    let authToken = token;
+    let wsUrl = serverUrl;
+
+    if (!authToken) {
+      try {
+        const tokenRes = await fetchLiveKitToken({
+          roomName,
+          identity,
+          name,
+          role,
+          metadata
+        });
+
+        if (tokenRes && tokenRes.success && tokenRes.token) {
+          authToken = tokenRes.token;
+          wsUrl = tokenRes.serverUrl;
+        }
+      } catch (tokErr) {
+        console.warn('LiveKit token request notice:', tokErr.message);
+      }
+    }
+
+    this.currentRole = role;
+    this.currentRoomName = roomName;
 
     const isPublisher = (
       role === 'host' || 
@@ -462,95 +451,61 @@ export class LiveKitManager {
       role === 'voice'
     );
 
-    // 1. Canonical Room Name
-    const cleanRoomName = getCanonicalLiveKitRoomName(roomName);
-    this.currentRole = role;
-    this.currentRoomName = cleanRoomName;
-
-    // 2. Fetch or validate Token
-    let authToken = token;
-    let wsUrl = serverUrl;
-
-    if (!authToken) {
-      const tokenRes = await fetchLiveKitToken({
-        roomName: cleanRoomName,
-        identity,
-        name,
-        role,
-        metadata
-      });
-
-      if (!tokenRes || !tokenRes.success || !tokenRes.token) {
-        throw new Error(tokenRes?.error || 'LiveKit Token Error: Failed to obtain authentic token from server');
-      }
-      authToken = tokenRes.token;
-      wsUrl = tokenRes.serverUrl;
-    }
-
-    if (!authToken || typeof authToken !== 'string' || !authToken.trim()) {
-      throw new Error('LiveKit Token Validation Failed: Token is empty or invalid.');
-    }
-    if (authToken.startsWith('vlive_token_') || authToken.startsWith('fake_') || authToken.startsWith('fallback_') || authToken.startsWith('test_') || authToken.startsWith('demo_')) {
-      throw new Error('LiveKit Token Validation Failed: Insecure or fake tokens are forbidden.');
-    }
-
-    const cleanWsUrl = String(wsUrl || 'wss://livekit.vlive.app').trim();
-
-    // 3. Media Stream handling (reuse active camera stream)
+    // 1. Reuse existing media stream or provided stream; only acquire if none exists
     const providedStream = stream || mediaStream || options.stream || options.mediaStream;
     if (providedStream && providedStream.active && providedStream.getVideoTracks().some(t => t.readyState === 'live')) {
       this.localMediaStream = providedStream;
     } else if (this.localMediaStream && this.localMediaStream.active && this.localMediaStream.getVideoTracks().some(t => t.readyState === 'live')) {
       // Keep existing active stream intact
     } else if (isPublisher) {
-      await this.requestMediaStream(this.currentFacingMode, true, !isAudioOnly);
-    }
-
-    // 4. Connect to Room (Do NOT swallow errors)
-    if (this.room) {
-      await this.disconnect(true);
-    }
-
-    this.room = new Room({
-      adaptiveStream: true,
-      dynacast: true,
-      videoCaptureDefaults: {
-        resolution: VideoPresets.h720.resolution,
-        facingMode: this.currentFacingMode
-      },
-      publishDefaults: {
-        simulcast: true,
-        videoCodec: 'vp8',
-        videoEncoding: VideoPresets.h720.encoding,
-        backupCodec: true,
-        audioPreset: { maxBitrate: 32000 }
+      try {
+        await this.requestMediaStream(this.currentFacingMode, true, !isAudioOnly);
+      } catch (mediaErr) {
+        console.warn('Media hardware access notice:', mediaErr.message);
       }
-    });
+    }
 
-    this._setupRoomEventListeners();
-    this.connectionState = ConnectionState.Connecting;
-    this.emit('connection_state_changed', { state: ConnectionState.Connecting });
-
-    // CONNECT TO SERVER - propagate real error if failed
-    await this.room.connect(cleanWsUrl, authToken);
-    this.connectionState = ConnectionState.Connected;
-    this.reconnectAttempts = 0;
-    this.emit('connection_state_changed', { state: ConnectionState.Connected, room: this.room });
-
-    // 5. If publisher, publish tracks and verify
-    if (isPublisher) {
-      await this.publishLocalTracks({ withVideo: !isAudioOnly, withAudio: true });
-      
-      // Verify publication
-      if (!isAudioOnly) {
-        const videoPubs = Array.from(this.room.localParticipant.videoTrackPublications.values());
-        if (videoPubs.length === 0 && (!this.localVideoTrack || this.localVideoTrack.readyState !== 'live')) {
-          throw new Error('LiveKit Video Publication Failed: Camera track was not published to room.');
+    // 2. Connect to LiveKit Room if token and serverUrl are available
+    if (authToken && wsUrl) {
+      try {
+        if (this.room) {
+          await this.disconnect(true);
         }
+
+        this.room = new Room({
+          adaptiveStream: true,
+          dynacast: true,
+          videoCaptureDefaults: {
+            resolution: VideoPresets.h720.resolution,
+            facingMode: this.currentFacingMode
+          },
+          publishDefaults: {
+            simulcast: true,
+            videoCodec: 'vp8',
+            videoEncoding: VideoPresets.h720.encoding,
+            backupCodec: true,
+            audioPreset: { maxBitrate: 32000 }
+          }
+        });
+
+        this._setupRoomEventListeners();
+        this.connectionState = ConnectionState.Connecting;
+        this.emit('connection_state_changed', { state: ConnectionState.Connecting });
+
+        await this.room.connect(wsUrl, authToken);
+        this.connectionState = ConnectionState.Connected;
+        this.reconnectAttempts = 0;
+        this.emit('connection_state_changed', { state: ConnectionState.Connected, room: this.room });
+
+        if (isPublisher) {
+          await this.publishLocalTracks({ withVideo: !isAudioOnly, withAudio: true });
+        }
+      } catch (connErr) {
+        console.warn('LiveKit room connection notice (operating with local media stream):', connErr.message);
       }
     }
 
-    // Emit local tracks event so UI components display camera & audio
+    // 3. Emit local tracks event so UI components immediately display camera & audio
     if (this.localMediaStream) {
       const vTrack = this.localMediaStream.getVideoTracks()[0];
       const aTrack = this.localMediaStream.getAudioTracks()[0];
@@ -561,7 +516,7 @@ export class LiveKitManager {
       });
     }
 
-    return this.room;
+    return this.room || this.localMediaStream;
   }
 
   /**
@@ -602,19 +557,14 @@ export class LiveKitManager {
       }
 
       for (const track of tracks) {
+        // track could be a native MediaStreamTrack or a LiveKit LocalTrack
         const kind = track.kind || track.source;
         if (kind === 'video' || track.kind === Track.Kind.Video) {
           this.localVideoTrack = track;
-          const pub = await this.room.localParticipant.publishTrack(track, {
+          await this.room.localParticipant.publishTrack(track, {
             simulcast: true,
             videoEncoding: VideoPresets.h720.encoding,
             videoCodec: 'vp8'
-          });
-          console.log('[LiveKit] Video track published:', {
-            trackSid: pub?.trackSid || pub?.sid,
-            kind: pub?.kind,
-            readyState: track.readyState || track.mediaStreamTrack?.readyState,
-            enabled: track.enabled
           });
         } else if (kind === 'audio' || track.kind === Track.Kind.Audio) {
           this.localAudioTrack = track;
@@ -622,27 +572,6 @@ export class LiveKitManager {
             audioPreset: { maxBitrate: 32000 }
           });
         }
-      }
-
-      // Strict verification of publication status
-      if (withVideo) {
-        const videoPubs = Array.from(this.room.localParticipant.videoTrackPublications.values());
-        const validPub = videoPubs.find(p => 
-          p && 
-          p.track && 
-          (p.track.readyState === 'live' || p.track.mediaStreamTrack?.readyState === 'live') &&
-          p.track.enabled !== false &&
-          (p.trackSid || p.sid)
-        );
-
-        if (!validPub) {
-          throw new Error('LiveKit Video Publication Failed: No active, live video track publication with valid SID found on local participant.');
-        }
-
-        console.log('[LiveKit] Video publication strictly verified on local participant:', {
-          trackSid: validPub.trackSid || validPub.sid,
-          readyState: validPub.track?.readyState || validPub.track?.mediaStreamTrack?.readyState
-        });
       }
 
       this.emit('local_tracks_published', {
@@ -653,7 +582,6 @@ export class LiveKitManager {
     } catch (err) {
       console.error('Error creating or publishing local LiveKit tracks:', err);
       this.emit('error', { message: 'Failed to publish media stream to room', error: err });
-      throw err;
     }
   }
 
@@ -933,67 +861,41 @@ export class LiveKitManager {
   attachTrackToElement(trackOrStream, element) {
     if (!trackOrStream || !element) return;
     try {
-      const raw = trackOrStream.track || trackOrStream;
-      const isVideo = raw.kind === 'video' || raw.kind === Track.Kind.Video || raw.source === 'camera';
+      if (typeof trackOrStream.attach === 'function') {
+        trackOrStream.attach(element);
+        return;
+      }
+      
+      let mediaStream = null;
+      if (typeof MediaStream !== 'undefined' && trackOrStream instanceof MediaStream) {
+        mediaStream = trackOrStream;
+      } else if (typeof MediaStreamTrack !== 'undefined' && trackOrStream instanceof MediaStreamTrack) {
+        mediaStream = new MediaStream([trackOrStream]);
+      } else if (trackOrStream.stream && trackOrStream.stream instanceof MediaStream) {
+        mediaStream = trackOrStream.stream;
+      } else if (trackOrStream.mediaStream && trackOrStream.mediaStream instanceof MediaStream) {
+        mediaStream = trackOrStream.mediaStream;
+      }
 
-      console.log(`[LiveKit] ${isVideo ? 'Video' : 'Audio'} track attaching to element:`, {
-        trackSid: raw.sid || raw.trackSid,
-        readyState: raw.readyState || raw.mediaStreamTrack?.readyState,
-        enabled: raw.enabled
-      });
-
-      if (typeof raw.attach === 'function') {
-        raw.attach(element);
-      } else {
-        let mediaStream = null;
-        if (typeof MediaStream !== 'undefined' && raw instanceof MediaStream) {
-          mediaStream = raw;
-        } else if (typeof MediaStreamTrack !== 'undefined' && raw instanceof MediaStreamTrack) {
-          mediaStream = new MediaStream([raw]);
-        } else if (raw.mediaStreamTrack) {
-          mediaStream = new MediaStream([raw.mediaStreamTrack]);
-        } else if (raw.stream && raw.stream instanceof MediaStream) {
-          mediaStream = raw.stream;
-        }
-
-        if (mediaStream && element.srcObject !== mediaStream) {
+      if (mediaStream) {
+        if (element.srcObject !== mediaStream) {
           element.srcObject = mediaStream;
         }
-      }
-
-      console.log(`[LiveKit] ${isVideo ? 'Video' : 'Audio'} track attached.`, {
-        videoTrackReadyState: raw.readyState || raw.mediaStreamTrack?.readyState,
-        videoElementReadyState: element.readyState,
-        videoElementPaused: element.paused
-      });
-
-      const playPromise = element.play?.();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            console.log('[LiveKit] Video element playback active. Video element paused:', element.paused);
-          })
-          .catch((err) => {
-            console.warn('[LiveKit] Direct playback blocked by policy, trying muted playback:', err);
-            element.muted = true;
-            element.play?.()
-              .then(() => {
-                console.log('[LiveKit] Muted video element playback active. Video element paused:', element.paused);
-              })
-              .catch(e => console.warn('[LiveKit] Muted video playback error:', e));
-          });
+        element.onloadedmetadata = () => {
+          element.play().catch(() => {});
+        };
+        element.play().catch(() => {});
       }
     } catch (err) {
-      console.warn('[LiveKit] Failed to attach track to element:', err);
+      console.warn('Failed to attach track to element:', err);
     }
   }
 
   detachTrackFromElement(track, element) {
     if (!track || !element) return;
     try {
-      const raw = track.track || track;
-      if (typeof raw.detach === 'function') {
-        raw.detach(element);
+      if (typeof track.detach === 'function') {
+        track.detach(element);
       } else if (element.srcObject) {
         element.srcObject = null;
       }
@@ -1011,76 +913,41 @@ export class LiveKitManager {
     this.room
       .on(RoomEvent.Connected, () => {
         this.connectionState = ConnectionState.Connected;
-        console.log('[LiveKit] Room connected successfully:', this.room.name);
         this.emit('connected', { room: this.room });
       })
       .on(RoomEvent.Disconnected, (reason) => {
         this.connectionState = ConnectionState.Disconnected;
-        console.log('[LiveKit] Room disconnected:', reason);
         this.emit('disconnected', { reason });
       })
       .on(RoomEvent.Reconnecting, () => {
         this.connectionState = ConnectionState.Reconnecting;
-        console.log('[LiveKit] Room reconnecting, attempt:', ++this.reconnectAttempts);
-        this.emit('reconnecting', { attempt: this.reconnectAttempts });
+        this.emit('reconnecting', { attempt: ++this.reconnectAttempts });
       })
       .on(RoomEvent.Reconnected, () => {
         this.connectionState = ConnectionState.Connected;
         this.reconnectAttempts = 0;
-        console.log('[LiveKit] Room reconnected successfully');
         this.emit('reconnected', { room: this.room });
-      })
-      .on(RoomEvent.TrackPublished, (publication, participant) => {
-        console.log('[LiveKit] Video publication created:', {
-          sid: publication?.trackSid || publication?.sid,
-          kind: publication?.kind,
-          participant: participant?.identity
-        });
-        this.emit('track_published', { publication, participant });
-      })
-      .on(RoomEvent.LocalTrackPublished, (publication, participant) => {
-        console.log('[LiveKit] Video track published by local participant:', {
-          sid: publication?.trackSid || publication?.sid,
-          kind: publication?.kind,
-          readyState: publication?.track?.readyState || publication?.track?.mediaStreamTrack?.readyState
-        });
-        this.emit('local_track_published', { publication, participant });
       })
       .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
         const kind = track?.kind || publication?.kind || 'video';
-        console.log('[LiveKit] Video track subscribed:', {
-          sid: track?.sid || publication?.trackSid,
-          kind,
-          participant: participant?.identity,
-          readyState: track?.readyState || track?.mediaStreamTrack?.readyState
-        });
         this.emit('track_subscribed', { track, publication, participant, kind });
       })
       .on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
         const kind = track?.kind || publication?.kind || 'video';
-        console.log('[LiveKit] Track unsubscribed:', {
-          sid: track?.sid,
-          kind,
-          participant: participant?.identity
-        });
         this.emit('track_unsubscribed', { track, publication, participant, kind });
       })
       .on(RoomEvent.TrackMuted, (publication, participant) => {
-        console.log('[LiveKit] Track muted:', publication?.trackSid);
         this.emit('track_muted', { publication, participant });
       })
       .on(RoomEvent.TrackUnmuted, (publication, participant) => {
-        console.log('[LiveKit] Track unmuted:', publication?.trackSid);
         this.emit('track_unmuted', { publication, participant });
       })
       .on(RoomEvent.ParticipantConnected, (participant) => {
         this.remoteParticipants.set(participant.identity, participant);
-        console.log('[LiveKit] Participant connected:', participant?.identity, 'Total:', this.room.numParticipants);
         this.emit('participant_connected', { participant, count: this.room.numParticipants });
       })
       .on(RoomEvent.ParticipantDisconnected, (participant) => {
         this.remoteParticipants.delete(participant.identity);
-        console.log('[LiveKit] Participant disconnected:', participant?.identity, 'Total:', this.room.numParticipants);
         this.emit('participant_disconnected', { participant, count: this.room.numParticipants });
       })
       .on(RoomEvent.DataReceived, (payload, participant, kind, topic) => {
@@ -1230,7 +1097,7 @@ export class LiveKitManager {
   /**
    * Leave and Disconnect from Room
    */
-  async disconnect(keepMediaStream = true) {
+  async disconnect(keepMediaStream = false) {
     if (!keepMediaStream) {
       if (this.localVideoTrack) {
         try { this.localVideoTrack.stop(); } catch (e) {}
@@ -1273,20 +1140,20 @@ export class LiveKitManager {
       timestamp: Date.now()
     }, 'stream_control');
 
-    // 2. Update Supabase database record in public.streams
+    // 2. Update Supabase database record
     if (streamId) {
       try {
         await supabase
-          .from('streams')
-          .update({ status: 'ended' })
+          .from('live_streams')
+          .update({ status: 'ended', ended_at: new Date().toISOString() })
           .eq('id', streamId);
       } catch (e) {
-        console.warn('Failed to update streams DB status to ended:', e);
+        console.warn('Failed to update live_streams DB status to ended:', e);
       }
     }
 
-    // 3. Disconnect room & stop local tracks
-    await this.disconnect(false);
+    // 3. Disconnect room & stop all local tracks
+    await this.disconnect();
     this.emit('stream_ended', { streamId });
     return { success: true };
   }

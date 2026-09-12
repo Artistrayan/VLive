@@ -1,7 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { presenceService } from './presenceService';
 import { calculateAge } from './businessRules';
-import { fetchLiveKitToken, getCanonicalLiveKitRoomName } from './livekitService';
+import { fetchLiveKitToken } from './livekitService';
 import { safeStorage } from '../utils/safeStorage';
 import { getStoredToken, setStoredToken, getUserId, setStoredSession } from '../utils/authSession';
 import { verifyAdminAccess, recordAdminAuditLog, ADMIN_TELEGRAM_ID } from './adminGuard';
@@ -1492,88 +1492,118 @@ export const apiProfile = {
 export const apiHome = {
   async getActiveStreams() {
     try {
-      // 1. Auto-cleanup: Mark stale active streams older than 3 hours as ended in Supabase
-      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
-      supabase
-        .from('streams')
-        .update({ status: 'ended' })
-        .eq('status', 'active')
-        .lt('created_at', threeHoursAgo)
-        .then(() => {})
-        .catch(() => {});
+      const streamsMap = new Map();
 
-      const { data, error } = await supabase
-        .from('streams')
-        .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, profiles:host_id(id, username, name, avatar, status)')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('getActiveStreams Supabase query error:', error.message);
-        return [];
-      }
-
-      if (!Array.isArray(data)) {
-        return [];
-      }
-
-      // Deduplicate: each host can only have ONE active live stream (the most recent one)
-      const seenHosts = new Set();
-      const validStreams = [];
-      const staleStreamIdsToClose = [];
-
-      for (const s of data) {
-        if (!s || s.status !== 'active') continue;
-
-        const hostKey = s.host_id || (s.profiles && (s.profiles.id || s.profiles.username)) || s.id;
-
-        if (seenHosts.has(hostKey)) {
-          // Stale duplicate stream from the same host - queue to mark ended
-          staleStreamIdsToClose.push(s.id);
-          continue;
-        }
-
-        seenHosts.add(hostKey);
-        validStreams.push(s);
-      }
-
-      // Asynchronously mark duplicate previous streams as ended in DB
-      if (staleStreamIdsToClose.length > 0) {
+      // Parallel fetch from streams and live_streams tables using their actual columns
+      const [
+        { data: sData },
+        { data: lsData }
+      ] = await Promise.all([
         supabase
           .from('streams')
-          .update({ status: 'ended' })
-          .in('id', staleStreamIdsToClose)
-          .then(() => {})
-          .catch(() => {});
+          .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, profiles:host_id(id, username, name, avatar)')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .catch(() => ({ data: [] })),
+        supabase
+          .from('live_streams')
+          .select('id, host_id, title, is_live, created_at, viewer_count, profiles:host_id(id, username, name, avatar)')
+          .eq('is_live', true)
+          .order('created_at', { ascending: false })
+          .catch(() => ({ data: [] }))
+      ]);
+
+      // 1. Process streams table records
+      if (Array.isArray(sData)) {
+        sData.forEach(s => {
+          if (s && s.id && s.status === 'active') {
+            const hostProfile = s.profiles || {};
+            const hostName = hostProfile.name || hostProfile.username || 'Streamer';
+            const hostAvatar = hostProfile.avatar || '';
+            const existing = streamsMap.get(s.id) || {};
+            streamsMap.set(s.id, {
+              ...existing,
+              id: s.id,
+              title: s.title || existing.title || 'پخش زنده',
+              host: hostName,
+              host_id: s.host_id || existing.host_id,
+              avatar: hostAvatar,
+              thumbnail: s.thumbnail || hostAvatar || '',
+              category: s.category || existing.category || 'General',
+              live_type: s.is_vip ? 'vip' : 'standard',
+              viewers: Number(existing.viewers) || 1,
+              description: existing.description || '',
+              tags: existing.tags || '#vlive',
+              livekit_room: existing.livekit_room || `room_${s.id}`,
+              livekit_server_url: existing.livekit_server_url || 'wss://livekit.vlive.app',
+              is_ticketed: Boolean(s.is_vip),
+              ticket_price: Number(s.entry_fee) || 0,
+              status: 'active',
+              is_live: true,
+              created_at: s.created_at || existing.created_at || new Date().toISOString()
+            });
+          }
+        });
       }
 
-      return validStreams.map(s => {
-        const hostProfile = s.profiles || {};
-        const hostName = hostProfile.name || hostProfile.username || 'Streamer';
-        const hostAvatar = hostProfile.avatar || '';
-        const canonicalRoom = getCanonicalLiveKitRoomName(s.id);
+      // 2. Process live_streams table records
+      if (Array.isArray(lsData)) {
+        lsData.forEach(ls => {
+          if (ls && ls.id && ls.is_live === true) {
+            const hostProfile = ls.profiles || {};
+            const hostName = hostProfile.name || hostProfile.username || (ls.host_id ? `User_${ls.host_id.substring(0, 6)}` : 'Streamer');
+            const hostAvatar = hostProfile.avatar || '';
+            const streamId = ls.id;
+            const existing = streamsMap.get(streamId) || {};
+            streamsMap.set(streamId, {
+              ...existing,
+              id: streamId,
+              title: ls.title || existing.title || 'پخش زنده',
+              host: existing.host || hostName,
+              host_id: ls.host_id || existing.host_id,
+              avatar: existing.avatar || hostAvatar,
+              thumbnail: existing.thumbnail || hostAvatar || '',
+              category: existing.category || 'General',
+              live_type: existing.live_type || 'standard',
+              viewers: Number(ls.viewer_count || existing.viewers) || 1,
+              description: existing.description || '',
+              tags: existing.tags || '#vlive',
+              livekit_room: existing.livekit_room || `room_${streamId}`,
+              livekit_server_url: existing.livekit_server_url || 'wss://livekit.vlive.app',
+              is_ticketed: Boolean(existing.is_ticketed),
+              ticket_price: Number(existing.ticket_price) || 0,
+              status: 'active',
+              is_live: true,
+              created_at: ls.created_at || existing.created_at || new Date().toISOString()
+            });
+          }
+        });
+      }
 
-        return {
-          id: s.id,
-          title: s.title || 'پخش زنده',
-          host: hostName,
-          host_id: s.host_id,
-          avatar: hostAvatar,
-          thumbnail: s.thumbnail || hostAvatar || '',
-          category: s.category || 'General',
-          live_type: s.is_vip ? 'vip' : 'standard',
-          viewers: 1,
-          description: '',
-          tags: '#vlive',
-          livekit_room: canonicalRoom,
-          livekit_server_url: 'wss://livekit.vlive.app',
-          is_ticketed: Boolean(s.is_vip),
-          ticket_price: Number(s.entry_fee) || 0,
-          status: 'active',
-          is_live: true,
-          created_at: s.created_at || new Date().toISOString()
-        };
-      });
+      // 3. Merge with local active streams cache for immediate responsiveness
+      try {
+        const cached = JSON.parse(safeStorage.getItem('vlive_active_live_streams') || '[]');
+        if (Array.isArray(cached)) {
+          cached.forEach(c => {
+            if (c && c.id && c.status === 'active' && !streamsMap.has(c.id)) {
+              streamsMap.set(c.id, {
+                ...c,
+                is_live: true,
+                status: 'active'
+              });
+            }
+          });
+        }
+      } catch (e) {}
+
+      const allActiveStreams = Array.from(streamsMap.values());
+
+      // Save valid streams to safeStorage
+      try {
+        safeStorage.setItem('vlive_active_live_streams', JSON.stringify(allActiveStreams.slice(0, 50)));
+      } catch (e) {}
+
+      return allActiveStreams;
     } catch (e) {
       console.warn('getActiveStreams catch:', e);
       return [];
@@ -2349,7 +2379,7 @@ export const apiMessages = {
               }).catch(() => {});
               
               setTimeout(() => {
-                try { supabase.removeChannel(ch); } catch {}
+                supabase.removeChannel(ch).catch(() => {});
               }, 2000);
             }
           });
@@ -2608,24 +2638,11 @@ export const apiLive = {
             callbacks.onStreamUpdated(payload.stream);
           }
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'streams' }, (payload) => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'live_streams' }, (payload) => {
           if (payload.eventType === 'INSERT' && payload.new && callbacks.onStreamStarted) {
-            const canonical = {
-              id: payload.new.id,
-              title: payload.new.title || 'پخش زنده',
-              host_id: payload.new.host_id,
-              category: payload.new.category || 'General',
-              thumbnail: payload.new.thumbnail || '',
-              status: payload.new.status || 'active',
-              is_live: payload.new.status === 'active',
-              is_ticketed: Boolean(payload.new.is_vip),
-              ticket_price: Number(payload.new.entry_fee) || 0,
-              livekit_room: getCanonicalLiveKitRoomName(payload.new.id),
-              livekit_server_url: 'wss://livekit.vlive.app'
-            };
-            callbacks.onStreamStarted(canonical);
+            callbacks.onStreamStarted(payload.new);
           } else if (payload.eventType === 'UPDATE' && payload.new) {
-            if (payload.new.status === 'ended') {
+            if (payload.new.is_live === false || payload.new.status === 'ended') {
               if (callbacks.onStreamEnded) callbacks.onStreamEnded(payload.new.id);
             } else if (callbacks.onStreamUpdated) {
               callbacks.onStreamUpdated(payload.new);
@@ -2644,140 +2661,104 @@ export const apiLive = {
   },
 
   async createLiveStream(streamPayload) {
-    const { data: authData } = await supabase.auth.getUser();
-    let hostUuid = authData?.user?.id || (typeof streamPayload?.host_id === 'string' && streamPayload.host_id.includes('-') && streamPayload.host_id.length >= 30 ? streamPayload.host_id : null);
+    const uid = getUserId() || streamPayload.host_id || 'streamer_user';
+    const streamId = streamPayload.id || `stream_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     
-    if (!hostUuid && streamPayload?.host_id) {
-      hostUuid = await resolveProfileUuid(streamPayload.host_id);
-    }
-    if (!hostUuid) {
-      const storedUid = getUserId();
-      if (storedUid) {
-        hostUuid = await resolveProfileUuid(storedUid);
-      }
-    }
-
-    if (!hostUuid) {
-      throw new Error('AUTH_REQUIRED: Authenticated user UUID is required to start a live stream.');
-    }
-
-    const title = (streamPayload.title || 'پخش زنده').trim();
-    const category = streamPayload.category || 'General';
-    const thumbnail = streamPayload.thumbnail || streamPayload.avatar || '';
-    const isVip = Boolean(streamPayload.is_vip || streamPayload.is_ticketed);
-    const entryFee = Number(streamPayload.entry_fee || streamPayload.ticket_price) || 0;
-
-    // 0. End all previous active streams for this host safely
-    try {
-      await supabase
-        .from('streams')
-        .update({ status: 'ended' })
-        .eq('host_id', hostUuid)
-        .eq('status', 'active');
-    } catch (e) {
-      console.warn('Notice ending previous streams:', e);
-    }
-
-    // 1. Insert directly into public.streams
-    let dbStream = null;
-    let insertError = null;
-
-    try {
-      const resWithProfile = await supabase
-        .from('streams')
-        .insert([{
-          host_id: hostUuid,
-          title: title,
-          status: 'active',
-          category: category,
-          thumbnail: thumbnail,
-          is_vip: isVip,
-          entry_fee: entryFee
-        }])
-        .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, profiles:host_id(id, username, name, avatar)')
-        .single();
-
-      if (resWithProfile.error) {
-        // Fallback without embedded profiles join if relation name differs
-        const resFallback = await supabase
-          .from('streams')
-          .insert([{
-            host_id: hostUuid,
-            title: title,
-            status: 'active',
-            category: category,
-            thumbnail: thumbnail,
-            is_vip: isVip,
-            entry_fee: entryFee
-          }])
-          .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at')
-          .single();
-
-        dbStream = resFallback.data;
-        insertError = resFallback.error;
-      } else {
-        dbStream = resWithProfile.data;
-        insertError = resWithProfile.error;
-      }
-    } catch (err) {
-      insertError = err;
-    }
-
-    if (insertError || !dbStream) {
-      console.error('Supabase streams insert error:', insertError);
-      throw new Error(insertError?.message || 'Failed to insert live stream record into database.');
-    }
-
-    const hostProfile = dbStream.profiles || {};
-    const canonicalRoom = getCanonicalLiveKitRoomName(dbStream.id);
-
     const streamRecord = {
-      id: dbStream.id,
-      host: hostProfile.name || hostProfile.username || streamPayload.host || 'Streamer',
-      host_id: dbStream.host_id,
-      avatar: hostProfile.avatar || streamPayload.avatar || '',
-      title: dbStream.title,
-      category: dbStream.category,
-      live_type: isVip ? 'vip' : (streamPayload.live_type || 'standard'),
+      id: streamId,
+      host: streamPayload.host || 'Streamer',
+      host_id: uid,
+      avatar: streamPayload.avatar || '',
+      title: (streamPayload.title || 'Live Stream').trim(),
+      category: streamPayload.category || 'General',
+      live_type: streamPayload.live_type || 'standard',
       description: streamPayload.description || '',
-      thumbnail: dbStream.thumbnail || '',
+      thumbnail: streamPayload.thumbnail || '',
       tags: streamPayload.tags || '#vlive',
-      viewers: 1,
+      viewers: Number(streamPayload.viewers) || 1,
       status: 'active',
       is_live: true,
-      is_ticketed: Boolean(dbStream.is_vip),
-      ticket_price: Number(dbStream.entry_fee) || 0,
+      is_ticketed: Boolean(streamPayload.is_ticketed),
+      ticket_price: Number(streamPayload.ticket_price) || 0,
       livekit_token: streamPayload.livekit_token || null,
-      livekit_room: canonicalRoom,
+      livekit_room: streamPayload.livekit_room || `room_${streamId}`,
       livekit_server_url: streamPayload.livekit_server_url || 'wss://livekit.vlive.app',
       is_broadcaster_authorized: true,
-      created_at: dbStream.created_at || new Date().toISOString()
+      created_at: new Date().toISOString()
     };
 
-    // Update host profile status to 'live'
+    // 1. Synchronize to Supabase database tables with valid columns
     try {
-      await supabase.from('profiles').update({ status: 'live' }).eq('id', hostUuid);
+      const { data: authData } = await supabase.auth.getUser();
+      const authUid = authData?.user?.id;
+      const hostUuid = (typeof uid === 'string' && uid.includes('-') && uid.length >= 30) ? uid : (authUid || undefined);
+
+      // Insert into streams table
+      const { data: dbStream } = await supabase.from('streams').insert([{
+        host_id: hostUuid,
+        title: streamRecord.title || 'پخش زنده',
+        status: 'active',
+        category: streamRecord.category || 'General',
+        thumbnail: streamRecord.thumbnail || streamRecord.avatar || '',
+        is_vip: Boolean(streamRecord.is_ticketed),
+        entry_fee: Number(streamRecord.ticket_price) || 0
+      }]).select().maybeSingle().catch(() => ({ data: null }));
+
+      if (dbStream && dbStream.id) {
+        streamRecord.id = dbStream.id;
+      }
+
+      // Also insert into live_streams table
+      await supabase.from('live_streams').insert([{
+        host_id: hostUuid,
+        title: streamRecord.title || 'پخش زنده',
+        is_live: true,
+        viewer_count: Math.max(1, Number(streamRecord.viewers) || 1)
+      }]).catch(() => {});
+
+      // Update host profile status to 'live'
+      if (hostUuid) {
+        await supabase.from('profiles').update({ status: 'live' }).eq('id', hostUuid).catch(() => {});
+      }
+    } catch (e) {
+      console.warn('DB stream insert notice:', e);
+    }
+
+    // 2. Persist in local storage cache
+    try {
+      const cached = JSON.parse(safeStorage.getItem('vlive_active_live_streams') || '[]');
+      const filtered = Array.isArray(cached) ? cached.filter(x => x.id !== streamRecord.id) : [];
+      safeStorage.setItem('vlive_active_live_streams', JSON.stringify([streamRecord, ...filtered].slice(0, 50)));
     } catch (e) {}
 
-    // Realtime global broadcast to all users across app
+    // 3. Realtime global broadcast to all users across app
     try {
       const ch = supabase.channel('global_live_streams', {
         config: { broadcast: { ack: true, self: true } }
       });
       ch.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          try {
+          await ch.send({
+            type: 'broadcast',
+            event: 'live_started',
+            payload: { stream: streamRecord }
+          }).catch(() => {});
+          
+          if (window._vliveStreamPingInterval) {
+            clearInterval(window._vliveStreamPingInterval);
+          }
+          window._vliveStreamPingInterval = setInterval(async () => {
             await ch.send({
               type: 'broadcast',
               event: 'live_started',
               payload: { stream: streamRecord }
-            });
-          } catch (e) {}
+            }).catch(() => {});
+          }, 8000);
         }
       });
     } catch (e) {}
 
-    // Dispatch local window event for instant same-tab response
+    // 4. Dispatch local window event for instant same-tab response
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('vlive_stream_started', { detail: streamRecord }));
     }
@@ -2786,44 +2767,47 @@ export const apiLive = {
   },
 
   async endLiveStream(streamId) {
-    if (!streamId) return { success: false, error: 'No streamId provided' };
+    if (!streamId) return { success: false };
 
-    const { data: authData } = await supabase.auth.getUser();
-    const currentUid = authData?.user?.id || getUserId();
-    const hostUuid = (typeof currentUid === 'string' && currentUid.includes('-') && currentUid.length >= 30) ? currentUid : undefined;
+    if (window._vliveStreamPingInterval) {
+      clearInterval(window._vliveStreamPingInterval);
+      window._vliveStreamPingInterval = null;
+    }
 
-    // 1. Update public.streams table
-    let endError = null;
+    // 1. DB Updates across all live stream tables
     try {
-      const { error } = await supabase
-        .from('streams')
-        .update({ status: 'ended' })
-        .eq('id', streamId);
-      endError = error;
-    } catch (e) {
-      endError = e;
-    }
+      const { data: authData } = await supabase.auth.getUser();
+      const currentUid = authData?.user?.id || getUserId();
+      const hostUuid = (typeof currentUid === 'string' && currentUid.includes('-') && currentUid.length >= 30) ? currentUid : undefined;
 
-    if (hostUuid) {
-      try {
-        await supabase.from('profiles').update({ status: 'online' }).eq('id', hostUuid);
-      } catch (e) {}
-    }
+      await Promise.allSettled([
+        supabase.from('streams').update({ status: 'ended' }).eq('id', streamId),
+        hostUuid ? supabase.from('streams').update({ status: 'ended' }).eq('host_id', hostUuid).eq('status', 'active') : Promise.resolve(),
+        supabase.from('live_streams').update({ is_live: false }).eq('id', streamId),
+        hostUuid ? supabase.from('live_streams').update({ is_live: false }).eq('host_id', hostUuid) : Promise.resolve(),
+        hostUuid ? supabase.from('profiles').update({ status: 'online' }).eq('id', hostUuid) : Promise.resolve()
+      ]);
+    } catch (e) {}
 
-    // 2. Global realtime broadcast that stream has ended
+    // 2. Remove from active cache
+    try {
+      const cached = JSON.parse(safeStorage.getItem('vlive_active_live_streams') || '[]');
+      const filtered = (Array.isArray(cached) ? cached : []).filter(x => x.id !== streamId && x.livekit_room !== streamId);
+      safeStorage.setItem('vlive_active_live_streams', JSON.stringify(filtered));
+    } catch (e) {}
+
+    // 3. Global realtime broadcast that stream has ended
     try {
       const ch = supabase.channel('global_live_streams', {
         config: { broadcast: { ack: true, self: true } }
       });
       ch.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          try {
-            await ch.send({
-              type: 'broadcast',
-              event: 'live_ended',
-              payload: { streamId }
-            });
-          } catch (e) {}
+          await ch.send({
+            type: 'broadcast',
+            event: 'live_ended',
+            payload: { streamId }
+          }).catch(() => {});
         }
       });
     } catch (e) {}
@@ -2832,17 +2816,14 @@ export const apiLive = {
       window.dispatchEvent(new CustomEvent('vlive_stream_ended', { detail: { streamId } }));
     }
 
-    if (endError) {
-      console.warn('endLiveStream Supabase error:', endError.message);
-    }
-    return { success: !endError };
+    return { success: true };
   },
 
   async joinStream(streamId) {
     const uid = getUserId();
     if (!uid || !streamId) return;
     try {
-      await supabase.from('live_stream_viewers').insert([{ stream_id: streamId, user_id: uid }]);
+      await supabase.from('live_stream_viewers').insert([{ stream_id: streamId, user_id: uid }]).catch(() => {});
     } catch (e) {}
   },
 
@@ -2850,7 +2831,7 @@ export const apiLive = {
     const uid = getUserId();
     if (!uid || !streamId) return;
     try {
-      await supabase.from('live_stream_viewers').delete().eq('stream_id', streamId).eq('user_id', uid);
+      await supabase.from('live_stream_viewers').delete().eq('stream_id', streamId).eq('user_id', uid).catch(() => {});
     } catch (e) {}
   },
   async saveAdultAccess(payload) {
@@ -2890,11 +2871,7 @@ export const apiLive = {
         created_at: new Date().toISOString()
       };
       
-      let data = null;
-      try {
-        const res = await supabase.from('live_comments').insert([payload]).select();
-        data = res.data;
-      } catch (e) {}
+      const { data } = await supabase.from('live_comments').insert([payload]).select().catch(() => ({ data: null }));
       
       const channel = supabase.channel(`stream_room_${streamId}`);
       await channel.send({
@@ -3811,9 +3788,7 @@ export const apiCalls = {
         const { error } = await supabase.from('live_reports').insert([payload]);
         if (error) {
           // Fallback table name attempt
-          try {
-            await supabase.from('reports').insert([payload]);
-          } catch (e) {}
+          await supabase.from('reports').insert([payload]).catch(() => {});
         }
       } catch (dbErr) {
         console.warn('Report DB insert notice:', dbErr.message);
@@ -4595,7 +4570,7 @@ export const apiNotifications = {
     if (!uid) return;
     try {
       const userUuid = (await resolveProfileUuid(uid)) || uid;
-      await supabase.from('notifications').update({ is_read: true }).or(`user_id.eq.${userUuid},user_id.eq.${uid}`);
+      await supabase.from('notifications').update({ is_read: true }).or(`user_id.eq.${userUuid},user_id.eq.${uid}`).catch(() => {});
     } catch {}
     try {
       const cached = JSON.parse(safeStorage.getItem('vlive_user_notifs_v1') || '[]');
@@ -4609,7 +4584,7 @@ export const apiNotifications = {
     if (!uid) return;
     try {
       const userUuid = (await resolveProfileUuid(uid)) || uid;
-      await supabase.from('notifications').delete().eq('user_id', userUuid);
+      await supabase.from('notifications').delete().eq('user_id', userUuid).catch(() => {});
     } catch {}
     try {
       safeStorage.setItem('vlive_user_notifs_v1', '[]');
@@ -4669,15 +4644,12 @@ export const apiAdmin = {
 
       // 1. Read persistent admin state from Supabase
       const subjectKey = `ADMIN_USER_STATE:${targetUuid}`;
-      let existingTicket = null;
-      try {
-        const res = await supabase
-          .from('support_tickets')
-          .select('id, message')
-          .eq('subject', subjectKey)
-          .maybeSingle();
-        existingTicket = res.data;
-      } catch (e) {}
+      const { data: existingTicket } = await supabase
+        .from('support_tickets')
+        .select('id, message')
+        .eq('subject', subjectKey)
+        .maybeSingle()
+        .catch(() => ({ data: null }));
 
       let existingState = {};
       if (existingTicket?.message) {
@@ -4687,25 +4659,19 @@ export const apiAdmin = {
       }
 
       // 2. Read current balance from wallets table, profiles table, or persistent state
-      let walData = null;
-      try {
-        const res = await supabase
-          .from('wallets')
-          .select('coins, usdt_balance, user_id')
-          .eq('user_id', targetUuid)
-          .maybeSingle();
-        walData = res.data;
-      } catch (e) {}
+      const { data: walData } = await supabase
+        .from('wallets')
+        .select('coins, usdt_balance, user_id')
+        .eq('user_id', targetUuid)
+        .maybeSingle()
+        .catch(() => ({ data: null }));
 
-      let profData = null;
-      try {
-        const res = await supabase
-          .from('profiles')
-          .select('coins, user_coins')
-          .eq('id', targetUuid)
-          .maybeSingle();
-        profData = res.data;
-      } catch (e) {}
+      const { data: profData } = await supabase
+        .from('profiles')
+        .select('coins, user_coins')
+        .eq('id', targetUuid)
+        .maybeSingle()
+        .catch(() => ({ data: null }));
 
       const walletCoins = walData && typeof walData.coins !== 'undefined' && walData.coins !== null ? Number(walData.coins || 0) : null;
       const profileCoins = profData && (typeof profData.coins !== 'undefined' || typeof profData.user_coins !== 'undefined') ? Number(profData.coins ?? profData.user_coins ?? 0) : null;
@@ -4720,21 +4686,17 @@ export const apiAdmin = {
 
       // 3. Upsert into wallets table in PostgreSQL & update profiles
       if (targetUuid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUuid))) {
-        try {
-          await supabase.from('wallets').upsert({
-            user_id: targetUuid,
-            coins: newCoins,
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'user_id' });
-        } catch (e) {}
+        await supabase.from('wallets').upsert({
+          user_id: targetUuid,
+          coins: newCoins,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' }).catch(() => {});
 
-        try {
-          await supabase.from('profiles').update({
-            coins: newCoins,
-            user_coins: newCoins,
-            updated_at: new Date().toISOString()
-          }).eq('id', targetUuid);
-        } catch (e) {}
+        await supabase.from('profiles').update({
+          coins: newCoins,
+          user_coins: newCoins,
+          updated_at: new Date().toISOString()
+        }).eq('id', targetUuid).catch(() => {});
       }
 
       // 4. Save state permanently in Supabase
@@ -4745,43 +4707,41 @@ export const apiAdmin = {
         updated_at: new Date().toISOString()
       };
 
-      try {
-        if (existingTicket?.id) {
-          await supabase
-            .from('support_tickets')
-            .update({
-              message: JSON.stringify(mergedState),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingTicket.id);
-        } else {
-          await supabase
-            .from('support_tickets')
-            .insert([{
-              user_id: targetUuid,
-              subject: subjectKey,
-              message: JSON.stringify(mergedState),
-              status: 'closed'
-            }]);
-        }
-      } catch (e) {}
+      if (existingTicket?.id) {
+        await supabase
+          .from('support_tickets')
+          .update({
+            message: JSON.stringify(mergedState),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingTicket.id)
+          .catch(() => {});
+      } else {
+        await supabase
+          .from('support_tickets')
+          .insert([{
+            user_id: targetUuid,
+            subject: subjectKey,
+            message: JSON.stringify(mergedState),
+            status: 'closed'
+          }])
+          .catch(() => {});
+      }
 
       // 5. Record audit transaction log in Supabase
-      try {
-        await supabase.from('support_tickets').insert([{
-          user_id: targetUuid,
-          subject: `TRANSACTION_LOG:${targetUuid}`,
-          message: JSON.stringify({
-            tx_type: val >= 0 ? 'deposit' : 'deduct',
-            amount_coins: Math.abs(val),
-            new_coins: newCoins,
-            old_coins: currentCoins,
-            reason: reason || 'Admin Manual Adjustment',
-            created_at: new Date().toISOString()
-          }),
-          status: 'closed'
-        }]);
-      } catch (e) {}
+      await supabase.from('support_tickets').insert([{
+        user_id: targetUuid,
+        subject: `TRANSACTION_LOG:${targetUuid}`,
+        message: JSON.stringify({
+          tx_type: val >= 0 ? 'deposit' : 'deduct',
+          amount_coins: Math.abs(val),
+          new_coins: newCoins,
+          old_coins: currentCoins,
+          reason: reason || 'Admin Manual Adjustment',
+          created_at: new Date().toISOString()
+        }),
+        status: 'closed'
+      }]).catch(() => {});
 
       // 6. Broadcast user update event across all components
       if (typeof window !== 'undefined') {
@@ -4827,41 +4787,34 @@ export const apiAdmin = {
         if (prof?.id) targetUuid = prof.id;
       }
 
-      let profData = null;
-      try {
-        const res = await supabase
-          .from('profiles')
-          .select('diamonds')
-          .eq('id', targetUuid)
-          .maybeSingle();
-        profData = res.data;
-      } catch (e) {}
+      const { data: profData } = await supabase
+        .from('profiles')
+        .select('diamonds')
+        .eq('id', targetUuid)
+        .maybeSingle()
+        .catch(() => ({ data: null }));
 
       const currentDiamonds = Number(profData?.diamonds || 0);
       const newDiamonds = Math.max(0, currentDiamonds + val);
 
-      try {
-        await supabase.from('profiles').update({
-          diamonds: newDiamonds
-        }).eq('id', targetUuid);
-      } catch (e) {}
+      await supabase.from('profiles').update({
+        diamonds: newDiamonds
+      }).eq('id', targetUuid).catch(() => {});
 
       // Record audit transaction log in Supabase
-      try {
-        await supabase.from('support_tickets').insert([{
-          user_id: targetUuid,
-          subject: `TRANSACTION_LOG:${targetUuid}`,
-          message: JSON.stringify({
-            tx_type: val >= 0 ? 'deposit_diamonds' : 'deduct_diamonds',
-            amount_diamonds: Math.abs(val),
-            new_diamonds: newDiamonds,
-            old_diamonds: currentDiamonds,
-            reason: reason || 'Admin Manual Diamond Adjustment',
-            created_at: new Date().toISOString()
-          }),
-          status: 'closed'
-        }]);
-      } catch (e) {}
+      await supabase.from('support_tickets').insert([{
+        user_id: targetUuid,
+        subject: `TRANSACTION_LOG:${targetUuid}`,
+        message: JSON.stringify({
+          tx_type: val >= 0 ? 'deposit_diamonds' : 'deduct_diamonds',
+          amount_diamonds: Math.abs(val),
+          new_diamonds: newDiamonds,
+          old_diamonds: currentDiamonds,
+          reason: reason || 'Admin Manual Diamond Adjustment',
+          created_at: new Date().toISOString()
+        }),
+        status: 'closed'
+      }]).catch(() => {});
 
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('vlive_user_updated', {
@@ -5005,23 +4958,18 @@ export const apiAdmin = {
   async getAllUsers() {
     if (!(await verifyAdminServerRole())) return [];
     try {
-      // Parallelize DB queries safely without calling .catch on builder instances
+      // Parallelize DB queries with Promise.all for high speed and instant loading
       const [
-        profsRes,
-        walRes,
-        adminStatesRes,
-        kycRes
+        { data: profs, error },
+        { data: walData },
+        { data: adminStates },
+        { data: approvedKycs }
       ] = await Promise.all([
         supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-        supabase.from('wallets').select('user_id, coins, usdt_balance'),
-        supabase.from('support_tickets').select('user_id, subject, message').like('subject', 'ADMIN_USER_STATE:%'),
-        supabase.from('kyc_applications').select('user_id').eq('status', 'Approved')
+        supabase.from('wallets').select('user_id, coins, usdt_balance').catch(() => ({ data: [] })),
+        supabase.from('support_tickets').select('user_id, subject, message').like('subject', 'ADMIN_USER_STATE:%').catch(() => ({ data: [] })),
+        supabase.from('kyc_applications').select('user_id').eq('status', 'Approved').catch(() => ({ data: [] }))
       ]);
-
-      const profs = profsRes?.data || [];
-      const walData = walRes?.data || [];
-      const adminStates = adminStatesRes?.data || [];
-      const approvedKycs = kycRes?.data || [];
 
       const walMap = new Map((walData || []).map(w => [w.user_id, w]));
       const adminStateMap = new Map();
@@ -5216,44 +5164,35 @@ export const apiAdmin = {
       // 3. Sync streamer_profiles and kyc_applications tables if streamer status modified
       if (isStreamerVal) {
         if (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) {
-          try {
-            await supabase.from('streamer_profiles').upsert([{
-              user_id: matchedId,
-              status: 'active',
-              updated_at: new Date().toISOString()
-            }], { onConflict: 'user_id' });
-          } catch (e) {}
+          await supabase.from('streamer_profiles').upsert([{
+            user_id: matchedId,
+            status: 'active',
+            updated_at: new Date().toISOString()
+          }], { onConflict: 'user_id' }).catch(() => {});
 
-          try {
-            await supabase.from('kyc_applications').update({
-              status: 'Approved',
-              updated_at: new Date().toISOString()
-            }).eq('user_id', matchedId);
-          } catch (e) {}
+          await supabase.from('kyc_applications').update({
+            status: 'Approved',
+            updated_at: new Date().toISOString()
+          }).eq('user_id', matchedId).catch(() => {});
         }
       } else if (isStreamerExplicit && !isStreamerVal) {
         if (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) {
-          try {
-            await supabase.from('streamer_profiles').update({
-              status: 'inactive',
-              updated_at: new Date().toISOString()
-            }).eq('user_id', matchedId);
-          } catch (e) {}
+          await supabase.from('streamer_profiles').update({
+            status: 'inactive',
+            updated_at: new Date().toISOString()
+          }).eq('user_id', matchedId).catch(() => {});
         }
       }
 
       // 4. Save state permanently in Supabase support_tickets table (ADMIN_USER_STATE)
       if (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) {
         const subjectKey = `ADMIN_USER_STATE:${matchedId}`;
-        let existingTicket = null;
-        try {
-          const res = await supabase
-            .from('support_tickets')
-            .select('id, message')
-            .eq('subject', subjectKey)
-            .maybeSingle();
-          existingTicket = res.data;
-        } catch (e) {}
+        const { data: existingTicket } = await supabase
+          .from('support_tickets')
+          .select('id, message')
+          .eq('subject', subjectKey)
+          .maybeSingle()
+          .catch(() => ({ data: null }));
 
         let existingState = {};
         if (existingTicket?.message) {
@@ -5295,26 +5234,26 @@ export const apiAdmin = {
         if (typeof updates.diamonds === 'number') mergedState.diamonds = updates.diamonds;
         if (updates.admin_notes) mergedState.admin_notes = updates.admin_notes;
 
-        try {
-          if (existingTicket?.id) {
-            await supabase
-              .from('support_tickets')
-              .update({
-                message: JSON.stringify(mergedState),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', existingTicket.id);
-          } else {
-            await supabase
-              .from('support_tickets')
-              .insert([{
-                user_id: matchedId,
-                subject: subjectKey,
-                message: JSON.stringify(mergedState),
-                status: 'closed'
-              }]);
-          }
-        } catch (e) {}
+        if (existingTicket?.id) {
+          await supabase
+            .from('support_tickets')
+            .update({
+              message: JSON.stringify(mergedState),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingTicket.id)
+            .catch(() => {});
+        } else {
+          await supabase
+            .from('support_tickets')
+            .insert([{
+              user_id: matchedId,
+              subject: subjectKey,
+              message: JSON.stringify(mergedState),
+              status: 'closed'
+            }])
+            .catch(() => {});
+        }
         isSuccess = true;
       }
 
@@ -5803,11 +5742,12 @@ export const apiAdmin = {
     if (!(await verifyAdminServerRole())) return { success: false, error: '403 Forbidden: Admin privileges required.' };
     try {
       const cleanId = String(streamId).replace(/^live_/, '');
-      const { error } = await supabase.from('streams').update({ status: 'ended' }).or(`id.eq.${cleanId},id.eq.${streamId}`);
+      await Promise.allSettled([
+        supabase.from('live_streams').update({ status: 'ended' }).or(`id.eq.${cleanId},id.eq.${streamId}`),
+        supabase.from('streams').update({ status: 'ended' }).or(`id.eq.${cleanId},id.eq.${streamId}`)
+      ]);
       try {
-        const ch = supabase.channel('global_live_streams', {
-          config: { broadcast: { ack: true, self: true } }
-        });
+        const ch = supabase.channel('live_global_broadcast');
         ch.subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             ch.send({ type: 'broadcast', event: 'live_ended', payload: { streamId, id: streamId } });
@@ -5815,7 +5755,7 @@ export const apiAdmin = {
           }
         });
       } catch (e) {}
-      return { success: !error };
+      return { success: true };
     } catch (e) {
       return { success: false, error: e.message };
     }
@@ -5830,9 +5770,7 @@ export const apiAdmin = {
     try {
       const cleanId = String(reportId);
       const { error } = await supabase.from('live_reports').update({ status }).eq('id', cleanId);
-      try {
-        await supabase.from('reports').update({ status }).eq('id', cleanId);
-      } catch (e) {}
+      await supabase.from('reports').update({ status }).eq('id', cleanId).catch(() => {});
       return { success: !error };
     } catch (e) {
       return { success: false };
