@@ -2371,7 +2371,7 @@ export default function App() {
           });
 
           // Function to attach video tracks to viewer video element
-          const attachRemoteTrack = (track) => {
+          const attachRemoteTrack = (payload) => { const track = payload?.track || payload;
             if (track && (track.kind === 'video' || track.source === 'camera') && viewerLiveVideoRef.current) {
               if (typeof track.attach === 'function') {
                 track.attach(viewerLiveVideoRef.current);

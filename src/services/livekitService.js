@@ -279,7 +279,7 @@ export class LiveKitManager {
     this.currentFacingMode = facingMode;
 
     // Fast path: Reuse existing active stream if it meets our requirements
-    if (this.localMediaStream && this.localMediaStream.active) {
+    if (this.localMediaStream && this.localMediaStream.getVideoTracks().some(t => t.readyState === 'live')) {
       const vTracks = this.localMediaStream.getVideoTracks();
       const aTracks = this.localMediaStream.getAudioTracks();
       const hasVideo = vTracks.length > 0 && vTracks[0].readyState === 'live';
@@ -559,9 +559,9 @@ export class LiveKitManager {
 
     // 3. Media Stream handling (reuse active camera stream)
     const providedStream = stream || mediaStream || options.stream || options.mediaStream;
-    if (providedStream && providedStream.active && providedStream.getVideoTracks().some(t => t.readyState === 'live')) {
+    if (providedStream && providedStream.getVideoTracks().some(t => t.readyState === 'live')) {
       this.localMediaStream = providedStream;
-    } else if (this.localMediaStream && this.localMediaStream.active && this.localMediaStream.getVideoTracks().some(t => t.readyState === 'live')) {
+    } else if (this.localMediaStream && this.localMediaStream.getVideoTracks().some(t => t.readyState === 'live')) {
       // Keep existing active stream intact
     } else if (isPublisher) {
       await this.requestMediaStream(this.currentFacingMode, true, !isAudioOnly);
@@ -637,7 +637,7 @@ export class LiveKitManager {
       let tracks = [];
       
       // If we already have a stream, wrap its tracks using LiveKit's createLocalTracks
-      if (this.localMediaStream && this.localMediaStream.active) {
+      if (this.localMediaStream && this.localMediaStream.getVideoTracks().some(t => t.readyState === 'live')) {
         const vTrack = this.localMediaStream.getVideoTracks()[0];
         const aTrack = this.localMediaStream.getAudioTracks()[0];
         

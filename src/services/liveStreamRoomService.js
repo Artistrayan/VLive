@@ -195,7 +195,7 @@ export class LiveStreamRoomService {
 
         // If I am a viewer, request video stream from the host
         if (!this.isHost) {
-          this.requestVideoStream();
+          // this.requestVideoStream(); disabled because LiveKit handles video
         }
       }
     });

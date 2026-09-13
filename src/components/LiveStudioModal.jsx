@@ -1109,7 +1109,7 @@ export default function LiveStudioModal({
       {/* PHASE 2: COUNTDOWN SCREEN */}
       {/* ========================================================================= */}
       {studioPhase === 'COUNTDOWN' && (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-950 space-y-6 animate-fadeIn">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 bg-black/60 backdrop-blur-sm space-y-6 animate-fadeIn relative z-10">
           <div className="relative flex items-center justify-center">
             <div className="w-40 h-40 rounded-full border-4 border-pink-500/30 animate-ping absolute" />
             <div className="w-36 h-36 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center shadow-[0_0_60px_rgba(236,72,153,0.8)] border-4 border-white">

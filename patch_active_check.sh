@@ -1,0 +1,2 @@
+sed -i 's/if (providedStream && providedStream.active && providedStream.getVideoTracks().some(t => t.readyState === '\'live\'')) {/if (providedStream \&\& providedStream.getVideoTracks().some(t => t.readyState === '\'live\'')) {/g' src/services/livekitService.js
+sed -i 's/if (this.localMediaStream && this.localMediaStream.active) {/if (this.localMediaStream \&\& this.localMediaStream.getVideoTracks().some(t => t.readyState === '\'live\'')) {/g' src/services/livekitService.js
