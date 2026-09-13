@@ -1,0 +1,1 @@
+sed -i 's/setCameraError('\''CAMERA_INIT_FAILED'\'');/if (err.message \&\& err.message.includes('\''Permission'\'')) { setCameraError('\''CAMERA_PERMISSION_DENIED'\''); } else { setCameraError('\''CAMERA_INIT_FAILED'\''); }/g' src/components/LiveStudioModal.jsx

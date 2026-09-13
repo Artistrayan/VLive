@@ -1494,7 +1494,7 @@ export const apiHome = {
     try {
       const { data, error } = await supabase
         .from('streams')
-        .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, profiles:host_id(id, username, name, avatar)')
+        .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, last_heartbeat_at, started_at, profiles:host_id(id, username, name, avatar)')
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
@@ -1503,11 +1503,21 @@ export const apiHome = {
         return [];
       }
 
+      const now = Date.now();
+      const validData = (data || []).filter(s => {
+        const createdMs = new Date(s.created_at).getTime();
+        if (s.last_heartbeat_at) {
+          const hbMs = new Date(s.last_heartbeat_at).getTime();
+          return (now - hbMs) < 60000; // 1 min timeout
+        }
+        return (now - createdMs) < 120000; // 2 min grace without heartbeat
+      });
+
       if (!Array.isArray(data)) {
         return [];
       }
 
-      return data.map(s => {
+      return validData.map(s => {
         const hostProfile = s.profiles || {};
         const hostName = hostProfile.name || hostProfile.username || 'Streamer';
         const hostAvatar = hostProfile.avatar || '';
@@ -2623,13 +2633,13 @@ export const apiLive = {
       .insert([{
         host_id: hostUuid,
         title: title,
-        status: 'active',
+        status: streamPayload.status || 'starting',
         category: category,
         thumbnail: thumbnail,
         is_vip: isVip,
         entry_fee: entryFee
       }])
-      .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, profiles:host_id(id, username, name, avatar)')
+      .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, last_heartbeat_at, started_at, profiles:host_id(id, username, name, avatar)')
       .single();
 
     if (insertError || !dbStream) {
@@ -2688,6 +2698,23 @@ export const apiLive = {
     }
 
     return { success: true, data: streamRecord };
+  },
+
+  async sendHeartbeat(streamId) {
+    if (!streamId) return;
+    try {
+      await supabase.from("streams").update({ last_heartbeat_at: new Date().toISOString() }).eq("id", streamId).eq("status", "active");
+    } catch (e) {}
+  },
+
+  async activateLiveStream(streamId) {
+    if (!streamId) return { success: false };
+    try {
+      await supabase.from("streams").update({ status: "active", started_at: new Date().toISOString() }).eq("id", streamId);
+      return { success: true };
+    } catch (e) {
+      return { success: false };
+    }
   },
 
   async endLiveStream(streamId) {
@@ -5649,6 +5676,23 @@ export const apiAdmin = {
       return Array.isArray(streams) ? streams : [];
     } catch (e) {
       return [];
+    }
+  },
+
+  async sendHeartbeat(streamId) {
+    if (!streamId) return;
+    try {
+      await supabase.from("streams").update({ last_heartbeat_at: new Date().toISOString() }).eq("id", streamId).eq("status", "active");
+    } catch (e) {}
+  },
+
+  async activateLiveStream(streamId) {
+    if (!streamId) return { success: false };
+    try {
+      await supabase.from("streams").update({ status: "active", started_at: new Date().toISOString() }).eq("id", streamId);
+      return { success: true };
+    } catch (e) {
+      return { success: false };
     }
   },
 

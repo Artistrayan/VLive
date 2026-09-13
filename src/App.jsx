@@ -2299,9 +2299,6 @@ export default function App() {
           onRemoteStream: (stream) => {
             if (viewerLiveVideoRef.current && stream) {
               try {
-                viewerLiveVideoRef.current.srcObject = stream;
-                console.log("ATTACHING WEBRTC STREAM TO VIEWER!", stream);
-              viewerLiveVideoRef.current.play().catch(() => {});
               } catch (e) {
                 console.warn('Error attaching WebRTC remote stream:', e);
               }
@@ -2362,7 +2359,7 @@ export default function App() {
 
           if (isLiveKitCancelled || !tokenRes?.token) return;
 
-          const attachRemoteTrack = (payload) => { const track = payload?.track || payload; console.log("ATTACH TRACK CALLED:", track?.kind, track?.source); if (track && viewerLiveVideoRef.current) { if (typeof track.attach === 'function') { track.attach(viewerLiveVideoRef.current); } else if (track.mediaStreamTrack) { const existingStream = viewerLiveVideoRef.current.srcObject; if (existingStream instanceof MediaStream) { existingStream.addTrack(track.mediaStreamTrack); } else { viewerLiveVideoRef.current.srcObject = new MediaStream([track.mediaStreamTrack]); } } viewerLiveVideoRef.current.play?.().catch(() => {}); } };
+          const attachRemoteTrack = (payload) => { const track = payload?.track || payload; if (track && viewerLiveVideoRef.current) { const mediaTrack = track.mediaStreamTrack || track; if (mediaTrack instanceof MediaStreamTrack) { const existingStream = viewerLiveVideoRef.current.srcObject; if (existingStream instanceof MediaStream) { const tracks = existingStream.getTracks(); if (!tracks.some(t => t.id === mediaTrack.id)) { existingStream.addTrack(mediaTrack); viewerLiveVideoRef.current.srcObject = new MediaStream(existingStream.getTracks()); } } else { viewerLiveVideoRef.current.srcObject = new MediaStream([mediaTrack]); } } else if (typeof track.attach === 'function') { track.attach(viewerLiveVideoRef.current); } viewerLiveVideoRef.current.play?.().catch((err) => { viewerLiveVideoRef.current.muted = true; viewerLiveVideoRef.current.play?.().catch(()=>{}); }); } };
           livekitManager.on('track_subscribed', attachRemoteTrack);
           livekitManager.on('track_published', attachRemoteTrack);
 
@@ -2378,7 +2375,7 @@ export default function App() {
           // Check already existing tracks in room
           if (livekitManager.room?.remoteParticipants) {
             for (const [_, p] of livekitManager.room.remoteParticipants) {
-              for (const [__, pub] of p.videoTrackPublications) {
+              for (const [__, pub] of p.trackPublications) {
                 if (pub.track) attachRemoteTrack(pub.track);
               }
             }

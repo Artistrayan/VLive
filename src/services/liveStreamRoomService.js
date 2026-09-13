@@ -47,13 +47,13 @@ export class LiveStreamRoomService {
           } else if (type === 'follow' && this.callbacks.onFollowerGained) {
             this.callbacks.onFollowerGained(payload);
           } else if (type === 'webrtc_viewer_join' && this.isHost) {
-            this._handleViewerJoin(payload.viewerId);
+            // this._handleViewerJoin(payload.viewerId);
           } else if (type === 'webrtc_offer' && !this.isHost && payload.targetViewerId === this.currentUserId) {
-            this._handleWebRtcOffer(payload);
+            // this._handleWebRtcOffer(payload);
           } else if (type === 'webrtc_answer' && this.isHost) {
-            this._handleWebRtcAnswer(payload);
+            // this._handleWebRtcAnswer(payload);
           } else if (type === 'webrtc_ice') {
-            this._handleIceCandidate(payload);
+            // this._handleIceCandidate(payload);
           }
         };
       }
@@ -161,21 +161,21 @@ export class LiveStreamRoomService {
       })
       .on('broadcast', { event: 'webrtc_viewer_join' }, ({ payload }) => {
         if (this.isHost && payload?.viewerId) {
-          this._handleViewerJoin(payload.viewerId);
+          // this._handleViewerJoin(payload.viewerId);
         }
       })
       .on('broadcast', { event: 'webrtc_offer' }, ({ payload }) => {
         if (!this.isHost && payload?.targetViewerId === this.currentUserId) {
-          this._handleWebRtcOffer(payload);
+          // this._handleWebRtcOffer(payload);
         }
       })
       .on('broadcast', { event: 'webrtc_answer' }, ({ payload }) => {
         if (this.isHost && payload) {
-          this._handleWebRtcAnswer(payload);
+          // this._handleWebRtcAnswer(payload);
         }
       })
       .on('broadcast', { event: 'webrtc_ice' }, ({ payload }) => {
-        this._handleIceCandidate(payload);
+        // this._handleIceCandidate(payload);
       });
 
     // Track user presence in the room
