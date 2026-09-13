@@ -2300,7 +2300,8 @@ export default function App() {
             if (viewerLiveVideoRef.current && stream) {
               try {
                 viewerLiveVideoRef.current.srcObject = stream;
-                viewerLiveVideoRef.current.play().catch(() => {});
+                console.log("ATTACHING WEBRTC STREAM TO VIEWER!", stream);
+              viewerLiveVideoRef.current.play().catch(() => {});
               } catch (e) {
                 console.warn('Error attaching WebRTC remote stream:', e);
               }
@@ -2361,6 +2362,10 @@ export default function App() {
 
           if (isLiveKitCancelled || !tokenRes?.token) return;
 
+          const attachRemoteTrack = (payload) => { const track = payload?.track || payload; console.log("ATTACH TRACK CALLED:", track?.kind, track?.source); if (track && viewerLiveVideoRef.current) { if (typeof track.attach === 'function') { track.attach(viewerLiveVideoRef.current); } else if (track.mediaStreamTrack) { const existingStream = viewerLiveVideoRef.current.srcObject; if (existingStream instanceof MediaStream) { existingStream.addTrack(track.mediaStreamTrack); } else { viewerLiveVideoRef.current.srcObject = new MediaStream([track.mediaStreamTrack]); } } viewerLiveVideoRef.current.play?.().catch(() => {}); } };
+          livekitManager.on('track_subscribed', attachRemoteTrack);
+          livekitManager.on('track_published', attachRemoteTrack);
+
           await livekitManager.connect({
             roomName: canonicalRoom,
             token: tokenRes.token,
@@ -2369,22 +2374,6 @@ export default function App() {
             name: currentUsername || userName || 'Viewer',
             role: 'viewer'
           });
-
-          // Function to attach video tracks to viewer video element
-          const attachRemoteTrack = (payload) => { const track = payload?.track || payload;
-            if (track && (track.kind === 'video' || track.source === 'camera') && viewerLiveVideoRef.current) {
-              if (typeof track.attach === 'function') {
-                track.attach(viewerLiveVideoRef.current);
-              } else if (track.mediaStreamTrack) {
-                const stream = new MediaStream([track.mediaStreamTrack]);
-                viewerLiveVideoRef.current.srcObject = stream;
-              }
-              viewerLiveVideoRef.current.play?.().catch(() => {});
-            }
-          };
-
-          livekitManager.on('track_subscribed', attachRemoteTrack);
-          livekitManager.on('track_published', attachRemoteTrack);
 
           // Check already existing tracks in room
           if (livekitManager.room?.remoteParticipants) {
@@ -2395,7 +2384,7 @@ export default function App() {
             }
           }
         } catch (lkErr) {
-          console.warn('LiveKit viewer connect note:', lkErr);
+          console.error('LiveKit viewer connect ERROR:', lkErr);
         }
       };
 
@@ -2805,6 +2794,13 @@ export default function App() {
         });
       },
       onStreamEnded: (endedStreamId) => {
+        setViewingStream(prev => {
+          if (prev && prev.id === endedStreamId) {
+            showToast(window.loc('لایو توسط میزبان پایان یافت.', 'Live stream ended by host.'));
+            return null;
+          }
+          return prev;
+        });
         if (!endedStreamId) return;
         setStreamsList(prev => {
           const arr = Array.isArray(prev) ? prev : [];
@@ -2832,6 +2828,13 @@ export default function App() {
 
     const handleLocalStreamEnded = (e) => {
       const endedId = e.detail?.streamId;
+      setViewingStream(prev => {
+        if (prev && prev.id === endedId) {
+          showToast(window.loc('لایو پایان یافت.', 'Live ended.'));
+          return null;
+        }
+        return prev;
+      });
       if (!endedId) return;
       setStreamsList(prev => {
         const arr = Array.isArray(prev) ? prev : [];
@@ -4250,11 +4253,11 @@ export default function App() {
           <div className="absolute inset-0 z-0 bg-slate-950 flex items-center justify-center overflow-hidden">
             <video
               ref={viewerLiveVideoRef}
-              src={viewingStream.video_url || viewingStream.stream_url || undefined}
+              src={(!viewingStream.livekit_room) ? (viewingStream.video_url || viewingStream.stream_url || undefined) : undefined}
               autoPlay
               playsInline
               muted={false}
-              className="w-full h-full object-cover z-10"
+              className="absolute inset-0 w-full h-full object-cover z-10"
             />
             {/* Fallback & Poster when live stream is connecting or audio-only */}
             <div className="absolute inset-0 z-0 bg-slate-950 flex items-center justify-center">

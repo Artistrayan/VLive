@@ -1,0 +1,1 @@
+sed -i 's/viewerLiveVideoRef.current.srcObject = new MediaStream(\[track.mediaStreamTrack\]);/const existingStream = viewerLiveVideoRef.current.srcObject; if (existingStream instanceof MediaStream) { existingStream.addTrack(track.mediaStreamTrack); } else { viewerLiveVideoRef.current.srcObject = new MediaStream([track.mediaStreamTrack]); }/g' src/App.jsx

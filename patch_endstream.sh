@@ -1,0 +1,1 @@
+sed -i 's/onStreamEnded: (endedStreamId) => {/onStreamEnded: (endedStreamId) => {\n        setViewingStream(prev => {\n          if (prev \&\& prev.id === endedStreamId) {\n            showToast(window.loc('\''لایو توسط میزبان پایان یافت.'\'', '\''Live stream ended by host.'\''));\n            return null;\n          }\n          return prev;\n        });/g' src/App.jsx
