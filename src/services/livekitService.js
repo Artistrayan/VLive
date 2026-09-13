@@ -35,9 +35,24 @@ function base64UrlEncode(input) {
 /**
  * Generates an authentic, signed LiveKit JWT access token using Web Crypto API (HMAC-SHA256).
  */
+export function getLiveKitConfig() {
+  const url = (typeof import.meta !== 'undefined' && (import.meta.env?.LIVEKIT_URL || import.meta.env?.VITE_LIVEKIT_URL)) ||
+              (typeof process !== 'undefined' && (process.env?.LIVEKIT_URL || process.env?.VITE_LIVEKIT_URL)) ||
+              'wss://livekit.vlive.app';
+
+  const key = (typeof import.meta !== 'undefined' && (import.meta.env?.LIVEKIT_API_KEY || import.meta.env?.VITE_LIVEKIT_API_KEY)) ||
+             (typeof process !== 'undefined' && (process.env?.LIVEKIT_API_KEY || process.env?.VITE_LIVEKIT_API_KEY)) ||
+             'devkey';
+
+  const secret = (typeof import.meta !== 'undefined' && (import.meta.env?.LIVEKIT_API_SECRET || import.meta.env?.VITE_LIVEKIT_API_SECRET)) ||
+                 (typeof process !== 'undefined' && (process.env?.LIVEKIT_API_SECRET || process.env?.VITE_LIVEKIT_API_SECRET)) ||
+                 'secret_livekit_vlive_key_2026';
+
+  return { url: String(url).trim(), key: String(key).trim(), secret: String(secret).trim() };
+}
+
 async function generateLiveKitJwt({ roomName, identity, name, role = 'host', metadata = {} }) {
-  const apiKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LIVEKIT_API_KEY) || 'devkey';
-  const apiSecret = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LIVEKIT_API_SECRET) || 'secret_livekit_vlive_key_2026';
+  const { key: apiKey, secret: apiSecret } = getLiveKitConfig();
   
   const header = { alg: 'HS256', typ: 'JWT' };
   const nowSec = Math.floor(Date.now() / 1000);
@@ -135,7 +150,7 @@ export async function fetchLiveKitToken({
           success: true,
           token: data.token,
           roomName: data.roomName || cleanRoom,
-          serverUrl: data.serverUrl || 'wss://livekit.vlive.app',
+          serverUrl: data.serverUrl || getLiveKitConfig().url,
           identity: data.identity || identity,
           name: data.name || name,
           role: data.role || role
@@ -160,7 +175,7 @@ export async function fetchLiveKitToken({
       success: true,
       token: signedJwt,
       roomName: cleanRoom,
-      serverUrl: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LIVEKIT_URL) || 'wss://livekit.vlive.app',
+      serverUrl: getLiveKitConfig().url,
       identity,
       name,
       role

@@ -42,6 +42,12 @@ const syncAssetsToAndroidPlugin = () => ({
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  envPrefix: ['VITE_', 'LIVEKIT_', 'GEMINI_'],
+  define: {
+    'process.env.LIVEKIT_URL': JSON.stringify(process.env.LIVEKIT_URL || process.env.VITE_LIVEKIT_URL || ''),
+    'process.env.LIVEKIT_API_KEY': JSON.stringify(process.env.LIVEKIT_API_KEY || process.env.VITE_LIVEKIT_API_KEY || ''),
+    'process.env.LIVEKIT_API_SECRET': JSON.stringify(process.env.LIVEKIT_API_SECRET || process.env.VITE_LIVEKIT_API_SECRET || ''),
+  },
   plugins: [react(), tailwindcss(), viteSingleFile(), syncAssetsToAndroidPlugin()],
   css: {
     preprocessorOptions: {

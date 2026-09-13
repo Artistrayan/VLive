@@ -64,7 +64,7 @@ import {
 import { startKeepAlivePing, compressImageFile } from './services/performance';
 import economyService from './services/economyService';
 import { LiveStreamRoomService } from './services/liveStreamRoomService';
-import { livekitManager, fetchLiveKitToken } from './services/livekitService';
+import { livekitManager, fetchLiveKitToken, getLiveKitConfig } from './services/livekitService';
 import { supabase } from './supabaseClient';
 import { safeStorage } from './utils/safeStorage';
 import { loc } from './utils/i18n';
@@ -2299,6 +2299,11 @@ export default function App() {
           onRemoteStream: (stream) => {
             if (viewerLiveVideoRef.current && stream) {
               try {
+                viewerLiveVideoRef.current.srcObject = stream;
+                viewerLiveVideoRef.current.play?.().catch(() => {
+                  viewerLiveVideoRef.current.muted = true;
+                  viewerLiveVideoRef.current.play?.().catch(() => {});
+                });
               } catch (e) {
                 console.warn('Error attaching WebRTC remote stream:', e);
               }
@@ -2366,7 +2371,7 @@ export default function App() {
           await livekitManager.connect({
             roomName: canonicalRoom,
             token: tokenRes.token,
-            serverUrl: tokenRes.serverUrl || viewingStream.livekit_server_url || 'wss://livekit.vlive.app',
+            serverUrl: tokenRes.serverUrl || viewingStream.livekit_server_url || getLiveKitConfig().url,
             identity: getUserId() || currentUser?.id,
             name: currentUsername || userName || 'Viewer',
             role: 'viewer'

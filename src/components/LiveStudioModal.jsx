@@ -11,7 +11,7 @@ import { apiLive, apiAdmin } from '../services/api';
 import { safeStorage } from '../utils/safeStorage';
 import { cameraPermissionService } from '../services/cameraPermissionService';
 import { LiveStreamRoomService } from '../services/liveStreamRoomService';
-import { livekitManager, fetchLiveKitToken } from '../services/livekitService';
+import { livekitManager, fetchLiveKitToken, getLiveKitConfig } from '../services/livekitService';
 import LuxuryGiftOverlay from './Overlays/LuxuryGiftOverlay';
 import VipEntranceBanner from './Overlays/VipEntranceBanner';
 import AiFaceEffectOverlay from './Overlays/AiFaceEffectOverlay';
@@ -190,7 +190,7 @@ export default function LiveStudioModal({
   const [isTrackPublished, setIsTrackPublished] = useState(false);
   const [livekitToken, setLivekitToken] = useState(null);
   const [livekitRoom, setLivekitRoom] = useState(null);
-  const [livekitServerUrl, setLivekitServerUrl] = useState('wss://livekit.vlive.app');
+  const [livekitServerUrl, setLivekitServerUrl] = useState(getLiveKitConfig().url);
   const [broadcasterAuthorized, setBroadcasterAuthorized] = useState(false);
 
   // Direct Camera & Microphone Stream Initialization (No permission prompts or blocks)
@@ -702,11 +702,12 @@ export default function LiveStudioModal({
       }
 
       const authenticToken = tokenRes.token.trim();
-      const effectiveServerUrl = tokenRes.serverUrl || 'wss://livekit.vlive.app';
+      const effectiveServerUrl = tokenRes.serverUrl || getLiveKitConfig().url;
       
-      // 4. Connect to LiveKit and Publish
+      // 4. Connect to LiveKit if available (with fallback to direct Supabase WebRTC room)
+      let lkConnected = false;
       try {
-        await livekitManager.connect({
+        const lkPromise = livekitManager.connect({
           roomName: canonicalRoom,
           token: authenticToken,
           serverUrl: effectiveServerUrl,
@@ -716,20 +717,22 @@ export default function LiveStudioModal({
           mediaStream: activeStream,
           stream: activeStream
         });
+        
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('LiveKit connection timeout')), 3500)
+        );
+
+        await Promise.race([lkPromise, timeoutPromise]);
+        
+        const videoPubs = Array.from(livekitManager.room?.localParticipant?.videoTrackPublications?.values() || []);
+        if (videoPubs.length > 0) {
+          lkConnected = true;
+          setIsLiveKitConnected(true);
+        }
       } catch (lkErr) {
-        await apiLive.endLiveStream(createdStream.id);
-        throw new Error(`خطا در اتصال به سرور لایو: ${lkErr.message}`);
+        console.warn('LiveKit SFU not reachable, falling back to direct WebRTC Realtime room:', lkErr.message);
+        setIsLiveKitConnected(false);
       }
-
-      // Check if tracks are published
-      const videoPubs = Array.from(livekitManager.room?.localParticipant?.videoTrackPublications?.values() || []);
-      if (videoPubs.length === 0) {
-        await apiLive.endLiveStream(createdStream.id);
-        await livekitManager.disconnect();
-        throw new Error('خطا: تصویر دوربین روی سرور منتشر نشد.');
-      }
-
-      setIsLiveKitConnected(true);
 
       // 5. Activate Stream in Supabase
       await apiLive.activateLiveStream(createdStream.id);

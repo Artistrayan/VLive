@@ -1,7 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { presenceService } from './presenceService';
 import { calculateAge } from './businessRules';
-import { fetchLiveKitToken, getCanonicalLiveKitRoomName } from './livekitService';
+import { fetchLiveKitToken, getCanonicalLiveKitRoomName, getLiveKitConfig } from './livekitService';
 import { safeStorage } from '../utils/safeStorage';
 import { getStoredToken, setStoredToken, getUserId, setStoredSession } from '../utils/authSession';
 import { verifyAdminAccess, recordAdminAuditLog, ADMIN_TELEGRAM_ID } from './adminGuard';
@@ -1536,7 +1536,7 @@ export const apiHome = {
           description: '',
           tags: '#vlive',
           livekit_room: canonicalRoom,
-          livekit_server_url: 'wss://livekit.vlive.app',
+          livekit_server_url: getLiveKitConfig().url,
           is_ticketed: Boolean(s.is_vip),
           ticket_price: Number(s.entry_fee) || 0,
           status: 'active',
@@ -2589,7 +2589,7 @@ export const apiLive = {
               is_ticketed: Boolean(payload.new.is_vip),
               ticket_price: Number(payload.new.entry_fee) || 0,
               livekit_room: getCanonicalLiveKitRoomName(payload.new.id),
-              livekit_server_url: 'wss://livekit.vlive.app'
+              livekit_server_url: getLiveKitConfig().url
             };
             callbacks.onStreamStarted(canonical);
           } else if (payload.eventType === 'UPDATE' && payload.new) {
@@ -2668,7 +2668,7 @@ export const apiLive = {
       ticket_price: Number(dbStream.entry_fee) || 0,
       livekit_token: streamPayload.livekit_token || null,
       livekit_room: canonicalRoom,
-      livekit_server_url: streamPayload.livekit_server_url || 'wss://livekit.vlive.app',
+      livekit_server_url: streamPayload.livekit_server_url || getLiveKitConfig().url,
       is_broadcaster_authorized: true,
       created_at: dbStream.created_at || new Date().toISOString()
     };
