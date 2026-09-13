@@ -160,12 +160,14 @@ export async function recordAdminAuditLog(action, targetUserId = null, metadata 
       metadata
     };
 
-    await supabase.from('support_tickets').insert([{
-      user_id: currentUid,
-      subject: `AUDIT_LOG:${action}:${Date.now()}`,
-      message: JSON.stringify(auditEntry),
-      status: 'closed'
-    }]).catch(() => {});
+    try {
+      await supabase.from('support_tickets').insert([{
+        user_id: currentUid,
+        subject: `AUDIT_LOG:${action}:${Date.now()}`,
+        message: JSON.stringify(auditEntry),
+        status: 'closed'
+      }]);
+    } catch (e) {}
   } catch (e) {
     console.warn('recordAdminAuditLog error:', e);
   }

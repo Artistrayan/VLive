@@ -1,1 +1,0 @@
-sed -i 's/const handleLocalStreamEnded = (e) => {/const handleLocalStreamEnded = (e) => {\n      const endedId = e.detail?.streamId;\n      setViewingStream(prev => {\n        if (prev \&\& prev.id === endedId) {\n          showToast(window.loc('\''لایو پایان یافت.'\'', '\''Live ended.'\''));\n          return null;\n        }\n        return prev;\n      });/g' src/App.jsx

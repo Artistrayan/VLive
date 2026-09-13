@@ -1,1 +1,0 @@
-sed -i 's/viewerLiveVideoRef.current.play?.().catch(() => {});/viewerLiveVideoRef.current.play?.().catch((err) => { console.warn("Play error", err); viewerLiveVideoRef.current.muted = true; viewerLiveVideoRef.current.play?.().catch(()=>{}); });/g' src/App.jsx

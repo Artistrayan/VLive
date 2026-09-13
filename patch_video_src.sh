@@ -1,1 +1,0 @@
-sed -i 's/src={viewingStream.video_url || viewingStream.stream_url || undefined}/src={(!viewingStream.livekit_room) ? (viewingStream.video_url || viewingStream.stream_url || undefined) : undefined}/g' src/App.jsx

@@ -1,1 +1,0 @@
-sed -i 's/existingStream.addTrack(mediaTrack); } } else {/existingStream.addTrack(mediaTrack); viewerLiveVideoRef.current.srcObject = new MediaStream(existingStream.getTracks()); } } else {/g' src/App.jsx

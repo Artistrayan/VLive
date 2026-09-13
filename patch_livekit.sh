@@ -1,1 +1,0 @@
-sed -i 's/console.error('\''Error creating or publishing local LiveKit tracks:'\'', err);/console.error('\''Error creating or publishing local LiveKit tracks:'\'', err);/g' src/services/livekitService.js

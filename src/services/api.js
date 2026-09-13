@@ -1570,13 +1570,11 @@ export const apiHome = {
         supabase
           .from('support_tickets')
           .select('user_id, subject, message')
-          .like('subject', 'ADMIN_USER_STATE:%')
-          .catch(() => ({ data: [] })),
+          .like('subject', 'ADMIN_USER_STATE:%'),
         supabase
           .from('kyc_applications')
           .select('user_id')
           .eq('status', 'Approved')
-          .catch(() => ({ data: [] }))
       ]);
 
       if (error || !Array.isArray(data)) return [];
@@ -3185,22 +3183,26 @@ export const apiVip = {
 
       // 2. Update Wallets table
       if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(resolvedUid))) {
-        await supabase.from('wallets').upsert({
-          user_id: resolvedUid,
-          coins: remainingCoins,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id' }).catch(() => {});
+        try {
+          await supabase.from('wallets').upsert({
+            user_id: resolvedUid,
+            coins: remainingCoins,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+        } catch (e) {}
       }
 
       // 3. Record transaction
-      await supabase.from('transactions').insert([{
-        user_id: resolvedUid,
-        tx_type: 'buy_vip',
-        amount_coins: -costCoins,
-        amount_usdt: 0,
-        status: 'Completed',
-        description: `Purchased VIP Plan: ${planKey.toUpperCase()} (${dur} Month${dur > 1 ? 's' : ''})`
-      }]).catch(() => {});
+      try {
+        await supabase.from('transactions').insert([{
+          user_id: resolvedUid,
+          tx_type: 'buy_vip',
+          amount_coins: -costCoins,
+          amount_usdt: 0,
+          status: 'Completed',
+          description: `Purchased VIP Plan: ${planKey.toUpperCase()} (${dur} Month${dur > 1 ? 's' : ''})`
+        }]);
+      } catch (e) {}
 
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('vlive_balance_updated', { detail: { coins: remainingCoins } }));
@@ -4630,11 +4632,13 @@ export const apiAdmin = {
 
       // 3. Upsert into wallets table in PostgreSQL & update profiles
       if (targetUuid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUuid))) {
-        await supabase.from('wallets').upsert({
-          user_id: targetUuid,
-          coins: newCoins,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id' }).catch(() => {});
+        try {
+          await supabase.from('wallets').upsert({
+            user_id: targetUuid,
+            coins: newCoins,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+        } catch (e) {}
 
         await supabase.from('profiles').update({
           coins: newCoins,
@@ -4743,19 +4747,21 @@ export const apiAdmin = {
       }).eq('id', targetUuid);
 
       // Record audit transaction log in Supabase
-      await supabase.from('support_tickets').insert([{
-        user_id: targetUuid,
-        subject: `TRANSACTION_LOG:${targetUuid}`,
-        message: JSON.stringify({
-          tx_type: val >= 0 ? 'deposit_diamonds' : 'deduct_diamonds',
-          amount_diamonds: Math.abs(val),
-          new_diamonds: newDiamonds,
-          old_diamonds: currentDiamonds,
-          reason: reason || 'Admin Manual Diamond Adjustment',
-          created_at: new Date().toISOString()
-        }),
-        status: 'closed'
-      }]).catch(() => {});
+      try {
+        await supabase.from('support_tickets').insert([{
+          user_id: targetUuid,
+          subject: `TRANSACTION_LOG:${targetUuid}`,
+          message: JSON.stringify({
+            tx_type: val >= 0 ? 'deposit_diamonds' : 'deduct_diamonds',
+            amount_diamonds: Math.abs(val),
+            new_diamonds: newDiamonds,
+            old_diamonds: currentDiamonds,
+            reason: reason || 'Admin Manual Diamond Adjustment',
+            created_at: new Date().toISOString()
+          }),
+          status: 'closed'
+        }]);
+      } catch (e) {}
 
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('vlive_user_updated', {
