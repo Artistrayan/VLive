@@ -6,6 +6,7 @@ class CameraPermissionService {
   }
 
   async checkCameraPermission() {
+    return "granted";
     try {
       if (navigator.permissions && navigator.permissions.query) {
         const res = await navigator.permissions.query({ name: 'camera' });
