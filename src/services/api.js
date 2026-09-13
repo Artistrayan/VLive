@@ -533,7 +533,7 @@ export const apiProfile = {
           coins: resolvedCoins,
           usdt_balance: 0.0,
           updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id' }).catch(() => {});
+        }, { onConflict: 'user_id' });
       }
       
       // Calculate dynamic age from birthdate if available
@@ -2318,8 +2318,8 @@ export const apiMessages = {
                 payload: formattedRecord
               }).catch(() => {});
               
-              setTimeout(() => {
-                supabase.removeChannel(ch).catch(() => {});
+              setTimeout(async () => {
+                try { await supabase.removeChannel(ch); } catch (e) {}
               }, 2000);
             }
           });
@@ -2676,7 +2676,7 @@ export const apiLive = {
     };
 
     // Update host profile status to 'live'
-    await supabase.from('profiles').update({ status: 'live' }).eq('id', hostUuid).catch(() => {});
+    try { await supabase.from('profiles').update({ status: 'live' }).eq('id', hostUuid); } catch (e) {}
 
     // Realtime global broadcast to all users across app
     try {
@@ -2733,7 +2733,7 @@ export const apiLive = {
       .eq('id', streamId);
 
     if (hostUuid) {
-      await supabase.from('profiles').update({ status: 'online' }).eq('id', hostUuid).catch(() => {});
+      try { await supabase.from('profiles').update({ status: 'online' }).eq('id', hostUuid); } catch (e) {}
     }
 
     // 2. Global realtime broadcast that stream has ended
@@ -2766,7 +2766,7 @@ export const apiLive = {
     const uid = getUserId();
     if (!uid || !streamId) return;
     try {
-      await supabase.from('live_stream_viewers').insert([{ stream_id: streamId, user_id: uid }]).catch(() => {});
+      try { await supabase.from('live_stream_viewers').insert([{ stream_id: streamId, user_id: uid }]); } catch (e) {}
     } catch (e) {}
   },
 
@@ -2774,7 +2774,7 @@ export const apiLive = {
     const uid = getUserId();
     if (!uid || !streamId) return;
     try {
-      await supabase.from('live_stream_viewers').delete().eq('stream_id', streamId).eq('user_id', uid).catch(() => {});
+      try { await supabase.from('live_stream_viewers').delete().eq('stream_id', streamId).eq('user_id', uid); } catch (e) {}
     } catch (e) {}
   },
   async saveAdultAccess(payload) {
@@ -2814,7 +2814,11 @@ export const apiLive = {
         created_at: new Date().toISOString()
       };
       
-      const { data } = await supabase.from('live_comments').insert([payload]).select().catch(() => ({ data: null }));
+      let data = null;
+      try {
+        const res = await supabase.from('live_comments').insert([payload]).select();
+        data = res.data;
+      } catch (e) {}
       
       const channel = supabase.channel(`stream_room_${streamId}`);
       await channel.send({
@@ -3731,7 +3735,7 @@ export const apiCalls = {
         const { error } = await supabase.from('live_reports').insert([payload]);
         if (error) {
           // Fallback table name attempt
-          await supabase.from('reports').insert([payload]).catch(() => {});
+          try { await supabase.from('reports').insert([payload]); } catch (e) {}
         }
       } catch (dbErr) {
         console.warn('Report DB insert notice:', dbErr.message);
@@ -4513,7 +4517,7 @@ export const apiNotifications = {
     if (!uid) return;
     try {
       const userUuid = (await resolveProfileUuid(uid)) || uid;
-      await supabase.from('notifications').update({ is_read: true }).or(`user_id.eq.${userUuid},user_id.eq.${uid}`).catch(() => {});
+      try { await supabase.from('notifications').update({ is_read: true }).or(`user_id.eq.${userUuid},user_id.eq.${uid}`); } catch (e) {}
     } catch {}
     try {
       const cached = JSON.parse(safeStorage.getItem('vlive_user_notifs_v1') || '[]');
@@ -4527,7 +4531,7 @@ export const apiNotifications = {
     if (!uid) return;
     try {
       const userUuid = (await resolveProfileUuid(uid)) || uid;
-      await supabase.from('notifications').delete().eq('user_id', userUuid).catch(() => {});
+      try { await supabase.from('notifications').delete().eq('user_id', userUuid); } catch (e) {}
     } catch {}
     try {
       safeStorage.setItem('vlive_user_notifs_v1', '[]');
@@ -4591,8 +4595,7 @@ export const apiAdmin = {
         .from('support_tickets')
         .select('id, message')
         .eq('subject', subjectKey)
-        .maybeSingle()
-        .catch(() => ({ data: null }));
+        .maybeSingle();
 
       let existingState = {};
       if (existingTicket?.message) {
@@ -4606,15 +4609,13 @@ export const apiAdmin = {
         .from('wallets')
         .select('coins, usdt_balance, user_id')
         .eq('user_id', targetUuid)
-        .maybeSingle()
-        .catch(() => ({ data: null }));
+        .maybeSingle();
 
       const { data: profData } = await supabase
         .from('profiles')
         .select('coins, user_coins')
         .eq('id', targetUuid)
-        .maybeSingle()
-        .catch(() => ({ data: null }));
+        .maybeSingle();
 
       const walletCoins = walData && typeof walData.coins !== 'undefined' && walData.coins !== null ? Number(walData.coins || 0) : null;
       const profileCoins = profData && (typeof profData.coins !== 'undefined' || typeof profData.user_coins !== 'undefined') ? Number(profData.coins ?? profData.user_coins ?? 0) : null;
@@ -4639,7 +4640,7 @@ export const apiAdmin = {
           coins: newCoins,
           user_coins: newCoins,
           updated_at: new Date().toISOString()
-        }).eq('id', targetUuid).catch(() => {});
+        }).eq('id', targetUuid);
       }
 
       // 4. Save state permanently in Supabase
@@ -4657,8 +4658,7 @@ export const apiAdmin = {
             message: JSON.stringify(mergedState),
             updated_at: new Date().toISOString()
           })
-          .eq('id', existingTicket.id)
-          .catch(() => {});
+          .eq('id', existingTicket.id);
       } else {
         await supabase
           .from('support_tickets')
@@ -4667,8 +4667,7 @@ export const apiAdmin = {
             subject: subjectKey,
             message: JSON.stringify(mergedState),
             status: 'closed'
-          }])
-          .catch(() => {});
+          }]);
       }
 
       // 5. Record audit transaction log in Supabase
@@ -4684,7 +4683,7 @@ export const apiAdmin = {
           created_at: new Date().toISOString()
         }),
         status: 'closed'
-      }]).catch(() => {});
+      }]);
 
       // 6. Broadcast user update event across all components
       if (typeof window !== 'undefined') {
@@ -4734,15 +4733,14 @@ export const apiAdmin = {
         .from('profiles')
         .select('diamonds')
         .eq('id', targetUuid)
-        .maybeSingle()
-        .catch(() => ({ data: null }));
+        .maybeSingle();
 
       const currentDiamonds = Number(profData?.diamonds || 0);
       const newDiamonds = Math.max(0, currentDiamonds + val);
 
       await supabase.from('profiles').update({
         diamonds: newDiamonds
-      }).eq('id', targetUuid).catch(() => {});
+      }).eq('id', targetUuid);
 
       // Record audit transaction log in Supabase
       await supabase.from('support_tickets').insert([{
@@ -4909,9 +4907,9 @@ export const apiAdmin = {
         { data: approvedKycs }
       ] = await Promise.all([
         supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-        supabase.from('wallets').select('user_id, coins, usdt_balance').catch(() => ({ data: [] })),
-        supabase.from('support_tickets').select('user_id, subject, message').like('subject', 'ADMIN_USER_STATE:%').catch(() => ({ data: [] })),
-        supabase.from('kyc_applications').select('user_id').eq('status', 'Approved').catch(() => ({ data: [] }))
+        supabase.from('wallets').select('user_id, coins, usdt_balance'),
+        supabase.from('support_tickets').select('user_id, subject, message').like('subject', 'ADMIN_USER_STATE:%'),
+        supabase.from('kyc_applications').select('user_id').eq('status', 'Approved')
       ]);
 
       const walMap = new Map((walData || []).map(w => [w.user_id, w]));
@@ -5111,19 +5109,19 @@ export const apiAdmin = {
             user_id: matchedId,
             status: 'active',
             updated_at: new Date().toISOString()
-          }], { onConflict: 'user_id' }).catch(() => {});
+          }], { onConflict: 'user_id' });
 
           await supabase.from('kyc_applications').update({
             status: 'Approved',
             updated_at: new Date().toISOString()
-          }).eq('user_id', matchedId).catch(() => {});
+          }).eq('user_id', matchedId);
         }
       } else if (isStreamerExplicit && !isStreamerVal) {
         if (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) {
           await supabase.from('streamer_profiles').update({
             status: 'inactive',
             updated_at: new Date().toISOString()
-          }).eq('user_id', matchedId).catch(() => {});
+          }).eq('user_id', matchedId);
         }
       }
 
@@ -5134,8 +5132,7 @@ export const apiAdmin = {
           .from('support_tickets')
           .select('id, message')
           .eq('subject', subjectKey)
-          .maybeSingle()
-          .catch(() => ({ data: null }));
+          .maybeSingle();
 
         let existingState = {};
         if (existingTicket?.message) {
@@ -5184,8 +5181,7 @@ export const apiAdmin = {
               message: JSON.stringify(mergedState),
               updated_at: new Date().toISOString()
             })
-            .eq('id', existingTicket.id)
-            .catch(() => {});
+            .eq('id', existingTicket.id);
         } else {
           await supabase
             .from('support_tickets')
@@ -5194,8 +5190,7 @@ export const apiAdmin = {
               subject: subjectKey,
               message: JSON.stringify(mergedState),
               status: 'closed'
-            }])
-            .catch(() => {});
+            }]);
         }
         isSuccess = true;
       }
@@ -5729,7 +5724,7 @@ export const apiAdmin = {
     try {
       const cleanId = String(reportId);
       const { error } = await supabase.from('live_reports').update({ status }).eq('id', cleanId);
-      await supabase.from('reports').update({ status }).eq('id', cleanId).catch(() => {});
+      try { await supabase.from('reports').update({ status }).eq('id', cleanId); } catch (e) {}
       return { success: !error };
     } catch (e) {
       return { success: false };
