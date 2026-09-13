@@ -2637,7 +2637,9 @@ export const apiLive = {
         category: category,
         thumbnail: thumbnail,
         is_vip: isVip,
-        entry_fee: entryFee
+        entry_fee: entryFee,
+        started_at: new Date().toISOString(),
+        last_heartbeat_at: new Date().toISOString()
       }])
       .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, last_heartbeat_at, started_at, profiles:host_id(id, username, name, avatar)')
       .single();
