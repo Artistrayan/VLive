@@ -105,7 +105,7 @@ export default function AiFaceEffectOverlay({
           const eyeDistPx = Math.max(40, interOcularDist * drawW);
 
           // -------------------------------------------------------------
-          // 1. SMART AI HAIR COLOR TINT (Advanced Polygon Masking)
+          // 1. SMART AI HAIR COLOR TINT
           // -------------------------------------------------------------
           if (isFacePresent && hasHair) {
             const hrX = mapX(landmarks?.hairRegion?.x || 0.5);
@@ -115,7 +115,7 @@ export default function AiFaceEffectOverlay({
             const hrRy = Math.max(80, (landmarks?.hairRegion?.ry || 0.16) * drawH * 1.6);
 
             ctx.save();
-            const hairAlpha = Math.min(0.75, (hairIntensity / 100) * 0.80);
+            const hairAlpha = Math.min(0.65, (hairIntensity / 100) * 0.70);
 
             let hairR = 217, hairG = 70, hairB = 239;
             if (hairTint === 'rose_gold') { hairR = 251; hairG = 113; hairB = 133; }
@@ -125,112 +125,40 @@ export default function AiFaceEffectOverlay({
             else if (hairTint === 'silver_ash') { hairR = 203; hairG = 213; hairB = 225; }
             else if (hairTint === 'ruby_red') { hairR = 225; hairG = 29; hairB = 72; }
 
-            ctx.beginPath();
-            // Mask everything
-            ctx.rect(0, 0, dW, dH);
-            
-            // Subtract face oval so color NEVER touches the face
-            if (face.faceOval && face.faceOval.length > 5) {
-              ctx.moveTo(mapX(face.faceOval[0].x), mapY(face.faceOval[0].y));
-              for (let i = face.faceOval.length - 1; i >= 0; i--) {
-                ctx.lineTo(mapX(face.faceOval[i].x), mapY(face.faceOval[i].y));
-              }
-              ctx.closePath();
-            } else {
-              // Fallback block mask
-              ctx.rect(0, Math.max(0, fhY), dW, dH);
-            }
-            ctx.clip("evenodd");
-
+            // Create a gradient that fades out quickly at the edges
             const hairGrad = ctx.createRadialGradient(hrX, hrY, hrRx * 0.2, hrX, hrY, hrRx);
             hairGrad.addColorStop(0, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha})`);
-            hairGrad.addColorStop(0.4, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha * 0.8})`);
-            hairGrad.addColorStop(0.8, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha * 0.3})`);
+            hairGrad.addColorStop(0.5, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha * 0.6})`);
+            hairGrad.addColorStop(0.8, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha * 0.1})`);
             hairGrad.addColorStop(1, `rgba(${hairR}, ${hairG}, ${hairB}, 0)`);
 
-            ctx.filter = 'blur(12px)';
-
-            // Pass 1: Soft Light for natural blend on dark hair
+            ctx.filter = 'blur(16px)';
             ctx.globalCompositeOperation = 'soft-light';
             ctx.fillStyle = hairGrad;
+            
+            // Draw an ellipse just on the top of the head
             ctx.beginPath();
             ctx.ellipse(hrX, hrY, hrRx, hrRy, 0, 0, Math.PI * 2);
             ctx.fill();
             
-            // Pass 2: Overlay for vibrance
+            // Second pass overlay for vibrance
             ctx.globalCompositeOperation = 'overlay';
-            ctx.fillStyle = hairGrad;
             ctx.beginPath();
             ctx.ellipse(hrX, hrY, hrRx, hrRy, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Clear the lower part of the face to ensure it doesn't bleed onto the face
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.filter = 'blur(10px)';
+            ctx.beginPath();
+            ctx.ellipse(mapX(landmarks?.nose?.x || 0.5), mapY(landmarks?.nose?.y || 0.5), hrRx * 0.8, hrRy * 1.2, 0, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.restore();
           }
 
           // -------------------------------------------------------------
-          // 2. TRUE SKIN SMOOTHING (Video Blur with Precision Eye/Mouth Holes)
-          // -------------------------------------------------------------
-          if (isFacePresent && hasSmoothing && face.faceOval?.length > 5) {
-            ctx.save();
-            ctx.beginPath();
-            
-            // Outer boundary: Face Oval
-            ctx.moveTo(mapX(face.faceOval[0].x), mapY(face.faceOval[0].y));
-            for (let i = 1; i < face.faceOval.length; i++) {
-              ctx.lineTo(mapX(face.faceOval[i].x), mapY(face.faceOval[i].y));
-            }
-            ctx.closePath();
-            
-            // Inner boundary: Left Eye (CCW)
-            if (face.leftEyeContour?.length > 3) {
-              ctx.moveTo(mapX(face.leftEyeContour[0].x), mapY(face.leftEyeContour[0].y));
-              for (let i = face.leftEyeContour.length - 1; i >= 0; i--) {
-                ctx.lineTo(mapX(face.leftEyeContour[i].x), mapY(face.leftEyeContour[i].y));
-              }
-              ctx.closePath();
-            }
-            
-            // Inner boundary: Right Eye (CCW)
-            if (face.rightEyeContour?.length > 3) {
-              ctx.moveTo(mapX(face.rightEyeContour[0].x), mapY(face.rightEyeContour[0].y));
-              for (let i = face.rightEyeContour.length - 1; i >= 0; i--) {
-                ctx.lineTo(mapX(face.rightEyeContour[i].x), mapY(face.rightEyeContour[i].y));
-              }
-              ctx.closePath();
-            }
-            
-            // Inner boundary: Lips (CCW)
-            if (face.fullLipsPolygon?.length > 3) {
-              ctx.moveTo(mapX(face.fullLipsPolygon[0].x), mapY(face.fullLipsPolygon[0].y));
-              for (let i = face.fullLipsPolygon.length - 1; i >= 0; i--) {
-                ctx.lineTo(mapX(face.fullLipsPolygon[i].x), mapY(face.fullLipsPolygon[i].y));
-              }
-              ctx.closePath();
-            }
-            
-            // Inner boundary: Eyebrows (Approximated to keep them sharp)
-            const leB = {x: mapX(landmarks?.leftEyebrow?.x || 0.39), y: mapY(landmarks?.leftEyebrow?.y || 0.34)};
-            const reB = {x: mapX(landmarks?.rightEyebrow?.x || 0.61), y: mapY(landmarks?.rightEyebrow?.y || 0.34)};
-            const ebW = eyeDistPx * 0.4;
-            const ebH = eyeDistPx * 0.15;
-            
-            ctx.moveTo(leB.x + ebW, leB.y);
-            ctx.ellipse(leB.x, leB.y, ebW, ebH, 0, 0, Math.PI * 2, true); // CCW
-            ctx.moveTo(reB.x + ebW, reB.y);
-            ctx.ellipse(reB.x, reB.y, ebW, ebH, 0, 0, Math.PI * 2, true); // CCW
-
-            ctx.clip("evenodd");
-
-            // True Skin Retouching: We draw the original video back, but heavily blurred
-            ctx.filter = `blur(${Math.max(2, skinSmoothing * 0.15)}px)`;
-            ctx.globalAlpha = Math.min(0.85, skinSmoothing * 0.012); 
-            ctx.drawImage(video, offsetX, offsetY, drawW, drawH);
-            
-            ctx.restore();
-          }
-
-          // -------------------------------------------------------------
-          // 3. SMART AI BLUSH & CHEEK CONTOUR (Positioned on Zygomatic Cheekbones)
+          // 2. SMART AI BLUSH & CHEEK CONTOUR (Positioned on Zygomatic Cheekbones)
           // -------------------------------------------------------------
           if (isFacePresent && hasBlush) {
             const lcX = mapX(face.leftCheek?.x || landmarks?.leftCheek?.x || 0.34);
@@ -446,61 +374,65 @@ export default function AiFaceEffectOverlay({
             const noseX = mapX(landmarks.noseTip?.x || 0.5);
             const noseY = mapY(landmarks.noseTip?.y || 0.53);
 
-            const faceScale = Math.max(0.65, Math.min(1.8, eyeDistPx / 100));
+            const faceScale = Math.max(0.8, eyeDistPx / 60);
 
             ctx.save();
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
             if (faceSticker === 'crown') {
-              const crownSize = Math.round(58 * faceScale);
+              const crownSize = Math.round(90 * faceScale);
               ctx.font = `${crownSize}px sans-serif`;
               ctx.shadowColor = 'rgba(234, 179, 8, 0.85)';
               ctx.shadowBlur = 14;
-              const bobY = Math.sin(performance.now() * 0.004) * 4;
-              // Crown sits comfortably right above the top of the skull
-              ctx.fillText('👑', skullX, Math.max(28, skullY - 18 * faceScale + bobY));
+              const bobY = Math.sin(performance.now() * 0.005) * 6;
+              ctx.fillText('👑', skullX, Math.max(10, skullY - 15 * faceScale + bobY));
             } else if (faceSticker === 'cat_ears') {
-              const earSize = Math.round(52 * faceScale);
+              const earSize = Math.round(180 * faceScale);
               ctx.font = `${earSize}px sans-serif`;
-              ctx.shadowColor = 'rgba(244, 114, 182, 0.85)';
+              ctx.shadowColor = 'rgba(15, 23, 42, 0.4)';
               ctx.shadowBlur = 12;
-              ctx.fillText('🐱', skullX, Math.max(28, skullY - 14 * faceScale));
+              // Cat emoji directly over the face
+              ctx.fillText('🐱', noseX, noseY - 10 * faceScale);
             } else if (faceSticker === 'sunglasses') {
-              const glassesSize = Math.round(66 * faceScale);
+              const glassesSize = Math.round(110 * faceScale);
               ctx.font = `${glassesSize}px sans-serif`;
               ctx.shadowColor = 'rgba(15, 23, 42, 0.7)';
               ctx.shadowBlur = 10;
               ctx.fillText('🕶️', midEyeX, midEyeY);
             } else if (faceSticker === 'sparkles') {
-              const sparkleSize = Math.round(28 * faceScale);
+              const sparkleSize = Math.round(45 * faceScale);
               ctx.font = `${sparkleSize}px sans-serif`;
               ctx.shadowColor = 'rgba(250, 204, 21, 0.85)';
               ctx.shadowBlur = 10;
-              const angle = performance.now() * 0.003;
-              const radius = eyeDistPx * 0.90;
-              const sp1X = noseX + Math.cos(angle) * radius;
-              const sp1Y = noseY + Math.sin(angle) * (radius * 0.65);
-              const sp2X = noseX + Math.cos(angle + Math.PI) * radius;
-              const sp2Y = noseY + Math.sin(angle + Math.PI) * (radius * 0.65);
-              ctx.fillText('✨', sp1X, sp1Y);
-              ctx.fillText('🌟', sp2X, sp2Y);
+              
+              const t = performance.now() * 0.002;
+              const o1 = Math.sin(t) * 10;
+              const o2 = Math.cos(t * 1.5) * 12;
+              const o3 = Math.sin(t * 0.8) * 14;
+              
+              const cheekLX = mapX(landmarks.leftCheek?.x || 0.35);
+              const cheekLY = mapY(landmarks.leftCheek?.y || 0.55);
+              const cheekRX = mapX(landmarks.rightCheek?.x || 0.65);
+              const cheekRY = mapY(landmarks.rightCheek?.y || 0.55);
+
+              ctx.fillText('✨', cheekLX - 20 + o1, cheekLY + o2);
+              ctx.fillText('⭐', cheekLX + 25 - o2, cheekLY - 15 + o3);
+              ctx.fillText('✨', cheekRX + 20 - o1, cheekRY + o2);
+              ctx.fillText('⭐', cheekRX - 25 + o2, cheekRY - 15 + o3);
             } else if (faceSticker === 'hearts') {
-              const heartSize = Math.round(28 * faceScale);
+              const heartSize = Math.round(55 * faceScale);
               ctx.font = `${heartSize}px sans-serif`;
               ctx.shadowColor = 'rgba(244, 63, 94, 0.85)';
-              ctx.shadowBlur = 10;
-              const t = performance.now() * 0.003;
-              const lcX = mapX(landmarks.leftCheek?.x || 0.34);
-              const lcY = mapY(landmarks.leftCheek?.y || 0.52);
-              const rcX = mapX(landmarks.rightCheek?.x || 0.66);
-              const rcY = mapY(landmarks.rightCheek?.y || 0.52);
-              const h1X = lcX - eyeDistPx * 0.30;
-              const h1Y = lcY - Math.abs(Math.sin(t)) * 12;
-              const h2X = rcX + eyeDistPx * 0.30;
-              const h2Y = rcY - Math.abs(Math.cos(t)) * 12;
-              ctx.fillText('💖', h1X, h1Y);
-              ctx.fillText('💕', h2X, h2Y);
+              ctx.shadowBlur = 15;
+              
+              const bob1 = Math.sin(performance.now() * 0.003) * 10;
+              const bob2 = Math.cos(performance.now() * 0.004) * 12;
+              const bob3 = Math.sin(performance.now() * 0.002 + 1) * 8;
+              
+              ctx.fillText('❤️', skullX - 50 * faceScale, skullY - 20 * faceScale + bob1);
+              ctx.fillText('💖', skullX + 50 * faceScale, skullY - 10 * faceScale + bob2);
+              ctx.fillText('💕', skullX, skullY - 50 * faceScale + bob3);
             }
             ctx.restore();
           }
