@@ -4,8 +4,9 @@ import {
   Filter, Sparkles, MessageSquare, Heart, Gift, AlertTriangle, X, Check, 
   ChevronRight, Mic, MicOff, Camera, RefreshCw, Radio, Tag, ShieldAlert, FileText
 } from 'lucide-react';
-import { apiLive, apiAdmin } from '../services/api';
+import { apiLive, apiHome, apiAdmin } from '../services/api';
 import { safeStorage } from '../utils/safeStorage';
+import LiveStreamCardWithPreview from './LiveStreamCard';
 
 export default function LiveStreamSystem({
   currentUser,
@@ -121,8 +122,8 @@ export default function LiveStreamSystem({
 
     fetchStreams();
 
-    // Periodic sync every 8 seconds to catch any newly started lives from other devices/users
-    const syncInterval = setInterval(fetchStreams, 8000);
+    // Periodic sync every 4 seconds to catch any newly started lives from other devices/users immediately
+    const syncInterval = setInterval(fetchStreams, 4000);
 
     const handleStreamStarted = (e) => {
       if (e?.detail) {
@@ -466,81 +467,13 @@ export default function LiveStreamSystem({
                 const isAdult = stream.live_type === 'adult' || stream.isVip18;
 
                 return (
-                  <div
+                  <LiveStreamCardWithPreview
                     key={stream.id}
-                    onClick={() => setViewingStream(stream)}
-                    className="card-3d bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 group relative cursor-pointer shadow-lg hover:border-pink-500/50 transition duration-300"
-                  >
-                    {/* THUMBNAIL CONTAINER */}
-                    <div className="aspect-[3/4] relative overflow-hidden bg-slate-950">
-                      {stream.thumbnail || stream.avatar ? (
-                        <img
-                          src={stream.thumbnail || stream.avatar}
-                          alt={stream.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-slate-900 text-slate-600 font-bold text-xs">
-                          {window.loc('بدون تصویر', 'No Image')}
-                        </div>
-                      )}
-
-                      {/* DARK GRADIENT OVERLAY */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
-
-                      {/* TOP BADGES */}
-                      <div className="absolute top-2.5 right-2.5 left-2.5 flex items-center justify-between">
-                        {/* Live Badge */}
-                        <div className="flex items-center gap-1 bg-rose-600/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-rose-400/40 text-[9px] font-black text-white shadow-md">
-                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                          <span>LIVE</span>
-                        </div>
-
-                        {/* Viewers Badge */}
-                        <div className="flex items-center gap-1 bg-slate-950/70 backdrop-blur-md px-2 py-0.5 rounded-full border border-slate-800 text-[10px] font-bold text-slate-200">
-                          <Eye className="w-3 h-3 text-cyan-400" />
-                          <span>{(stream.viewers || 0).toLocaleString()}</span>
-                        </div>
-                      </div>
-
-                      {/* 18+ VIP BADGE IF ADULT */}
-                      {isAdult && (
-                        <div className="absolute top-9 right-2.5 bg-gradient-to-r from-amber-500 to-rose-600 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full shadow-lg border border-amber-300 flex items-center gap-1">
-                          <Crown className="w-3 h-3 text-slate-950" />
-                          <span>ADULT 18+</span>
-                        </div>
-                      )}
-
-                      {/* BOTTOM INFORMATION OVERLAY */}
-                      <div className="absolute bottom-3 right-3 left-3 space-y-1 text-right dir-rtl">
-                        <span className="inline-block px-2 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md border border-slate-700/60 text-[9px] font-bold text-pink-300">
-                          {stream.category || 'General'}
-                        </span>
-                        
-                        <h4 className="text-xs font-black text-white truncate drop-shadow">
-                          {stream.title || window.loc('پخش زنده اختصاسی', 'Special live broadcast')}
-                        </h4>
-
-                        <div className="flex items-center gap-1.5 pt-0.5">
-                          {stream.avatar ? (
-                            <img
-                              src={stream.avatar}
-                              alt={stream.host}
-                              className="w-4 h-4 rounded-full object-cover border border-white/40"
-                            />
-                          ) : (
-                            <div className="w-4 h-4 rounded-full bg-slate-800 flex items-center justify-center text-[8px] font-bold text-white">
-                              {stream.host ? stream.host.charAt(0).toUpperCase() : 'U'}
-                            </div>
-                          )}
-                          <span className="text-[10px] font-bold text-slate-300 truncate">
-                            {stream.host}
-                          </span>
-                        </div>
-                      </div>
-
-                    </div>
-                  </div>
+                    stream={stream}
+                    isAdult={isAdult}
+                    currentUser={currentUser}
+                    onSelectStream={(selected) => setViewingStream(selected)}
+                  />
                 );
               })}
             </div>
