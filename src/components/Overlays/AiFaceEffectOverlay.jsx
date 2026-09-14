@@ -302,7 +302,8 @@ export default function AiFaceEffectOverlay({
           // 5. SMART AI LIP TINT & GLOSS (Exact Anatomical 3D Mesh Polygon)
           // -------------------------------------------------------------
           if (isFacePresent && hasLips) {
-            const lipAlpha = Math.min(0.80, (lipIntensity / 100) * 0.75);
+            // More natural, softer lip alpha
+            const lipAlpha = Math.min(0.55, (lipIntensity / 100) * 0.50);
 
             let lipR = 225, lipG = 29, lipB = 72; // Classic Ruby
             if (lipTint === 'rose_petal') { lipR = 244; lipG = 63; lipB = 94; }
@@ -312,12 +313,12 @@ export default function AiFaceEffectOverlay({
             else if (lipTint === 'glossy_shine') { lipR = 255; lipG = 180; lipB = 210; }
 
             ctx.save();
-            ctx.globalCompositeOperation = 'multiply';
+            ctx.globalCompositeOperation = 'soft-light';
 
             const hasPolygons = face.upperLipPolygon && face.upperLipPolygon.length > 3 && face.lowerLipPolygon && face.lowerLipPolygon.length > 3;
 
             if (hasPolygons) {
-              ctx.filter = 'blur(2px)';
+              ctx.filter = 'blur(4px)';
               ctx.fillStyle = `rgba(${lipR}, ${lipG}, ${lipB}, ${lipAlpha})`;
 
               // 1. Upper Lip Exact Mesh Polygon
@@ -340,7 +341,7 @@ export default function AiFaceEffectOverlay({
               ctx.fill();
             } else if (landmarks?.mouth) {
               // Smooth elliptical fallback
-              ctx.filter = 'blur(3px)';
+              ctx.filter = 'blur(5px)';
               const mX = mapX(landmarks.mouth.x);
               const mY = mapY(landmarks.mouth.y);
               const mW = Math.max(28, (landmarks.mouth.width || 0.18) * drawW);
@@ -370,8 +371,8 @@ export default function AiFaceEffectOverlay({
             // Lip Highlight / Specular Gloss
             if (lipTint === 'glossy_shine' || lipIntensity > 55) {
               ctx.globalCompositeOperation = 'screen';
-              ctx.filter = 'blur(1px)';
-              ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+              ctx.filter = 'blur(2px)';
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
               const mX = mapX(landmarks?.mouth?.x || 0.5);
               const mY = mapY(landmarks?.mouth?.y || 0.65);
               const mW = Math.max(28, (landmarks?.mouth?.width || 0.18) * drawW);

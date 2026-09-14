@@ -140,6 +140,8 @@ export default function UserProfileViewModal({
   const showFollowers = user?.privacy_show_followers !== false && user?.show_followers !== false;
   const showLikes = user?.privacy_show_likes !== false && user?.show_likes !== false;
 
+  const isSelf = currentUser && user && ((String(currentUser.id) === String(user.id)) || (String(currentUser.username) === String(user.username)));
+
   const publicPhotos = fetchedPhotos.length > 0 ? fetchedPhotos : (user?.photos || []);
 
   const toggleFollow = async () => {
@@ -284,39 +286,43 @@ export default function UserProfileViewModal({
 
             {/* Quick Follow & Like Buttons */}
             <div className="flex items-center gap-2 pb-1">
-              <button
-                onClick={toggleLike}
-                className={`w-11 h-11 rounded-2xl border flex items-center justify-center transition shadow-lg ${
-                  isLiked 
-                    ? 'bg-rose-600 border-rose-400 text-white' 
-                    : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white'
-                }`}
-              >
-                <Heart className={`w-5 h-5 ${isLiked ? 'fill-white' : ''}`} />
-              </button>
+              {!isSelf && (
+                <>
+                  <button
+                    onClick={toggleLike}
+                    className={`w-11 h-11 rounded-2xl border flex items-center justify-center transition shadow-lg ${
+                      isLiked 
+                        ? 'bg-rose-600 border-rose-400 text-white' 
+                        : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    <Heart className={`w-5 h-5 ${isLiked ? 'fill-white' : ''}`} />
+                  </button>
 
-              <button
-                onClick={triggerSuperLike}
-                className={`w-11 h-11 rounded-2xl border flex items-center justify-center transition shadow-lg ${
-                  isSuperLiked 
-                    ? 'bg-amber-400 border-amber-300 text-slate-950 font-black' 
-                    : 'bg-slate-900 border-amber-500/40 text-amber-400 hover:bg-amber-500/10'
-                }`}
-              >
-                <Star className={`w-5 h-5 ${isSuperLiked ? 'fill-slate-950' : ''}`} />
-              </button>
+                  <button
+                    onClick={triggerSuperLike}
+                    className={`w-11 h-11 rounded-2xl border flex items-center justify-center transition shadow-lg ${
+                      isSuperLiked 
+                        ? 'bg-amber-400 border-amber-300 text-slate-950 font-black' 
+                        : 'bg-slate-900 border-amber-500/40 text-amber-400 hover:bg-amber-500/10'
+                    }`}
+                  >
+                    <Star className={`w-5 h-5 ${isSuperLiked ? 'fill-slate-950' : ''}`} />
+                  </button>
 
-              <button
-                onClick={toggleFollow}
-                className={`px-5 py-2.5 rounded-2xl font-black text-xs shadow-lg transition flex items-center gap-1.5 ${
-                  isFollowing
-                    ? 'bg-slate-800 text-slate-200 border border-slate-700'
-                    : 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white shadow-pink-500/30'
-                }`}
-              >
-                {isFollowing ? <UserCheck className="w-4 h-4 text-emerald-400" /> : <Users className="w-4 h-4" />}
-                <span>{isFollowing ? window.loc('دنبال می‌کنید', 'Following') : window.loc('دنبال کردن', 'Follow')}</span>
-              </button>
+                  <button
+                    onClick={toggleFollow}
+                    className={`px-5 py-2.5 rounded-2xl font-black text-xs shadow-lg transition flex items-center gap-1.5 ${
+                      isFollowing
+                        ? 'bg-slate-800 text-slate-200 border border-slate-700'
+                        : 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white shadow-pink-500/30'
+                    }`}
+                  >
+                    {isFollowing ? <UserCheck className="w-4 h-4 text-emerald-400" /> : <Users className="w-4 h-4" />}
+                    <span>{isFollowing ? window.loc('دنبال می‌کنید', 'Following') : window.loc('دنبال کردن', 'Follow')}</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -372,50 +378,52 @@ export default function UserProfileViewModal({
           </div>
 
           {/* Action Row: Message, Audio Call, Video Call, Gift */}
-          <div className="grid grid-cols-4 gap-2 pt-2">
-            <button
-              onClick={() => {
-                onClose();
-                onStartMessage(user);
-              }}
-              className="py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-300 font-bold text-xs flex flex-col items-center gap-1 shadow-md transition"
-            >
-              <MessageSquare className="w-4 h-4 text-cyan-400" />
-              <span>{window.loc('پیام', 'Message')}</span>
-            </button>
+          {!isSelf && (
+            <div className="grid grid-cols-4 gap-2 pt-2">
+              <button
+                onClick={() => {
+                  onClose();
+                  onStartMessage(user);
+                }}
+                className="py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-300 font-bold text-xs flex flex-col items-center gap-1 shadow-md transition"
+              >
+                <MessageSquare className="w-4 h-4 text-cyan-400" />
+                <span>{window.loc('پیام', 'Message')}</span>
+              </button>
 
-            <button
-              onClick={() => {
-                onClose();
-                onStartCall(user, 'audio');
-              }}
-              className="py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-emerald-300 font-bold text-xs flex flex-col items-center gap-1 shadow-md transition"
-            >
-              <PhoneCall className="w-4 h-4 text-emerald-400" />
-              <span>{window.loc('تماس صوتی', 'Voice Call')}</span>
-            </button>
+              <button
+                onClick={() => {
+                  onClose();
+                  onStartCall(user, 'audio');
+                }}
+                className="py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-emerald-300 font-bold text-xs flex flex-col items-center gap-1 shadow-md transition"
+              >
+                <PhoneCall className="w-4 h-4 text-emerald-400" />
+                <span>{window.loc('تماس صوتی', 'Voice Call')}</span>
+              </button>
 
-            <button
-              onClick={() => {
-                onClose();
-                onStartCall(user, 'video');
-              }}
-              className="py-3 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-black text-xs flex flex-col items-center gap-1 shadow-lg hover:opacity-90 transition"
-            >
-              <Video className="w-4 h-4 fill-white" />
-              <span>{window.loc('تماس تصویری', 'Video Call')}</span>
-            </button>
+              <button
+                onClick={() => {
+                  onClose();
+                  onStartCall(user, 'video');
+                }}
+                className="py-3 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-black text-xs flex flex-col items-center gap-1 shadow-lg hover:opacity-90 transition"
+              >
+                <Video className="w-4 h-4 fill-white" />
+                <span>{window.loc('تماس تصویری', 'Video Call')}</span>
+              </button>
 
-            <button
-              onClick={() => {
-                onSendGift(user);
-              }}
-              className="py-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs flex flex-col items-center gap-1 shadow-md transition"
-            >
-              <Gift className="w-4 h-4 text-amber-400 animate-bounce" />
-              <span>{window.loc('ارسال هدیه', 'Send Gift')}</span>
-            </button>
-          </div>
+              <button
+                onClick={() => {
+                  onSendGift(user);
+                }}
+                className="py-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs flex flex-col items-center gap-1 shadow-md transition"
+              >
+                <Gift className="w-4 h-4 text-amber-400 animate-bounce" />
+                <span>{window.loc('ارسال هدیه', 'Send Gift')}</span>
+              </button>
+            </div>
+          )}
 
           {/* Stats Bar with Real Statistics */}
           <div className="grid grid-cols-4 gap-2 p-3 bg-slate-950/80 rounded-2xl border border-slate-800 text-center text-xs">

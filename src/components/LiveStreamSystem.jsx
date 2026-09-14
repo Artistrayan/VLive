@@ -210,6 +210,11 @@ export default function LiveStreamSystem({
       return false;
     }
 
+    // Exclude the user's own live stream from their feed
+    if (currentUser && (stream.host === currentUser.username || stream.host_id === currentUser.id)) {
+      return false;
+    }
+
     const isAdultStream = stream.live_type === 'adult' || stream.isVip18 || stream.is18Plus;
     
     // STRICT RULE: Never mix Standard and Adult streams!

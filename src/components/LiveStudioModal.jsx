@@ -1006,52 +1006,52 @@ export default function LiveStudioModal({
             {/* Switch Camera */}
             <button
               onClick={toggleCameraFacingMode}
-              className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-xl transition hover:bg-black/70 active:scale-90"
+              className="w-12 h-12 rounded-full bg-transparent text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] flex items-center justify-center transition hover:scale-110 active:scale-90"
               title={window.loc('چرخش دوربین', 'Switch Camera')}
             >
-              <RefreshCcw className="w-5 h-5" />
+              <RefreshCcw className="w-6 h-6" />
             </button>
             
             {/* Toggle Camera */}
             <button
               onClick={() => setIsCamEnabled(!isCamEnabled)}
-              className={`w-12 h-12 rounded-full backdrop-blur-md border flex items-center justify-center shadow-xl transition active:scale-90 ${
-                isCamEnabled ? 'bg-black/50 text-emerald-400 border-emerald-500/40' : 'bg-rose-950/80 text-rose-400 border-rose-500/50'
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition hover:scale-110 active:scale-90 drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] ${
+                isCamEnabled ? 'bg-transparent text-white' : 'bg-transparent text-rose-400'
               }`}
               title={isCamEnabled ? window.loc('دوربین روشن', 'Camera on') : window.loc('دوربین خاموش', 'Camera off')}
             >
-              {isCamEnabled ? <Camera className="w-5 h-5" /> : <CameraOff className="w-5 h-5" />}
+              {isCamEnabled ? <Camera className="w-6 h-6" /> : <CameraOff className="w-6 h-6" />}
             </button>
 
             {/* Toggle Mic */}
             <button
               onClick={() => setIsMicEnabled(!isMicEnabled)}
-              className={`w-12 h-12 rounded-full backdrop-blur-md border flex items-center justify-center shadow-xl transition active:scale-90 ${
-                isMicEnabled ? 'bg-black/50 text-emerald-400 border-emerald-500/40' : 'bg-rose-950/80 text-rose-400 border-rose-500/50'
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition hover:scale-110 active:scale-90 drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] ${
+                isMicEnabled ? 'bg-transparent text-white' : 'bg-transparent text-rose-400'
               }`}
               title={isMicEnabled ? window.loc('میکروفون فعال', 'Active microphone') : window.loc('میکروفون قطع', 'Microphone cut off')}
             >
-              {isMicEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+              {isMicEnabled ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
             </button>
 
             {/* Mirror Mode (Flip Horizontal) */}
             <button
               onClick={toggleMirrorMode}
-              className={`w-12 h-12 rounded-full backdrop-blur-md border flex items-center justify-center shadow-xl transition active:scale-90 ${
-                isMirrored ? 'bg-pink-600/70 border-pink-400 text-white shadow-pink-500/30' : 'bg-black/50 border-white/20 text-pink-300 hover:text-white'
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition hover:scale-110 active:scale-90 drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] ${
+                isMirrored ? 'bg-transparent text-pink-400' : 'bg-transparent text-white'
               }`}
               title={window.loc('آینه کردن تصویر (چپ و راست)', 'Flip / Mirror Image')}
             >
-              <FlipHorizontal className="w-5 h-5" />
+              <FlipHorizontal className="w-6 h-6" />
             </button>
 
             {/* Beauty & AR Filters */}
             <button
               onClick={() => setActiveTabDrawer('beauty')}
-              className="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-600/80 to-pink-600/80 backdrop-blur-md border border-pink-400/50 text-white flex items-center justify-center shadow-xl hover:scale-105 transition active:scale-90"
+              className="w-12 h-12 rounded-full bg-transparent text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] flex items-center justify-center hover:scale-110 transition active:scale-90"
               title={window.loc('فیلتر زیبایی و جلوه‌ها', 'Beauty Filter')}
             >
-              <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
+              <Sparkles className="w-6 h-6 text-amber-300 animate-pulse" />
             </button>
           </div>
 
@@ -1203,7 +1203,7 @@ export default function LiveStudioModal({
               
               {/* Host & Stream Badges */}
               <div className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-2 bg-black/40 px-2 py-1.5 rounded-full border border-white/10 backdrop-blur-md shadow-sm">
+                <div className="flex items-center gap-2 bg-transparent px-2 py-1.5 rounded-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                   <div className="relative shrink-0">
                     <img src={currentUser?.avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE5IDIxdi0yYTRgMCAwIDAtNC00SDlhNCA0IDAgMCAwLTQgNHYyIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSI3IiByPSI0Ii8+PC9zdmc+'} alt="host" className="w-6 h-6 rounded-full object-cover border border-white/20 bg-slate-800" />
                     <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse border border-slate-900" />
@@ -1229,13 +1229,13 @@ export default function LiveStudioModal({
 
               {/* Viewers & Earnings KPI Badges */}
               <div className="flex flex-col items-end gap-1.5">
-                <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md shadow-sm text-white">
+                <div className="flex items-center gap-1.5 bg-transparent px-2.5 py-1 rounded-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-white">
                   <Eye className="w-3.5 h-3.5 opacity-80" />
                   <span className="text-xs font-bold font-mono">{viewerCount.toLocaleString()}</span>
                 </div>
                 
                 {giftCoinsEarned > 0 && (
-                  <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-amber-500/30 backdrop-blur-md shadow-sm text-amber-300">
+                  <div className="flex items-center gap-1.5 bg-transparent px-2.5 py-1 rounded-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-amber-300">
                     <Gift className="w-3.5 h-3.5" />
                     <span className="text-xs font-bold font-mono">{giftCoinsEarned.toLocaleString()}</span>
                   </div>
@@ -1247,7 +1247,7 @@ export default function LiveStudioModal({
             {/* PK Battle Banner if active */}
             {isPkActive && (
               <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 w-11/12 max-w-xs">
-                <div className="bg-black/50 p-2 rounded-2xl border border-white/10 backdrop-blur-xl shadow-2xl flex flex-col gap-1.5 relative overflow-hidden">
+                <div className="bg-transparent p-2 flex flex-col gap-1.5 relative drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                   <div className="flex items-center justify-between text-[10px] font-bold px-1">
                     <div className="flex items-center gap-1 text-white">
                        <span className="w-2 h-2 rounded-full bg-rose-500" /> {window.loc('شما', 'You')}: {pkRedScore}
@@ -1272,7 +1272,7 @@ export default function LiveStudioModal({
               
               {/* Pinned Message */}
               {pinnedMessage && (
-                <div className="p-2 rounded-2xl bg-black/40 border border-amber-500/30 text-amber-200 text-[10px] font-bold flex items-center justify-between backdrop-blur-md shadow-lg w-fit max-w-[80%] self-start">
+                <div className="p-2 rounded-2xl bg-transparent text-amber-200 text-[10px] font-bold flex items-center justify-between drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] w-fit max-w-[80%] self-start">
                   <div className="flex items-center gap-1.5 truncate">
                     <Pin className="w-3 h-3 text-amber-400 shrink-0" />
                     <span className="truncate">{pinnedMessage}</span>
@@ -1286,7 +1286,7 @@ export default function LiveStudioModal({
                 <div className="max-h-48 overflow-y-auto space-y-1.5 py-2 w-full flex flex-col items-start" style={{ maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)' }}>
                   {chatMessages.map(msg => (
                     <div key={msg.id} className="text-[11px] flex flex-col group w-fit max-w-[85%] self-start">
-                      <div className="px-3 py-1.5 rounded-2xl bg-black/30 backdrop-blur-sm border border-white/5 inline-flex items-center gap-1.5 shadow-sm">
+                      <div className="px-3 py-1.5 rounded-2xl bg-transparent inline-flex items-center gap-1.5 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                         <span className={`font-bold shrink-0 ${msg.isHost ? 'text-amber-400' : msg.isVip ? 'text-pink-400' : 'text-cyan-300'}`}>
                           {msg.user}:
                         </span>
@@ -1322,7 +1322,7 @@ export default function LiveStudioModal({
                   onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
                   placeholder={isCommentsDisabled ? window.loc('کامنت‌ها غیرفعال است', 'Comments disabled') : window.loc('پیام خود را بنویسید...', 'Write your message...')}
                   disabled={isCommentsDisabled}
-                  className="flex-1 px-4 py-2.5 rounded-full bg-black/40 border border-white/10 text-xs text-white placeholder-white/50 outline-none focus:border-white/30 focus:bg-black/60 backdrop-blur-md shadow-lg transition-all"
+                  className="flex-1 px-4 py-2.5 rounded-full bg-black/20 border-transparent text-xs text-white placeholder-white/70 outline-none focus:bg-black/40 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-all"
                 />
                 {chatInput && (
                   <button
@@ -1339,66 +1339,66 @@ export default function LiveStudioModal({
             {/* ================= BOTTOM FLOATING TOOLBAR ================= */}
             <div className="absolute bottom-4 right-4 left-4 z-30 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
               
-              <div className="flex items-center gap-2 flex-nowrap">
+              <div className="flex items-center gap-4 flex-nowrap">
                 {/* Switch Camera */}
                 <button
                   onClick={toggleCameraFacingMode}
-                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border bg-black/40 border-white/10 text-white hover:bg-black/60"
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 shrink-0 bg-transparent text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)]"
                   title="Switch Camera"
                 >
-                  <RefreshCcw className="w-4 h-4" />
+                  <RefreshCcw className="w-6 h-6" />
                 </button>
                 {/* Cam Toggle */}
                 <button
                   onClick={() => setIsCamEnabled(!isCamEnabled)}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
-                    isCamEnabled ? 'bg-black/40 border-white/10 text-white hover:bg-black/60' : 'bg-rose-500/80 border-rose-500 text-white'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 shrink-0 bg-transparent drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] ${
+                    isCamEnabled ? 'text-white' : 'text-rose-400'
                   }`}
                   title="Camera"
                 >
-                  <Camera className="w-4 h-4" />
+                  <Camera className="w-6 h-6" />
                 </button>
 
                 {/* Mic Toggle */}
                 <button
                   onClick={() => setIsMicEnabled(!isMicEnabled)}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
-                    isMicEnabled ? 'bg-black/40 border-white/10 text-white hover:bg-black/60' : 'bg-rose-500/80 border-rose-500 text-white'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 shrink-0 bg-transparent drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] ${
+                    isMicEnabled ? 'text-white' : 'text-rose-400'
                   }`}
                   title="Microphone"
                 >
-                  {isMicEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                  {isMicEnabled ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
                 </button>
 
                 {/* Flip / Mirror Camera Horizontal (Left <-> Right) */}
                 <button
                   onClick={toggleMirrorMode}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border active:scale-90 ${
-                    isMirrored ? 'bg-pink-600/60 border-pink-400 text-white' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 shrink-0 bg-transparent drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] active:scale-90 ${
+                    isMirrored ? 'text-pink-400' : 'text-white'
                   }`}
                   title={window.loc('آینه کردن تصویر (چپ و راست)', 'Flip / Mirror Image')}
                 >
-                  <FlipHorizontal className="w-4 h-4 text-pink-300" />
+                  <FlipHorizontal className="w-6 h-6" />
                 </button>
 
                 {/* Beauty Filter */}
                 <button
                   onClick={() => setActiveTabDrawer(activeTabDrawer === 'beauty' ? null : 'beauty')}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
-                    activeTabDrawer === 'beauty' ? 'bg-pink-500/40 border-pink-500/50 text-pink-100' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 shrink-0 bg-transparent drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] ${
+                    activeTabDrawer === 'beauty' ? 'text-pink-400' : 'text-white'
                   }`}
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-6 h-6" />
                 </button>
 
                 {/* Guests */}
                 <button
                   onClick={() => setActiveTabDrawer(activeTabDrawer === 'guests' ? null : 'guests')}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border relative ${
-                    activeTabDrawer === 'guests' ? 'bg-cyan-500/40 border-cyan-500/50 text-cyan-100' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 shrink-0 bg-transparent drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] relative ${
+                    activeTabDrawer === 'guests' ? 'text-cyan-400' : 'text-white'
                   }`}
                 >
-                  <UserPlus className="w-4 h-4" />
+                  <UserPlus className="w-6 h-6" />
                   {guestRequests.length > 0 && (
                     <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-rose-500 border border-slate-900 animate-pulse" />
                   )}
@@ -1416,49 +1416,49 @@ export default function LiveStudioModal({
                       showToast(window.loc('⚔️ مسابقه PK آغاز شد!', '⚔️ The PK match has started!'));
                     }
                   }}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
-                    isPkActive ? 'bg-rose-500/80 border-rose-500 text-white' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 shrink-0 bg-transparent drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] ${
+                    isPkActive ? 'text-rose-400' : 'text-white'
                   }`}
                 >
-                  <Swords className="w-4 h-4" />
+                  <Swords className="w-6 h-6" />
                 </button>
                 
                 {/* Stats */}
                 <button
                   onClick={() => setActiveTabDrawer(activeTabDrawer === 'stats' ? null : 'stats')}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
-                    activeTabDrawer === 'stats' ? 'bg-amber-500/40 border-amber-500/50 text-amber-100' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 shrink-0 bg-transparent drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] ${
+                    activeTabDrawer === 'stats' ? 'text-amber-400' : 'text-white'
                   }`}
                 >
-                  <BarChart2 className="w-4 h-4" />
+                  <BarChart2 className="w-6 h-6" />
                 </button>
 
                 {/* Settings */}
                 <button
                   onClick={() => setActiveTabDrawer(activeTabDrawer === 'settings' ? null : 'settings')}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg backdrop-blur-md border ${
-                    activeTabDrawer === 'settings' ? 'bg-purple-500/40 border-purple-500/50 text-purple-100' : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 shrink-0 bg-transparent drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] ${
+                    activeTabDrawer === 'settings' ? 'text-purple-400' : 'text-white'
                   }`}
                 >
-                  <Settings className="w-4 h-4" />
+                  <Settings className="w-6 h-6" />
                 </button>
               </div>
 
               {/* End Live Button */}
               <button
                 onClick={() => setIsEndConfirmOpen(true)}
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-rose-500 hover:bg-rose-600 border border-rose-400/50 text-white shadow-[0_0_15px_rgba(244,63,94,0.4)] shrink-0 active:scale-90 transition-all"
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] text-rose-500 hover:text-rose-400 shrink-0 active:scale-90 transition-all hover:scale-110"
               >
-                <Square className="w-4 h-4 fill-white" />
+                <Square className="w-7 h-7 fill-rose-500" />
               </button>
             </div>
           </div>
 
           {/* ================= DRAWER POPUPS (BEAUTY, GUESTS, STATS, SETTINGS) ================= */}
           {activeTabDrawer && (
-            <div className="absolute bottom-[72px] right-4 left-4 z-40 bg-black/70 border border-white/10 p-4 rounded-3xl shadow-2xl space-y-3 backdrop-blur-2xl animate-fadeIn max-h-72 overflow-y-auto no-scrollbar">
+            <div className="absolute bottom-[72px] right-4 left-4 z-40 bg-transparent p-2 space-y-3 drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)] animate-fadeIn max-h-72 overflow-y-auto no-scrollbar">
               
-              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <div className="flex items-center justify-between border-b border-white/30 pb-2">
                 <span className="font-bold text-white text-xs">
                   {activeTabDrawer === 'beauty' && window.loc('✨ فیلترها و زیبایی چهره', '✨ Beauty & Filters')}
                   {activeTabDrawer === 'guests' && window.loc('👥 مدیریت مهمانان لایو (Guest Requests)', '👥 Management of live guests (Guest Requests)')}
@@ -1598,7 +1598,7 @@ export default function LiveStudioModal({
                   {beautySubTab === 'retouch' && (
                     <div className="space-y-3 animate-fadeIn">
                       {/* Skin Smoothing Slider */}
-                      <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10">
+                      <div className="space-y-1.5 p-2.5 rounded-2xl bg-black/20 backdrop-blur-md border border-white/10">
                         <div className="flex items-center justify-between text-xs font-bold">
                           <span className="text-pink-300 flex items-center gap-1">
                             <Sparkles className="w-3.5 h-3.5" />
@@ -1617,7 +1617,7 @@ export default function LiveStudioModal({
                       </div>
 
                       {/* Skin Tone Filter Preset */}
-                      <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10">
+                      <div className="space-y-1.5 p-2.5 rounded-2xl bg-black/20 backdrop-blur-md border border-white/10">
                         <span className="text-xs font-bold text-slate-200">{window.loc('تن و فیلتر رنگ پوست', 'Skin Tone & Filter')}</span>
                         <div className="grid grid-cols-5 gap-1.5 pt-1">
                           {[
@@ -1646,7 +1646,7 @@ export default function LiveStudioModal({
                   {/* 2. MAKEUP & LIP TINT TAB */}
                   {beautySubTab === 'makeup' && (
                     <div className="space-y-3 animate-fadeIn">
-                      <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10">
+                      <div className="space-y-1.5 p-2.5 rounded-2xl bg-black/20 backdrop-blur-md border border-white/10">
                         <div className="flex items-center justify-between text-xs font-bold">
                           <span className="text-rose-300 flex items-center gap-1">
                             <span>💄</span>
@@ -1691,7 +1691,7 @@ export default function LiveStudioModal({
                   {/* 3. HAIR TINT TAB */}
                   {beautySubTab === 'hair' && (
                     <div className="space-y-3 animate-fadeIn">
-                      <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10">
+                      <div className="space-y-1.5 p-2.5 rounded-2xl bg-black/20 backdrop-blur-md border border-white/10">
                         <div className="flex items-center justify-between text-xs font-bold">
                           <span className="text-purple-300 flex items-center gap-1">
                             <span>💇‍♀️</span>
