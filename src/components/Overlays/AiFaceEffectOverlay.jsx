@@ -105,19 +105,19 @@ export default function AiFaceEffectOverlay({
           const eyeDistPx = Math.max(40, interOcularDist * drawW);
 
           // -------------------------------------------------------------
-          // 1. SMART AI HAIR COLOR TINT (Pins accurately above hairline on hair crown)
+          // 1. SMART AI HAIR COLOR TINT (Advanced Polygon Masking)
           // -------------------------------------------------------------
           if (isFacePresent && hasHair) {
             const hrX = mapX(landmarks?.hairRegion?.x || 0.5);
             const hrY = mapY(landmarks?.hairRegion?.y || 0.14);
             const fhY = mapY(landmarks?.forehead?.y || 0.25);
-            const hrRx = Math.max(80, (landmarks?.hairRegion?.rx || 0.28) * drawW * 1.5);
-            const hrRy = Math.max(70, (landmarks?.hairRegion?.ry || 0.16) * drawH * 1.5);
+            const hrRx = Math.max(90, (landmarks?.hairRegion?.rx || 0.28) * drawW * 1.6);
+            const hrRy = Math.max(80, (landmarks?.hairRegion?.ry || 0.16) * drawH * 1.6);
 
             ctx.save();
-            const hairAlpha = Math.min(0.85, (hairIntensity / 100) * 0.90);
+            const hairAlpha = Math.min(0.75, (hairIntensity / 100) * 0.80);
 
-            let hairR = 217, hairG = 70, hairB = 239; // Default Neon Pink
+            let hairR = 217, hairG = 70, hairB = 239;
             if (hairTint === 'rose_gold') { hairR = 251; hairG = 113; hairB = 133; }
             else if (hairTint === 'cyan_cyber') { hairR = 6; hairG = 182; hairB = 212; }
             else if (hairTint === 'golden_blonde') { hairR = 250; hairG = 204; hairB = 21; }
@@ -125,35 +125,39 @@ export default function AiFaceEffectOverlay({
             else if (hairTint === 'silver_ash') { hairR = 203; hairG = 213; hairB = 225; }
             else if (hairTint === 'ruby_red') { hairR = 225; hairG = 29; hairB = 72; }
 
-            // Clip region above forehead/hairline so hair color never touches facial skin or eyes
             ctx.beginPath();
-            if (face.hairline && face.hairline.length > 3) {
-              ctx.moveTo(0, 0);
-              ctx.lineTo(dW, 0);
-              ctx.lineTo(dW, mapY(face.hairline[face.hairline.length - 1].y));
-              for (let i = face.hairline.length - 1; i >= 0; i--) {
-                ctx.lineTo(mapX(face.hairline[i].x), mapY(face.hairline[i].y));
+            // Mask everything
+            ctx.rect(0, 0, dW, dH);
+            
+            // Subtract face oval so color NEVER touches the face
+            if (face.faceOval && face.faceOval.length > 5) {
+              ctx.moveTo(mapX(face.faceOval[0].x), mapY(face.faceOval[0].y));
+              for (let i = face.faceOval.length - 1; i >= 0; i--) {
+                ctx.lineTo(mapX(face.faceOval[i].x), mapY(face.faceOval[i].y));
               }
-              ctx.lineTo(0, mapY(face.hairline[0].y));
               ctx.closePath();
             } else {
-              ctx.rect(0, 0, dW, Math.max(0, fhY - 5));
+              // Fallback block mask
+              ctx.rect(0, Math.max(0, fhY), dW, dH);
             }
-            ctx.clip();
+            ctx.clip("evenodd");
 
-            const hairGrad = ctx.createRadialGradient(hrX, hrY, hrRx * 0.15, hrX, hrY, hrRx);
+            const hairGrad = ctx.createRadialGradient(hrX, hrY, hrRx * 0.2, hrX, hrY, hrRx);
             hairGrad.addColorStop(0, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha})`);
-            hairGrad.addColorStop(0.5, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha * 0.8})`);
+            hairGrad.addColorStop(0.4, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha * 0.8})`);
+            hairGrad.addColorStop(0.8, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha * 0.3})`);
             hairGrad.addColorStop(1, `rgba(${hairR}, ${hairG}, ${hairB}, 0)`);
 
-            // Use soft-light to color dark hair better than 'color'
+            ctx.filter = 'blur(12px)';
+
+            // Pass 1: Soft Light for natural blend on dark hair
             ctx.globalCompositeOperation = 'soft-light';
             ctx.fillStyle = hairGrad;
             ctx.beginPath();
             ctx.ellipse(hrX, hrY, hrRx, hrRy, 0, 0, Math.PI * 2);
             ctx.fill();
             
-            // Second pass overlay for vibrance
+            // Pass 2: Overlay for vibrance
             ctx.globalCompositeOperation = 'overlay';
             ctx.fillStyle = hairGrad;
             ctx.beginPath();
@@ -164,38 +168,64 @@ export default function AiFaceEffectOverlay({
           }
 
           // -------------------------------------------------------------
-          // 2. SKIN SMOOTHING & PORE-RETOUCH OVERLAY (Clipped to Face Oval)
+          // 2. TRUE SKIN SMOOTHING (Video Blur with Precision Eye/Mouth Holes)
           // -------------------------------------------------------------
-          if (isFacePresent && hasSmoothing) {
-            const lcX = mapX(landmarks?.leftCheek?.x || 0.34);
-            const rcX = mapX(landmarks?.rightCheek?.x || 0.66);
-            const cX = (lcX + rcX) * 0.5;
-            const cY = mapY((landmarks?.noseBridge?.y || 0.46));
-            const faceRadius = Math.max(35, eyeDistPx * 0.95);
-
+          if (isFacePresent && hasSmoothing && face.faceOval?.length > 5) {
             ctx.save();
-            ctx.globalCompositeOperation = 'soft-light';
-            ctx.filter = `blur(${Math.max(4, skinSmoothing * 0.18)}px)`;
-
-            if (face.faceOval && face.faceOval.length > 5) {
-              ctx.beginPath();
-              ctx.moveTo(mapX(face.faceOval[0].x), mapY(face.faceOval[0].y));
-              for (let i = 1; i < face.faceOval.length; i++) {
-                ctx.lineTo(mapX(face.faceOval[i].x), mapY(face.faceOval[i].y));
+            ctx.beginPath();
+            
+            // Outer boundary: Face Oval
+            ctx.moveTo(mapX(face.faceOval[0].x), mapY(face.faceOval[0].y));
+            for (let i = 1; i < face.faceOval.length; i++) {
+              ctx.lineTo(mapX(face.faceOval[i].x), mapY(face.faceOval[i].y));
+            }
+            ctx.closePath();
+            
+            // Inner boundary: Left Eye (CCW)
+            if (face.leftEyeContour?.length > 3) {
+              ctx.moveTo(mapX(face.leftEyeContour[0].x), mapY(face.leftEyeContour[0].y));
+              for (let i = face.leftEyeContour.length - 1; i >= 0; i--) {
+                ctx.lineTo(mapX(face.leftEyeContour[i].x), mapY(face.leftEyeContour[i].y));
               }
               ctx.closePath();
-              ctx.clip();
             }
+            
+            // Inner boundary: Right Eye (CCW)
+            if (face.rightEyeContour?.length > 3) {
+              ctx.moveTo(mapX(face.rightEyeContour[0].x), mapY(face.rightEyeContour[0].y));
+              for (let i = face.rightEyeContour.length - 1; i >= 0; i--) {
+                ctx.lineTo(mapX(face.rightEyeContour[i].x), mapY(face.rightEyeContour[i].y));
+              }
+              ctx.closePath();
+            }
+            
+            // Inner boundary: Lips (CCW)
+            if (face.fullLipsPolygon?.length > 3) {
+              ctx.moveTo(mapX(face.fullLipsPolygon[0].x), mapY(face.fullLipsPolygon[0].y));
+              for (let i = face.fullLipsPolygon.length - 1; i >= 0; i--) {
+                ctx.lineTo(mapX(face.fullLipsPolygon[i].x), mapY(face.fullLipsPolygon[i].y));
+              }
+              ctx.closePath();
+            }
+            
+            // Inner boundary: Eyebrows (Approximated to keep them sharp)
+            const leB = {x: mapX(landmarks?.leftEyebrow?.x || 0.39), y: mapY(landmarks?.leftEyebrow?.y || 0.34)};
+            const reB = {x: mapX(landmarks?.rightEyebrow?.x || 0.61), y: mapY(landmarks?.rightEyebrow?.y || 0.34)};
+            const ebW = eyeDistPx * 0.4;
+            const ebH = eyeDistPx * 0.15;
+            
+            ctx.moveTo(leB.x + ebW, leB.y);
+            ctx.ellipse(leB.x, leB.y, ebW, ebH, 0, 0, Math.PI * 2, true); // CCW
+            ctx.moveTo(reB.x + ebW, reB.y);
+            ctx.ellipse(reB.x, reB.y, ebW, ebH, 0, 0, Math.PI * 2, true); // CCW
 
-            const skinGlow = ctx.createRadialGradient(cX, cY, faceRadius * 0.2, cX, cY, faceRadius);
-            const alpha = Math.min(0.45, skinSmoothing * 0.005);
-            skinGlow.addColorStop(0, `rgba(255, 246, 240, ${alpha})`);
-            skinGlow.addColorStop(0.65, `rgba(255, 238, 230, ${alpha * 0.6})`);
-            skinGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
-            ctx.fillStyle = skinGlow;
-            ctx.beginPath();
-            ctx.ellipse(cX, cY, faceRadius, faceRadius * 1.25, 0, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.clip("evenodd");
+
+            // True Skin Retouching: We draw the original video back, but heavily blurred
+            ctx.filter = `blur(${Math.max(2, skinSmoothing * 0.15)}px)`;
+            ctx.globalAlpha = Math.min(0.85, skinSmoothing * 0.012); 
+            ctx.drawImage(video, offsetX, offsetY, drawW, drawH);
+            
             ctx.restore();
           }
 
@@ -216,28 +246,34 @@ export default function AiFaceEffectOverlay({
             else if (blushEffect === 'sweet_plum') blushCol = '192, 132, 252';
 
             ctx.save();
-            ctx.globalCompositeOperation = 'multiply';
-            ctx.filter = 'blur(6px)';
+            ctx.globalCompositeOperation = 'soft-light';
+            ctx.filter = 'blur(14px)';
 
-            // Left Cheek
+            // Left Cheek (Rotated towards temple)
             const gL = ctx.createRadialGradient(lcX, lcY, 0, lcX, lcY, cheekR);
             gL.addColorStop(0, `rgba(${blushCol}, ${bAlpha})`);
-            gL.addColorStop(0.7, `rgba(${blushCol}, ${bAlpha * 0.5})`);
+            gL.addColorStop(0.5, `rgba(${blushCol}, ${bAlpha * 0.6})`);
             gL.addColorStop(1, `rgba(${blushCol}, 0)`);
             ctx.fillStyle = gL;
             ctx.beginPath();
-            ctx.ellipse(lcX, lcY, cheekR * 1.1, cheekR * 0.85, 0, 0, Math.PI * 2);
+            ctx.translate(lcX, lcY);
+            ctx.rotate(-Math.PI / 8);
+            ctx.ellipse(0, 0, cheekR * 1.5, cheekR * 0.9, 0, 0, Math.PI * 2);
             ctx.fill();
+            ctx.resetTransform(); // Reset for right cheek
 
-            // Right Cheek
+            // Right Cheek (Rotated towards temple)
             const gR = ctx.createRadialGradient(rcX, rcY, 0, rcX, rcY, cheekR);
             gR.addColorStop(0, `rgba(${blushCol}, ${bAlpha})`);
-            gR.addColorStop(0.7, `rgba(${blushCol}, ${bAlpha * 0.5})`);
+            gR.addColorStop(0.5, `rgba(${blushCol}, ${bAlpha * 0.6})`);
             gR.addColorStop(1, `rgba(${blushCol}, 0)`);
             ctx.fillStyle = gR;
             ctx.beginPath();
-            ctx.ellipse(rcX, rcY, cheekR * 1.1, cheekR * 0.85, 0, 0, Math.PI * 2);
+            ctx.translate(rcX, rcY);
+            ctx.rotate(Math.PI / 8);
+            ctx.ellipse(0, 0, cheekR * 1.5, cheekR * 0.9, 0, 0, Math.PI * 2);
             ctx.fill();
+            ctx.resetTransform();
 
             ctx.restore();
           }
@@ -254,8 +290,8 @@ export default function AiFaceEffectOverlay({
             const reX = mapX(rIris.x);
             const reY = mapY(rIris.y);
 
-            const irisRadiusL = Math.max(6, (lIris.radius ? lIris.radius * drawW : eyeDistPx * 0.12));
-            const irisRadiusR = Math.max(6, (rIris.radius ? rIris.radius * drawW : eyeDistPx * 0.12));
+            const irisRadiusL = Math.max(5, (lIris.radius ? lIris.radius * drawW : eyeDistPx * 0.11));
+            const irisRadiusR = Math.max(5, (rIris.radius ? rIris.radius * drawW : eyeDistPx * 0.11));
 
             let lensR = 56, lensG = 189, lensB = 248; // Ice Blue
             if (eyeLens === 'hazel_honey') { lensR = 217; lensG = 119; lensB = 6; }
@@ -265,35 +301,49 @@ export default function AiFaceEffectOverlay({
 
             ctx.save();
             [
-              { x: leX, y: leY, r: irisRadiusL },
-              { x: reX, y: reY, r: irisRadiusR }
+              { x: leX, y: leY, r: irisRadiusL, contour: face.leftEyeContour },
+              { x: reX, y: reY, r: irisRadiusR, contour: face.rightEyeContour }
             ].forEach(eye => {
-              const pupilRadius = eye.r * 0.38;
-
-              // Iris Color Fill (overlay blend mode for realistic texture preservation)
-              ctx.globalCompositeOperation = 'overlay';
+              if (!eye.contour || eye.contour.length < 3) return;
               
+              ctx.save(); // Save per eye
+
+              // 1. Clip EXACTLY to the eye opening polygon (prevents color on eyelids)
+              ctx.beginPath();
+              ctx.moveTo(mapX(eye.contour[0].x), mapY(eye.contour[0].y));
+              for(let i = 1; i < eye.contour.length; i++) {
+                ctx.lineTo(mapX(eye.contour[i].x), mapY(eye.contour[i].y));
+              }
+              ctx.closePath();
+              ctx.clip();
+              
+              const pupilRadius = eye.r * 0.35;
+
+              // 2. Iris Color Fill (overlay blend mode for realistic texture preservation)
+              ctx.globalCompositeOperation = 'overlay';
               ctx.beginPath();
               ctx.arc(eye.x, eye.y, eye.r, 0, Math.PI * 2);
               ctx.arc(eye.x, eye.y, pupilRadius, 0, Math.PI * 2, true); // exclude pupil
-              ctx.fillStyle = `rgba(${lensR}, ${lensG}, ${lensB}, 0.65)`;
+              ctx.fillStyle = `rgba(${lensR}, ${lensG}, ${lensB}, 0.70)`;
               ctx.fill();
               
-              // Add a subtle color blend to ensure the tint is visible
+              // 3. Subtle color blend to ensure the tint is visible
               ctx.globalCompositeOperation = 'color';
-              ctx.fillStyle = `rgba(${lensR}, ${lensG}, ${lensB}, 0.35)`;
+              ctx.fillStyle = `rgba(${lensR}, ${lensG}, ${lensB}, 0.40)`;
               ctx.beginPath();
               ctx.arc(eye.x, eye.y, eye.r, 0, Math.PI * 2);
               ctx.arc(eye.x, eye.y, pupilRadius, 0, Math.PI * 2, true);
               ctx.fill();
 
-              // Limbal Ring (outer dark iris boundary)
+              // 4. Limbal Ring (outer dark iris boundary)
               ctx.globalCompositeOperation = 'multiply';
-              ctx.strokeStyle = `rgba(10, 15, 25, 0.5)`;
+              ctx.strokeStyle = `rgba(5, 10, 15, 0.4)`;
               ctx.lineWidth = 1.0;
               ctx.beginPath();
               ctx.arc(eye.x, eye.y, eye.r, 0, Math.PI * 2);
               ctx.stroke();
+
+              ctx.restore(); // Restore per eye clipping
             });
             ctx.restore();
           }
