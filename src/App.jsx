@@ -1323,7 +1323,15 @@ export default function App() {
       return;
     }
     try {
-      const res = await apiWallet.sendGift(viewingStream.hostId || viewingStream.id || 'host', gift.id, gift.coins);
+      const targetHost = viewingStream.host_id || viewingStream.hostId || viewingStream.user_id || viewingStream.host || viewingStream.id;
+      const res = await apiWallet.sendGift({
+        recipientId: targetHost,
+        host_id: targetHost,
+        streamId: viewingStream.id,
+        giftId: gift.id,
+        giftName: gift.name,
+        coins: gift.coins || 0
+      });
       if (res && res.success) {
         setUserCoins(prev => Math.max(0, prev - gift.coins));
         setActiveLuxuryGift(gift);

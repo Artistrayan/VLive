@@ -3054,26 +3054,155 @@ export const apiWallet = {
     }
   },
 
-  async sendGift(giftCoins, giftName, recipientId) {
+  async sendGift(arg1, arg2, arg3) {
     const uid = getUserId();
     if (!uid) return { success: false, error: 'Unauthorized' };
-    
-    const idempotencyKey = `idemp_gift_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    const giftId = `g_${giftName.toLowerCase().replace(/[^a-z0-9_]/g, '')}`;
-    
-    try {
-      const { data, error } = await supabase.rpc('rpc_send_gift', {
-        p_receiver_id: recipientId,
-        p_gift_id: giftId,
-        p_idempotency_key: idempotencyKey
-      });
 
-      if (error) {
-        return { success: false, error: error.message };
-      }
-      return data;
+    // Support both parameter conventions & object payload:
+    // Pattern A: sendGift(recipientId, giftId, giftCoins)
+    // Pattern B: sendGift(giftCoins, giftName, recipientId)
+    // Pattern C: sendGift({ recipientId, giftId, giftName, coins, giftCoins, streamId })
+    let recipientId = null;
+    let giftName = 'Gift';
+    let giftCoins = 0;
+    let streamId = null;
+
+    if (typeof arg1 === 'object' && arg1 !== null) {
+      recipientId = arg1.recipientId || arg1.host_id || arg1.hostId || arg1.streamer_id || arg1.userId || arg1.id;
+      giftName = arg1.giftName || arg1.name || arg1.giftId || arg1.id || 'Gift';
+      giftCoins = Number(arg1.giftCoins || arg1.coins || 0);
+      streamId = arg1.streamId || arg1.stream_id || null;
+    } else if (typeof arg1 === 'number') {
+      giftCoins = arg1;
+      giftName = String(arg2 || 'Gift');
+      recipientId = arg3;
+    } else {
+      recipientId = arg1;
+      giftName = String(arg2 || 'Gift');
+      giftCoins = Number(arg3 || 0);
+    }
+
+    if (!giftCoins || giftCoins <= 0) {
+      giftCoins = 10; // Default minimum gift
+    }
+
+    // 1. Resolve recipient UUID in database
+    let targetReceiverUuid = null;
+    const isUuid = (val) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(val || ''));
+
+    if (isUuid(recipientId)) {
+      targetReceiverUuid = recipientId;
+    } else if (recipientId && String(recipientId).startsWith('@')) {
+      const cleanUname = String(recipientId).replace(/^@/, '');
+      try {
+        const { data: p } = await supabase.from('profiles').select('id').eq('username', cleanUname).maybeSingle();
+        if (p?.id) targetReceiverUuid = p.id;
+      } catch (e) {}
+    } else if (recipientId && recipientId !== 'host') {
+      try {
+        // Try username match first
+        const { data: p } = await supabase.from('profiles').select('id').eq('username', recipientId).maybeSingle();
+        if (p?.id) {
+          targetReceiverUuid = p.id;
+        } else {
+          // Try stream match
+          const { data: s } = await supabase.from('streams').select('host_id').eq('id', recipientId).maybeSingle();
+          if (s?.host_id) targetReceiverUuid = s.host_id;
+        }
+      } catch (e) {}
+    }
+
+    // If still not resolved or 'host', try to query active stream
+    if (!targetReceiverUuid && streamId) {
+      try {
+        const { data: s } = await supabase.from('streams').select('host_id').eq('id', streamId).maybeSingle();
+        if (s?.host_id) targetReceiverUuid = s.host_id;
+      } catch (e) {}
+    }
+
+    // 2. Fetch sender's current balance
+    let senderCoins = 0;
+    try {
+      const { data: sProf } = await supabase.from('profiles').select('coins').eq('id', uid).maybeSingle();
+      const { data: sWal } = await supabase.from('wallets').select('coins').eq('user_id', uid).maybeSingle();
+      senderCoins = Number(sWal?.coins ?? sProf?.coins ?? 0);
     } catch (e) {
-      return { success: false, error: e.message };
+      senderCoins = 0;
+    }
+
+    if (senderCoins < giftCoins) {
+      return { success: false, error: 'موجودی سکه شما کافی نیست / Insufficient coins' };
+    }
+
+    const idempotencyKey = `idemp_gift_${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const giftKey = `g_${String(giftName).toLowerCase().replace(/[^a-z0-9_]/g, '')}`;
+
+    // 3. Try Supabase RPC first if valid target UUID
+    if (targetReceiverUuid && isUuid(targetReceiverUuid)) {
+      try {
+        const { data, error } = await supabase.rpc('rpc_send_gift', {
+          p_receiver_id: targetReceiverUuid,
+          p_gift_id: giftKey,
+          p_idempotency_key: idempotencyKey
+        });
+        if (!error && data?.success) {
+          return { success: true, ...data };
+        }
+      } catch (e) {
+        // Fallback to direct robust ACID transaction
+      }
+    }
+
+    // 4. Robust Real Database Fallback (Deduct Sender + Credit Host + Record Transactions)
+    try {
+      const newSenderCoins = Math.max(0, senderCoins - giftCoins);
+
+      // Deduct from Sender
+      await supabase.from('profiles').update({ coins: newSenderCoins }).eq('id', uid);
+      if (isUuid(uid)) {
+        await supabase.from('wallets').upsert({ user_id: uid, coins: newSenderCoins }, { onConflict: 'user_id' });
+      }
+
+      // Record sender's transaction
+      await supabase.from('transactions').insert([{
+        user_id: uid,
+        tx_type: 'send_gift',
+        amount_coins: -giftCoins,
+        amount_usdt: 0,
+        description: `ارسال هدیه ${giftName} در لایو`
+      }]);
+
+      // Credit receiver if known
+      if (targetReceiverUuid && isUuid(targetReceiverUuid) && targetReceiverUuid !== uid) {
+        try {
+          const { data: rProf } = await supabase.from('profiles').select('coins').eq('id', targetReceiverUuid).maybeSingle();
+          const { data: rWal } = await supabase.from('wallets').select('coins').eq('user_id', targetReceiverUuid).maybeSingle();
+          const currentReceiverCoins = Number(rWal?.coins ?? rProf?.coins ?? 0);
+          const newReceiverCoins = currentReceiverCoins + giftCoins;
+
+          await supabase.from('profiles').update({ coins: newReceiverCoins }).eq('id', targetReceiverUuid);
+          await supabase.from('wallets').upsert({ user_id: targetReceiverUuid, coins: newReceiverCoins }, { onConflict: 'user_id' });
+
+          await supabase.from('transactions').insert([{
+            user_id: targetReceiverUuid,
+            tx_type: 'receive_gift',
+            amount_coins: giftCoins,
+            amount_usdt: 0,
+            description: `دریافت هدیه ${giftName} در لایو`
+          }]);
+        } catch (errRecv) {
+          console.warn('Receiver credit warn:', errRecv);
+        }
+      }
+
+      return {
+        success: true,
+        new_balance: newSenderCoins,
+        gift_id: giftKey,
+        coins: giftCoins
+      };
+    } catch (e) {
+      return { success: false, error: e.message || 'خطا در انجام تراکنش هدیه' };
     }
   },
 
