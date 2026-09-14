@@ -14,7 +14,6 @@ import { LiveStreamRoomService } from '../services/liveStreamRoomService';
 import { livekitManager, fetchLiveKitToken, getLiveKitConfig } from '../services/livekitService';
 import LuxuryGiftOverlay from './Overlays/LuxuryGiftOverlay';
 import VipEntranceBanner from './Overlays/VipEntranceBanner';
-import AiFaceEffectOverlay from './Overlays/AiFaceEffectOverlay';
 import { filterMessageContent } from '../services/aiModeration';
 
 export default function LiveStudioModal({
@@ -108,24 +107,7 @@ export default function LiveStudioModal({
   const [isCamEnabled, setIsCamEnabled] = useState(true);
   const [isMicEnabled, setIsMicEnabled] = useState(true);
   const [isFlashOn, setIsFlashOn] = useState(false);
-  const [isMirrored, setIsMirrored] = useState(false);
-  const [beautyFilter, setBeautyFilter] = useState('smooth'); // 'off' | 'smooth' | 'glow' | 'ultra' | 'rose' | 'bronze' | 'fair' | 'tan'
-  const [skinSmoothing, setSkinSmoothing] = useState(50); // 0 - 100
-  const [skinTonePreset, setSkinTonePreset] = useState('natural'); // 'natural' | 'fair' | 'warm' | 'bronze' | 'porcelain'
-  const [eyeEnlarge, setEyeEnlarge] = useState(40); // 0 - 100
-  const [slimmingLevel, setSlimmingLevel] = useState(30); // 0 - 100
-  const [faceSticker, setFaceSticker] = useState('none'); // 'none' | 'cat_ears' | 'crown' | 'sparkles' | 'sunglasses' | 'hearts'
-  const [lightingEffect, setLightingEffect] = useState('none'); // 'none' | 'studio' | 'warm' | 'cool' | 'neon' | 'sunset'
-  
-  // Advanced AI Makeup & Beauty states
-  const [lipTint, setLipTint] = useState('none'); // 'none' | 'rose_petal' | 'ruby_red' | 'velvet_cherry' | 'nude_peach' | 'barbie_pink' | 'glossy_shine'
-  const [lipIntensity, setLipIntensity] = useState(65);
-  const [hairTint, setHairTint] = useState('none'); // 'none' | 'rose_gold' | 'cyan_cyber' | 'golden_blonde' | 'purple_velvet' | 'silver_ash' | 'ruby_red'
-  const [hairIntensity, setHairIntensity] = useState(50);
-  const [eyeLens, setEyeLens] = useState('none'); // 'none' | 'ice_blue' | 'hazel_honey' | 'emerald_green' | 'crystal_gray' | 'violet_dream'
-  const [blushEffect, setBlushEffect] = useState('none'); // 'none' | 'rose_pink' | 'peach' | 'coral' | 'sweet_plum'
-  const [blushIntensity, setBlushIntensity] = useState(45);
-  const [beautySubTab, setBeautySubTab] = useState('retouch'); // 'retouch' | 'makeup' | 'hair' | 'stickers' | 'lighting'
+  const isMirrored = facingMode === 'user';
 
   const [networkQuality, setNetworkQuality] = useState('EXCELLENT'); // 'EXCELLENT' | 'GOOD' | 'POOR'
   const [estimatedBitrate, setEstimatedBitrate] = useState(4500); // kbps
@@ -133,70 +115,6 @@ export default function LiveStudioModal({
   // Countdown State
   const [countdownNum, setCountdownNum] = useState(3);
   const [isStartingLive, setIsStartingLive] = useState(false);
-
-  // Live Broadcast Real-time States
-  const [liveDurationSeconds, setLiveDurationSeconds] = useState(0);
-  const [viewerCount, setViewerCount] = useState(1);
-  const [likeCount, setLikeCount] = useState(0);
-  const [giftCoinsEarned, setGiftCoinsEarned] = useState(0);
-  const [batteryLevel, setBatteryLevel] = useState(100);
-  const [followersGained, setFollowersGained] = useState(0);
-
-  // Interactive Drawers / Panels
-  const [isChatExpanded, setIsChatExpanded] = useState(true);
-  const [chatInput, setChatInput] = useState('');
-  const [pinnedMessage, setPinnedMessage] = useState(null);
-  const [chatMessages, setChatMessages] = useState([]);
-
-  // Chat Control Settings
-  const [isSlowMode, setIsSlowMode] = useState(false);
-  const [isFollowersOnlyChat, setIsFollowersOnlyChat] = useState(false);
-  const [isVipOnlyChat, setIsVipOnlyChat] = useState(false);
-  const [isCommentsDisabled, setIsCommentsDisabled] = useState(false);
-
-  // Guest & PK System States
-  const [activeTabDrawer, setActiveTabDrawer] = useState(null); // 'guests' | 'pk' | 'stats' | 'mods' | 'settings'
-  const [guestRequests, setGuestRequests] = useState([]);
-  const [activeGuests, setActiveGuests] = useState([]);
-  const maxGuestsLimit = 4;
-
-  // PK State
-  const [isPkActive, setIsPkActive] = useState(false);
-  const [pkOpponent, setPkOpponent] = useState(null);
-  const [pkRedScore, setPkRedScore] = useState(0);
-  const [pkBlueScore, setPkBlueScore] = useState(0);
-  const [pkTimeLeft, setPkTimeLeft] = useState(180);
-
-  // Moderation Lists
-  const [moderatorsList, setModeratorsList] = useState([]);
-  const [mutedUsers, setMutedUsers] = useState([]);
-  const [blockedUsers, setBlockedUsers] = useState([]);
-
-  // AI Monitor Status
-  const [aiMonitorStatus, setAiMonitorStatus] = useState('ALL_CLEAR'); // 'ALL_CLEAR' | 'FLAGGED'
-  const [aiNoticeMsg, setAiNoticeMsg] = useState(window.loc('چک چهره، دسته‌بندی و عدم اسپم تایید شد ✅', 'Face check, category and non-spam were confirmed'));
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // Confirmation Modals
-  const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
-
-  // Camera & Media Hardware Refs
-  const cameraVideoRef = useRef(null);
-  const mediaStreamRef = useRef(null);
-  const roomServiceRef = useRef(null);
-  const [activeStreamRecord, setActiveStreamRecord] = useState(null);
-
-  // Camera & Hardware States
-  const [currentFacingMode, setCurrentFacingMode] = useState('user');
-  const [mediaStream, setMediaStream] = useState(null);
-  const [cameraError, setCameraError] = useState(null);
-  const [isSwitchingCamera, setIsSwitchingCamera] = useState(false);
-  const cameraOperationIdRef = useRef(0);
-  const isSwitchingCameraRef = useRef(false);
-  const startInProgressRef = useRef(false);
-  const [startFailureReason, setStartFailureReason] = useState("");
-
-  // LiveKit Connection & Secure Broadcaster Token States
   const [isLiveKitConnected, setIsLiveKitConnected] = useState(false);
   const [localVideoTrack, setLocalVideoTrack] = useState(null);
   const [isTrackPublished, setIsTrackPublished] = useState(false);
@@ -225,25 +143,26 @@ export default function LiveStudioModal({
         mediaStreamRef.current = stream;
       } else {
         try {
+          // Just request it once. If the user denies or there's an error, handle it cleanly.
+          // By not specifying exact resolution, we avoid OverconstrainedError and just get the best available.
           stream = await cameraPermissionService.getUserMedia({
-            video: { 
-              facingMode: { ideal: facingMode }, 
-              width: { ideal: 1280 }, 
-              height: { ideal: 720 } 
-            },
+            video: { facingMode: facingMode },
             audio: true
           }, opId);
-        } catch (primaryErr) {
-          try {
-            stream = await cameraPermissionService.getUserMedia({
-              video: { facingMode: facingMode },
-              audio: true
-            }, opId);
-          } catch (audioErr) {
-            stream = await cameraPermissionService.getUserMedia({
-              video: true,
-              audio: false
-            }, opId);
+        } catch (err) {
+          console.warn(`[Camera:${opId}] Primary getUserMedia failed:`, err);
+          // If it fails with audio (e.g. no microphone), fallback to video only
+          if (err.name === 'NotReadableError' || err.name === 'NotFoundError') {
+            try {
+              stream = await cameraPermissionService.getUserMedia({
+                video: { facingMode: facingMode },
+                audio: false
+              }, opId);
+            } catch (fallbackErr) {
+              throw fallbackErr;
+            }
+          } else {
+            throw err;
           }
         }
 
@@ -251,19 +170,16 @@ export default function LiveStudioModal({
           if (stream) stream.getTracks().forEach(t => t.stop());
           return;
         }
-
         if (mediaStreamRef.current && mediaStreamRef.current !== stream) {
           mediaStreamRef.current.getTracks().forEach(t => {
             try { t.stop(); } catch(e) {}
           });
         }
-
-        setMediaStream(stream);
         mediaStreamRef.current = stream;
-        cameraPermissionService.setActiveStream(stream);
+        setMediaStream(stream);
       }
 
-      // Extract LocalVideoTrack
+      // Extract Video Track
       const vTrack = stream.getVideoTracks()[0];
       if (vTrack) {
         vTrack.enabled = isCamEnabled;
@@ -354,19 +270,6 @@ export default function LiveStudioModal({
   const handleCloseStudio = () => {
     setStudioPhase('PRE_LIVE');
     if (onClose) onClose();
-  };
-
-  // Toggle horizontal mirror flip (Left <-> Right) on front camera without reconnecting or interrupting stream
-  const toggleMirrorMode = () => {
-    setIsMirrored(prev => {
-      const nextState = !prev;
-      showToast(
-        nextState 
-          ? window.loc('🪞 حالت آینه فعال شد (تصویر معکوس)', '🪞 Mirror mode enabled (Flipped)') 
-          : window.loc('✨ تصویر به حالت طبیعی تغییر کرد (غیر آینه‌ای)', '✨ Normal orientation (Direct)')
-      );
-      return nextState;
-    });
   };
 
   // Atomic Camera Switch between Front and Back with concurrency lock
@@ -898,21 +801,6 @@ export default function LiveStudioModal({
               className={`w-full h-full object-cover transition-all duration-300 ${isMirrored ? 'scale-x-[-1]' : ''}`}
             />
 
-            {/* Real-time AI Face & AR Overlay */}
-            <AiFaceEffectOverlay
-              videoRef={cameraVideoRef}
-              isMirrored={isMirrored}
-              faceSticker={faceSticker}
-              lightingEffect={lightingEffect}
-              skinSmoothing={skinSmoothing}
-              lipTint={lipTint}
-              lipIntensity={lipIntensity}
-              hairTint={hairTint}
-              hairIntensity={hairIntensity}
-              eyeLens={eyeLens}
-              blushEffect={blushEffect}
-              blushIntensity={blushIntensity}
-            />
 
             {/* Studio Lighting atmosphere layers */}
             {lightingEffect === 'warm' && (
@@ -1035,25 +923,6 @@ export default function LiveStudioModal({
               {isMicEnabled ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
             </button>
 
-            {/* Mirror Mode (Flip Horizontal) */}
-            <button
-              onClick={toggleMirrorMode}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition hover:scale-110 active:scale-90 drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] ${
-                isMirrored ? 'bg-transparent text-pink-400' : 'bg-transparent text-white'
-              }`}
-              title={window.loc('آینه کردن تصویر (چپ و راست)', 'Flip / Mirror Image')}
-            >
-              <FlipHorizontal className="w-6 h-6" />
-            </button>
-
-            {/* Beauty & AR Filters */}
-            <button
-              onClick={() => setActiveTabDrawer('beauty')}
-              className="w-12 h-12 rounded-full bg-transparent text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] flex items-center justify-center hover:scale-110 transition active:scale-90"
-              title={window.loc('فیلتر زیبایی و جلوه‌ها', 'Beauty Filter')}
-            >
-              <Sparkles className="w-6 h-6 text-amber-300 animate-pulse" />
-            </button>
           </div>
 
           {/* Bottom Area: Ticketed Stream Option + START Button */}
@@ -1276,25 +1145,10 @@ export default function LiveStudioModal({
                         <button onClick={() => setIsMicEnabled(!isMicEnabled)} className={`flex flex-col items-center gap-1 transition ${isMicEnabled ? 'text-white hover:text-cyan-300' : 'text-rose-400'}`}>
                           {isMicEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
                         </button>
-                        <button onClick={toggleMirrorMode} className={`flex flex-col items-center gap-1 transition ${isMirrored ? 'text-pink-400' : 'text-white hover:text-cyan-300'}`}>
-                          <FlipHorizontal className="w-5 h-5" />
-                        </button>
                       </div>
                     </div>
 
-                    {/* Effects & Filters */}
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] text-white/50 font-bold px-1 border-b border-white/10 pb-1">{window.loc('✨ جلوه‌ها', '✨ Effects')}</span>
-                      <button 
-                        onClick={() => { setActiveTabDrawer(activeTabDrawer === 'beauty' ? null : 'beauty'); setIsMenuOpen(false); }}
-                        className={`flex items-center gap-2 px-2 py-1.5 rounded-xl transition ${activeTabDrawer === 'beauty' ? 'bg-white/20 text-pink-300' : 'text-white hover:bg-white/10'}`}
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        <span className="text-xs font-bold">{window.loc('زیبایی چهره', 'Beauty')}</span>
-                      </button>
-                    </div>
-
-                    {/* Tools & Moderation */}
+{/* Tools & Moderation */}
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[10px] text-white/50 font-bold px-1 border-b border-white/10 pb-1">{window.loc('🛠 ابزارها', '🛠 Tools')}</span>
                       <button onClick={() => { setActiveTabDrawer(activeTabDrawer === 'guests' ? null : 'guests'); setIsMenuOpen(false); }} className="flex items-center justify-between px-2 py-1.5 rounded-xl text-white hover:bg-white/10 transition">
@@ -1436,7 +1290,6 @@ export default function LiveStudioModal({
               
               <div className="flex items-center justify-between border-b border-white/30 pb-2">
                 <span className="font-bold text-white text-xs [text-shadow:_0_1px_2px_rgba(0,0,0,1)]">
-                  {activeTabDrawer === 'beauty' && window.loc('✨ زیبایی', '✨ Beauty')}
                   {activeTabDrawer === 'guests' && window.loc('👥 مهمانان', '👥 Guests')}
                   {activeTabDrawer === 'stats' && window.loc('📊 آمار', '📊 Stats')}
                   {activeTabDrawer === 'settings' && window.loc('⚙️ تنظیمات', '⚙️ Settings')}

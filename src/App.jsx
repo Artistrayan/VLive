@@ -13,7 +13,6 @@ import IncomingCallModal from './components/Overlays/IncomingCallModal';
 import IncomingCallBanner from './components/Overlays/IncomingCallBanner';
 import OutgoingCallModal from './components/Overlays/OutgoingCallModal';
 import LivePkBattleOverlay from './components/Overlays/LivePkBattleOverlay';
-import AiFaceEffectOverlay from './components/Overlays/AiFaceEffectOverlay';
 import LiveMiniGamesOverlay from './components/Overlays/LiveMiniGamesOverlay';
 import LuxuryGiftOverlay from './components/Overlays/LuxuryGiftOverlay';
 import VipEntranceBanner from './components/Overlays/VipEntranceBanner';

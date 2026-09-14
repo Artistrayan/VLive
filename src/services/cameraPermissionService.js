@@ -72,24 +72,18 @@ class CameraPermissionService {
     }
     this.currentFacingMode = facingMode;
 
-    if (oldTrack && oldTrack.readyState === 'live' && typeof oldTrack.applyConstraints === 'function') {
-      try {
-        await oldTrack.applyConstraints({ facingMode: { ideal: facingMode } });
-        const currentSettings = typeof oldTrack.getSettings === 'function' ? oldTrack.getSettings() : {};
-        if (currentSettings.facingMode === facingMode) {
-          return { track: oldTrack, isNewTrack: false, stream: null };
-        }
-      } catch (applyErr) {}
-    }
-
     let newStream = null;
     try {
       newStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: { exact: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false
       });
     } catch (err1) {
-      newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: false });
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: false });
+      } catch (err2) {
+        newStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
     }
 
     const newTrack = newStream.getVideoTracks()[0];
@@ -103,26 +97,14 @@ class CameraPermissionService {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('WebRTC mediaDevices is not supported in this environment.');
     }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      this.activeStream = stream;
-      
-      if (constraints.video) this.permissionState.camera = 'granted';
-      if (constraints.audio) this.permissionState.microphone = 'granted';
-      
-      return stream;
-    } catch (err) {
-      try {
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({
-          video: typeof constraints.video === 'object' && constraints.video?.facingMode ? { facingMode: constraints.video.facingMode } : true,
-          audio: Boolean(constraints.audio)
-        });
-        this.activeStream = fallbackStream;
-        return fallbackStream;
-      } catch (fallbackErr) {
-        throw new Error('Permission denied or no devices available.');
-      }
-    }
+    
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    this.activeStream = stream;
+    
+    if (constraints.video) this.permissionState.camera = 'granted';
+    if (constraints.audio) this.permissionState.microphone = 'granted';
+    
+    return stream;
   }
 
   stopActiveStream() {
