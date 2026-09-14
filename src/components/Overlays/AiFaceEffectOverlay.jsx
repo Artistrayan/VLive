@@ -111,12 +111,11 @@ export default function AiFaceEffectOverlay({
             const hrX = mapX(landmarks?.hairRegion?.x || 0.5);
             const hrY = mapY(landmarks?.hairRegion?.y || 0.14);
             const fhY = mapY(landmarks?.forehead?.y || 0.25);
-            const hrRx = Math.max(30, (landmarks?.hairRegion?.rx || 0.28) * drawW);
-            const hrRy = Math.max(25, (landmarks?.hairRegion?.ry || 0.16) * drawH);
+            const hrRx = Math.max(80, (landmarks?.hairRegion?.rx || 0.28) * drawW * 1.5);
+            const hrRy = Math.max(70, (landmarks?.hairRegion?.ry || 0.16) * drawH * 1.5);
 
             ctx.save();
-            ctx.globalCompositeOperation = 'color';
-            const hairAlpha = Math.min(0.75, (hairIntensity / 100) * 0.70);
+            const hairAlpha = Math.min(0.85, (hairIntensity / 100) * 0.90);
 
             let hairR = 217, hairG = 70, hairB = 239; // Default Neon Pink
             if (hairTint === 'rose_gold') { hairR = 251; hairG = 113; hairB = 133; }
@@ -144,13 +143,23 @@ export default function AiFaceEffectOverlay({
 
             const hairGrad = ctx.createRadialGradient(hrX, hrY, hrRx * 0.15, hrX, hrY, hrRx);
             hairGrad.addColorStop(0, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha})`);
-            hairGrad.addColorStop(0.65, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha * 0.75})`);
+            hairGrad.addColorStop(0.5, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha * 0.8})`);
             hairGrad.addColorStop(1, `rgba(${hairR}, ${hairG}, ${hairB}, 0)`);
 
+            // Use soft-light to color dark hair better than 'color'
+            ctx.globalCompositeOperation = 'soft-light';
             ctx.fillStyle = hairGrad;
             ctx.beginPath();
-            ctx.ellipse(hrX, hrY, hrRx, hrRy * 1.35, 0, 0, Math.PI * 2);
+            ctx.ellipse(hrX, hrY, hrRx, hrRy, 0, 0, Math.PI * 2);
             ctx.fill();
+            
+            // Second pass overlay for vibrance
+            ctx.globalCompositeOperation = 'overlay';
+            ctx.fillStyle = hairGrad;
+            ctx.beginPath();
+            ctx.ellipse(hrX, hrY, hrRx, hrRy, 0, 0, Math.PI * 2);
+            ctx.fill();
+
             ctx.restore();
           }
 
@@ -261,37 +270,30 @@ export default function AiFaceEffectOverlay({
             ].forEach(eye => {
               const pupilRadius = eye.r * 0.38;
 
+              // Iris Color Fill (overlay blend mode for realistic texture preservation)
+              ctx.globalCompositeOperation = 'overlay';
+              
+              ctx.beginPath();
+              ctx.arc(eye.x, eye.y, eye.r, 0, Math.PI * 2);
+              ctx.arc(eye.x, eye.y, pupilRadius, 0, Math.PI * 2, true); // exclude pupil
+              ctx.fillStyle = `rgba(${lensR}, ${lensG}, ${lensB}, 0.65)`;
+              ctx.fill();
+              
+              // Add a subtle color blend to ensure the tint is visible
+              ctx.globalCompositeOperation = 'color';
+              ctx.fillStyle = `rgba(${lensR}, ${lensG}, ${lensB}, 0.35)`;
+              ctx.beginPath();
+              ctx.arc(eye.x, eye.y, eye.r, 0, Math.PI * 2);
+              ctx.arc(eye.x, eye.y, pupilRadius, 0, Math.PI * 2, true);
+              ctx.fill();
+
               // Limbal Ring (outer dark iris boundary)
-              ctx.globalCompositeOperation = 'source-over';
-              ctx.strokeStyle = `rgba(15, 23, 42, 0.70)`;
-              ctx.lineWidth = 1.5;
+              ctx.globalCompositeOperation = 'multiply';
+              ctx.strokeStyle = `rgba(10, 15, 25, 0.5)`;
+              ctx.lineWidth = 1.0;
               ctx.beginPath();
               ctx.arc(eye.x, eye.y, eye.r, 0, Math.PI * 2);
               ctx.stroke();
-
-              // Iris Color Fill (screen blend mode for realistic vibrance)
-              ctx.globalCompositeOperation = 'screen';
-              const eyeGlow = ctx.createRadialGradient(eye.x, eye.y, pupilRadius * 0.5, eye.x, eye.y, eye.r);
-              eyeGlow.addColorStop(0, `rgba(${lensR}, ${lensG}, ${lensB}, 0.95)`);
-              eyeGlow.addColorStop(0.65, `rgba(${lensR}, ${lensG}, ${lensB}, 0.70)`);
-              eyeGlow.addColorStop(1, `rgba(${lensR}, ${lensG}, ${lensB}, 0.10)`);
-              ctx.fillStyle = eyeGlow;
-              ctx.beginPath();
-              ctx.arc(eye.x, eye.y, eye.r, 0, Math.PI * 2);
-              ctx.fill();
-
-              // Dark Natural Pupil Center
-              ctx.globalCompositeOperation = 'source-over';
-              ctx.fillStyle = 'rgba(10, 15, 25, 0.88)';
-              ctx.beginPath();
-              ctx.arc(eye.x, eye.y, pupilRadius, 0, Math.PI * 2);
-              ctx.fill();
-
-              // Cornea Specular Catchlight
-              ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-              ctx.beginPath();
-              ctx.arc(eye.x - pupilRadius * 0.45, eye.y - pupilRadius * 0.45, pupilRadius * 0.4, 0, Math.PI * 2);
-              ctx.fill();
             });
             ctx.restore();
           }
