@@ -1432,7 +1432,7 @@ export default function LiveStudioModal({
 
           {/* ================= DRAWER POPUPS (BEAUTY, GUESTS, STATS, SETTINGS) ================= */}
           {activeTabDrawer && (
-            <div className="absolute top-20 right-4 left-4 z-40 bg-black/60 backdrop-blur-2xl border border-white/20 p-4 rounded-3xl space-y-3 shadow-2xl animate-fadeIn max-h-[70vh] overflow-y-auto no-scrollbar">
+            <div className="absolute bottom-4 right-4 left-4 z-50 bg-black/40 backdrop-blur-xl border border-white/10 p-4 rounded-3xl space-y-3 shadow-lg animate-fadeIn max-h-[45vh] overflow-y-auto no-scrollbar">
               
               <div className="flex items-center justify-between border-b border-white/30 pb-2">
                 <span className="font-bold text-white text-xs [text-shadow:_0_1px_2px_rgba(0,0,0,1)]">
@@ -1542,7 +1542,7 @@ export default function LiveStudioModal({
 
               {/* BEAUTY & AR EFFECTS STUDIO DRAWER */}
               {activeTabDrawer === 'beauty' && (
-                <div className="space-y-3.5 max-h-80 overflow-y-auto no-scrollbar p-1">
+                <div className="space-y-2 p-1">
                   
                   {/* Category Tabs: Retouch | Makeup | Hair | Lenses | Stickers | Lighting */}
                   <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1 border-b border-white/10">
