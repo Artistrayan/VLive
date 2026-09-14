@@ -1,14 +1,12 @@
+import { MediaPipeFaceEngine } from './mediaPipeFaceEngine';
+
 /**
  * Professional Ultra-High Precision Biometric AI Face & Feature Tracking Engine
- * Uses Multi-Stage Computer Vision & Anthropometric Facial Geometry:
- * 1. Hardware-accelerated FaceDetector API (when available)
- * 2. Multi-scale Eye-Socket / Pupil Luminance Valley & Orbital Feature Locator
- * 3. Chrominance & Edge-guided Lip / Oral Fissure Detector
- * 4. Anatomical Proportional Rigging (Roll-invariant, Beard-proof, Lighting-proof)
- * 5. Temporal Kalman / Low-pass Jitter Filter
+ * Powered by Google MediaPipe 478-point 3D Face & Iris Mesh
  */
 export class AiFaceTracker {
   constructor() {
+    this.mediaPipeEngine = new MediaPipeFaceEngine();
     this.hasNativeDetector = typeof window !== 'undefined' && 'FaceDetector' in window;
     this.faceDetector = null;
     if (this.hasNativeDetector) {
@@ -26,6 +24,16 @@ export class AiFaceTracker {
       roll: 0, // head tilt in radians
       interOcularDist: 0.22, // distance between eyes normalized
       box: { x: 0.20, y: 0.12, width: 0.60, height: 0.76 },
+      // Exact MediaPipe anatomical polygons
+      leftIris: { x: 0.39, y: 0.40, radius: 0.024 },
+      rightIris: { x: 0.61, y: 0.40, radius: 0.024 },
+      leftEyeContour: [],
+      rightEyeContour: [],
+      upperLipPolygon: [],
+      lowerLipPolygon: [],
+      fullLipsPolygon: [],
+      faceOval: [],
+      hairline: [],
       landmarks: {
         midEyes: { x: 0.50, y: 0.40 },
         leftEye: { x: 0.39, y: 0.40 },
@@ -76,14 +84,77 @@ export class AiFaceTracker {
       return this.face;
     }
 
+    // 1. Try MediaPipe 478-Landmark Engine first
+    if (this.mediaPipeEngine) {
+      try {
+        const mpState = await this.mediaPipeEngine.processFrame(videoElement);
+        if (mpState && mpState.detected && mpState.landmarks478) {
+          this.face.detected = true;
+          this.face.confidence = mpState.confidence;
+          this.face.roll = mpState.roll;
+          this.face.interOcularDist = mpState.interOcularDist;
+          this.face.leftIris = mpState.leftIris;
+          this.face.rightIris = mpState.rightIris;
+          this.face.leftEyeContour = mpState.leftEyeContour;
+          this.face.rightEyeContour = mpState.rightEyeContour;
+          this.face.upperLipPolygon = mpState.upperLipPolygon;
+          this.face.lowerLipPolygon = mpState.lowerLipPolygon;
+          this.face.fullLipsPolygon = mpState.fullLipsPolygon;
+          this.face.faceOval = mpState.faceOval;
+          this.face.hairline = mpState.hairline;
+
+          this.face.landmarks = {
+            midEyes: { x: (mpState.leftIris.x + mpState.rightIris.x) * 0.5, y: (mpState.leftIris.y + mpState.rightIris.y) * 0.5 },
+            leftEye: { x: mpState.leftIris.x, y: mpState.leftIris.y },
+            rightEye: { x: mpState.rightIris.x, y: mpState.rightIris.y },
+            leftPupil: { x: mpState.leftIris.x, y: mpState.leftIris.y },
+            rightPupil: { x: mpState.rightIris.x, y: mpState.rightIris.y },
+            leftEyebrow: { x: mpState.leftIris.x, y: mpState.leftIris.y - mpState.interOcularDist * 0.26 },
+            rightEyebrow: { x: mpState.rightIris.x, y: mpState.rightIris.y - mpState.interOcularDist * 0.26 },
+            forehead: mpState.forehead,
+            hairRegion: {
+              x: mpState.skullTop.x,
+              y: mpState.skullTop.y,
+              rx: mpState.interOcularDist * 1.1,
+              ry: mpState.interOcularDist * 0.65
+            },
+            skullTop: mpState.skullTop,
+            noseBridge: mpState.noseBridge,
+            noseTip: mpState.noseTip,
+            mouth: mpState.lipsCenter,
+            upperLip: { x: mpState.lipsCenter.x, y: mpState.lipsCenter.y - mpState.lipsCenter.height * 0.3 },
+            lowerLip: { x: mpState.lipsCenter.x, y: mpState.lipsCenter.y + mpState.lipsCenter.height * 0.3 },
+            mouthLeft: { x: mpState.lipsCenter.x - mpState.lipsCenter.width * 0.5, y: mpState.lipsCenter.y },
+            mouthRight: { x: mpState.lipsCenter.x + mpState.lipsCenter.width * 0.5, y: mpState.lipsCenter.y },
+            leftCheek: mpState.leftCheek,
+            rightCheek: mpState.rightCheek,
+            leftJaw: { x: mpState.leftCheek.x - mpState.interOcularDist * 0.3, y: mpState.leftCheek.y + mpState.interOcularDist * 0.6 },
+            rightJaw: { x: mpState.rightCheek.x + mpState.interOcularDist * 0.3, y: mpState.rightCheek.y + mpState.interOcularDist * 0.6 },
+            chin: mpState.chin
+          };
+
+          this.face.box = {
+            x: mpState.skullTop.x - mpState.interOcularDist * 1.2,
+            y: mpState.skullTop.y,
+            width: mpState.interOcularDist * 2.4,
+            height: mpState.interOcularDist * 3.4
+          };
+
+          return this.face;
+        }
+      } catch (e) {
+        // Fall back to CV pipeline
+      }
+    }
+
     const now = performance.now();
-    // Run AI / CV detection every ~40ms (25fps analysis loop with 60fps interpolation)
+    // Run fallback detection loop
     if (now - this.lastProcessed > 40) {
       this.lastProcessed = now;
       await this._detectFace(videoElement);
     }
 
-    // Smooth exponential lerp filter for natural, jitter-free AR overlay
+    // Smooth exponential lerp filter
     const lerpFactor = 0.55;
     const lerp = (a, b) => a + (b - a) * lerpFactor;
 
