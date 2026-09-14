@@ -4,11 +4,11 @@ import { AiFaceTracker } from '../../services/aiFaceTracker';
 /**
  * Advanced Professional AI Beauty & Makeup Real-Time Overlay
  * Renders:
- *  1. Smart AI Lip Tint & Gloss (Pins dynamically to detected upper and lower lip contour)
- *  2. Smart AI Hair Color Tint (Tints the upper hair crown region with natural blend)
- *  3. AI Eye Color Lens & Eye Enlarge (Pins color iris lens to left and right eye centers)
+ *  1. Smart AI Lip Tint & Gloss (Pins dynamically to real anatomical lips with Cupid's bow)
+ *  2. Smart AI Hair Color Tint (Tints the upper hair crown region above forehead)
+ *  3. AI Eye Color Lens & Iris Ring (Pins realistic iris lenses directly to eye pupils)
  *  4. AI Blush & Face Contour (Pins natural rosy / peach cheek glow to cheekbones)
- *  5. Skin Smoothing & Tone Retouch (Selective pore-erasing soft lighting)
+ *  5. Skin Smoothing & Pore-Erasing Filter
  *  6. 3D AR Face Stickers (Crown, Cat Ears, Sunglasses, Sparkles, Hearts)
  *  7. Studio Lighting mood filter
  */
@@ -74,7 +74,7 @@ export default function AiFaceEffectOverlay({
 
           const now = performance.now();
           if (trackerRef.current) {
-            if (now - lastTrackTime > 60) {
+            if (now - lastTrackTime > 40) {
               lastTrackTime = now;
               cachedFace = await trackerRef.current.update(video);
             }
@@ -84,7 +84,7 @@ export default function AiFaceEffectOverlay({
 
           const face = cachedFace;
           const isFacePresent = face && face.detected;
-          const { landmarks } = face || {};
+          const { landmarks, roll = 0, interOcularDist = 0.22 } = face || {};
 
           // Coordinate Mapping for video object-fit: cover
           const vW = video.videoWidth;
@@ -101,18 +101,22 @@ export default function AiFaceEffectOverlay({
           };
           const mapY = (ny) => offsetY + (ny * drawH);
 
+          // Scaled distances
+          const eyeDistPx = Math.max(40, interOcularDist * drawW);
+
           // -------------------------------------------------------------
-          // 1. SMART AI HAIR COLOR TINT (Pins accurately above forehead & crown)
+          // 1. SMART AI HAIR COLOR TINT (Pins accurately above forehead on hair crown)
           // -------------------------------------------------------------
-          if (isFacePresent && hasHair && landmarks?.hairRegion) {
+          if (isFacePresent && hasHair && landmarks?.hairRegion && landmarks?.forehead) {
             const hrX = mapX(landmarks.hairRegion.x);
             const hrY = mapY(landmarks.hairRegion.y);
-            const hrRx = landmarks.hairRegion.rx * drawW;
-            const hrRy = landmarks.hairRegion.ry * drawH;
+            const fhY = mapY(landmarks.forehead.y);
+            const hrRx = Math.max(30, (landmarks.hairRegion.rx || 0.28) * drawW);
+            const hrRy = Math.max(25, (landmarks.hairRegion.ry || 0.16) * drawH);
 
             ctx.save();
             ctx.globalCompositeOperation = 'color';
-            const hairAlpha = Math.min(0.7, (hairIntensity / 100) * 0.65);
+            const hairAlpha = Math.min(0.75, (hairIntensity / 100) * 0.70);
 
             let hairR = 217, hairG = 70, hairB = 239; // Default Neon Pink
             if (hairTint === 'rose_gold') { hairR = 251; hairG = 113; hairB = 133; }
@@ -122,14 +126,19 @@ export default function AiFaceEffectOverlay({
             else if (hairTint === 'silver_ash') { hairR = 203; hairG = 213; hairB = 225; }
             else if (hairTint === 'ruby_red') { hairR = 225; hairG = 29; hairB = 72; }
 
-            const hairGrad = ctx.createRadialGradient(hrX, hrY, hrRx * 0.2, hrX, hrY, hrRx);
+            // Clip region above forehead so hair color never covers forehead or eyes
+            ctx.beginPath();
+            ctx.rect(0, 0, dW, Math.max(0, fhY - 5));
+            ctx.clip();
+
+            const hairGrad = ctx.createRadialGradient(hrX, hrY, hrRx * 0.15, hrX, hrY, hrRx);
             hairGrad.addColorStop(0, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha})`);
-            hairGrad.addColorStop(0.6, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha * 0.7})`);
+            hairGrad.addColorStop(0.65, `rgba(${hairR}, ${hairG}, ${hairB}, ${hairAlpha * 0.75})`);
             hairGrad.addColorStop(1, `rgba(${hairR}, ${hairG}, ${hairB}, 0)`);
 
             ctx.fillStyle = hairGrad;
             ctx.beginPath();
-            ctx.ellipse(hrX, hrY, hrRx, hrRy, 0, 0, Math.PI * 2);
+            ctx.ellipse(hrX, hrY, hrRx, hrRy * 1.3, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
           }
@@ -138,35 +147,37 @@ export default function AiFaceEffectOverlay({
           // 2. SKIN SMOOTHING & PORE-RETOUCH OVERLAY
           // -------------------------------------------------------------
           if (isFacePresent && hasSmoothing && landmarks?.leftCheek && landmarks?.rightCheek) {
-            const cX = mapX((landmarks.leftCheek.x + landmarks.rightCheek.x) * 0.5);
-            const cY = mapY((landmarks.forehead?.y || 0.2) + ((landmarks.chin?.y || 0.8) - (landmarks.forehead?.y || 0.2)) * 0.5);
-            const faceRadius = Math.max(30, Math.abs(mapX(landmarks.rightCheek.x) - mapX(landmarks.leftCheek.x)) * 0.88);
+            const lcX = mapX(landmarks.leftCheek.x);
+            const rcX = mapX(landmarks.rightCheek.x);
+            const cX = (lcX + rcX) * 0.5;
+            const cY = mapY((landmarks.noseBridge?.y || 0.46));
+            const faceRadius = Math.max(35, eyeDistPx * 0.95);
 
             ctx.save();
             ctx.globalCompositeOperation = 'soft-light';
-            ctx.filter = `blur(${Math.max(4, skinSmoothing * 0.16)}px)`;
-            const skinGlow = ctx.createRadialGradient(cX, cY, faceRadius * 0.15, cX, cY, faceRadius);
-            const alpha = Math.min(0.5, skinSmoothing * 0.0055);
-            skinGlow.addColorStop(0, `rgba(255, 245, 238, ${alpha})`);
-            skinGlow.addColorStop(0.6, `rgba(255, 235, 225, ${alpha * 0.6})`);
+            ctx.filter = `blur(${Math.max(4, skinSmoothing * 0.18)}px)`;
+            const skinGlow = ctx.createRadialGradient(cX, cY, faceRadius * 0.2, cX, cY, faceRadius);
+            const alpha = Math.min(0.45, skinSmoothing * 0.005);
+            skinGlow.addColorStop(0, `rgba(255, 246, 240, ${alpha})`);
+            skinGlow.addColorStop(0.65, `rgba(255, 238, 230, ${alpha * 0.6})`);
             skinGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
             ctx.fillStyle = skinGlow;
             ctx.beginPath();
-            ctx.ellipse(cX, cY, faceRadius, faceRadius * 1.18, 0, 0, Math.PI * 2);
+            ctx.ellipse(cX, cY, faceRadius, faceRadius * 1.25, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
           }
 
           // -------------------------------------------------------------
-          // 3. SMART AI BLUSH & CHEEK CONTOUR
+          // 3. SMART AI BLUSH & CHEEK CONTOUR (Positioned on cheekbones)
           // -------------------------------------------------------------
           if (isFacePresent && hasBlush && landmarks?.leftCheek && landmarks?.rightCheek) {
             const lcX = mapX(landmarks.leftCheek.x);
             const lcY = mapY(landmarks.leftCheek.y);
             const rcX = mapX(landmarks.rightCheek.x);
             const rcY = mapY(landmarks.rightCheek.y);
-            const cheekR = Math.max(16, Math.abs(rcX - lcX) * 0.22);
-            const bAlpha = Math.min(0.65, (blushIntensity / 100) * 0.6);
+            const cheekR = Math.max(14, eyeDistPx * 0.24);
+            const bAlpha = Math.min(0.65, (blushIntensity / 100) * 0.60);
 
             let blushCol = '244, 114, 182'; // Rose Pink
             if (blushEffect === 'peach') blushCol = '251, 146, 60';
@@ -180,34 +191,36 @@ export default function AiFaceEffectOverlay({
             // Left Cheek
             const gL = ctx.createRadialGradient(lcX, lcY, 0, lcX, lcY, cheekR);
             gL.addColorStop(0, `rgba(${blushCol}, ${bAlpha})`);
+            gL.addColorStop(0.7, `rgba(${blushCol}, ${bAlpha * 0.5})`);
             gL.addColorStop(1, `rgba(${blushCol}, 0)`);
             ctx.fillStyle = gL;
             ctx.beginPath();
-            ctx.arc(lcX, lcY, cheekR, 0, Math.PI * 2);
+            ctx.ellipse(lcX, lcY, cheekR * 1.1, cheekR * 0.85, 0, 0, Math.PI * 2);
             ctx.fill();
 
             // Right Cheek
             const gR = ctx.createRadialGradient(rcX, rcY, 0, rcX, rcY, cheekR);
             gR.addColorStop(0, `rgba(${blushCol}, ${bAlpha})`);
+            gR.addColorStop(0.7, `rgba(${blushCol}, ${bAlpha * 0.5})`);
             gR.addColorStop(1, `rgba(${blushCol}, 0)`);
             ctx.fillStyle = gR;
             ctx.beginPath();
-            ctx.arc(rcX, rcY, cheekR, 0, Math.PI * 2);
+            ctx.ellipse(rcX, rcY, cheekR * 1.1, cheekR * 0.85, 0, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.restore();
           }
 
           // -------------------------------------------------------------
-          // 4. AI EYE COLOR LENS (Pins perfectly to left & right eye pupils)
+          // 4. AI EYE COLOR LENS (Pins perfectly to actual left & right pupils)
           // -------------------------------------------------------------
           if (isFacePresent && hasEyes && landmarks?.leftEye && landmarks?.rightEye) {
             const leX = mapX(landmarks.leftEye.x);
             const leY = mapY(landmarks.leftEye.y);
             const reX = mapX(landmarks.rightEye.x);
             const reY = mapY(landmarks.rightEye.y);
-            const eyeDist = Math.abs(reX - leX);
-            const pupilR = Math.max(5, eyeDist * 0.08);
+            const irisRadius = Math.max(6, eyeDistPx * 0.12);
+            const pupilRadius = irisRadius * 0.40;
 
             let lensR = 56, lensG = 189, lensB = 248; // Ice Blue
             if (eyeLens === 'hazel_honey') { lensR = 217; lensG = 119; lensB = 6; }
@@ -216,21 +229,37 @@ export default function AiFaceEffectOverlay({
             else if (eyeLens === 'violet_dream') { lensR = 168; lensG = 85; lensB = 247; }
 
             ctx.save();
-            ctx.globalCompositeOperation = 'screen';
             [ { x: leX, y: leY }, { x: reX, y: reY } ].forEach(eye => {
-              const eyeGlow = ctx.createRadialGradient(eye.x, eye.y, pupilR * 0.2, eye.x, eye.y, pupilR);
-              eyeGlow.addColorStop(0, `rgba(${lensR}, ${lensG}, ${lensB}, 0.8)`);
-              eyeGlow.addColorStop(0.7, `rgba(${lensR}, ${lensG}, ${lensB}, 0.4)`);
-              eyeGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+              // Limbal Ring (outer dark iris boundary)
+              ctx.globalCompositeOperation = 'source-over';
+              ctx.strokeStyle = `rgba(15, 23, 42, 0.65)`;
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.arc(eye.x, eye.y, irisRadius, 0, Math.PI * 2);
+              ctx.stroke();
+
+              // Iris Color Fill (screen mode for realistic vibrant blend)
+              ctx.globalCompositeOperation = 'screen';
+              const eyeGlow = ctx.createRadialGradient(eye.x, eye.y, pupilRadius * 0.5, eye.x, eye.y, irisRadius);
+              eyeGlow.addColorStop(0, `rgba(${lensR}, ${lensG}, ${lensB}, 0.95)`);
+              eyeGlow.addColorStop(0.65, `rgba(${lensR}, ${lensG}, ${lensB}, 0.70)`);
+              eyeGlow.addColorStop(1, `rgba(${lensR}, ${lensG}, ${lensB}, 0.10)`);
               ctx.fillStyle = eyeGlow;
               ctx.beginPath();
-              ctx.arc(eye.x, eye.y, pupilR, 0, Math.PI * 2);
+              ctx.arc(eye.x, eye.y, irisRadius, 0, Math.PI * 2);
               ctx.fill();
 
-              // Tiny iris highlight
-              ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+              // Dark Natural Pupil Center
+              ctx.globalCompositeOperation = 'source-over';
+              ctx.fillStyle = 'rgba(10, 15, 25, 0.85)';
               ctx.beginPath();
-              ctx.arc(eye.x - pupilR * 0.3, eye.y - pupilR * 0.3, pupilR * 0.25, 0, Math.PI * 2);
+              ctx.arc(eye.x, eye.y, pupilRadius, 0, Math.PI * 2);
+              ctx.fill();
+
+              // Cornea Specular Catchlight
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+              ctx.beginPath();
+              ctx.arc(eye.x - pupilRadius * 0.45, eye.y - pupilRadius * 0.45, pupilRadius * 0.4, 0, Math.PI * 2);
               ctx.fill();
             });
             ctx.restore();
@@ -242,38 +271,52 @@ export default function AiFaceEffectOverlay({
           if (isFacePresent && hasLips && landmarks?.mouth) {
             const mX = mapX(landmarks.mouth.x);
             const mY = mapY(landmarks.mouth.y);
-            const mW = (landmarks.mouth.width || 0.28) * drawW;
-            const mH = (landmarks.mouth.height || 0.10) * drawH;
-            const lipAlpha = Math.min(0.75, (lipIntensity / 100) * 0.7);
+            const mW = Math.max(28, (landmarks.mouth.width || 0.18) * drawW);
+            const mH = Math.max(14, (landmarks.mouth.height || 0.07) * drawH);
+            const lipAlpha = Math.min(0.80, (lipIntensity / 100) * 0.75);
 
             let lipR = 225, lipG = 29, lipB = 72; // Classic Ruby
             if (lipTint === 'rose_petal') { lipR = 244; lipG = 63; lipB = 94; }
             else if (lipTint === 'velvet_cherry') { lipR = 190; lipG = 18; lipB = 60; }
             else if (lipTint === 'nude_peach') { lipR = 249; lipG = 115; lipB = 22; }
             else if (lipTint === 'barbie_pink') { lipR = 236; lipG = 72; lipB = 153; }
-            else if (lipTint === 'glossy_shine') { lipR = 255; lipG = 200; lipB = 220; }
+            else if (lipTint === 'glossy_shine') { lipR = 255; lipG = 180; lipB = 210; }
 
             ctx.save();
             ctx.globalCompositeOperation = 'multiply';
-            ctx.filter = 'blur(2px)';
+            ctx.filter = 'blur(3px)';
 
-            // Upper Lip & Lower Lip Shape Contouring
-            const lipGrad = ctx.createRadialGradient(mX, mY, mW * 0.1, mX, mY, mW * 0.5);
-            lipGrad.addColorStop(0, `rgba(${lipR}, ${lipG}, ${lipB}, ${lipAlpha})`);
-            lipGrad.addColorStop(0.7, `rgba(${lipR}, ${lipG}, ${lipB}, ${lipAlpha * 0.65})`);
-            lipGrad.addColorStop(1, `rgba(${lipR}, ${lipG}, ${lipB}, 0)`);
+            // Upper Lip Contour (with subtle Cupid's bow curve)
+            const upY = mY - mH * 0.28;
+            const upGrad = ctx.createRadialGradient(mX, upY, mW * 0.08, mX, upY, mW * 0.52);
+            upGrad.addColorStop(0, `rgba(${lipR}, ${lipG}, ${lipB}, ${lipAlpha})`);
+            upGrad.addColorStop(0.7, `rgba(${lipR}, ${lipG}, ${lipB}, ${lipAlpha * 0.65})`);
+            upGrad.addColorStop(1, `rgba(${lipR}, ${lipG}, ${lipB}, 0)`);
 
-            ctx.fillStyle = lipGrad;
+            ctx.fillStyle = upGrad;
             ctx.beginPath();
-            ctx.ellipse(mX, mY, mW * 0.46, mH * 0.44, 0, 0, Math.PI * 2);
+            ctx.ellipse(mX, upY, mW * 0.48, mH * 0.40, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Lip Highlight / Gloss
-            if (lipTint === 'glossy_shine' || lipIntensity > 60) {
+            // Lower Lip Contour
+            const lowY = mY + mH * 0.28;
+            const lowGrad = ctx.createRadialGradient(mX, lowY, mW * 0.08, mX, lowY, mW * 0.54);
+            lowGrad.addColorStop(0, `rgba(${lipR}, ${lipG}, ${lipB}, ${lipAlpha * 1.05})`);
+            lowGrad.addColorStop(0.75, `rgba(${lipR}, ${lipG}, ${lipB}, ${lipAlpha * 0.70})`);
+            lowGrad.addColorStop(1, `rgba(${lipR}, ${lipG}, ${lipB}, 0)`);
+
+            ctx.fillStyle = lowGrad;
+            ctx.beginPath();
+            ctx.ellipse(mX, lowY, mW * 0.45, mH * 0.48, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Lip Highlight / Specular Gloss
+            if (lipTint === 'glossy_shine' || lipIntensity > 55) {
               ctx.globalCompositeOperation = 'screen';
-              ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+              ctx.filter = 'blur(1px)';
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
               ctx.beginPath();
-              ctx.ellipse(mX, mY + mH * 0.12, mW * 0.22, mH * 0.15, 0, 0, Math.PI * 2);
+              ctx.ellipse(mX, lowY, mW * 0.22, mH * 0.16, 0, 0, Math.PI * 2);
               ctx.fill();
             }
 
@@ -284,61 +327,66 @@ export default function AiFaceEffectOverlay({
           // 6. 3D AR FACE STICKERS & ACCESSORIES
           // -------------------------------------------------------------
           if (isFacePresent && landmarks && hasStickers) {
-            const fhX = mapX(landmarks.forehead?.x || 0.5);
-            const fhY = mapY(landmarks.forehead?.y || 0.20);
-            const noseX = mapX(landmarks.nose?.x || 0.5);
-            const noseY = mapY(landmarks.nose?.y || 0.50);
-            const eyeDist = landmarks.rightEye && landmarks.leftEye ? Math.abs(mapX(landmarks.rightEye.x) - mapX(landmarks.leftEye.x)) : 100;
-            const faceScale = Math.max(0.6, Math.min(1.6, eyeDist / 120));
+            const skullX = mapX(landmarks.skullTop?.x || landmarks.forehead?.x || 0.5);
+            const skullY = mapY(landmarks.skullTop?.y || 0.14);
+            const midEyeX = mapX(landmarks.midEyes?.x || 0.5);
+            const midEyeY = mapY(landmarks.midEyes?.y || 0.40);
+            const noseX = mapX(landmarks.noseTip?.x || 0.5);
+            const noseY = mapY(landmarks.noseTip?.y || 0.53);
+
+            const faceScale = Math.max(0.65, Math.min(1.8, eyeDistPx / 100));
 
             ctx.save();
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
             if (faceSticker === 'crown') {
-              const crownSize = Math.round(64 * faceScale);
+              const crownSize = Math.round(58 * faceScale);
               ctx.font = `${crownSize}px sans-serif`;
-              ctx.shadowColor = 'rgba(234, 179, 8, 0.8)';
-              ctx.shadowBlur = 12;
-              const bobY = Math.sin(performance.now() * 0.004) * 5;
-              ctx.fillText('👑', fhX, Math.max(30, fhY - 40 * faceScale + bobY));
+              ctx.shadowColor = 'rgba(234, 179, 8, 0.85)';
+              ctx.shadowBlur = 14;
+              const bobY = Math.sin(performance.now() * 0.004) * 4;
+              // Crown sits comfortably right above the top of the skull
+              ctx.fillText('👑', skullX, Math.max(28, skullY - 18 * faceScale + bobY));
             } else if (faceSticker === 'cat_ears') {
-              const earSize = Math.round(50 * faceScale);
+              const earSize = Math.round(52 * faceScale);
               ctx.font = `${earSize}px sans-serif`;
-              ctx.shadowColor = 'rgba(244, 114, 182, 0.8)';
-              ctx.shadowBlur = 10;
-              const earY = fhY - 32 * faceScale;
-              ctx.fillText('🐱', fhX, earY);
+              ctx.shadowColor = 'rgba(244, 114, 182, 0.85)';
+              ctx.shadowBlur = 12;
+              ctx.fillText('🐱', skullX, Math.max(28, skullY - 14 * faceScale));
             } else if (faceSticker === 'sunglasses') {
-              const glassesSize = Math.round(62 * faceScale);
-              const eyeY = mapY(((landmarks.leftEye?.y || 0.38) + (landmarks.rightEye?.y || 0.38)) * 0.5);
+              const glassesSize = Math.round(66 * faceScale);
               ctx.font = `${glassesSize}px sans-serif`;
-              ctx.shadowColor = 'rgba(15, 23, 42, 0.6)';
-              ctx.shadowBlur = 8;
-              ctx.fillText('🕶️', noseX, eyeY);
+              ctx.shadowColor = 'rgba(15, 23, 42, 0.7)';
+              ctx.shadowBlur = 10;
+              ctx.fillText('🕶️', midEyeX, midEyeY);
             } else if (faceSticker === 'sparkles') {
-              const sparkleSize = Math.round(30 * faceScale);
+              const sparkleSize = Math.round(28 * faceScale);
               ctx.font = `${sparkleSize}px sans-serif`;
-              ctx.shadowColor = 'rgba(250, 204, 21, 0.8)';
+              ctx.shadowColor = 'rgba(250, 204, 21, 0.85)';
               ctx.shadowBlur = 10;
               const angle = performance.now() * 0.003;
-              const radius = 55 * faceScale;
+              const radius = eyeDistPx * 0.90;
               const sp1X = noseX + Math.cos(angle) * radius;
-              const sp1Y = noseY + Math.sin(angle) * (radius * 0.6);
+              const sp1Y = noseY + Math.sin(angle) * (radius * 0.65);
               const sp2X = noseX + Math.cos(angle + Math.PI) * radius;
-              const sp2Y = noseY + Math.sin(angle + Math.PI) * (radius * 0.6);
+              const sp2Y = noseY + Math.sin(angle + Math.PI) * (radius * 0.65);
               ctx.fillText('✨', sp1X, sp1Y);
               ctx.fillText('🌟', sp2X, sp2Y);
             } else if (faceSticker === 'hearts') {
-              const heartSize = Math.round(30 * faceScale);
+              const heartSize = Math.round(28 * faceScale);
               ctx.font = `${heartSize}px sans-serif`;
-              ctx.shadowColor = 'rgba(244, 63, 94, 0.8)';
-              ctx.shadowBlur = 8;
+              ctx.shadowColor = 'rgba(244, 63, 94, 0.85)';
+              ctx.shadowBlur = 10;
               const t = performance.now() * 0.003;
-              const h1X = mapX(landmarks.leftCheek?.x || 0.32);
-              const h1Y = mapY(landmarks.leftCheek?.y || 0.52) - Math.abs(Math.sin(t)) * 12;
-              const h2X = mapX(landmarks.rightCheek?.x || 0.68);
-              const h2Y = mapY(landmarks.rightCheek?.y || 0.52) - Math.abs(Math.cos(t)) * 12;
+              const lcX = mapX(landmarks.leftCheek?.x || 0.34);
+              const lcY = mapY(landmarks.leftCheek?.y || 0.52);
+              const rcX = mapX(landmarks.rightCheek?.x || 0.66);
+              const rcY = mapY(landmarks.rightCheek?.y || 0.52);
+              const h1X = lcX - eyeDistPx * 0.30;
+              const h1Y = lcY - Math.abs(Math.sin(t)) * 12;
+              const h2X = rcX + eyeDistPx * 0.30;
+              const h2Y = rcY - Math.abs(Math.cos(t)) * 12;
               ctx.fillText('💖', h1X, h1Y);
               ctx.fillText('💕', h2X, h2Y);
             }
@@ -355,21 +403,21 @@ export default function AiFaceEffectOverlay({
             const lightY = dH * 0.35;
             const lightGrad = ctx.createRadialGradient(lightX, lightY, 40, lightX, lightY, dW * 0.7);
             if (lightingEffect === 'warm') {
-              lightGrad.addColorStop(0, 'rgba(251, 191, 36, 0.25)');
+              lightGrad.addColorStop(0, 'rgba(251, 191, 36, 0.28)');
               lightGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
             } else if (lightingEffect === 'cool') {
-              lightGrad.addColorStop(0, 'rgba(56, 189, 248, 0.25)');
+              lightGrad.addColorStop(0, 'rgba(56, 189, 248, 0.28)');
               lightGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
             } else if (lightingEffect === 'neon') {
-              lightGrad.addColorStop(0, 'rgba(236, 72, 153, 0.20)');
-              lightGrad.addColorStop(0.6, 'rgba(139, 92, 246, 0.15)');
+              lightGrad.addColorStop(0, 'rgba(236, 72, 153, 0.22)');
+              lightGrad.addColorStop(0.6, 'rgba(139, 92, 246, 0.18)');
               lightGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
             } else if (lightingEffect === 'sunset') {
-              lightGrad.addColorStop(0, 'rgba(244, 63, 94, 0.25)');
-              lightGrad.addColorStop(0.6, 'rgba(251, 146, 60, 0.15)');
+              lightGrad.addColorStop(0, 'rgba(244, 63, 94, 0.28)');
+              lightGrad.addColorStop(0.6, 'rgba(251, 146, 60, 0.18)');
               lightGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
             } else if (lightingEffect === 'studio') {
-              lightGrad.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
+              lightGrad.addColorStop(0, 'rgba(255, 255, 255, 0.30)');
               lightGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
             }
             ctx.fillStyle = lightGrad;
