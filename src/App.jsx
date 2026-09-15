@@ -3304,26 +3304,9 @@ export default function App() {
         {/* TAB 1: HOME (EXPLORE & LIVE SUB-TABS) */}
         {activeTab === 'home' && <div className="space-y-3 animate-fadeIn pb-12">
             
-            {/* TOP UNIFIED FEMALE ONLINE & VIP USERS RAIL (Placed directly above the subtab buttons) */}
-            <div className="bg-slate-950/75 p-3 rounded-2xl border border-slate-800/80 shadow-lg">
-              <div className="flex items-center justify-between px-1 mb-2.5">
-                <div className="flex items-center gap-1.5 text-xs font-black text-slate-200">
-                  <div className="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1 rounded-full border border-slate-800">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-[11px] text-emerald-400 font-bold">{loc('کاربران خانم آنلاین و VIP', 'Online & VIP Female Users')}</span>
-                  </div>
-                </div>
-                <span className="text-[10px] text-slate-400 font-bold">
-                  {usersList.filter(u => {
-                    if (!u || u.status === 'banned' || u.isBanned) return false;
-                    const g = String(u.gender || '').trim().toLowerCase();
-                    const isFemale = g === 'female' || g === 'خانم' || g === 'زن' || g === 'f';
-                    if (!isFemale) return false;
-                    return (u.online || u.isOnline || u.status === 'Online' || u.isVip || u.is_vip || u.vip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null') || u.isTop);
-                  }).length} {loc('کاربر', 'users')}
-                </span>
-              </div>
-              <div className="flex items-center gap-4 overflow-x-auto pb-1.5 no-scrollbar px-1">
+            {/* TOP UNIFIED FEMALE ONLINE & VIP USERS RAIL (Standard avatar size, no text header, top of home) */}
+            <div className="bg-slate-950/80 p-2 rounded-2xl border border-slate-800/80 shadow-md">
+              <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
                 {usersList
                   .filter(u => {
                     if (!u || u.status === 'banned' || u.isBanned) return false;
@@ -3348,27 +3331,27 @@ export default function App() {
                     return (
                       <div
                         key={user.id}
-                        className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group"
+                        className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
                         onClick={() => {
                           setSelectedUser(user);
                           setIsUserProfileModalOpen(true);
                         }}
                       >
                         <div className="relative">
-                          {/* Large Avatar container with dynamic gradient border */}
-                          <div className={`w-16 h-16 sm:w-18 sm:h-18 rounded-full p-[2.5px] transition-transform duration-300 group-hover:scale-105 shadow-lg ${
+                          {/* Standard Avatar container */}
+                          <div className={`w-12 h-12 rounded-full p-[2px] transition-transform duration-300 group-hover:scale-105 shadow-md ${
                             isVip 
-                              ? 'bg-gradient-to-tr from-amber-400 via-yellow-400 to-orange-500 ring-2 ring-amber-400/40 shadow-amber-500/20' 
+                              ? 'bg-gradient-to-tr from-amber-400 via-yellow-400 to-orange-500 ring-1 ring-amber-400/40' 
                               : 'bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400'
                           }`}>
                             {user.avatar ? (
                               <img
                                 src={user.avatar}
-                                alt={user.name}
-                                className="w-full h-full object-cover rounded-full border-2 border-slate-950"
+                                alt={user.name || user.username}
+                                className="w-full h-full object-cover rounded-full border border-slate-950"
                               />
                             ) : (
-                              <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-sm font-black text-white border-2 border-slate-950">
+                              <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-xs font-black text-white border border-slate-950">
                                 {(user.name || user.username || 'U').charAt(0).toUpperCase()}
                               </div>
                             )}
@@ -3377,21 +3360,21 @@ export default function App() {
                           {/* VIP Delicate Small Crown Badge on Top-Left Corner */}
                           {isVip && (
                             <div 
-                              className="absolute -top-1 -left-1 z-10 w-4 h-4 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-yellow-600 border border-amber-200 shadow-md -rotate-12 flex items-center justify-center pointer-events-none"
+                              className="absolute -top-1 -left-1 z-10 w-3.5 h-3.5 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-yellow-600 border border-amber-200 shadow-sm -rotate-12 flex items-center justify-center pointer-events-none"
                               title={loc('کاربر VIP', 'VIP Member')}
                             >
-                              <Crown className="w-2.5 h-2.5 text-slate-950 fill-slate-950" />
+                              <Crown className="w-2 h-2 text-slate-950 fill-slate-950" />
                             </div>
                           )}
 
                           {/* Online Indicator on Bottom-Right */}
                           {isOnline && (
-                            <div className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-slate-950 shadow-sm" />
+                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full border-2 border-slate-950 shadow-sm" />
                           )}
                         </div>
 
                         {/* User Name */}
-                        <span className={`text-[11px] font-bold max-w-[68px] truncate text-center ${
+                        <span className={`text-[10px] font-bold max-w-[56px] truncate text-center ${
                           isVip ? 'text-amber-300 group-hover:text-amber-200 font-black' : 'text-slate-200 group-hover:text-white'
                         }`}>
                           {user.name || user.username}
@@ -3451,66 +3434,6 @@ export default function App() {
 
             {/* SUB-TAB 1: EXPLORE (USER DISCOVERY FEED) */}
             {homeSubTab === 'explore' && <div className="space-y-3 animate-fadeIn">
-                
-                {/* Real Stories Tray (Connected to Database) */}
-                <div className="bg-slate-950/80 p-2.5 rounded-2xl border border-slate-800/80">
-                  <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
-                    {/* Stories List from Supabase (Only active stories within 24 hours on Home) */}
-                    {(advancedStories || []).filter(story => {
-                      if (!story) return false;
-                      const createdTime = story.created_at ? new Date(story.created_at).getTime() : 0;
-                      if (!createdTime) return true;
-                      const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-                      return (Date.now() - createdTime) < TWENTY_FOUR_HOURS;
-                    }).map((story, i) => {
-                      const isMyStory = Boolean(
-                        (story.userId && currentUser?.id && String(story.userId) === String(currentUser.id)) ||
-                        (story.user_id && currentUser?.id && String(story.user_id) === String(currentUser.id)) ||
-                        (story.username && currentUsername && String(story.username).toLowerCase() === String(currentUsername).toLowerCase()) ||
-                        (story.username && authUsername && String(story.username).toLowerCase() === String(authUsername).toLowerCase())
-                      );
-
-                      return (
-                        <div
-                          key={story.id || i}
-                          onClick={() => {
-                            setActiveStoryView({
-                              group: {
-                                user: {
-                                  name: story.username || 'User',
-                                  avatar: story.userAvatar || '',
-                                  isVip: true
-                                },
-                                items: [
-                                  {
-                                    id: story.id,
-                                    url: story.imageUrl || story.videoUrl,
-                                    duration: 5,
-                                    time: loc('هم‌اکنون', 'Right now'),
-                                    caption: story.caption || ''
-                                  }
-                                ],
-                                isMe: isMyStory
-                              },
-                              currentIndex: 0,
-                              progress: 0
-                            });
-                          }}
-                          className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
-                        >
-                        <div className="relative w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition shadow-lg">
-                          <img
-                            src={story.userAvatar || story.imageUrl || ''}
-                            alt={story.username}
-                            className="w-full h-full object-cover rounded-full border border-slate-950"
-                          />
-                        </div>
-                        <span className="text-[10px] font-bold text-slate-200 max-w-[60px] truncate">{story.username}</span>
-                      </div>
-                    );
-                  })}
-                  </div>
-                </div>
 
                 {/* Scrollable Compact User Filter Bar (7 Distinct Cards) */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar dir-rtl">
