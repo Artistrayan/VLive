@@ -5,7 +5,7 @@ import {
   ThumbsUp, Send, AlertTriangle, X, Check, ChevronUp, ChevronDown, Sliders, Volume2, 
   VolumeX, UserPlus, Swords, BarChart2, UserX, UserMinus, Pin, CornerUpLeft, Trash2, 
   Cpu, BatteryCharging, Wifi, Play, Square, Award, Filter, ArrowRight, Share2, Info, Coins,
-  FlipHorizontal, RefreshCcw
+  FlipHorizontal, SwitchCamera
 } from 'lucide-react';
 import { apiLive, apiAdmin } from '../services/api';
 import { safeStorage } from '../utils/safeStorage';
@@ -909,17 +909,17 @@ export default function LiveStudioModal({
             {/* Switch Camera */}
             <button
               onClick={toggleCameraFacingMode}
-              className="w-12 h-12 rounded-full bg-transparent text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] flex items-center justify-center transition hover:scale-110 active:scale-90"
-              title={window.loc('چرخش دوربین', 'Switch Camera')}
+              className="w-12 h-12 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] flex items-center justify-center transition hover:scale-110 active:scale-90"
+              title={window.loc('تغییر دوربین جلو / عقب', 'Flip Camera (Front/Rear)')}
             >
-              <RefreshCcw className="w-6 h-6" />
+              <SwitchCamera className="w-6 h-6 text-cyan-400" />
             </button>
             
             {/* Toggle Camera */}
             <button
               onClick={() => setIsCamEnabled(!isCamEnabled)}
               className={`w-12 h-12 rounded-full flex items-center justify-center transition hover:scale-110 active:scale-90 drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] ${
-                isCamEnabled ? 'bg-transparent text-white' : 'bg-transparent text-rose-400'
+                isCamEnabled ? 'bg-slate-900/60 backdrop-blur-md border border-white/20 text-white' : 'bg-rose-900/60 backdrop-blur-md border border-rose-500 text-rose-400'
               }`}
               title={isCamEnabled ? window.loc('دوربین روشن', 'Camera on') : window.loc('دوربین خاموش', 'Camera off')}
             >
@@ -1150,8 +1150,8 @@ export default function LiveStudioModal({
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[10px] text-white/50 font-bold px-1 border-b border-white/10 pb-1">{window.loc('🎥 رسانه', '🎥 Media')}</span>
                       <div className="grid grid-cols-4 gap-1 pt-1">
-                        <button onClick={toggleCameraFacingMode} className="flex flex-col items-center gap-1 text-white hover:text-cyan-300 transition">
-                          <RefreshCcw className="w-5 h-5" />
+                        <button onClick={toggleCameraFacingMode} className="flex flex-col items-center gap-1 text-cyan-400 hover:text-cyan-300 transition" title={window.loc('تغییر دوربین جلو / عقب', 'Flip Camera')}>
+                          <SwitchCamera className="w-5 h-5" />
                         </button>
                         <button onClick={() => setIsCamEnabled(!isCamEnabled)} className={`flex flex-col items-center gap-1 transition ${isCamEnabled ? 'text-white hover:text-cyan-300' : 'text-rose-400'}`}>
                           {isCamEnabled ? <Camera className="w-5 h-5" /> : <CameraOff className="w-5 h-5" />}

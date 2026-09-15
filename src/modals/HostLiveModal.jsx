@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Video, Flame, Lock, Radio, Camera, Mic, MicOff, 
-  Sparkles, Crown, ShieldAlert, RefreshCw, X, Globe, User, Hash, Play
+  Sparkles, Crown, ShieldAlert, SwitchCamera, X, Globe, User, Hash, Play
 } from 'lucide-react';
 import { safeStorage } from '../utils/safeStorage';
 import { cameraPermissionService } from '../services/cameraPermissionService';
@@ -390,7 +390,7 @@ export default function HostLiveModal({
                   className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-cyan-400 border border-cyan-500/40 backdrop-blur-md shadow-md active:scale-95 transition flex items-center justify-center"
                   title={facingMode === 'user' ? loc('دوربین عقب', 'Back Camera') : loc('دوربین جلو', 'Front Camera')}
                 >
-                  <RefreshCw className="w-5 h-5" />
+                  <SwitchCamera className="w-5 h-5" />
                 </button>
               </div>
 
