@@ -141,6 +141,8 @@ export default function HostLiveModal({
     }
   };
 
+  const isStartingLiveRef = useRef(false);
+
   const stopCamera = () => {
     const opId = ++cameraOpIdRef.current;
     console.log(`[Camera:${opId}] CAMERA_CLEANUP in HostLiveModal`);
@@ -223,13 +225,15 @@ export default function HostLiveModal({
     }
   };
 
-  // Clean up stream on modal close (NEVER auto-request on open)
+  // Clean up stream only when user cancels or closes modal without starting live
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen && !isStartingLiveRef.current) {
       stopCamera();
     }
     return () => {
-      stopCamera();
+      if (!isStartingLiveRef.current) {
+        stopCamera();
+      }
     };
   }, [isOpen]);
 
@@ -521,7 +525,10 @@ export default function HostLiveModal({
         <div className="space-y-2 pt-1 flex flex-col items-center">
           <button 
             onClick={() => {
-              stopCamera();
+              isStartingLiveRef.current = true;
+              if (streamRef.current && streamRef.current.active) {
+                cameraPermissionService.setActiveStream(streamRef.current);
+              }
               onStartLive();
             }}
             className="w-full bg-transparent border-0 outline-none hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 group cursor-pointer animate-start-text-glow py-2 px-6 rounded-full"

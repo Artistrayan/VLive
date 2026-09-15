@@ -70,7 +70,6 @@ class CameraPermissionService {
     // 2. Single clean getUserMedia call with ideal facingMode (NEVER exact: to avoid OverconstrainedError & duplicate prompts)
     let newStream = null;
     try {
-      // Find matching device ID if devices are enumerated
       let targetDeviceId = null;
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
@@ -116,16 +115,32 @@ class CameraPermissionService {
       throw new Error('WebRTC mediaDevices is not supported in this environment.');
     }
 
-    // If an existing stream with live tracks matches the request, reuse it
+    // 1. If an existing stream already has all requested live tracks, reuse it directly
     if (this.activeStream && this.activeStream.active) {
       const vOk = !constraints.video || this.activeStream.getVideoTracks().some(t => t.readyState === 'live');
       const aOk = !constraints.audio || this.activeStream.getAudioTracks().some(t => t.readyState === 'live');
       if (vOk && aOk) {
         return this.activeStream;
       }
+
+      // If we already have video and only need audio, request ONLY audio and attach to active stream
+      if (vOk && !aOk && constraints.audio) {
+        try {
+          const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          const aTrack = audioStream.getAudioTracks()[0];
+          if (aTrack) {
+            this.activeStream.addTrack(aTrack);
+            this.permissionState.microphone = 'granted';
+            return this.activeStream;
+          }
+        } catch (e) {
+          console.warn('[CameraPermission] Audio attachment skipped or not available');
+          return this.activeStream;
+        }
+      }
     }
 
-    // Clean constraints to avoid OverconstrainedError and multiple prompt cascades
+    // 2. Clean constraints to avoid OverconstrainedError and multiple prompt cascades
     const sanitizedConstraints = { ...constraints };
     if (typeof sanitizedConstraints.video === 'object' && sanitizedConstraints.video !== null) {
       if (sanitizedConstraints.video.facingMode && typeof sanitizedConstraints.video.facingMode === 'string') {
