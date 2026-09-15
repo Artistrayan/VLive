@@ -146,6 +146,13 @@ export default function LiveStudioModal({
   const [isCommentsDisabled, setIsCommentsDisabled] = useState(false);
   const [activeStreamRecord, setActiveStreamRecord] = useState(null);
   const [isSwitchingCamera, setIsSwitchingCamera] = useState(false);
+  const [isChatExpanded, setIsChatExpanded] = useState(true);
+  const [aiMonitorStatus, setAiMonitorStatus] = useState('ALL_CLEAR');
+  const [aiNoticeMsg, setAiNoticeMsg] = useState('');
+  const [pkRedScore, setPkRedScore] = useState(0);
+  const [pkBlueScore, setPkBlueScore] = useState(0);
+  const [pkOpponent, setPkOpponent] = useState(null);
+  const [maxGuestsLimit, setMaxGuestsLimit] = useState(4);
 
   const mediaStreamRef = useRef(null);
   const cameraVideoRef = useRef(null);
@@ -820,32 +827,8 @@ export default function LiveStudioModal({
               autoPlay
               playsInline
               muted
-              style={{
-                filter: `
-                  brightness(${100 + skinSmoothing * 0.12 + (lightingEffect === 'studio' ? 12 : lightingEffect === 'warm' ? 6 : beautyFilter === 'smooth' ? 8 : beautyFilter === 'glow' ? 15 : beautyFilter === 'rose' ? 6 : beautyFilter === 'bronze' ? 4 : 0)}%) 
-                  contrast(${100 - skinSmoothing * 0.08 + (lightingEffect === 'studio' ? 4 : beautyFilter === 'smooth' ? -6 : beautyFilter === 'glow' ? -4 : beautyFilter === 'bronze' ? 4 : 0)}%) 
-                  saturate(${100 + (lightingEffect === 'warm' ? 10 : lightingEffect === 'neon' ? 15 : lightingEffect === 'sunset' ? 12 : beautyFilter === 'glow' ? 12 : beautyFilter === 'rose' ? 20 : beautyFilter === 'bronze' ? 25 : 0)}%)
-                  ${beautyFilter === 'rose' ? 'hue-rotate(345deg)' : ''}
-                  ${beautyFilter === 'bronze' ? 'sepia(20%)' : ''}
-                `.trim()
-              }}
               className={`w-full h-full object-cover transition-all duration-300 ${isMirrored ? 'scale-x-[-1]' : ''}`}
             />
-
-
-            {/* Studio Lighting atmosphere layers */}
-            {lightingEffect === 'warm' && (
-              <div className="absolute inset-0 bg-gradient-to-t from-amber-500/15 via-transparent to-amber-400/10 pointer-events-none" />
-            )}
-            {lightingEffect === 'neon' && (
-              <div className="absolute inset-0 bg-gradient-to-tr from-pink-500/20 via-transparent to-purple-600/20 pointer-events-none" />
-            )}
-            {lightingEffect === 'sunset' && (
-              <div className="absolute inset-0 bg-gradient-to-t from-orange-600/20 via-pink-600/10 to-transparent pointer-events-none" />
-            )}
-            {lightingEffect === 'studio' && (
-              <div className="absolute inset-0 bg-white/5 pointer-events-none backdrop-brightness-105" />
-            )}
           </div>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-500 space-y-2">

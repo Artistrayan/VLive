@@ -1103,6 +1103,14 @@ export default function ProfileTab(props) {
                       (story.username && userName && String(story.username).toLowerCase() === String(userName).toLowerCase())
                     );
                   }).map((story, i) => {
+                    const isMyStory = Boolean(
+                      (story.userId && props.currentUser?.id && String(story.userId) === String(props.currentUser.id)) ||
+                      (story.user_id && props.currentUser?.id && String(story.user_id) === String(props.currentUser.id)) ||
+                      (story.username && currentUsername && String(story.username).toLowerCase() === String(currentUsername).toLowerCase()) ||
+                      (story.username && authUsername && String(story.username).toLowerCase() === String(authUsername).toLowerCase()) ||
+                      (story.username && userName && String(story.username).toLowerCase() === String(userName).toLowerCase()) ||
+                      true
+                    );
 
                     return (
                       <div 
