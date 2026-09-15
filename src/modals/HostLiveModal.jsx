@@ -84,7 +84,27 @@ export default function HostLiveModal({
 
   const isAuthorizedStreamer = Boolean(isUserAdmin || (isFemaleUser && isManagementApproved));
 
-  // Initialize and start live camera preview (ONLY on explicit user toggle, NEVER auto-prompt)
+  // Auto-start camera when modal opens
+  useEffect(() => {
+    if (isOpen && isAuthorizedStreamer && isCamEnabled !== false) {
+      isStartingLiveRef.current = false;
+      startCamera(facingMode);
+    }
+  }, [isOpen, isAuthorizedStreamer]);
+
+  // Ensure video element receives camera stream and plays automatically without black screen
+  useEffect(() => {
+    if (videoRef.current && cameraStream) {
+      if (videoRef.current.srcObject !== cameraStream) {
+        videoRef.current.srcObject = cameraStream;
+      }
+      videoRef.current.muted = true;
+      videoRef.current.playsInline = true;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [cameraStream, isCameraPreviewActive]);
+
+  // Initialize and start live camera preview (smooth single-prompt with front camera)
   const startCamera = async (mode = facingMode) => {
     const opId = ++cameraOpIdRef.current;
     try {
@@ -96,6 +116,8 @@ export default function HostLiveModal({
         setIsCameraPreviewActive(true);
         if (videoRef.current) {
           videoRef.current.srcObject = streamRef.current;
+          videoRef.current.muted = true;
+          videoRef.current.playsInline = true;
           videoRef.current.play().catch(() => {});
         }
         return;
@@ -104,15 +126,17 @@ export default function HostLiveModal({
       console.log(`[Camera:${opId}] CAMERA_STREAM_CREATE mode: ${mode}`);
       let stream;
       try {
+        // Request video + audio in one single prompt to prevent re-prompting later in LiveStudio
         stream = await cameraPermissionService.getUserMedia({
           video: {
-            facingMode: { ideal: mode },
+            facingMode: mode,
             width: { ideal: 1280 },
             height: { ideal: 720 }
           },
-          audio: false
+          audio: true
         }, opId);
       } catch (e) {
+        // Fallback to video only if mic is unavailable or errored
         stream = await cameraPermissionService.getUserMedia({
           video: { facingMode: mode },
           audio: false
@@ -369,20 +393,24 @@ export default function HostLiveModal({
 
         {/* Real Live Camera Preview Box */}
         <div className="relative w-full h-52 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-xl group">
-          {isCameraPreviewActive && cameraStream ? (
-            <div className="relative w-full h-full">
-              <video 
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/40 pointer-events-none" />
+          {/* Always mounted video element for instant stream attachment and zero black screen */}
+          <video 
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={`w-full h-full object-cover transition-transform duration-300 ${
+              facingMode === 'user' ? 'scale-x-[-1]' : ''
+            } ${isCamEnabled && isCameraPreviewActive ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}
+          />
+
+          {isCamEnabled && isCameraPreviewActive ? (
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/40" />
               
               {/* Top Controls Overlay */}
-              <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between z-10">
-                <span className="flex items-center gap-1 bg-slate-950/70 backdrop-blur-md border border-slate-800 px-2 py-0.5 rounded-full text-[10px] text-white font-bold">
+              <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-auto z-10">
+                <span className="flex items-center gap-1.5 bg-slate-950/70 backdrop-blur-md border border-slate-800 px-2.5 py-1 rounded-full text-[10px] text-white font-bold">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   <span>@{currentUsername || userName}</span>
                 </span>
@@ -391,7 +419,7 @@ export default function HostLiveModal({
                 <button
                   type="button"
                   onClick={toggleCameraFacing}
-                  className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-cyan-400 border border-cyan-500/40 backdrop-blur-md shadow-md active:scale-95 transition flex items-center justify-center"
+                  className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-cyan-400 border border-cyan-500/40 backdrop-blur-md shadow-md active:scale-95 transition flex items-center justify-center cursor-pointer"
                   title={facingMode === 'user' ? loc('دوربین عقب', 'Back Camera') : loc('دوربین جلو', 'Front Camera')}
                 >
                   <SwitchCamera className="w-5 h-5" />
@@ -399,7 +427,7 @@ export default function HostLiveModal({
               </div>
 
               {/* Bottom Quick Action Overlay */}
-              <div className="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between z-10">
+              <div className="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between pointer-events-auto z-10">
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
@@ -407,7 +435,7 @@ export default function HostLiveModal({
                       stopCamera();
                       setIsCamEnabled(false);
                     }}
-                    className="p-2 rounded-xl border backdrop-blur-md transition bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                    className="p-2 rounded-xl border backdrop-blur-md transition bg-emerald-500/20 text-emerald-400 border-emerald-500/40 cursor-pointer"
                     title={loc('خاموش کردن دوربین پیش‌نمایش', 'Turn off preview camera')}
                   >
                     <Camera className="w-4 h-4" />
@@ -415,9 +443,10 @@ export default function HostLiveModal({
                   <button
                     type="button"
                     onClick={() => setIsMicEnabled(!isMicEnabled)}
-                    className={`p-2 rounded-xl border backdrop-blur-md transition ${
+                    className={`p-2 rounded-xl border backdrop-blur-md transition cursor-pointer ${
                       isMicEnabled ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' : 'bg-rose-500/20 text-rose-400 border-rose-500/40'
                     }`}
+                    title={isMicEnabled ? loc('میکروفون روشن', 'Mic On') : loc('میکروفون خاموش', 'Mic Off')}
                   >
                     {isMicEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
                   </button>
@@ -449,8 +478,8 @@ export default function HostLiveModal({
                     </div>
                   )}
                 </div>
-                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-rose-600 text-white font-black text-[8px] px-2 py-0.2 rounded-full border border-slate-950 shadow">
-                  READY
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-pink-600 text-white font-black text-[8px] px-2 py-0.5 rounded-full border border-slate-950 shadow">
+                  LIVE
                 </div>
               </div>
 
@@ -461,7 +490,7 @@ export default function HostLiveModal({
                 {hostLiveCategory || 'Live Stream'} • {hostLiveType === 'adult' ? '🔞 18+ VIP' : (hostLiveType === 'private' ? '🔒 Private' : '🌐 Public')}
               </p>
 
-              {/* Optional Camera Test Button */}
+              {/* Camera Enable Button if disabled */}
               <div className="flex items-center gap-2 z-10">
                 <button
                   type="button"
@@ -469,10 +498,10 @@ export default function HostLiveModal({
                     setIsCamEnabled(true);
                     startCamera(facingMode);
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-cyan-300 font-bold text-[10px] border border-cyan-500/30 flex items-center gap-1.5 transition shadow active:scale-95"
+                  className="px-3.5 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-black text-xs border border-pink-400/40 flex items-center gap-1.5 transition shadow-lg shadow-pink-600/30 active:scale-95"
                 >
-                  <Camera className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>{loc('پیش‌نمایش دوربین (اختیاری)', 'Preview Camera (Optional)')}</span>
+                  <Camera className="w-4 h-4 text-white" />
+                  <span>{loc('روشن کردن دوربین', 'Turn on Camera')}</span>
                 </button>
               </div>
 

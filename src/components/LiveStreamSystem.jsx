@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Video, Flame, ShieldCheck, Lock, Unlock, Crown, Users, Eye, Plus, 
   Filter, Sparkles, MessageSquare, Heart, Gift, AlertTriangle, X, Check, 
-  ChevronRight, Mic, MicOff, Camera, RefreshCw, Radio, Tag, ShieldAlert, FileText
+  ChevronRight, Mic, MicOff, Camera, RefreshCw, Radio, Tag, ShieldAlert
 } from 'lucide-react';
 import { apiLive, apiHome, apiAdmin } from '../services/api';
 import { safeStorage } from '../utils/safeStorage';
@@ -39,16 +39,6 @@ export default function LiveStreamSystem({
   const [liveTypeTab, setLiveTypeTab] = useState('standard'); // 'standard' | 'adult'
   const [selectedSubCategory, setSelectedSubCategory] = useState('all');
 
-  // 18+ Access Control States
-  const [isAge18Verified, setIsAge18Verified] = useState(() => {
-    return localStorage.getItem('vlive_age_18_verified') === 'true';
-  });
-  const [acceptedAdultRules, setAcceptedAdultRules] = useState(() => {
-    return localStorage.getItem('vlive_adult_rules_accepted') === 'true';
-  });
-  const [isAdultVipModalOpen, setIsAdultVipModalOpen] = useState(false);
-  const [isAdultGateModalOpen, setIsAdultGateModalOpen] = useState(false);
-
   // Streamer Start Live Setup Modal States
   const [isStartLiveModalOpen, setIsStartLiveModalOpen] = useState(false);
   const [newLiveType, setNewLiveType] = useState('standard');
@@ -81,9 +71,18 @@ export default function LiveStreamSystem({
     userGenderVal === 'f'
   );
 
-  // Check if Adult Access is fully granted
-  const isAdultVipActive = vipPlan === 'VIP Adult' || vipPlan === 'VIP Platinum' || currentUser?.isAdultVip;
-  const hasAdultAccess = isAge18Verified && acceptedAdultRules && (isAdultVipActive || isFemaleUser || isUserAdmin);
+  // Age verification from profile (set upon initial onboarding/profile completion)
+  const userAge = Number(
+    currentUser?.age || 
+    safeStorage.getItem('vlive_profile_age') || 
+    (currentUser?.birth_date ? new Date().getFullYear() - new Date(currentUser.birth_date).getFullYear() : 0) ||
+    (safeStorage.getItem('vlive_profile_completed') === 'true' ? 18 : 0)
+  );
+  const isUnder18 = userAge > 0 && userAge < 18;
+
+  // Check if Adult Access is granted
+  const isAdultVipActive = Boolean(vipPlan === 'VIP Adult' || vipPlan === 'VIP Platinum' || currentUser?.isAdultVip || currentUser?.vip_plan === 'VIP Adult' || currentUser?.vip_plan === 'VIP Platinum');
+  const hasAdultAccess = Boolean(isUserAdmin || isFemaleUser || (!isUnder18 && isAdultVipActive));
 
   const isManagementApproved = Boolean(
     isUserAdmin ||
@@ -156,38 +155,15 @@ export default function LiveStreamSystem({
     };
   }, []);
 
-  // Handle Age 18 Verification save
-  const handleVerifyAge18 = (verified) => {
-    setIsAge18Verified(verified);
-    localStorage.setItem('vlive_age_18_verified', verified ? 'true' : 'false');
-    apiLive.saveAdultAccess({
-      age_verified: verified,
-      rules_accepted: acceptedAdultRules,
-      adult_vip_active: isAdultVipActive
-    });
-  };
-
-  const handleAcceptAdultRules = (accepted) => {
-    setAcceptedAdultRules(accepted);
-    localStorage.setItem('vlive_adult_rules_accepted', accepted ? 'true' : 'false');
-    apiLive.saveAdultAccess({
-      age_verified: isAge18Verified,
-      rules_accepted: accepted,
-      adult_vip_active: isAdultVipActive
-    });
-  };
-
-  // Handle Upgrade to Adult VIP
-  const handleUpgradeToAdultVip = () => {
-    setVipPlan('VIP Adult');
-    localStorage.setItem('vlive_vip_plan', 'VIP Adult');
-    showToast(window.loc('🎉 اشتراک Adult VIP شما با موفقیت فعال گردید!', '🎉 Your Adult VIP subscription has been successfully activated!'));
-    setIsAdultVipModalOpen(false);
-    apiLive.saveAdultAccess({
-      age_verified: isAge18Verified,
-      rules_accepted: acceptedAdultRules,
-      adult_vip_active: true
-    });
+  // Handler for locked 18+ stream click
+  const handleLockedStreamClick = () => {
+    if (isUnder18) {
+      showToast(window.loc('⚠️ دسترسی غیرمجاز: سن شما کمتر از ۱۸ سال است و امکان مشاهده این لایو را ندارید', '⚠️ Access restricted: You are under 18 years old and cannot view this live stream'));
+    } else if (!isAdultVipActive) {
+      showToast(window.loc('⚠️ این پخش زنده مخصوص مشترکین VIP و افراد بالای ۱۸ سال است', '⚠️ This live stream is for 18+ VIP members only'));
+    } else {
+      showToast(window.loc('⚠️ این محتوا مخصوص افراد بالای ۱۸ سال است', '⚠️ This content is restricted to 18+ users'));
+    }
   };
 
   // Standard Categories list
@@ -366,32 +342,7 @@ export default function LiveStreamSystem({
 
       </div>
 
-      {/* 2. ADULT 18+ ACCESS STATUS BANNER (Compact informational banner when regular user visits 18+ tab) */}
-      {liveTypeTab === 'adult' && !hasAdultAccess && (
-        <div className="card-3d p-3 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-amber-500/40 backdrop-blur-xl shadow-lg flex items-center justify-between gap-3 dir-rtl animate-fadeIn">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
-              <Lock className="w-4 h-4 text-amber-400" />
-            </div>
-            <div>
-              <h4 className="text-xs font-black text-white flex items-center gap-1.5">
-                <span>{window.loc('پخش زنده ۱۸+ (مخصوص VIP)', '18+ Live Broadcast (VIP Only)')}</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30">VIP</span>
-              </h4>
-              <p className="text-[10px] text-slate-400 font-medium">{window.loc('برای مشاهده و ورود به لایوها، تایید سن و اشتراک VIP لازم است', 'Age verification and VIP membership required to watch full streams')}</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setIsAdultGateModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-[10px] shadow-md shadow-amber-500/20 hover:scale-105 active:scale-95 transition shrink-0 flex items-center gap-1"
-          >
-            <Crown className="w-3 h-3 text-slate-950" />
-            <span>{window.loc('بازکردن قفل', 'Unlock')}</span>
-          </button>
-        </div>
-      )}
-
-      {/* 3. STREAMS GRID DISPLAY (Always visible for all users - with blur, lock and VIP badge on 18+ for regular users) */}
+      {/* 2. STREAMS GRID DISPLAY (Always visible for all users - with blur, lock and VIP badge on 18+ for regular users) */}
       <div>
         {filteredStreams.length === 0 ? (
           <div className="p-8 text-center bg-slate-900/60 rounded-3xl border border-slate-800 space-y-2">
@@ -415,7 +366,7 @@ export default function LiveStreamSystem({
                   isAdult={isAdult}
                   isLocked={isLocked}
                   currentUser={currentUser}
-                  onUnlockRequest={() => setIsAdultGateModalOpen(true)}
+                  onUnlockRequest={handleLockedStreamClick}
                   onSelectStream={(selected) => setViewingStream(selected)}
                 />
               );
@@ -424,99 +375,7 @@ export default function LiveStreamSystem({
         )}
       </div>
 
-      {/* 18+ UNLOCK & VERIFICATION MODAL */}
-      {isAdultGateModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn dir-rtl">
-          <div className="card-3d w-full max-w-md bg-slate-900 rounded-3xl border border-amber-500/40 p-5 shadow-[0_0_50px_rgba(245,158,11,0.25)] space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar">
-            
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
-                  <Lock className="w-5 h-5 text-amber-400" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-white">{window.loc('دسترسی به بخش لایوهای ۱۸+', '18+ Live Section Access')}</h3>
-                  <p className="text-[11px] text-slate-400">{window.loc('احراز سن و فعال‌سازی اشتراک VIP', 'Age verification & VIP membership')}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsAdultGateModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-sm font-bold transition"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* CHECKBOXES & VERIFICATION STEPS */}
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-right space-y-3">
-              
-              {/* Step 1: Age 18 Check */}
-              <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl hover:bg-slate-900/60 transition">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className={`w-4 h-4 ${isAge18Verified ? 'text-emerald-400' : 'text-slate-500'}`} />
-                  <span className="text-xs font-bold text-slate-200">{window.loc('تایید سن بالای ۱۸ سال دارم', 'I am over 18 years old')}</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={isAge18Verified}
-                  onChange={(e) => handleVerifyAge18(e.target.checked)}
-                  className="w-4 h-4 accent-pink-500 rounded cursor-pointer"
-                />
-              </label>
-
-              {/* Step 2: Accept Adult Rules */}
-              <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl hover:bg-slate-900/60 transition">
-                <div className="flex items-center gap-2">
-                  <FileText className={`w-4 h-4 ${acceptedAdultRules ? 'text-emerald-400' : 'text-slate-500'}`} />
-                  <span className="text-xs font-bold text-slate-200">{window.loc('پذیرش قوانین و حریم خصوصی ۱۸+', 'Acceptance of 18+ privacy rules')}</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={acceptedAdultRules}
-                  onChange={(e) => handleAcceptAdultRules(e.target.checked)}
-                  className="w-4 h-4 accent-pink-500 rounded cursor-pointer"
-                />
-              </label>
-
-              {/* Step 3: Adult VIP Status */}
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800">
-                <div className="flex items-center gap-2">
-                  <Crown className={`w-4 h-4 ${isAdultVipActive ? 'text-amber-400' : 'text-slate-500'}`} />
-                  <span className="text-xs font-bold text-slate-200">{window.loc('وضعیت اشتراک Adult VIP', 'Adult VIP subscription status')}</span>
-                </div>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${isAdultVipActive ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}`}>
-                  {isAdultVipActive ? window.loc('فعال ✅', 'active') : window.loc('غیرفعال ❌', 'Disabled ❌')}
-                </span>
-              </div>
-
-            </div>
-
-            {/* ACTION BUTTON */}
-            <button
-              onClick={() => {
-                if (!isAge18Verified || !acceptedAdultRules) {
-                  showToast(window.loc('⚠️ لطفاً ابتدا سن بالای ۱۸ سال و قوانین را تایید کنید', '⚠️ Please confirm the age above 18 years and the rules first'));
-                  return;
-                }
-                if (!isAdultVipActive) {
-                  setIsAdultGateModalOpen(false);
-                  setIsAdultVipModalOpen(true);
-                } else {
-                  setIsAdultGateModalOpen(false);
-                  showToast(window.loc('✅ دسترسی ۱۸+ شما فعال است', '✅ Your 18+ access is active'));
-                }
-              }}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-rose-600 via-purple-600 to-amber-500 text-white font-black text-xs shadow-lg shadow-rose-500/30 hover:scale-102 active:scale-95 transition flex items-center justify-center gap-2"
-            >
-              <Crown className="w-4 h-4 text-amber-300" />
-              <span>{isAdultVipActive ? window.loc('مشاهده لایوهای ۱۸+', 'Watch 18+ livestreams') : window.loc('ارتقا به اشتراک Adult VIP', 'Upgrade to Adult VIP subscription')}</span>
-            </button>
-
-          </div>
-        </div>
-      )}
-
-      {/* 4. APPROVED STREAMER START LIVE SETUP MODAL */}
+      {/* 3. APPROVED STREAMER START LIVE SETUP MODAL */}
       {isStartLiveModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn dir-rtl">
           <div className="card-3d w-full max-w-md bg-slate-900 rounded-3xl border border-pink-500/40 p-5 shadow-[0_0_50px_rgba(236,72,153,0.3)] space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar">
@@ -669,56 +528,6 @@ export default function LiveStreamSystem({
             >
               <Radio className="w-4 h-4 animate-pulse" />
               <span>{window.loc('شروع رسمی پخش زنده', 'The official start of the live stream')}</span>
-            </button>
-
-          </div>
-        </div>
-      )}
-
-      {/* 5. ADULT VIP PURCHASE MODAL */}
-      {isAdultVipModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn dir-rtl">
-          <div className="card-3d w-full max-w-md bg-slate-900 rounded-3xl border border-amber-500/40 p-5 shadow-[0_0_50px_rgba(245,158,11,0.3)] space-y-4">
-            
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
-                  <Crown className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-white">{window.loc('ارتقا به اشتراک Adult VIP', 'Upgrade to Adult VIP subscription')}</h3>
-                  <p className="text-[11px] text-slate-400">{window.loc('دسترسی نامحدود به لایوها و دسته‌بندی‌های ۱۸+', 'Unlimited access to 18+ live streams and categories')}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsAdultVipModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-sm font-bold transition"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs text-slate-300">
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-amber-500/30 space-y-2">
-                <h4 className="font-black text-amber-400 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4" />
-                  <span>{window.loc('مزایای اختصاصی Adult VIP:', 'Exclusive benefits of Adult VIP:')}</span>
-                </h4>
-                <ul className="space-y-1.5 text-[11px] text-slate-400 list-disc list-inside">
-                  <li>{window.loc('دسترسی کامل و بدون محدودیت به تمام لایواستریم‌های ۱۸+', 'Complete and unrestricted access to all 18+ livestreams')}</li>
-                  <li>{window.loc('امکان جستجو و فیلتر اختصاصی در دسته ۱۸+', 'Ability to search and filter exclusively in the 18+ category')}</li>
-                  <li>{window.loc('نشان ویژه Adult VIP طلایی روی پروفایل کاربری', 'Golden Adult VIP badge on user profile')}</li>
-                  <li>{window.loc('امکان تماس تصویری مستقیم با استریمرهای ۱۸+', 'Possibility of direct video call with 18+ streamers')}</li>
-                </ul>
-              </div>
-            </div>
-
-            <button
-              onClick={handleUpgradeToAdultVip}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-600 text-white font-black text-xs shadow-lg shadow-amber-500/30 hover:scale-102 active:scale-95 transition flex items-center justify-center gap-2"
-            >
-              <Crown className="w-4 h-4 text-slate-950" />
-              <span>{window.loc('تایید و فعال‌سازی فوری اشتراک Adult VIP', 'Confirmation and instant activation of Adult VIP subscription')}</span>
             </button>
 
           </div>
