@@ -122,6 +122,37 @@ export default function LiveStudioModal({
   const [livekitRoom, setLivekitRoom] = useState(null);
   const [livekitServerUrl, setLivekitServerUrl] = useState(getLiveKitConfig().url);
   const [broadcasterAuthorized, setBroadcasterAuthorized] = useState(false);
+  const [mediaStream, setMediaStream] = useState(null);
+  const [cameraError, setCameraError] = useState(null);
+  const [startFailureReason, setStartFailureReason] = useState('');
+  const [activeTabDrawer, setActiveTabDrawer] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
+  const [liveDurationSeconds, setLiveDurationSeconds] = useState(0);
+  const [giftCoinsEarned, setGiftCoinsEarned] = useState(0);
+  const [likeCount, setLikeCount] = useState(0);
+  const [viewerCount, setViewerCount] = useState(0);
+  const [followersGained, setFollowersGained] = useState(0);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [pinnedMessage, setPinnedMessage] = useState(null);
+  const [isPkActive, setIsPkActive] = useState(false);
+  const [pkTimeLeft, setPkTimeLeft] = useState(300);
+  const [activeGuests, setActiveGuests] = useState([]);
+  const [guestRequests, setGuestRequests] = useState([]);
+  const [mutedUsers, setMutedUsers] = useState([]);
+  const [isVipOnlyChat, setIsVipOnlyChat] = useState(false);
+  const [isFollowersOnlyChat, setIsFollowersOnlyChat] = useState(false);
+  const [isCommentsDisabled, setIsCommentsDisabled] = useState(false);
+  const [activeStreamRecord, setActiveStreamRecord] = useState(null);
+  const [isSwitchingCamera, setIsSwitchingCamera] = useState(false);
+
+  const mediaStreamRef = useRef(null);
+  const cameraVideoRef = useRef(null);
+  const cameraOperationIdRef = useRef(0);
+  const roomServiceRef = useRef(null);
+  const isSwitchingCameraRef = useRef(false);
+  const startInProgressRef = useRef(false);
 
   // Direct Camera & Microphone Stream Initialization (No permission prompts or blocks)
   const initCameraAndStream = async () => {
@@ -1393,311 +1424,7 @@ export default function LiveStudioModal({
                 </div>
               )}
 
-              {/* BEAUTY & AR EFFECTS STUDIO DRAWER */}
-              {activeTabDrawer === 'beauty' && (
-                <div className="space-y-2 p-1">
-                  
-                  {/* Category Tabs: Retouch | Makeup | Hair | Lenses | Stickers | Lighting */}
-                  <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1 border-b border-white/10">
-                    {[
-                      { id: 'retouch', label: window.loc('روتوش پوست', 'Retouch'), icon: '✨' },
-                      { id: 'makeup', label: window.loc('آرایش و لب', 'Makeup & Lips'), icon: '💄' },
-                      { id: 'hair', label: window.loc('رنگ مو', 'Hair Tint'), icon: '💇‍♀️' },
-                      { id: 'lens', label: window.loc('لنز چشم', 'Eye Lens'), icon: '👁️' },
-                      { id: 'blush', label: window.loc('رژگونه', 'Blush'), icon: '🌸' },
-                      { id: 'stickers', label: window.loc('استیکر 3D', '3D Stickers'), icon: '👑' },
-                      { id: 'lighting', label: window.loc('نورپردازی', 'Lighting'), icon: '💡' }
-                    ].map(tab => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setBeautySubTab(tab.id)}
-                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold whitespace-nowrap flex items-center gap-1 transition ${
-                          beautySubTab === tab.id
-                            ? 'bg-pink-500 text-white shadow-md shadow-pink-500/30'
-                            : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                        }`}
-                      >
-                        <span>{tab.icon}</span>
-                        <span>{tab.label}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* 1. RETOUCH TAB */}
-                  {beautySubTab === 'retouch' && (
-                    <div className="space-y-3 animate-fadeIn">
-                      {/* Skin Smoothing Slider */}
-                      <div className="space-y-1.5 p-2.5 rounded-2xl bg-black/20 backdrop-blur-md border border-white/10">
-                        <div className="flex items-center justify-between text-xs font-bold">
-                          <span className="text-pink-300 flex items-center gap-1">
-                            <Sparkles className="w-3.5 h-3.5" />
-                            {window.loc('صافی پوست', 'Skin Smoothing')}
-                          </span>
-                          <span className="font-mono text-pink-400">{skinSmoothing}%</span>
-                        </div>
-                        <input 
-                          type="range" 
-                          min="0" 
-                          max="100" 
-                          value={skinSmoothing}
-                          onChange={(e) => setSkinSmoothing(Number(e.target.value))}
-                          className="w-full h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-pink-500 border border-white/10"
-                        />
-                      </div>
-
-                      {/* Skin Tone Filter Preset */}
-                      <div className="space-y-1.5 p-2.5 rounded-2xl bg-black/20 backdrop-blur-md border border-white/10">
-                        <span className="text-xs font-bold text-slate-200">{window.loc('رنگ پوست', 'Skin Tone & Filter')}</span>
-                        <div className="grid grid-cols-5 gap-1.5 pt-1">
-                          {[
-                            { id: 'off', label: 'طبیعی', color: '#94a3b8' },
-                            { id: 'smooth', label: 'صافی ابریشم', color: '#fbcfe8' },
-                            { id: 'glow', label: 'درخشان', color: '#fef08a' },
-                            { id: 'rose', label: 'گلگون', color: '#f43f5e' },
-                            { id: 'bronze', label: 'برنزه طلایی', color: '#b45309' },
-                          ].map(filter => (
-                            <button
-                              key={filter.id}
-                              onClick={() => setBeautyFilter(filter.id)}
-                              className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
-                                beautyFilter === filter.id ? 'border-pink-400 bg-pink-500/20 scale-105 shadow-md' : 'border-white/10 bg-white/5 hover:bg-white/10'
-                              }`}
-                            >
-                              <span className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner" style={{ backgroundColor: filter.color }} />
-                              <span className="text-[8px] font-bold text-white/80 truncate w-full text-center">{filter.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 2. MAKEUP & LIP TINT TAB */}
-                  {beautySubTab === 'makeup' && (
-                    <div className="space-y-3 animate-fadeIn">
-                      <div className="space-y-1.5 p-2.5 rounded-2xl bg-black/20 backdrop-blur-md border border-white/10">
-                        <div className="flex items-center justify-between text-xs font-bold">
-                          <span className="text-rose-300 flex items-center gap-1">
-                            <span>💄</span>
-                            {window.loc('رژ لب', 'AI Lip Tint & Gloss')}
-                          </span>
-                          <span className="font-mono text-rose-400">{lipIntensity}%</span>
-                        </div>
-                        <input 
-                          type="range" 
-                          min="10" 
-                          max="100" 
-                          value={lipIntensity}
-                          onChange={(e) => setLipIntensity(Number(e.target.value))}
-                          className="w-full h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-rose-500 border border-white/10"
-                        />
-                        <div className="grid grid-cols-4 gap-1.5 pt-2">
-                          {[
-                            { id: 'none', label: 'بدون رژلب', color: '#64748b' },
-                            { id: 'rose_petal', label: 'رز پتال', color: '#f43f5e' },
-                            { id: 'ruby_red', label: 'قرمز یاقوتی', color: '#e11d48' },
-                            { id: 'velvet_cherry', label: 'آلبالویی', color: '#be123c' },
-                            { id: 'nude_peach', label: 'هلویی نود', color: '#f97316' },
-                            { id: 'barbie_pink', label: 'صورتی باربی', color: '#ec4899' },
-                            { id: 'glossy_shine', label: 'شاین و براق', color: '#ffc0d3' }
-                          ].map(lip => (
-                            <button
-                              key={lip.id}
-                              onClick={() => setLipTint(lip.id)}
-                              className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
-                                lipTint === lip.id ? 'border-rose-400 bg-rose-500/20 scale-105 shadow-md' : 'border-white/10 bg-white/5 hover:bg-white/10'
-                              }`}
-                            >
-                              <span className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner" style={{ backgroundColor: lip.color }} />
-                              <span className="text-[8px] font-bold text-white/80 truncate w-full text-center">{lip.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 3. HAIR TINT TAB */}
-                  {beautySubTab === 'hair' && (
-                    <div className="space-y-3 animate-fadeIn">
-                      <div className="space-y-1.5 p-2.5 rounded-2xl bg-black/20 backdrop-blur-md border border-white/10">
-                        <div className="flex items-center justify-between text-xs font-bold">
-                          <span className="text-purple-300 flex items-center gap-1">
-                            <span>💇‍♀️</span>
-                            {window.loc('رنگ مو', 'AI Hair Tint')}
-                          </span>
-                          <span className="font-mono text-purple-400">{hairIntensity}%</span>
-                        </div>
-                        <input 
-                          type="range" 
-                          min="10" 
-                          max="100" 
-                          value={hairIntensity}
-                          onChange={(e) => setHairIntensity(Number(e.target.value))}
-                          className="w-full h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-purple-500 border border-white/10"
-                        />
-                        <div className="grid grid-cols-4 gap-1.5 pt-2">
-                          {[
-                            { id: 'none', label: 'بدون رنگ', color: '#64748b' },
-                            { id: 'rose_gold', label: 'رز گلد', color: '#fb7185' },
-                            { id: 'golden_blonde', label: 'بلوند طلایی', color: '#facc15' },
-                            { id: 'purple_velvet', label: 'بنفش مخملی', color: '#a855f7' },
-                            { id: 'cyan_cyber', label: 'آبی سایبری', color: '#06b6d4' },
-                            { id: 'ruby_red', label: 'قرمز شرابی', color: '#e11d48' },
-                            { id: 'silver_ash', label: 'دودی نقره‌ای', color: '#cbd5e1' }
-                          ].map(h => (
-                            <button
-                              key={h.id}
-                              onClick={() => setHairTint(h.id)}
-                              className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
-                                hairTint === h.id ? 'border-purple-400 bg-purple-500/20 scale-105 shadow-md' : 'border-white/10 bg-white/5 hover:bg-white/10'
-                              }`}
-                            >
-                              <span className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner" style={{ backgroundColor: h.color }} />
-                              <span className="text-[8px] font-bold text-white/80 truncate w-full text-center">{h.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 4. EYE LENS TAB */}
-                  {beautySubTab === 'lens' && (
-                    <div className="space-y-3 animate-fadeIn">
-                      <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10">
-                        <span className="text-xs font-bold text-cyan-300 flex items-center gap-1">
-                          <span>👁️</span>
-                          {window.loc('لنز چشم', 'AI Eye Lens')}
-                        </span>
-                        <div className="grid grid-cols-3 gap-1.5 pt-2">
-                          {[
-                            { id: 'none', label: 'چشم طبیعی', color: '#64748b' },
-                            { id: 'ice_blue', label: 'آبی یخی', color: '#38bdf8' },
-                            { id: 'hazel_honey', label: 'عسلی فندقی', color: '#d97706' },
-                            { id: 'emerald_green', label: 'سبز زمردی', color: '#10b981' },
-                            { id: 'crystal_gray', label: 'طوسی کریستالی', color: '#94a3b8' },
-                            { id: 'violet_dream', label: 'بنفش فانتزی', color: '#a855f7' }
-                          ].map(eye => (
-                            <button
-                              key={eye.id}
-                              onClick={() => setEyeLens(eye.id)}
-                              className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition ${
-                                eyeLens === eye.id ? 'border-cyan-400 bg-cyan-500/20 scale-105 shadow-md' : 'border-white/10 bg-white/5 hover:bg-white/10'
-                              }`}
-                            >
-                              <span className="w-4 h-4 rounded-full border border-white/30 shadow-inner" style={{ backgroundColor: eye.color }} />
-                              <span className="text-[9px] font-bold text-white/90 truncate w-full text-center">{eye.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 5. BLUSH TAB */}
-                  {beautySubTab === 'blush' && (
-                    <div className="space-y-3 animate-fadeIn">
-                      <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10">
-                        <div className="flex items-center justify-between text-xs font-bold">
-                          <span className="text-pink-300 flex items-center gap-1">
-                            <span>🌸</span>
-                            {window.loc('رژگونه', 'AI Blush & Contour')}
-                          </span>
-                          <span className="font-mono text-pink-400">{blushIntensity}%</span>
-                        </div>
-                        <input 
-                          type="range" 
-                          min="10" 
-                          max="100" 
-                          value={blushIntensity}
-                          onChange={(e) => setBlushIntensity(Number(e.target.value))}
-                          className="w-full h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-pink-500 border border-white/10"
-                        />
-                        <div className="grid grid-cols-4 gap-1.5 pt-2">
-                          {[
-                            { id: 'none', label: 'بدون رژگونه', color: '#64748b' },
-                            { id: 'rose_pink', label: 'صورتی ملایم', color: '#f472b6' },
-                            { id: 'peach', label: 'هلویی شاداب', color: '#fb923c' },
-                            { id: 'coral', label: 'مرجانی تابستانی', color: '#f87171' },
-                            { id: 'sweet_plum', label: 'آلویی شیک', color: '#c084fc' }
-                          ].map(bl => (
-                            <button
-                              key={bl.id}
-                              onClick={() => setBlushEffect(bl.id)}
-                              className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
-                                blushEffect === bl.id ? 'border-pink-400 bg-pink-500/20 scale-105 shadow-md' : 'border-white/10 bg-white/5 hover:bg-white/10'
-                              }`}
-                            >
-                              <span className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner" style={{ backgroundColor: bl.color }} />
-                              <span className="text-[8px] font-bold text-white/80 truncate w-full text-center">{bl.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 6. STICKERS TAB */}
-                  {beautySubTab === 'stickers' && (
-                    <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10 animate-fadeIn">
-                      <span className="text-xs font-bold text-slate-200">{window.loc('استیکرها', 'AR Stickers')}</span>
-                      <div className="grid grid-cols-6 gap-1.5 pt-1">
-                        {[
-                          { id: 'none', label: 'بدون استیکر', icon: '🚫' },
-                          { id: 'cat_ears', label: 'گوش گربه‌ای', icon: '🐱' },
-                          { id: 'crown', label: 'تاج سلطنتی', icon: '👑' },
-                          { id: 'sparkles', label: 'ستارگان', icon: '✨' },
-                          { id: 'sunglasses', label: 'عینک دودی', icon: '🕶️' },
-                          { id: 'hearts', label: 'قلب‌های عاشق', icon: '💖' },
-                        ].map(s => (
-                          <button
-                            key={s.id}
-                            onClick={() => setFaceSticker(s.id)}
-                            className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
-                              faceSticker === s.id ? 'border-amber-400 bg-amber-500/20 scale-105 shadow-md' : 'border-white/10 bg-white/5 hover:bg-white/10'
-                            }`}
-                          >
-                            <span className="text-base">{s.icon}</span>
-                            <span className="text-[8px] font-bold text-white/80 truncate w-full text-center">{s.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 7. LIGHTING TAB */}
-                  {beautySubTab === 'lighting' && (
-                    <div className="space-y-1.5 bg-white/5 p-2.5 rounded-2xl border border-white/10 animate-fadeIn">
-                      <span className="text-xs font-bold text-slate-200">{window.loc('نورپردازی', 'Lighting')}</span>
-                      <div className="grid grid-cols-6 gap-1.5 pt-1">
-                        {[
-                          { id: 'none', label: 'طبیعی', icon: '🚫' },
-                          { id: 'studio', label: 'استودیو', icon: '💡' },
-                          { id: 'warm', label: 'گرم و طلایی', icon: '☀️' },
-                          { id: 'cool', label: 'خنک کریستال', icon: '❄️' },
-                          { id: 'neon', label: 'نئون سایبر', icon: '🔮' },
-                          { id: 'sunset', label: 'غروب آفتاب', icon: '🌅' },
-                        ].map(light => (
-                          <button
-                            key={light.id}
-                            onClick={() => setLightingEffect(light.id)}
-                            className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 transition ${
-                              lightingEffect === light.id ? 'border-cyan-400 bg-cyan-500/20 scale-105 shadow-md' : 'border-white/10 bg-white/5 hover:bg-white/10'
-                            }`}
-                          >
-                            <span className="text-sm">{light.icon}</span>
-                            <span className="text-[8px] font-bold text-white/80 truncate w-full text-center">{light.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                </div>
-              )}
-
-            </div>
+                          </div>
           )}
 
         </div>

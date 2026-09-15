@@ -35,7 +35,7 @@ import StreamerApplicationModal from './modals/StreamerApplicationModal';
 import AdminDashboardModal from './modals/AdminDashboardModal';
 import HelpCenterModal from './modals/HelpCenterModal';
 import {
-  LuckyWheelModal, PartyRoomStageModal, CreateAgencyModal, StreamerWelcomeGuideModal
+  LuckyWheelModal, PartyRoomStageModal, CreateAgencyModal
 } from './modals/EntertainmentModals';
 import ContentAndEngagementModals from './modals/ContentAndEngagementModals';
 import TermsModal from './modals/TermsModal';
@@ -401,7 +401,6 @@ export default function App() {
   const [isDirectCallModalOpen, setIsDirectCallModalOpen] = useState(false);
   const [isAudioCallOpen, setIsAudioCallOpen] = useState(false);
   const [isLiveModalOpen, setIsLiveModalOpen] = useState(false);
-  const [showStreamerWelcomeModal, setShowStreamerWelcomeModal] = useState(false);
   const [liveGuideStep, setLiveGuideStep] = useState(0);
   const [helpCenterInitialTab, setHelpCenterInitialTab] = useState('faq');
 
@@ -657,13 +656,24 @@ export default function App() {
 
   const t = useCallback((key, defaultVal) => defaultVal || key, []);
 
-  // UI Toast Handler
-  const showToast = useCallback((msg) => {
-    if (!msg) return;
-    setToastMessage(msg);
+  // UI Toast Handler - Only displays necessary actionable warnings/errors; suppresses annoying explanations & status popups
+  const showToast = useCallback((msg, force = false) => {
+    if (!msg || typeof msg !== 'string') return;
+    const cleanMsg = msg.trim();
+    if (!cleanMsg) return;
+
+    // Suppress unnecessary status explanations, welcome messages, toggle banners, navigation alerts
+    const isMundaneExplanation = 
+      /وارد شدید|خوش آمدید|فعال شد|غیرفعال شد|ذخیره شد|کپی شد|تغییر یافت|ثبت شد|انجام شد|موفقیت|دنبال شد|لایک شد|بسته شد|باز شد|انتخاب شد|پایان یافت|opened chat|applied|switched|saved|toggled|followed|unfollowed|liked|copied|successful|welcome|logged out|received/i.test(cleanMsg);
+
+    if (isMundaneExplanation && !force) {
+      return;
+    }
+
+    setToastMessage(cleanMsg);
     setTimeout(() => {
       setToastMessage(null);
-    }, 4000);
+    }, 3000);
   }, []);
 
   // Sound Effects Handler
@@ -5180,12 +5190,6 @@ export default function App() {
             if (typeof addAdminAuditLog === 'function') addAdminAuditLog('Admin Streamer', `Toggled streamer status for ${data.username} to ${nextStreamer}`);
           }
         }} />
-
-      {/* STREAMER WELCOME GUIDE MODAL */}
-      <StreamerWelcomeGuideModal isOpen={showStreamerWelcomeModal} onClose={() => {
-          setShowStreamerWelcomeModal(false);
-          showToast('🚀 فعالیت میزبانی شما فعال شد! خوش آمدید.');
-        }} loc={loc} />
 
       {/* OUTGOING CALL WAITING MODAL (20-SECOND TIMER) */}
       {outgoingCall && (

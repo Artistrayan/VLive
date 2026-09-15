@@ -259,35 +259,3 @@ export function CreateAgencyModal({
   );
 }
 
-export function StreamerWelcomeGuideModal({
-  isOpen,
-  onClose,
-  loc
-}) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fadeIn dir-rtl text-right">
-      <div className="w-full max-w-md bg-slate-900 border border-pink-500/50 rounded-3xl p-5 space-y-4 shadow-[0_0_60px_rgba(236,72,153,0.3)] relative overflow-hidden">
-        <div className="text-center space-y-1.5">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-tr from-pink-500 to-purple-600 text-white flex items-center justify-center shadow-lg text-2xl">
-            🌸
-          </div>
-          <h2 className="text-base font-black text-white">
-            {loc('خوش آمدید به جمع میزبانان V.LIVE! 🎉', 'Welcome to V.LIVE Creators! 🎉')}
-          </h2>
-          <p className="text-[11px] text-pink-400 font-bold">
-            {loc('تایید حساب میزبانی شما با موفقیت انجام گردید', 'Host account approved successfully')}
-          </p>
-        </div>
-        
-        <button
-          onClick={onClose}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 active:scale-95 text-white font-black text-xs shadow-lg transition border border-pink-400/30"
-        >
-          {loc('متوجه شدم - شروع فعالیت 🚀', 'Got it - Start Broadcasting 🚀')}
-        </button>
-      </div>
-    </div>
-  );
-}
