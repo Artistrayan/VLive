@@ -3304,127 +3304,6 @@ export default function App() {
         {/* TAB 1: HOME (EXPLORE & LIVE SUB-TABS) */}
         {activeTab === 'home' && <div className="space-y-3 animate-fadeIn pb-12">
             
-            {/* TOP UNIFIED ONLINE & VIP USERS RAIL (Standard avatar size, no text header, includes Admin & VIPs) */}
-            <div className="bg-slate-950/80 p-2 rounded-2xl border border-slate-800/80 shadow-md">
-              <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
-                {(() => {
-                  const allUsers = [...usersList];
-                  if (currentUser && (currentUser.id || currentUser.username || currentUsername)) {
-                    const exists = allUsers.some(u => (currentUser.id && u.id === currentUser.id) || (currentUser.username && u.username === currentUser.username) || (currentUsername && u.username === currentUsername));
-                    if (!exists) {
-                      allUsers.push({
-                        ...currentUser,
-                        id: currentUser.id || 'current-admin-user',
-                        username: currentUser.username || currentUsername || authUsername || 'rayan',
-                        name: currentUser.name || userName || currentUsername || 'Rayan',
-                        avatar: currentUser.avatar || userAvatar || '',
-                        role: userRole || currentUser.role || (isUserSuperAdmin || isUserAdmin || isUserRayan ? 'admin' : 'user'),
-                        isVip: true,
-                        vip: true,
-                        vip_plan: vipPlan || 'vip_gold',
-                        online: true,
-                        isOnline: true,
-                        status: 'Online'
-                      });
-                    }
-                  }
-                  return allUsers
-                    .filter(u => {
-                      if (!u || u.status === 'banned' || u.isBanned) return false;
-                      const role = String(u.role || '').toLowerCase();
-                      const uname = String(u.username || '').toLowerCase();
-                      const email = String(u.email || '').toLowerCase();
-                      const isAdmin = role === 'admin' || role === 'superadmin' || role === 'owner' || Boolean(u.isAdmin || u.is_admin || u.isSuperAdmin || u.is_super_admin) || uname === 'rayan' || uname === 'admin' || uname === 'superadmin' || email.includes('tattoo.rayan');
-                      const isVip = Boolean(u.isVip || u.is_vip || u.vip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null') || u.isTop || isAdmin);
-                      const isOnline = Boolean(u.online || u.isOnline || u.status === 'Online');
-                      return isAdmin || isVip || isOnline;
-                    })
-                    .sort((a, b) => {
-                      const roleA = String(a.role || '').toLowerCase();
-                      const unameA = String(a.username || '').toLowerCase();
-                      const emailA = String(a.email || '').toLowerCase();
-                      const isAdminA = roleA === 'admin' || roleA === 'superadmin' || roleA === 'owner' || Boolean(a.isAdmin || a.is_admin || a.isSuperAdmin || a.is_super_admin) || unameA === 'rayan' || unameA === 'admin' || unameA === 'superadmin' || emailA.includes('tattoo.rayan');
-
-                      const roleB = String(b.role || '').toLowerCase();
-                      const unameB = String(b.username || '').toLowerCase();
-                      const emailB = String(b.email || '').toLowerCase();
-                      const isAdminB = roleB === 'admin' || roleB === 'superadmin' || roleB === 'owner' || Boolean(b.isAdmin || b.is_admin || b.isSuperAdmin || b.is_super_admin) || unameB === 'rayan' || unameB === 'admin' || unameB === 'superadmin' || emailB.includes('tattoo.rayan');
-
-                      const isVipA = Boolean(a.isVip || a.is_vip || a.vip || (a.vip_plan && a.vip_plan !== 'none' && a.vip_plan !== 'null') || a.isTop || isAdminA);
-                      const isVipB = Boolean(b.isVip || b.is_vip || b.vip || (b.vip_plan && b.vip_plan !== 'none' && b.vip_plan !== 'null') || b.isTop || isAdminB);
-
-                      if (isAdminA && !isAdminB) return -1;
-                      if (!isAdminA && isAdminB) return 1;
-                      if (isVipA && !isVipB) return -1;
-                      if (!isVipA && isVipB) return 1;
-                      return 0;
-                    })
-                    .map(user => {
-                      const role = String(user.role || '').toLowerCase();
-                      const uname = String(user.username || '').toLowerCase();
-                      const email = String(user.email || '').toLowerCase();
-                      const isAdmin = role === 'admin' || role === 'superadmin' || role === 'owner' || Boolean(user.isAdmin || user.is_admin || user.isSuperAdmin || user.is_super_admin) || uname === 'rayan' || uname === 'admin' || uname === 'superadmin' || email.includes('tattoo.rayan');
-                      const isVip = Boolean(user.isVip || user.is_vip || user.vip || (user.vip_plan && user.vip_plan !== 'none' && user.vip_plan !== 'null') || user.isTop || isAdmin);
-                      const isOnline = Boolean(user.online || user.isOnline || user.status === 'Online');
-
-                      return (
-                        <div
-                          key={user.id || user.username}
-                          className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setIsUserProfileModalOpen(true);
-                          }}
-                        >
-                          <div className="relative">
-                            {/* Standard Avatar container */}
-                            <div className={`w-12 h-12 rounded-full p-[2px] transition-transform duration-300 group-hover:scale-105 shadow-md ${
-                              isVip 
-                                ? 'bg-gradient-to-tr from-amber-400 via-yellow-400 to-orange-500 ring-1 ring-amber-400/40' 
-                                : 'bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400'
-                            }`}>
-                              {user.avatar ? (
-                                <img
-                                  src={user.avatar}
-                                  alt={user.name || user.username}
-                                  className="w-full h-full object-cover rounded-full border border-slate-950"
-                                />
-                              ) : (
-                                <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-xs font-black text-white border border-slate-950">
-                                  {(user.name || user.username || 'U').charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* VIP Delicate Small Crown Badge on Top-Left Corner */}
-                            {isVip && (
-                              <div 
-                                className="absolute -top-1 -left-1 z-10 w-3.5 h-3.5 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-yellow-600 border border-amber-200 shadow-sm -rotate-12 flex items-center justify-center pointer-events-none"
-                                title={loc('کاربر VIP', 'VIP Member')}
-                              >
-                                <Crown className="w-2 h-2 text-slate-950 fill-slate-950" />
-                              </div>
-                            )}
-
-                            {/* Online Indicator on Bottom-Right */}
-                            {isOnline && (
-                              <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full border-2 border-slate-950 shadow-sm" />
-                            )}
-                          </div>
-
-                          {/* User Name */}
-                          <span className={`text-[10px] font-bold max-w-[56px] truncate text-center ${
-                            isVip ? 'text-amber-300 group-hover:text-amber-200 font-black' : 'text-slate-200 group-hover:text-white'
-                          }`}>
-                            {user.name || user.username}
-                          </span>
-                        </div>
-                      );
-                    });
-                })()}
-              </div>
-            </div>
-
             {/* TOP HARMONIZED SUB-TAB SWITCHER (EXPLORE COMPASS / LIVE BROADCASTS FEED / START LIVE STREAM) */}
             <div className="max-w-md mx-auto w-full px-1">
               <div className="grid grid-cols-3 gap-1.5 bg-slate-950/90 backdrop-blur-xl p-1.5 rounded-2xl border border-slate-800/90 shadow-xl shadow-purple-950/20">
@@ -3472,8 +3351,148 @@ export default function App() {
               </div>
             </div>
 
-            {/* SUB-TAB 1: EXPLORE (USER DISCOVERY FEED) */}
+            {/* SUB-TAB 1: EXPLORE (USERS FEED - INCLUDES ONLINE & VIP USERS RAIL) */}
             {homeSubTab === 'explore' && <div className="space-y-3 animate-fadeIn">
+
+                {/* TOP UNIFIED ONLINE & VIP USERS RAIL (Exclusively in Explore / Users tab) */}
+                <div className="bg-slate-950/80 p-2 rounded-2xl border border-slate-800/80 shadow-md">
+                  <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
+                    {(() => {
+                      const seenIds = new Set();
+                      const seenUsernames = new Set();
+                      const allUsers = [];
+
+                      // Add currentUser first if logged in
+                      if (currentUser && (currentUser.id || currentUser.username || currentUsername)) {
+                        const adminObj = {
+                          ...currentUser,
+                          id: currentUser.id || 'current-admin-user',
+                          username: currentUser.username || currentUsername || authUsername || 'rayan',
+                          name: currentUser.name || userName || currentUsername || 'Rayan',
+                          avatar: currentUser.avatar || userAvatar || '',
+                          role: userRole || currentUser.role || (isUserSuperAdmin || isUserAdmin || isUserRayan ? 'admin' : 'user'),
+                          isVip: true,
+                          vip: true,
+                          vip_plan: vipPlan || 'vip_gold',
+                          online: true,
+                          isOnline: true,
+                          status: 'Online'
+                        };
+                        allUsers.push(adminObj);
+                        if (adminObj.id) seenIds.add(String(adminObj.id));
+                        if (adminObj.username) seenUsernames.add(String(adminObj.username).toLowerCase());
+                      }
+
+                      // Add from usersList ensuring strictly no duplicate id or username
+                      (usersList || []).forEach(u => {
+                        if (!u) return;
+                        const uid = u.id ? String(u.id) : null;
+                        const uname = u.username ? String(u.username).toLowerCase() : null;
+
+                        if (uid && seenIds.has(uid)) return;
+                        if (uname && seenUsernames.has(uname)) return;
+
+                        if (uid) seenIds.add(uid);
+                        if (uname) seenUsernames.add(uname);
+                        allUsers.push(u);
+                      });
+
+                      return allUsers
+                        .filter(u => {
+                          if (!u || u.status === 'banned' || u.isBanned) return false;
+                          const role = String(u.role || '').toLowerCase();
+                          const uname = String(u.username || '').toLowerCase();
+                          const email = String(u.email || '').toLowerCase();
+                          const isAdmin = role === 'admin' || role === 'superadmin' || role === 'owner' || Boolean(u.isAdmin || u.is_admin || u.isSuperAdmin || u.is_super_admin) || uname === 'rayan' || uname === 'admin' || uname === 'superadmin' || email.includes('tattoo.rayan');
+                          const isVip = Boolean(u.isVip || u.is_vip || u.vip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null') || u.isTop || isAdmin);
+                          const isOnline = Boolean(u.online || u.isOnline || u.status === 'Online');
+                          return isAdmin || isVip || isOnline;
+                        })
+                        .sort((a, b) => {
+                          const roleA = String(a.role || '').toLowerCase();
+                          const unameA = String(a.username || '').toLowerCase();
+                          const emailA = String(a.email || '').toLowerCase();
+                          const isAdminA = roleA === 'admin' || roleA === 'superadmin' || roleA === 'owner' || Boolean(a.isAdmin || a.is_admin || a.isSuperAdmin || a.is_super_admin) || unameA === 'rayan' || unameA === 'admin' || unameA === 'superadmin' || emailA.includes('tattoo.rayan');
+
+                          const roleB = String(b.role || '').toLowerCase();
+                          const unameB = String(b.username || '').toLowerCase();
+                          const emailB = String(b.email || '').toLowerCase();
+                          const isAdminB = roleB === 'admin' || roleB === 'superadmin' || roleB === 'owner' || Boolean(b.isAdmin || b.is_admin || b.isSuperAdmin || b.is_super_admin) || unameB === 'rayan' || unameB === 'admin' || unameB === 'superadmin' || emailB.includes('tattoo.rayan');
+
+                          const isVipA = Boolean(a.isVip || a.is_vip || a.vip || (a.vip_plan && a.vip_plan !== 'none' && a.vip_plan !== 'null') || a.isTop || isAdminA);
+                          const isVipB = Boolean(b.isVip || b.is_vip || b.vip || (b.vip_plan && b.vip_plan !== 'none' && b.vip_plan !== 'null') || b.isTop || isAdminB);
+
+                          if (isAdminA && !isAdminB) return -1;
+                          if (!isAdminA && isAdminB) return 1;
+                          if (isVipA && !isVipB) return -1;
+                          if (!isVipA && isVipB) return 1;
+                          return 0;
+                        })
+                        .map(user => {
+                          const role = String(user.role || '').toLowerCase();
+                          const uname = String(user.username || '').toLowerCase();
+                          const email = String(user.email || '').toLowerCase();
+                          const isAdmin = role === 'admin' || role === 'superadmin' || role === 'owner' || Boolean(user.isAdmin || user.is_admin || user.isSuperAdmin || user.is_super_admin) || uname === 'rayan' || uname === 'admin' || uname === 'superadmin' || email.includes('tattoo.rayan');
+                          const isVip = Boolean(user.isVip || user.is_vip || user.vip || (user.vip_plan && user.vip_plan !== 'none' && user.vip_plan !== 'null') || user.isTop || isAdmin);
+                          const isOnline = Boolean(user.online || user.isOnline || user.status === 'Online');
+
+                          return (
+                            <div
+                              key={user.id || user.username}
+                              className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setIsUserProfileModalOpen(true);
+                              }}
+                            >
+                              <div className="relative">
+                                {/* Standard Avatar container */}
+                                <div className={`w-12 h-12 rounded-full p-[2px] transition-transform duration-300 group-hover:scale-105 shadow-md ${
+                                  isVip 
+                                    ? 'bg-gradient-to-tr from-amber-400 via-yellow-400 to-orange-500 ring-1 ring-amber-400/40' 
+                                    : 'bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400'
+                                }`}>
+                                  {user.avatar ? (
+                                    <img
+                                      src={user.avatar}
+                                      alt={user.name || user.username}
+                                      className="w-full h-full object-cover rounded-full border border-slate-950"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-xs font-black text-white border border-slate-950">
+                                      {(user.name || user.username || 'U').charAt(0).toUpperCase()}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* VIP Delicate Small Crown Badge on Top-Left Corner */}
+                                {isVip && (
+                                  <div 
+                                    className="absolute -top-1 -left-1 z-10 w-3.5 h-3.5 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-yellow-600 border border-amber-200 shadow-sm -rotate-12 flex items-center justify-center pointer-events-none"
+                                    title={loc('کاربر VIP', 'VIP Member')}
+                                  >
+                                    <Crown className="w-2 h-2 text-slate-950 fill-slate-950" />
+                                  </div>
+                                )}
+
+                                {/* Online Indicator on Bottom-Right */}
+                                {isOnline && (
+                                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full border-2 border-slate-950 shadow-sm" />
+                                )}
+                              </div>
+
+                              {/* User Name */}
+                              <span className={`text-[10px] font-bold max-w-[56px] truncate text-center ${
+                                isVip ? 'text-amber-300 group-hover:text-amber-200 font-black' : 'text-slate-200 group-hover:text-white'
+                              }`}>
+                                {user.name || user.username}
+                              </span>
+                            </div>
+                          );
+                        });
+                    })()}
+                  </div>
+                </div>
 
                 {/* Scrollable Compact User Filter Bar (7 Distinct Cards) */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar dir-rtl">
@@ -3617,8 +3636,107 @@ export default function App() {
 
               </div>}
 
-            {/* SUB-TAB 2: LIVE STREAMS (DEDICATED WATCHING EXPERIENCE) */}
-            {homeSubTab === 'live' && <div className="animate-fadeIn">
+            {/* SUB-TAB 2: LIVE STREAMS (DEDICATED WATCHING EXPERIENCE WITH STORY RAIL) */}
+            {homeSubTab === 'live' && <div className="space-y-3 animate-fadeIn">
+                
+                {/* TOP STORIES RAIL (Moved exclusively to Live Streams tab) */}
+                <div className="bg-slate-950/80 p-2 rounded-2xl border border-slate-800/80 shadow-md">
+                  <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
+                    
+                    {/* Add Story Action */}
+                    <div
+                      onClick={() => {
+                        setIsAddStoryModalOpen(true);
+                      }}
+                      className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                    >
+                      <div className="w-12 h-12 rounded-full border-2 border-dashed border-pink-500/70 flex items-center justify-center bg-pink-500/10 group-hover:border-pink-400 group-hover:bg-pink-500/20 transition-all shadow-sm">
+                        <Plus className="w-5 h-5 text-pink-400 group-hover:scale-110 transition" />
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-300 max-w-[56px] truncate text-center">
+                        {loc('استوری شما', 'Your Story')}
+                      </span>
+                    </div>
+
+                    {/* Published Stories Grouped by User */}
+                    {(() => {
+                      const map = new Map();
+                      (advancedStories || []).forEach(story => {
+                        const key = String(story.userId || story.user_id || story.username || story.id);
+                        if (!map.has(key)) {
+                          const isMe = Boolean(
+                            (currentUser?.id && (String(story.userId) === String(currentUser.id) || String(story.user_id) === String(currentUser.id))) ||
+                            (currentUsername && story.username && story.username.toLowerCase() === currentUsername.toLowerCase()) ||
+                            (authUsername && story.username && story.username.toLowerCase() === authUsername.toLowerCase())
+                          );
+                          map.set(key, {
+                            id: key,
+                            userId: story.userId || story.user_id,
+                            username: story.username,
+                            isMe: isMe,
+                            user: {
+                              id: story.userId || story.user_id,
+                              username: story.username,
+                              name: story.username || (isMe ? (currentUser?.name || currentUsername) : 'User'),
+                              avatar: story.userAvatar || story.avatar || (isMe ? (currentUser?.avatar || userAvatar) : ''),
+                              isVip: Boolean(story.isVip || story.is_vip || (isMe && (vipPlan && vipPlan !== 'none')))
+                            },
+                            items: []
+                          });
+                        }
+                        map.get(key).items.push({
+                          id: story.id,
+                          url: story.media_url || story.imageUrl || story.url || story.videoUrl,
+                          type: story.media_type || (story.videoUrl ? 'video' : 'image'),
+                          caption: story.caption || story.title || '',
+                          time: story.time || (story.created_at ? new Date(story.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'هم‌اکنون'),
+                          views: Number(story.views_count || story.views || 0)
+                        });
+                      });
+                      const grouped = Array.from(map.values());
+
+                      return grouped.map(group => {
+                        return (
+                          <div
+                            key={group.id}
+                            onClick={() => {
+                              setActiveStoryView({
+                                group: group,
+                                currentIndex: 0
+                              });
+                            }}
+                            className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                          >
+                            <div className="relative">
+                              <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-pink-500 via-purple-500 to-amber-400 transition-transform duration-300 group-hover:scale-105 shadow-md">
+                                {group.user?.avatar ? (
+                                  <img
+                                    src={group.user.avatar}
+                                    alt={group.user.name || group.user.username}
+                                    className="w-full h-full object-cover rounded-full border border-slate-950"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-xs font-black text-white border border-slate-950">
+                                    {(group.user?.name || group.user?.username || 'U').charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+                              {group.user?.isVip && (
+                                <div className="absolute -top-1 -left-1 z-10 w-3.5 h-3.5 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-yellow-600 border border-amber-200 shadow-sm -rotate-12 flex items-center justify-center pointer-events-none">
+                                  <Crown className="w-2 h-2 text-slate-950 fill-slate-950" />
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-200 group-hover:text-white max-w-[56px] truncate text-center">
+                              {group.user?.name || group.user?.username}
+                            </span>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+
                 <LiveStreamSystem currentUser={currentUser} userRole={userRole} userGender={userGender} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isVerified={isVerified} isStreamerUser={isStreamerUser} kycApplications={kycApplications} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} currentUsername={currentUsername} userCoins={userCoins} setUserCoins={setUserCoins} vipPlan={vipPlan} setVipPlan={setVipPlan} streamsList={streamsList} setStreamsList={setStreamsList} viewingStream={viewingStream} setViewingStream={setViewingStream} showToast={showToast} setActiveTab={setActiveTab} handleInitiateCall={handleInitiateCall} addAdminAuditLog={addAdminAuditLog} setAdminReportsList={setAdminReportsList} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} />
               </div>}
 

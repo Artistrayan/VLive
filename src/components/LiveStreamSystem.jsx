@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Video, Flame, ShieldCheck, Lock, Unlock, Crown, Users, Eye, Search, Plus, 
+  Video, Flame, ShieldCheck, Lock, Unlock, Crown, Users, Eye, Plus, 
   Filter, Sparkles, MessageSquare, Heart, Gift, AlertTriangle, X, Check, 
   ChevronRight, Mic, MicOff, Camera, RefreshCw, Radio, Tag, ShieldAlert, FileText
 } from 'lucide-react';
@@ -38,7 +38,6 @@ export default function LiveStreamSystem({
   // Category & Subtab Switchers
   const [liveTypeTab, setLiveTypeTab] = useState('standard'); // 'standard' | 'adult'
   const [selectedSubCategory, setSelectedSubCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
 
   // 18+ Access Control States
   const [isAge18Verified, setIsAge18Verified] = useState(() => {
@@ -226,15 +225,6 @@ export default function LiveStreamSystem({
       return false;
     }
 
-    // Search Query Filter
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchTitle = (stream.title || '').toLowerCase().includes(q);
-      const matchHost = (stream.host || '').toLowerCase().includes(q);
-      const matchCategory = (stream.category || '').toLowerCase().includes(q);
-      if (!matchTitle && !matchHost && !matchCategory) return false;
-    }
-
     return true;
   });
 
@@ -303,23 +293,9 @@ export default function LiveStreamSystem({
   return (
     <div className="space-y-4 animate-fadeIn pb-12">
       
-      {/* 1. TOP SECTION HEADER & CATEGORY SWITCHER (Standard vs Adult 18+) */}
-      <div className="card-3d p-4 bg-slate-900/95 rounded-3xl border border-slate-800 backdrop-blur-xl shadow-xl space-y-3 dir-rtl">
+      {/* 1. TOP SECTION (Standard vs Adult 18+ Toggle and Sub-Categories) */}
+      <div className="card-3d p-3 bg-slate-900/95 rounded-3xl border border-slate-800 backdrop-blur-xl shadow-xl space-y-3 dir-rtl">
         
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 p-0.5 shadow-lg shadow-pink-500/30 flex items-center justify-center">
-              <Radio className="w-5 h-5 text-white animate-pulse" />
-            </div>
-            <div>
-              <h2 className="text-base font-black text-white flex items-center gap-1.5">
-                <span>V.LIVE</span>
-                <span className="text-[10px] bg-pink-500/20 text-pink-400 px-2 py-0.5 rounded-full border border-pink-500/30">{window.loc('زنده', 'alive')}</span>
-              </h2>
-            </div>
-          </div>
-        </div>
-
         {/* MAIN TYPE TOGGLE (Standard Live vs Adult Live 18+) */}
         <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
           <button
@@ -351,18 +327,6 @@ export default function LiveStreamSystem({
           >
             <Flame className="w-5 h-5 text-amber-400 animate-pulse" />
           </button>
-        </div>
-
-        {/* SEARCH BAR FOR STREAMS */}
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={liveTypeTab === 'adult' ? window.loc('جستجو در لایوهای ۱۸+ ...', 'Search in 18+ live...') : window.loc('جستجوی نام استریمر یا عنوان لایو ...', 'Search streamer name or live title...')}
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold text-white outline-none focus:border-pink-500 placeholder-slate-500 transition"
-          />
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
         </div>
 
         {/* SUBCATEGORY PILLS */}
