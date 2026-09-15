@@ -3201,7 +3201,7 @@ export default function App() {
   const handleOpenLiveBroadcast = () => {
     // Admin has direct full access without any gender check or KYC requirement
     if (isUserAdmin) {
-      setIsLiveStudioOpen(true);
+      setIsHostLiveOpen(true);
       return;
     }
     if (!isFemaleUser) {
@@ -3209,7 +3209,7 @@ export default function App() {
       return;
     }
     if (isStreamerUser) {
-      setIsLiveStudioOpen(true);
+      setIsHostLiveOpen(true);
     } else {
       const userApp = (kycApplications || []).find(a => (a.username === (currentUsername || userName) || a.user_id === currentUser?.id));
       if (userApp && userApp.status === 'Pending') {
