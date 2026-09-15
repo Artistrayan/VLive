@@ -3414,35 +3414,92 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* VIP Users Stories Row */}
-                <div className="bg-slate-950/60 p-2 rounded-2xl border border-slate-800/80">
-                  <div className="flex items-center justify-between px-1 mb-1.5">
-                    <span className="text-xs font-black text-amber-300 flex items-center gap-1">
-                      <Crown className="w-3.5 h-3.5 text-amber-400" />
-                      <span>VIP Members</span>
+                {/* Unified Online & VIP Users Rail */}
+                <div className="bg-slate-950/70 p-2.5 rounded-2xl border border-slate-800/80 shadow-md">
+                  <div className="flex items-center justify-between px-1 mb-2">
+                    <div className="flex items-center gap-1.5 text-xs font-black text-slate-200">
+                      <div className="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1 rounded-full border border-slate-800">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-[11px] text-emerald-400 font-bold">{loc('کاربران آنلاین و VIP', 'Online & VIP Users')}</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-bold">
+                      {usersList.filter(u => !u.isBanned && u.status !== 'banned' && (u.online || u.isOnline || u.status === 'Online' || u.isVip || u.is_vip || u.vip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null') || u.isTop)).length} {loc('کاربر', 'users')}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
-                    {usersList.filter(u => {
-                      if (u.status === 'banned' || u.isBanned) return false;
-                      const isVip = Boolean(u.isVip || u.is_vip || u.vip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null') || u.isTop);
-                      return isVip;
-                    }).map(user => <div key={user.id} className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group" onClick={() => {
-                      setSelectedUser(user);
-                      setIsUserProfileModalOpen(true);
-                    }}>
-                        <div className="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-orange-500 shadow-md group-hover:scale-105 transition">
-                          {user.avatar ? (
-                            <img src={user.avatar} alt={user.name} className="w-full h-full object-cover rounded-full border border-slate-950" />
-                          ) : (
-                            <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-white border border-slate-950">
-                              {(user.name || user.username || 'U').charAt(0).toUpperCase()}
+                  <div className="flex items-center gap-3.5 overflow-x-auto pb-1 no-scrollbar px-1">
+                    {usersList
+                      .filter(u => {
+                        if (u.status === 'banned' || u.isBanned) return false;
+                        const isVip = Boolean(u.isVip || u.is_vip || u.vip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null') || u.isTop);
+                        const isOnline = Boolean(u.online || u.isOnline || u.status === 'Online');
+                        return isOnline || isVip;
+                      })
+                      .sort((a, b) => {
+                        const aVip = Boolean(a.isVip || a.is_vip || a.vip || (a.vip_plan && a.vip_plan !== 'none' && a.vip_plan !== 'null') || a.isTop);
+                        const bVip = Boolean(b.isVip || b.is_vip || b.vip || (b.vip_plan && b.vip_plan !== 'none' && b.vip_plan !== 'null') || b.isTop);
+                        if (aVip && !bVip) return -1;
+                        if (!aVip && bVip) return 1;
+                        return 0;
+                      })
+                      .map(user => {
+                        const isVip = Boolean(user.isVip || user.is_vip || user.vip || (user.vip_plan && user.vip_plan !== 'none' && user.vip_plan !== 'null') || user.isTop);
+                        const isOnline = Boolean(user.online || user.isOnline || user.status === 'Online');
+
+                        return (
+                          <div
+                            key={user.id}
+                            className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setIsUserProfileModalOpen(true);
+                            }}
+                          >
+                            <div className="relative">
+                              {/* Avatar container with dynamic gradient border */}
+                              <div className={`w-13 h-13 rounded-full p-[2px] transition-transform duration-300 group-hover:scale-105 shadow-md ${
+                                isVip 
+                                  ? 'bg-gradient-to-tr from-amber-500 via-yellow-400 to-orange-500 ring-2 ring-amber-400/30' 
+                                  : 'bg-gradient-to-tr from-emerald-400 to-cyan-500'
+                              }`}>
+                                {user.avatar ? (
+                                  <img
+                                    src={user.avatar}
+                                    alt={user.name}
+                                    className="w-full h-full object-cover rounded-full border-2 border-slate-950"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-xs font-black text-white border-2 border-slate-950">
+                                    {(user.name || user.username || 'U').charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* VIP Diagonal / Tilted Crown on Top-Left Corner */}
+                              {isVip && (
+                                <div 
+                                  className="absolute -top-1.5 -left-1.5 z-10 w-5 h-5 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-yellow-600 border border-amber-200 shadow-lg -rotate-12 flex items-center justify-center"
+                                  title={loc('کاربر VIP', 'VIP Member')}
+                                >
+                                  <Crown className="w-3 h-3 text-slate-950 fill-slate-950" />
+                                </div>
+                              )}
+
+                              {/* Online Indicator on Bottom-Right */}
+                              {isOnline && (
+                                <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-slate-950 shadow-sm" />
+                              )}
                             </div>
-                          )}
-                          {user.online && <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border border-slate-950" />}
-                        </div>
-                        <span className="text-[9px] font-bold text-amber-200 max-w-[50px] truncate">{user.name}</span>
-                      </div>)}
+
+                            {/* User Name */}
+                            <span className={`text-[10px] font-bold max-w-[58px] truncate text-center ${
+                              isVip ? 'text-amber-300 group-hover:text-amber-200' : 'text-slate-300 group-hover:text-white'
+                            }`}>
+                              {user.name || user.username}
+                            </span>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
 
