@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Eye, Crown, Radio, Sparkles, Volume2, VolumeX, Maximize2, Play } from 'lucide-react';
+import { Eye, Crown, Radio, Sparkles, Volume2, VolumeX, Maximize2, Play, Lock } from 'lucide-react';
 import { LiveStreamRoomService } from '../services/liveStreamRoomService';
 import { livekitManager, fetchLiveKitToken, getLiveKitConfig } from '../services/livekitService';
 
@@ -11,12 +11,15 @@ import { livekitManager, fetchLiveKitToken, getLiveKitConfig } from '../services
  * 3. Sound mute/unmute preview toggle
  * 4. Countdown timer progress for 5-8 seconds preview
  * 5. Instant tap to open full live broadcast
+ * 6. Blur and Lock protection with delicate VIP badge for 18+ restricted streams
  */
 export default function LiveStreamCardWithPreview({
   stream,
   onSelectStream,
   isAdult = false,
-  currentUser
+  currentUser,
+  isLocked = false,
+  onUnlockRequest
 }) {
   const [isPreviewActive, setIsPreviewActive] = useState(false);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
@@ -64,7 +67,7 @@ export default function LiveStreamCardWithPreview({
 
   // Start Instant Preview for 6 seconds
   const startPreview = async () => {
-    if (isPreviewActive) return;
+    if (isPreviewActive || isLocked) return;
     setIsPreviewActive(true);
     setIsPreviewLoading(true);
     setPreviewSecondsLeft(6);
@@ -147,6 +150,7 @@ export default function LiveStreamCardWithPreview({
 
   // Touch Handlers for Mobile Swipe (Left/Right) and Long-Press Preview
   const handleTouchStart = (e) => {
+    if (isLocked) return;
     const touch = e.touches[0];
     touchStartXRef.current = touch.clientX;
     touchStartYRef.current = touch.clientY;
@@ -162,6 +166,7 @@ export default function LiveStreamCardWithPreview({
   };
 
   const handleTouchMove = (e) => {
+    if (isLocked) return;
     const touch = e.touches[0];
     const diffX = Math.abs(touch.clientX - touchStartXRef.current);
     const diffY = Math.abs(touch.clientY - touchStartYRef.current);
@@ -187,6 +192,12 @@ export default function LiveStreamCardWithPreview({
   };
 
   const handleClick = (e) => {
+    if (isLocked) {
+      if (typeof onUnlockRequest === 'function') {
+        onUnlockRequest(stream);
+      }
+      return;
+    }
     // If preview buttons clicked, don't trigger full open
     if (e.target.closest('.preview-control-btn')) return;
     stopPreview();
@@ -207,6 +218,7 @@ export default function LiveStreamCardWithPreview({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onMouseEnter={() => {
+        if (isLocked) return;
         // Desktop hover preview trigger after brief delay
         if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = setTimeout(() => {
@@ -217,7 +229,11 @@ export default function LiveStreamCardWithPreview({
         if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
         if (isPreviewActive) stopPreview();
       }}
-      className="card-3d bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 group relative cursor-pointer shadow-lg hover:border-pink-500/50 transition duration-300 select-none"
+      className={`card-3d bg-slate-900 rounded-3xl overflow-hidden border group relative cursor-pointer shadow-lg transition duration-300 select-none ${
+        isLocked 
+          ? 'border-amber-500/40 hover:border-amber-400/80 shadow-amber-500/5' 
+          : 'border-slate-800 hover:border-pink-500/50'
+      }`}
     >
       {/* THUMBNAIL & VIDEO PREVIEW CONTAINER */}
       <div className="aspect-[3/4] relative overflow-hidden bg-slate-950">
@@ -228,7 +244,11 @@ export default function LiveStreamCardWithPreview({
             src={stream.thumbnail || stream.avatar}
             alt={stream.title}
             className={`w-full h-full object-cover transition duration-500 ${
-              isPreviewActive ? 'filter brightness-40 blur-[1px]' : 'group-hover:scale-105'
+              isLocked 
+                ? 'filter blur-md brightness-50 scale-105' 
+                : isPreviewActive 
+                  ? 'filter brightness-40 blur-[1px]' 
+                  : 'group-hover:scale-105'
             }`}
           />
         ) : (
@@ -237,22 +257,40 @@ export default function LiveStreamCardWithPreview({
           </div>
         )}
 
-        {/* Real-time Video Preview Player */}
-        <video
-          ref={videoPreviewRef}
-          autoPlay
-          playsInline
-          muted={isAudioMuted}
-          className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-300 ${
-            isPreviewActive && hasRemoteVideo ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-        />
+        {/* Real-time Video Preview Player (disabled when locked) */}
+        {!isLocked && (
+          <video
+            ref={videoPreviewRef}
+            autoPlay
+            playsInline
+            muted={isAudioMuted}
+            className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-300 ${
+              isPreviewActive && hasRemoteVideo ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+          />
+        )}
 
         {/* DARK GRADIENT OVERLAY */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent pointer-events-none z-10" />
 
+        {/* LOCKED BLUR OVERLAY WITH LOCK ICON & NEAT VIP BADGE */}
+        {isLocked && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 p-2 bg-slate-950/40 backdrop-blur-[4px] pointer-events-none animate-fadeIn">
+            {/* Lock Icon */}
+            <div className="w-10 h-10 rounded-2xl bg-slate-950/85 backdrop-blur-xl border border-amber-400/50 text-amber-400 flex items-center justify-center shadow-xl shadow-amber-500/20 group-hover:scale-110 transition-transform duration-300">
+              <Lock className="w-5 h-5 text-amber-400" />
+            </div>
+
+            {/* Small, Organized & Translucent VIP Badge */}
+            <div className="px-2.5 py-0.5 rounded-full bg-slate-950/85 border border-amber-400/40 text-amber-300 text-[10px] font-black tracking-wider uppercase backdrop-blur-md flex items-center gap-1 shadow-md">
+              <Crown className="w-2.5 h-2.5 text-amber-400 fill-amber-400" />
+              <span>VIP</span>
+            </div>
+          </div>
+        )}
+
         {/* ACTIVE PREVIEW HUD / OVERLAY */}
-        {isPreviewActive && (
+        {!isLocked && isPreviewActive && (
           <div className="absolute inset-0 z-20 flex flex-col justify-between p-2.5 bg-black/30 backdrop-blur-[2px] animate-fadeIn pointer-events-none">
             
             {/* Top Preview Bar */}
@@ -318,7 +356,7 @@ export default function LiveStreamCardWithPreview({
         )}
 
         {/* 18+ VIP BADGE IF ADULT */}
-        {isAdult && !isPreviewActive && (
+        {isAdult && !isPreviewActive && !isLocked && (
           <div className="absolute top-9 right-2.5 bg-gradient-to-r from-amber-500 to-rose-600 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full shadow-lg border border-amber-300 flex items-center gap-1 z-10">
             <Crown className="w-3 h-3 text-slate-950" />
             <span>ADULT 18+</span>
@@ -333,13 +371,15 @@ export default function LiveStreamCardWithPreview({
             </span>
 
             {/* Hint for long-press / swipe preview */}
-            <span className="text-[8px] text-white/50 font-medium hidden sm:inline-block">
-              {window.loc('نگه‌داشتن برای پیش‌نمایش', 'Hold to preview')}
-            </span>
+            {!isLocked && (
+              <span className="text-[8px] text-white/50 font-medium hidden sm:inline-block">
+                {window.loc('نگه‌داشتن برای پیش‌نمایش', 'Hold to preview')}
+              </span>
+            )}
           </div>
           
           <h4 className="text-xs font-black text-white truncate drop-shadow">
-            {stream.title || window.loc('پخش زنده اختصاسی', 'Special live broadcast')}
+            {stream.title || window.loc('پخش زنده اختصاصی', 'Special live broadcast')}
           </h4>
 
           <div className="flex items-center gap-1.5 pt-0.5">

@@ -3645,7 +3645,7 @@ export default function App() {
                         
                         {/* Image Container with aspect ratio */}
                         <div className="aspect-[4/5] relative cursor-pointer overflow-hidden" onClick={() => {
-                          const activeStreamForUser = (streamsList || []).find(s => s && s.status === 'active' && s.is_live !== false && (
+                          const activeStreamForUser = (streamsList || []).find(s => s && s.status === 'active' && s.is_live !== false && !s.is_private && !s.isPrivate && s.visibility !== 'private' && s.category !== 'Private Live' && s.category !== 'VIP Chat' && (
                             (s.host_id && String(s.host_id) === String(user.id)) ||
                             (s.host && (s.host === user.name || s.host === user.username))
                           ));
@@ -3694,8 +3694,8 @@ export default function App() {
                             <Heart className={`w-3.5 h-3.5 ${isUserCardLiked ? 'fill-white text-white' : 'text-pink-400'}`} />
                           </button>
 
-                          {/* Top Right LIVE Badge (if streamer has real active live) */}
-                          {Boolean((streamsList || []).some(s => s && s.status === 'active' && s.is_live !== false && ((s.host_id && String(s.host_id) === String(user.id)) || (s.host && (s.host === user.name || s.host === user.username))))) && (
+                          {/* Top Right LIVE Badge (if streamer has real active public live) */}
+                          {Boolean((streamsList || []).some(s => s && s.status === 'active' && s.is_live !== false && !s.is_private && !s.isPrivate && s.visibility !== 'private' && s.category !== 'Private Live' && s.category !== 'VIP Chat' && ((s.host_id && String(s.host_id) === String(user.id)) || (s.host && (s.host === user.name || s.host === user.username))))) && (
                             <div className="absolute top-7 right-1.5 flex items-center gap-1 bg-rose-600/90 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-rose-400/60 z-10">
                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                                <span className="text-[8px] font-black text-white">LIVE</span>
