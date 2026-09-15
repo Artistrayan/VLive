@@ -3305,8 +3305,8 @@ export default function App() {
         {activeTab === 'home' && <div className="space-y-3 animate-fadeIn pb-12">
             
             {/* TOP UNIFIED FEMALE ONLINE & VIP USERS RAIL (Placed directly above the subtab buttons) */}
-            <div className="bg-slate-950/75 p-2.5 rounded-2xl border border-slate-800/80 shadow-lg">
-              <div className="flex items-center justify-between px-1 mb-2">
+            <div className="bg-slate-950/75 p-3 rounded-2xl border border-slate-800/80 shadow-lg">
+              <div className="flex items-center justify-between px-1 mb-2.5">
                 <div className="flex items-center gap-1.5 text-xs font-black text-slate-200">
                   <div className="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1 rounded-full border border-slate-800">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -3323,7 +3323,7 @@ export default function App() {
                   }).length} {loc('کاربر', 'users')}
                 </span>
               </div>
-              <div className="flex items-center gap-3.5 overflow-x-auto pb-1 no-scrollbar px-1">
+              <div className="flex items-center gap-4 overflow-x-auto pb-1.5 no-scrollbar px-1">
                 {usersList
                   .filter(u => {
                     if (!u || u.status === 'banned' || u.isBanned) return false;
@@ -3355,10 +3355,10 @@ export default function App() {
                         }}
                       >
                         <div className="relative">
-                          {/* Avatar container with dynamic gradient border */}
-                          <div className={`w-13 h-13 rounded-full p-[2px] transition-transform duration-300 group-hover:scale-105 shadow-md ${
+                          {/* Large Avatar container with dynamic gradient border */}
+                          <div className={`w-16 h-16 sm:w-18 sm:h-18 rounded-full p-[2.5px] transition-transform duration-300 group-hover:scale-105 shadow-lg ${
                             isVip 
-                              ? 'bg-gradient-to-tr from-amber-500 via-yellow-400 to-orange-500 ring-2 ring-amber-400/30' 
+                              ? 'bg-gradient-to-tr from-amber-400 via-yellow-400 to-orange-500 ring-2 ring-amber-400/40 shadow-amber-500/20' 
                               : 'bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400'
                           }`}>
                             {user.avatar ? (
@@ -3368,31 +3368,31 @@ export default function App() {
                                 className="w-full h-full object-cover rounded-full border-2 border-slate-950"
                               />
                             ) : (
-                              <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-xs font-black text-white border-2 border-slate-950">
+                              <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-sm font-black text-white border-2 border-slate-950">
                                 {(user.name || user.username || 'U').charAt(0).toUpperCase()}
                               </div>
                             )}
                           </div>
 
-                          {/* VIP Diagonal / Tilted Crown on Top-Left Corner */}
+                          {/* VIP Delicate Small Crown Badge on Top-Left Corner */}
                           {isVip && (
                             <div 
-                              className="absolute -top-1.5 -left-1.5 z-10 w-5 h-5 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-yellow-600 border border-amber-200 shadow-lg -rotate-12 flex items-center justify-center"
+                              className="absolute -top-1 -left-1 z-10 w-4 h-4 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-yellow-600 border border-amber-200 shadow-md -rotate-12 flex items-center justify-center pointer-events-none"
                               title={loc('کاربر VIP', 'VIP Member')}
                             >
-                              <Crown className="w-3 h-3 text-slate-950 fill-slate-950" />
+                              <Crown className="w-2.5 h-2.5 text-slate-950 fill-slate-950" />
                             </div>
                           )}
 
                           {/* Online Indicator on Bottom-Right */}
                           {isOnline && (
-                            <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-slate-950 shadow-sm" />
+                            <div className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-slate-950 shadow-sm" />
                           )}
                         </div>
 
                         {/* User Name */}
-                        <span className={`text-[10px] font-bold max-w-[58px] truncate text-center ${
-                          isVip ? 'text-amber-300 group-hover:text-amber-200' : 'text-slate-300 group-hover:text-white'
+                        <span className={`text-[11px] font-bold max-w-[68px] truncate text-center ${
+                          isVip ? 'text-amber-300 group-hover:text-amber-200 font-black' : 'text-slate-200 group-hover:text-white'
                         }`}>
                           {user.name || user.username}
                         </span>
