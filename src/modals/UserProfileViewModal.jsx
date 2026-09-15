@@ -212,7 +212,7 @@ export default function UserProfileViewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] bg-slate-950/90 backdrop-blur-xl flex flex-col justify-end sm:justify-center p-0 sm:p-4 overflow-y-auto animate-fadeIn dir-ltr">
+    <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-xl flex flex-col justify-end sm:justify-center p-0 sm:p-4 overflow-y-auto animate-fadeIn dir-ltr">
       <div className="w-full max-w-xl mx-auto bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 rounded-t-3xl sm:rounded-3xl border border-slate-800/80 shadow-2xl overflow-hidden my-0 sm:my-auto max-h-[92vh] flex flex-col">
         
         {/* ================= HEADER COVER & PROFILE PHOTO ================= */}
@@ -652,7 +652,7 @@ export default function UserProfileViewModal({
 
       {/* ================= REPORT MODAL POPUP ================= */}
       {isReportModalOpen && (
-        <div className="fixed inset-0 z-[80] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[110] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
           <div className="w-full max-w-sm bg-slate-900 rounded-3xl border border-slate-800 p-5 space-y-4 shadow-2xl dir-rtl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="font-bold text-white text-sm flex items-center gap-2">
