@@ -3354,81 +3354,80 @@ export default function App() {
             {/* SUB-TAB 1: EXPLORE (USERS FEED - INCLUDES ONLINE & VIP USERS RAIL) */}
             {homeSubTab === 'explore' && <div className="space-y-3 animate-fadeIn">
 
-                {/* TOP UNIFIED ONLINE & VIP USERS RAIL (Exclusively in Explore / Users tab) */}
-                <div className="bg-slate-950/80 p-2 rounded-2xl border border-slate-800/80 shadow-md">
-                  <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
-                    {(() => {
-                      const seenIds = new Set();
-                      const seenUsernames = new Set();
-                      const allUsers = [];
+                {/* TOP UNIFIED ONLINE & VIP USERS RAIL (Exclusively for Online VIP Users in Explore / Users tab) */}
+                {(() => {
+                  const seenIds = new Set();
+                  const seenUsernames = new Set();
+                  const allUsers = [];
 
-                      // Add currentUser first if logged in
-                      if (currentUser && (currentUser.id || currentUser.username || currentUsername)) {
-                        const adminObj = {
-                          ...currentUser,
-                          id: currentUser.id || 'current-admin-user',
-                          username: currentUser.username || currentUsername || authUsername || 'rayan',
-                          name: currentUser.name || userName || currentUsername || 'Rayan',
-                          avatar: currentUser.avatar || userAvatar || '',
-                          role: userRole || currentUser.role || (isUserSuperAdmin || isUserAdmin || isUserRayan ? 'admin' : 'user'),
-                          isVip: true,
-                          vip: true,
-                          vip_plan: vipPlan || 'vip_gold',
-                          online: true,
-                          isOnline: true,
-                          status: 'Online'
-                        };
-                        allUsers.push(adminObj);
-                        if (adminObj.id) seenIds.add(String(adminObj.id));
-                        if (adminObj.username) seenUsernames.add(String(adminObj.username).toLowerCase());
-                      }
+                  // Add currentUser first if logged in
+                  if (currentUser && (currentUser.id || currentUser.username || currentUsername)) {
+                    const adminObj = {
+                      ...currentUser,
+                      id: currentUser.id || 'current-admin-user',
+                      username: currentUser.username || currentUsername || authUsername || 'rayan',
+                      name: currentUser.name || userName || currentUsername || 'Rayan',
+                      avatar: currentUser.avatar || userAvatar || '',
+                      role: userRole || currentUser.role || (isUserSuperAdmin || isUserAdmin || isUserRayan ? 'admin' : 'user'),
+                      isVip: true,
+                      vip: true,
+                      vip_plan: vipPlan || 'vip_gold',
+                      online: true,
+                      isOnline: true,
+                      status: 'Online'
+                    };
+                    allUsers.push(adminObj);
+                    if (adminObj.id) seenIds.add(String(adminObj.id));
+                    if (adminObj.username) seenUsernames.add(String(adminObj.username).toLowerCase());
+                  }
 
-                      // Add from usersList ensuring strictly no duplicate id or username
-                      (usersList || []).forEach(u => {
-                        if (!u) return;
-                        const uid = u.id ? String(u.id) : null;
-                        const uname = u.username ? String(u.username).toLowerCase() : null;
+                  // Add from usersList ensuring strictly no duplicate id or username
+                  (usersList || []).forEach(u => {
+                    if (!u) return;
+                    const uid = u.id ? String(u.id) : null;
+                    const uname = u.username ? String(u.username).toLowerCase() : null;
 
-                        if (uid && seenIds.has(uid)) return;
-                        if (uname && seenUsernames.has(uname)) return;
+                    if (uid && seenIds.has(uid)) return;
+                    if (uname && seenUsernames.has(uname)) return;
 
-                        if (uid) seenIds.add(uid);
-                        if (uname) seenUsernames.add(uname);
-                        allUsers.push(u);
-                      });
+                    if (uid) seenIds.add(uid);
+                    if (uname) seenUsernames.add(uname);
+                    allUsers.push(u);
+                  });
 
-                      return allUsers
-                        .filter(u => {
-                          if (!u || u.status === 'banned' || u.isBanned) return false;
-                          const role = String(u.role || '').toLowerCase();
-                          const uname = String(u.username || '').toLowerCase();
-                          const email = String(u.email || '').toLowerCase();
-                          const isAdmin = role === 'admin' || role === 'superadmin' || role === 'owner' || Boolean(u.isAdmin || u.is_admin || u.isSuperAdmin || u.is_super_admin) || uname === 'rayan' || uname === 'admin' || uname === 'superadmin' || email.includes('tattoo.rayan');
-                          const isVip = Boolean(u.isVip || u.is_vip || u.vip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null') || u.isTop || isAdmin);
-                          const isOnline = Boolean(u.online || u.isOnline || u.status === 'Online');
-                          return isAdmin || isVip || isOnline;
-                        })
-                        .sort((a, b) => {
-                          const roleA = String(a.role || '').toLowerCase();
-                          const unameA = String(a.username || '').toLowerCase();
-                          const emailA = String(a.email || '').toLowerCase();
-                          const isAdminA = roleA === 'admin' || roleA === 'superadmin' || roleA === 'owner' || Boolean(a.isAdmin || a.is_admin || a.isSuperAdmin || a.is_super_admin) || unameA === 'rayan' || unameA === 'admin' || unameA === 'superadmin' || emailA.includes('tattoo.rayan');
+                  const vipOnlineList = allUsers
+                    .filter(u => {
+                      if (!u || u.status === 'banned' || u.isBanned) return false;
+                      const role = String(u.role || '').toLowerCase();
+                      const uname = String(u.username || '').toLowerCase();
+                      const email = String(u.email || '').toLowerCase();
+                      const isAdmin = role === 'admin' || role === 'superadmin' || role === 'owner' || Boolean(u.isAdmin || u.is_admin || u.isSuperAdmin || u.is_super_admin) || uname === 'rayan' || uname === 'admin' || uname === 'superadmin' || email.includes('tattoo.rayan');
+                      const isVip = Boolean(u.isVip || u.is_vip || u.vip || (u.vip_plan && u.vip_plan !== 'none' && u.vip_plan !== 'null') || u.isTop || isAdmin);
+                      const isOnline = Boolean(u.online || u.isOnline || u.status === 'Online');
+                      return isVip && isOnline;
+                    })
+                    .sort((a, b) => {
+                      const roleA = String(a.role || '').toLowerCase();
+                      const unameA = String(a.username || '').toLowerCase();
+                      const emailA = String(a.email || '').toLowerCase();
+                      const isAdminA = roleA === 'admin' || roleA === 'superadmin' || roleA === 'owner' || Boolean(a.isAdmin || a.is_admin || a.isSuperAdmin || a.is_super_admin) || unameA === 'rayan' || unameA === 'admin' || unameA === 'superadmin' || emailA.includes('tattoo.rayan');
 
-                          const roleB = String(b.role || '').toLowerCase();
-                          const unameB = String(b.username || '').toLowerCase();
-                          const emailB = String(b.email || '').toLowerCase();
-                          const isAdminB = roleB === 'admin' || roleB === 'superadmin' || roleB === 'owner' || Boolean(b.isAdmin || b.is_admin || b.isSuperAdmin || b.is_super_admin) || unameB === 'rayan' || unameB === 'admin' || unameB === 'superadmin' || emailB.includes('tattoo.rayan');
+                      const roleB = String(b.role || '').toLowerCase();
+                      const unameB = String(b.username || '').toLowerCase();
+                      const emailB = String(b.email || '').toLowerCase();
+                      const isAdminB = roleB === 'admin' || roleB === 'superadmin' || roleB === 'owner' || Boolean(b.isAdmin || b.is_admin || b.isSuperAdmin || b.is_super_admin) || unameB === 'rayan' || unameB === 'admin' || unameB === 'superadmin' || emailB.includes('tattoo.rayan');
 
-                          const isVipA = Boolean(a.isVip || a.is_vip || a.vip || (a.vip_plan && a.vip_plan !== 'none' && a.vip_plan !== 'null') || a.isTop || isAdminA);
-                          const isVipB = Boolean(b.isVip || b.is_vip || b.vip || (b.vip_plan && b.vip_plan !== 'none' && b.vip_plan !== 'null') || b.isTop || isAdminB);
+                      if (isAdminA && !isAdminB) return -1;
+                      if (!isAdminA && isAdminB) return 1;
+                      return 0;
+                    });
 
-                          if (isAdminA && !isAdminB) return -1;
-                          if (!isAdminA && isAdminB) return 1;
-                          if (isVipA && !isVipB) return -1;
-                          if (!isVipA && isVipB) return 1;
-                          return 0;
-                        })
-                        .map(user => {
+                  if (vipOnlineList.length === 0) return null;
+
+                  return (
+                    <div className="bg-slate-950/80 p-2 rounded-2xl border border-slate-800/80 shadow-md">
+                      <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
+                        {vipOnlineList.map(user => {
                           const role = String(user.role || '').toLowerCase();
                           const uname = String(user.username || '').toLowerCase();
                           const email = String(user.email || '').toLowerCase();
@@ -3489,10 +3488,11 @@ export default function App() {
                               </span>
                             </div>
                           );
-                        });
-                    })()}
-                  </div>
-                </div>
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Scrollable Compact User Filter Bar (7 Distinct Cards) */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar dir-rtl">
