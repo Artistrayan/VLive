@@ -22,6 +22,8 @@ import VLiveEntrySplashLoader from './components/Overlays/VLiveEntrySplashLoader
 import FloatingDailyGift from './components/FloatingDailyGift';
 import LiveStreamSystem from './components/LiveStreamSystem';
 import UltraModernHome from './components/HomeScreen/UltraModernHome';
+import UltraPremiumLiveViewer from './components/LiveViewer/UltraPremiumLiveViewer';
+import UltraSexyMatchView from './components/Match/UltraSexyMatchView';
 import LiveStudioModal from './components/LiveStudioModal';
 import StreamerDashboardModal from './components/StreamerDashboardModal';
 import WalletTab from './components/Tabs/WalletTab';
@@ -3339,230 +3341,37 @@ export default function App() {
             setLiveMode={setHomeLiveMode}
           />
         )}
-        {/* TAB: MATCH TAB (RADAR & SWIPE MATCH SYSTEM) */}
-        {activeTab === 'match' && <div className="h-[calc(100vh-130px)] max-w-md mx-auto flex flex-col justify-between overflow-hidden px-3 py-2 select-none animate-fadeIn font-sans relative">
-            
-            {/* OVAL 3D MODE SELECTOR (RADAR vs SWIPE) IN ONE ROW WITH EMBOSSED ACTIVE STATE */}
-            <div className="flex items-center justify-center w-full z-30 pt-1 pb-1">
-              <div className="inline-flex items-center p-1.5 rounded-full bg-slate-900/90 border border-slate-800/90 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.08)] gap-2">
-                {/* 1. Radar Button (3D Embossed when active) */}
-                <button
-                  onClick={() => setMatchMode('radar')}
-                  className={`relative flex items-center justify-center gap-2 px-5 py-2.5 rounded-full transition-all duration-300 ${
-                    (matchMode === 'radar' || matchMode === 'random')
-                      ? 'bg-gradient-to-b from-cyan-400 via-cyan-500 to-teal-600 text-slate-950 font-black shadow-[0_6px_20px_rgba(34,211,238,0.45),inset_0_2px_3px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.3)] border-t border-cyan-200/90 -translate-y-0.5 scale-105'
-                      : 'text-slate-400 hover:text-cyan-300 hover:bg-slate-800/60 shadow-sm'
-                  }`}
-                  title={loc('رادار', 'Radar')}
-                >
-                  <Radio className={`w-5 h-5 ${(matchMode === 'radar' || matchMode === 'random') ? 'stroke-[2.5] drop-shadow-[0_2px_3px_rgba(0,0,0,0.3)]' : 'opacity-70'}`} />
-                  <span className="text-xs font-bold">{loc('رادار', 'Radar')}</span>
-                </button>
-
-                {/* 2. Swipe Button (3D Embossed when active) */}
-                <button
-                  onClick={() => setMatchMode('swipe')}
-                  className={`relative flex items-center justify-center gap-2 px-5 py-2.5 rounded-full transition-all duration-300 ${
-                    (matchMode === 'swipe' || matchMode === 'manual')
-                      ? 'bg-gradient-to-b from-pink-500 via-rose-500 to-purple-600 text-white font-black shadow-[0_6px_20px_rgba(236,72,153,0.45),inset_0_2px_3px_rgba(255,255,255,0.5),inset_0_-2px_4px_rgba(0,0,0,0.3)] border-t border-pink-200/90 -translate-y-0.5 scale-105'
-                      : 'text-slate-400 hover:text-pink-300 hover:bg-slate-800/60 shadow-sm'
-                  }`}
-                  title={loc('سوایپ', 'Swipe')}
-                >
-                  <Flame className={`w-5 h-5 ${(matchMode === 'swipe' || matchMode === 'manual') ? 'fill-current drop-shadow-[0_2px_3px_rgba(0,0,0,0.3)]' : 'opacity-70'}`} />
-                  <span className="text-xs font-bold">{loc('سوایپ', 'Swipe')}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* MAIN SYSTEM DISPLAY */}
-            {(matchMode === 'radar' || matchMode === 'random') ? <div className="flex-1 flex flex-col justify-center space-y-5 py-4 w-full relative z-10">
-                {matchState === 'idle' && <div className="space-y-4 text-center">
-                    <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-cyan-400/20 to-emerald-400/20 border border-cyan-400/30 flex items-center justify-center shadow-[0_0_25px_rgba(34,211,238,0.3)]">
-                      <Radio className="w-10 h-10 text-cyan-400 animate-pulse" />
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="text-sm font-black text-white">{loc('رادار آنلاین', 'Live Radar')}</h4>
-                      <p className="text-xs text-slate-400">
-                        {loc('جستجوی رندوم کاربران آنلاین.', 'Random search for online users.')}
-                      </p>
-                    </div>
-
-                    {!isUserSuperAdmin && <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 text-right space-y-1">
-                      <p className="font-bold text-amber-400">📜 {loc('تماس رایگان ۲۰ ثانیه‌ای:', 'Free 20s Calls:')} {freeMatchCallsLeft} / 3</p>
-                      <p>• {loc('در صورت اتمام سهمیه، هزینه به صورت دقیقه‌ای کسر می‌شود.', 'If quota ends, calls are charged per minute.')}</p>
-                    </div>}
-
-                    <button onClick={() => startRandomMatchSearch()} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-slate-950 font-black text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition">
-                      {loc('🚀 شروع جستجوی رادار', 'Start Radar Search')}
-                    </button>
-                  </div>}
-
-                {matchState === 'searching' && <div className="py-12 text-center space-y-4">
-                    <div className="w-24 h-24 mx-auto rounded-full border-2 border-cyan-400 border-dashed animate-spin-slow flex items-center justify-center relative shadow-[0_0_25px_rgba(34,211,238,0.3)]">
-                       <Radio className="w-8 h-8 text-cyan-400 animate-ping absolute" />
-                    </div>
-                    <h4 className="text-sm font-black text-white">{loc('در حال اسکن رادار...', 'Scanning Radar...')}</h4>
-                  </div>}
-
-                {matchState === 'connected' && matchedMatchUser && <div className="space-y-4 px-2">
-                    <div className="relative aspect-[3/4] sm:aspect-[4/5] rounded-3xl overflow-hidden bg-slate-950 border border-cyan-400/30 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-                      <img src={matchedMatchUser.avatar || ''} alt={matchedMatchUser.name || matchedMatchUser.username || 'User'} className="absolute inset-0 w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
-                      
-                      <div className="absolute bottom-6 left-6 right-6 text-center space-y-4">
-                        <div>
-                          <h4 className="text-lg font-black text-white flex items-center justify-center gap-1">
-                            {matchedMatchUser?.name || matchedMatchUser?.username || loc('کاربر آنلاین', 'Online User')}
-                            {matchedMatchUser?.isVerified && <span className="text-blue-400 text-sm">✔</span>}
-                          </h4>
-                          <p className="text-xs text-cyan-300 font-bold mt-1 flex items-center justify-center gap-1">
-                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                             {loc('آنلاین', 'Online')}
-                          </p>
-                        </div>
-                        
-                        <div className="flex items-center justify-center gap-4">
-                          <button onClick={() => {
-                            setMatchState('idle');
-                          }} className="w-14 h-14 rounded-full bg-slate-800/80 backdrop-blur border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition shadow-lg">
-                            <X className="w-6 h-6" />
-                          </button>
-                          
-                          <button onClick={() => {
-                            handleStartCallDirect(matchedMatchUser, 'video', true);
-                            setMatchState('idle');
-                          }} className="w-16 h-16 rounded-full bg-gradient-to-tr from-pink-500 to-purple-500 shadow-[0_0_20px_rgba(236,72,153,0.5)] flex items-center justify-center text-white hover:scale-110 active:scale-95 transition">
-                            <Heart className="w-8 h-8 fill-current" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>}
-              </div> : (/* CARD SWIPE MODE */
-            <div className="flex-1 flex flex-col justify-center items-center overflow-hidden py-1 w-full relative z-10">
-                {matchCardIndex < matchDeckProfiles.length && matchDeckProfiles[matchCardIndex] ? <div className="relative w-full max-w-[340px] h-[470px] max-h-[63vh] rounded-3xl overflow-hidden bg-slate-950 border border-pink-500/30 shadow-[0_15px_35px_rgba(0,0,0,0.8)] flex flex-col justify-end transition-transform duration-150 group select-none touch-none" style={{
-                transform: `translate(${swipeDragPos.x}px, ${swipeDragPos.y}px) rotate(${swipeDragPos.x * 0.06}deg)`
-              }} onTouchStart={handleTouchStart} onMouseDown={e => handleTouchStart({
-                touches: [{
-                  clientX: e.clientX,
-                  clientY: e.clientY
-                }]
-              })} onTouchMove={handleTouchMove} onMouseMove={e => handleTouchMove({
-                touches: [{
-                  clientX: e.clientX,
-                  clientY: e.clientY
-                }]
-              })} onTouchEnd={handleTouchEnd} onMouseUp={handleTouchEnd} onMouseLeave={handleTouchEnd}>
-                      {/* Swipe Direction Indicators: Pure 3D Icons, No Text */}
-                      {swipeDragPos.x > 40 && (
-                        <div className="absolute top-8 right-6 z-40 p-3 rounded-full bg-pink-500/90 text-white font-black border-2 border-white shadow-xl rotate-12 flex items-center justify-center animate-pulse">
-                          <Heart className="w-6 h-6 fill-current" />
-                        </div>
-                      )}
-                      {swipeDragPos.x < -40 && (
-                        <div className="absolute top-8 left-6 z-40 p-3 rounded-full bg-rose-600/90 text-white font-black border-2 border-white shadow-xl -rotate-12 flex items-center justify-center animate-pulse">
-                          <X className="w-6 h-6 stroke-[3]" />
-                        </div>
-                      )}
-
-                      {matchAnimationEffect && <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm animate-fadeIn">
-                        {matchAnimationEffect === 'like' && <Heart className="w-28 h-28 text-pink-500 fill-pink-500 animate-bounce" />}
-                        {matchAnimationEffect === 'reject' && <X className="w-28 h-28 text-rose-500 animate-ping" />}
-                        {matchAnimationEffect === 'superlike' && <Star className="w-28 h-28 text-amber-400 fill-amber-400 animate-pulse" />}
-                      </div>}
-                    {/* Background Blur & Photo */}
-                    <img src={matchDeckProfiles[matchCardIndex]?.avatar || ''} alt={matchDeckProfiles[matchCardIndex]?.name || 'Match'} className="absolute inset-0 w-full h-full object-cover filter brightness-95 group-hover:scale-105 transition duration-700 pointer-events-none" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent pointer-events-none" />
-                    {/* Top Badges */}
-                    <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10 pointer-events-none">
-                      <div className="px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md border border-slate-800 text-white text-xs font-black flex items-center gap-1.5 shadow">
-                        <span className={`w-2 h-2 rounded-full ${matchDeckProfiles[matchCardIndex]?.isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
-                        <span>{matchDeckProfiles[matchCardIndex]?.isOnline ? loc('آنلاین', 'Online') : loc('آفلاین', 'Offline')}</span>
-                        <span className="text-slate-500">•</span>
-                        <span>{matchDeckProfiles[matchCardIndex].distance}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="px-2.5 py-1 rounded-full bg-pink-950/85 backdrop-blur-md border border-pink-500/50 text-pink-300 text-xs font-black flex items-center gap-1 shadow-lg">
-                          <span>🪙</span>
-                          <span>{matchDeckProfiles[matchCardIndex].tariffPerMin || 100} / {loc('دقیقه', 'min')}</span>
-                        </div>
-                        {matchDeckProfiles[matchCardIndex].isVip && <span className="px-2.5 py-1 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-500/40 text-amber-300 text-xs font-black flex items-center gap-1">
-                          👑 VIP
-                        </span>}
-                      </div>
-                    </div>
-                    {/* Card Details Info */}
-                    <div className="relative z-10 p-4 space-y-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-1.5 drop-shadow-md">
-                            {matchDeckProfiles[matchCardIndex]?.name || ''}{matchDeckProfiles[matchCardIndex]?.age ? `, ${matchDeckProfiles[matchCardIndex]?.age}` : ''}
-                            {matchDeckProfiles[matchCardIndex]?.isVerified && <span className="text-blue-400 text-sm">✔</span>}
-                          </h2>
-                        </div>
-                        <p className="text-xs text-slate-300 font-bold flex items-center gap-1 mt-0.5 drop-shadow-md">
-                          <span>📍</span> {matchDeckProfiles[matchCardIndex]?.city || loc('تهران', 'Tehran')}
-                        </p>
-                      </div>
-                      {/* Action Buttons Bar: Strictly X (Pass) and Heart (Like) - No text, no person icon */}
-                      <div className="flex items-center justify-center gap-10 pt-2 pb-1">
-                        {/* Reject / Pass Button (X) */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMatchAnimationEffect('reject');
-                            setTimeout(() => {
-                              setMatchCardIndex(prev => prev + 1);
-                              setMatchAnimationEffect(null);
-                              setSwipeDragPos({ x: 0, y: 0 });
-                            }, 250);
-                          }}
-                          className="w-16 h-16 rounded-full bg-slate-900/90 border border-slate-700/80 text-rose-500 hover:text-rose-400 hover:bg-rose-500/20 shadow-[0_8px_20px_rgba(0,0,0,0.6)] flex items-center justify-center active:scale-90 transition-all hover:scale-105"
-                          title={loc('رد کردن', 'Pass')}
-                        >
-                          <X className="w-8 h-8 stroke-[2.5]" />
-                        </button>
-
-                        {/* Like Button (Heart - redirects to video call if coins sufficient, else error toast per user rule) */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const target = matchDeckProfiles[matchCardIndex];
-                            handleSwipeLikeAction(target);
-                          }}
-                          className="w-16 h-16 rounded-full bg-gradient-to-tr from-pink-500 via-rose-500 to-purple-600 text-white shadow-[0_8px_25px_rgba(236,72,153,0.5)] flex items-center justify-center hover:scale-110 active:scale-90 transition-all"
-                          title={loc('لایک', 'Like')}
-                        >
-                          <Heart className="w-8 h-8 fill-current text-white animate-pulse" />
-                        </button>
-                      </div>
-                    </div>
-                  </div> : <div className="text-center space-y-4 my-auto py-16">
-                    <div className="w-20 h-20 mx-auto rounded-3xl bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-3xl animate-bounce">
-                      ✨
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="text-base font-black text-white">{loc('همه کارت‌ها دیده شدند!', 'All profiles viewed!')}</h4>
-                      <p className="text-xs text-slate-400">{loc('برای مشاهده مجدد کارت‌های جدید کلیک کنید.', 'Refresh deck to see new profiles.')}</p>
-                    </div>
-                    <button onClick={() => setMatchCardIndex(0)} className="px-6 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs shadow-lg hover:scale-105 active:scale-95 transition">
-                      {loc('🔄 بارگذاری مجدد', '🔄 Refresh Deck')}
-                    </button>
-                  </div>}
-              </div>)}
-
-            {/* SUB-CENTER BADGE: TICKET / PASS INDICATOR (RADAR ONLY) */}
-            {(matchMode === 'radar' || matchMode === 'random') && (
-              <div className="flex items-center justify-center gap-1 shrink-0 my-1 z-20">
-                <div className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-purple-900/60 border border-purple-500/40 text-purple-300 text-xs font-black shadow-md backdrop-blur-md">
-                  <span>🎟️</span>
-                  <span>X{freeMatchCallsLeft} {loc('تماس رایگان', 'Free Passes')}</span>
-                </div>
-              </div>
-            )}
-
-          </div>}
+        {/* TAB: ULTRA-PREMIUM SEXY MATCH TAB */}
+        {activeTab === 'match' && (
+          <UltraSexyMatchView
+            matchMode={matchMode}
+            setMatchMode={setMatchMode}
+            matchDeckProfiles={matchDeckProfiles}
+            matchCardIndex={matchCardIndex}
+            setMatchCardIndex={setMatchCardIndex}
+            handleSwipeLikeAction={handleSwipeLikeAction}
+            handleStartCallDirect={handleStartCallDirect}
+            userCoins={userCoins}
+            isUserSuperAdmin={isUserSuperAdmin}
+            freeMatchCallsLeft={freeMatchCallsLeft}
+            matchState={matchState}
+            setMatchState={setMatchState}
+            matchedMatchUser={matchedMatchUser}
+            startRandomMatchSearch={startRandomMatchSearch}
+            matchFilterVerifiedOnly={matchFilterVerifiedOnly}
+            setMatchFilterVerifiedOnly={setMatchFilterVerifiedOnly}
+            matchFilterOnlineOnly={matchFilterOnlineOnly}
+            setMatchFilterOnlineOnly={setMatchFilterOnlineOnly}
+            matchFilterMaxDistance={matchFilterMaxDistance}
+            setMatchFilterMaxDistance={setMatchFilterMaxDistance}
+            matchGenderFilter={matchGenderFilter}
+            setMatchGenderFilter={setMatchGenderFilter}
+            showToast={showToast}
+            loc={loc}
+            isRtl={isRtl}
+            playSoundEffect={playSoundEffect}
+          />
+        )}
 
         {/* TAB 2: MESSAGES & CHAT TAB */}
         <ChatTab currentUser={currentUser} currentUsername={currentUsername} vipPlan={vipPlan} setIsVipModalOpen={setIsVipModalOpen} userRole={userRole} isUserRayan={isUserRayan} activeTab={activeTab} usersList={usersList} txHistoryList={txHistoryList} userAvatar={userAvatar} userName={userName} totalUnreadMessages={totalUnreadMessages} msgSearchQuery={msgSearchQuery} setMsgSearchQuery={setMsgSearchQuery} msgSearchField={msgSearchField} setMsgSearchField={setMsgSearchField} msgFilterTab={msgFilterTab} setMsgFilterTab={setMsgFilterTab} isCreateGroupModalOpen={isCreateGroupModalOpen} setIsCreateGroupModalOpen={setIsCreateGroupModalOpen} newGroupName={newGroupName} setNewGroupName={setNewGroupName} newGroupDesc={newGroupDesc} setNewGroupDesc={setNewGroupDesc} isNewChatModalOpen={isNewChatModalOpen} setIsNewChatModalOpen={setIsNewChatModalOpen} isChatGalleryOpen={isChatGalleryOpen} setIsChatGalleryOpen={setIsChatGalleryOpen} isSendGiftInChatOpen={isSendGiftInChatOpen} setIsSendGiftInChatOpen={setIsSendGiftInChatOpen} conversations={conversations} setConversations={setConversations} activeConversationId={activeConversationId} setActiveConversationId={setActiveConversationId} chatSearchQuery={chatSearchQuery} setChatSearchQuery={setChatSearchQuery} isChatSearchOpen={isChatSearchOpen} setIsChatSearchOpen={setIsChatSearchOpen} activeChatCall={activeChatCall} setActiveChatCall={setActiveChatCall} isAutoTranslateActive={isAutoTranslateActive} setIsAutoTranslateActive={setIsAutoTranslateActive} handleTranslateChatMessage={handleTranslateChatMessage} handleSendDirectMessage={handleSendDirectMessage} handleInitiateCall={handleInitiateCall} userCoins={userCoins} setUserCoins={setUserCoins} langCode={currentAppLang} t={t} showToast={showToast} loc={loc} isRtl={isRtl} />
@@ -4008,43 +3817,41 @@ export default function App() {
         </div>}
 
       {/* ==================== FULLSCREEN LIVE STREAM VIEWER ==================== */}
-      {viewingStream && !isMiniPlayer && <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col justify-between overflow-hidden animate-fadeIn" dir={isRtl ? "rtl" : "ltr"}>
-          
-          {/* LIVE BROADCAST VIDEO / FEED CANVAS BACKGROUND */}
-          <div className="absolute inset-0 z-0 bg-slate-950 flex items-center justify-center overflow-hidden">
-            <video
-              ref={viewerLiveVideoRef}
-              src={(!viewingStream.livekit_room) ? (viewingStream.video_url || viewingStream.stream_url || undefined) : undefined}
-              autoPlay
-              playsInline
-              muted={false}
-              className="absolute inset-0 w-full h-full object-cover z-10"
-            />
-            {/* Fallback & Poster when live stream is connecting or audio-only */}
-            <div className="absolute inset-0 z-0 bg-slate-950 flex items-center justify-center">
-              {viewingStream.thumbnail || viewingStream.avatar ? (
-                <img
-                  src={viewingStream.thumbnail || viewingStream.avatar}
-                  alt={viewingStream.title}
-                  className="w-full h-full object-cover filter brightness-50 scale-105"
-                />
-              ) : (
-                <div className="w-full h-full bg-slate-950 flex items-center justify-center text-slate-600 font-bold text-sm">
-                  {loc('پخش زنده صوتی/تصویری', 'Live Audio/Video Stream')}
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/60 pointer-events-none" />
-              {/* Live Stream Status Visualizer */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 pointer-events-none">
-                <div className="w-16 h-16 rounded-full bg-pink-500/20 border border-pink-500/40 flex items-center justify-center backdrop-blur-md animate-pulse">
-                  <Radio className="w-8 h-8 text-pink-400 animate-spin" style={{ animationDuration: '8s' }} />
-                </div>
-                <span className="px-3 py-1 rounded-full bg-black/60 border border-white/20 text-white font-bold text-xs backdrop-blur-md">
-                  {loc('پخش زنده مستقیم استریمر 🔴', 'Streamer Live Broadcast 🔴')}
-                </span>
-              </div>
-            </div>
-          </div>
+      {/* ==================== ULTRA-PREMIUM 8K LIVE STREAM VIEWER ==================== */}
+      {viewingStream && !isMiniPlayer && (
+        <>
+          <UltraPremiumLiveViewer
+            viewingStream={viewingStream}
+            setViewingStream={setViewingStream}
+            viewerLiveVideoRef={viewerLiveVideoRef}
+            currentUser={currentUser}
+            currentUsername={currentUsername}
+            userName={userName}
+            userAvatar={userAvatar}
+            userCoins={userCoins}
+            setUserCoins={setUserCoins}
+            vipPlan={vipPlan}
+            isVip={isVip}
+            streamLikes={streamLikes}
+            handleLikeStream={handleLikeStream}
+            streamChatMessages={streamChatMessages}
+            streamChatInput={streamChatInput}
+            setStreamChatInput={setStreamChatInput}
+            handleSendStreamChat={handleSendStreamChat}
+            handleSendLuxuryGift={handleSendLuxuryGift}
+            activeLuxuryGift={activeLuxuryGift}
+            setActiveLuxuryGift={setActiveLuxuryGift}
+            activeVipEntrance={activeVipEntrance}
+            setActiveVipEntrance={setActiveVipEntrance}
+            isStreamerFollowed={isStreamerFollowed}
+            setIsStreamerFollowed={setIsStreamerFollowed}
+            handleInitiateCall={handleInitiateCall}
+            setIsExitLiveModalOpen={setIsExitLiveModalOpen}
+            showToast={showToast}
+            loc={loc}
+            isRtl={isRtl}
+            playSoundEffect={playSoundEffect}
+          />
 
           {/* FULL SCREEN LUXURY GIFT OVERLAY */}
           {activeLuxuryGift && <LuxuryGiftOverlay giftData={activeLuxuryGift} onComplete={() => setActiveLuxuryGift(null)} />}
@@ -4070,284 +3877,8 @@ export default function App() {
 
           {/* ENTRANCE RIBBON OVERLAY */}
           {activeEntranceRibbon && <EntranceRibbonOverlay entranceData={activeEntranceRibbon} onComplete={() => setActiveEntranceRibbon(null)} />}
-
-          {/* VIP ENTRANCE BANNER */}
-          {activeVipEntrance && <VipEntranceBanner vipUser={activeVipEntrance} onComplete={() => setActiveVipEntrance(null)} />}
-
-          {/* Header */}
-          <div className="absolute top-0 inset-x-0 p-4 bg-gradient-to-b from-black/80 to-transparent z-30 flex items-center justify-between">
-            <div className="flex items-center gap-2 bg-black/40 rounded-full pr-1 pl-3 py-1 border border-white/10 backdrop-blur-md">
-              <span className="text-white font-bold text-xs">{viewingStream.host || loc('میزبان', 'Host')}</span>
-              <button onClick={() => {
-                const next = !isStreamerFollowed;
-                setIsStreamerFollowed(next);
-                showToast(next ? window.loc(`با موفقیت ${viewingStream.host} دنبال شد 👤`, `با موفقیت ${viewingStream.host} دنبال شد 👤`) : window.loc(`دنبال کردن لغو شد`, `دنبال کردن لغو شد`));
-              }} className={`px-2.5 py-1 rounded-xl text-[10px] font-black shadow transition ml-1 ${isStreamerFollowed ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'}`}>
-                {isStreamerFollowed ? loc('دنبال شده', 'Followed') : loc('+ دنبال کردن', '+ follow')}
-              </button>
-            </div>
-            <button onClick={() => setViewingStream(null)} className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-white/20">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-              
-
-              {/* ================= EXPANDABLE LIVE INFORMATION PANEL ================= */}
-            {isLiveInfoPanelOpen && <div className="absolute top-16 left-4 z-40 max-w-sm w-full bg-slate-950/95 border border-pink-500/40 rounded-3xl p-4 shadow-2xl backdrop-blur-xl animate-fadeIn space-y-3 dir-rtl text-right">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <h3 className="text-sm font-black text-white flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-pink-400" />
-                    <span>{loc('اطلاعات لایواستریم', 'Livestream info')}</span>
-                  </h3>
-                  <button onClick={() => setIsLiveInfoPanelOpen(false)} className="text-slate-400 hover:text-white">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="space-y-2 text-xs text-slate-300 max-h-60 overflow-y-auto custom-scrollbar pr-1">
-                  <div className="grid grid-cols-1 gap-1.5 text-[10px] text-center">
-                    <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block">{loc('کشور', 'the country')}</span>
-                      <span className="font-bold text-amber-300">{loc('ایران 🇮🇷', 'Iran 🇮🇷')}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] text-pink-400 font-bold block">{loc('برچسب‌ها:', 'Tags:')}</span>
-                    <p className="text-[11px] font-mono text-cyan-300">{viewingStream?.tags || '#vlive #stream #live'}</p>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] text-pink-400 font-bold block">{loc('توضیحات لایو:', 'Live description:')}</span>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      {viewingStream?.description || loc('به پخش زنده خوش آمدید! برای حمایت می‌توانید هدیه ارسال کنید و در چت گفتگو نمایید.', 'Welcome to the live stream! To support, you can send a gift and talk in the chat.')}
-                    </p>
-                  </div>
-                </div>
-              </div>}
-
-            {/* ================= EXPANDABLE LIVE MEMBERS PANEL ================= */}
-            {isLiveMembersOpen && <div className="absolute top-16 right-4 z-40 max-w-xs w-full bg-slate-950/95 border border-purple-500/40 rounded-3xl p-4 shadow-2xl backdrop-blur-xl animate-fadeIn space-y-3 dir-rtl text-right">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <h3 className="text-sm font-black text-white flex items-center gap-1.5">
-                    <Users className="w-4 h-4 text-purple-400" />
-                    <span>{loc('اعضای آنلاین روم (', 'Rome Online Members (')}{(viewingStream.viewers || 0).toLocaleString()})</span>
-                  </h3>
-                  <button onClick={() => setIsLiveMembersOpen(false)} className="text-slate-400 hover:text-white">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="space-y-2 text-xs text-slate-300 max-h-60 overflow-y-auto custom-scrollbar">
-                  <span className="text-[10px] font-bold text-amber-400 block">{loc('👑 حامیان برتر (Top Supporters):', '👑 Top Supporters:')}</span>
-                  <div className="space-y-1">
-                    {[{
-                  name: 'Arash_VIP',
-                  coins: '12,500 🪙',
-                  avatar: ''
-                }, {
-                  name: 'Sahar_Royal',
-                  coins: '8,200 🪙',
-                  avatar: ''
-                }].map((sup, idx) => <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-amber-500/20">
-                        <div className="flex items-center gap-2">
-                          <img src={sup.avatar} alt={sup.name} className="w-7 h-7 rounded-full object-cover" />
-                          <span className="font-bold text-white text-[11px]">{sup.name}</span>
-                        </div>
-                        <span className="text-[10px] font-black text-amber-400">{sup.coins}</span>
-                      </div>)}
-                  </div>
-
-                  <span className="text-[10px] font-bold text-cyan-400 block pt-1">{loc('🎙️ مهمانان فعال روم:', '🎙️ active guests of Rome:')}</span>
-                  {guestRequestStatus === 'accepted' ? <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-emerald-500/30">
-                      <span className="font-bold text-emerald-300 text-[11px]">{loc('شما (مهمان صوتی)', 'you (audio guest)')}</span>
-                      <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">{loc('متصل', 'connected')}</span>
-                    </div> : <p className="text-[10px] text-slate-500">{loc('هیچ مهمان فعالی روی استیج نیست.', 'There are no active guests on stage.')}</p>}
-                </div>
-              </div>}
-
-            {/* ================= CHAT OVERLAY & CONTROLS ================= */}
-            <div className="absolute bottom-4 left-4 right-4 z-20 space-y-2">
-              
-              {/* PINNED MESSAGES BANNER */}
-              {streamPinnedMessages.length > 0 && <div className="p-2 rounded-2xl bg-amber-500/15 border border-amber-500/30 backdrop-blur-md flex items-center justify-between text-xs text-amber-200 dir-rtl">
-                  <div className="flex items-center gap-1.5 truncate">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
-                    <span className="font-black text-[10px] text-amber-400 shrink-0">{loc('سنجاق‌شده:', 'Pinned:')}</span>
-                    <span className="truncate text-[11px]">{streamPinnedMessages[0].text}</span>
-                  </div>
-                  <button onClick={() => setStreamPinnedMessages([])} className="text-slate-400 hover:text-white p-1">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>}
-
-              {/* CHAT MESSAGES DISPLAY BOX */}
-              {!isHideStreamChat && <div className="max-h-48 overflow-y-auto space-y-2 p-3 bg-slate-950/85 rounded-3xl backdrop-blur-xl border border-slate-800/80 dir-rtl text-right custom-scrollbar">
-                  {streamChatMessages.map(msg => <div key={msg.id || Math.random()} className="text-xs group flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-black text-pink-400 hover:underline cursor-pointer" onClick={() => setSelectedUserProfile({
-                    name: msg.user
-                  })}>
-                          {msg.user}:
-                        </span>
-                        <span className="text-white font-medium leading-relaxed">{msg.text}</span>
-                        {msg.isVip && <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[8px] font-black border border-amber-500/30">
-                            VIP
-                          </span>}
-                      </div>
-
-                      {/* Quick Hover Message Actions */}
-                      <div className="hidden group-hover:flex items-center gap-1 text-[10px] shrink-0">
-                        <button onClick={() => {
-                    navigator.clipboard?.writeText(msg.text);
-                    showToast(loc('متن پیام کپی شد', 'The text of the message was copied'));
-                  }} className="text-slate-400 hover:text-white" title={loc('کپی', 'copy')}>
-                          {loc('کپی', 'copy')}
-                        </button>
-                        <button onClick={() => {
-                    showToast(window.loc(`ترجمه: ${msg.text}`, `ترجمه: ${msg.text}`));
-                  }} className="text-cyan-400 hover:text-cyan-300 font-bold" title={loc('ترجمه', 'Translation')}>
-                          🌐
-                        </button>
-                      </div>
-                    </div>)}
-                </div>}
-
-              {/* FLOATING SOUNDBOARD & GIFT & MINI-GAMES TOOLBAR */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar dir-rtl">
-                <button onClick={() => setIsPkBattleOpen(true)} className="px-3 py-1 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 text-white text-[10px] font-black shrink-0 flex items-center gap-1 shadow-md hover:scale-105 active:scale-95 transition">
-                  <Swords className="w-3.5 h-3.5 text-amber-300" />
-                  <span>{loc('دوئل PK ⚔️', 'PK Battle ⚔️')}</span>
-                </button>
-                <button onClick={() => setIsLiveMiniGamesOpen(true)} className="px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 text-[10px] font-black shrink-0 flex items-center gap-1 shadow-md hover:scale-105 active:scale-95 transition">
-                  <Sparkles className="w-3.5 h-3.5 text-slate-950" />
-                  <span>{loc('گردونه شانس 🎡', 'Lucky Wheel 🎡')}</span>
-                </button>
-                <button onClick={() => playSoundEffect('applause')} className="px-3 py-1 rounded-xl bg-purple-950/80 border border-purple-500/40 text-purple-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-purple-900">
-                  <ThumbsUp className="w-3 h-3 text-purple-300" />
-                  {loc('تشویق 👏', 'Cheers 👏')}
-                </button>
-                <button onClick={() => playSoundEffect('cheer')} className="px-3 py-1 rounded-xl bg-pink-950/80 border border-pink-500/40 text-pink-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-pink-900">
-                  <Sparkles className="w-3 h-3 text-pink-300" />
-                  {loc('هورا 🎉', 'Hooray 🎉')}
-                </button>
-                <button onClick={() => playSoundEffect('horn')} className="px-3 py-1 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-200 text-[10px] font-bold shrink-0 flex items-center gap-1 hover:bg-cyan-900">
-                  <Radio className="w-3 h-3 text-cyan-300" />
-                  {loc('بوق 🎺', 'Horn 🎺')}
-                </button>
-                <button onClick={handleOpenLuckyBox} className="px-3 py-1 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 text-slate-950 text-[10px] font-black shrink-0 flex items-center gap-1 shadow-md hover:brightness-110">
-                  <Gift className="w-3 h-3 text-slate-950" />
-                  {loc('جعبه شانس (100c) 🎁', 'Lucky box (100c) 🎁')}
-                </button>
-                <button onClick={() => setIsHideStreamChat(!isHideStreamChat)} className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-[10px] font-bold shrink-0">
-                  {isHideStreamChat ? loc('نمایش چت', 'Show chat') : loc('مخفی چت', 'hidden chat')}
-                </button>
-              </div>
-
-              {/* Floating Animated Hearts */}
-              <div className="absolute bottom-16 right-4 pointer-events-none w-24 h-48 overflow-hidden z-30">
-                {floatingHearts.map(h => <div key={h.id} className="absolute bottom-0 text-xl animate-bounce transition-all duration-1000" style={{
-                left: `${h.left}%`,
-                color: h.color,
-                opacity: 0.9
-              }}>
-                    ❤️
-                  </div>)}
-              </div>
-
-              {/* CHAT INPUT BAR & LIKE / GIFT BUTTONS */}
-              <div className="flex items-center gap-2 dir-rtl">
-                <input type="text" value={streamChatInput} onChange={e => setStreamChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSendStreamChat()} placeholder={loc('ارسال پیام زنده در لایواستریم...', 'Send a live message on Livestream...')} className="flex-1 px-4 py-2.5 rounded-2xl bg-slate-950/90 border border-slate-800 text-xs text-white outline-none focus:border-pink-500" />
-                
-                <button onClick={handleSendStreamChat} className="px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 hover:opacity-90 text-white font-bold text-xs flex items-center gap-1 active:scale-95 transition shadow-lg">
-                  <Send className="w-4 h-4 rotate-180" />
-                </button>
-
-                <button onClick={handleLikeStream} className="p-2.5 rounded-2xl bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/40 active:scale-90 transition flex items-center gap-1" title={loc('ارسال لایک زنده', 'Send live likes')}>
-                  <Heart className="w-5 h-5 fill-red-500 text-red-500 animate-pulse" />
-                  <span className="text-[10px] font-black text-red-300">{streamLikes}</span>
-                </button>
-
-                <button onClick={() => setIsStreamGiftTrayOpen(!isStreamGiftTrayOpen)} className={`p-2.5 rounded-2xl border transition flex items-center justify-center ${isStreamGiftTrayOpen ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.6)]' : 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'}`} title={loc('ارسال هدیه زنده', 'Send live gifts')}>
-                  <Gift className="w-5 h-5 animate-bounce" />
-                </button>
-              </div>
-
-              {/* IN-STREAM LUXURY GIFT TRAY BOTTOM SHEET */}
-              {isStreamGiftTrayOpen && <div className="p-3.5 rounded-3xl bg-slate-950/95 border-2 border-amber-500/50 backdrop-blur-2xl shadow-[0_0_35px_rgba(0,0,0,0.9)] space-y-3 animate-fadeIn dir-rtl text-right">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <div className="flex items-center gap-1.5">
-                      <Gift className="w-4 h-4 text-amber-400" />
-                      <span className="font-black text-xs text-white">{loc('🎁 ارسال هدیه به میزبان', '🎁 Send gift to host')}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-mono font-black text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
-                        {userCoins.toLocaleString()} 🪙
-                      </span>
-                      <button onClick={() => setIsStreamGiftTrayOpen(false)} className="text-slate-400 hover:text-white p-1">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Gift Items Grid */}
-                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
-                    {(GIFTS_CATALOG || [{
-                  id: 'rose',
-                  name: 'گل رز',
-                  icon: '🌹',
-                  coins: 10,
-                  animationType: 'rose'
-                }, {
-                  id: 'heart',
-                  name: 'قلب آتشین',
-                  icon: '💖',
-                  coins: 50,
-                  animationType: 'heart'
-                }, {
-                  id: 'perfume',
-                  name: 'عطر لوکس',
-                  icon: '💎',
-                  coins: 100,
-                  animationType: 'diamond'
-                }, {
-                  id: 'crown',
-                  name: 'تاج پادشاهی',
-                  icon: '👑',
-                  coins: 500,
-                  animationType: 'crown'
-                }, {
-                  id: 'supercar',
-                  name: 'سوپراسپرت قرمز',
-                  icon: '🏎️',
-                  coins: 1000,
-                  animationType: 'supercar'
-                }, {
-                  id: 'jet',
-                  name: 'جت شخصی VIP',
-                  icon: '🚀',
-                  coins: 2500,
-                  animationType: 'jet'
-                }, {
-                  id: 'vault',
-                  name: 'صندوقچه شمش طلا',
-                  icon: '📦',
-                  coins: 5000,
-                  animationType: 'vault'
-                }]).map(g => <button key={g.id} onClick={() => handleSendLuxuryGift(g)} className="p-2 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-amber-400 hover:bg-slate-850 hover:scale-105 active:scale-95 transition flex flex-col items-center justify-center gap-1 group shadow">
-                        <span className="text-2xl group-hover:scale-110 transition-transform">{g.icon}</span>
-                        <span className="text-[10px] font-bold text-white truncate max-w-full">{g.name}</span>
-                        <span className="text-[9px] font-mono font-bold text-amber-400 bg-slate-950 px-1.5 py-0.2 rounded-full border border-slate-800">
-                          {g.coins} 🪙
-                        </span>
-                      </button>)}
-                  </div>
-                </div>}
-
-            </div>
-
-          </div>}
-
+        </>
+      )}
       
       
 
