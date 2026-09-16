@@ -379,16 +379,28 @@ export class LiveKitManager {
         const oldVideoTracks = this.localMediaStream.getVideoTracks();
         const activeVideoTrack = oldVideoTracks[0];
         // Release old track and acquire real camera track for new facingMode
-        const { track: newVideoTrack } = await cameraPermissionService.getVideoTrackForFacingMode(targetFacing, activeVideoTrack);
+        const result = await cameraPermissionService.getVideoTrackForFacingMode(targetFacing, activeVideoTrack);
+        
+        if (result.isSingleCamera) {
+          return { facingMode: this.currentFacingMode, isSingleCamera: true };
+        }
+
+        const { track: newVideoTrack, actualFacingMode } = result;
+        const finalFacing = actualFacingMode || targetFacing;
+        this.currentFacingMode = finalFacing;
         
         // Remove old tracks from localMediaStream
         oldVideoTracks.forEach(t => {
-          try { t.stop(); } catch(e) {}
-          try { this.localMediaStream.removeTrack(t); } catch(e) {}
+          if (t !== newVideoTrack) {
+            try { t.stop(); } catch(e) {}
+            try { this.localMediaStream.removeTrack(t); } catch(e) {}
+          }
         });
 
         if (newVideoTrack) {
-          this.localMediaStream.addTrack(newVideoTrack);
+          if (!this.localMediaStream.getVideoTracks().includes(newVideoTrack)) {
+            this.localMediaStream.addTrack(newVideoTrack);
+          }
           // Replace track on WebRTC PeerConnection if active
           if (this.peerConnection) {
             const senders = this.peerConnection.getSenders();
@@ -398,6 +410,8 @@ export class LiveKitManager {
             }
           }
         }
+        this.emit('camera_switched', { facingMode: finalFacing });
+        return { facingMode: finalFacing };
       } catch (err) {
         console.warn('WebRTC fallback switch error:', err);
       }

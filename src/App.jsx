@@ -1075,6 +1075,10 @@ export default function App() {
   const handleSwitchCameraFacing = useCallback(async () => {
     try {
       const res = await livekitManager.switchCamera();
+      if (res?.isSingleCamera) {
+        showToast(loc('این دستگاه تنها دارای یک دوربین است', 'This device only has one camera'));
+        return;
+      }
       const nextFacing = res?.facingMode || (activeCall?.facingMode === 'environment' ? 'user' : 'environment');
       setActiveCall(prev => prev ? { ...prev, facingMode: nextFacing } : null);
       showToast(nextFacing === 'environment' ? loc('دوربین پشت فعال شد 🔄', 'Rear camera active 🔄') : loc('دوربین جلو فعال شد 🔄', 'Front camera active 🔄'));

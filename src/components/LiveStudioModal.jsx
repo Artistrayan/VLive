@@ -566,8 +566,14 @@ export default function LiveStudioModal({
       const activeVideoTrack = oldVideoTracks[0] || null;
 
       // Request facing mode video track
-      const { track: newVideoTrack, isNewTrack } = 
-        await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode, activeVideoTrack, opId);
+      const result = await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode, activeVideoTrack, opId);
+
+      if (result.isSingleCamera) {
+        showToast(window.loc('این دستگاه تنها دارای یک دوربین است', 'This device only has one camera'));
+        return;
+      }
+
+      const { track: newVideoTrack, isNewTrack, actualFacingMode } = result;
 
       if (opId !== cameraOperationIdRef.current) {
         console.warn(`[Camera:${opId}] Switch operation superseded by operation ${cameraOperationIdRef.current}`);
@@ -587,15 +593,19 @@ export default function LiveStudioModal({
 
         // Stop and remove old video tracks
         oldVideoTracks.forEach(t => {
-          try {
-            stream.removeTrack(t);
-            t.stop();
-          } catch(e) {}
+          if (t !== newVideoTrack) {
+            try {
+              stream.removeTrack(t);
+              t.stop();
+            } catch(e) {}
+          }
         });
 
-        // Add new video track
-        newVideoTrack.enabled = isCamEnabled;
-        stream.addTrack(newVideoTrack);
+        // Add new video track if not present
+        if (!stream.getVideoTracks().includes(newVideoTrack)) {
+          newVideoTrack.enabled = isCamEnabled;
+          stream.addTrack(newVideoTrack);
+        }
         setMediaStream(stream);
         mediaStreamRef.current = stream;
 
@@ -604,7 +614,8 @@ export default function LiveStudioModal({
           await attachStreamToVideo(cameraVideoRef.current, opId);
         }
 
-        setFacingMode(nextFacingMode);
+        const finalFacing = actualFacingMode || nextFacingMode;
+        setFacingMode(finalFacing);
 
         // Update localVideoTrack state
         const trackObj = {
@@ -619,11 +630,11 @@ export default function LiveStudioModal({
 
         // If we are LIVE, tell LiveKit to replace its published track
         if (studioPhase === 'LIVE' && isLiveKitConnected && typeof livekitManager?.replaceVideoTrack === 'function') {
-          await livekitManager.replaceVideoTrack(newVideoTrack, nextFacingMode).catch(() => {});
+          await livekitManager.replaceVideoTrack(newVideoTrack, finalFacing).catch(() => {});
         }
 
         showToast(
-          nextFacingMode === 'environment'
+          finalFacing === 'environment'
             ? window.loc('دوربین عقب فعال شد 📷', 'Switched to rear camera 📷')
             : window.loc('دوربین جلو فعال شد 🤳', 'Switched to front camera 🤳')
         );
