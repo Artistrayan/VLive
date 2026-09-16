@@ -53,58 +53,86 @@ class CameraPermissionService {
     }
     this.currentFacingMode = facingMode;
 
-    // 1. Try in-place applyConstraints on existing live track first (zero-prompt, seamless)
-    if (oldTrack && oldTrack.readyState === 'live' && typeof oldTrack.applyConstraints === 'function') {
-      try {
-        await oldTrack.applyConstraints({
-          facingMode: { ideal: facingMode },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+    let targetDeviceId = null;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevs = devices.filter(d => d.kind === 'videoinput');
+      
+      if (videoDevs.length > 1) {
+        // 1. Find device by label keyword
+        const match = videoDevs.find(d => {
+          const label = (d.label || '').toLowerCase();
+          if (facingMode === 'environment') {
+            return label.includes('back') || label.includes('rear') || label.includes('environment') || label.includes('facing back') || label.includes('camera2 0') || label.includes('0, facing back');
+          } else {
+            return label.includes('front') || label.includes('user') || label.includes('face') || label.includes('facing front') || label.includes('camera2 1') || label.includes('1, facing front');
+          }
         });
-        return { track: oldTrack, isNewTrack: false, stream: this.activeStream };
-      } catch (errApply) {
-        console.log(`[CameraPermission] applyConstraints not supported for facing change, acquiring new track`);
+        
+        if (match) {
+          targetDeviceId = match.deviceId;
+        } else if (oldTrack && typeof oldTrack.getSettings === 'function') {
+          // 2. If no labeled match, switch to the other available videoinput device
+          const currDevId = oldTrack.getSettings()?.deviceId;
+          const otherDev = videoDevs.find(d => d.deviceId && d.deviceId !== currDevId);
+          if (otherDev) {
+            targetDeviceId = otherDev.deviceId;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[CameraPermission] Device enumeration error:', e);
+    }
+
+    let newStream = null;
+
+    // Strategy 1: If targetDeviceId found, request by deviceId
+    if (targetDeviceId) {
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: targetDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+      } catch (e1) {
+        console.warn('[CameraPermission] targetDeviceId exact failed, trying facingMode:', e1);
       }
     }
 
-    // 2. Single clean getUserMedia call with ideal facingMode (NEVER exact: to avoid OverconstrainedError & duplicate prompts)
-    let newStream = null;
-    try {
-      let targetDeviceId = null;
+    // Strategy 2: Request by exact facingMode
+    if (!newStream) {
       try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevs = devices.filter(d => d.kind === 'videoinput');
-        if (videoDevs.length > 1) {
-          const match = videoDevs.find(d => {
-            const label = (d.label || '').toLowerCase();
-            return facingMode === 'environment'
-              ? (label.includes('back') || label.includes('rear') || label.includes('environment'))
-              : (label.includes('front') || label.includes('user') || label.includes('face'));
-          });
-          if (match) {
-            targetDeviceId = match.deviceId;
-          }
-        }
-      } catch (enumErr) {}
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { exact: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+      } catch (e2) {
+        console.warn('[CameraPermission] exact facingMode failed, trying ideal facingMode:', e2);
+      }
+    }
 
-      const videoConstraints = targetDeviceId
-        ? { deviceId: { ideal: targetDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
-        : { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } };
+    // Strategy 3: Request by ideal facingMode
+    if (!newStream) {
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+      } catch (e3) {
+        console.warn('[CameraPermission] ideal facingMode failed, fallback to video: true:', e3);
+      }
+    }
 
-      newStream = await navigator.mediaDevices.getUserMedia({
-        video: videoConstraints,
-        audio: false
-      });
-    } catch (err) {
-      // Direct graceful fallback
+    // Strategy 4: Fallback generic video
+    if (!newStream) {
       newStream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: false
       });
     }
 
-    const newTrack = newStream.getVideoTracks()[0];
+    const newTrack = newStream?.getVideoTracks()[0];
     if (newTrack && newTrack.readyState === 'live') {
+      this.activeStream = newStream;
       return { track: newTrack, isNewTrack: true, stream: newStream };
     }
     throw new Error('FAILED_TO_ACQUIRE_CAMERA_TRACK');
@@ -115,8 +143,10 @@ class CameraPermissionService {
       throw new Error('WebRTC mediaDevices is not supported in this environment.');
     }
 
-    // 1. If an existing stream already has all requested live tracks, reuse it directly
-    if (this.activeStream && this.activeStream.active) {
+    const requestedFacing = typeof constraints.video === 'object' && constraints.video !== null ? (constraints.video.facingMode?.ideal || constraints.video.facingMode) : null;
+
+    // 1. If an existing stream already has all requested live tracks and facingMode matches, reuse it directly
+    if (this.activeStream && this.activeStream.active && (!requestedFacing || requestedFacing === this.currentFacingMode)) {
       const vOk = !constraints.video || this.activeStream.getVideoTracks().some(t => t.readyState === 'live');
       const aOk = !constraints.audio || this.activeStream.getAudioTracks().some(t => t.readyState === 'live');
       if (vOk && aOk) {

@@ -405,8 +405,13 @@ export default function LiveStudioModal({
 
       // Camera Stream Acquisition directly
       let stream = mediaStreamRef.current || cameraPermissionService.activeStream;
-      if (stream && stream.active && stream.getVideoTracks().some(t => t.readyState === 'live')) {
-        console.log(`[Camera:${opId}] Reusing existing live active stream`);
+      if (
+        stream && 
+        stream.active && 
+        cameraPermissionService.currentFacingMode === facingMode &&
+        stream.getVideoTracks().some(t => t.readyState === 'live')
+      ) {
+        console.log(`[Camera:${opId}] Reusing existing live active stream matching facingMode: ${facingMode}`);
         setMediaStream(stream);
         mediaStreamRef.current = stream;
       } else {
@@ -554,72 +559,72 @@ export default function LiveStudioModal({
     console.log(`[Camera:${opId}] CAMERA_SWITCH_START nextFacingMode: ${nextFacingMode}`);
 
     try {
-      if (mediaStreamRef.current) {
-        const oldVideoTracks = mediaStreamRef.current.getVideoTracks();
-        const activeVideoTrack = oldVideoTracks[0];
+      const oldStream = mediaStreamRef.current || mediaStream;
+      const oldVideoTracks = oldStream ? oldStream.getVideoTracks() : [];
+      const activeVideoTrack = oldVideoTracks[0] || null;
 
-        // 1. Request facing mode update (checks applyConstraints first)
-        const { track: newVideoTrack, isNewTrack } = 
-          await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode, activeVideoTrack, opId);
+      // Request facing mode video track
+      const { track: newVideoTrack, isNewTrack } = 
+        await cameraPermissionService.getVideoTrackForFacingMode(nextFacingMode, activeVideoTrack, opId);
 
-        if (opId !== cameraOperationIdRef.current) {
-          console.warn(`[Camera:${opId}] Switch operation superseded by operation ${cameraOperationIdRef.current}`);
-          if (isNewTrack && newVideoTrack) {
-            try { newVideoTrack.stop(); } catch(e) {}
-          }
-          return;
+      if (opId !== cameraOperationIdRef.current) {
+        console.warn(`[Camera:${opId}] Switch operation superseded by operation ${cameraOperationIdRef.current}`);
+        if (isNewTrack && newVideoTrack) {
+          try { newVideoTrack.stop(); } catch(e) {}
+        }
+        return;
+      }
+
+      if (newVideoTrack) {
+        // Ensure we have a valid media stream container
+        let stream = mediaStreamRef.current;
+        if (!stream || !stream.active) {
+          stream = new MediaStream();
+          mediaStreamRef.current = stream;
         }
 
-        if (newVideoTrack) {
-          if (isNewTrack) {
-            // Remove old track references from mediaStreamRef (do NOT stop yet!)
-            oldVideoTracks.forEach(t => {
-              try { mediaStreamRef.current.removeTrack(t); } catch(e) {}
-            });
+        // Stop and remove old video tracks
+        oldVideoTracks.forEach(t => {
+          try {
+            stream.removeTrack(t);
+            t.stop();
+          } catch(e) {}
+        });
 
-            // Add new video track
-            newVideoTrack.enabled = isCamEnabled;
-            mediaStreamRef.current.addTrack(newVideoTrack);
-            setMediaStream(mediaStreamRef.current);
+        // Add new video track
+        newVideoTrack.enabled = isCamEnabled;
+        stream.addTrack(newVideoTrack);
+        setMediaStream(stream);
+        mediaStreamRef.current = stream;
 
-            // Attach to video element and verify play BEFORE stopping old track
-            if (cameraVideoRef.current) {
-              await attachStreamToVideo(cameraVideoRef.current, opId);
-            }
-
-            // ONLY AFTER successful attach and play, stop old tracks safely!
-            console.log(`[Camera:${opId}] CAMERA_SWITCH_OLD_TRACK_STOP`);
-            oldVideoTracks.forEach(t => {
-              if (t !== newVideoTrack) {
-                try { t.stop(); } catch(e) {}
-              }
-            });
-          } else {
-            // Track was updated in-place via applyConstraints - DO NOT stop it!
-            console.log(`[Camera:${opId}] Kept existing track via applyConstraints`);
-            if (cameraVideoRef.current) {
-              await attachStreamToVideo(cameraVideoRef.current, opId);
-            }
-          }
-
-          setFacingMode(nextFacingMode);
-
-          // Update localVideoTrack state
-          const trackObj = {
-            id: newVideoTrack.id,
-            kind: 'video',
-            source: 'camera',
-            mediaStreamTrack: newVideoTrack,
-            isMuted: !newVideoTrack.enabled,
-            published: true
-          };
-          setLocalVideoTrack(trackObj);
-
-          // If we are LIVE, tell LiveKit to replace its published track
-          if (studioPhase === 'LIVE' && isLiveKitConnected && typeof livekitManager?.replaceVideoTrack === 'function') {
-            await livekitManager.replaceVideoTrack(newVideoTrack, nextFacingMode).catch(() => {});
-          }
+        // Attach to video element and play
+        if (cameraVideoRef.current) {
+          await attachStreamToVideo(cameraVideoRef.current, opId);
         }
+
+        setFacingMode(nextFacingMode);
+
+        // Update localVideoTrack state
+        const trackObj = {
+          id: newVideoTrack.id,
+          kind: 'video',
+          source: 'camera',
+          mediaStreamTrack: newVideoTrack,
+          isMuted: !newVideoTrack.enabled,
+          published: true
+        };
+        setLocalVideoTrack(trackObj);
+
+        // If we are LIVE, tell LiveKit to replace its published track
+        if (studioPhase === 'LIVE' && isLiveKitConnected && typeof livekitManager?.replaceVideoTrack === 'function') {
+          await livekitManager.replaceVideoTrack(newVideoTrack, nextFacingMode).catch(() => {});
+        }
+
+        showToast(
+          nextFacingMode === 'environment'
+            ? window.loc('دوربین عقب فعال شد 📷', 'Switched to rear camera 📷')
+            : window.loc('دوربین جلو فعال شد 🤳', 'Switched to front camera 🤳')
+        );
       }
     } catch (e) {
       console.warn(`[Camera:${opId}] Failed to switch camera:`, e);
