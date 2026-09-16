@@ -180,10 +180,10 @@ export default function UltraPremiumLiveViewer({
 
   // 1. Duration Counter Timer
   useEffect(() => {
-    // Initial random offset or start time based on stream creation
+    // Start time based on stream creation
     const initialDuration = viewingStream?.started_at
       ? Math.max(0, Math.floor((Date.now() - new Date(viewingStream.started_at).getTime()) / 1000))
-      : 1240; // Default ~20m active duration
+      : 0;
     setDurationSeconds(initialDuration);
 
     const timer = setInterval(() => {
@@ -214,15 +214,10 @@ export default function UltraPremiumLiveViewer({
       if (Array.isArray(supporters) && supporters.length > 0) {
         setTopGifters(supporters);
       } else {
-        // Fallback to active room supporters if backend has no prior records
-        setTopGifters([
-          { id: '1', name: '👑 RoyalKing_VIP', coins: 14500, rank: 1, avatar: '' },
-          { id: '2', name: '💎 DiamondPrince', coins: 9200, rank: 2, avatar: '' },
-          { id: '3', name: '🏎️ NeonSpeed_77', coins: 6400, rank: 3, avatar: '' }
-        ]);
+        setTopGifters([]);
       }
     } catch {
-      // Fallback state
+      setTopGifters([]);
     } finally {
       setIsLoadingGifters(false);
     }
@@ -808,7 +803,7 @@ export default function UltraPremiumLiveViewer({
         <div className="flex items-center gap-1.5 bg-black/40 border border-white/15 rounded-full px-2.5 py-1 backdrop-blur-xl shrink-0 shadow-lg">
           <div className="flex items-center gap-1 text-rose-400 font-black text-xs">
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-            <span>{(viewingStream?.viewers || 1280).toLocaleString()}</span>
+            <span>{Number(viewingStream?.viewers || 0).toLocaleString()}</span>
           </div>
           <span className="text-white/30 text-xs">|</span>
           <div className="flex items-center gap-1 text-white/90 font-mono text-[11px]">
@@ -819,22 +814,27 @@ export default function UltraPremiumLiveViewer({
 
         {/* Right: Top Gifters Leaderboard Trigger, Report & Close */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {/* Top Gifters Mini Avatars Pod */}
-          <button
-            onClick={() => setIsLeaderboardOpen(true)}
-            className="hidden sm:flex items-center -space-x-1.5 hover:scale-105 transition-transform"
-            title={loc('لیست برترین حامیان', 'Top Gifters Leaderboard')}
-          >
-            <div className="w-7 h-7 rounded-full border-2 border-amber-400 bg-amber-500/30 flex items-center justify-center text-xs text-white font-black shadow-md z-30">
-              🥇
-            </div>
-            <div className="w-6 h-6 rounded-full border-2 border-slate-300 bg-slate-400/30 flex items-center justify-center text-[10px] text-white font-black shadow-md z-20">
-              🥈
-            </div>
-            <div className="w-5 h-5 rounded-full border-2 border-amber-600 bg-amber-700/30 flex items-center justify-center text-[9px] text-white font-black shadow-md z-10">
-              🥉
-            </div>
-          </button>
+          {/* Top Gifters Mini Avatars Pod (Only if real supporters exist) */}
+          {topGifters.length > 0 && (
+            <button
+              onClick={() => setIsLeaderboardOpen(true)}
+              className="hidden sm:flex items-center -space-x-1.5 hover:scale-105 transition-transform"
+              title={loc('لیست برترین حامیان', 'Top Gifters Leaderboard')}
+            >
+              {topGifters.slice(0, 3).map((g, idx) => (
+                <div
+                  key={g.id || idx}
+                  className={`rounded-full border-2 flex items-center justify-center font-black shadow-md ${
+                    idx === 0 ? 'w-7 h-7 border-amber-400 bg-amber-500/30 text-xs z-30' :
+                    idx === 1 ? 'w-6 h-6 border-slate-300 bg-slate-400/30 text-[10px] z-20' :
+                    'w-5 h-5 border-amber-600 bg-amber-700/30 text-[9px] z-10'
+                  }`}
+                >
+                  {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                </div>
+              ))}
+            </button>
+          )}
 
           {/* Report Button */}
           <button
@@ -1177,59 +1177,69 @@ export default function UltraPremiumLiveViewer({
             </div>
 
             {/* Podium for Top 3 */}
-            <div className="grid grid-cols-3 gap-2 text-center pt-2">
-              {/* Rank 2 (Silver) */}
-              <div className="p-3 rounded-2xl bg-white/5 border border-slate-300/30 flex flex-col items-center justify-end">
-                <span className="text-2xl mb-1">🥈</span>
-                <span className="text-xs font-black text-slate-200 truncate w-full">
-                  {topGifters[1]?.name || loc('حامی شماره ۲', 'Supporter #2')}
-                </span>
-                <span className="text-[10px] font-mono font-black text-amber-400 mt-1">
-                  {(topGifters[1]?.coins || 0).toLocaleString()} 🪙
-                </span>
+            {topGifters.length === 0 ? (
+              <div className="py-8 text-center text-white/50 text-xs font-medium">
+                {loc('هنوز هیچ هدیه‌ای برای این استریمر ثبت نشده است.', 'No gifts sent to this streamer yet.')}
               </div>
-
-              {/* Rank 1 (Gold) */}
-              <div className="p-4 rounded-2xl bg-gradient-to-b from-amber-500/20 to-yellow-600/10 border-2 border-amber-400 flex flex-col items-center justify-end shadow-[0_0_25px_rgba(245,158,11,0.4)]">
-                <Crown className="w-6 h-6 text-amber-400 animate-bounce mb-1" />
-                <span className="text-2xl mb-1">🥇</span>
-                <span className="text-xs font-black text-amber-300 truncate w-full">
-                  {topGifters[0]?.name || loc('حامی برتر', 'Top Supporter')}
-                </span>
-                <span className="text-[11px] font-mono font-black text-amber-300 mt-1">
-                  {(topGifters[0]?.coins || 0).toLocaleString()} 🪙
-                </span>
-              </div>
-
-              {/* Rank 3 (Bronze) */}
-              <div className="p-3 rounded-2xl bg-white/5 border border-amber-700/30 flex flex-col items-center justify-end">
-                <span className="text-2xl mb-1">🥉</span>
-                <span className="text-xs font-black text-amber-600 truncate w-full">
-                  {topGifters[2]?.name || loc('حامی شماره ۳', 'Supporter #3')}
-                </span>
-                <span className="text-[10px] font-mono font-black text-amber-400 mt-1">
-                  {(topGifters[2]?.coins || 0).toLocaleString()} 🪙
-                </span>
-              </div>
-            </div>
-
-            {/* Remaining Gifters List */}
-            <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
-              {topGifters.slice(3).map((gifter, idx) => (
-                <div
-                  key={gifter.id || idx}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black text-white/50 w-5">#{idx + 4}</span>
-                    <span className="text-xs font-bold text-white">{gifter.name}</span>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-2 text-center pt-2">
+                  {/* Rank 2 (Silver) */}
+                  <div className="p-3 rounded-2xl bg-white/5 border border-slate-300/30 flex flex-col items-center justify-end">
+                    <span className="text-2xl mb-1">🥈</span>
+                    <span className="text-xs font-black text-slate-200 truncate w-full">
+                      {topGifters[1]?.name || '-'}
+                    </span>
+                    <span className="text-[10px] font-mono font-black text-amber-400 mt-1">
+                      {(topGifters[1]?.coins || 0).toLocaleString()} 🪙
+                    </span>
                   </div>
-                  <span className="text-xs font-mono font-black text-amber-400">
-                    {(gifter.coins || 0).toLocaleString()} 🪙
-                  </span>
+
+                  {/* Rank 1 (Gold) */}
+                  <div className="p-4 rounded-2xl bg-gradient-to-b from-amber-500/20 to-yellow-600/10 border-2 border-amber-400 flex flex-col items-center justify-end shadow-[0_0_25px_rgba(245,158,11,0.4)]">
+                    <Crown className="w-6 h-6 text-amber-400 animate-bounce mb-1" />
+                    <span className="text-2xl mb-1">🥇</span>
+                    <span className="text-xs font-black text-amber-300 truncate w-full">
+                      {topGifters[0]?.name || '-'}
+                    </span>
+                    <span className="text-[11px] font-mono font-black text-amber-300 mt-1">
+                      {(topGifters[0]?.coins || 0).toLocaleString()} 🪙
+                    </span>
+                  </div>
+
+                  {/* Rank 3 (Bronze) */}
+                  <div className="p-3 rounded-2xl bg-white/5 border border-amber-700/30 flex flex-col items-center justify-end">
+                    <span className="text-2xl mb-1">🥉</span>
+                    <span className="text-xs font-black text-amber-600 truncate w-full">
+                      {topGifters[2]?.name || '-'}
+                    </span>
+                    <span className="text-[10px] font-mono font-black text-amber-400 mt-1">
+                      {(topGifters[2]?.coins || 0).toLocaleString()} 🪙
+                    </span>
+                  </div>
                 </div>
-              ))}
-            </div>
+
+                {/* Remaining Gifters List */}
+                {topGifters.length > 3 && (
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+                    {topGifters.slice(3).map((gifter, idx) => (
+                      <div
+                        key={gifter.id || idx}
+                        className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-white/50 w-5">#{idx + 4}</span>
+                          <span className="text-xs font-bold text-white">{gifter.name}</span>
+                        </div>
+                        <span className="text-xs font-mono font-black text-amber-400">
+                          {(gifter.coins || 0).toLocaleString()} 🪙
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}

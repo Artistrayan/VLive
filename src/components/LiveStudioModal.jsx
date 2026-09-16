@@ -201,11 +201,7 @@ export default function LiveStudioModal({
   const [is3DGiftPanelOpen, setIs3DGiftPanelOpen] = useState(false);
   const [selected3DGift, setSelected3DGift] = useState(HIGH_END_3D_GIFTS[0]);
   const [realtimeGiftAlert, setRealtimeGiftAlert] = useState(null);
-  const [topGifters, setTopGifters] = useState([
-    { id: '1', name: 'Shahram_VIP', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100', coins: 15400, rank: 1 },
-    { id: '2', name: 'Nazanin_Rose', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', coins: 8200, rank: 2 },
-    { id: '3', name: 'Amir_Royal', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100', coins: 4500, rank: 3 }
-  ]);
+  const [topGifters, setTopGifters] = useState([]);
 
   const getBeautyFilterStyle = () => {
     const factor = (beautyStrength || 80) / 100;
@@ -311,11 +307,17 @@ export default function LiveStudioModal({
       setActiveLuxuryGift(prev => (prev?.id === giftId ? null : prev));
     }, 3800);
 
-    setTopGifters(prev => {
-      const copy = [...prev];
-      copy[0].coins += coins;
-      return copy;
-    });
+    if (coins > 0) {
+      setTopGifters(prev => {
+        const sender = currentUsername || 'Host';
+        const existing = prev.find(g => g.name === sender);
+        if (existing) {
+          return prev.map(g => g.name === sender ? { ...g, coins: g.coins + coins } : g).sort((a, b) => b.coins - a.coins);
+        } else {
+          return [...prev, { id: String(Date.now()), name: sender, avatar: currentUser?.avatar || '', coins: coins, rank: prev.length + 1 }].sort((a, b) => b.coins - a.coins);
+        }
+      });
+    }
 
     setChatMessages(prev => [...prev, {
       id: Date.now() + Math.random(),
@@ -1698,22 +1700,30 @@ export default function LiveStudioModal({
             <div className="relative z-30 px-4 pb-4 space-y-2 pointer-events-auto flex flex-col items-stretch">
               
               {/* MINI LEADERBOARD OF TOP GIFTERS */}
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-                <div className="flex items-center gap-1 bg-black/40 backdrop-blur-xl border border-amber-400/30 px-2.5 py-1 rounded-full text-amber-300 text-[10px] font-black shrink-0 shadow-lg">
-                  <Crown className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                  <span>{window.loc('برترین حامیان:', 'Top Gifters:')}</span>
-                </div>
-                {topGifters.map(g => (
-                  <div key={g.id} className="flex items-center gap-1.5 bg-black/30 backdrop-blur-xl border border-white/10 px-2.5 py-1 rounded-full shrink-0 shadow-sm">
-                    <span className="text-xs">
-                      {g.rank === 1 ? '🥇' : g.rank === 2 ? '🥈' : '🥉'}
-                    </span>
-                    <img src={g.avatar} alt={g.name} className="w-5 h-5 rounded-full object-cover border border-amber-400/40" />
-                    <span className="text-[10px] font-bold text-white truncate max-w-[70px]">@{g.name}</span>
-                    <span className="text-[9px] font-mono font-black text-amber-400">{g.coins.toLocaleString()} 🪙</span>
+              {topGifters.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+                  <div className="flex items-center gap-1 bg-black/40 backdrop-blur-xl border border-amber-400/30 px-2.5 py-1 rounded-full text-amber-300 text-[10px] font-black shrink-0 shadow-lg">
+                    <Crown className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                    <span>{window.loc('برترین حامیان:', 'Top Gifters:')}</span>
                   </div>
-                ))}
-              </div>
+                  {topGifters.map((g, idx) => (
+                    <div key={g.id || idx} className="flex items-center gap-1.5 bg-black/30 backdrop-blur-xl border border-white/10 px-2.5 py-1 rounded-full shrink-0 shadow-sm">
+                      <span className="text-xs">
+                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                      </span>
+                      {g.avatar ? (
+                        <img src={g.avatar} alt={g.name} className="w-5 h-5 rounded-full object-cover border border-amber-400/40" />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-black text-amber-300">
+                          {g.name?.[0] || 'U'}
+                        </div>
+                      )}
+                      <span className="text-[10px] font-bold text-white truncate max-w-[70px]">@{g.name}</span>
+                      <span className="text-[9px] font-mono font-black text-amber-400">{(g.coins || 0).toLocaleString()} 🪙</span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* LIVE COMMENTS FEED (TRANSPARENT, CLEAN) */}
               <div className="max-h-44 overflow-y-auto space-y-1.5 py-1 w-full flex flex-col items-start no-scrollbar" style={{ maskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)' }}>
