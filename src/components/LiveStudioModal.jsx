@@ -5,8 +5,89 @@ import {
   ThumbsUp, Send, AlertTriangle, X, Check, ChevronUp, ChevronDown, Sliders, Volume2, 
   VolumeX, UserPlus, Swords, BarChart2, UserX, UserMinus, Pin, CornerUpLeft, Trash2, 
   Cpu, BatteryCharging, Wifi, Play, Square, Award, Filter, ArrowRight, Share2, Info, Coins,
-  FlipHorizontal, SwitchCamera
+  FlipHorizontal, SwitchCamera, Sun, Wand2, Smile, Layers, Star
 } from 'lucide-react';
+
+const HIGH_END_3D_GIFTS = [
+  {
+    id: 'supercar',
+    name: 'سوپراسپرت بوگاتی',
+    nameEn: 'Bugatti Supercar',
+    icon: '🏎️',
+    price: 10000,
+    category: 'Ultra Luxury',
+    color: 'from-rose-500 via-red-600 to-amber-500',
+    border: 'border-rose-500/70',
+    glow: 'shadow-[0_0_50px_rgba(244,63,94,0.8)]',
+    accentColor: '#f43f5e',
+    desc: 'غرش موتور ۱۶ سیلندر با شعله‌های آتش و پیست نئونی'
+  },
+  {
+    id: 'diamond',
+    name: 'الماس سلطنتی',
+    nameEn: 'Royal Diamond',
+    icon: '💎',
+    price: 2500,
+    category: 'Prestige',
+    color: 'from-cyan-400 via-blue-500 to-indigo-600',
+    border: 'border-cyan-400/70',
+    glow: 'shadow-[0_0_50px_rgba(34,211,238,0.8)]',
+    accentColor: '#22d3ee',
+    desc: 'درخشش نور کریستالی با پرتوهای کوانتومی و هاله الماس'
+  },
+  {
+    id: 'gold_rose',
+    name: 'رز طلایی جاودان',
+    nameEn: 'Golden Rose',
+    icon: '🌹',
+    price: 500,
+    category: 'Romantic',
+    color: 'from-amber-400 via-yellow-500 to-orange-500',
+    border: 'border-amber-400/70',
+    glow: 'shadow-[0_0_45px_rgba(245,158,11,0.8)]',
+    accentColor: '#f59e0b',
+    desc: 'باران گلبرگ‌های طلایی با عطر کهربایی و نور لطیف'
+  },
+  {
+    id: 'private_jet',
+    name: 'جت اختصاصی VIP',
+    nameEn: 'VIP Private Jet',
+    icon: '✈️',
+    price: 25000,
+    category: 'Elite Supreme',
+    color: 'from-purple-500 via-fuchsia-600 to-pink-500',
+    border: 'border-purple-500/70',
+    glow: 'shadow-[0_0_60px_rgba(168,85,247,0.9)]',
+    accentColor: '#a855f7',
+    desc: 'پرواز در آسمان لایو با دنباله خط نور و ابرهای نئونی'
+  },
+  {
+    id: 'crown',
+    name: 'تاج امپراتوری الماس',
+    nameEn: 'Imperial Crown',
+    icon: '👑',
+    price: 5000,
+    category: 'Royalty',
+    color: 'from-yellow-300 via-amber-500 to-yellow-600',
+    border: 'border-yellow-400/80',
+    glow: 'shadow-[0_0_50px_rgba(234,179,8,0.85)]',
+    accentColor: '#eab308',
+    desc: 'تاج‌گذاری پادشاهی با جواهرات سلطنتی و هاله طلا'
+  },
+  {
+    id: 'champagne',
+    name: 'شامپاین لوکس طلایی',
+    nameEn: 'Gold Champagne',
+    icon: '🍾',
+    price: 1200,
+    category: 'Celebration',
+    color: 'from-emerald-400 via-teal-500 to-amber-400',
+    border: 'border-teal-400/70',
+    glow: 'shadow-[0_0_45px_rgba(45,212,191,0.8)]',
+    accentColor: '#2dd4bf',
+    desc: 'انفجار حباب‌های طلایی و فشفشه‌های پر زرق و برق'
+  }
+];
 import { apiLive, apiAdmin } from '../services/api';
 import { safeStorage } from '../utils/safeStorage';
 import { cameraPermissionService } from '../services/cameraPermissionService';
@@ -98,6 +179,105 @@ export default function LiveStudioModal({
   // Luxury FX & VIP Entrance States
   const [activeLuxuryGift, setActiveLuxuryGift] = useState(null);
   const [activeVipEntrance, setActiveVipEntrance] = useState(null);
+
+  // Real-Time Beauty Filters & 8K Mobile Cinematic Controls
+  const [beautyFilter, setBeautyFilter] = useState('glam'); // 'glam' | 'radiance' | 'smooth' | 'cinematic' | 'natural' | 'none'
+  const [beautyStrength, setBeautyStrength] = useState(85); // 0 - 100
+  const [isBeautyPanelOpen, setIsBeautyPanelOpen] = useState(false);
+  const [streamQuality, setStreamQuality] = useState('4K'); // 'HD' | '4K'
+  const [isTorchActive, setIsTorchActive] = useState(false); // Virtual ring-light edge glow
+  const [isStickersOpen, setIsStickersOpen] = useState(false);
+  const [activeSticker, setActiveSticker] = useState(null); // 'crown' | 'glasses' | 'cat_ears' | 'halo' | 'hearts'
+  const [is3DGiftPanelOpen, setIs3DGiftPanelOpen] = useState(false);
+  const [selected3DGift, setSelected3DGift] = useState(HIGH_END_3D_GIFTS[0]);
+  const [realtimeGiftAlert, setRealtimeGiftAlert] = useState(null);
+  const [topGifters, setTopGifters] = useState([
+    { id: '1', name: 'Shahram_VIP', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100', coins: 15400, rank: 1 },
+    { id: '2', name: 'Nazanin_Rose', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', coins: 8200, rank: 2 },
+    { id: '3', name: 'Amir_Royal', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100', coins: 4500, rank: 3 }
+  ]);
+
+  const getBeautyFilterStyle = () => {
+    const factor = (beautyStrength || 80) / 100;
+    switch (beautyFilter) {
+      case 'radiance':
+        return `brightness(${1 + 0.12 * factor}) contrast(${1 + 0.08 * factor}) saturate(${1 + 0.18 * factor})`;
+      case 'glam':
+        return `brightness(${1 + 0.15 * factor}) contrast(${1 + 0.12 * factor}) saturate(${1 + 0.22 * factor}) hue-rotate(-3deg)`;
+      case 'smooth':
+        return `brightness(${1 + 0.08 * factor}) contrast(${1 + 0.04 * factor}) blur(${0.35 * factor}px)`;
+      case 'cinematic':
+        return `brightness(${1 + 0.05 * factor}) contrast(${1 + 0.22 * factor}) saturate(${1 + 0.3 * factor})`;
+      case 'natural':
+        return `brightness(${1 + 0.06 * factor}) contrast(${1 + 0.06 * factor}) saturate(${1 + 0.1 * factor})`;
+      case 'none':
+      default:
+        return 'none';
+    }
+  };
+
+  const quickRepliesList = [
+    window.loc('❤️ ممنون از حمایتتون', '❤️ Thanks for your support'),
+    window.loc('🔥 خوش آمدید به لایو', '🔥 Welcome to the live!'),
+    window.loc('👑 مرسی بابت هدیه خفن', '👑 Thank you for the awesome gift!'),
+    window.loc('✨ لایو رو به اشتراک بذارید', '✨ Share the live!'),
+    window.loc('🎯 هدف بعدی: ۱۰,۰۰۰ سکه', '🎯 Next goal: 10K coins')
+  ];
+
+  const handleSendQuickReply = (text) => {
+    if (!text) return;
+    const newMsg = {
+      id: Date.now() + Math.random(),
+      user: currentUsername || currentUser?.username || 'Host',
+      text: text,
+      isHost: true,
+      isVip: true
+    };
+    setChatMessages(prev => [...prev, newMsg]);
+    if (roomServiceRef.current) {
+      roomServiceRef.current.sendChatMessage(text, { isHost: true });
+    }
+    showToast(window.loc('پیام سریع ارسال شد 🚀', 'Quick reply sent 🚀'));
+  };
+
+  const handleSend3DGift = (gift) => {
+    const targetGift = gift || selected3DGift;
+    const coins = targetGift.price;
+    setGiftCoinsEarned(prev => prev + coins);
+    if (setUserCoins) setUserCoins(prev => prev + coins);
+
+    const giftData = {
+      name: targetGift.name,
+      icon: targetGift.icon,
+      coins: coins,
+      sender: currentUsername || 'Host',
+      receiver: currentUsername || 'Host',
+      type: targetGift.id
+    };
+
+    setActiveLuxuryGift(giftData);
+    setRealtimeGiftAlert({
+      ...giftData,
+      id: Date.now()
+    });
+
+    setTopGifters(prev => {
+      const copy = [...prev];
+      copy[0].coins += coins;
+      return copy;
+    });
+
+    setChatMessages(prev => [...prev, {
+      id: Date.now() + Math.random(),
+      user: currentUsername || 'Host',
+      text: `هدیه لوکس ${targetGift.name} (${coins.toLocaleString()} سکه) فعال شد! ${targetGift.icon}`,
+      isVip: true,
+      isHost: true
+    }]);
+
+    setIs3DGiftPanelOpen(false);
+    showToast(window.loc(`🎉 هدیه ۳ بعدی ${targetGift.name} فعال شد!`, `🎉 3D gift ${targetGift.name} activated!`));
+  };
 
 
   // Hardware / Device States
@@ -827,8 +1007,24 @@ export default function LiveStudioModal({
               autoPlay
               playsInline
               muted
+              style={{ filter: getBeautyFilterStyle() }}
               className={`w-full h-full object-cover transition-all duration-300 ${isMirrored ? 'scale-x-[-1]' : ''}`}
             />
+            {/* Virtual Ring-Light Screen Illumination Glow */}
+            {isTorchActive && (
+              <div className="absolute inset-0 pointer-events-none z-10 shadow-[inset_0_0_120px_40px_rgba(255,250,240,0.5)] border-4 border-white/60 animate-pulse transition-all duration-300" />
+            )}
+            {/* AR Sticker / Particle Overlay */}
+            {activeSticker && (
+              <div className="absolute top-28 left-1/2 -translate-x-1/2 pointer-events-none z-20 text-6xl animate-bounce drop-shadow-[0_0_25px_rgba(255,255,255,0.8)]">
+                {activeSticker === 'crown' && '👑'}
+                {activeSticker === 'glasses' && '🕶️'}
+                {activeSticker === 'cat_ears' && '🐱'}
+                {activeSticker === 'halo' && '😇'}
+                {activeSticker === 'hearts' && '💖'}
+                {activeSticker === 'sparkles' && '✨'}
+              </div>
+            )}
           </div>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-500 space-y-2">
@@ -1059,7 +1255,7 @@ export default function LiveStudioModal({
       {/* PHASE 3: LIVE STUDIO BROADCAST SCREEN */}
       {/* ========================================================================= */}
       {studioPhase === 'LIVE' && (
-        <div className="flex-1 relative bg-transparent flex flex-col overflow-hidden">
+        <div className="flex-1 relative bg-transparent flex flex-col overflow-hidden select-none">
           
           {/* LUXURY GIFT OVERLAY & VIP ENTRANCE FX */}
           {activeLuxuryGift && (
@@ -1076,338 +1272,538 @@ export default function LiveStudioModal({
             />
           )}
 
-          {/* CENTER LARGE CAMERA PREVIEW AREA (Uses Persistent Root Camera behind) */}
-          <div className="relative flex-1 bg-transparent overflow-hidden">
-            {/* Gradient Overlays for Readability */}
-            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
-            <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
-
-            {/* ================= TOP BAR ================= */}
-            <div className="absolute top-4 right-4 left-4 z-30 flex items-start justify-between">
-              
-              {/* Host & Stream Badges */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-2 bg-transparent px-2 py-1.5 rounded-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                  <div className="relative shrink-0">
-                    <img src={currentUser?.avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE5IDIxdi0yYTRgMCAwIDAtNC00SDlhNCA0IDAgMCAwLTQgNHYyIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSI3IiByPSI0Ii8+PC9zdmc+'} alt="host" className="w-6 h-6 rounded-full object-cover border border-white/20 bg-slate-800" />
-                    <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse border border-slate-900" />
-                  </div>
-                  <div className="flex flex-col pr-1 pl-1">
-                    <span className="text-[10px] font-bold text-white leading-tight">@{currentUsername || currentUser?.username || 'Host'}</span>
-                    <span className="text-[9px] text-white/70 font-mono leading-tight">{formatTime(liveDurationSeconds)}</span>
-                  </div>
-                  <div className="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-lg shadow-rose-500/20">LIVE</div>
-                  {liveType === 'adult' && (
-                    <div className="bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-full">18+</div>
-                  )}
+          {/* REAL-TIME 3D GIFT NOTIFICATION FLOATING BANNER */}
+          {realtimeGiftAlert && (
+            <div className="absolute top-20 left-4 z-40 animate-slideInRight max-w-xs">
+              <div className="bg-black/60 backdrop-blur-2xl border border-amber-400/50 rounded-2xl p-2.5 shadow-[0_0_30px_rgba(245,158,11,0.4)] flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-500/30 to-yellow-300/20 border border-amber-400/50 flex items-center justify-center text-2xl animate-pulse shadow-inner">
+                  {realtimeGiftAlert.icon || '🎁'}
                 </div>
-                
-                {/* AI Monitor Indicator Badge (Subtle) */}
-                {aiMonitorStatus !== 'ALL_CLEAR' && (
-                  <div className="bg-rose-500/20 border border-rose-500/40 text-rose-200 px-2 py-1 rounded-full text-[9px] font-bold backdrop-blur-md flex items-center gap-1 w-fit animate-pulse">
-                    <AlertTriangle className="w-2.5 h-2.5" />
-                    <span>{aiNoticeMsg}</span>
+                <div className="flex-1 text-right">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black text-amber-300">@{realtimeGiftAlert.sender}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold">+{Number(realtimeGiftAlert.coins || 0).toLocaleString()} 🪙</span>
                   </div>
-                )}
+                  <p className="text-[10px] text-white/90 font-bold truncate">
+                    {window.loc(`هدیه ${realtimeGiftAlert.name} ارسال کرد!`, `Sent ${realtimeGiftAlert.name}!`)}
+                  </p>
+                </div>
+                <button onClick={() => setRealtimeGiftAlert(null)} className="text-white/50 hover:text-white text-xs px-1">✕</button>
+              </div>
+            </div>
+          )}
+
+          {/* MAIN BROADCAST VIEWPORT AREA */}
+          <div className="relative flex-1 bg-transparent overflow-hidden flex flex-col justify-between">
+            {/* Ambient Lighting & Readability Gradients */}
+            <div className="absolute top-0 left-0 right-0 h-36 bg-gradient-to-b from-black/70 via-black/25 to-transparent pointer-events-none z-10" />
+            <div className="absolute bottom-0 left-0 right-0 h-72 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-10" />
+
+            {/* ========================================================================= */}
+            {/* 1. TOP GLASS BAR */}
+            {/* ========================================================================= */}
+            <div className="relative z-30 px-3 pt-3 flex items-center justify-between gap-2">
+              
+              {/* Left Group: Live Indicator & Host Info */}
+              <div className="flex items-center gap-2">
+                {/* Live Indicator with Red Pulsing Dot */}
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-600/30 border border-rose-500/60 shadow-[0_0_20px_rgba(244,63,94,0.6)] backdrop-blur-xl">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                  <span className="text-[10px] font-black tracking-widest text-white drop-shadow">LIVE</span>
+                </div>
+
+                {/* Host Capsule */}
+                <div className="flex items-center gap-2 bg-black/40 backdrop-blur-2xl border border-white/15 px-2.5 py-1 rounded-full shadow-lg">
+                  <div className="relative w-6 h-6 rounded-full overflow-hidden border border-white/20">
+                    <img src={currentUser?.avatar || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE5IDIxdi0yYTRgMCAwIDAtNC00SDlhNCA0IDAgMCAwLTQgNHYyIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSI3IiByPSI0Ii8+PC9zdmc+'} alt="host" className="w-full h-full object-cover" />
+                  </div>
+                  <span className="text-[10px] font-black text-white truncate max-w-[70px]">@{currentUsername || currentUser?.username || 'Host'}</span>
+                </div>
               </div>
 
-              {/* Viewers & Earnings KPI Badges */}
-              <div className="flex flex-col items-end gap-1.5 relative">
-                <div className="flex items-center gap-1.5 bg-transparent px-2.5 py-1 rounded-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-white">
-                  <Eye className="w-3.5 h-3.5 opacity-80" />
-                  <span className="text-xs font-bold font-mono [text-shadow:_0_1px_3px_rgba(0,0,0,0.8)]">{viewerCount.toLocaleString()}</span>
+              {/* Center Group: Viewer Count & Duration Timer */}
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/40 backdrop-blur-2xl border border-white/15 text-white font-mono text-xs shadow-lg">
+                <div className="flex items-center gap-1 font-black">
+                  <Eye className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{viewerCount.toLocaleString()}</span>
                 </div>
-                
-                {giftCoinsEarned > 0 && (
-                  <div className="flex items-center gap-1.5 bg-transparent px-2.5 py-1 rounded-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-amber-300">
-                    <Gift className="w-3.5 h-3.5" />
-                    <span className="text-xs font-bold font-mono [text-shadow:_0_1px_3px_rgba(0,0,0,0.8)]">{giftCoinsEarned.toLocaleString()}</span>
-                  </div>
-                )}
-
-                {/* NEW CONTROLS: Menu & End Live */}
-                <div className="flex items-center gap-2 mt-1">
-                  <button 
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center transition hover:scale-110 shrink-0 bg-transparent drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] active:scale-90 ${isMenuOpen ? 'text-cyan-400' : 'text-white'}`}
-                  >
-                    <Sliders className="w-6 h-6" />
-                  </button>
-
-                  <button
-                    onClick={() => setIsEndConfirmOpen(true)}
-                    className="w-9 h-9 rounded-full flex items-center justify-center bg-transparent drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] text-rose-500 hover:text-rose-400 shrink-0 active:scale-90 transition-all hover:scale-110"
-                  >
-                    <Square className="w-6 h-6 fill-rose-500" />
-                  </button>
+                <span className="text-white/30">|</span>
+                <div className="flex items-center gap-1 text-amber-300 font-black">
+                  <Clock className="w-3 h-3 text-amber-400" />
+                  <span>{formatTime(liveDurationSeconds)}</span>
                 </div>
+              </div>
 
-                {/* DROPDOWN MENU */}
-                {isMenuOpen && (
-                  <div className="absolute top-full right-0 mt-3 w-56 bg-black/60 backdrop-blur-2xl border border-white/20 rounded-3xl p-3 shadow-2xl animate-fadeIn flex flex-col gap-3 [text-shadow:_0_1px_2px_rgba(0,0,0,1)]">
-                    
-                    {/* Media Tools */}
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] text-white/50 font-bold px-1 border-b border-white/10 pb-1">{window.loc('🎥 رسانه', '🎥 Media')}</span>
-                      <div className="grid grid-cols-4 gap-1 pt-1">
-                        <button onClick={toggleCameraFacingMode} className="flex flex-col items-center gap-1 text-cyan-400 hover:text-cyan-300 transition" title={window.loc('تغییر دوربین جلو / عقب', 'Flip Camera')}>
-                          <SwitchCamera className="w-5 h-5" />
-                        </button>
-                        <button onClick={() => setIsCamEnabled(!isCamEnabled)} className={`flex flex-col items-center gap-1 transition ${isCamEnabled ? 'text-white hover:text-cyan-300' : 'text-rose-400'}`}>
-                          {isCamEnabled ? <Camera className="w-5 h-5" /> : <CameraOff className="w-5 h-5" />}
-                        </button>
-                        <button onClick={() => setIsMicEnabled(!isMicEnabled)} className={`flex flex-col items-center gap-1 transition ${isMicEnabled ? 'text-white hover:text-cyan-300' : 'text-rose-400'}`}>
-                          {isMicEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-                        </button>
-                      </div>
-                    </div>
+              {/* Right Group: Stream Quality (HD / 4K) & End Live Button */}
+              <div className="flex items-center gap-2">
+                {/* Stream Quality Indicator (HD / 4K) */}
+                <button
+                  onClick={() => {
+                    const next = streamQuality === '4K' ? 'HD' : '4K';
+                    setStreamQuality(next);
+                    showToast(window.loc(`کیفیت استریم: ${next} 60FPS`, `Stream quality: ${next} 60FPS`));
+                  }}
+                  className="px-2.5 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 text-[10px] font-black tracking-wider flex items-center gap-1 shadow-[0_0_15px_rgba(34,211,238,0.4)] hover:scale-105 active:scale-95 transition"
+                  title="Stream Quality"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                  <span>{streamQuality}</span>
+                </button>
 
-{/* Tools & Moderation */}
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] text-white/50 font-bold px-1 border-b border-white/10 pb-1">{window.loc('🛠 ابزارها', '🛠 Tools')}</span>
-                      <button onClick={() => { setActiveTabDrawer(activeTabDrawer === 'guests' ? null : 'guests'); setIsMenuOpen(false); }} className="flex items-center justify-between px-2 py-1.5 rounded-xl text-white hover:bg-white/10 transition">
-                        <div className="flex items-center gap-2">
-                          <UserPlus className="w-4 h-4" />
-                          <span className="text-xs font-bold">{window.loc('مهمانان', 'Guests')}</span>
-                        </div>
-                        {guestRequests.length > 0 && <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />}
-                      </button>
-
-                      <button onClick={() => {
-                        if (isPkActive) {
-                          setIsPkActive(false);
-                          showToast(window.loc('⚔️ مسابقه PK پایان یافت.', '⚔️ The PK match is over.'));
-                        } else {
-                          setIsPkActive(true);
-                          setPkTimeLeft(180);
-                          showToast(window.loc('⚔️ مسابقه PK آغاز شد!', '⚔️ The PK match has started!'));
-                        }
-                        setIsMenuOpen(false);
-                      }} className={`flex items-center gap-2 px-2 py-1.5 rounded-xl transition ${isPkActive ? 'text-rose-400 bg-rose-500/20' : 'text-white hover:bg-white/10'}`}>
-                        <Swords className="w-4 h-4" />
-                        <span className="text-xs font-bold">{window.loc('نبرد (PK)', 'PK Battle')}</span>
-                      </button>
-
-                      <button onClick={() => { setActiveTabDrawer(activeTabDrawer === 'stats' ? null : 'stats'); setIsMenuOpen(false); }} className="flex items-center gap-2 px-2 py-1.5 rounded-xl text-white hover:bg-white/10 transition">
-                        <BarChart2 className="w-4 h-4" />
-                        <span className="text-xs font-bold">{window.loc('آمار', 'Stats')}</span>
-                      </button>
-
-                      <button onClick={() => { setActiveTabDrawer(activeTabDrawer === 'settings' ? null : 'settings'); setIsMenuOpen(false); }} className="flex items-center gap-2 px-2 py-1.5 rounded-xl text-white hover:bg-white/10 transition">
-                        <Settings className="w-4 h-4" />
-                        <span className="text-xs font-bold">{window.loc('تنظیمات', 'Settings')}</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
+                {/* End Live Button (Red) */}
+                <button
+                  onClick={() => setIsEndConfirmOpen(true)}
+                  className="px-3 py-1 rounded-full bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black text-[11px] shadow-[0_0_20px_rgba(244,63,94,0.7)] border border-rose-400/50 flex items-center gap-1.5 active:scale-95 transition-all"
+                  title={window.loc('پایان لایواستریم', 'End Live Stream')}
+                >
+                  <Square className="w-3 h-3 fill-white" />
+                  <span>{window.loc('پایان', 'End')}</span>
+                </button>
               </div>
 
             </div>
 
-            {/* PK Battle Banner if active */}
-            {isPkActive && (
-              <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 w-11/12 max-w-xs">
-                <div className="bg-transparent p-2 flex flex-col gap-1.5 relative drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                  <div className="flex items-center justify-between text-[10px] font-bold px-1">
-                    <div className="flex items-center gap-1 text-white">
-                       <span className="w-2 h-2 rounded-full bg-rose-500" /> {window.loc('شما', 'You')}: {pkRedScore}
-                    </div>
-                    <div className="px-2 py-0.5 rounded-full bg-slate-800/80 text-amber-300 font-mono text-[9px] border border-amber-500/20 animate-pulse">
-                      {pkTimeLeft}s
-                    </div>
-                    <div className="flex items-center gap-1 text-white">
-                      {(pkOpponent && (pkOpponent.name || pkOpponent.username)) ? (pkOpponent.name || pkOpponent.username) : window.loc('حریف', 'Rival')}: {pkBlueScore} <span className="w-2 h-2 rounded-full bg-cyan-500" />
-                    </div>
+            {/* AI Notice Badge if any */}
+            {aiMonitorStatus !== 'ALL_CLEAR' && (
+              <div className="relative z-30 mx-4 mt-2 bg-rose-500/20 border border-rose-500/40 text-rose-200 px-3 py-1 rounded-full text-[10px] font-bold backdrop-blur-md flex items-center gap-1.5 w-fit animate-pulse">
+                <AlertTriangle className="w-3 h-3" />
+                <span>{aiNoticeMsg}</span>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* 2. RIGHT VERTICAL CONTROL PANEL (FLOATING GLASS) */}
+            {/* ========================================================================= */}
+            <div className="absolute top-20 right-3.5 z-30 flex flex-col items-center gap-2.5 p-2 rounded-3xl bg-black/45 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.8)]">
+              
+              {/* Beauty Filters Toggle */}
+              <button
+                onClick={() => setIsBeautyPanelOpen(!isBeautyPanelOpen)}
+                className={`w-10 h-10 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 relative group ${
+                  isBeautyPanelOpen || beautyFilter !== 'none'
+                    ? 'bg-pink-500/30 text-pink-300 border border-pink-400/60 shadow-[0_0_20px_rgba(236,72,153,0.6)] scale-105'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+                title={window.loc('فیلترهای زیبایی (Beauty)', 'Beauty Filters')}
+              >
+                <Wand2 className="w-5 h-5" />
+                <span className="text-[8px] font-bold mt-0.5">{window.loc('زیبایی', 'Beauty')}</span>
+                {beautyFilter !== 'none' && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-pink-400 animate-ping" />
+                )}
+              </button>
+
+              {/* Effects & Stickers */}
+              <button
+                onClick={() => setIsStickersOpen(!isStickersOpen)}
+                className={`w-10 h-10 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 relative group ${
+                  isStickersOpen || activeSticker
+                    ? 'bg-amber-500/30 text-amber-300 border border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.6)] scale-105'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+                title={window.loc('افکت‌ها و استیکرها', 'Effects & Stickers')}
+              >
+                <Smile className="w-5 h-5" />
+                <span className="text-[8px] font-bold mt-0.5">{window.loc('افکت', 'Effects')}</span>
+              </button>
+
+              {/* Camera Flip */}
+              <button
+                onClick={toggleCameraFacingMode}
+                className="w-10 h-10 rounded-2xl flex flex-col items-center justify-center text-white/80 hover:text-cyan-300 hover:bg-white/10 transition active:scale-90"
+                title={window.loc('تغییر دوربین جلو / عقب', 'Camera Flip')}
+              >
+                <SwitchCamera className="w-5 h-5" />
+                <span className="text-[8px] font-bold mt-0.5">{window.loc('دوربین', 'Flip')}</span>
+              </button>
+
+              {/* Mic Mute / Unmute */}
+              <button
+                onClick={() => {
+                  const next = !isMicEnabled;
+                  setIsMicEnabled(next);
+                  showToast(next ? window.loc('میکروفون فعال شد 🎙️', 'Mic enabled') : window.loc('میکروفون بی‌صدا شد 🔇', 'Mic muted'));
+                }}
+                className={`w-10 h-10 rounded-2xl flex flex-col items-center justify-center transition ${
+                  isMicEnabled
+                    ? 'text-emerald-300 hover:bg-white/10'
+                    : 'bg-rose-600/30 text-rose-300 border border-rose-500/60 shadow-[0_0_15px_rgba(244,63,94,0.5)]'
+                }`}
+                title={isMicEnabled ? window.loc('قطع میکروفون', 'Mute Mic') : window.loc('وصل میکروفون', 'Unmute Mic')}
+              >
+                {isMicEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                <span className="text-[8px] font-bold mt-0.5">{isMicEnabled ? window.loc('میک', 'Mic') : window.loc('صامت', 'Muted')}</span>
+              </button>
+
+              {/* Flash / Virtual Ring Light */}
+              <button
+                onClick={() => {
+                  setIsTorchActive(!isTorchActive);
+                  showToast(!isTorchActive ? window.loc('رینگ‌لایت و نورپردازی فعال شد 💡', 'Ring-light activated') : window.loc('نورپردازی خاموش شد', 'Ring-light off'));
+                }}
+                className={`w-10 h-10 rounded-2xl flex flex-col items-center justify-center transition ${
+                  isTorchActive
+                    ? 'bg-yellow-400/30 text-yellow-300 border border-yellow-400/70 shadow-[0_0_20px_rgba(250,204,21,0.7)] scale-105'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+                title={window.loc('نورپردازی رینگ‌لایت', 'Ring Light')}
+              >
+                <Sun className={`w-5 h-5 ${isTorchActive ? 'animate-spin' : ''}`} style={{ animationDuration: '10s' }} />
+                <span className="text-[8px] font-bold mt-0.5">{window.loc('نور', 'Light')}</span>
+              </button>
+
+              {/* Private Mode / +18 Lock */}
+              <button
+                onClick={() => {
+                  const next = liveType === 'adult' ? 'standard' : 'adult';
+                  setLiveType(next);
+                  showToast(next === 'adult' ? window.loc('حالت ۱۸+ بزرگسالان فعال شد 🔞', '18+ Adult mode enabled') : window.loc('حالت لایو عادی فعال شد', 'Standard live mode'));
+                }}
+                className={`w-10 h-10 rounded-2xl flex flex-col items-center justify-center transition ${
+                  liveType === 'adult'
+                    ? 'bg-rose-900/40 text-rose-300 border border-rose-500/70 shadow-[0_0_20px_rgba(244,63,94,0.6)] scale-105'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+                title={window.loc('قفل حالت ۱۸+ بزرگسالان', '18+ Lock')}
+              >
+                {liveType === 'adult' ? <ShieldAlert className="w-5 h-5 text-rose-400" /> : <Lock className="w-5 h-5" />}
+                <span className="text-[8px] font-bold mt-0.5">{liveType === 'adult' ? '18+' : window.loc('خصوصی', 'Private')}</span>
+              </button>
+
+              {/* 3D Luxury Gifts Panel Trigger */}
+              <button
+                onClick={() => setIs3DGiftPanelOpen(true)}
+                className="w-10 h-10 rounded-2xl flex flex-col items-center justify-center bg-gradient-to-tr from-amber-500/30 to-pink-500/30 text-amber-300 border border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.5)] hover:scale-110 active:scale-95 transition"
+                title={window.loc('پنل هدایای سه بعدی لوکس', '3D Luxury Gifts')}
+              >
+                <Gift className="w-5 h-5 animate-pulse" />
+                <span className="text-[8px] font-bold mt-0.5">{window.loc('هدایا', 'Gifts')}</span>
+              </button>
+
+              {/* Stream Settings */}
+              <button
+                onClick={() => {
+                  setActiveTabDrawer(activeTabDrawer === 'settings' ? null : 'settings');
+                }}
+                className={`w-10 h-10 rounded-2xl flex flex-col items-center justify-center transition ${
+                  activeTabDrawer === 'settings'
+                    ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-400/60'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+                title={window.loc('تنظیمات استریم', 'Stream Settings')}
+              >
+                <Settings className="w-5 h-5" />
+                <span className="text-[8px] font-bold mt-0.5">{window.loc('تنظیمات', 'Setup')}</span>
+              </button>
+
+            </div>
+
+            {/* BEAUTY FILTER FLOATING DRAWER */}
+            {isBeautyPanelOpen && (
+              <div className="absolute top-20 right-20 z-40 w-64 bg-black/60 backdrop-blur-2xl border border-pink-500/40 rounded-3xl p-4 shadow-[0_0_50px_rgba(236,72,153,0.3)] space-y-3 animate-fadeIn">
+                <div className="flex items-center justify-between border-b border-white/15 pb-2">
+                  <div className="flex items-center gap-1.5 text-pink-300 font-bold text-xs">
+                    <Sparkles className="w-4 h-4" />
+                    <span>{window.loc('فیلترهای زیبایی سینمایی 8K', '8K Cinematic Beauty Filters')}</span>
                   </div>
-                  <div className="w-full h-1.5 bg-black/50 rounded-full overflow-hidden flex relative z-10">
-                    <div className="bg-gradient-to-r from-rose-600 to-rose-400 h-full transition-all duration-300" style={{ width: `${(pkRedScore / (pkRedScore + pkBlueScore + 0.1)) * 100}%` }} />
-                    <div className="bg-gradient-to-l from-cyan-600 to-cyan-400 h-full transition-all duration-300" style={{ width: `${(pkBlueScore / (pkRedScore + pkBlueScore + 0.1)) * 100}%` }} />
+                  <button onClick={() => setIsBeautyPanelOpen(false)} className="text-white/60 hover:text-white text-xs">✕</button>
+                </div>
+
+                {/* Filter Presets Grid */}
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { id: 'glam', label: '💄 Glam', desc: 'آرایش هالیوودی' },
+                    { id: 'radiance', label: '🌟 Radiance', desc: 'پوست درخشان' },
+                    { id: 'smooth', label: '🌸 Smooth', desc: 'پوست ابریشمی' },
+                    { id: 'cinematic', label: '🎬 Cinematic', desc: 'سینمایی 8K' },
+                    { id: 'natural', label: '🌿 Natural', desc: 'طبیعی و زنده' },
+                    { id: 'none', label: '⚪ None', desc: 'خاموش' }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setBeautyFilter(f.id)}
+                      className={`p-2 rounded-2xl text-right transition flex flex-col ${
+                        beautyFilter === f.id
+                          ? 'bg-gradient-to-r from-pink-600/40 to-purple-600/40 border border-pink-400 text-white shadow-[0_0_15px_rgba(236,72,153,0.5)]'
+                          : 'bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      <span className="text-xs font-black">{f.label}</span>
+                      <span className="text-[9px] text-white/50">{f.desc}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Strength Slider */}
+                {beautyFilter !== 'none' && (
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex items-center justify-between text-[10px] text-white/80 font-bold">
+                      <span>{window.loc('شدت فیلتر زیبایی:', 'Beauty Intensity:')}</span>
+                      <span className="text-pink-300 font-mono">{beautyStrength}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      value={beautyStrength}
+                      onChange={(e) => setBeautyStrength(Number(e.target.value))}
+                      className="w-full accent-pink-500 h-1.5 bg-white/20 rounded-full cursor-pointer"
+                    />
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* STICKERS & EFFECTS FLOATING DRAWER */}
+            {isStickersOpen && (
+              <div className="absolute top-36 right-20 z-40 w-60 bg-black/60 backdrop-blur-2xl border border-amber-500/40 rounded-3xl p-3.5 shadow-[0_0_50px_rgba(245,158,11,0.3)] space-y-3 animate-fadeIn">
+                <div className="flex items-center justify-between border-b border-white/15 pb-2">
+                  <span className="text-amber-300 font-bold text-xs">{window.loc('🎭 افکت و استیکرهای سه بعدی', '3D Stickers & FX')}</span>
+                  <button onClick={() => setIsStickersOpen(false)} className="text-white/60 hover:text-white text-xs">✕</button>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  {[
+                    { id: 'crown', icon: '👑', label: 'تاج' },
+                    { id: 'glasses', icon: '🕶️', label: 'عینک نئون' },
+                    { id: 'cat_ears', icon: '🐱', label: 'گربه ملوس' },
+                    { id: 'halo', icon: '😇', label: 'هاله فرشته' },
+                    { id: 'hearts', icon: '💖', label: 'باران قلب' },
+                    { id: 'sparkles', icon: '✨', label: 'ستاره‌ها' }
+                  ].map(s => (
+                    <button
+                      key={s.id}
+                      onClick={() => {
+                        setActiveSticker(activeSticker === s.id ? null : s.id);
+                        setIsStickersOpen(false);
+                      }}
+                      className={`p-2.5 rounded-2xl flex flex-col items-center gap-1 transition ${
+                        activeSticker === s.id
+                          ? 'bg-amber-500/30 border border-amber-400 text-white shadow-[0_0_15px_rgba(245,158,11,0.5)]'
+                          : 'bg-white/5 border border-white/10 text-white/80 hover:bg-white/10'
+                      }`}
+                    >
+                      <span className="text-2xl">{s.icon}</span>
+                      <span className="text-[9px] font-bold">{s.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* COLLAPSIBLE LIVE CHAT OVERLAY */}
-            <div className="absolute bottom-4 right-4 left-4 z-20 space-y-2 pointer-events-auto flex flex-col items-stretch">
+            {/* ========================================================================= */}
+            {/* 3. BOTTOM SECTION: LEADERBOARD, COMMENTS FEED & QUICK REPLIES */}
+            {/* ========================================================================= */}
+            <div className="relative z-30 px-4 pb-4 space-y-2 pointer-events-auto flex flex-col items-stretch">
               
-              {/* Pinned Message */}
-              {pinnedMessage && (
-                <div className="p-2 rounded-2xl bg-transparent text-amber-200 text-[10px] font-bold flex items-center justify-between drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] w-fit max-w-[80%] self-start">
-                  <div className="flex items-center gap-1.5 truncate">
-                    <Pin className="w-3 h-3 text-amber-400 shrink-0" />
-                    <span className="truncate">{pinnedMessage}</span>
-                  </div>
-                  <button onClick={() => setPinnedMessage('')} className="px-2 text-amber-300/70 hover:text-white">✕</button>
+              {/* MINI LEADERBOARD OF TOP GIFTERS */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+                <div className="flex items-center gap-1 bg-black/40 backdrop-blur-xl border border-amber-400/30 px-2.5 py-1 rounded-full text-amber-300 text-[10px] font-black shrink-0 shadow-lg">
+                  <Crown className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                  <span>{window.loc('برترین حامیان:', 'Top Gifters:')}</span>
                 </div>
-              )}
+                {topGifters.map(g => (
+                  <div key={g.id} className="flex items-center gap-1.5 bg-black/30 backdrop-blur-xl border border-white/10 px-2.5 py-1 rounded-full shrink-0 shadow-sm">
+                    <span className="text-xs">
+                      {g.rank === 1 ? '🥇' : g.rank === 2 ? '🥈' : '🥉'}
+                    </span>
+                    <img src={g.avatar} alt={g.name} className="w-5 h-5 rounded-full object-cover border border-amber-400/40" />
+                    <span className="text-[10px] font-bold text-white truncate max-w-[70px]">@{g.name}</span>
+                    <span className="text-[9px] font-mono font-black text-amber-400">{g.coins.toLocaleString()} 🪙</span>
+                  </div>
+                ))}
+              </div>
 
-              {/* Chat Messages Box */}
-              {isChatExpanded && (
-                <div className="max-h-48 overflow-y-auto space-y-1.5 py-2 w-full flex flex-col items-start" style={{ maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)' }}>
-                  {chatMessages.map(msg => (
-                    <div key={msg.id} className="text-[11px] flex flex-col group w-fit max-w-[85%] self-start">
-                      <div className="px-3 py-1.5 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/5 inline-flex items-center gap-1.5 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] [text-shadow:_0_1px_2px_rgba(0,0,0,1)]">
-                        <span className={`font-bold shrink-0 ${msg.isHost ? 'text-amber-400' : msg.isVip ? 'text-pink-400' : 'text-cyan-300'}`}>
-                          {msg.user}:
+              {/* LIVE COMMENTS FEED (TRANSPARENT, CLEAN) */}
+              <div className="max-h-44 overflow-y-auto space-y-1.5 py-1 w-full flex flex-col items-start no-scrollbar" style={{ maskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)' }}>
+                {chatMessages.length === 0 ? (
+                  <div className="px-3 py-1.5 rounded-2xl bg-black/20 backdrop-blur-md border border-white/5 text-[10px] text-white/60">
+                    {window.loc('خوش آمدید! بینندگان می‌توانند در این بخش پیام بگذارند.', 'Welcome! Viewers can chat here.')}
+                  </div>
+                ) : (
+                  chatMessages.map(msg => (
+                    <div key={msg.id} className="text-[11px] flex flex-col group w-fit max-w-[85%] self-start animate-fadeIn">
+                      <div className="px-3 py-1.5 rounded-2xl bg-black/25 backdrop-blur-md border border-white/10 inline-flex items-center gap-1.5 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                        <span className={`font-black shrink-0 ${msg.isHost ? 'text-amber-400' : msg.isVip ? 'text-pink-400' : 'text-cyan-300'}`}>
+                          @{msg.user}:
                         </span>
-                        <span className="text-white leading-snug">{msg.text}</span>
-                        
-                        {/* Inline Moderation actions for streamer */}
-                        {!msg.isHost && (
-                          <div className="hidden group-hover:flex items-center px-2 mx-2 border-x border-white/10">
-                            <button
-                              onClick={() => {
-                                setMutedUsers(prev => [...prev, msg.user]);
-                                showToast(window.loc(`🔇 کاربر @${msg.user} بی‌صدا گردید.`, `🔇 کاربر @${msg.user} بی‌صدا گردید.`));
-                              }}
-                              className="text-white/50 hover:text-rose-400 transition"
-                              title="Mute User"
-                            >
-                              <VolumeX className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
+                        <span className="text-white leading-snug font-medium">{msg.text}</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  ))
+                )}
+              </div>
+
+              {/* QUICK REPLY BUTTONS */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+                {quickRepliesList.map((qr, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSendQuickReply(qr)}
+                    className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 border border-white/15 text-white/90 text-[10px] font-bold backdrop-blur-xl shrink-0 transition-all shadow-sm"
+                  >
+                    {qr}
+                  </button>
+                ))}
+              </div>
 
               {/* Chat Input Bar */}
-              <div className="flex items-center gap-2 w-full">
+              <div className="flex items-center gap-2 w-full pt-1">
                 <input
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                  placeholder={isCommentsDisabled ? window.loc('کامنت‌ها غیرفعال است', 'Comments disabled') : window.loc('پیام خود را بنویسید...', 'Write your message...')}
+                  placeholder={isCommentsDisabled ? window.loc('کامنت‌ها غیرفعال است', 'Comments disabled') : window.loc('ارسال پیام به بینندگان استریم...', 'Send message to stream viewers...')}
                   disabled={isCommentsDisabled}
-                  className="flex-1 px-4 py-2.5 rounded-full bg-black/20 border-transparent text-xs text-white placeholder-white/70 outline-none focus:bg-black/40 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-all"
+                  className="flex-1 px-4 py-2.5 rounded-full bg-black/40 backdrop-blur-2xl border border-white/20 text-xs text-white placeholder-white/60 outline-none focus:border-pink-500 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] transition-all"
                 />
+                <button
+                  onClick={() => setIs3DGiftPanelOpen(true)}
+                  className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-pink-600 text-white flex items-center justify-center transition active:scale-95 shadow-[0_0_20px_rgba(245,158,11,0.5)] shrink-0"
+                  title="3D Gifts"
+                >
+                  <Gift className="w-5 h-5" />
+                </button>
                 {chatInput && (
                   <button
                     onClick={handleSendChat}
                     disabled={isCommentsDisabled}
-                    className="w-9 h-9 rounded-full bg-pink-600 hover:bg-pink-500 text-white flex items-center justify-center transition active:scale-95 shadow-lg shrink-0"
+                    className="w-10 h-10 rounded-full bg-pink-600 hover:bg-pink-500 text-white flex items-center justify-center transition active:scale-95 shadow-lg shrink-0"
                   >
                     <Send className="w-4 h-4 ml-0.5" />
                   </button>
                 )}
               </div>
+
             </div>
 
           </div>
 
-          {/* ================= DRAWER POPUPS (BEAUTY, GUESTS, STATS, SETTINGS) ================= */}
-          {activeTabDrawer && (
-            <div className="absolute bottom-4 right-4 left-4 z-50 bg-black/40 backdrop-blur-xl border border-white/10 p-4 rounded-3xl space-y-3 shadow-lg animate-fadeIn max-h-[45vh] overflow-y-auto no-scrollbar">
-              
-              <div className="flex items-center justify-between border-b border-white/30 pb-2">
-                <span className="font-bold text-white text-xs [text-shadow:_0_1px_2px_rgba(0,0,0,1)]">
-                  {activeTabDrawer === 'guests' && window.loc('👥 مهمانان', '👥 Guests')}
-                  {activeTabDrawer === 'stats' && window.loc('📊 آمار', '📊 Stats')}
-                  {activeTabDrawer === 'settings' && window.loc('⚙️ تنظیمات', '⚙️ Settings')}
-                </span>
-                <button onClick={() => setActiveTabDrawer(null)} className="text-white/70 hover:text-white transition">✕</button>
+          {/* ========================================================================= */}
+          {/* 4. CENTER FLOATING ADVANCED GIFT PANEL (WHEN OPENED) */}
+          {/* ========================================================================= */}
+          {is3DGiftPanelOpen && (
+            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-2xl flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+              <div className="w-full max-w-sm bg-gradient-to-b from-slate-900/95 to-black/95 border border-pink-500/40 rounded-3xl p-5 shadow-[0_0_80px_rgba(236,72,153,0.35)] space-y-4 relative overflow-hidden flex flex-col">
+                
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-pink-400">
+                      <Sparkles className="w-4 h-4 animate-pulse" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-white">{window.loc('هدایای فوق‌لوکس سه بعدی (3D Realistic)', 'Ultra-Luxury 3D Realistic Gifts')}</h4>
+                      <p className="text-[10px] text-slate-400">{window.loc('موتور گرافیکی Unreal Engine 5 با ترکینگ نور', 'Unreal Engine 5 Real-Time Rendering')}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setIs3DGiftPanelOpen(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm transition">✕</button>
+                </div>
+
+                {/* 3D Showcase Pedestal Rotating in 3D Space */}
+                <div className="relative h-44 rounded-2xl bg-gradient-to-b from-white/5 to-white/0 border border-white/10 flex flex-col items-center justify-center overflow-hidden">
+                  
+                  {/* Dynamic Particle Rings & Light Trails */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className={`w-36 h-36 rounded-full border border-dashed border-white/20 animate-spin ${selected3DGift.glow}`} style={{ animationDuration: '14s' }} />
+                    <div className="absolute w-24 h-24 rounded-full bg-gradient-to-r from-pink-500/20 to-cyan-500/20 blur-xl animate-pulse" />
+                  </div>
+
+                  {/* 3D Rotating Rotating Element */}
+                  <div 
+                    className="relative z-10 text-6xl transform transition-transform duration-500 animate-bounce"
+                    style={{
+                      textShadow: '0 10px 30px rgba(0,0,0,0.8)'
+                    }}
+                  >
+                    {selected3DGift.icon}
+                  </div>
+
+                  {/* Gift Info Tag */}
+                  <div className="relative z-10 text-center mt-2 space-y-0.5">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-xs font-black text-white">{selected3DGift.name}</span>
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-400/40">
+                        {selected3DGift.category}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-300 font-medium px-4">{selected3DGift.desc}</p>
+                    <div className="text-xs font-mono font-black text-amber-400 pt-0.5">
+                      {selected3DGift.price.toLocaleString()} 🪙
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* High-End Gifts Selection Grid */}
+                <div className="grid grid-cols-3 gap-2">
+                  {HIGH_END_3D_GIFTS.map(g => (
+                    <button
+                      key={g.id}
+                      onClick={() => setSelected3DGift(g)}
+                      className={`p-2.5 rounded-2xl flex flex-col items-center gap-1 transition-all duration-300 relative ${
+                        selected3DGift.id === g.id
+                          ? `bg-gradient-to-b ${g.color} ${g.border} ${g.glow} scale-105 text-white`
+                          : 'bg-white/5 border border-white/10 hover:bg-white/10 text-white/80'
+                      }`}
+                    >
+                      <span className="text-2xl transform transition-transform group-hover:scale-125">{g.icon}</span>
+                      <span className="text-[10px] font-black truncate w-full text-center">{g.name}</span>
+                      <span className="text-[9px] font-mono font-bold opacity-90">{g.price.toLocaleString()} 🪙</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Send Button with Strong Glow */}
+                <button
+                  onClick={() => handleSend3DGift(selected3DGift)}
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white font-black text-xs shadow-[0_0_35px_rgba(236,72,153,0.85)] hover:shadow-[0_0_50px_rgba(236,72,153,1)] hover:scale-102 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4 animate-spin" style={{ animationDuration: '6s' }} />
+                  <span>{window.loc(`ارسال هدیه ۳ بعدی (${selected3DGift.price.toLocaleString()} سکه)`, `Send 3D Gift (${selected3DGift.price.toLocaleString()} coins)`)}</span>
+                </button>
+
               </div>
+            </div>
+          )}
 
-              {/* GUESTS DRAWER */}
-              {activeTabDrawer === 'guests' && (
-                <div className="space-y-2">
-                  <p className="text-[10px] text-slate-400">{window.loc('حداکثر تعداد مهمان همزمان:', 'Maximum number of simultaneous guests:')} {maxGuestsLimit} {window.loc('نفر', 'person')}</p>
-                  {guestRequests.length === 0 ? (
-                    <p className="text-slate-500 text-center py-3">{window.loc('درخواستی از سمت بینندگان وجود ندارد', 'There is no request from the viewers')}</p>
-                  ) : (
-                    guestRequests.map(req => (
-                      <div key={req.id} className="p-2.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <img src={req.avatar} alt={req.name} className="w-7 h-7 rounded-full object-cover" />
-                          <span className="font-bold text-white text-xs">{req.name}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => {
-                              setActiveGuests(prev => [...prev, req]);
-                              setGuestRequests(prev => prev.filter(g => g.id !== req.id));
-                              showToast(window.loc(`✅ درخواست @${req.name} تایید شد.`, `✅ درخواست @${req.name} تایید شد.`));
-                            }}
-                            className="px-2.5 py-1 rounded-xl bg-emerald-500 text-slate-950 font-black text-[10px]"
-                          >
-                            {window.loc('تایید', 'confirmation')}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setGuestRequests(prev => prev.filter(g => g.id !== req.id));
-                            }}
-                            className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-400 text-[10px]"
-                          >
-                            {window.loc('رد', 'rejection')}
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-
-              {/* STATS DRAWER */}
-              {activeTabDrawer === 'stats' && (
-                <div className="grid grid-cols-2 gap-2 text-center">
-                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                    <span className="text-white/60 text-[10px]">{window.loc('بینندگان', 'Viewers')}</span>
-                    <p className="text-base font-black text-cyan-400 font-mono">{viewerCount}</p>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                    <span className="text-white/60 text-[10px]">{window.loc('لایک‌ها', 'Likes')}</span>
-                    <p className="text-base font-black text-rose-400 font-mono">{likeCount}</p>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                    <span className="text-white/60 text-[10px]">{window.loc('سکه هدایا', 'Coins')}</span>
-                    <p className="text-base font-black text-amber-400 font-mono">{giftCoinsEarned} 🪙</p>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                    <span className="text-white/60 text-[10px]">{window.loc('فالوور جدید', 'New Followers')}</span>
-                    <p className="text-base font-black text-emerald-400 font-mono">+{followersGained}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* SETTINGS DRAWER */}
-              {activeTabDrawer === 'settings' && (
-                <div className="space-y-2">
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition">
-                    <span className="text-xs font-bold text-slate-200">{window.loc('چت فقط فالوورها', 'Followers Only Chat')}</span>
-                    <input
-                      type="checkbox"
-                      checked={isFollowersOnlyChat}
-                      onChange={(e) => setIsFollowersOnlyChat(e.target.checked)}
-                      className="w-4 h-4 accent-pink-500 rounded"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition">
-                    <span className="text-xs font-bold text-slate-200">{window.loc('چت فقط VIP', 'VIP Only Chat')}</span>
-                    <input
-                      type="checkbox"
-                      checked={isVipOnlyChat}
-                      onChange={(e) => setIsVipOnlyChat(e.target.checked)}
-                      className="w-4 h-4 accent-pink-500 rounded"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition">
-                    <span className="text-xs font-bold text-slate-200">{window.loc('غیرفعال کردن چت', 'Disable Chat')}</span>
-                    <input
-                      type="checkbox"
-                      checked={isCommentsDisabled}
-                      onChange={(e) => setIsCommentsDisabled(e.target.checked)}
-                      className="w-4 h-4 accent-rose-500 rounded"
-                    />
-                  </label>
-                </div>
-              )}
-
-                          </div>
+          {/* STREAM SETTINGS DRAWER POPUP */}
+          {activeTabDrawer === 'settings' && (
+            <div className="absolute bottom-20 right-4 left-4 z-40 bg-black/60 backdrop-blur-2xl border border-white/15 p-4 rounded-3xl space-y-3 shadow-2xl animate-fadeIn max-h-[45vh] overflow-y-auto no-scrollbar">
+              <div className="flex items-center justify-between border-b border-white/15 pb-2">
+                <span className="font-black text-white text-xs">{window.loc('⚙️ تنظیمات پیشرفته استودیو لایو', 'Advanced Studio Live Settings')}</span>
+                <button onClick={() => setActiveTabDrawer(null)} className="text-white/60 hover:text-white text-xs">✕</button>
+              </div>
+              <div className="space-y-2">
+                <label className="flex items-center justify-between p-2.5 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition">
+                  <span className="text-xs font-bold text-slate-200">{window.loc('چت فقط فالوورها', 'Followers Only Chat')}</span>
+                  <input
+                    type="checkbox"
+                    checked={isFollowersOnlyChat}
+                    onChange={(e) => setIsFollowersOnlyChat(e.target.checked)}
+                    className="w-4 h-4 accent-pink-500 rounded"
+                  />
+                </label>
+                <label className="flex items-center justify-between p-2.5 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition">
+                  <span className="text-xs font-bold text-slate-200">{window.loc('چت فقط VIP', 'VIP Only Chat')}</span>
+                  <input
+                    type="checkbox"
+                    checked={isVipOnlyChat}
+                    onChange={(e) => setIsVipOnlyChat(e.target.checked)}
+                    className="w-4 h-4 accent-pink-500 rounded"
+                  />
+                </label>
+                <label className="flex items-center justify-between p-2.5 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition">
+                  <span className="text-xs font-bold text-slate-200">{window.loc('غیرفعال کردن کامنت‌ها', 'Disable Comments')}</span>
+                  <input
+                    type="checkbox"
+                    checked={isCommentsDisabled}
+                    onChange={(e) => setIsCommentsDisabled(e.target.checked)}
+                    className="w-4 h-4 accent-rose-500 rounded"
+                  />
+                </label>
+              </div>
+            </div>
           )}
 
         </div>
