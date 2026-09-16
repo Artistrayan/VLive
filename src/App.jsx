@@ -40,7 +40,6 @@ import {
 import ContentAndEngagementModals from './modals/ContentAndEngagementModals';
 import TermsModal from './modals/TermsModal';
 import SettingsModal from './modals/SettingsModal';
-import HostLiveModal from './modals/HostLiveModal';
 import UserProfileViewModal from './modals/UserProfileViewModal';
 import QrCodeModal from './modals/QrCodeModal';
 
@@ -195,8 +194,7 @@ export default function App() {
   const [isStreaming, setIsStreaming] = useState(false);
 
   // Host Live & PK Battle State
-  const [isHostLiveOpen, setIsHostLiveOpen] = useState(false);
-  const [isLiveStudioOpen, setIsLiveStudioOpen] = useState(false);
+    const [isLiveStudioOpen, setIsLiveStudioOpen] = useState(false);
   const [isStreamerCenterOpen, setIsStreamerCenterOpen] = useState(false);
   const [hostLiveTitle, setHostLiveTitle] = useState('');
   const [hostLiveCategory, setHostLiveCategory] = useState('chat');
@@ -3201,7 +3199,7 @@ export default function App() {
   const handleOpenLiveBroadcast = () => {
     // Admin has direct full access without any gender check or KYC requirement
     if (isUserAdmin) {
-      setIsHostLiveOpen(true);
+      setIsLiveStudioOpen(true);
       return;
     }
     if (!isFemaleUser) {
@@ -3209,7 +3207,7 @@ export default function App() {
       return;
     }
     if (isStreamerUser) {
-      setIsHostLiveOpen(true);
+      setIsLiveStudioOpen(true);
     } else {
       const userApp = (kycApplications || []).find(a => (a.username === (currentUsername || userName) || a.user_id === currentUser?.id));
       if (userApp && userApp.status === 'Pending') {
@@ -3738,7 +3736,7 @@ export default function App() {
 
             {/* SUB-TAB 2: LIVE STREAMS (DEDICATED WATCHING EXPERIENCE) */}
             {homeSubTab === 'live' && <div className="space-y-3 animate-fadeIn">
-                <LiveStreamSystem currentUser={currentUser} userRole={userRole} userGender={userGender} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isVerified={isVerified} isStreamerUser={isStreamerUser} kycApplications={kycApplications} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} currentUsername={currentUsername} userCoins={userCoins} setUserCoins={setUserCoins} vipPlan={vipPlan} setVipPlan={setVipPlan} streamsList={streamsList} setStreamsList={setStreamsList} viewingStream={viewingStream} setViewingStream={setViewingStream} showToast={showToast} setActiveTab={setActiveTab} handleInitiateCall={handleInitiateCall} addAdminAuditLog={addAdminAuditLog} setAdminReportsList={setAdminReportsList} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} />
+                <LiveStreamSystem currentUser={currentUser} userRole={userRole} userGender={userGender} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isVerified={isVerified} isStreamerUser={isStreamerUser} kycApplications={kycApplications} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} currentUsername={currentUsername} userCoins={userCoins} setUserCoins={setUserCoins} vipPlan={vipPlan} setVipPlan={setVipPlan} streamsList={streamsList} setStreamsList={setStreamsList} viewingStream={viewingStream} setViewingStream={setViewingStream} showToast={showToast} setActiveTab={setActiveTab} handleInitiateCall={handleInitiateCall} addAdminAuditLog={addAdminAuditLog} setAdminReportsList={setAdminReportsList} setIsHostLiveOpen={setIsLiveStudioOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} />
               </div>}
 
           </div>}
@@ -3972,7 +3970,7 @@ export default function App() {
         {/* TAB 3: WALLET & EARNINGS TAB */}
         <WalletTab currentUser={currentUser} userRole={userRole} currentUsername={currentUsername} isUserRayan={isUserRayan} handleBuyService={handleBuyService} activeTab={activeTab} txHistoryList={txHistoryList} userCoins={userCoins} setUserCoins={setUserCoins} userDiamonds={userDiamonds} setUserDiamonds={setUserDiamonds} userCashBalance={userCashBalance} setUserCashBalance={setUserCashBalance} walletSubTab={walletSubTab} setWalletSubTab={setWalletSubTab} referralCode={referralCode} setIsVipModalOpen={setIsVipModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} showToast={showToast} isVerified={isVerified} isUserSuperAdmin={isUserSuperAdmin} loc={loc} isRtl={isRtl} isStreamerUser={isStreamerUser} />
         {/* TAB 4: PROFILE TAB */}
-        <ProfileTab currentUser={currentUser} userRole={userRole} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsKycModalOpen={setIsKycModalOpen} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userNickname={userNickname} setUserNickname={setUserNickname} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsHostLiveOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={isVerified} isStreamerUser={isStreamerUser} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} advancedStories={advancedStories} setIsAddStoryModalOpen={setIsAddStoryModalOpen} setActiveStoryView={setActiveStoryView} setSelectedUser={setSelectedUser} setIsUserProfileModalOpen={setIsUserProfileModalOpen} />
+        <ProfileTab currentUser={currentUser} userRole={userRole} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsKycModalOpen={setIsKycModalOpen} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userNickname={userNickname} setUserNickname={setUserNickname} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsLiveStudioOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={isVerified} isStreamerUser={isStreamerUser} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} advancedStories={advancedStories} setIsAddStoryModalOpen={setIsAddStoryModalOpen} setActiveStoryView={setActiveStoryView} setSelectedUser={setSelectedUser} setIsUserProfileModalOpen={setIsUserProfileModalOpen} />
         </main>
       <nav className="fixed bottom-0 w-full max-w-[800px] z-40 bg-slate-900/95 backdrop-blur-2xl border-t border-slate-800/80 p-2 sm:px-6 flex justify-between items-center shadow-[0_-5px_30px_rgba(0,0,0,0.5)]">
         
@@ -4805,29 +4803,7 @@ export default function App() {
 
       
       {/* MODAL: LIVE HOST SETUP & BROADCAST */}
-      <HostLiveModal isOpen={isHostLiveOpen || isLiveModalOpen} onClose={() => {
-          setIsHostLiveOpen(false);
-          setIsLiveModalOpen(false);
-        }} loc={loc} isRtl={isRtl} currentUsername={currentUsername} userName={userName} userAvatar={userAvatar} currentUser={currentUser} userLevel={userLevel} userRole={userRole} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isStreamerUser={isStreamerUser} onOpenStreamerApplication={() => setIsBecomeStreamerModalOpen(true)} hostLiveType={hostLiveType} setHostLiveType={setHostLiveType} hostLiveTitle={hostLiveTitle} setHostLiveTitle={setHostLiveTitle} hostLiveCategory={hostLiveCategory} setHostLiveCategory={setHostLiveCategory} hostCoinRate={hostCoinRate} setHostCoinRate={setHostCoinRate} hostAdultConsent={hostAdultConsent} setHostAdultConsent={setHostAdultConsent} isCamEnabled={isCamEnabled} setIsCamEnabled={setIsCamEnabled} isMicEnabled={isMicEnabled} setIsMicEnabled={setIsMicEnabled} liveGuideStep={liveGuideStep} setLiveGuideStep={setLiveGuideStep} onStartLive={() => {
-          if (!isStreamerUser) {
-            handleOpenLiveBroadcast();
-            setIsHostLiveOpen(false);
-            setIsLiveModalOpen(false);
-            return;
-          }
-          const finalTitle = (hostLiveType === 'adult' ? `🔞 لایو بزرگسالان @${currentUsername || userName}` : `لایواستریم @${currentUsername || userName}`);
-          showToast(loc('در حال آماده‌سازی و شروع لایواستریم...', 'Starting Live Broadcast...'));
-          setTimeout(() => {
-            setIsHostLiveOpen(false);
-            setIsLiveModalOpen(false);
-            setViewingStream(null);
-            setIsLiveStudioOpen(true);
-          }, 600);
-        }} onOpenStreamerCenter={() => {
-          setIsHostLiveOpen(false);
-          setIsLiveModalOpen(false);
-          setIsStreamerCenterOpen(true);
-        }} />
+      
 {/* MODALS: PARTY ROOM, LUCKY WHEEL & CREATE AGENCY */}
       <PartyRoomStageModal activePartyRoom={activePartyRoom} onClose={() => {
           setActivePartyRoom(null);
@@ -4850,7 +4826,7 @@ export default function App() {
         </div>}
 
       {/* MODAL: STREAMER CENTER DASHBOARD */}
-      <StreamerDashboardModal isOpen={isStreamerCenterOpen} onClose={() => setIsStreamerCenterOpen(false)} currentUser={currentUser} userRole={userRole} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isVerified={isVerified} isStreamerUser={isStreamerUser} onOpenStreamerApplication={() => setIsBecomeStreamerModalOpen(true)} currentUsername={currentUsername} userCoins={userCoins} setUserCoins={setUserCoins} showToast={showToast} onSwitchMainTab={setActiveTab} setIsStartLiveModalOpen={() => { if (isStreamerUser) { setIsHostLiveOpen(true); } else { handleOpenLiveBroadcast(); } }} addAdminAuditLog={addAdminAuditLog} />
+      <StreamerDashboardModal isOpen={isStreamerCenterOpen} onClose={() => setIsStreamerCenterOpen(false)} currentUser={currentUser} userRole={userRole} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isVerified={isVerified} isStreamerUser={isStreamerUser} onOpenStreamerApplication={() => setIsBecomeStreamerModalOpen(true)} currentUsername={currentUsername} userCoins={userCoins} setUserCoins={setUserCoins} showToast={showToast} onSwitchMainTab={setActiveTab} setIsStartLiveModalOpen={() => { if (isStreamerUser) { setIsLiveStudioOpen(true); } else { handleOpenLiveBroadcast(); } }} addAdminAuditLog={addAdminAuditLog} />
 
       {/* MODAL: LIVE STUDIO (INTERNAL STREAMER PANEL) */}
       <LiveStudioModal isOpen={isLiveStudioOpen} onClose={() => { setIsLiveStudioOpen(false); setViewingStream(null); }} currentUser={currentUser} userLevel={userLevel} userRole={userRole} isUserRayan={isUserRayan} isUserSuperAdmin={isUserSuperAdmin} isVerified={isVerified} isStreamerUser={isStreamerUser} onOpenStreamerApplication={() => setIsBecomeStreamerModalOpen(true)} currentUsername={currentUsername} userCoins={userCoins} setUserCoins={setUserCoins} streamsList={streamsList} setStreamsList={setStreamsList} setViewingStream={setViewingStream} showToast={showToast} addAdminAuditLog={addAdminAuditLog} setAdminReportsList={setAdminReportsList} loc={loc} isRtl={isRtl} />
