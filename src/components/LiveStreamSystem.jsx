@@ -289,20 +289,22 @@ export default function LiveStreamSystem({
       <div className="card-3d p-3 bg-slate-900/95 rounded-3xl border border-slate-800 backdrop-blur-xl shadow-xl space-y-3 dir-rtl">
         
         {/* MAIN TYPE TOGGLE (Standard Live vs Adult Live 18+) */}
-        <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
+        <div className="grid grid-cols-2 gap-3 bg-white/5 backdrop-blur-2xl p-2 rounded-3xl border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)] relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-rose-500/10 pointer-events-none" />
           <button
             onClick={() => {
               setLiveTypeTab('standard');
               setSelectedSubCategory('all');
             }}
             title={window.loc('پخش استاندارد', 'Standard')}
-            className={`py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center ${
+            className={`relative z-10 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
               liveTypeTab === 'standard'
-                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/30 ring-1 ring-pink-400/50'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
+                ? 'bg-blue-600/20 text-blue-300 shadow-[0_0_20px_rgba(37,99,235,0.4)] border border-blue-500/50 scale-105'
+                : 'text-slate-400 hover:text-white hover:bg-slate-900/60 border border-transparent'
             }`}
           >
-            <Video className="w-5 h-5 text-cyan-300" />
+            <div className={`w-2 h-2 rounded-full ${liveTypeTab === 'standard' ? 'bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,1)]' : 'bg-slate-600'}`} />
+            {window.loc('لایو عادی', 'Normal Live')}
           </button>
 
           <button
@@ -310,14 +312,15 @@ export default function LiveStreamSystem({
               setLiveTypeTab('adult');
               setSelectedSubCategory('all');
             }}
-            title={window.loc('پخش زنده ۱۸+', '18+ Live')}
-            className={`py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center ${
+            title={window.loc('لایو بزرگسالان +۱۸', 'Adult Live +18')}
+            className={`relative z-10 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
               liveTypeTab === 'adult'
-                ? 'bg-gradient-to-r from-rose-600 via-purple-700 to-amber-500 text-white shadow-lg shadow-rose-500/40 ring-1 ring-amber-400/60'
-                : 'text-rose-400 hover:text-rose-200 hover:bg-slate-900/60'
+                ? 'bg-rose-900/40 text-rose-300 shadow-[0_0_25px_rgba(225,29,72,0.5)] border border-rose-500/60 scale-105'
+                : 'text-slate-500 hover:text-rose-300 hover:bg-rose-950/30 border border-transparent'
             }`}
           >
-            <Flame className="w-5 h-5 text-amber-400 animate-pulse" />
+            <ShieldAlert className={`w-4 h-4 ${liveTypeTab === 'adult' ? 'text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'text-slate-600'}`} />
+            <span className="tracking-wide">{window.loc('بزرگسالان +۱۸', 'Adult +18')}</span>
           </button>
         </div>
 
@@ -420,7 +423,7 @@ export default function LiveStreamSystem({
                         : 'bg-slate-950 border-slate-800 text-slate-400'
                     }`}
                   >
-                    <Video className="w-5 h-5 text-pink-400" />
+                    <Flame className="w-6 h-6 text-pink-400 drop-shadow-md group-hover:scale-110 transition-transform duration-300" />
                   </button>
 
                   <button
@@ -436,7 +439,7 @@ export default function LiveStreamSystem({
                         : 'bg-slate-950 border-slate-800 text-slate-400'
                     }`}
                   >
-                    <Flame className="w-5 h-5 text-amber-400 animate-pulse" />
+                    <span className="text-xl font-black tracking-tighter drop-shadow-md group-hover:scale-110 transition-transform duration-300">+18</span>
                   </button>
                 </div>
               </div>
