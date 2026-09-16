@@ -3313,7 +3313,7 @@ export default function App() {
       <main className={`flex-1 max-w-4xl mx-auto w-full flex flex-col min-h-0 ${activeTab === 'messages' ? 'h-full overflow-hidden p-1 sm:p-2' : 'p-2 sm:p-4 space-y-4'}`}>
 
         {/* TAB 1: ULTRA-MODERN PREMIUM HOME SCREEN (DUAL-MODE LIVE & VIP) */}
-        {activeTab === 'home' && (
+        {(activeTab === 'home' || activeTab === 'search') && (
           <UltraModernHome
             currentUser={currentUser}
             currentUsername={currentUsername}
@@ -3326,12 +3326,18 @@ export default function App() {
             isUserAdmin={isUserAdmin}
             isUserSuperAdmin={isUserSuperAdmin}
             isFemaleUser={isFemaleUser}
+            isStreamerUser={isStreamerUser}
+            isApprovedStreamerOrAdmin={isApprovedStreamerOrAdmin}
+            handleOpenLiveBroadcast={handleOpenLiveBroadcast}
+            setIsAdminPanelOpen={setIsAdminPanelOpen}
             usersList={usersList}
             streamsList={streamsList}
             advancedStories={advancedStories}
             isLoggedIn={isLoggedIn}
             notificationsList={notificationsList}
             totalUnreadMessages={totalUnreadMessages}
+            activeTab={activeTab}
+            isSearchTabActive={activeTab === 'search'}
             setActiveTab={setActiveTab}
             setSelectedUser={setSelectedUser}
             setIsUserProfileModalOpen={setIsUserProfileModalOpen}
