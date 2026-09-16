@@ -106,14 +106,8 @@ export default function UserOnboardingModal({
     setPermissions(prev => ({ ...prev, [key]: nextVal }));
     if (key === 'camera') {
       safeStorage.setItem('vlive_camera_permission_granted', nextVal ? 'true' : 'false');
-      if (nextVal) {
-        cameraPermissionService.ensurePermissions({ video: true, audio: false }).catch(() => {});
-      }
     } else if (key === 'microphone') {
       safeStorage.setItem('vlive_mic_permission_granted', nextVal ? 'true' : 'false');
-      if (nextVal) {
-        cameraPermissionService.ensurePermissions({ video: false, audio: true }).catch(() => {});
-      }
     } else if (key === 'gallery') {
       safeStorage.setItem('vlive_perm_gallery_granted', nextVal ? 'true' : 'false');
       setHasGalleryPermission(nextVal);
@@ -139,10 +133,6 @@ export default function UserOnboardingModal({
     safeStorage.setItem('vlive_notif_permission_granted', 'true');
     safeStorage.setItem('vlive_permissions_granted', 'true');
     safeStorage.setItem('vlive_permissions_prompted_once', 'true');
-
-    try {
-      await cameraPermissionService.ensurePermissions({ video: true, audio: true });
-    } catch (e) {}
 
     if (typeof Notification !== 'undefined' && Notification.requestPermission) {
       try {

@@ -30,6 +30,13 @@ class CameraPermissionService {
   }
 
   async ensurePermissions({ video = true, audio = true } = {}) {
+    // If permissions are already granted at browser level, return immediately without opening camera
+    const camState = await this.checkCameraPermission();
+    const micState = await this.checkMicPermission();
+    if ((!video || camState === 'granted') && (!audio || micState === 'granted')) {
+      return { camera: camState, microphone: micState };
+    }
+
     // If we already have an active stream with matching tracks, return immediately
     if (this.activeStream && this.activeStream.active) {
       const hasVideo = !video || this.activeStream.getVideoTracks().some(t => t.readyState === 'live');
