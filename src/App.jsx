@@ -3373,7 +3373,7 @@ export default function App() {
               if (vipOnlineList.length === 0) return null;
 
               return (
-                <div className="bg-slate-950/80 p-2 rounded-2xl border border-slate-800/80 shadow-md">
+                <div className="pb-1 mb-0.5">
                   <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
                     {vipOnlineList.map(user => {
                       const role = String(user.role || '').toLowerCase();
@@ -3542,50 +3542,49 @@ export default function App() {
               </div>
             )}
             
+            
             {/* TOP HARMONIZED SUB-TAB SWITCHER (EXPLORE COMPASS / LIVE BROADCASTS FEED / START LIVE STREAM) */}
-            <div className="max-w-md mx-auto w-full px-1">
-              <div className="grid grid-cols-3 gap-1.5 bg-slate-950/90 backdrop-blur-xl p-1.5 rounded-2xl border border-slate-800/90 shadow-xl shadow-purple-950/20">
+            <div className="max-w-md mx-auto w-full px-2 mt-0 mb-1">
+              <div className="flex items-center justify-around">
                 
-                {/* 1. کاربران (Users Feed) */}
+                {/* 1. کاربران (Users Feed) -> Just Icon */}
                 <button 
                   onClick={() => setHomeSubTab('explore')} 
-                  className={`py-2 px-2 sm:px-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-1.5 group ${
+                  className={`p-2.5 rounded-full transition-all duration-300 flex items-center justify-center group ${
                     homeSubTab === 'explore' 
-                      ? 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white shadow-md shadow-pink-500/25 font-black' 
-                      : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
+                      ? 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 shadow-md shadow-pink-500/30' 
+                      : 'hover:bg-slate-900/60'
                   }`} 
                   title={loc('کشف کاربران', 'Explore Users')}
                 >
-                  <Users className={`w-5 h-5 transition-transform duration-300 ${homeSubTab === 'explore' ? 'scale-110 text-white' : 'text-cyan-400/90 group-hover:scale-105'}`} />
-                  <span className="text-xs font-bold">{loc('کاربران', 'Users')}</span>
+                  <Users className={`w-6 h-6 transition-transform duration-300 ${homeSubTab === 'explore' ? 'text-white scale-110' : 'text-cyan-400 group-hover:scale-110'}`} />
                 </button>
 
-                {/* 2. نمایش اجرای زنده (Live Feed) */}
+                {/* 2. نمایش اجرای زنده (Live Feed) -> Colorful 3D Text "زنده" */}
                 <button 
                   onClick={() => setHomeSubTab('live')} 
-                  className={`py-2 px-2 sm:px-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-1.5 group ${
-                    homeSubTab === 'live' 
-                      ? 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white shadow-md shadow-pink-500/25 font-black' 
-                      : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
-                  }`} 
+                  className="py-2 px-4 transition-all duration-300 flex items-center justify-center group hover:scale-110 active:scale-95"
                   title={loc('نمایش اجرای زنده (استریم‌ها)', 'Live Streams Feed')}
                 >
-                  <Radio className={`w-5 h-5 transition-all duration-300 ${homeSubTab === 'live' ? 'scale-110 text-white animate-pulse' : 'text-pink-400/90 group-hover:scale-105'}`} />
-                  <span className="text-xs font-bold">{loc('پخش زنده', 'Live')}</span>
+                  <span className={`text-2xl sm:text-3xl font-black tracking-wider drop-shadow-md transition-all duration-300 ${
+                    homeSubTab === 'live' 
+                      ? 'bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-amber-500 animate-pulse drop-shadow-[0_0_15px_rgba(236,72,153,0.8)]' 
+                      : 'bg-clip-text text-transparent bg-gradient-to-r from-slate-400 to-slate-500 group-hover:from-pink-400 group-hover:to-cyan-400'
+                  }`}>
+                    {loc('زنده', 'LIVE')}
+                  </span>
                 </button>
 
-                {/* 3. اجرای زنده (Start Live Broadcast) */}
+                {/* 3. اجرای زنده (Start Live Broadcast) -> Just + Icon */}
                 {isApprovedStreamerOrAdmin && (
                   <button 
                     onClick={handleOpenLiveBroadcast}
-                    className="py-2 px-2 sm:px-3 rounded-xl bg-gradient-to-r from-rose-600 via-purple-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white shadow-md shadow-rose-500/25 flex items-center justify-center gap-1.5 hover:scale-102 active:scale-95 transition-all duration-300 border border-amber-400/40 group"
+                    className="w-11 h-11 rounded-full bg-gradient-to-r from-rose-600 via-purple-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white shadow-lg shadow-rose-500/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 border border-amber-400/40 group"
                     title={loc('اجرای زنده (استودیو)', 'Start Live Broadcast')}
                   >
-                    <Video className="w-5 h-5 text-amber-300 animate-pulse transition-transform duration-300 group-hover:scale-110" />
-                    <span className="text-xs font-black">{loc('شروع لایو', 'Go Live')}</span>
+                    <Plus className="w-6 h-6 text-white font-black group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
                   </button>
                 )}
-
               </div>
             </div>
 
@@ -4002,8 +4001,8 @@ export default function App() {
 
         {/* 3. Match (Center Fire) */}
         <button onClick={() => setActiveTab('match')} className={activeTab === 'match' ? "relative -top-4 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/30 active:scale-95 transition-all duration-300 group" : "relative -top-5 w-14 h-14 rounded-full bg-gradient-to-tr from-pink-600 to-purple-600 p-0.5 shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:shadow-[0_0_30px_rgba(236,72,153,0.6)] transition-all group"} title={loc('رادار رولت', 'Radar Match')}>
-           {activeTab === 'match' ? <Flame className="w-7 h-7 text-white font-black group-hover:scale-110 transition duration-300" /> : <div className="w-full h-full rounded-full bg-slate-900 flex flex-col items-center justify-center transition duration-300">
-                <Flame className="w-6 h-6 text-pink-400 group-hover:text-pink-300 group-hover:scale-110 transition duration-300" />
+           {activeTab === 'match' ? <div className="text-2xl font-black text-white group-hover:scale-110 transition duration-300 drop-shadow-md">+18</div> : <div className="w-full h-full rounded-full bg-slate-900 flex flex-col items-center justify-center transition duration-300">
+                <div className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-amber-500 group-hover:scale-110 transition duration-300 drop-shadow-sm">+18</div>
               </div>}
         </button>
 
