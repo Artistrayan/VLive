@@ -234,6 +234,41 @@ export default function LiveStudioModal({
     window.loc('🎯 هدف بعدی: ۱۰,۰۰۰ سکه', '🎯 Next goal: 10K coins')
   ];
 
+  // Swipe Left (Hide UI & Chat) / Swipe Right (Show UI & Chat)
+  const [isUIVisible, setIsUIVisible] = useState(true);
+  const touchStartXRef = useRef(null);
+  const touchStartYRef = useRef(null);
+
+  const handleLiveTouchStart = (e) => {
+    if (e.touches && e.touches[0]) {
+      touchStartXRef.current = e.touches[0].clientX;
+      touchStartYRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleLiveTouchEnd = (e) => {
+    if (touchStartXRef.current === null) return;
+    const touchEndX = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : null;
+    const touchEndY = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : null;
+    if (touchEndX !== null) {
+      const diffX = touchEndX - touchStartXRef.current;
+      const diffY = touchEndY !== null ? Math.abs(touchEndY - touchStartYRef.current) : 0;
+      // Threshold 40px horizontal swipe
+      if (Math.abs(diffX) > 40 && Math.abs(diffX) > diffY) {
+        if (diffX < 0) {
+          // Swiped Left -> Hide all overlays, chat, and buttons
+          setIsUIVisible(false);
+          if (showToast) showToast(window.loc('منوها و چت مخفی شدند (کشیدن به راست برای نمایش)', 'Controls hidden (swipe right to show)'));
+        } else {
+          // Swiped Right -> Restore all overlays, chat, and buttons
+          setIsUIVisible(true);
+        }
+      }
+    }
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+  };
+
   const handleSendQuickReply = (text) => {
     if (!text) return;
     const newMsg = {
@@ -1276,7 +1311,11 @@ export default function LiveStudioModal({
       {/* PHASE 3: LIVE STUDIO BROADCAST SCREEN */}
       {/* ========================================================================= */}
       {studioPhase === 'LIVE' && (
-        <div className="flex-1 relative bg-transparent flex flex-col overflow-hidden select-none">
+        <div 
+          className="flex-1 relative bg-transparent flex flex-col overflow-hidden select-none"
+          onTouchStart={handleLiveTouchStart}
+          onTouchEnd={handleLiveTouchEnd}
+        >
           
           {/* LUXURY GIFT OVERLAY & VIP ENTRANCE FX */}
           {activeLuxuryGift && (
@@ -1293,9 +1332,31 @@ export default function LiveStudioModal({
             />
           )}
 
+          {/* CLEAN SCREEN MINIMAL HINT (VISIBLE WHEN UI IS HIDDEN VIA SWIPE LEFT) */}
+          {!isUIVisible && (
+            <div className="absolute top-4 inset-x-4 z-40 flex items-center justify-between pointer-events-auto animate-fadeIn">
+              <button
+                onClick={() => setIsUIVisible(true)}
+                className="px-3.5 py-1.5 rounded-full bg-black/70 backdrop-blur-2xl border border-white/25 text-white text-[11px] font-bold shadow-2xl flex items-center gap-1.5 hover:bg-black/90 active:scale-95 transition"
+              >
+                <span>👉 {window.loc('کشیدن به راست برای نمایش منوها و چت', 'Swipe right to show controls & chat')}</span>
+              </button>
+
+              {/* Direct Instant End Live Button even when hidden */}
+              <button
+                onClick={() => setIsEndConfirmOpen(true)}
+                className="px-3.5 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-black border border-rose-400/60 shadow-[0_0_20px_rgba(244,63,94,0.8)] flex items-center gap-1.5 active:scale-95 transition"
+                title={window.loc('قطع و اتمام لایو', 'End Live Stream')}
+              >
+                <Square className="w-3.5 h-3.5 fill-white" />
+                <span>{window.loc('اتمام لایو', 'End Live')}</span>
+              </button>
+            </div>
+          )}
+
           {/* REAL-TIME 3D GIFT NOTIFICATION FLOATING BANNER */}
-          {realtimeGiftAlert && (
-            <div className="absolute top-20 left-4 z-40 animate-slideInRight max-w-xs">
+          {realtimeGiftAlert && isUIVisible && (
+            <div className="absolute top-20 left-4 z-40 animate-slideInRight max-w-xs pointer-events-auto">
               <div className="bg-black/60 backdrop-blur-2xl border border-amber-400/50 rounded-2xl p-2.5 shadow-[0_0_30px_rgba(245,158,11,0.4)] flex items-center gap-3">
                 <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-500/30 to-yellow-300/20 border border-amber-400/50 flex items-center justify-center text-2xl animate-pulse shadow-inner">
                   {realtimeGiftAlert.icon || '🎁'}
@@ -1314,8 +1375,10 @@ export default function LiveStudioModal({
             </div>
           )}
 
-          {/* MAIN BROADCAST VIEWPORT AREA */}
-          <div className="relative flex-1 bg-transparent overflow-hidden flex flex-col justify-between">
+          {/* MAIN BROADCAST VIEWPORT AREA (TOGGLED BY SWIPE) */}
+          <div className={`relative flex-1 bg-transparent overflow-hidden flex flex-col justify-between transition-all duration-300 ${
+            isUIVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}>
             {/* Ambient Lighting & Readability Gradients */}
             <div className="absolute top-0 left-0 right-0 h-36 bg-gradient-to-b from-black/70 via-black/25 to-transparent pointer-events-none z-10" />
             <div className="absolute bottom-0 left-0 right-0 h-72 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-10" />
@@ -1515,6 +1578,16 @@ export default function LiveStudioModal({
               >
                 <Settings className="w-5 h-5" />
                 <span className="text-[8px] font-bold mt-0.5">{window.loc('تنظیمات', 'Setup')}</span>
+              </button>
+
+              {/* End Live Stream Button directly in dock */}
+              <button
+                onClick={() => setIsEndConfirmOpen(true)}
+                className="w-10 h-10 rounded-2xl flex flex-col items-center justify-center bg-rose-600/40 text-rose-300 border border-rose-500/70 shadow-[0_0_15px_rgba(244,63,94,0.6)] hover:bg-rose-600 hover:text-white transition active:scale-90"
+                title={window.loc('قطع و اتمام لایواستریم', 'End Live Stream')}
+              >
+                <Square className="w-4 h-4 fill-current" />
+                <span className="text-[8px] font-bold mt-0.5">{window.loc('پایان', 'End')}</span>
               </button>
 
             </div>

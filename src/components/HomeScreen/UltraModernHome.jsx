@@ -325,122 +325,17 @@ export default function UltraModernHome({
       </div>
 
       {/* =========================================================================
-          1. TOP SECTION: LOGO + SEARCH + WALLET + NOTIF (+ ADMIN ICON)
-             + TWO MODE TABS (ONLY FOR APPROVED FEMALE STREAMERS & ADMIN)
+          1. TWO MODE TABS (ONLY FOR APPROVED FEMALE STREAMERS & ADMIN)
          ========================================================================= */}
-      <div className="relative z-10 rounded-3xl overflow-hidden bg-slate-950/80 backdrop-blur-2xl border border-rose-500/20 shadow-[0_15px_40px_rgba(0,0,0,0.8)] p-3.5 sm:p-4 space-y-3">
-        
-        {/* Mobile Status Row (Time, 5G 8K, Battery) */}
-        <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 px-1 border-b border-white/5 pb-2">
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-white tracking-wider">{currentTime}</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
-          </div>
-          <div className="flex items-center gap-2.5 text-slate-300">
-            <Wifi className="w-3.5 h-3.5 text-cyan-400" />
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] font-bold text-rose-400 tracking-wider">8K CINEMATIC</span>
-              <Battery className="w-4 h-4 text-emerald-400" />
-            </div>
-          </div>
-        </div>
-
-        {/* Top Header Bar: Logo + Search + Wallet + Notification + Admin */}
-        <div className="flex items-center justify-between gap-2.5">
-          {/* App Logo */}
-          <div 
-            onClick={() => setActiveTab('home')}
-            className="flex items-center gap-2 cursor-pointer group shrink-0"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-600 via-pink-600 to-purple-600 p-[1.5px] shadow-[0_0_20px_rgba(244,63,94,0.5)] group-hover:scale-105 transition-all duration-300">
-              <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-                <Flame className="w-5 h-5 text-rose-500 group-hover:scale-110 transition-transform" />
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-base font-black tracking-wider bg-gradient-to-r from-rose-300 via-pink-400 to-amber-300 bg-clip-text text-transparent">
-                V.LIVE
-              </span>
-              <span className="text-[8px] font-mono font-bold text-rose-400 -mt-1 tracking-widest">
-                ADULT 8K
-              </span>
-            </div>
-          </div>
-
-          {/* Search Bar */}
-          <div className="flex-1 relative">
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={loc('جستجوی کاربران و استریمرها...', 'Search users and streamers...')}
-              className={`w-full h-9 pl-8 pr-8 rounded-2xl bg-white/5 border text-xs text-white placeholder-slate-400 focus:outline-none transition-all ${
-                isSearchTabActive
-                  ? 'border-rose-500/80 bg-rose-950/20 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
-                  : 'border-white/10 focus:border-rose-400/60 focus:bg-white/10 focus:shadow-[0_0_15px_rgba(244,63,94,0.2)]'
-              }`}
-            />
-            <Search className="w-3.5 h-3.5 text-rose-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery('')}
-                className="w-4 h-4 rounded-full bg-slate-800 text-slate-400 hover:text-white absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center text-[10px]"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          {/* Right Action Icons: Admin (if admin) + Wallet + Notification */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            {/* Admin Panel Icon (Visible only for Admin account) */}
-            {(isUserAdmin || isUserSuperAdmin) && (
-              <button
-                onClick={() => setIsAdminPanelOpen(true)}
-                className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-rose-600/20 border border-amber-400/60 text-amber-300 hover:border-amber-300 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:scale-105 active:scale-95 transition-all group"
-                title={loc('پنل مدیریت ارشد', 'Admin Panel')}
-              >
-                <Shield className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
-              </button>
-            )}
-
-            {/* Wallet Button */}
-            <button
-              onClick={() => setActiveTab('wallet')}
-              className="h-9 px-2.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/20 border border-amber-400/40 text-amber-300 hover:border-amber-300 flex items-center gap-1.5 shadow-[0_0_15px_rgba(245,158,11,0.2)] hover:scale-105 active:scale-95 transition-all"
-              title={loc('کیف پول و سکه‌ها', 'Wallet & Coins')}
-            >
-              <Coins className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              <span className="text-[11px] font-mono font-black text-amber-200">
-                {(userCoins || 0).toLocaleString()}
-              </span>
-            </button>
-
-            {/* Notification Button */}
-            <button
-              onClick={() => setIsNotificationsOpen(true)}
-              className="w-9 h-9 rounded-2xl bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:border-rose-500/50 flex items-center justify-center relative hover:scale-105 active:scale-95 transition-all"
-              title={loc('اعلان‌ها', 'Notifications')}
-            >
-              <Bell className="w-4 h-4" />
-              {notificationsList.some(n => n.unread) && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.9)] animate-ping" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* TWO MODE TABS: “لایو عادی” and “لایو +۱۸” 
-            (ONLY visible and accessible for approved female streamers & admin) */}
-        {canAccessBroadcasting && (
-          <div className="grid grid-cols-2 gap-2.5 pt-1">
+      {canAccessBroadcasting && (
+        <div className="relative z-10 rounded-2xl overflow-hidden bg-slate-950/80 backdrop-blur-2xl border border-rose-500/20 shadow-[0_10px_30px_rgba(0,0,0,0.6)] p-2">
+          <div className="grid grid-cols-2 gap-2">
             {/* Tab 1: Normal Live */}
             <button
               onClick={() => handleModeChange('normal')}
-              className={`relative py-2.5 px-3 sm:px-4 rounded-2xl flex items-center justify-center gap-2 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
+              className={`relative py-2 px-3 sm:px-4 rounded-xl flex items-center justify-center gap-2 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
                 activeMode === 'normal'
-                  ? 'bg-gradient-to-r from-cyan-900/40 via-cyan-600/30 to-blue-900/40 text-cyan-200 border-2 border-cyan-400 shadow-[0_0_25px_rgba(6,182,212,0.45)] scale-[1.01]'
+                  ? 'bg-gradient-to-r from-cyan-900/40 via-cyan-600/30 to-blue-900/40 text-cyan-200 border-2 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-[1.01]'
                   : 'bg-white/5 border border-white/10 text-slate-400 hover:text-cyan-300 hover:bg-white/10 hover:border-cyan-500/30'
               }`}
             >
@@ -453,9 +348,9 @@ export default function UltraModernHome({
             {/* Tab 2: Adult Live +18 */}
             <button
               onClick={() => handleModeChange('adult')}
-              className={`relative py-2.5 px-3 sm:px-4 rounded-2xl flex items-center justify-center gap-2 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
+              className={`relative py-2 px-3 sm:px-4 rounded-xl flex items-center justify-center gap-2 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
                 activeMode === 'adult'
-                  ? 'bg-gradient-to-r from-rose-950/60 via-red-600/40 to-pink-950/60 text-rose-200 border-2 border-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.6)] scale-[1.01]'
+                  ? 'bg-gradient-to-r from-rose-950/60 via-red-600/40 to-pink-950/60 text-rose-200 border-2 border-rose-500 shadow-[0_0_25px_rgba(244,63,94,0.55)] scale-[1.01]'
                   : 'bg-white/5 border border-white/10 text-slate-400 hover:text-rose-300 hover:bg-rose-950/20 hover:border-rose-500/30'
               }`}
             >
@@ -463,14 +358,13 @@ export default function UltraModernHome({
               <span className="tracking-wide">
                 {loc('لایو +۱۸', 'Live +18')}
               </span>
-              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-md bg-rose-500/30 border border-rose-400/50 text-rose-200">
+              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-md bg-rose-500/30 border border-rose-400/50 text-rose-200 font-black">
                 18+
               </span>
             </button>
           </div>
-        )}
-
-      </div>
+        </div>
+      )}
 
       {/* =========================================================================
           2. STORIES ROW (HORIZONTAL SCROLL)

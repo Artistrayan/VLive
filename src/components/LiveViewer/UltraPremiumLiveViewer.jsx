@@ -144,6 +144,40 @@ export default function UltraPremiumLiveViewer({
   // Video canvas / container ref
   const canvasRef = useRef(null);
 
+  // Swipe left/right gesture to hide/show menus and chat
+  const [isUIVisible, setIsUIVisible] = useState(true);
+  const touchStartXRef = useRef(null);
+  const touchStartYRef = useRef(null);
+
+  const handleViewerTouchStart = (e) => {
+    if (e.touches && e.touches[0]) {
+      touchStartXRef.current = e.touches[0].clientX;
+      touchStartYRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleViewerTouchEnd = (e) => {
+    if (touchStartXRef.current === null) return;
+    const touchEndX = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : null;
+    const touchEndY = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : null;
+    if (touchEndX !== null) {
+      const diffX = touchEndX - touchStartXRef.current;
+      const diffY = touchEndY !== null ? Math.abs(touchEndY - touchStartYRef.current) : 0;
+      if (Math.abs(diffX) > 40 && Math.abs(diffX) > diffY) {
+        if (diffX < 0) {
+          // Swipe Left -> Hide menus and chat
+          setIsUIVisible(false);
+          if (showToast) showToast(loc('منوها و چت مخفی شدند (کشیدن به راست برای نمایش)', 'Controls & chat hidden (swipe right to show)'));
+        } else {
+          // Swipe Right -> Show menus and chat
+          setIsUIVisible(true);
+        }
+      }
+    }
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+  };
+
   // 1. Duration Counter Timer
   useEffect(() => {
     // Initial random offset or start time based on stream creation
@@ -484,6 +518,8 @@ export default function UltraPremiumLiveViewer({
     <div
       className="fixed inset-0 z-50 bg-slate-950 flex flex-col justify-between overflow-hidden select-none font-sans"
       dir={isRtl ? 'rtl' : 'ltr'}
+      onTouchStart={handleViewerTouchStart}
+      onTouchEnd={handleViewerTouchEnd}
     >
       {/* ========================================================================= */}
       {/* 1. CINEMATIC FULLSCREEN LIVE VIDEO / FEED CANVAS BACKGROUND              */}
@@ -673,10 +709,39 @@ export default function UltraPremiumLiveViewer({
         </div>
       )}
 
+      {/* CLEAN SCREEN MINIMAL RESTORE BUTTON (WHEN UI IS HIDDEN VIA SWIPE LEFT) */}
+      {!isUIVisible && (
+        <div className="absolute top-4 inset-x-4 z-40 flex items-center justify-between pointer-events-auto animate-fadeIn">
+          <button
+            onClick={() => setIsUIVisible(true)}
+            className="px-3.5 py-1.5 rounded-full bg-black/70 backdrop-blur-2xl border border-white/25 text-white text-[11px] font-bold shadow-2xl flex items-center gap-1.5 hover:bg-black/90 active:scale-95 transition"
+          >
+            <span>👉 {loc('کشیدن به راست یا کلیک برای نمایش چت و منوها', 'Swipe right or tap to show chat & menu')}</span>
+          </button>
+          <button
+            onClick={() => {
+              if (setIsExitLiveModalOpen) {
+                setIsExitLiveModalOpen(true);
+              } else {
+                setViewingStream(null);
+              }
+            }}
+            className="w-8 h-8 rounded-full bg-black/60 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center backdrop-blur-xl transition active:scale-95"
+            title={loc('خروج', 'Exit')}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* ========================================================================= */}
-      {/* 4. TOP OVERLAY: STREAMER INFO, LIVE BADGE, DURATION, FOLLOW, REPORT, CLOSE */}
+      {/* 4. MAIN INTERACTIVE UI OVERLAY CONTAINER (TOGGLED BY SWIPE)               */}
       {/* ========================================================================= */}
-      <header className="relative z-30 pt-4 px-3 sm:px-5 flex items-center justify-between gap-2 pointer-events-auto">
+      <div className={`relative flex-1 flex flex-col justify-between transition-all duration-300 ${
+        isUIVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+      }`}>
+        {/* TOP OVERLAY: STREAMER INFO, LIVE BADGE, DURATION, FOLLOW, REPORT, CLOSE */}
+        <header className="relative z-30 pt-4 px-3 sm:px-5 flex items-center justify-between gap-2 pointer-events-auto">
         {/* Left: Streamer Avatar + Name + VIP Crown + Follow */}
         <div className="flex items-center gap-2 max-w-[55%]">
           {/* Streamer Avatar with Glowing Ring */}
@@ -1038,6 +1103,7 @@ export default function UltraPremiumLiveViewer({
           </button>
         </div>
       </footer>
+      </div>
 
       {/* ========================================================================= */}
       {/* 7. EXPANDABLE LUXURY 3D GIFT TRAY MODAL / SHEET                           */}
