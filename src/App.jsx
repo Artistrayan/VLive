@@ -3545,7 +3545,7 @@ export default function App() {
             
             {/* TOP HARMONIZED SUB-TAB SWITCHER (EXPLORE COMPASS / LIVE BROADCASTS FEED / START LIVE STREAM) */}
             <div className="max-w-md mx-auto w-full px-2 mt-0 mb-1">
-              <div className="flex items-center justify-around">
+              <div className="flex items-center justify-around bg-slate-950/40 backdrop-blur-md border border-slate-700/50 rounded-2xl py-1.5 px-3 shadow-[0_8px_20px_rgba(0,0,0,0.6)] shadow-purple-500/10">
                 
                 {/* 1. کاربران (Users Feed) -> Just Icon */}
                 <button 
