@@ -114,6 +114,7 @@ export default function App() {
   const [vipExpireDays, setVipExpireDays] = useState(0);
   const [isVipMonthlyClaimed, setIsVipMonthlyClaimed] = useState(false);
   const [referralCode, setReferralCode] = useState('');
+  const [likedUsersMap, setLikedUsersMap] = useState({});
   const [followedUsers, setFollowedUsers] = useState([]);
   const [authStep, setAuthStep] = useState('welcome');
   const [authUsername, setAuthUsername] = useState('');
@@ -583,6 +584,8 @@ export default function App() {
       gender: userGender,
       isVerified,
       vipPlan,
+      isVip: Boolean(vipPlan && vipPlan !== 'Free' && vipPlan !== 'none' && vipPlan !== 'null') || Boolean(authUserRecord?.is_vip || authUserRecord?.isVip),
+      is_vip: Boolean(vipPlan && vipPlan !== 'Free' && vipPlan !== 'none' && vipPlan !== 'null') || Boolean(authUserRecord?.is_vip || authUserRecord?.isVip),
       bio: userBio,
       telegramId: currentTelegramId,
       ...authUserRecord,
@@ -590,6 +593,11 @@ export default function App() {
       telegram_id: currentTelegramId || authUserRecord?.telegram_id || authUserRecord?.telegramId
     };
   }, [isLoggedIn, userName, userNickname, currentUsername, userAvatar, userCoins, userDiamonds, userGender, userRole, isVerified, vipPlan, userBio, currentTelegramId, authUserRecord]);
+
+  const isVip = useMemo(() => {
+    return Boolean(vipPlan && vipPlan !== 'Free' && vipPlan !== 'none' && vipPlan !== 'null') ||
+      Boolean(currentUser?.is_vip || currentUser?.isVip || authUserRecord?.is_vip || authUserRecord?.isVip);
+  }, [vipPlan, currentUser?.is_vip, currentUser?.isVip, authUserRecord?.is_vip, authUserRecord?.isVip]);
 
   const setCurrentUser = useCallback((updater) => {
     setAuthUserRecord(prev => {
@@ -1809,6 +1817,7 @@ export default function App() {
           }
           return u;
         }));
+        setLikedUsersMap(prev => ({ ...prev, [targetId]: Boolean(res.isLiked) }));
         showToast(res.isLiked ? loc('❤️ پروفایل کاربر لایک شد!', '❤️ User profile liked!') : loc('لایک برداشته شد', 'Like removed'));
       }
     } catch (err) {
