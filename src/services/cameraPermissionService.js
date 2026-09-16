@@ -60,15 +60,42 @@ class CameraPermissionService {
     }
     this.currentFacingMode = facingMode;
 
-    // 1. Enumerate available video inputs before stopping old track
-    let videoDevs = [];
-    let currDevId = null;
-    if (oldTrack && typeof oldTrack.getSettings === 'function') {
+    // 1. FAST-PATH: If oldTrack is alive and supports applyConstraints, use applyConstraints
+    // This flips camera hardware instantly without ANY getUserMedia call or permission prompt!
+    if (oldTrack && oldTrack.readyState === 'live' && typeof oldTrack.applyConstraints === 'function') {
       try {
-        currDevId = oldTrack.getSettings()?.deviceId || null;
-      } catch (e) {}
+        await oldTrack.applyConstraints({
+          facingMode: { ideal: facingMode }
+        });
+        
+        let actualFacingMode = facingMode;
+        const settings = typeof oldTrack.getSettings === 'function' ? oldTrack.getSettings() : {};
+        if (settings.facingMode) {
+          actualFacingMode = settings.facingMode;
+        } else if (oldTrack.label) {
+          const label = oldTrack.label.toLowerCase();
+          if (label.includes('back') || label.includes('rear') || label.includes('environment')) {
+            actualFacingMode = 'environment';
+          } else if (label.includes('front') || label.includes('user') || label.includes('face')) {
+            actualFacingMode = 'user';
+          }
+        }
+        this.currentFacingMode = actualFacingMode;
+
+        return {
+          track: oldTrack,
+          isNewTrack: false,
+          stream: this.activeStream,
+          actualFacingMode: actualFacingMode,
+          isSingleCamera: false
+        };
+      } catch (applyErr) {
+        console.log('[CameraPermission] applyConstraints not supported on this track, using seamless track switch:', applyErr);
+      }
     }
 
+    // 2. Enumerate available video inputs to check if physical camera exists
+    let videoDevs = [];
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
       videoDevs = devices.filter(d => d.kind === 'videoinput');
@@ -76,7 +103,7 @@ class CameraPermissionService {
       console.warn('[CameraPermission] Device enumeration error:', e);
     }
 
-    // If device only has 1 camera total, it cannot switch to back camera physically
+    // If device physically only has 1 camera total
     if (videoDevs.length === 1 && oldTrack && oldTrack.readyState === 'live') {
       const settings = typeof oldTrack.getSettings === 'function' ? oldTrack.getSettings() : {};
       const actualFacing = settings.facingMode || 'user';
@@ -89,91 +116,35 @@ class CameraPermissionService {
       };
     }
 
-    // 2. Identify target device if multiple cameras are available
-    let targetDeviceId = null;
-    if (videoDevs.length > 1) {
-      // Find candidate device matching target facingMode
-      const matchedDevice = videoDevs.find(d => {
-        const label = (d.label || '').toLowerCase();
-        if (facingMode === 'environment') {
-          return label.includes('back') || label.includes('rear') || label.includes('environment') || 
-                 label.includes('camera2 0') || label.includes('0, facing back') || label.includes('main') || label.includes('wide');
-        } else {
-          return label.includes('front') || label.includes('user') || label.includes('face') || 
-                 label.includes('camera2 1') || label.includes('1, facing front') || label.includes('selfie');
-        }
-      });
-
-      if (matchedDevice && matchedDevice.deviceId) {
-        targetDeviceId = matchedDevice.deviceId;
-      } else if (currDevId) {
-        // If labels don't specify, switch to the other available video device ID
-        const otherDev = videoDevs.find(d => d.deviceId && d.deviceId !== currDevId);
-        if (otherDev) {
-          targetDeviceId = otherDev.deviceId;
-        }
-      } else if (videoDevs.length >= 2) {
-        // Default Android ordering: index 0 is often back, index 1 is often front
-        targetDeviceId = facingMode === 'environment' ? videoDevs[0].deviceId : videoDevs[1].deviceId;
-      }
-    }
-
-    // 3. CRITICAL: Stop previous video tracks so mobile hardware lock is freed
-    if (oldTrack && typeof oldTrack.stop === 'function') {
-      try {
-        oldTrack.stop();
-      } catch (e) {}
-    }
-    if (this.activeStream) {
-      try {
-        this.activeStream.getVideoTracks().forEach(t => {
-          try { t.stop(); } catch (e) {}
-        });
-      } catch (e) {}
-    }
-
-    // 4. Acquire the camera cleanly (Single targeted request without multiple prompt cascades)
+    // 3. Clean acquisition without deviceId exact constraints
+    // Request using facingMode: { ideal: facingMode } which NEVER asks for deviceId fingerprint permissions
     let newStream = null;
-
-    if (targetDeviceId) {
-      try {
-        newStream = await navigator.mediaDevices.getUserMedia({
-          video: { 
-            deviceId: { exact: targetDeviceId }, 
-            width: { ideal: 1280 }, 
-            height: { ideal: 720 } 
-          },
-          audio: false
-        });
-      } catch (devErr) {
-        console.warn('[CameraPermission] targetDeviceId acquisition fallback to ideal facingMode:', devErr.message);
-      }
+    try {
+      newStream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: { ideal: facingMode }, 
+          width: { ideal: 1280 }, 
+          height: { ideal: 720 } 
+        },
+        audio: false
+      });
+    } catch (facingErr) {
+      console.warn('[CameraPermission] ideal facingMode acquisition fallback:', facingErr.message);
+      newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facingMode },
+        audio: false
+      });
     }
 
-    if (!newStream) {
-      try {
-        newStream = await navigator.mediaDevices.getUserMedia({
-          video: { 
-            facingMode: { ideal: facingMode }, 
-            width: { ideal: 1280 }, 
-            height: { ideal: 720 } 
-          },
-          audio: false
-        });
-      } catch (facingErr) {
-        console.warn('[CameraPermission] ideal facingMode acquisition fallback to generic video:', facingErr.message);
-        newStream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false
-        });
-      }
+    // Stop old track ONLY after successfully acquiring new track
+    if (oldTrack && typeof oldTrack.stop === 'function') {
+      try { oldTrack.stop(); } catch (e) {}
     }
 
     const newTrack = newStream?.getVideoTracks()[0];
     if (newTrack && newTrack.readyState === 'live') {
       this.activeStream = newStream;
 
-      // Determine real actual facing mode from track settings or label
       let actualFacingMode = facingMode;
       const settings = typeof newTrack.getSettings === 'function' ? newTrack.getSettings() : {};
       if (settings.facingMode) {
