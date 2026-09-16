@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Crown, Sparkles, Star } from 'lucide-react';
 
 export default function VipEntranceBanner({ vipUser, onComplete }) {
   const [visible, setVisible] = useState(false);
+  const onCompleteRef = useRef(onComplete);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     if (!vipUser) return;
@@ -10,17 +15,17 @@ export default function VipEntranceBanner({ vipUser, onComplete }) {
 
     const timerHide = setTimeout(() => {
       setVisible(false);
-    }, 3800);
+    }, 2800);
 
     const timerDone = setTimeout(() => {
-      if (onComplete) onComplete();
-    }, 4300);
+      if (onCompleteRef.current) onCompleteRef.current();
+    }, 3200);
 
     return () => {
       clearTimeout(timerHide);
       clearTimeout(timerDone);
     };
-  }, [vipUser, onComplete]);
+  }, [vipUser?.id, vipUser?.name]);
 
   if (!vipUser) return null;
 

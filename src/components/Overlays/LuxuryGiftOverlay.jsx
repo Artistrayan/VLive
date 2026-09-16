@@ -1,8 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { Sparkles, Crown, Zap, Flame, Rocket, Star, Heart } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Sparkles, Crown, Zap, Flame, Rocket, Star, Heart, X } from 'lucide-react';
 
 export default function LuxuryGiftOverlay({ giftData, onComplete }) {
   const [stage, setStage] = useState('entering'); // entering -> active -> exiting
+  const onCompleteRef = useRef(onComplete);
+
+  // Keep ref synchronized without retriggering the timer effect
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  // Safe dismiss handler
+  const handleDismiss = () => {
+    setStage('exiting');
+    setTimeout(() => {
+      if (onCompleteRef.current) onCompleteRef.current();
+    }, 200);
+  };
 
   useEffect(() => {
     if (!giftData) return;
@@ -11,22 +25,24 @@ export default function LuxuryGiftOverlay({ giftData, onComplete }) {
     setStage('entering');
     const timerActive = setTimeout(() => {
       setStage('active');
-    }, 400);
+    }, 300);
 
     const timerExiting = setTimeout(() => {
       setStage('exiting');
-    }, 3600);
+    }, 2700);
 
     const timerFinish = setTimeout(() => {
-      if (onComplete) onComplete();
-    }, 4200);
+      if (onCompleteRef.current) {
+        onCompleteRef.current();
+      }
+    }, 3200);
 
     return () => {
       clearTimeout(timerActive);
       clearTimeout(timerExiting);
       clearTimeout(timerFinish);
     };
-  }, [giftData, onComplete]);
+  }, [giftData?.id, giftData?.name, giftData?.coins]);
 
   if (!giftData) return null;
 
@@ -40,40 +56,44 @@ export default function LuxuryGiftOverlay({ giftData, onComplete }) {
   } = giftData;
 
   // Determine theme and special FX based on gift icon or type
-  const isSupercar = icon === '🏎️' || name.toLowerCase().includes('car');
-  const isRocket = icon === '🚀' || icon === '✈️' || name.toLowerCase().includes('jet');
-  const isCrown = icon === '👑' || name.toLowerCase().includes('crown');
-  const isDiamond = icon === '💎' || name.toLowerCase().includes('diamond');
+  const isSupercar = icon === '🏎️' || name.toLowerCase().includes('car') || type === 'supercar';
+  const isRocket = icon === '🚀' || icon === '✈️' || name.toLowerCase().includes('jet') || type === 'private_jet';
+  const isCrown = icon === '👑' || name.toLowerCase().includes('crown') || type === 'crown';
+  const isDiamond = icon === '💎' || name.toLowerCase().includes('diamond') || type === 'diamond';
   const isVault = icon === '📦' || icon === '🏦' || name.toLowerCase().includes('vault');
-  const isHeartRose = icon === '🌹' || icon === '❤️' || icon === '💖';
+  const isHeartRose = icon === '🌹' || icon === '❤️' || icon === '💖' || icon === '🍾' || type === 'gold_rose' || type === 'champagne';
 
   return (
-    <div className={`fixed inset-0 z-[100] pointer-events-none flex flex-col items-center justify-center overflow-hidden transition-opacity duration-500 ${
+    <div className={`fixed inset-0 z-[100] pointer-events-none flex flex-col items-center justify-center overflow-hidden transition-opacity duration-300 ${
       stage === 'exiting' ? 'opacity-0' : 'opacity-100'
     }`}>
-      {/* Background ambient lighting burst */}
-      <div className={`absolute inset-0 transition-opacity duration-700 ${
-        isSupercar ? 'bg-gradient-to-t from-red-600/30 via-transparent to-orange-500/20' :
-        isRocket ? 'bg-gradient-to-tr from-cyan-600/30 via-purple-600/20 to-pink-600/30' :
-        isCrown ? 'bg-gradient-to-b from-amber-500/30 via-yellow-600/15 to-transparent' :
-        isDiamond ? 'bg-gradient-to-r from-cyan-500/30 via-blue-600/20 to-teal-400/30' :
-        'bg-slate-950/40'
-      } backdrop-blur-[2px]`} />
+      {/* Ambient background accent without blocking camera visibility */}
+      <div className={`absolute inset-0 transition-opacity duration-500 pointer-events-none ${
+        isSupercar ? 'bg-gradient-to-t from-red-600/20 via-transparent to-orange-500/10' :
+        isRocket ? 'bg-gradient-to-tr from-cyan-600/20 via-purple-600/15 to-pink-600/20' :
+        isCrown ? 'bg-gradient-to-b from-amber-500/20 via-yellow-600/10 to-transparent' :
+        isDiamond ? 'bg-gradient-to-r from-cyan-500/20 via-blue-600/15 to-teal-400/20' :
+        'bg-slate-950/25'
+      }`} />
 
-      {/* TOP NOTIFICATION BANNER (Sender ➔ Receiver) */}
-      <div className={`absolute top-20 z-20 px-6 py-2.5 rounded-full border shadow-2xl transition-all duration-700 flex items-center gap-3 backdrop-blur-xl ${
-        stage === 'entering' ? '-translate-y-16 opacity-0 scale-90' : 'translate-y-0 opacity-100 scale-100'
-      } ${
-        isCrown ? 'bg-gradient-to-r from-amber-500/90 via-yellow-400/95 to-amber-600/90 border-yellow-200 text-slate-950 shadow-[0_0_30px_rgba(245,158,11,0.8)]' :
-        isSupercar ? 'bg-gradient-to-r from-red-600/90 via-pink-600/95 to-purple-600/90 border-red-300 text-white shadow-[0_0_30px_rgba(239,68,68,0.8)]' :
-        'bg-gradient-to-r from-cyan-600/90 via-purple-600/95 to-pink-600/90 border-cyan-300 text-white shadow-[0_0_30px_rgba(6,182,212,0.8)]'
-      }`}>
+      {/* TOP NOTIFICATION BANNER (Sender ➔ Receiver) - Clickable to dismiss */}
+      <div
+        onClick={handleDismiss}
+        title={window.loc('کلیک برای بستن', 'Click to close')}
+        className={`pointer-events-auto cursor-pointer absolute top-16 z-30 px-6 py-2.5 rounded-full border shadow-2xl transition-all duration-500 flex items-center gap-3 backdrop-blur-xl hover:scale-105 active:scale-95 ${
+          stage === 'entering' ? '-translate-y-16 opacity-0 scale-90' : 'translate-y-0 opacity-100 scale-100'
+        } ${
+          isCrown ? 'bg-gradient-to-r from-amber-500/90 via-yellow-400/95 to-amber-600/90 border-yellow-200 text-slate-950 shadow-[0_0_30px_rgba(245,158,11,0.8)]' :
+          isSupercar ? 'bg-gradient-to-r from-red-600/90 via-pink-600/95 to-purple-600/90 border-red-300 text-white shadow-[0_0_30px_rgba(239,68,68,0.8)]' :
+          'bg-gradient-to-r from-cyan-600/90 via-purple-600/95 to-pink-600/90 border-cyan-300 text-white shadow-[0_0_30px_rgba(6,182,212,0.8)]'
+        }`}
+      >
         <span className="text-2xl animate-bounce">{icon}</span>
         <div className="text-right">
           <div className="flex items-center gap-1.5 text-xs font-black">
-            <span className="underline">{sender}</span>
+            <span className="underline">@{sender}</span>
             <span className="text-[10px] opacity-80">➔</span>
-            <span>{receiver}</span>
+            <span>@{receiver}</span>
           </div>
           <p className="text-[11px] font-bold opacity-90">
             {window.loc(`هدیه لوکس ${name} را ارسال کرد!`, `sent luxury ${name}!`)}
@@ -82,6 +102,15 @@ export default function LuxuryGiftOverlay({ giftData, onComplete }) {
         <div className="px-2.5 py-1 rounded-full bg-slate-950/40 text-amber-300 font-mono font-black text-xs border border-white/20">
           +{coins.toLocaleString()} 🪙
         </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDismiss();
+          }}
+          className="w-5 h-5 rounded-full bg-black/30 hover:bg-black/60 text-white flex items-center justify-center text-xs ml-1"
+        >
+          ✕
+        </button>
       </div>
 
       {/* 1. SUPERCAR FX: Drives swiftly across screen */}

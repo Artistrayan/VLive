@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Video, Mic, MicOff, Camera, CameraOff, RefreshCw, Radio, Sparkles, ShieldCheck, ShieldAlert, 
   Crown, Users, Eye, Heart, Gift, MessageSquare, Settings, Flame, Lock, Zap, Clock, 
@@ -95,6 +95,7 @@ import { LiveStreamRoomService } from '../services/liveStreamRoomService';
 import { livekitManager, fetchLiveKitToken, getLiveKitConfig } from '../services/livekitService';
 import LuxuryGiftOverlay from './Overlays/LuxuryGiftOverlay';
 import VipEntranceBanner from './Overlays/VipEntranceBanner';
+import RealisticArOverlay from './Overlays/RealisticArOverlay';
 import { filterMessageContent } from '../services/aiModeration';
 
 export default function LiveStudioModal({
@@ -180,6 +181,15 @@ export default function LiveStudioModal({
   const [activeLuxuryGift, setActiveLuxuryGift] = useState(null);
   const [activeVipEntrance, setActiveVipEntrance] = useState(null);
 
+  // Stable callbacks for overlay dismissal to prevent timer reset loops
+  const handleCloseLuxuryGift = useCallback(() => {
+    setActiveLuxuryGift(null);
+  }, []);
+
+  const handleCloseVipEntrance = useCallback(() => {
+    setActiveVipEntrance(null);
+  }, []);
+
   // Real-Time Beauty Filters & 8K Mobile Cinematic Controls
   const [beautyFilter, setBeautyFilter] = useState('glam'); // 'glam' | 'radiance' | 'smooth' | 'cinematic' | 'natural' | 'none'
   const [beautyStrength, setBeautyStrength] = useState(85); // 0 - 100
@@ -246,20 +256,25 @@ export default function LiveStudioModal({
     setGiftCoinsEarned(prev => prev + coins);
     if (setUserCoins) setUserCoins(prev => prev + coins);
 
+    const giftId = Date.now() + Math.floor(Math.random() * 1000);
     const giftData = {
+      id: giftId,
       name: targetGift.name,
       icon: targetGift.icon,
       coins: coins,
       sender: currentUsername || 'Host',
       receiver: currentUsername || 'Host',
-      type: targetGift.id
+      type: targetGift.id,
+      timestamp: giftId
     };
 
     setActiveLuxuryGift(giftData);
-    setRealtimeGiftAlert({
-      ...giftData,
-      id: Date.now()
-    });
+    setRealtimeGiftAlert(giftData);
+
+    // Failsafe auto-dismiss after 3.8s in parent state as well
+    setTimeout(() => {
+      setActiveLuxuryGift(prev => (prev?.id === giftId ? null : prev));
+    }, 3800);
 
     setTopGifters(prev => {
       const copy = [...prev];
@@ -898,7 +913,16 @@ export default function LiveStudioModal({
             const coins = giftData.coins || 0;
             setGiftCoinsEarned(prev => prev + coins);
             if (setUserCoins) setUserCoins(prev => prev + coins);
-            setActiveLuxuryGift(giftData);
+            const giftId = giftData.id || (Date.now() + Math.floor(Math.random() * 1000));
+            const enriched = {
+              ...giftData,
+              id: giftId,
+              timestamp: giftId
+            };
+            setActiveLuxuryGift(enriched);
+            setTimeout(() => {
+              setActiveLuxuryGift(prev => (prev?.id === giftId ? null : prev));
+            }, 3800);
           },
           onChatMessage: (chatData) => {
             setChatMessages(prev => [...prev, {
@@ -1014,16 +1038,13 @@ export default function LiveStudioModal({
             {isTorchActive && (
               <div className="absolute inset-0 pointer-events-none z-10 shadow-[inset_0_0_120px_40px_rgba(255,250,240,0.5)] border-4 border-white/60 animate-pulse transition-all duration-300" />
             )}
-            {/* AR Sticker / Particle Overlay */}
+            {/* AR Sticker / Realistic Head & Eye Tracking Overlay */}
             {activeSticker && (
-              <div className="absolute top-28 left-1/2 -translate-x-1/2 pointer-events-none z-20 text-6xl animate-bounce drop-shadow-[0_0_25px_rgba(255,255,255,0.8)]">
-                {activeSticker === 'crown' && '👑'}
-                {activeSticker === 'glasses' && '🕶️'}
-                {activeSticker === 'cat_ears' && '🐱'}
-                {activeSticker === 'halo' && '😇'}
-                {activeSticker === 'hearts' && '💖'}
-                {activeSticker === 'sparkles' && '✨'}
-              </div>
+              <RealisticArOverlay
+                videoRef={cameraVideoRef}
+                activeSticker={activeSticker}
+                isMirrored={isMirrored}
+              />
             )}
           </div>
         ) : (
@@ -1261,14 +1282,14 @@ export default function LiveStudioModal({
           {activeLuxuryGift && (
             <LuxuryGiftOverlay
               giftData={activeLuxuryGift}
-              onComplete={() => setActiveLuxuryGift(null)}
+              onComplete={handleCloseLuxuryGift}
             />
           )}
 
           {activeVipEntrance && (
             <VipEntranceBanner
               vipUser={activeVipEntrance}
-              onComplete={() => setActiveVipEntrance(null)}
+              onComplete={handleCloseVipEntrance}
             />
           )}
 
@@ -1558,8 +1579,11 @@ export default function LiveStudioModal({
             {isStickersOpen && (
               <div className="absolute top-36 right-20 z-40 w-60 bg-black/60 backdrop-blur-2xl border border-amber-500/40 rounded-3xl p-3.5 shadow-[0_0_50px_rgba(245,158,11,0.3)] space-y-3 animate-fadeIn">
                 <div className="flex items-center justify-between border-b border-white/15 pb-2">
-                  <span className="text-amber-300 font-bold text-xs">{window.loc('🎭 افکت و استیکرهای سه بعدی', '3D Stickers & FX')}</span>
-                  <button onClick={() => setIsStickersOpen(false)} className="text-white/60 hover:text-white text-xs">✕</button>
+                  <div className="flex flex-col text-right">
+                    <span className="text-amber-300 font-bold text-xs">{window.loc('🎭 فیلترها و استیکرهای هوشمند AR', 'Smart AR Face Filters')}</span>
+                    <span className="text-[9px] text-emerald-300 font-medium">{window.loc('✓ ردیابی خودکار ابعاد سر و چشم', '✓ Real-time Head & Eye Detection')}</span>
+                  </div>
+                  <button onClick={() => setIsStickersOpen(false)} className="text-white/60 hover:text-white text-xs p-1">✕</button>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   {[
