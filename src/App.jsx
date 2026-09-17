@@ -3354,6 +3354,7 @@ export default function App() {
             setIsNotificationsOpen={setIsNotificationsOpen}
             setIsSettingsModalOpen={setIsSettingsModalOpen}
             setIsVipModalOpen={setIsVipModalOpen}
+            setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen}
             loc={loc}
             isRtl={isRtl}
             liveMode={homeLiveMode}

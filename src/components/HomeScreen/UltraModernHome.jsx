@@ -72,6 +72,7 @@ export default function UltraModernHome({
   setIsNotificationsOpen,
   setIsSettingsModalOpen,
   setIsVipModalOpen,
+  setIsBecomeStreamerModalOpen,
   loc,
   isRtl = true,
   liveMode = 'normal', // 'normal' | 'adult'
@@ -292,13 +293,12 @@ export default function UltraModernHome({
 
     // Apply Filters & Search
     return cards.filter(card => {
-      // If user is approved streamer/admin and selected adult mode:
-      if (canAccessBroadcasting) {
-        if (activeMode === 'normal' && card.isAdult) return false;
-        if (activeMode === 'adult' && !card.isAdult) return false;
-      }
+      // Filter by active mode (Normal Live vs Adult +18 Live)
+      if (activeMode === 'normal' && card.isAdult) return false;
+      if (activeMode === 'adult' && !card.isAdult) return false;
 
       // Filter chips
+      if (activeFilter === 'live' && !card.isLive) return false;
       if (activeFilter === 'online' && !card.isOnline) return false;
       if (activeFilter === 'vip' && !card.isVip) return false;
 
@@ -312,7 +312,7 @@ export default function UltraModernHome({
 
       return true;
     });
-  }, [streamsList, usersList, canAccessBroadcasting, activeMode, activeFilter, searchQuery, loc]);
+  }, [streamsList, usersList, activeMode, activeFilter, searchQuery, loc]);
 
   return (
     <div className="relative w-full max-w-4xl mx-auto space-y-4 pb-24 select-none text-slate-100 font-sans">
@@ -325,46 +325,44 @@ export default function UltraModernHome({
       </div>
 
       {/* =========================================================================
-          1. TWO MODE TABS (ONLY FOR APPROVED FEMALE STREAMERS & ADMIN)
+          1. TWO MODE TABS (ACCESSIBLE TO ALL USERS FOR EASY FILTERING)
          ========================================================================= */}
-      {canAccessBroadcasting && (
-        <div className="relative z-10 rounded-2xl overflow-hidden bg-slate-950/80 backdrop-blur-2xl border border-rose-500/20 shadow-[0_10px_30px_rgba(0,0,0,0.6)] p-2">
-          <div className="grid grid-cols-2 gap-2">
-            {/* Tab 1: Normal Live */}
-            <button
-              onClick={() => handleModeChange('normal')}
-              className={`relative py-2 px-3 sm:px-4 rounded-xl flex items-center justify-center gap-2 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
-                activeMode === 'normal'
-                  ? 'bg-gradient-to-r from-cyan-900/40 via-cyan-600/30 to-blue-900/40 text-cyan-200 border-2 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-[1.01]'
-                  : 'bg-white/5 border border-white/10 text-slate-400 hover:text-cyan-300 hover:bg-white/10 hover:border-cyan-500/30'
-              }`}
-            >
-              <Radio className={`w-4 h-4 ${activeMode === 'normal' ? 'text-cyan-300 animate-pulse' : 'text-slate-500'}`} />
-              <span className="tracking-wide">
-                {loc('لایو عادی', 'Normal Live')}
-              </span>
-            </button>
+      <div className="relative z-10 rounded-2xl overflow-hidden bg-slate-950/80 backdrop-blur-2xl border border-rose-500/20 shadow-[0_10px_30px_rgba(0,0,0,0.6)] p-2">
+        <div className="grid grid-cols-2 gap-2">
+          {/* Tab 1: Normal Live */}
+          <button
+            onClick={() => handleModeChange('normal')}
+            className={`relative py-2 px-3 sm:px-4 rounded-xl flex items-center justify-center gap-2 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
+              activeMode === 'normal'
+                ? 'bg-gradient-to-r from-cyan-900/40 via-cyan-600/30 to-blue-900/40 text-cyan-200 border-2 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-[1.01]'
+                : 'bg-white/5 border border-white/10 text-slate-400 hover:text-cyan-300 hover:bg-white/10 hover:border-cyan-500/30'
+            }`}
+          >
+            <Radio className={`w-4 h-4 ${activeMode === 'normal' ? 'text-cyan-300 animate-pulse' : 'text-slate-500'}`} />
+            <span className="tracking-wide">
+              {loc('لایو عادی', 'Normal Live')}
+            </span>
+          </button>
 
-            {/* Tab 2: Adult Live +18 */}
-            <button
-              onClick={() => handleModeChange('adult')}
-              className={`relative py-2 px-3 sm:px-4 rounded-xl flex items-center justify-center gap-2 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
-                activeMode === 'adult'
-                  ? 'bg-gradient-to-r from-rose-950/60 via-red-600/40 to-pink-950/60 text-rose-200 border-2 border-rose-500 shadow-[0_0_25px_rgba(244,63,94,0.55)] scale-[1.01]'
-                  : 'bg-white/5 border border-white/10 text-slate-400 hover:text-rose-300 hover:bg-rose-950/20 hover:border-rose-500/30'
-              }`}
-            >
-              <ShieldAlert className={`w-4 h-4 ${activeMode === 'adult' ? 'text-rose-400 drop-shadow-[0_0_10px_rgba(244,63,94,0.9)]' : 'text-slate-500'}`} />
-              <span className="tracking-wide">
-                {loc('لایو +۱۸', 'Live +18')}
-              </span>
-              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-md bg-rose-500/30 border border-rose-400/50 text-rose-200 font-black">
-                18+
-              </span>
-            </button>
-          </div>
+          {/* Tab 2: Adult Live +18 */}
+          <button
+            onClick={() => handleModeChange('adult')}
+            className={`relative py-2 px-3 sm:px-4 rounded-xl flex items-center justify-center gap-2 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
+              activeMode === 'adult'
+                ? 'bg-gradient-to-r from-rose-950/60 via-red-600/40 to-pink-950/60 text-rose-200 border-2 border-rose-500 shadow-[0_0_25px_rgba(244,63,94,0.55)] scale-[1.01]'
+                : 'bg-white/5 border border-white/10 text-slate-400 hover:text-rose-300 hover:bg-rose-950/20 hover:border-rose-500/30'
+            }`}
+          >
+            <ShieldAlert className={`w-4 h-4 ${activeMode === 'adult' ? 'text-rose-400 drop-shadow-[0_0_10px_rgba(244,63,94,0.9)]' : 'text-slate-500'}`} />
+            <span className="tracking-wide">
+              {loc('لایو +۱۸', 'Live +18')}
+            </span>
+            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-md bg-rose-500/30 border border-rose-400/50 text-rose-200 font-black">
+              18+
+            </span>
+          </button>
         </div>
-      )}
+      </div>
 
       {/* =========================================================================
           2. STORIES ROW (HORIZONTAL SCROLL)
@@ -563,16 +561,17 @@ export default function UltraModernHome({
           </div>
 
           {/* Filter Chips */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             {[
               { id: 'all', label: loc('همه', 'All') },
+              { id: 'live', label: `🔴 ${loc('پخش زنده', 'Live')}` },
               { id: 'online', label: loc('آنلاین', 'Online') },
               { id: 'vip', label: 'VIP' }
             ].map(f => (
               <button
                 key={f.id}
                 onClick={() => setActiveFilter(f.id)}
-                className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all ${
+                className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all whitespace-nowrap ${
                   activeFilter === f.id
                     ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-md'
                     : 'bg-white/5 text-slate-400 hover:text-white border border-white/5'
@@ -589,7 +588,7 @@ export default function UltraModernHome({
           <div className="p-12 text-center bg-slate-950/70 rounded-3xl border border-rose-500/20 space-y-3">
             <Radio className="w-10 h-10 text-slate-600 mx-auto animate-pulse" />
             <p className="text-xs font-bold text-slate-400">
-              {loc('هیچ استریمر آنلاینی در این دسته‌بندی یافت نشد.', 'No active streamers found in this category.')}
+              {loc('هیچ موردی در این دسته‌بندی یافت نشد.', 'No items found in this category.')}
             </p>
           </div>
         ) : (
@@ -607,6 +606,14 @@ export default function UltraModernHome({
                     onClick={() => {
                       if (card.type === 'stream' && card.streamData) {
                         setViewingStream(card.streamData);
+                      } else if (card.isLive) {
+                        const activeStream = (streamsList || []).find(s => String(s.host_id) === String(card.userId) || s.host === card.username);
+                        if (activeStream) {
+                          setViewingStream(activeStream);
+                        } else if (card.userData) {
+                          setSelectedUser(card.userData);
+                          setIsUserProfileModalOpen(true);
+                        }
                       } else if (card.userData) {
                         setSelectedUser(card.userData);
                         setIsUserProfileModalOpen(true);
@@ -683,7 +690,7 @@ export default function UltraModernHome({
                     </div>
                   </div>
 
-                  {/* Card Action Footer: Heart Like + Glowing Match Button */}
+                  {/* Card Action Footer: Heart Like + Glowing Action Button */}
                   <div className="p-2 bg-slate-950/95 border-t border-white/10 flex items-center gap-1.5">
                     {/* Heart Like Button */}
                     <button
@@ -703,23 +710,46 @@ export default function UltraModernHome({
                       <Heart className={`w-3.5 h-3.5 ${likedUsersMap[card.userId] ? 'fill-rose-500 text-rose-500' : 'fill-rose-500/40 text-rose-400 hover:fill-rose-500'}`} />
                     </button>
 
-                    {/* Match Button with Glowing Deep Red-Pink Effect */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const targetUser = card.userData || {
-                          id: card.userId,
-                          name: card.username,
-                          username: card.username,
-                          avatar: card.avatar
-                        };
-                        handleInitiateCall(targetUser, 'video');
-                      }}
-                      className="flex-1 h-8 rounded-xl font-black text-[11px] flex items-center justify-center gap-1.5 shadow-lg transition-all active:scale-95 group bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.55)] border border-rose-400/50"
-                    >
-                      <Flame className="w-3.5 h-3.5 group-hover:scale-125 transition-transform" />
-                      <span>{loc('Match', 'Match')}</span>
-                    </button>
+                    {/* If Streaming -> Direct "Watch Live" Button; Otherwise -> "Match / Call" */}
+                    {isStreaming ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (card.type === 'stream' && card.streamData) {
+                            setViewingStream(card.streamData);
+                          } else {
+                            const activeStream = (streamsList || []).find(s => String(s.host_id) === String(card.userId) || s.host === card.username);
+                            if (activeStream) {
+                              setViewingStream(activeStream);
+                            } else if (card.userData) {
+                              setSelectedUser(card.userData);
+                              setIsUserProfileModalOpen(true);
+                            }
+                          }
+                        }}
+                        className="flex-1 h-8 rounded-xl font-black text-[11px] flex items-center justify-center gap-1.5 shadow-lg transition-all active:scale-95 group bg-gradient-to-r from-rose-600 via-red-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.6)] border border-rose-400/60 animate-pulse"
+                      >
+                        <Radio className="w-3.5 h-3.5 group-hover:scale-125 transition-transform" />
+                        <span>{loc('ورود به لایو', 'Watch Live')}</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const targetUser = card.userData || {
+                            id: card.userId,
+                            name: card.username,
+                            username: card.username,
+                            avatar: card.avatar
+                          };
+                          handleInitiateCall(targetUser, 'video');
+                        }}
+                        className="flex-1 h-8 rounded-xl font-black text-[11px] flex items-center justify-center gap-1.5 shadow-lg transition-all active:scale-95 group bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.55)] border border-rose-400/50"
+                      >
+                        <Flame className="w-3.5 h-3.5 group-hover:scale-125 transition-transform" />
+                        <span>{loc('Match', 'Match')}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -729,12 +759,12 @@ export default function UltraModernHome({
       </div>
 
       {/* =========================================================================
-          5. “START LIVE” FLOATING ACTION BUTTON (IMPORTANT DESIGN RULE)
-          - Completely hidden for normal users and male accounts
-          - ONLY appears for female streamers who are approved by admin, or admin account
+          5. “START LIVE / BECOME STREAMER” FLOATING ACTION BUTTON
+          - For approved broadcasters / admins: opens Live Studio to stream
+          - For regular users: opens "Become a Streamer" application modal
          ========================================================================= */}
-      {canAccessBroadcasting && (
-        <div className="fixed bottom-24 right-4 z-40 flex flex-col items-end gap-2.5 pointer-events-auto animate-bounce-gentle">
+      <div className="fixed bottom-24 right-4 z-40 flex flex-col items-end gap-2.5 pointer-events-auto animate-bounce-gentle">
+        {canAccessBroadcasting ? (
           <button
             onClick={() => {
               if (handleOpenLiveBroadcast) {
@@ -748,8 +778,21 @@ export default function UltraModernHome({
             <Video className="w-4 h-4 group-hover:scale-125 transition-transform drop-shadow" />
             <span className="tracking-wide">{loc('شروع لایو', 'Start Live')}</span>
           </button>
-        </div>
-      )}
+        ) : (
+          <button
+            onClick={() => {
+              if (setIsBecomeStreamerModalOpen) {
+                setIsBecomeStreamerModalOpen(true);
+              }
+            }}
+            className="relative px-4 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 text-white font-black text-xs flex items-center gap-2 shadow-[0_0_25px_rgba(219,39,119,0.7)] border border-white/20 hover:scale-105 active:scale-95 transition-all group backdrop-blur-md"
+            title={loc('درخواست مجوز پخش زنده و استریمری', 'Apply to Become a Streamer')}
+          >
+            <Video className="w-3.5 h-3.5 text-pink-200 group-hover:scale-110 transition-transform" />
+            <span className="tracking-wide">{loc('درخواست استریمری', 'Go Live / Streamer')}</span>
+          </button>
+        )}
+      </div>
 
     </div>
   );
