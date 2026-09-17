@@ -39,7 +39,7 @@ export default function HelpCenterModal({
   const [recentlyViewedIds, setRecentlyViewedIds] = useState([]);
 
   // Withdrawal Flow State
-  const [withdrawMethod, setWithdrawMethod] = useState('usdt_trc20'); // 'usdt_trc20' | 'usdt_bep20' | 'sheba'
+  const [withdrawMethod, setWithdrawMethod] = useState('usdt_trc20');
   const [withdrawDiamondsInput, setWithdrawDiamondsInput] = useState('10000');
   const [withdrawAddressInput, setWithdrawAddressInput] = useState('');
   const [withdrawStatusFilter, setWithdrawStatusFilter] = useState('ALL'); // 'ALL' | 'Pending' | 'Approved' | 'Rejected'
@@ -134,7 +134,7 @@ export default function HelpCenterModal({
         time: 'همین الان (Just now)',
         date: nowStr,
         timestamp: Date.now(),
-        method: withdrawMethod === 'usdt_trc20' ? 'USDT (TRC20)' : withdrawMethod === 'usdt_bep20' ? 'USDT (BEP20)' : 'Shaba Card',
+        method: 'USDT (TRC20)',
         txHash: withdrawAddressInput.trim(),
         notice: loc('درخواست شما در صف بررسی حسابداری قرار گرفت و ظرف ۲ الی ۱۲ ساعت تسویه خواهد شد.', 'Request queued for accounting audit and will be paid in 2-12h.')
       };

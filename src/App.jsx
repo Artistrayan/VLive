@@ -3355,6 +3355,7 @@ export default function App() {
             setIsSettingsModalOpen={setIsSettingsModalOpen}
             setIsVipModalOpen={setIsVipModalOpen}
             setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen}
+            handleOpenDirectChat={handleStartNewChatWithUser}
             loc={loc}
             isRtl={isRtl}
             liveMode={homeLiveMode}

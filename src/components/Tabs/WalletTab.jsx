@@ -543,15 +543,10 @@ export default function WalletTab(props) {
 
                 {/* PAYMENT METHOD SELECTOR */}
                 <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <label className="text-xs text-slate-200 font-bold block">{window.loc('انتخاب روش پرداخت:', 'Choose a payment method:')}</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <button
-                      onClick={() => setSelectedCoinPackPayment('USDT TRC20')}
-                      className={`p-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 transition ${selectedCoinPackPayment === 'USDT TRC20' || selectedCoinPackPayment !== 'USDT BEP20' ? 'bg-amber-500 text-slate-950 border-amber-300 font-black' : 'bg-slate-900 border-slate-800 text-slate-300'}`}
-                    >
-                      {window.loc('🪙 USDT TRC20', '🪙 USDT TRC20')}
-                    </button>
-                    
+                  <label className="text-xs text-slate-200 font-bold block">{window.loc('روش واریز و شارژ حساب:', 'Deposit & Payment Method:')}</label>
+                  <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-black text-xs flex items-center justify-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>{window.loc('💵 تتر USDT TRC20 (تنها روش واریز و شارژ رسمی)', '💵 Tether USDT TRC20 (Exclusive Official Deposit Method)')}</span>
                   </div>
                 </div>
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Search, Bell, Coins, Plus, Crown, Heart, Eye, Flame, ShieldAlert,
   Radio, Video, ChevronRight, CheckCircle2, User, Globe, Shield,
-  Wifi, Battery, Sparkles, SlidersHorizontal
+  Wifi, Battery, Sparkles, SlidersHorizontal, Lock, MessageSquare, ShieldCheck
 } from 'lucide-react';
 
 /**
@@ -68,6 +68,7 @@ export default function UltraModernHome({
   setViewingStream,
   handleInitiateCall,
   handleToggleLikeUserCard,
+  handleOpenDirectChat,
   likedUsersMap = {},
   setIsNotificationsOpen,
   setIsSettingsModalOpen,
@@ -75,10 +76,10 @@ export default function UltraModernHome({
   setIsBecomeStreamerModalOpen,
   loc,
   isRtl = true,
-  liveMode = 'normal', // 'normal' | 'adult'
+  liveMode = 'normal', // 'normal' | 'adult' | 'online_users'
   setLiveMode
 }) {
-  // Mode selection: normal vs adult (+18)
+  // Mode selection: 'normal' | 'adult' | 'online_users'
   const [internalLiveMode, setInternalLiveMode] = useState(liveMode || 'normal');
   const activeMode = setLiveMode ? liveMode : internalLiveMode;
   const handleModeChange = (mode) => {
@@ -88,7 +89,7 @@ export default function UltraModernHome({
 
   // Search input state
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'online' | 'vip' | 'nearby'
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'online' | 'vip' | 'live'
   const searchInputRef = useRef(null);
 
   // When search tab is active, auto-focus search input
@@ -97,20 +98,6 @@ export default function UltraModernHome({
       searchInputRef.current.focus();
     }
   }, [isSearchTabActive]);
-
-  // Status Bar live clock
-  const [currentTime, setCurrentTime] = useState(() => {
-    const now = new Date();
-    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  });
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date();
-      setCurrentTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    }, 10000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Check if current user is an approved streamer or admin
   const canAccessBroadcasting = Boolean(
@@ -230,6 +217,9 @@ export default function UltraModernHome({
         u => String(u.id) === String(stream.host_id) || u.username === stream.host || u.username === stream.username
       );
 
+      const isVerified = Boolean(hostUser?.is_verified || hostUser?.isVerified || hostUser?.verified);
+      const isAdmin = Boolean(hostUser?.role === 'admin' || hostUser?.role === 'super_admin' || hostUser?.is_admin || hostUser?.user_type === 'ADMIN' || hostUser?.user_type === 'SUPER_ADMIN');
+
       cards.push({
         id: `stream_${stream.id}`,
         type: 'stream',
@@ -237,6 +227,8 @@ export default function UltraModernHome({
         userData: hostUser,
         isLive: true,
         isAdult: isAdultStream,
+        isVerified: isVerified,
+        isAdmin: isAdmin,
         title: stream.title || loc('پخش زنده استودیویی', 'Live Broadcast'),
         username: stream.host || stream.username || hostUser?.name || 'Host',
         userId: stream.host_id || hostUser?.id,
@@ -269,6 +261,8 @@ export default function UltraModernHome({
         user.is_adult || user.isAdult || (user.age >= 18 && (user.tariffPerMin > 150 || user.category === 'Adult'))
       );
       const isUserLive = Boolean(user.online && (user.isStreamer || user.is_streamer || user.role === 'streamer'));
+      const isVerified = Boolean(user.is_verified || user.isVerified || user.verified);
+      const isAdmin = Boolean(user.role === 'admin' || user.role === 'super_admin' || user.is_admin || user.user_type === 'ADMIN' || user.user_type === 'SUPER_ADMIN');
 
       cards.push({
         id: `user_${uid}`,
@@ -276,6 +270,8 @@ export default function UltraModernHome({
         userData: user,
         isLive: isUserLive,
         isAdult: isAdultUser,
+        isVerified: isVerified,
+        isAdmin: isAdmin,
         title: user.bio || loc('آماده چت و تماس تصویری زنده', 'Ready for live video chat'),
         username: user.name || user.username || 'User',
         userId: user.id,
@@ -293,16 +289,26 @@ export default function UltraModernHome({
 
     // Apply Filters & Search
     return cards.filter(card => {
-      // Filter by active mode (Normal Live vs Adult +18 Live)
-      if (activeMode === 'normal' && card.isAdult) return false;
-      if (activeMode === 'adult' && !card.isAdult) return false;
+      // 1. Filter by Active Mode Tabs:
+      // Tab 'normal': only normal lives and normal profiles
+      if (activeMode === 'normal') {
+        if (card.isAdult) return false;
+      }
+      // Tab 'adult': only adult +18 lives and adult profiles
+      else if (activeMode === 'adult') {
+        if (!card.isAdult) return false;
+      }
+      // Tab 'online_users': only online female users
+      else if (activeMode === 'online_users') {
+        if (!card.isOnline) return false;
+      }
 
-      // Filter chips
+      // 2. Filter Chips:
       if (activeFilter === 'live' && !card.isLive) return false;
       if (activeFilter === 'online' && !card.isOnline) return false;
       if (activeFilter === 'vip' && !card.isVip) return false;
 
-      // Search Query
+      // 3. Search Query:
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchTitle = card.title?.toLowerCase().includes(q);
@@ -317,7 +323,7 @@ export default function UltraModernHome({
   return (
     <div className="relative w-full max-w-4xl mx-auto space-y-4 pb-24 select-none text-slate-100 font-sans">
       
-      {/* Seductive Dark Atmospheric Glows */}
+      {/* Dark Atmospheric Glows */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-10 left-1/4 w-96 h-96 bg-rose-600/10 rounded-full blur-[120px]" />
         <div className="absolute top-1/3 right-10 w-80 h-80 bg-pink-600/10 rounded-full blur-[100px]" />
@@ -325,47 +331,7 @@ export default function UltraModernHome({
       </div>
 
       {/* =========================================================================
-          1. TWO MODE TABS (ACCESSIBLE TO ALL USERS FOR EASY FILTERING)
-         ========================================================================= */}
-      <div className="relative z-10 rounded-2xl overflow-hidden bg-slate-950/80 backdrop-blur-2xl border border-rose-500/20 shadow-[0_10px_30px_rgba(0,0,0,0.6)] p-2">
-        <div className="grid grid-cols-2 gap-2">
-          {/* Tab 1: Normal Live */}
-          <button
-            onClick={() => handleModeChange('normal')}
-            className={`relative py-2 px-3 sm:px-4 rounded-xl flex items-center justify-center gap-2 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
-              activeMode === 'normal'
-                ? 'bg-gradient-to-r from-cyan-900/40 via-cyan-600/30 to-blue-900/40 text-cyan-200 border-2 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-[1.01]'
-                : 'bg-white/5 border border-white/10 text-slate-400 hover:text-cyan-300 hover:bg-white/10 hover:border-cyan-500/30'
-            }`}
-          >
-            <Radio className={`w-4 h-4 ${activeMode === 'normal' ? 'text-cyan-300 animate-pulse' : 'text-slate-500'}`} />
-            <span className="tracking-wide">
-              {loc('لایو عادی', 'Normal Live')}
-            </span>
-          </button>
-
-          {/* Tab 2: Adult Live +18 */}
-          <button
-            onClick={() => handleModeChange('adult')}
-            className={`relative py-2 px-3 sm:px-4 rounded-xl flex items-center justify-center gap-2 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
-              activeMode === 'adult'
-                ? 'bg-gradient-to-r from-rose-950/60 via-red-600/40 to-pink-950/60 text-rose-200 border-2 border-rose-500 shadow-[0_0_25px_rgba(244,63,94,0.55)] scale-[1.01]'
-                : 'bg-white/5 border border-white/10 text-slate-400 hover:text-rose-300 hover:bg-rose-950/20 hover:border-rose-500/30'
-            }`}
-          >
-            <ShieldAlert className={`w-4 h-4 ${activeMode === 'adult' ? 'text-rose-400 drop-shadow-[0_0_10px_rgba(244,63,94,0.9)]' : 'text-slate-500'}`} />
-            <span className="tracking-wide">
-              {loc('لایو +۱۸', 'Live +18')}
-            </span>
-            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-md bg-rose-500/30 border border-rose-400/50 text-rose-200 font-black">
-              18+
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          2. STORIES ROW (HORIZONTAL SCROLL)
+          1. STORIES ROW (AT THE VERY TOP - HORIZONTAL SCROLL)
           - ONLY female users’ stories with colorful rings
           - VIP female stories have gold border and crown
           - “Add Story” only for female/admin
@@ -460,6 +426,58 @@ export default function UltraModernHome({
       </div>
 
       {/* =========================================================================
+          2. THREE MODE TABS (UNDERNEATH STORIES)
+          - 1) لایو عادی (Normal Live)
+          - 2) لایو +۱۸ (Live +18)
+          - 3) نمایش کاربرهای آنلاین (Online Users)
+         ========================================================================= */}
+      <div className="relative z-10 rounded-2xl overflow-hidden bg-slate-950/85 backdrop-blur-2xl border border-rose-500/20 shadow-[0_10px_30px_rgba(0,0,0,0.6)] p-1.5">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+          {/* Tab 1: Normal Live */}
+          <button
+            onClick={() => handleModeChange('normal')}
+            className={`relative py-2.5 px-2 sm:px-3 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
+              activeMode === 'normal'
+                ? 'bg-gradient-to-r from-cyan-900/50 via-cyan-600/40 to-blue-900/50 text-cyan-200 border-2 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-[1.01]'
+                : 'bg-white/5 border border-white/10 text-slate-400 hover:text-cyan-300 hover:bg-white/10 hover:border-cyan-500/30'
+            }`}
+          >
+            <Radio className={`w-3.5 h-3.5 ${activeMode === 'normal' ? 'text-cyan-300 animate-pulse' : 'text-slate-500'}`} />
+            <span className="truncate">{loc('لایو عادی', 'Normal Live')}</span>
+          </button>
+
+          {/* Tab 2: Adult Live +18 */}
+          <button
+            onClick={() => handleModeChange('adult')}
+            className={`relative py-2.5 px-2 sm:px-3 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
+              activeMode === 'adult'
+                ? 'bg-gradient-to-r from-rose-950/70 via-red-600/50 to-pink-950/70 text-rose-200 border-2 border-rose-500 shadow-[0_0_25px_rgba(244,63,94,0.55)] scale-[1.01]'
+                : 'bg-white/5 border border-white/10 text-slate-400 hover:text-rose-300 hover:bg-rose-950/20 hover:border-rose-500/30'
+            }`}
+          >
+            <ShieldAlert className={`w-3.5 h-3.5 ${activeMode === 'adult' ? 'text-rose-400 drop-shadow-[0_0_10px_rgba(244,63,94,0.9)]' : 'text-slate-500'}`} />
+            <span className="truncate">{loc('لایو +۱۸', 'Live +18')}</span>
+            <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-rose-500/30 border border-rose-400/50 text-rose-200 font-black">
+              18+
+            </span>
+          </button>
+
+          {/* Tab 3: Online Users */}
+          <button
+            onClick={() => handleModeChange('online_users')}
+            className={`relative py-2.5 px-2 sm:px-3 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
+              activeMode === 'online_users'
+                ? 'bg-gradient-to-r from-emerald-950/60 via-emerald-600/40 to-teal-950/60 text-emerald-200 border-2 border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.4)] scale-[1.01]'
+                : 'bg-white/5 border border-white/10 text-slate-400 hover:text-emerald-300 hover:bg-white/10 hover:border-emerald-500/30'
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,1)]" />
+            <span className="truncate">{loc('کاربرهای آنلاین', 'Online Users')}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* =========================================================================
           3. VIP FEMALE USERS CAROUSEL:
           - Horizontal list of ONLY female VIP users
           - Gold frames, crown badges, and online status
@@ -543,9 +561,11 @@ export default function UltraModernHome({
 
       {/* =========================================================================
           4. MAIN USER LIST (GRID):
-          - ONLY female users displayed
-          - Each card shows avatar, username, age, online status, “LIVE” badge (if streaming)
-          - Male users are COMPLETELY HIDDEN (they only appear as spectators)
+          - ONLY female users displayed (both verified and unverified)
+          - Badges: Verified, VIP, Admin/Management, Online/Offline
+          - Live badge on top-left of image for streaming users
+          - +18 Live streams blurred & locked with Lock icon for normal users
+          - Action area: Heart like (no numbers), Message, Video Call / Watch Live
          ========================================================================= */}
       <div className="relative z-10 space-y-3">
         {/* Header & Filter Chips */}
@@ -553,7 +573,7 @@ export default function UltraModernHome({
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]" />
             <h2 className="text-sm sm:text-base font-black text-white tracking-wide">
-              {loc('استریمرها و کاربران آنلاین', 'Streamers & Online Users')}
+              {loc('استریمرها و کاربران خانم', 'Female Streamers & Users')}
             </h2>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-rose-300 font-bold">
               {femaleLiveCards.length}
@@ -564,8 +584,8 @@ export default function UltraModernHome({
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             {[
               { id: 'all', label: loc('همه', 'All') },
-              { id: 'live', label: `🔴 ${loc('پخش زنده', 'Live')}` },
               { id: 'online', label: loc('آنلاین', 'Online') },
+              { id: 'live', label: `🔴 ${loc('پخش زنده', 'Live')}` },
               { id: 'vip', label: 'VIP' }
             ].map(f => (
               <button
@@ -596,6 +616,33 @@ export default function UltraModernHome({
             {femaleLiveCards.map(card => {
               const isStreaming = card.isLive;
               const isAdult = card.isAdult;
+              const isVerifiedUser = card.isVerified;
+              const isAdminUser = card.isAdmin;
+              
+              // +18 Live streams are locked and blurred for non-VIP, non-Admin users
+              const isStreamLocked = isAdult && !isVip && !isUserAdmin && !isUserSuperAdmin;
+
+              const handleCardMainClick = () => {
+                if (isStreamLocked) {
+                  if (setIsVipModalOpen) setIsVipModalOpen(true);
+                  return;
+                }
+                if (card.type === 'stream' && card.streamData) {
+                  setViewingStream(card.streamData);
+                } else if (card.isLive) {
+                  const activeStream = (streamsList || []).find(s => String(s.host_id) === String(card.userId) || s.host === card.username);
+                  if (activeStream) {
+                    setViewingStream(activeStream);
+                  } else if (card.userData) {
+                    setSelectedUser(card.userData);
+                    setIsUserProfileModalOpen(true);
+                  }
+                } else if (card.userData) {
+                  setSelectedUser(card.userData);
+                  setIsUserProfileModalOpen(true);
+                }
+              };
+
               return (
                 <div
                   key={card.id}
@@ -603,29 +650,16 @@ export default function UltraModernHome({
                 >
                   {/* Aspect Ratio 3:4 Thumbnail Container */}
                   <div 
-                    onClick={() => {
-                      if (card.type === 'stream' && card.streamData) {
-                        setViewingStream(card.streamData);
-                      } else if (card.isLive) {
-                        const activeStream = (streamsList || []).find(s => String(s.host_id) === String(card.userId) || s.host === card.username);
-                        if (activeStream) {
-                          setViewingStream(activeStream);
-                        } else if (card.userData) {
-                          setSelectedUser(card.userData);
-                          setIsUserProfileModalOpen(true);
-                        }
-                      } else if (card.userData) {
-                        setSelectedUser(card.userData);
-                        setIsUserProfileModalOpen(true);
-                      }
-                    }}
+                    onClick={handleCardMainClick}
                     className="aspect-[3/4] relative overflow-hidden cursor-pointer"
                   >
                     {card.thumbnail ? (
                       <img
                         src={card.thumbnail}
                         alt={card.username}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        className={`w-full h-full object-cover transition-transform duration-700 ${
+                          isStreamLocked ? 'filter blur-md scale-105' : 'group-hover:scale-105'
+                        }`}
                       />
                     ) : (
                       <div className="w-full h-full bg-slate-900 flex items-center justify-center text-slate-500 font-black text-sm">
@@ -633,49 +667,64 @@ export default function UltraModernHome({
                       </div>
                     )}
 
+                    {/* Locked +18 Overlay for Normal Users */}
+                    {isStreamLocked && (
+                      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-2.5 text-center z-15">
+                        <div className="w-9 h-9 rounded-full bg-rose-600/30 border border-rose-500/70 flex items-center justify-center mb-1 shadow-[0_0_15px_rgba(244,63,94,0.6)]">
+                          <Lock className="w-4 h-4 text-rose-300" />
+                        </div>
+                        <span className="text-[10px] font-black text-rose-200">
+                          {loc('لایو +۱۸ (قفل)', '18+ Live (Locked)')}
+                        </span>
+                        <span className="text-[8.5px] text-amber-300 font-bold mt-0.5 bg-amber-500/20 px-1.5 py-0.2 rounded-full border border-amber-500/30">
+                          {loc('مخصوص VIP', 'VIP Only')}
+                        </span>
+                      </div>
+                    )}
+
                     {/* Dark Seductive Vignette Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
 
-                    {/* Top Row Badges */}
-                    <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10 pointer-events-none">
-                      {/* LIVE Badge (if streaming) OR Online Status */}
-                      {isStreaming ? (
-                        <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black text-white shadow-lg backdrop-blur-md ${
-                          isAdult
-                            ? 'bg-rose-600/90 border border-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.8)]'
-                            : 'bg-cyan-600/90 border border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.8)]'
-                        }`}>
-                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                          <span className="tracking-widest">LIVE</span>
-                          {isAdult && <span className="font-mono text-[8px]">+18</span>}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-white/10 text-slate-300 text-[9px] font-bold">
-                          <span className={`w-2 h-2 rounded-full ${card.isOnline ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)] animate-pulse' : 'bg-slate-500'}`} />
-                          <span>{card.isOnline ? loc('آنلاین', 'Online') : loc('آفلاین', 'Offline')}</span>
+                    {/* Small Neat LIVE badge on Top-Left of avatar/profile */}
+                    {isStreaming && (
+                      <div className="absolute top-2 left-2 z-20 flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-600/95 border border-rose-400 text-[8.5px] font-black text-white shadow-[0_0_12px_rgba(244,63,94,0.9)] backdrop-blur-md animate-pulse pointer-events-none">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                        <span className="tracking-wider">LIVE</span>
+                        {isAdult && <span className="font-mono text-[7.5px] bg-black/40 px-1 py-0.2 rounded">+18</span>}
+                      </div>
+                    )}
+
+                    {/* Top Right Badges: Admin/Management, VIP, Verified, Online/Offline */}
+                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1 pointer-events-none flex-wrap justify-end">
+                      {/* Admin / Senior Management Badge */}
+                      {isAdminUser && (
+                        <div className="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-700 border border-purple-400 text-white text-[8px] font-black flex items-center gap-0.5 shadow-md">
+                          <ShieldCheck className="w-2.5 h-2.5 text-purple-200" />
+                          <span>{loc('مدیریت', 'Admin')}</span>
                         </div>
                       )}
 
-                      {/* Viewers or Distance Badge */}
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-white/10 text-slate-200 text-[9px] font-bold">
-                        {isStreaming ? (
-                          <>
-                            <Eye className="w-3 h-3 text-rose-400" />
-                            <span>{(card.viewers || 0).toLocaleString()}</span>
-                          </>
-                        ) : (
-                          <span>{card.distance}</span>
-                        )}
+                      {/* VIP Badge */}
+                      {card.isVip && (
+                        <div className="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 border border-amber-200 text-slate-950 text-[8px] font-black flex items-center gap-0.5 shadow-md">
+                          <Crown className="w-2.5 h-2.5 fill-slate-950" />
+                          <span>VIP</span>
+                        </div>
+                      )}
+
+                      {/* Verified Badge */}
+                      {isVerifiedUser && (
+                        <div className="p-0.5 rounded-full bg-cyan-500 text-white shadow-md">
+                          <CheckCircle2 className="w-3 h-3 text-white fill-cyan-400" />
+                        </div>
+                      )}
+
+                      {/* Online / Offline Dot Badge */}
+                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-white/10 text-slate-300 text-[8.5px] font-bold">
+                        <span className={`w-1.5 h-1.5 rounded-full ${card.isOnline ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,1)] animate-pulse' : 'bg-slate-500'}`} />
+                        <span>{card.isOnline ? loc('آنلاین', 'Online') : loc('آفلاین', 'Offline')}</span>
                       </div>
                     </div>
-
-                    {/* VIP Crown Tag */}
-                    {card.isVip && (
-                      <div className="absolute top-9 left-2.5 z-10 flex items-center gap-0.5 px-2 py-0.2 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 text-[8px] font-black shadow-md pointer-events-none">
-                        <Crown className="w-2.5 h-2.5 fill-slate-950" />
-                        <span>VIP</span>
-                      </div>
-                    )}
 
                     {/* Bottom Info on Thumbnail: Username + Age + Flag */}
                     <div className="absolute bottom-2 left-2.5 right-2.5 z-10 space-y-0.5 text-right dir-rtl pointer-events-none">
@@ -690,9 +739,9 @@ export default function UltraModernHome({
                     </div>
                   </div>
 
-                  {/* Card Action Footer: Heart Like + Glowing Action Button */}
-                  <div className="p-2 bg-slate-950/95 border-t border-white/10 flex items-center gap-1.5">
-                    {/* Heart Like Button */}
+                  {/* Card Action Footer: Heart Like (pure active/dim, no count) + Direct Message + Action Button */}
+                  <div className="p-1.5 sm:p-2 bg-slate-950/95 border-t border-white/10 flex items-center gap-1.5">
+                    {/* Small Heart Like Button (strictly without number/count) */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -700,21 +749,47 @@ export default function UltraModernHome({
                           handleToggleLikeUserCard(card.userId, e);
                         }
                       }}
-                      className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all active:scale-90 shrink-0 ${
+                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl border flex items-center justify-center transition-all active:scale-90 shrink-0 ${
                         likedUsersMap[card.userId]
-                          ? 'bg-rose-500/20 border-rose-500 text-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.4)]'
-                          : 'bg-white/5 hover:bg-rose-500/20 border-white/10 hover:border-rose-500/40 text-rose-400'
+                          ? 'bg-rose-500/25 border-rose-500 text-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.5)]'
+                          : 'bg-white/5 hover:bg-rose-500/20 border-white/10 text-slate-400 hover:text-rose-400'
                       }`}
                       title={loc('لایک', 'Like')}
                     >
-                      <Heart className={`w-3.5 h-3.5 ${likedUsersMap[card.userId] ? 'fill-rose-500 text-rose-500' : 'fill-rose-500/40 text-rose-400 hover:fill-rose-500'}`} />
+                      <Heart className={`w-3.5 h-3.5 ${likedUsersMap[card.userId] ? 'fill-rose-500 text-rose-500 scale-110' : 'text-slate-400'}`} />
                     </button>
 
-                    {/* If Streaming -> Direct "Watch Live" Button; Otherwise -> "Match / Call" */}
+                    {/* Direct Message (پیام) Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const targetUser = card.userData || {
+                          id: card.userId,
+                          name: card.username,
+                          username: card.username,
+                          avatar: card.avatar
+                        };
+                        if (handleOpenDirectChat) {
+                          handleOpenDirectChat(targetUser);
+                        } else if (setActiveTab) {
+                          setActiveTab('messages');
+                        }
+                      }}
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 flex items-center justify-center transition-all active:scale-90 shrink-0"
+                      title={loc('ارسال پیام', 'Send Message')}
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Action Button: Watch Live (if streaming) or Video Call (if not streaming) */}
                     {isStreaming ? (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (isStreamLocked) {
+                            if (setIsVipModalOpen) setIsVipModalOpen(true);
+                            return;
+                          }
                           if (card.type === 'stream' && card.streamData) {
                             setViewingStream(card.streamData);
                           } else {
@@ -727,10 +802,23 @@ export default function UltraModernHome({
                             }
                           }
                         }}
-                        className="flex-1 h-8 rounded-xl font-black text-[11px] flex items-center justify-center gap-1.5 shadow-lg transition-all active:scale-95 group bg-gradient-to-r from-rose-600 via-red-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.6)] border border-rose-400/60 animate-pulse"
+                        className={`flex-1 h-7 sm:h-8 rounded-xl font-black text-[10px] sm:text-[11px] flex items-center justify-center gap-1 shadow-lg transition-all active:scale-95 border ${
+                          isStreamLocked
+                            ? 'bg-gradient-to-r from-amber-600 via-rose-700 to-slate-800 text-amber-200 border-amber-400/40 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
+                            : 'bg-gradient-to-r from-rose-600 via-red-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border-rose-400/60 animate-pulse'
+                        }`}
                       >
-                        <Radio className="w-3.5 h-3.5 group-hover:scale-125 transition-transform" />
-                        <span>{loc('ورود به لایو', 'Watch Live')}</span>
+                        {isStreamLocked ? (
+                          <>
+                            <Lock className="w-3 h-3 text-amber-200" />
+                            <span>{loc('قفل (VIP)', 'VIP Lock')}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Radio className="w-3 h-3 animate-pulse" />
+                            <span>{loc('ورود به لایو', 'Watch Live')}</span>
+                          </>
+                        )}
                       </button>
                     ) : (
                       <button
@@ -744,10 +832,10 @@ export default function UltraModernHome({
                           };
                           handleInitiateCall(targetUser, 'video');
                         }}
-                        className="flex-1 h-8 rounded-xl font-black text-[11px] flex items-center justify-center gap-1.5 shadow-lg transition-all active:scale-95 group bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.55)] border border-rose-400/50"
+                        className="flex-1 h-7 sm:h-8 rounded-xl font-black text-[10px] sm:text-[11px] flex items-center justify-center gap-1 shadow-lg transition-all active:scale-95 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40"
                       >
-                        <Flame className="w-3.5 h-3.5 group-hover:scale-125 transition-transform" />
-                        <span>{loc('Match', 'Match')}</span>
+                        <Video className="w-3 h-3" />
+                        <span>{loc('تماس تصویری', 'Video Call')}</span>
                       </button>
                     )}
                   </div>
@@ -759,12 +847,12 @@ export default function UltraModernHome({
       </div>
 
       {/* =========================================================================
-          5. “START LIVE / BECOME STREAMER” FLOATING ACTION BUTTON
-          - For approved broadcasters / admins: opens Live Studio to stream
-          - For regular users: opens "Become a Streamer" application modal
+          5. “START LIVE” FLOATING ACTION BUTTON
+          - STRICT RULE: Visible ONLY for Admin/Management and Approved Female Streamers
+          - Completely HIDDEN for unapproved females and regular users
          ========================================================================= */}
-      <div className="fixed bottom-24 right-4 z-40 flex flex-col items-end gap-2.5 pointer-events-auto animate-bounce-gentle">
-        {canAccessBroadcasting ? (
+      {canAccessBroadcasting && (
+        <div className="fixed bottom-24 right-4 z-40 flex flex-col items-end gap-2.5 pointer-events-auto animate-bounce-gentle">
           <button
             onClick={() => {
               if (handleOpenLiveBroadcast) {
@@ -772,27 +860,14 @@ export default function UltraModernHome({
               }
             }}
             className="relative px-5 py-3 rounded-full bg-gradient-to-r from-rose-600 via-red-600 to-pink-600 text-white font-black text-xs flex items-center gap-2.5 shadow-[0_0_35px_rgba(244,63,94,0.9)] border-2 border-white/30 hover:scale-105 active:scale-95 transition-all group"
-            title={loc('شروع پخش زنده (مخصوص استریمرهای تایید شده)', 'Start Live Broadcast')}
+            title={loc('شروع پخش زنده', 'Start Live Broadcast')}
           >
             <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
             <Video className="w-4 h-4 group-hover:scale-125 transition-transform drop-shadow" />
             <span className="tracking-wide">{loc('شروع لایو', 'Start Live')}</span>
           </button>
-        ) : (
-          <button
-            onClick={() => {
-              if (setIsBecomeStreamerModalOpen) {
-                setIsBecomeStreamerModalOpen(true);
-              }
-            }}
-            className="relative px-4 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 text-white font-black text-xs flex items-center gap-2 shadow-[0_0_25px_rgba(219,39,119,0.7)] border border-white/20 hover:scale-105 active:scale-95 transition-all group backdrop-blur-md"
-            title={loc('درخواست مجوز پخش زنده و استریمری', 'Apply to Become a Streamer')}
-          >
-            <Video className="w-3.5 h-3.5 text-pink-200 group-hover:scale-110 transition-transform" />
-            <span className="tracking-wide">{loc('درخواست استریمری', 'Go Live / Streamer')}</span>
-          </button>
-        )}
-      </div>
+        </div>
+      )}
 
     </div>
   );
