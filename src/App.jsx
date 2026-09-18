@@ -77,7 +77,7 @@ export default function App() {
   // Navigation & Tab State
   const [activeTab, setActiveTab] = useState('home');
   const [homeSubTab, setHomeSubTab] = useState('explore');
-  const [homeLiveMode, setHomeLiveMode] = useState('normal'); // 'normal' | 'adult'
+  const [homeLiveMode, setHomeLiveMode] = useState('all'); // 'all' | 'normal' | 'adult'
   const [matchSubTab, setMatchSubTab] = useState('discover');
   const [matchMode, setMatchMode] = useState('swipe');
   const [activeProfileTab, setActiveProfileTab] = useState('overview');
@@ -3358,6 +3358,7 @@ export default function App() {
             isRtl={isRtl}
             liveMode={homeLiveMode}
             setLiveMode={setHomeLiveMode}
+            followedUsers={followedUsers}
           />
         )}
         {/* TAB: ULTRA-PREMIUM SEXY MATCH TAB */}

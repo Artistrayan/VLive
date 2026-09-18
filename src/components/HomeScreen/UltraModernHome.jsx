@@ -2,8 +2,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Search, Bell, Coins, Plus, Crown, Heart, Eye, Flame, ShieldAlert,
   Radio, Video, ChevronRight, CheckCircle2, User, Globe, Shield,
-  Wifi, Battery, Sparkles, SlidersHorizontal, Lock, MessageSquare, ShieldCheck
+  Wifi, Battery, Sparkles, SlidersHorizontal, Lock, MessageSquare, ShieldCheck,
+  Trophy, UserCheck
 } from 'lucide-react';
+import { getStreamerScores } from '../../services/streamerScoring';
 
 /**
  * Helper to determine if a user/profile is female.
@@ -76,11 +78,12 @@ export default function UltraModernHome({
   setIsBecomeStreamerModalOpen,
   loc,
   isRtl = true,
-  liveMode = 'normal', // 'normal' | 'adult' | 'online_users'
-  setLiveMode
+  liveMode = 'all', // 'all' | 'normal' | 'adult'
+  setLiveMode,
+  followedUsers = []
 }) {
-  // Mode selection: 'normal' | 'adult' | 'online_users'
-  const [internalLiveMode, setInternalLiveMode] = useState(liveMode || 'normal');
+  // Mode selection: 'all' | 'normal' | 'adult'
+  const [internalLiveMode, setInternalLiveMode] = useState(liveMode || 'all');
   const activeMode = setLiveMode ? liveMode : internalLiveMode;
   const handleModeChange = (mode) => {
     if (setLiveMode) setLiveMode(mode);
@@ -210,6 +213,36 @@ export default function UltraModernHome({
     const cards = [];
     const addedUserIds = new Set();
 
+    // Helper to check if a user is followed by the current user
+    const isCardFollowed = (card) => {
+      const targetId = card.userId;
+      const targetUsername = card.username;
+      if (Array.isArray(followedUsers)) {
+        if (targetId && followedUsers.includes(targetId)) return true;
+        if (targetUsername && followedUsers.includes(targetUsername)) return true;
+      }
+      try {
+        const stored = localStorage.getItem('vlive_user_following_list');
+        if (stored) {
+          const list = JSON.parse(stored);
+          return list.some(u => 
+            (targetId && String(u.id) === String(targetId)) ||
+            (targetUsername && String(u.username).toLowerCase() === String(targetUsername).toLowerCase())
+          );
+        }
+      } catch (e) {}
+      return false;
+    };
+
+    // Helper to extract user/streamer level (for top level ranking)
+    const getCardLevel = (card) => {
+      const u = card.userData;
+      if (u?.level && Number(u.level) > 0) return Number(u.level);
+      if (u?.user_level && Number(u.user_level) > 0) return Number(u.user_level);
+      const score = getStreamerScores(u || card.streamData);
+      return score?.level || 1;
+    };
+
     // Add active female streams
     activeStreams.forEach(stream => {
       const isAdultStream = Boolean(stream.live_type === 'adult' || stream.isVip18 || stream.is18Plus);
@@ -219,6 +252,7 @@ export default function UltraModernHome({
 
       const isVerified = Boolean(hostUser?.is_verified || hostUser?.isVerified || hostUser?.verified);
       const isAdmin = Boolean(hostUser?.role === 'admin' || hostUser?.role === 'super_admin' || hostUser?.is_admin || hostUser?.user_type === 'ADMIN' || hostUser?.user_type === 'SUPER_ADMIN');
+      const hostLevel = hostUser?.level || hostUser?.user_level || getStreamerScores(hostUser || stream).level || 1;
 
       cards.push({
         id: `stream_${stream.id}`,
@@ -229,13 +263,14 @@ export default function UltraModernHome({
         isAdult: isAdultStream,
         isVerified: isVerified,
         isAdmin: isAdmin,
+        level: hostLevel,
         title: stream.title || '',
         username: stream.host || stream.username || hostUser?.name || 'Host',
         userId: stream.host_id || hostUser?.id,
         avatar: stream.avatar || stream.thumbnail || hostUser?.avatar,
         thumbnail: stream.thumbnail || stream.avatar || hostUser?.avatar,
-        viewers: stream.viewers || 0,
-        likes: stream.likes || 0,
+        viewers: Number(stream.viewers || 0),
+        likes: Number(stream.likes || hostUser?.likes_count || hostUser?.likes || 0),
         age: hostUser?.age || 22,
         distance: hostUser?.distance || '',
         countryFlag: '🇮🇷',
@@ -263,6 +298,7 @@ export default function UltraModernHome({
       const isUserLive = Boolean(user.online && (user.isStreamer || user.is_streamer || user.role === 'streamer'));
       const isVerified = Boolean(user.is_verified || user.isVerified || user.verified);
       const isAdmin = Boolean(user.role === 'admin' || user.role === 'super_admin' || user.is_admin || user.user_type === 'ADMIN' || user.user_type === 'SUPER_ADMIN');
+      const userLevel = user.level || user.user_level || getStreamerScores(user).level || 1;
 
       cards.push({
         id: `user_${uid}`,
@@ -272,6 +308,7 @@ export default function UltraModernHome({
         isAdult: isAdultUser,
         isVerified: isVerified,
         isAdmin: isAdmin,
+        level: userLevel,
         title: user.bio || '',
         username: user.name || user.username || 'User',
         userId: user.id,
@@ -288,24 +325,22 @@ export default function UltraModernHome({
     });
 
     // Apply Filters & Search
-    return cards.filter(card => {
+    const filtered = cards.filter(card => {
       // 1. Filter by Active Mode Tabs:
-      // Tab 'normal': only normal lives and normal profiles
+      // Mode 'normal': only normal lives and normal profiles (hide adult 18+)
       if (activeMode === 'normal') {
         if (card.isAdult) return false;
       }
-      // Tab 'adult': only adult +18 lives and adult profiles
+      // Mode 'adult': only adult +18 lives and adult profiles
       else if (activeMode === 'adult') {
         if (!card.isAdult) return false;
       }
-      // Tab 'online_users': only online female users
-      else if (activeMode === 'online_users') {
-        if (!card.isOnline) return false;
-      }
+      // Mode 'all': shows all female users (both standard & 18+)
 
-      // 2. Filter Chips:
-      if (activeFilter === 'live' && !card.isLive) return false;
+      // 2. Sub-filters:
       if (activeFilter === 'online' && !card.isOnline) return false;
+      if (activeFilter === 'followed' && !isCardFollowed(card)) return false;
+      if (activeFilter === 'live' && !card.isLive) return false;
       if (activeFilter === 'vip' && !card.isVip) return false;
 
       // 3. Search Query:
@@ -318,7 +353,39 @@ export default function UltraModernHome({
 
       return true;
     });
-  }, [streamsList, usersList, activeMode, activeFilter, searchQuery, loc]);
+
+    // 4. Sort cards according to activeFilter or default priority:
+    return filtered.sort((a, b) => {
+      // Filter: برترین (از نظر سطح / رنک کریتور)
+      if (activeFilter === 'top_level') {
+        const lvlA = getCardLevel(a);
+        const lvlB = getCardLevel(b);
+        if (lvlB !== lvlA) return lvlB - lvlA;
+        return (b.isOnline ? 1 : 0) - (a.isOnline ? 1 : 0);
+      }
+
+      // Filter: محبوب‌ترین (از نظر بیشترین لایک)
+      if (activeFilter === 'most_liked') {
+        const likesA = Number(a.likes || a.userData?.likes_count || a.userData?.likes || 0);
+        const likesB = Number(b.likes || b.userData?.likes_count || b.userData?.likes || 0);
+        if (likesB !== likesA) return likesB - likesA;
+        return (b.isOnline ? 1 : 0) - (a.isOnline ? 1 : 0);
+      }
+
+      // Filter: داغ (پخش زنده و بیشترین تعامل و بیننده)
+      if (activeFilter === 'hot') {
+        const scoreA = (a.isLive ? 10000 : 0) + (a.isOnline ? 1000 : 0) + (a.viewers || 0) * 10 + (a.likes || 0);
+        const scoreB = (b.isLive ? 10000 : 0) + (b.isOnline ? 1000 : 0) + (b.viewers || 0) * 10 + (b.likes || 0);
+        return scoreB - scoreA;
+      }
+
+      // Default sorting: Live streams first, then Online users, then VIPs, then others
+      if (a.isLive !== b.isLive) return a.isLive ? -1 : 1;
+      if (a.isOnline !== b.isOnline) return a.isOnline ? -1 : 1;
+      if (a.isVip !== b.isVip) return a.isVip ? -1 : 1;
+      return 0;
+    });
+  }, [streamsList, usersList, activeMode, activeFilter, searchQuery, loc, followedUsers]);
 
   return (
     <div className="relative w-full max-w-4xl mx-auto space-y-3 pb-24 select-none text-slate-100 font-sans">
@@ -436,10 +503,26 @@ export default function UltraModernHome({
 
       {/* =========================================================================
           2. THREE MODE TABS (CLEAN & CONCISE)
+          - 1) همه (All female users)
+          - 2) لایو (Live streams)
+          - 3) ۱۸+ (Live +18)
          ========================================================================= */}
       <div className="relative z-10 rounded-2xl bg-slate-950/85 backdrop-blur-2xl border border-white/10 p-1">
         <div className="grid grid-cols-3 gap-1">
-          {/* Tab 1: Live */}
+          {/* Tab 1: All (همه) */}
+          <button
+            onClick={() => handleModeChange('all')}
+            className={`py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs transition-all duration-300 ${
+              activeMode === 'all'
+                ? 'bg-gradient-to-r from-emerald-950/60 via-emerald-600/40 to-teal-950/60 text-emerald-200 border border-emerald-400/80 shadow-[0_0_15px_rgba(52,211,153,0.3)]'
+                : 'text-slate-400 hover:text-emerald-300 hover:bg-white/5'
+            }`}
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${activeMode === 'all' ? 'text-emerald-300' : 'text-slate-500'}`} />
+            <span>{loc('همه', 'All')}</span>
+          </button>
+
+          {/* Tab 2: Live (لایو) */}
           <button
             onClick={() => handleModeChange('normal')}
             className={`py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs transition-all duration-300 ${
@@ -452,7 +535,7 @@ export default function UltraModernHome({
             <span>{loc('لایو', 'Live')}</span>
           </button>
 
-          {/* Tab 2: 18+ */}
+          {/* Tab 3: 18+ (۱۸+) */}
           <button
             onClick={() => handleModeChange('adult')}
             className={`py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs transition-all duration-300 ${
@@ -463,19 +546,6 @@ export default function UltraModernHome({
           >
             <ShieldAlert className={`w-3.5 h-3.5 ${activeMode === 'adult' ? 'text-rose-400' : 'text-slate-500'}`} />
             <span>{loc('۱۸+', '18+')}</span>
-          </button>
-
-          {/* Tab 3: Online */}
-          <button
-            onClick={() => handleModeChange('online_users')}
-            className={`py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs transition-all duration-300 ${
-              activeMode === 'online_users'
-                ? 'bg-gradient-to-r from-emerald-950/60 via-emerald-600/40 to-teal-950/60 text-emerald-200 border border-emerald-400/80 shadow-[0_0_15px_rgba(52,211,153,0.3)]'
-                : 'text-slate-400 hover:text-emerald-300 hover:bg-white/5'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,1)]" />
-            <span>{loc('آنلاین', 'Online')}</span>
           </button>
         </div>
       </div>
@@ -549,38 +619,67 @@ export default function UltraModernHome({
       )}
 
       {/* =========================================================================
-          4. MAIN USER LIST (GRID)
+          4. MAIN USER LIST (GRID) WITH DEDICATED SUB-FILTERS
          ========================================================================= */}
       <div className="relative z-10 space-y-2.5">
-        {/* Header & Filter Chips */}
-        <div className="flex items-center justify-between px-1">
+        {/* Header & Sub-filter Chips Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
             <h2 className="text-xs sm:text-sm font-black text-white">
-              {loc('کاوش', 'Explore')}
+              {activeMode === 'all'
+                ? loc('همه کاربران خانم', 'All Female Users')
+                : activeMode === 'normal'
+                ? loc('پخش زنده و استریمرها', 'Live & Streamers')
+                : loc('پخش زنده +۱۸', '18+ Streams')}
             </h2>
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-white/10 text-rose-300 font-bold">
+              {femaleLiveCards.length}
+            </span>
           </div>
 
-          {/* Filter Chips */}
+          {/* Sub-filters Chips Bar */}
           <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
-            {[
-              { id: 'all', label: loc('همه', 'All') },
-              { id: 'online', label: loc('آنلاین', 'Online') },
-              { id: 'live', label: loc('لایو', 'Live') },
-              { id: 'vip', label: 'VIP' }
-            ].map(f => (
-              <button
-                key={f.id}
-                onClick={() => setActiveFilter(f.id)}
-                className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${
-                  activeFilter === f.id
-                    ? 'bg-rose-600 text-white shadow'
-                    : 'bg-white/5 text-slate-400 hover:text-white border border-white/5'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
+            {(activeMode === 'all'
+              ? [
+                  { id: 'all', label: loc('همه', 'All'), icon: Sparkles },
+                  { id: 'online', label: loc('آنلاین', 'Online'), isDot: true },
+                  { id: 'top_level', label: loc('برترین', 'Top Rank'), icon: Trophy },
+                  { id: 'hot', label: loc('داغ', 'Hot'), icon: Flame },
+                  { id: 'most_liked', label: loc('محبوب‌ترین', 'Most Popular'), icon: Heart },
+                  { id: 'followed', label: loc('فالو', 'Following'), icon: UserCheck }
+                ]
+              : [
+                  { id: 'all', label: loc('همه', 'All'), icon: Sparkles },
+                  { id: 'online', label: loc('آنلاین', 'Online'), isDot: true },
+                  { id: 'live', label: loc('لایو', 'Live'), icon: Radio },
+                  { id: 'top_level', label: loc('برترین', 'Top Rank'), icon: Trophy },
+                  { id: 'hot', label: loc('داغ', 'Hot'), icon: Flame },
+                  { id: 'most_liked', label: loc('محبوب‌ترین', 'Most Popular'), icon: Heart },
+                  { id: 'vip', label: 'VIP', icon: Crown },
+                  { id: 'followed', label: loc('فالو', 'Following'), icon: UserCheck }
+                ]
+            ).map(f => {
+              const IconComp = f.icon;
+              const isSelected = activeFilter === f.id;
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => setActiveFilter(f.id)}
+                  className={`px-2.5 py-1 rounded-xl text-[10.5px] font-bold transition-all whitespace-nowrap flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-md scale-[1.02]'
+                      : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 border border-white/5'
+                  }`}
+                >
+                  {f.isDot && (
+                    <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-400 animate-pulse'}`} />
+                  )}
+                  {IconComp && <IconComp className={`w-3 h-3 ${isSelected ? 'text-white' : 'text-slate-400'}`} />}
+                  <span>{f.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -589,7 +688,9 @@ export default function UltraModernHome({
           <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-white/5 space-y-2">
             <Radio className="w-8 h-8 text-slate-600 mx-auto animate-pulse" />
             <p className="text-xs text-slate-500">
-              {loc('موردی یافت نشد', 'No items found')}
+              {activeFilter === 'followed'
+                ? loc('شما هنوز هیچ کاربری را فالو نکرده‌اید.', 'You are not following any users yet.')
+                : loc('موردی با این فیلتر یافت نشد', 'No items found for this filter')}
             </p>
           </div>
         ) : (
@@ -599,6 +700,7 @@ export default function UltraModernHome({
               const isAdult = card.isAdult;
               const isVerifiedUser = card.isVerified;
               const isAdminUser = card.isAdmin;
+              const cardLevel = card.level || 1;
               
               const isStreamLocked = isAdult && !isVip && !isUserAdmin && !isUserSuperAdmin;
 
@@ -672,7 +774,14 @@ export default function UltraModernHome({
                     )}
 
                     {/* Top Right Badges */}
-                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1 pointer-events-none">
+                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1 pointer-events-none flex-wrap justify-end">
+                      {/* Level Badge (Highlighted for Top Level or level > 1) */}
+                      {cardLevel > 1 && (
+                        <div className="px-1 py-0.2 rounded bg-indigo-600/90 text-white text-[7.5px] font-black shadow flex items-center gap-0.5">
+                          <span>Lv.{cardLevel}</span>
+                        </div>
+                      )}
+
                       {/* Admin Badge */}
                       {isAdminUser && (
                         <div className="p-0.5 rounded-md bg-purple-600 text-white shadow">
@@ -710,6 +819,13 @@ export default function UltraModernHome({
                           {card.title}
                         </p>
                       ) : null}
+                      {/* Likes count indicator when most_liked is selected or user has likes */}
+                      {activeFilter === 'most_liked' && card.likes > 0 && (
+                        <div className="flex items-center gap-0.5 text-rose-300 text-[8.5px] font-bold">
+                          <Heart className="w-2.5 h-2.5 fill-rose-500 text-rose-500" />
+                          <span>{card.likes.toLocaleString()}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
