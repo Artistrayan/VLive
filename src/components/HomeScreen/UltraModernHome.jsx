@@ -229,15 +229,15 @@ export default function UltraModernHome({
         isAdult: isAdultStream,
         isVerified: isVerified,
         isAdmin: isAdmin,
-        title: stream.title || loc('پخش زنده استودیویی', 'Live Broadcast'),
+        title: stream.title || '',
         username: stream.host || stream.username || hostUser?.name || 'Host',
         userId: stream.host_id || hostUser?.id,
         avatar: stream.avatar || stream.thumbnail || hostUser?.avatar,
         thumbnail: stream.thumbnail || stream.avatar || hostUser?.avatar,
-        viewers: stream.viewers || Math.floor(Math.random() * 85) + 18,
-        likes: stream.likes || 140,
+        viewers: stream.viewers || 0,
+        likes: stream.likes || 0,
         age: hostUser?.age || 22,
-        distance: hostUser?.distance || '۲.۴ km',
+        distance: hostUser?.distance || '',
         countryFlag: '🇮🇷',
         isOnline: true,
         isVip: Boolean(stream.isVip || stream.is_vip || hostUser?.isVip || hostUser?.is_vip || hostUser?.vip)
@@ -272,15 +272,15 @@ export default function UltraModernHome({
         isAdult: isAdultUser,
         isVerified: isVerified,
         isAdmin: isAdmin,
-        title: user.bio || loc('آماده چت و تماس تصویری زنده', 'Ready for live video chat'),
+        title: user.bio || '',
         username: user.name || user.username || 'User',
         userId: user.id,
         avatar: user.avatar,
         thumbnail: user.avatar,
-        viewers: user.online ? Math.floor(Math.random() * 45) + 6 : 0,
-        likes: Number(user.likes_count || user.likes || 24),
+        viewers: 0,
+        likes: Number(user.likes_count || user.likes || 0),
         age: user.age || 21,
-        distance: user.distance || '۳ km',
+        distance: user.distance || '',
         countryFlag: user.country_flag || '🇮🇷',
         isOnline: Boolean(user.online || user.online_status === 'online' || user.status === 'online'),
         isVip: Boolean(user.isVip || user.is_vip || user.vip)
@@ -321,7 +321,7 @@ export default function UltraModernHome({
   }, [streamsList, usersList, activeMode, activeFilter, searchQuery, loc]);
 
   return (
-    <div className="relative w-full max-w-4xl mx-auto space-y-4 pb-24 select-none text-slate-100 font-sans">
+    <div className="relative w-full max-w-4xl mx-auto space-y-3 pb-24 select-none text-slate-100 font-sans">
       
       {/* Dark Atmospheric Glows */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -330,182 +330,177 @@ export default function UltraModernHome({
         <div className="absolute bottom-20 left-10 w-72 h-72 bg-purple-900/15 rounded-full blur-[100px]" />
       </div>
 
-      {/* =========================================================================
-          1. STORIES ROW (AT THE VERY TOP - HORIZONTAL SCROLL)
-          - ONLY female users’ stories with colorful rings
-          - VIP female stories have gold border and crown
-          - “Add Story” only for female/admin
-         ========================================================================= */}
-      <div className="relative z-10 bg-slate-950/70 backdrop-blur-xl rounded-3xl p-3.5 border border-rose-500/15 shadow-lg">
-        <div className="flex items-center justify-between pb-2 px-1">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
-            <h3 className="text-xs font-black text-slate-200 tracking-wide">
-              {loc('استوری‌های زنده', 'Live Stories')}
-            </h3>
-          </div>
-          <span className="text-[10px] font-bold text-slate-400">
-            {femaleStories.length} {loc('استوری', 'Stories')}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3.5 overflow-x-auto pb-1 no-scrollbar px-1">
-          {/* Add Story Button (Visible for female users or admin) */}
-          {(isFemaleUser || isUserAdmin) && (
-            <div
-              onClick={() => setIsAddStoryModalOpen(true)}
-              className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group"
-            >
-              <div className="w-14 h-14 rounded-full border-2 border-dashed border-rose-500/80 bg-gradient-to-tr from-rose-500/20 via-pink-600/10 to-transparent flex items-center justify-center group-hover:border-rose-400 group-hover:bg-rose-500/30 group-hover:scale-105 transition-all duration-300 shadow-[0_0_15px_rgba(244,63,94,0.3)]">
-                <Plus className="w-6 h-6 text-rose-400 group-hover:scale-110 transition-transform" />
-              </div>
-              <span className="text-[10px] font-bold text-rose-300 group-hover:text-white max-w-[62px] truncate text-center">
-                {loc('افزودن استوری', 'Add Story')}
-              </span>
-            </div>
-          )}
-
-          {/* Female Story Ring Avatars */}
-          {femaleStories.map(group => {
-            const isGroupVip = group.user?.isVip;
-            return (
-              <div
-                key={group.id}
-                onClick={() => setActiveStoryView({ group, currentIndex: 0 })}
-                className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group"
+      {/* SEARCH BAR (WHEN SEARCH TAB IS ACTIVE) */}
+      {isSearchTabActive && (
+        <div className="relative z-20 px-1">
+          <div className="relative flex items-center">
+            <Search className="absolute right-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={loc('جستجو...', 'Search...')}
+              className="w-full bg-slate-900/90 border border-white/10 rounded-2xl pr-10 pl-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-pink-500/60 transition"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute left-3 text-slate-400 hover:text-white text-xs"
               >
-                <div className="relative">
-                  {/* Outer Ring: VIP gets Gold Border, Regular gets Colorful Gradient Ring */}
-                  <div className={`w-14 h-14 rounded-full p-[2.5px] transition-all duration-300 group-hover:scale-105 ${
-                    isGroupVip
-                      ? 'bg-gradient-to-tr from-amber-300 via-yellow-400 to-amber-600 shadow-[0_0_20px_rgba(245,158,11,0.5)] ring-2 ring-amber-400/50'
-                      : 'bg-gradient-to-tr from-rose-500 via-pink-500 to-purple-500 shadow-[0_0_15px_rgba(244,63,94,0.4)]'
-                  }`}>
-                    <div className="w-full h-full rounded-full overflow-hidden bg-slate-950 border-2 border-slate-950">
-                      {group.user?.avatar ? (
-                        <img
-                          src={group.user.avatar}
-                          alt={group.user.name || group.user.username}
-                          className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-slate-800 flex items-center justify-center text-xs font-black text-rose-300">
-                          {(group.user?.name || group.user?.username || 'F').charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
-                  {/* VIP Crown for VIP Female Stories */}
-                  {isGroupVip && (
-                    <div 
-                      className="absolute -top-1 -right-1 z-10 w-4 h-4 rounded-full bg-gradient-to-tr from-amber-300 via-yellow-400 to-amber-600 border border-amber-200 shadow-md flex items-center justify-center pointer-events-none -rotate-12"
-                      title="VIP Story"
-                    >
-                      <Crown className="w-2.5 h-2.5 text-slate-950 fill-slate-950" />
-                    </div>
-                  )}
-
-                  {/* Unread Counter Badge */}
-                  {group.items.length > 1 && (
-                    <div className="absolute -bottom-1 -left-1 z-10 px-1 py-0.2 rounded-full bg-rose-600 text-white font-mono text-[8px] font-black border border-slate-950">
-                      {group.items.length}
-                    </div>
-                  )}
+      {/* =========================================================================
+          1. STORIES ROW (HORIZONTAL SCROLL)
+         ========================================================================= */}
+      {((isFemaleUser || isUserAdmin) || femaleStories.length > 0) && (
+        <div className="relative z-10 bg-slate-950/70 backdrop-blur-xl rounded-2xl p-2.5 border border-white/5 shadow-md">
+          <div className="flex items-center gap-3 overflow-x-auto pb-0.5 no-scrollbar px-1">
+            {/* Add Story Button (Visible for female users or admin) */}
+            {(isFemaleUser || isUserAdmin) && (
+              <div
+                onClick={() => setIsAddStoryModalOpen(true)}
+                className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+              >
+                <div className="w-13 h-13 rounded-full border-2 border-dashed border-rose-500/80 bg-rose-500/10 flex items-center justify-center group-hover:border-rose-400 group-hover:bg-rose-500/20 group-hover:scale-105 transition-all duration-300">
+                  <Plus className="w-5 h-5 text-rose-400 group-hover:scale-110 transition-transform" />
                 </div>
-
-                <span className={`text-[10px] font-bold max-w-[62px] truncate text-center ${
-                  isGroupVip ? 'text-amber-300 group-hover:text-amber-200' : 'text-slate-300 group-hover:text-white'
-                }`}>
-                  {group.user?.name || group.user?.username}
+                <span className="text-[10px] font-bold text-rose-300 group-hover:text-white max-w-[56px] truncate text-center">
+                  {loc('افزودن', 'Add')}
                 </span>
               </div>
-            );
-          })}
+            )}
+
+            {/* Female Story Ring Avatars */}
+            {femaleStories.map(group => {
+              const isGroupVip = group.user?.isVip;
+              return (
+                <div
+                  key={group.id}
+                  onClick={() => setActiveStoryView({ group, currentIndex: 0 })}
+                  className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                >
+                  <div className="relative">
+                    {/* Outer Ring */}
+                    <div className={`w-13 h-13 rounded-full p-[2px] transition-all duration-300 group-hover:scale-105 ${
+                      isGroupVip
+                        ? 'bg-gradient-to-tr from-amber-300 via-yellow-400 to-amber-600 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+                        : 'bg-gradient-to-tr from-rose-500 via-pink-500 to-purple-500 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
+                    }`}>
+                      <div className="w-full h-full rounded-full overflow-hidden bg-slate-950 border border-slate-950">
+                        {group.user?.avatar ? (
+                          <img
+                            src={group.user.avatar}
+                            alt={group.user.name || group.user.username}
+                            className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-slate-800 flex items-center justify-center text-xs font-black text-rose-300">
+                            {(group.user?.name || group.user?.username || 'F').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* VIP Crown */}
+                    {isGroupVip && (
+                      <div className="absolute -top-1 -right-1 z-10 w-3.5 h-3.5 rounded-full bg-gradient-to-tr from-amber-300 to-amber-500 shadow flex items-center justify-center pointer-events-none">
+                        <Crown className="w-2 h-2 text-slate-950 fill-slate-950" />
+                      </div>
+                    )}
+
+                    {/* Unread Counter Badge */}
+                    {group.items.length > 1 && (
+                      <div className="absolute -bottom-0.5 -left-0.5 z-10 px-1 rounded-full bg-rose-600 text-white font-mono text-[7.5px] font-black border border-slate-950">
+                        {group.items.length}
+                      </div>
+                    )}
+                  </div>
+
+                  <span className={`text-[10px] font-bold max-w-[56px] truncate text-center ${
+                    isGroupVip ? 'text-amber-300' : 'text-slate-300'
+                  }`}>
+                    {group.user?.name || group.user?.username}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* =========================================================================
-          2. THREE MODE TABS (UNDERNEATH STORIES)
-          - 1) لایو عادی (Normal Live)
-          - 2) لایو +۱۸ (Live +18)
-          - 3) نمایش کاربرهای آنلاین (Online Users)
+          2. THREE MODE TABS (CLEAN & CONCISE)
          ========================================================================= */}
-      <div className="relative z-10 rounded-2xl overflow-hidden bg-slate-950/85 backdrop-blur-2xl border border-rose-500/20 shadow-[0_10px_30px_rgba(0,0,0,0.6)] p-1.5">
-        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-          {/* Tab 1: Normal Live */}
+      <div className="relative z-10 rounded-2xl bg-slate-950/85 backdrop-blur-2xl border border-white/10 p-1">
+        <div className="grid grid-cols-3 gap-1">
+          {/* Tab 1: Live */}
           <button
             onClick={() => handleModeChange('normal')}
-            className={`relative py-2.5 px-2 sm:px-3 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
+            className={`py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs transition-all duration-300 ${
               activeMode === 'normal'
-                ? 'bg-gradient-to-r from-cyan-900/50 via-cyan-600/40 to-blue-900/50 text-cyan-200 border-2 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-[1.01]'
-                : 'bg-white/5 border border-white/10 text-slate-400 hover:text-cyan-300 hover:bg-white/10 hover:border-cyan-500/30'
+                ? 'bg-gradient-to-r from-cyan-900/50 via-cyan-600/40 to-blue-900/50 text-cyan-200 border border-cyan-400/80 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
+                : 'text-slate-400 hover:text-cyan-300 hover:bg-white/5'
             }`}
           >
             <Radio className={`w-3.5 h-3.5 ${activeMode === 'normal' ? 'text-cyan-300 animate-pulse' : 'text-slate-500'}`} />
-            <span className="truncate">{loc('لایو عادی', 'Normal Live')}</span>
+            <span>{loc('لایو', 'Live')}</span>
           </button>
 
-          {/* Tab 2: Adult Live +18 */}
+          {/* Tab 2: 18+ */}
           <button
             onClick={() => handleModeChange('adult')}
-            className={`relative py-2.5 px-2 sm:px-3 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
+            className={`py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs transition-all duration-300 ${
               activeMode === 'adult'
-                ? 'bg-gradient-to-r from-rose-950/70 via-red-600/50 to-pink-950/70 text-rose-200 border-2 border-rose-500 shadow-[0_0_25px_rgba(244,63,94,0.55)] scale-[1.01]'
-                : 'bg-white/5 border border-white/10 text-slate-400 hover:text-rose-300 hover:bg-rose-950/20 hover:border-rose-500/30'
+                ? 'bg-gradient-to-r from-rose-950/70 via-red-600/50 to-pink-950/70 text-rose-200 border border-rose-500/80 shadow-[0_0_15px_rgba(244,63,94,0.4)]'
+                : 'text-slate-400 hover:text-rose-300 hover:bg-white/5'
             }`}
           >
-            <ShieldAlert className={`w-3.5 h-3.5 ${activeMode === 'adult' ? 'text-rose-400 drop-shadow-[0_0_10px_rgba(244,63,94,0.9)]' : 'text-slate-500'}`} />
-            <span className="truncate">{loc('لایو +۱۸', 'Live +18')}</span>
-            <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-rose-500/30 border border-rose-400/50 text-rose-200 font-black">
-              18+
-            </span>
+            <ShieldAlert className={`w-3.5 h-3.5 ${activeMode === 'adult' ? 'text-rose-400' : 'text-slate-500'}`} />
+            <span>{loc('۱۸+', '18+')}</span>
           </button>
 
-          {/* Tab 3: Online Users */}
+          {/* Tab 3: Online */}
           <button
             onClick={() => handleModeChange('online_users')}
-            className={`relative py-2.5 px-2 sm:px-3 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs sm:text-sm transition-all duration-300 overflow-hidden ${
+            className={`py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs transition-all duration-300 ${
               activeMode === 'online_users'
-                ? 'bg-gradient-to-r from-emerald-950/60 via-emerald-600/40 to-teal-950/60 text-emerald-200 border-2 border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.4)] scale-[1.01]'
-                : 'bg-white/5 border border-white/10 text-slate-400 hover:text-emerald-300 hover:bg-white/10 hover:border-emerald-500/30'
+                ? 'bg-gradient-to-r from-emerald-950/60 via-emerald-600/40 to-teal-950/60 text-emerald-200 border border-emerald-400/80 shadow-[0_0_15px_rgba(52,211,153,0.3)]'
+                : 'text-slate-400 hover:text-emerald-300 hover:bg-white/5'
             }`}
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,1)]" />
-            <span className="truncate">{loc('کاربرهای آنلاین', 'Online Users')}</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,1)]" />
+            <span>{loc('آنلاین', 'Online')}</span>
           </button>
         </div>
       </div>
 
       {/* =========================================================================
-          3. VIP FEMALE USERS CAROUSEL:
-          - Horizontal list of ONLY female VIP users
-          - Gold frames, crown badges, and online status
+          3. VIP CAROUSEL
          ========================================================================= */}
       {vipFemaleUsers.length > 0 && (
-        <div className="relative z-10 bg-gradient-to-r from-amber-950/25 via-slate-950/80 to-amber-950/25 backdrop-blur-xl rounded-3xl p-3.5 border border-amber-500/30 shadow-[0_10px_35px_rgba(245,158,11,0.15)]">
-          <div className="flex items-center justify-between pb-2 px-1">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-xl bg-gradient-to-tr from-amber-400 to-yellow-500 flex items-center justify-center shadow-md">
-                <Crown className="w-3.5 h-3.5 text-slate-950 fill-slate-950" />
-              </div>
-              <h3 className="text-xs sm:text-sm font-black text-amber-300 tracking-wide flex items-center gap-1.5">
-                <span>{loc('ستارگان ویژه VIP خانم‌ها', 'VIP Female Star Users')}</span>
-                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40">
-                  EXCLUSIVE
-                </span>
+        <div className="relative z-10 bg-slate-950/70 backdrop-blur-xl rounded-2xl p-2.5 border border-amber-500/20 shadow-md">
+          <div className="flex items-center justify-between pb-1.5 px-1">
+            <div className="flex items-center gap-1.5">
+              <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+              <h3 className="text-xs font-black text-amber-300 tracking-wide">
+                VIP
               </h3>
             </div>
             <button
               onClick={() => setIsVipModalOpen(true)}
               className="text-[10px] font-bold text-amber-400 hover:text-amber-200 flex items-center gap-0.5"
             >
-              <span>{loc('ارتقا به VIP', 'Upgrade')}</span>
               <ChevronRight className="w-3 h-3" />
             </button>
           </div>
 
-          <div className="flex items-center gap-3 overflow-x-auto pb-1.5 no-scrollbar px-1">
+          <div className="flex items-center gap-2.5 overflow-x-auto pb-1 no-scrollbar px-1">
             {vipFemaleUsers.map(user => {
               const isOnline = Boolean(user.online || user.isOnline || user.online_status === 'online');
               return (
@@ -515,12 +510,12 @@ export default function UltraModernHome({
                     setSelectedUser(user);
                     setIsUserProfileModalOpen(true);
                   }}
-                  className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group"
+                  className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
                 >
                   <div className="relative">
-                    {/* Gold Frame with Ambient Glow */}
-                    <div className="w-14 h-14 rounded-2xl p-[2px] bg-gradient-to-b from-amber-300 via-yellow-500 to-orange-600 shadow-[0_0_20px_rgba(245,158,11,0.4)] group-hover:scale-105 transition-all duration-300">
-                      <div className="w-full h-full rounded-[14px] overflow-hidden bg-slate-950 border border-slate-900">
+                    {/* Gold Frame */}
+                    <div className="w-13 h-13 rounded-2xl p-[1.5px] bg-gradient-to-b from-amber-300 via-yellow-500 to-orange-600 shadow-[0_0_12px_rgba(245,158,11,0.3)] group-hover:scale-105 transition-all duration-300">
+                      <div className="w-full h-full rounded-[14px] overflow-hidden bg-slate-950">
                         {user.avatar ? (
                           <img
                             src={user.avatar}
@@ -535,21 +530,15 @@ export default function UltraModernHome({
                       </div>
                     </div>
 
-                    {/* VIP Tag & Crown */}
-                    <div className="absolute -top-1.5 -right-1.5 z-10 px-1.5 py-0.2 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 border border-amber-200 text-slate-950 text-[8px] font-black shadow-md flex items-center gap-0.5">
-                      <Crown className="w-2.5 h-2.5 fill-slate-950 text-slate-950" />
-                      <span>VIP</span>
-                    </div>
-
                     {/* Online Status Dot */}
                     {isOnline && (
-                      <div className="absolute -bottom-1 -left-1 z-10 w-3.5 h-3.5 rounded-full bg-slate-950 flex items-center justify-center">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)] animate-pulse" />
+                      <div className="absolute -bottom-0.5 -left-0.5 z-10 w-3 h-3 rounded-full bg-slate-950 flex items-center justify-center">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,1)] animate-pulse" />
                       </div>
                     )}
                   </div>
 
-                  <span className="text-[10px] font-black text-amber-300 group-hover:text-white max-w-[64px] truncate text-center">
+                  <span className="text-[10px] font-bold text-amber-300 group-hover:text-white max-w-[56px] truncate text-center">
                     {user.name || user.username}
                   </span>
                 </div>
@@ -560,40 +549,32 @@ export default function UltraModernHome({
       )}
 
       {/* =========================================================================
-          4. MAIN USER LIST (GRID):
-          - ONLY female users displayed (both verified and unverified)
-          - Badges: Verified, VIP, Admin/Management, Online/Offline
-          - Live badge on top-left of image for streaming users
-          - +18 Live streams blurred & locked with Lock icon for normal users
-          - Action area: Heart like (no numbers), Message, Video Call / Watch Live
+          4. MAIN USER LIST (GRID)
          ========================================================================= */}
-      <div className="relative z-10 space-y-3">
+      <div className="relative z-10 space-y-2.5">
         {/* Header & Filter Chips */}
         <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]" />
-            <h2 className="text-sm sm:text-base font-black text-white tracking-wide">
-              {loc('استریمرها و کاربران خانم', 'Female Streamers & Users')}
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
+            <h2 className="text-xs sm:text-sm font-black text-white">
+              {loc('کاوش', 'Explore')}
             </h2>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-rose-300 font-bold">
-              {femaleLiveCards.length}
-            </span>
           </div>
 
           {/* Filter Chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
             {[
               { id: 'all', label: loc('همه', 'All') },
               { id: 'online', label: loc('آنلاین', 'Online') },
-              { id: 'live', label: `🔴 ${loc('پخش زنده', 'Live')}` },
+              { id: 'live', label: loc('لایو', 'Live') },
               { id: 'vip', label: 'VIP' }
             ].map(f => (
               <button
                 key={f.id}
                 onClick={() => setActiveFilter(f.id)}
-                className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all whitespace-nowrap ${
+                className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${
                   activeFilter === f.id
-                    ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-md'
+                    ? 'bg-rose-600 text-white shadow'
                     : 'bg-white/5 text-slate-400 hover:text-white border border-white/5'
                 }`}
               >
@@ -605,21 +586,20 @@ export default function UltraModernHome({
 
         {/* User Cards Grid */}
         {femaleLiveCards.length === 0 ? (
-          <div className="p-12 text-center bg-slate-950/70 rounded-3xl border border-rose-500/20 space-y-3">
-            <Radio className="w-10 h-10 text-slate-600 mx-auto animate-pulse" />
-            <p className="text-xs font-bold text-slate-400">
-              {loc('هیچ موردی در این دسته‌بندی یافت نشد.', 'No items found in this category.')}
+          <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-white/5 space-y-2">
+            <Radio className="w-8 h-8 text-slate-600 mx-auto animate-pulse" />
+            <p className="text-xs text-slate-500">
+              {loc('موردی یافت نشد', 'No items found')}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
             {femaleLiveCards.map(card => {
               const isStreaming = card.isLive;
               const isAdult = card.isAdult;
               const isVerifiedUser = card.isVerified;
               const isAdminUser = card.isAdmin;
               
-              // +18 Live streams are locked and blurred for non-VIP, non-Admin users
               const isStreamLocked = isAdult && !isVip && !isUserAdmin && !isUserSuperAdmin;
 
               const handleCardMainClick = () => {
@@ -646,7 +626,7 @@ export default function UltraModernHome({
               return (
                 <div
                   key={card.id}
-                  className="group relative rounded-3xl overflow-hidden bg-slate-950 border border-rose-500/25 hover:border-rose-400/80 transition-all duration-300 flex flex-col justify-between shadow-xl hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(244,63,94,0.35)]"
+                  className="group relative rounded-2xl overflow-hidden bg-slate-950 border border-white/10 hover:border-rose-500/50 transition-all duration-300 flex flex-col justify-between shadow-lg hover:-translate-y-0.5"
                 >
                   {/* Aspect Ratio 3:4 Thumbnail Container */}
                   <div 
@@ -657,91 +637,85 @@ export default function UltraModernHome({
                       <img
                         src={card.thumbnail}
                         alt={card.username}
-                        className={`w-full h-full object-cover transition-transform duration-700 ${
+                        className={`w-full h-full object-cover transition-transform duration-500 ${
                           isStreamLocked ? 'filter blur-md scale-105' : 'group-hover:scale-105'
                         }`}
                       />
                     ) : (
-                      <div className="w-full h-full bg-slate-900 flex items-center justify-center text-slate-500 font-black text-sm">
+                      <div className="w-full h-full bg-slate-900 flex items-center justify-center text-slate-500 font-bold text-sm">
                         {card.username.charAt(0).toUpperCase()}
                       </div>
                     )}
 
-                    {/* Locked +18 Overlay for Normal Users */}
+                    {/* Locked +18 Overlay */}
                     {isStreamLocked && (
-                      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-2.5 text-center z-15">
-                        <div className="w-9 h-9 rounded-full bg-rose-600/30 border border-rose-500/70 flex items-center justify-center mb-1 shadow-[0_0_15px_rgba(244,63,94,0.6)]">
-                          <Lock className="w-4 h-4 text-rose-300" />
+                      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-2 text-center z-15">
+                        <div className="w-8 h-8 rounded-full bg-rose-600/30 border border-rose-500/60 flex items-center justify-center mb-1">
+                          <Lock className="w-3.5 h-3.5 text-rose-300" />
                         </div>
-                        <span className="text-[10px] font-black text-rose-200">
-                          {loc('لایو +۱۸ (قفل)', '18+ Live (Locked)')}
-                        </span>
-                        <span className="text-[8.5px] text-amber-300 font-bold mt-0.5 bg-amber-500/20 px-1.5 py-0.2 rounded-full border border-amber-500/30">
-                          {loc('مخصوص VIP', 'VIP Only')}
+                        <span className="text-[9px] font-black text-rose-200">
+                          VIP 18+
                         </span>
                       </div>
                     )}
 
-                    {/* Dark Seductive Vignette Overlay */}
+                    {/* Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
 
-                    {/* Small Neat LIVE badge on Top-Left of avatar/profile */}
+                    {/* LIVE badge */}
                     {isStreaming && (
-                      <div className="absolute top-2 left-2 z-20 flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-600/95 border border-rose-400 text-[8.5px] font-black text-white shadow-[0_0_12px_rgba(244,63,94,0.9)] backdrop-blur-md animate-pulse pointer-events-none">
+                      <div className="absolute top-2 left-2 z-20 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-600 text-[8px] font-black text-white shadow animate-pulse pointer-events-none">
                         <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                        <span className="tracking-wider">LIVE</span>
-                        {isAdult && <span className="font-mono text-[7.5px] bg-black/40 px-1 py-0.2 rounded">+18</span>}
+                        <span>LIVE</span>
+                        {isAdult && <span className="text-[7px]">18+</span>}
                       </div>
                     )}
 
-                    {/* Top Right Badges: Admin/Management, VIP, Verified, Online/Offline */}
-                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1 pointer-events-none flex-wrap justify-end">
-                      {/* Admin / Senior Management Badge */}
+                    {/* Top Right Badges */}
+                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1 pointer-events-none">
+                      {/* Admin Badge */}
                       {isAdminUser && (
-                        <div className="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-700 border border-purple-400 text-white text-[8px] font-black flex items-center gap-0.5 shadow-md">
-                          <ShieldCheck className="w-2.5 h-2.5 text-purple-200" />
-                          <span>{loc('مدیریت', 'Admin')}</span>
+                        <div className="p-0.5 rounded-md bg-purple-600 text-white shadow">
+                          <ShieldCheck className="w-3 h-3" />
                         </div>
                       )}
 
                       {/* VIP Badge */}
                       {card.isVip && (
-                        <div className="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 border border-amber-200 text-slate-950 text-[8px] font-black flex items-center gap-0.5 shadow-md">
-                          <Crown className="w-2.5 h-2.5 fill-slate-950" />
-                          <span>VIP</span>
+                        <div className="px-1 py-0.2 rounded bg-amber-400 text-slate-950 text-[7.5px] font-black shadow">
+                          VIP
                         </div>
                       )}
 
                       {/* Verified Badge */}
                       {isVerifiedUser && (
-                        <div className="p-0.5 rounded-full bg-cyan-500 text-white shadow-md">
+                        <div className="p-0.5 rounded-full bg-cyan-500 text-white shadow">
                           <CheckCircle2 className="w-3 h-3 text-white fill-cyan-400" />
                         </div>
                       )}
 
-                      {/* Online / Offline Dot Badge */}
-                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-white/10 text-slate-300 text-[8.5px] font-bold">
-                        <span className={`w-1.5 h-1.5 rounded-full ${card.isOnline ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,1)] animate-pulse' : 'bg-slate-500'}`} />
-                        <span>{card.isOnline ? loc('آنلاین', 'Online') : loc('آفلاین', 'Offline')}</span>
-                      </div>
+                      {/* Online Status Dot */}
+                      <span className={`w-2 h-2 rounded-full ${card.isOnline ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,1)]' : 'bg-slate-600'}`} />
                     </div>
 
                     {/* Bottom Info on Thumbnail: Username + Age + Flag */}
-                    <div className="absolute bottom-2 left-2.5 right-2.5 z-10 space-y-0.5 text-right dir-rtl pointer-events-none">
-                      <div className="flex items-center gap-1 text-white font-black text-xs drop-shadow-md truncate">
+                    <div className="absolute bottom-1.5 left-2 right-2 z-10 space-y-0.5 text-right dir-rtl pointer-events-none">
+                      <div className="flex items-center gap-1 text-white font-black text-xs drop-shadow truncate">
                         <span className="truncate">{card.username}</span>
                         {card.age && <span className="text-rose-300 font-mono text-[10px]">,{card.age}</span>}
-                        <span className="text-xs">{card.countryFlag}</span>
+                        <span className="text-[11px]">{card.countryFlag}</span>
                       </div>
-                      <p className="text-[9px] text-slate-300/80 truncate font-medium">
-                        {card.title}
-                      </p>
+                      {card.title ? (
+                        <p className="text-[9px] text-slate-300/80 truncate font-normal">
+                          {card.title}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
 
-                  {/* Card Action Footer: Heart Like (pure active/dim, no count) + Direct Message + Action Button */}
-                  <div className="p-1.5 sm:p-2 bg-slate-950/95 border-t border-white/10 flex items-center gap-1.5">
-                    {/* Small Heart Like Button (strictly without number/count) */}
+                  {/* Card Action Footer */}
+                  <div className="p-1.5 bg-slate-950 border-t border-white/5 flex items-center gap-1">
+                    {/* Heart Like Button */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -749,17 +723,16 @@ export default function UltraModernHome({
                           handleToggleLikeUserCard(card.userId, e);
                         }
                       }}
-                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl border flex items-center justify-center transition-all active:scale-90 shrink-0 ${
+                      className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all active:scale-90 shrink-0 ${
                         likedUsersMap[card.userId]
-                          ? 'bg-rose-500/25 border-rose-500 text-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.5)]'
-                          : 'bg-white/5 hover:bg-rose-500/20 border-white/10 text-slate-400 hover:text-rose-400'
+                          ? 'bg-rose-500/20 border-rose-500 text-rose-500'
+                          : 'bg-white/5 hover:bg-rose-500/10 border-white/5 text-slate-400 hover:text-rose-400'
                       }`}
-                      title={loc('لایک', 'Like')}
                     >
-                      <Heart className={`w-3.5 h-3.5 ${likedUsersMap[card.userId] ? 'fill-rose-500 text-rose-500 scale-110' : 'text-slate-400'}`} />
+                      <Heart className={`w-3.5 h-3.5 ${likedUsersMap[card.userId] ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} />
                     </button>
 
-                    {/* Direct Message (پیام) Button */}
+                    {/* Message Button */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -775,13 +748,12 @@ export default function UltraModernHome({
                           setActiveTab('messages');
                         }
                       }}
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 flex items-center justify-center transition-all active:scale-90 shrink-0"
-                      title={loc('ارسال پیام', 'Send Message')}
+                      className="w-7 h-7 rounded-lg border border-white/5 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-cyan-300 flex items-center justify-center transition-all active:scale-90 shrink-0"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                     </button>
 
-                    {/* Action Button: Watch Live (if streaming) or Video Call (if not streaming) */}
+                    {/* Action Button: Live or Call */}
                     {isStreaming ? (
                       <button
                         onClick={(e) => {
@@ -802,21 +774,21 @@ export default function UltraModernHome({
                             }
                           }
                         }}
-                        className={`flex-1 h-7 sm:h-8 rounded-xl font-black text-[10px] sm:text-[11px] flex items-center justify-center gap-1 shadow-lg transition-all active:scale-95 border ${
+                        className={`flex-1 h-7 rounded-lg font-black text-[10px] flex items-center justify-center gap-1 transition-all active:scale-95 ${
                           isStreamLocked
-                            ? 'bg-gradient-to-r from-amber-600 via-rose-700 to-slate-800 text-amber-200 border-amber-400/40 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
-                            : 'bg-gradient-to-r from-rose-600 via-red-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border-rose-400/60 animate-pulse'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            : 'bg-rose-600 hover:bg-rose-500 text-white shadow animate-pulse'
                         }`}
                       >
                         {isStreamLocked ? (
                           <>
-                            <Lock className="w-3 h-3 text-amber-200" />
-                            <span>{loc('قفل (VIP)', 'VIP Lock')}</span>
+                            <Lock className="w-3 h-3" />
+                            <span>VIP</span>
                           </>
                         ) : (
                           <>
-                            <Radio className="w-3 h-3 animate-pulse" />
-                            <span>{loc('ورود به لایو', 'Watch Live')}</span>
+                            <Radio className="w-3 h-3" />
+                            <span>{loc('لایو', 'Live')}</span>
                           </>
                         )}
                       </button>
@@ -832,10 +804,10 @@ export default function UltraModernHome({
                           };
                           handleInitiateCall(targetUser, 'video');
                         }}
-                        className="flex-1 h-7 sm:h-8 rounded-xl font-black text-[10px] sm:text-[11px] flex items-center justify-center gap-1 shadow-lg transition-all active:scale-95 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40"
+                        className="flex-1 h-7 rounded-lg font-black text-[10px] flex items-center justify-center gap-1 transition-all active:scale-95 bg-cyan-600/80 hover:bg-cyan-500 text-white"
                       >
                         <Video className="w-3 h-3" />
-                        <span>{loc('تماس تصویری', 'Video Call')}</span>
+                        <span>{loc('تماس', 'Call')}</span>
                       </button>
                     )}
                   </div>
@@ -847,24 +819,20 @@ export default function UltraModernHome({
       </div>
 
       {/* =========================================================================
-          5. “START LIVE” FLOATING ACTION BUTTON
-          - STRICT RULE: Visible ONLY for Admin/Management and Approved Female Streamers
-          - Completely HIDDEN for unapproved females and regular users
+          5. “START LIVE” FAB (ADMIN & APPROVED FEMALE STREAMERS ONLY)
          ========================================================================= */}
       {canAccessBroadcasting && (
-        <div className="fixed bottom-24 right-4 z-40 flex flex-col items-end gap-2.5 pointer-events-auto animate-bounce-gentle">
+        <div className="fixed bottom-24 right-4 z-40 flex flex-col items-end gap-2.5 pointer-events-auto">
           <button
             onClick={() => {
               if (handleOpenLiveBroadcast) {
                 handleOpenLiveBroadcast();
               }
             }}
-            className="relative px-5 py-3 rounded-full bg-gradient-to-r from-rose-600 via-red-600 to-pink-600 text-white font-black text-xs flex items-center gap-2.5 shadow-[0_0_35px_rgba(244,63,94,0.9)] border-2 border-white/30 hover:scale-105 active:scale-95 transition-all group"
-            title={loc('شروع پخش زنده', 'Start Live Broadcast')}
+            className="px-4 py-2.5 rounded-full bg-gradient-to-r from-rose-600 to-pink-600 text-white font-black text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(244,63,94,0.7)] border border-white/20 hover:scale-105 active:scale-95 transition-all"
           >
-            <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
-            <Video className="w-4 h-4 group-hover:scale-125 transition-transform drop-shadow" />
-            <span className="tracking-wide">{loc('شروع لایو', 'Start Live')}</span>
+            <Video className="w-3.5 h-3.5" />
+            <span>{loc('شروع لایو', 'Start Live')}</span>
           </button>
         </div>
       )}
