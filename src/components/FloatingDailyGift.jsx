@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Gift, Sparkles, X } from 'lucide-react';
+import { Gift, Sparkles } from 'lucide-react';
 import { safeStorage } from '../utils/safeStorage';
 
 /**

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Phone, PhoneOff, Video, Mic, Crown, Clock } from 'lucide-react';
+import { Phone, PhoneOff, Video, Mic, Crown } from 'lucide-react';
 
 export default function IncomingCallBanner({
   incomingCall,

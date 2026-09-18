@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Gift, Flame, Trophy, Coins, RotateCw, X, Award, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Coins, RotateCw, X } from 'lucide-react';
 import { apiWallet } from '../../services/api';
 
 const WHEEL_PRIZES = [

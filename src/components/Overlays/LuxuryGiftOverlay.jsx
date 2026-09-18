@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Sparkles, Crown, Zap, Flame, Rocket, Star, Heart, X } from 'lucide-react';
+import { Sparkles, Star } from 'lucide-react';
 
 export default function LuxuryGiftOverlay({ giftData, onComplete }) {
   const [stage, setStage] = useState('entering'); // entering -> active -> exiting

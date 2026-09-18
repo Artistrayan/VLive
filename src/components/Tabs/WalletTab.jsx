@@ -1,8 +1,7 @@
-import { apiVip, apiWallet, apiReferral } from '../../services/api';
+import { apiWallet, apiReferral } from '../../services/api';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import React, { useState, useEffect } from 'react';
 import { APP_CONFIG } from '../../config';
-// from 'react';
 import { safeStorage } from '../../utils/safeStorage';
 import { economyService } from '../../services/economyService';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
@@ -12,7 +11,6 @@ import {
   TrendingUp, BarChart2, Video, MessageSquare, Star, Clock, AlertTriangle, Filter, Search, Plus, Radio, PhoneCall, Flame, Palette, BarChart3, Coins, Zap, Target, Calendar,
   Play, CheckCircle2, Heart, Eye, Settings, Shield, LifeBuoy, Link, Send, Camera, Trophy, ShieldAlert, UserCheck
 } from 'lucide-react';
-import { CoinsIcon } from '../CommonBadges';
 
 export default function WalletTab(props) {
   const {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Phone, PhoneOff, Video, Mic, ShieldCheck, Sparkles, Coins, Clock } from 'lucide-react';
+import { Phone, PhoneOff, Video, Mic, ShieldCheck, Coins, Clock } from 'lucide-react';
 
 export default function IncomingCallModal({
   incomingCall,

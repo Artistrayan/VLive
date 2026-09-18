@@ -4,7 +4,7 @@ import { calculateAge } from './businessRules';
 import { fetchLiveKitToken, getCanonicalLiveKitRoomName, getLiveKitConfig } from './livekitService';
 import { safeStorage } from '../utils/safeStorage';
 import { getStoredToken, setStoredToken, getUserId, setStoredSession } from '../utils/authSession';
-import { verifyAdminAccess, recordAdminAuditLog, ADMIN_TELEGRAM_ID } from './adminGuard';
+import { verifyAdminAccess, recordAdminAuditLog } from './adminGuard';
 
 export { safeStorage, presenceService, calculateAge, getStoredToken, setStoredToken, getUserId, setStoredSession };
 
@@ -6093,5 +6093,3 @@ export const apiSupport = {
     }
   }
 };
-
-export const apiChats = apiMessages;

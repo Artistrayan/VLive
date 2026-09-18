@@ -8,7 +8,7 @@ import {
   Radio, Camera, Play, Flame, Star, Lock, Eye, AlertCircle, ShieldCheck,
   Zap, Award, Globe, Briefcase, GraduationCap, Copy, Check, Users, Shield
 } from 'lucide-react';
-import { CoinsIcon, VerifiedBadge, VipStatusBadge, StreamerScoresBadges } from '../components/CommonBadges';
+import { VerifiedBadge, VipStatusBadge, StreamerScoresBadges } from '../components/CommonBadges';
 
 export default function UserProfileViewModal({
   isOpen,

@@ -1,9 +1,8 @@
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { apiVip, apiSupport } from '../services/api';
 import { supabase } from '../supabaseClient';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { APP_CONFIG } from '../config';
-// from 'react';
 import { Crown, ShieldAlert, X, Clock, CreditCard, FileText, CheckCircle2, HelpCircle } from 'lucide-react';
 
 export default function VipAndRewardModals(props) {

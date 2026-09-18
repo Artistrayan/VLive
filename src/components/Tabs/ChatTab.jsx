@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { VerifiedBadge } from '../CommonBadges';
 import { supabase } from '../../supabaseClient';
-import { apiMessages, apiHome, getUserId, presenceService, calculateAge, getCanonicalConversationId, formatUserDisplayName, formatUserUsername } from '../../services/api';
+import { apiMessages, apiHome, getUserId, presenceService, getCanonicalConversationId, formatUserDisplayName, formatUserUsername } from '../../services/api';
 import { 
   Search, Plus, Filter, MessageSquare, PhoneCall, Video, Pin, BellOff, Trash2, 
   CheckCheck, Send, Mic, Image, Paperclip, Smile, Gift, Sparkles, X, ChevronRight,

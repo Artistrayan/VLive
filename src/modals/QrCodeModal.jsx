@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { X, Copy, Share2, Download, Check, QrCode, Scan, User, Sparkles, Crown, Shield } from 'lucide-react';
+import { X, Copy, Share2, Download, Check, QrCode, Scan, User, Sparkles, Crown } from 'lucide-react';
 
 export default function QrCodeModal({
   isOpen,

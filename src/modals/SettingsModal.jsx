@@ -3,7 +3,6 @@ import React from 'react';
 import { safeStorage } from '../utils/safeStorage';
 import { supabase } from '../supabaseClient';
 import { apiCalls, apiProfile, apiSupport, getUserId } from '../services/api';
-import { cameraPermissionService } from '../services/cameraPermissionService';
 import { 
   Settings, X, Search, User, ShieldCheck, Bell, Lock, Globe, Palette,
   Volume2, Video, Database, Award, HelpCircle, FileText, Info, Camera,

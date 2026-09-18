@@ -6,8 +6,7 @@ import {
 } from 'lucide-react';
 import { helpCenterService, FAQ_CATEGORIES } from '../services/helpCenterService';
 import { economyService } from '../services/economyService';
-import { apiSupport, getUserId } from '../services/api';
-import { safeStorage } from '../utils/safeStorage';
+import { apiSupport } from '../services/api';
 import { loc } from '../utils/i18n';
 
 export default function HelpCenterModal({ 

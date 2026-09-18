@@ -8,7 +8,7 @@ import {
   ZoomIn, ZoomOut, RotateCw, Maximize2, Download, Image as ImageIcon,
   ExternalLink, Layers, Check, User
 } from 'lucide-react';
-import { STREAMER_LEVELS, AVAILABLE_BADGES, getStreamerScores, detectAntiCheatAnomalies } from '../../services/streamerScoring';
+import { STREAMER_LEVELS, getStreamerScores } from '../../services/streamerScoring';
 
 // Component for High-Definition, crisp image display with auto-fallback & progressive loading for slow internet
 function HighQualityKycImage({ src, alt, className = "", onClick, badge = null, fallbackText = "بدون تصویر", isZoomable = true }) {

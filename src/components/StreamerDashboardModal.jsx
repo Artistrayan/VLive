@@ -5,8 +5,8 @@ import {
   CreditCard, Bell, Sparkles, CheckCircle2, ChevronLeft, ChevronRight, 
   BarChart3, RefreshCw, AlertCircle, FileText, HelpCircle, Lock
 } from 'lucide-react';
-import { apiStreamer, apiWallet } from '../services/api';
-import { PLATFORM_RULES, canAccessCreatorStudio } from '../services/businessRules';
+import { apiStreamer } from '../services/api';
+import { PLATFORM_RULES } from '../services/businessRules';
 import { getStreamerScores } from '../services/streamerScoring';
 import { safeStorage } from '../utils/safeStorage';
 

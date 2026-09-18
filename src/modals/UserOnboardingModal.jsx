@@ -6,9 +6,8 @@ import {
 } from 'lucide-react';
 import { safeStorage } from '../utils/safeStorage';
 import { cameraPermissionService } from '../services/cameraPermissionService';
-import { apiProfile, apiAdmin, apiAuth } from '../services/api';
+import { apiProfile, apiAuth } from '../services/api';
 import { compressImageFile } from '../services/performance';
-import { interestService } from '../services/interestService';
 
 const AVAILABLE_COUNTRIES = [
   { code: 'IR', name: 'ایران (Iran)', flag: '🇮🇷' },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Coins, CheckCircle, BadgeCheck, Crown, ShieldCheck, Award, Sparkles, Flame, Zap } from 'lucide-react';
+import { Coins, CheckCircle, BadgeCheck, Crown, Sparkles } from 'lucide-react';
 import { getStreamerScores } from '../services/streamerScoring';
 
 export function CoinsIcon({ className = "w-4 h-4 text-amber-400" }) {

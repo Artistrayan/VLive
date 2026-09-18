@@ -2,7 +2,7 @@ import { useVisualUiEditor } from '../../context/VisualUiEditorContext';
 import React, { useState, useEffect } from 'react';
 import VisualSectionWrapper from '../VisualUiEditor/VisualSectionWrapper';
 import { safeStorage } from '../../utils/safeStorage';
-import { getUserId, apiProfile, apiSocial, calculateAge } from '../../services/api';
+import { getUserId, apiProfile, calculateAge } from '../../services/api';
 import { isUserAnAdmin } from '../../utils/usernameUtils';
 import { 
   Camera, Edit3, Settings, ShieldAlert, Sparkles, QrCode, Lock, Crown,
@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { interestService } from "../../services/interestService.js";
 import InterestsModal from "./InterestsModal.jsx";
-import { CoinsIcon, VerifiedBadge, VipStatusBadge } from '../CommonBadges';
+import { VerifiedBadge } from '../CommonBadges';
 
 
 // Helper to localize numbers according to current active language
