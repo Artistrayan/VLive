@@ -88,6 +88,8 @@ export default function UltraModernHome({
   const handleModeChange = (mode) => {
     if (setLiveMode) setLiveMode(mode);
     setInternalLiveMode(mode);
+    // Reset sub-filter to 'all' when switching top mode tabs
+    setActiveFilter('all');
   };
 
   // Search input state
@@ -195,6 +197,36 @@ export default function UltraModernHome({
       }
     });
     return list;
+  }, [usersList]);
+
+  // 2.1 WEEKLY TOP STREAMERS (FOR NORMAL LIVE TAB): Top ranked female streamers
+  const weeklyTopStreamers = useMemo(() => {
+    const list = [];
+    const seen = new Set();
+    (usersList || []).forEach(u => {
+      if (!u || u.status === 'banned' || u.isBanned) return;
+      if (!isFemaleProfile(u)) return;
+      const uid = String(u.id || u.username);
+      if (seen.has(uid)) return;
+      seen.add(uid);
+
+      const score = getStreamerScores(u);
+      const level = Number(u.level || u.user_level || score.level || 1);
+      const weeklyLikes = Number(u.weekly_likes || u.likes_count || u.likes || 0);
+      const giftsCount = Number(u.received_gifts_count || u.gifts_count || 0);
+
+      list.push({
+        user: u,
+        level,
+        weeklyLikes,
+        giftsCount,
+        score: (level * 100) + weeklyLikes + (giftsCount * 5)
+      });
+    });
+
+    return list
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
   }, [usersList]);
 
   // 3. MAIN USER LIST (GRID): Only Female Users displayed (Males are completely hidden)
@@ -423,85 +455,6 @@ export default function UltraModernHome({
       )}
 
       {/* =========================================================================
-          1. STORIES ROW (HORIZONTAL SCROLL)
-         ========================================================================= */}
-      {((isFemaleUser || isUserAdmin) || femaleStories.length > 0) && (
-        <div className="relative z-10 bg-slate-950/70 backdrop-blur-xl rounded-2xl p-2.5 border border-white/5 shadow-md">
-          <div className="flex items-center gap-3 overflow-x-auto pb-0.5 no-scrollbar px-1">
-            {/* Add Story Button (Visible for female users or admin) */}
-            {(isFemaleUser || isUserAdmin) && (
-              <div
-                onClick={() => setIsAddStoryModalOpen(true)}
-                className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
-              >
-                <div className="w-13 h-13 rounded-full border-2 border-dashed border-rose-500/80 bg-rose-500/10 flex items-center justify-center group-hover:border-rose-400 group-hover:bg-rose-500/20 group-hover:scale-105 transition-all duration-300">
-                  <Plus className="w-5 h-5 text-rose-400 group-hover:scale-110 transition-transform" />
-                </div>
-                <span className="text-[10px] font-bold text-rose-300 group-hover:text-white max-w-[56px] truncate text-center">
-                  {loc('افزودن', 'Add')}
-                </span>
-              </div>
-            )}
-
-            {/* Female Story Ring Avatars */}
-            {femaleStories.map(group => {
-              const isGroupVip = group.user?.isVip;
-              return (
-                <div
-                  key={group.id}
-                  onClick={() => setActiveStoryView({ group, currentIndex: 0 })}
-                  className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
-                >
-                  <div className="relative">
-                    {/* Outer Ring */}
-                    <div className={`w-13 h-13 rounded-full p-[2px] transition-all duration-300 group-hover:scale-105 ${
-                      isGroupVip
-                        ? 'bg-gradient-to-tr from-amber-300 via-yellow-400 to-amber-600 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-                        : 'bg-gradient-to-tr from-rose-500 via-pink-500 to-purple-500 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
-                    }`}>
-                      <div className="w-full h-full rounded-full overflow-hidden bg-slate-950 border border-slate-950">
-                        {group.user?.avatar ? (
-                          <img
-                            src={group.user.avatar}
-                            alt={group.user.name || group.user.username}
-                            className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-slate-800 flex items-center justify-center text-xs font-black text-rose-300">
-                            {(group.user?.name || group.user?.username || 'F').charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* VIP Crown */}
-                    {isGroupVip && (
-                      <div className="absolute -top-1 -right-1 z-10 w-3.5 h-3.5 rounded-full bg-gradient-to-tr from-amber-300 to-amber-500 shadow flex items-center justify-center pointer-events-none">
-                        <Crown className="w-2 h-2 text-slate-950 fill-slate-950" />
-                      </div>
-                    )}
-
-                    {/* Unread Counter Badge */}
-                    {group.items.length > 1 && (
-                      <div className="absolute -bottom-0.5 -left-0.5 z-10 px-1 rounded-full bg-rose-600 text-white font-mono text-[7.5px] font-black border border-slate-950">
-                        {group.items.length}
-                      </div>
-                    )}
-                  </div>
-
-                  <span className={`text-[10px] font-bold max-w-[56px] truncate text-center ${
-                    isGroupVip ? 'text-amber-300' : 'text-slate-300'
-                  }`}>
-                    {group.user?.name || group.user?.username}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
           2. THREE MODE TABS (CLEAN & CONCISE)
           - 1) همه (All female users)
           - 2) لایو (Live streams)
@@ -549,6 +502,170 @@ export default function UltraModernHome({
           </button>
         </div>
       </div>
+
+      {/* =========================================================================
+          1. STORIES ROW (HORIZONTAL SCROLL) - EXCLUSIVELY IN "همه" (ALL) TAB
+         ========================================================================= */}
+      {activeMode === 'all' && ((isFemaleUser || isUserAdmin) || femaleStories.length > 0) && (
+        <div className="relative z-10 bg-slate-950/70 backdrop-blur-xl rounded-2xl p-2 border border-white/5 shadow-md">
+          <div className="flex items-center gap-2.5 overflow-x-auto pb-0.5 no-scrollbar px-1">
+            {/* Add Story Button (Visible for female users or admin) */}
+            {(isFemaleUser || isUserAdmin) && (
+              <div
+                onClick={() => setIsAddStoryModalOpen(true)}
+                className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+              >
+                <div className="w-10 h-10 rounded-full border-2 border-dashed border-rose-500/80 bg-rose-500/10 flex items-center justify-center group-hover:border-rose-400 group-hover:bg-rose-500/20 group-hover:scale-105 transition-all duration-300">
+                  <Plus className="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform" />
+                </div>
+                <span className="text-[9.5px] font-bold text-rose-300 group-hover:text-white max-w-[48px] truncate text-center">
+                  {loc('افزودن', 'Add')}
+                </span>
+              </div>
+            )}
+
+            {/* Female Story Ring Avatars - Standard Compact 40px (w-10 h-10) */}
+            {femaleStories.map(group => {
+              const isGroupVip = group.user?.isVip;
+              return (
+                <div
+                  key={group.id}
+                  onClick={() => setActiveStoryView({ group, currentIndex: 0 })}
+                  className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                >
+                  <div className="relative">
+                    {/* Outer Ring */}
+                    <div className={`w-10 h-10 rounded-full p-[1.5px] transition-all duration-300 group-hover:scale-105 ${
+                      isGroupVip
+                        ? 'bg-gradient-to-tr from-amber-300 via-yellow-400 to-amber-600 shadow-[0_0_10px_rgba(245,158,11,0.4)]'
+                        : 'bg-gradient-to-tr from-rose-500 via-pink-500 to-purple-500 shadow-[0_0_8px_rgba(244,63,94,0.3)]'
+                    }`}>
+                      <div className="w-full h-full rounded-full overflow-hidden bg-slate-950 border border-slate-950">
+                        {group.user?.avatar ? (
+                          <img
+                            src={group.user.avatar}
+                            alt={group.user.name || group.user.username}
+                            className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-slate-800 flex items-center justify-center text-[10px] font-black text-rose-300">
+                            {(group.user?.name || group.user?.username || 'F').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* VIP Crown */}
+                    {isGroupVip && (
+                      <div className="absolute -top-1 -right-1 z-10 w-3 h-3 rounded-full bg-gradient-to-tr from-amber-300 to-amber-500 shadow flex items-center justify-center pointer-events-none">
+                        <Crown className="w-1.5 h-1.5 text-slate-950 fill-slate-950" />
+                      </div>
+                    )}
+
+                    {/* Unread Counter Badge */}
+                    {group.items.length > 1 && (
+                      <div className="absolute -bottom-0.5 -left-0.5 z-10 px-0.8 rounded-full bg-rose-600 text-white font-mono text-[7px] font-black border border-slate-950 leading-none py-0.5">
+                        {group.items.length}
+                      </div>
+                    )}
+                  </div>
+
+                  <span className={`text-[9.5px] font-bold max-w-[48px] truncate text-center ${
+                    isGroupVip ? 'text-amber-300' : 'text-slate-300'
+                  }`}>
+                    {group.user?.name || group.user?.username}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          2. WEEKLY TOP STREAMERS BAR (FOR NORMAL LIVE TAB)
+         ========================================================================= */}
+      {activeMode === 'normal' && weeklyTopStreamers.length > 0 && (
+        <div className="relative z-10 bg-slate-950/70 backdrop-blur-xl rounded-2xl p-2.5 border border-cyan-500/20 shadow-md">
+          <div className="flex items-center justify-between pb-1.5 px-1">
+            <div className="flex items-center gap-1.5">
+              <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+              <h3 className="text-xs font-black text-cyan-200 tracking-wide">
+                {loc('برترین استریمرهای هفتگی', 'Weekly Top Streamers')}
+              </h3>
+            </div>
+            <span className="text-[10px] font-bold text-cyan-400 font-mono">
+              TOP 10
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar px-1">
+            {weeklyTopStreamers.map((item, idx) => {
+              const u = item.user;
+              const isOnline = Boolean(u.online || u.isOnline || u.online_status === 'online');
+              const rank = idx + 1;
+              const rankColor = rank === 1 ? 'from-amber-300 via-yellow-400 to-amber-600 shadow-[0_0_12px_rgba(245,158,11,0.5)]' :
+                                rank === 2 ? 'from-slate-200 via-gray-300 to-slate-400 shadow-[0_0_10px_rgba(203,213,225,0.4)]' :
+                                rank === 3 ? 'from-amber-600 via-orange-600 to-amber-800 shadow-[0_0_10px_rgba(217,119,6,0.4)]' :
+                                'from-cyan-500 to-blue-600';
+
+              return (
+                <div
+                  key={u.id || u.username}
+                  onClick={() => {
+                    setSelectedUser(u);
+                    setIsUserProfileModalOpen(true);
+                  }}
+                  className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                >
+                  <div className="relative">
+                    {/* Rank Badge */}
+                    <div className={`absolute -top-1.5 -left-1.5 z-20 w-4 h-4 rounded-full flex items-center justify-center font-black text-[8.5px] text-slate-950 shadow-md ${
+                      rank === 1 ? 'bg-gradient-to-r from-amber-300 to-yellow-400 ring-1 ring-amber-200' :
+                      rank === 2 ? 'bg-gradient-to-r from-slate-200 to-slate-300 ring-1 ring-white' :
+                      rank === 3 ? 'bg-gradient-to-r from-amber-600 to-orange-500 text-white ring-1 ring-amber-400' :
+                      'bg-cyan-600 text-white'
+                    }`}>
+                      {rank}
+                    </div>
+
+                    {/* Avatar Ring */}
+                    <div className={`w-11 h-11 rounded-2xl p-[1.5px] bg-gradient-to-tr ${rankColor} group-hover:scale-105 transition-all duration-300`}>
+                      <div className="w-full h-full rounded-[14px] overflow-hidden bg-slate-950">
+                        {u.avatar ? (
+                          <img
+                            src={u.avatar}
+                            alt={u.name || u.username}
+                            className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-slate-800 flex items-center justify-center text-xs font-black text-cyan-300">
+                            {(u.name || u.username || 'S').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Online Dot */}
+                    {isOnline && (
+                      <div className="absolute -bottom-0.5 -right-0.5 z-10 w-3 h-3 rounded-full bg-slate-950 flex items-center justify-center">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,1)] animate-pulse" />
+                      </div>
+                    )}
+                  </div>
+
+                  <span className="text-[10px] font-bold text-slate-200 group-hover:text-cyan-300 max-w-[56px] truncate text-center">
+                    {u.name || u.username}
+                  </span>
+                  <span className="text-[8.5px] font-mono font-bold text-cyan-400 -mt-0.5">
+                    Lv.{item.level}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* =========================================================================
           3. VIP CAROUSEL
@@ -638,49 +755,39 @@ export default function UltraModernHome({
             </span>
           </div>
 
-          {/* Sub-filters Chips Bar */}
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
-            {(activeMode === 'all'
-              ? [
-                  { id: 'all', label: loc('همه', 'All'), icon: Sparkles },
-                  { id: 'online', label: loc('آنلاین', 'Online'), isDot: true },
-                  { id: 'top_level', label: loc('برترین', 'Top Rank'), icon: Trophy },
-                  { id: 'hot', label: loc('داغ', 'Hot'), icon: Flame },
-                  { id: 'most_liked', label: loc('محبوب‌ترین', 'Most Popular'), icon: Heart },
-                  { id: 'followed', label: loc('فالو', 'Following'), icon: UserCheck }
-                ]
-              : [
-                  { id: 'all', label: loc('همه', 'All'), icon: Sparkles },
-                  { id: 'online', label: loc('آنلاین', 'Online'), isDot: true },
-                  { id: 'live', label: loc('لایو', 'Live'), icon: Radio },
-                  { id: 'top_level', label: loc('برترین', 'Top Rank'), icon: Trophy },
-                  { id: 'hot', label: loc('داغ', 'Hot'), icon: Flame },
-                  { id: 'most_liked', label: loc('محبوب‌ترین', 'Most Popular'), icon: Heart },
-                  { id: 'vip', label: 'VIP', icon: Crown },
-                  { id: 'followed', label: loc('فالو', 'Following'), icon: UserCheck }
-                ]
-            ).map(f => {
-              const IconComp = f.icon;
-              const isSelected = activeFilter === f.id;
-              return (
-                <button
-                  key={f.id}
-                  onClick={() => setActiveFilter(f.id)}
-                  className={`px-2.5 py-1 rounded-xl text-[10.5px] font-bold transition-all whitespace-nowrap flex items-center gap-1 ${
-                    isSelected
-                      ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-md scale-[1.02]'
-                      : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 border border-white/5'
-                  }`}
-                >
-                  {f.isDot && (
-                    <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-400 animate-pulse'}`} />
-                  )}
-                  {IconComp && <IconComp className={`w-3 h-3 ${isSelected ? 'text-white' : 'text-slate-400'}`} />}
-                  <span>{f.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          {/* Sub-filters Chips Bar: Exclusively visible in 'همه' (All) Tab */}
+          {activeMode === 'all' && (
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+              {[
+                { id: 'all', label: loc('همه', 'All'), icon: Sparkles },
+                { id: 'online', label: loc('آنلاین', 'Online'), isDot: true },
+                { id: 'top_level', label: loc('برترین', 'Top Rank'), icon: Trophy },
+                { id: 'hot', label: loc('داغ', 'Hot'), icon: Flame },
+                { id: 'most_liked', label: loc('محبوب‌ترین', 'Most Popular'), icon: Heart },
+                { id: 'followed', label: loc('فالو', 'Following'), icon: UserCheck }
+              ].map(f => {
+                const IconComp = f.icon;
+                const isSelected = activeFilter === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => setActiveFilter(f.id)}
+                    className={`px-2.5 py-1 rounded-xl text-[10.5px] font-bold transition-all whitespace-nowrap flex items-center gap-1 ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-md scale-[1.02]'
+                        : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 border border-white/5'
+                    }`}
+                  >
+                    {f.isDot && (
+                      <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-400 animate-pulse'}`} />
+                    )}
+                    {IconComp && <IconComp className={`w-3 h-3 ${isSelected ? 'text-white' : 'text-slate-400'}`} />}
+                    <span>{f.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* User Cards Grid */}
