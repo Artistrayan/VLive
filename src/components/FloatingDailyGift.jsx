@@ -131,35 +131,49 @@ export default function FloatingDailyGift({ onClick, userId, onClaimSuccess }) {
     >
       <div className="relative flex flex-col items-center justify-center">
         
-        {/* Glowing Pulsing Ring */}
-        <div className="absolute inset-0 -m-2 rounded-full bg-gradient-to-r from-amber-500 via-pink-500 to-yellow-400 opacity-70 blur-md animate-pulse group-hover:opacity-100 transition duration-300" />
+        {/* Dynamic Glowing Aura */}
+        <div className="absolute inset-0 -m-4 rounded-full bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 opacity-40 blur-xl animate-[pulse_3s_ease-in-out_infinite] group-hover:opacity-70 transition duration-500" />
+        <div className="absolute inset-0 -m-2 rounded-full bg-gradient-to-tr from-amber-300 via-yellow-200 to-orange-400 opacity-60 blur-md animate-spin group-hover:opacity-100 transition duration-300" style={{ animationDuration: '8s' }} />
         
-        {/* Main Floating Gift Box Card */}
-        <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 via-pink-500 to-rose-600 p-0.5 shadow-2xl shadow-pink-600/50 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center">
-          <div className="w-full h-full rounded-[14px] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center relative overflow-hidden border border-amber-300/40">
+        {/* Advanced 3D Sphere */}
+        <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-yellow-300 via-amber-500 to-orange-600 p-[2px] shadow-[0_0_30px_rgba(245,158,11,0.6)] hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center animate-[float_4s_ease-in-out_infinite]">
+          <div className="w-full h-full rounded-full bg-slate-900/80 backdrop-blur-xl flex flex-col items-center justify-center relative overflow-hidden shadow-[inset_0_4px_10px_rgba(0,0,0,0.5)] border border-yellow-300/50">
             
-            {/* Animated Light Sweep */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+            {/* Inner Glare / Reflection */}
+            <div className="absolute top-0 left-1/4 right-1/4 h-1/3 bg-gradient-to-b from-white/40 to-transparent rounded-full blur-[2px] pointer-events-none" />
             
-            {/* Gift Icon & Sparkle */}
-            <div className="relative">
-              <Gift className="w-7 h-7 text-amber-300 animate-bounce" />
-              <Sparkles className="w-3.5 h-3.5 text-yellow-200 absolute -top-1 -right-1 animate-spin text-[10px]" style={{ animationDuration: '4s' }} />
+            {/* Animated Laser Sweep */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-yellow-100/40 to-transparent -translate-x-full animate-[shimmer_3s_infinite] pointer-events-none" />
+            
+            {/* Gift Icon & Sparkles */}
+            <div className="relative transform group-hover:rotate-12 transition-transform duration-300 mt-0.5">
+              <Gift className="w-7 h-7 text-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.8)]" />
+              <Sparkles className="w-4 h-4 text-white absolute -top-2 -right-2 animate-ping" style={{ animationDuration: '2s' }} />
+              <Sparkles className="w-3 h-3 text-amber-200 absolute -bottom-1 -left-2 animate-pulse" />
             </div>
             
             {/* Label */}
-            <span className="text-[9px] font-black text-amber-300 mt-0.5 tracking-tight">
+            <span className="text-[9px] font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-400 mt-1 tracking-widest drop-shadow-sm uppercase">
               {window.loc ? window.loc('هدیه', 'GIFT') : 'GIFT'}
             </span>
           </div>
         </div>
 
-        {/* Top Floating Notification Badge */}
-        <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 border border-white text-[9px] font-bold text-white flex items-center justify-center shadow animate-ping" />
-        <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 border border-white text-[9px] font-bold text-white flex items-center justify-center shadow">
+        {/* Floating Notification Badge */}
+        <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-tr from-rose-500 to-red-600 border-2 border-slate-900 text-[10px] font-black text-white flex items-center justify-center shadow-lg shadow-rose-500/50 animate-bounce">
           1
         </div>
       </div>
+      
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes shimmer {
+          100% { transform: translateX(100%); }
+        }
+      `}} />
     </div>
   );
 }

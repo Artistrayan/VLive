@@ -455,92 +455,24 @@ export default function UltraModernHome({
       )}
 
       {/* =========================================================================
-          2. THREE MODE TABS (CLEAN & CONCISE)
-          - 1) همه (All female users)
-          - 2) لایو (Live streams)
-          - 3) ۱۸+ (Live +18)
+          1. STORIES ROW (HORIZONTAL SCROLL) - ABOVE TABS
          ========================================================================= */}
-      <div className="relative z-10 rounded-2xl bg-slate-950/85 backdrop-blur-2xl border border-white/10 p-1">
-        <div className="grid grid-cols-3 gap-1">
-          {/* Tab 1: All (همه) */}
-          <button
-            onClick={() => handleModeChange('all')}
-            className={`py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs transition-all duration-300 ${
-              activeMode === 'all'
-                ? 'bg-gradient-to-r from-emerald-950/60 via-emerald-600/40 to-teal-950/60 text-emerald-200 border border-emerald-400/80 shadow-[0_0_15px_rgba(52,211,153,0.3)]'
-                : 'text-slate-400 hover:text-emerald-300 hover:bg-white/5'
-            }`}
-          >
-            <Sparkles className={`w-3.5 h-3.5 ${activeMode === 'all' ? 'text-emerald-300' : 'text-slate-500'}`} />
-            <span>{loc('همه', 'All')}</span>
-          </button>
-
-          {/* Tab 2: Live (لایو) */}
-          <button
-            onClick={() => handleModeChange('normal')}
-            className={`py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs transition-all duration-300 ${
-              activeMode === 'normal'
-                ? 'bg-gradient-to-r from-cyan-900/50 via-cyan-600/40 to-blue-900/50 text-cyan-200 border border-cyan-400/80 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
-                : 'text-slate-400 hover:text-cyan-300 hover:bg-white/5'
-            }`}
-          >
-            <Radio className={`w-3.5 h-3.5 ${activeMode === 'normal' ? 'text-cyan-300 animate-pulse' : 'text-slate-500'}`} />
-            <span>{loc('لایو', 'Live')}</span>
-          </button>
-
-          {/* Tab 3: 18+ (۱۸+) */}
-          <button
-            onClick={() => handleModeChange('adult')}
-            className={`py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 font-black text-xs transition-all duration-300 ${
-              activeMode === 'adult'
-                ? 'bg-gradient-to-r from-rose-950/70 via-red-600/50 to-pink-950/70 text-rose-200 border border-rose-500/80 shadow-[0_0_15px_rgba(244,63,94,0.4)]'
-                : 'text-slate-400 hover:text-rose-300 hover:bg-white/5'
-            }`}
-          >
-            <ShieldAlert className={`w-3.5 h-3.5 ${activeMode === 'adult' ? 'text-rose-400' : 'text-slate-500'}`} />
-            <span>{loc('۱۸+', '18+')}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          1. STORIES ROW (HORIZONTAL SCROLL) - EXCLUSIVELY IN "همه" (ALL) TAB
-         ========================================================================= */}
-      {activeMode === 'all' && ((isFemaleUser || isUserAdmin) || femaleStories.length > 0) && (
-        <div className="relative z-10 bg-slate-950/70 backdrop-blur-xl rounded-2xl p-2 border border-white/5 shadow-md">
-          <div className="flex items-center gap-2.5 overflow-x-auto pb-0.5 no-scrollbar px-1">
-            {/* Add Story Button (Visible for female users or admin) */}
-            {(isFemaleUser || isUserAdmin) && (
-              <div
-                onClick={() => setIsAddStoryModalOpen(true)}
-                className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
-              >
-                <div className="w-10 h-10 rounded-full border-2 border-dashed border-rose-500/80 bg-rose-500/10 flex items-center justify-center group-hover:border-rose-400 group-hover:bg-rose-500/20 group-hover:scale-105 transition-all duration-300">
-                  <Plus className="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform" />
-                </div>
-                <span className="text-[9.5px] font-bold text-rose-300 group-hover:text-white max-w-[48px] truncate text-center">
-                  {loc('افزودن', 'Add')}
-                </span>
-              </div>
-            )}
-
-            {/* Female Story Ring Avatars - Standard Compact 40px (w-10 h-10) */}
+      {activeMode === 'all' && femaleStories.length > 0 && (
+        <div className="relative z-10 pb-2">
+          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar px-1">
+            {/* Female Story Ring Avatars - With Soft 3D Shadow */}
             {femaleStories.map(group => {
               const isGroupVip = group.user?.isVip;
               return (
                 <div
                   key={group.id}
                   onClick={() => setActiveStoryView({ group, currentIndex: 0 })}
-                  className="flex flex-col items-center gap-1 shrink-0 cursor-pointer group"
+                  className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group"
                 >
                   <div className="relative">
-                    {/* Outer Ring */}
-                    <div className={`w-10 h-10 rounded-full p-[1.5px] transition-all duration-300 group-hover:scale-105 ${
-                      isGroupVip
-                        ? 'bg-gradient-to-tr from-amber-300 via-yellow-400 to-amber-600 shadow-[0_0_10px_rgba(245,158,11,0.4)]'
-                        : 'bg-gradient-to-tr from-rose-500 via-pink-500 to-purple-500 shadow-[0_0_8px_rgba(244,63,94,0.3)]'
-                    }`}>
-                      <div className="w-full h-full rounded-full overflow-hidden bg-slate-950 border border-slate-950">
+                    {/* Circle Image with 3D Soft Shadow (Removed outer colored ring padding) */}
+                    <div className={`w-14 h-14 rounded-full transition-all duration-300 group-hover:scale-105 shadow-[0_10px_20px_-5px_rgba(0,0,0,0.6),0_6px_10px_-3px_rgba(244,63,94,0.3)] bg-slate-900 border border-white/10`}>
+                      <div className="w-full h-full rounded-full overflow-hidden">
                         {group.user?.avatar ? (
                           <img
                             src={group.user.avatar}
@@ -548,7 +480,7 @@ export default function UltraModernHome({
                             className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
                           />
                         ) : (
-                          <div className="w-full h-full bg-slate-800 flex items-center justify-center text-[10px] font-black text-rose-300">
+                          <div className="w-full h-full bg-slate-800 flex items-center justify-center text-sm font-black text-rose-300">
                             {(group.user?.name || group.user?.username || 'F').charAt(0).toUpperCase()}
                           </div>
                         )}
@@ -557,20 +489,20 @@ export default function UltraModernHome({
 
                     {/* VIP Crown */}
                     {isGroupVip && (
-                      <div className="absolute -top-1 -right-1 z-10 w-3 h-3 rounded-full bg-gradient-to-tr from-amber-300 to-amber-500 shadow flex items-center justify-center pointer-events-none">
-                        <Crown className="w-1.5 h-1.5 text-slate-950 fill-slate-950" />
+                      <div className="absolute -top-1 -right-1 z-10 w-4 h-4 rounded-full bg-gradient-to-tr from-amber-300 to-amber-500 shadow-md flex items-center justify-center pointer-events-none">
+                        <Crown className="w-2.5 h-2.5 text-slate-950 fill-slate-950" />
                       </div>
                     )}
 
                     {/* Unread Counter Badge */}
                     {group.items.length > 1 && (
-                      <div className="absolute -bottom-0.5 -left-0.5 z-10 px-0.8 rounded-full bg-rose-600 text-white font-mono text-[7px] font-black border border-slate-950 leading-none py-0.5">
+                      <div className="absolute -bottom-1 -left-1 z-10 min-w-[16px] h-[16px] px-1 rounded-full bg-rose-600 text-white font-mono text-[9px] font-black border-2 border-slate-950 flex items-center justify-center shadow-sm">
                         {group.items.length}
                       </div>
                     )}
                   </div>
 
-                  <span className={`text-[9.5px] font-bold max-w-[48px] truncate text-center ${
+                  <span className={`text-[10px] font-bold max-w-[56px] truncate text-center ${
                     isGroupVip ? 'text-amber-300' : 'text-slate-300'
                   }`}>
                     {group.user?.name || group.user?.username}
@@ -581,6 +513,49 @@ export default function UltraModernHome({
           </div>
         </div>
       )}
+
+      {/* =========================================================================
+          2. THREE MODE TABS (CLEAN & CONCISE)
+         ========================================================================= */}
+      <div className="relative z-10 rounded-2xl bg-slate-950/85 backdrop-blur-2xl border border-white/10 p-1 mb-2">
+        <div className="grid grid-cols-3 gap-1">
+          {/* Tab 1: All */}
+          <button
+            onClick={() => handleModeChange('all')}
+            className={`py-3 px-2 rounded-xl flex items-center justify-center transition-all duration-300 ${
+              activeMode === 'all'
+                ? 'bg-gradient-to-r from-emerald-950/60 via-emerald-600/40 to-teal-950/60 border border-emerald-400/80 shadow-[0_0_15px_rgba(52,211,153,0.3)]'
+                : 'hover:bg-white/5'
+            }`}
+          >
+            <Sparkles className={`w-5 h-5 ${activeMode === 'all' ? 'text-emerald-300' : 'text-slate-500'}`} />
+          </button>
+
+          {/* Tab 2: Live */}
+          <button
+            onClick={() => handleModeChange('normal')}
+            className={`py-3 px-2 rounded-xl flex items-center justify-center transition-all duration-300 ${
+              activeMode === 'normal'
+                ? 'bg-gradient-to-r from-cyan-900/50 via-cyan-600/40 to-blue-900/50 border border-cyan-400/80 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
+                : 'hover:bg-white/5'
+            }`}
+          >
+            <Radio className={`w-5 h-5 ${activeMode === 'normal' ? 'text-cyan-300 animate-pulse' : 'text-slate-500'}`} />
+          </button>
+
+          {/* Tab 3: 18+ */}
+          <button
+            onClick={() => handleModeChange('adult')}
+            className={`py-3 px-2 rounded-xl flex items-center justify-center transition-all duration-300 ${
+              activeMode === 'adult'
+                ? 'bg-gradient-to-r from-rose-950/70 via-red-600/50 to-pink-950/70 border border-rose-500/80 shadow-[0_0_15px_rgba(244,63,94,0.4)]'
+                : 'hover:bg-white/5'
+            }`}
+          >
+            <ShieldAlert className={`w-5 h-5 ${activeMode === 'adult' ? 'text-rose-400' : 'text-slate-500'}`} />
+          </button>
+        </div>
+      </div>
 
       {/* =========================================================================
           2. WEEKLY TOP STREAMERS BAR (FOR NORMAL LIVE TAB)

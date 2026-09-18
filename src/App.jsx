@@ -19,6 +19,7 @@ import PreCallConfirmModal from './components/Overlays/PreCallConfirmModal';
 import { EntranceRibbonOverlay } from './components/CommonBadges';
 import VLiveEntrySplashLoader from './components/Overlays/VLiveEntrySplashLoader';
 import FloatingDailyGift from './components/FloatingDailyGift';
+import FloatingNotification from './components/FloatingNotification';
 import UltraModernHome from './components/HomeScreen/UltraModernHome';
 import UltraPremiumLiveViewer from './components/LiveViewer/UltraPremiumLiveViewer';
 import UltraSexyMatchView from './components/Match/UltraSexyMatchView';
@@ -3294,15 +3295,6 @@ export default function App() {
               </span>
             </button>
 
-            <button onClick={() => {
-              setIsNotificationsOpen(true);
-              apiNotifications.markAllAsRead();
-              setNotificationsList(prev => prev.map(n => ({ ...n, unread: false })));
-            }} className="relative p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition" title="Notifications">
-              <Bell className="w-3.5 h-3.5" />
-              {notificationsList.some(n => n.unread) && <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-pink-500" />}
-            </button>
-
             <button onClick={() => setIsSettingsModalOpen(true)} className="p-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition">
               <Settings className="w-3.5 h-3.5" />
             </button>
@@ -3507,6 +3499,19 @@ export default function App() {
         compressImageFile={compressImageFile} 
         showToast={showToast} 
         loc={loc} 
+      />
+
+      {/* FLOATING NOTIFICATION (Only visible when unread) */}
+      <FloatingNotification 
+        hasUnread={notificationsList.some(n => n.unread)}
+        unreadCount={notificationsList.filter(n => n.unread).length}
+        onClick={() => {
+          setIsNotificationsOpen(true);
+        }}
+        onMarkRead={() => {
+          apiNotifications.markAllAsRead();
+          setNotificationsList(prev => prev.map(n => ({ ...n, unread: false })));
+        }}
       />
 
       {/* FLOATING DRAGGABLE ANIMATED DAILY GIFT */}
