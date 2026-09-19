@@ -718,13 +718,6 @@ export default function UltraModernHome({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
-            <h2 className="text-xs sm:text-sm font-black text-white">
-              {activeMode === 'all'
-                ? loc('همه کاربران خانم', 'All Female Users')
-                : activeMode === 'normal'
-                ? loc('پخش زنده و استریمرها', 'Live & Streamers')
-                : loc('پخش زنده +۱۸', '18+ Streams')}
-            </h2>
             <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-white/10 text-rose-300 font-bold">
               {femaleLiveCards.length}
             </span>

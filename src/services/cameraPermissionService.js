@@ -65,65 +65,73 @@ class CameraPermissionService {
     }
     this.currentFacingMode = facingMode;
 
-    // 1. STOP previous video tracks first to release mobile hardware sensor lock
-    if (oldTrack && typeof oldTrack.stop === 'function') {
-      try { oldTrack.stop(); } catch (e) {}
-    }
-    if (this.activeStream) {
-      try {
-        this.activeStream.getVideoTracks().forEach(t => {
-          try { t.stop(); } catch (e) {}
-        });
-      } catch (e) {}
-    }
-
-    // 2. Acquire target camera using standard facingMode constraints
-    // (NEVER use deviceId: exact which triggers browser permission dialogs on every switch)
     let newStream = null;
 
-    // Strategy 1: facingMode with exact (standard Android/iOS mobile lens switch without prompt)
-    try {
-      newStream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: { exact: facingMode }, 
-          width: { ideal: 1280 }, 
-          height: { ideal: 720 } 
-        },
-        audio: false
-      });
-    } catch (exactErr) {
-      console.log('[CameraPermission] exact facingMode not supported, trying ideal facingMode:', exactErr.message);
-    }
-
-    // Strategy 2: facingMode with ideal (for browsers/devices that don't support exact)
-    if (!newStream) {
+    // Helper to request stream
+    const requestStream = async () => {
+      let stream = null;
       try {
-        newStream = await navigator.mediaDevices.getUserMedia({
-          video: { 
-            facingMode: { ideal: facingMode }, 
-            width: { ideal: 1280 }, 
-            height: { ideal: 720 } 
-          },
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { exact: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: false
         });
-      } catch (idealErr) {
-        console.log('[CameraPermission] ideal facingMode failed, trying direct string:', idealErr.message);
+      } catch (e) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: false
+          });
+        } catch (e2) {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: facingMode }, audio: false
+            });
+          } catch (e3) {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: true, audio: false
+            });
+          }
+        }
       }
+      return stream;
+    };
+
+    // 1. Try to acquire target camera WITHOUT stopping previous tracks (to prevent WebView permission prompt)
+    try {
+      newStream = await requestStream();
+    } catch (err) {
+      console.warn('[CameraPermission] Failed to acquire without stopping (hardware lock?), stopping and retrying', err);
     }
 
-    // Strategy 3: simple facingMode string fallback
-    if (!newStream) {
+    // 2. If it failed, or we didn't get a stream, stop old tracks (release hardware lock) and retry
+    if (!newStream || !newStream.getVideoTracks().length) {
+      if (oldTrack && typeof oldTrack.stop === 'function') {
+        try { oldTrack.stop(); } catch (e) {}
+      }
+      if (this.activeStream) {
+        try {
+          this.activeStream.getVideoTracks().forEach(t => {
+            try { t.stop(); } catch (e) {}
+          });
+        } catch (e) {}
+      }
+
       try {
-        newStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: facingMode },
-          audio: false
-        });
-      } catch (fallbackErr) {
-        console.warn('[CameraPermission] All facingMode strategies failed, generic fallback:', fallbackErr.message);
-        newStream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false
-        });
+        newStream = await requestStream();
+      } catch (err) {
+        console.error('[CameraPermission] Failed to acquire even after stopping old tracks', err);
+      }
+    } else {
+      // If we successfully acquired new stream, NOW stop the old tracks
+      if (oldTrack && typeof oldTrack.stop === 'function') {
+        try { oldTrack.stop(); } catch (e) {}
+      }
+      if (this.activeStream) {
+        try {
+          this.activeStream.getVideoTracks().forEach(t => {
+            try { t.stop(); } catch (e) {}
+          });
+        } catch (e) {}
       }
     }
 

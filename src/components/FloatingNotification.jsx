@@ -18,21 +18,14 @@ export default function FloatingNotification({
       }}
     >
       <div className="relative">
-        {/* Animated Background Ring */}
         <div className="absolute inset-0 bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 rounded-full animate-ping opacity-60" style={{ animationDuration: '2s' }}></div>
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 rounded-full animate-pulse opacity-40 blur-md"></div>
         
-        {/* Main Floating Button */}
         <div className="relative w-14 h-14 rounded-full bg-slate-900/90 backdrop-blur-md border border-pink-500/50 shadow-[0_0_20px_rgba(236,72,153,0.5)] flex items-center justify-center overflow-hidden group-hover:scale-110 transition-transform duration-300">
-          
-          {/* Sweeping Light Effect */}
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
-          
-          {/* Bell Icon with Swing Animation */}
           <Bell className="w-6 h-6 text-pink-400 fill-pink-400/20 animate-[swing_2s_ease-in-out_infinite] group-hover:text-white transition-colors" style={{ transformOrigin: 'top center' }} />
         </div>
 
-        {/* Unread Count Badge */}
         {unreadCount > 0 && (
           <div className="absolute -top-1 -right-1 z-10 min-w-[20px] h-[20px] px-1 rounded-full bg-gradient-to-tr from-rose-500 to-pink-500 text-white font-mono text-[10px] font-black border-2 border-slate-900 flex items-center justify-center shadow-lg transform group-hover:scale-125 transition-transform duration-300">
             {unreadCount}

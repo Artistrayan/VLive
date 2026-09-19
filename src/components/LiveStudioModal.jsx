@@ -521,23 +521,26 @@ export default function LiveStudioModal({
 
     return () => {
       // ONLY clean up resources if the studio modal is genuinely closing
-      if (!isOpen) {
-        const opId = ++cameraOperationIdRef.current;
-        console.log(`[Camera:${opId}] CAMERA_CLEANUP closing LiveStudio modal`);
-        if (roomServiceRef.current) {
-          try { roomServiceRef.current.unsubscribe(); } catch(e) {}
-          roomServiceRef.current = null;
-        }
-        if (mediaStreamRef.current) {
-          mediaStreamRef.current.getTracks().forEach(track => {
-            try { track.stop(); } catch (e) {}
-          });
-          mediaStreamRef.current = null;
-        }
-        setMediaStream(null);
-        setLocalVideoTrack(null);
-        setIsLiveKitConnected(false);
-        setIsTrackPublished(false);
+      const opId = ++cameraOperationIdRef.current;
+      console.log(`[Camera:${opId}] CAMERA_CLEANUP closing LiveStudio modal`);
+      if (roomServiceRef.current) {
+        try { roomServiceRef.current.unsubscribe(); } catch(e) {}
+        roomServiceRef.current = null;
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => {
+          try { track.stop(); } catch (e) {}
+        });
+        mediaStreamRef.current = null;
+      }
+      setMediaStream(null);
+      setLocalVideoTrack(null);
+      setIsLiveKitConnected(false);
+      setIsTrackPublished(false);
+      
+      // Stop the global cameraPermissionService stream as well to completely release hardware lock
+      if (typeof cameraPermissionService.stopActiveStream === 'function') {
+        cameraPermissionService.stopActiveStream();
       }
     };
   }, [isOpen, isAuthorizedStreamer]);
