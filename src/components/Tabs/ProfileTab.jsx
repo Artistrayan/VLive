@@ -931,28 +931,7 @@ export default function ProfileTab(props) {
                       </span>
                     </button>
 
-                    {/* FOLLOW BUTTON IN FRONT OF HEART */}
-                    <button
-                      onClick={handleToggleFollow}
-                      className={`px-3.5 py-1.5 rounded-full font-bold text-xs shadow-md transition-all duration-300 flex items-center gap-1.5 active:scale-95 cursor-pointer border ${
-                        isUserFollowedState
-                          ? 'bg-slate-900 border-slate-700 text-emerald-400 hover:border-rose-500/50 hover:text-rose-400'
-                          : 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 border-transparent text-white hover:opacity-95 shadow-[0_0_15px_rgba(236,72,153,0.3)]'
-                      }`}
-                      title={isUserFollowedState ? window.loc('لغو دنبال کردن', 'Unfollow') : window.loc('دنبال کردن کاربر', 'Follow User')}
-                    >
-                      {isUserFollowedState ? (
-                        <>
-                          <UserCheck className="w-4 h-4 text-emerald-400" />
-                          <span>{window.loc('دنبال می‌کنید', 'Following')}</span>
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="w-4 h-4" />
-                          <span>{window.loc('دنبال کردن', 'Follow')}</span>
-                        </>
-                      )}
-                    </button>
+                    {/* FOLLOW BUTTON IN FRONT OF HEART - REMOVED AS IT'S THE USER'S OWN PROFILE */}
                   </div>
 
                   {/* Bio placed prominently in front of photo instead of Full Name */}
