@@ -4,8 +4,9 @@ import {
   Clock, Coins as CoinsIcon, Compass, Crown, Edit3, Eye, FileText, Filter,
   Flag, Flame, Gift, Globe, Headphones, Heart, Home, Languages, LogIn,
   MessageSquare, Plus, Radio, Send, Settings, Shield, ShieldCheck, Sliders,
-  Smartphone, Sparkles, Star, Swords, ThumbsUp, Trash2, User, Users, Video, X, Zap
+  Smartphone, Sparkles, Star, Swords, ThumbsUp, Trash2, User, Users, Video, X, Zap, Trophy
 } from 'lucide-react';
+import LeaderboardScreen from './components/HomeScreen/LeaderboardScreen';
 
 // Overlays & Components
 import ActiveCallOverlay from './components/Overlays/ActiveCallOverlay';
@@ -3307,7 +3308,7 @@ export default function App() {
       <main className={`flex-1 max-w-4xl mx-auto w-full flex flex-col min-h-0 ${activeTab === 'messages' ? 'h-full overflow-hidden p-1 sm:p-2' : 'p-2 sm:p-4 space-y-4'}`}>
 
         {/* TAB 1: ULTRA-MODERN PREMIUM HOME SCREEN (DUAL-MODE LIVE & VIP) */}
-        {(activeTab === 'home' || activeTab === 'search') && (
+        {(activeTab === 'home' || activeTab === 'leaderboard') && (
           <UltraModernHome
             currentUser={currentUser}
             currentUsername={currentUsername}
@@ -3399,9 +3400,9 @@ export default function App() {
           {activeTab === 'home' ? <Home className="w-6 h-6 font-black group-hover:scale-110 transition duration-300 drop-shadow-md" /> : <Home className="w-6 h-6" />}
         </button>
 
-        {/* 2. Search (🔍) */}
-        <button onClick={() => setActiveTab('search')} className={activeTab === 'search' ? "relative -top-4 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/10 active:scale-95 transition-all duration-300 group" : "relative flex flex-col items-center gap-1 p-2 rounded-2xl text-slate-500 hover:text-slate-300 active:scale-95 transition-all duration-300 group"} title={loc('جستجو', 'Search')}>
-          {activeTab === 'search' ? <Search className="w-6 h-6 font-black group-hover:scale-110 transition duration-300 drop-shadow-md" /> : <Search className="w-6 h-6 group-hover:scale-110 transition duration-300" />}
+        {/* 2. Leaderboard (🏆) */}
+        <button onClick={() => setActiveTab('leaderboard')} className={activeTab === 'leaderboard' ? "relative -top-4 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/10 active:scale-95 transition-all duration-300 group" : "relative flex flex-col items-center gap-1 p-2 rounded-2xl text-slate-500 hover:text-slate-300 active:scale-95 transition-all duration-300 group"} title={loc('آمار', 'Stats')}>
+          {activeTab === 'leaderboard' ? <Trophy className="w-6 h-6 font-black group-hover:scale-110 transition duration-300 drop-shadow-md" /> : <Trophy className="w-6 h-6 group-hover:scale-110 transition duration-300" />}
         </button>
 
         {/* 3. Match (Center Fire) */}
