@@ -37,18 +37,19 @@ function base64UrlEncode(input) {
  */
 export function getLiveKitConfig() {
   const url = (typeof import.meta !== 'undefined' && (import.meta.env?.LIVEKIT_URL || import.meta.env?.VITE_LIVEKIT_URL)) ||
-              (typeof process !== 'undefined' && (process.env?.LIVEKIT_URL || process.env?.VITE_LIVEKIT_URL)) ||
-              'wss://livekit.vlive.app';
+              (typeof process !== 'undefined' && (process.env?.LIVEKIT_URL || process.env?.VITE_LIVEKIT_URL));
 
   const key = (typeof import.meta !== 'undefined' && (import.meta.env?.LIVEKIT_API_KEY || import.meta.env?.VITE_LIVEKIT_API_KEY)) ||
-             (typeof process !== 'undefined' && (process.env?.LIVEKIT_API_KEY || process.env?.VITE_LIVEKIT_API_KEY)) ||
-             'devkey';
+             (typeof process !== 'undefined' && (process.env?.LIVEKIT_API_KEY || process.env?.VITE_LIVEKIT_API_KEY));
 
   const secret = (typeof import.meta !== 'undefined' && (import.meta.env?.LIVEKIT_API_SECRET || import.meta.env?.VITE_LIVEKIT_API_SECRET)) ||
-                 (typeof process !== 'undefined' && (process.env?.LIVEKIT_API_SECRET || process.env?.VITE_LIVEKIT_API_SECRET)) ||
-                 'secret_livekit_vlive_key_2026';
+                 (typeof process !== 'undefined' && (process.env?.LIVEKIT_API_SECRET || process.env?.VITE_LIVEKIT_API_SECRET));
 
-  return { url: String(url).trim(), key: String(key).trim(), secret: String(secret).trim() };
+  if (!url || !key || !secret) {
+    console.error("Missing LiveKit configuration in environment variables!");
+  }
+
+  return { url: String(url || '').trim(), key: String(key || '').trim(), secret: String(secret || '').trim() };
 }
 
 async function generateLiveKitJwt({ roomName, identity, name, role = 'host', metadata = {} }) {

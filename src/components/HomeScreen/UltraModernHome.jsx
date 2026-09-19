@@ -270,7 +270,7 @@ export default function UltraModernHome({
       return score?.level || 1;
     };
 
-    // Add active female streams
+    // Add active streams with visibility rules
     activeStreams.forEach(stream => {
       const isAdultStream = Boolean(stream.live_type === 'adult' || stream.isVip18 || stream.is18Plus);
       const hostUser = (usersList || []).find(
@@ -280,6 +280,13 @@ export default function UltraModernHome({
       const isVerified = Boolean(hostUser?.is_verified || hostUser?.isVerified || hostUser?.verified);
       const isAdmin = Boolean(hostUser?.role === 'admin' || hostUser?.role === 'super_admin' || hostUser?.is_admin || hostUser?.user_type === 'ADMIN' || hostUser?.user_type === 'SUPER_ADMIN');
       const hostLevel = hostUser?.level || hostUser?.user_level || getStreamerScores(hostUser || stream).level || 1;
+
+      // Filter logic: 
+      // 1. All users can see normal streams.
+      // 2. Only VIP, Admin, or SuperAdmin can see 18+ streams.
+      if (isAdultStream && !isVip && !isUserAdmin && !isUserSuperAdmin) {
+        return; // Skip this stream
+      }
 
       cards.push({
         id: `stream_${stream.id}`,
