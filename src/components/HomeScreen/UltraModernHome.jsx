@@ -229,17 +229,12 @@ export default function UltraModernHome({
       .slice(0, 10);
   }, [usersList]);
 
-  // 3. MAIN USER LIST (GRID): Only Female Users displayed (Males are completely hidden)
-  const femaleLiveCards = useMemo(() => {
+  // 3. MAIN USER LIST (GRID): All Users displayed
+  const liveCards = useMemo(() => {
     const activeStreams = (streamsList || []).filter(s => {
       if (!s || s.status === 'ended' || s.is_live === false) return false;
       if (s.is_private || s.isPrivate || s.visibility === 'private') return false;
-
-      // Check if host is female
-      const hostUser = (usersList || []).find(
-        u => String(u.id) === String(s.host_id) || u.username === s.host || u.username === s.username
-      );
-      return isFemaleProfile(hostUser || s);
+      return true;
     });
 
     const cards = [];
@@ -719,7 +714,7 @@ export default function UltraModernHome({
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
             <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-white/10 text-rose-300 font-bold">
-              {femaleLiveCards.length}
+              {liveCards.length}
             </span>
           </div>
 
@@ -759,7 +754,7 @@ export default function UltraModernHome({
         </div>
 
         {/* User Cards Grid */}
-        {femaleLiveCards.length === 0 ? (
+        {liveCards.length === 0 ? (
           <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-white/5 space-y-2">
             <Radio className="w-8 h-8 text-slate-600 mx-auto animate-pulse" />
             <p className="text-xs text-slate-500">
@@ -770,7 +765,7 @@ export default function UltraModernHome({
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
-            {femaleLiveCards.map(card => {
+            {liveCards.map(card => {
               const isStreaming = card.isLive;
               const isAdult = card.isAdult;
               const isVerifiedUser = card.isVerified;
