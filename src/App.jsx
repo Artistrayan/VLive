@@ -3353,6 +3353,7 @@ export default function App() {
             followedUsers={followedUsers}
           />
         )}
+        {activeTab === 'leaderboard' && <LeaderboardScreen loc={loc} />}
         {/* TAB: ULTRA-PREMIUM SEXY MATCH TAB */}
         {activeTab === 'match' && (
           <UltraSexyMatchView
