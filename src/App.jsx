@@ -3332,7 +3332,7 @@ export default function App() {
             notificationsList={notificationsList}
             totalUnreadMessages={totalUnreadMessages}
             activeTab={activeTab}
-            isSearchTabActive={activeTab === 'search'}
+            isSearchTabActive={activeTab === 'leaderboard'}
             setActiveTab={setActiveTab}
             setSelectedUser={setSelectedUser}
             setIsUserProfileModalOpen={setIsUserProfileModalOpen}
