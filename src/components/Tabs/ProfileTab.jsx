@@ -550,6 +550,23 @@ export default function ProfileTab(props) {
     }
   });
 
+  // Sync real photos and videos from database and API
+  useEffect(() => {
+    const uid = props.currentUser?.id || getUserId() || currentUsername || 'me';
+    if (uid && apiProfile && typeof apiProfile.getUserMedia === 'function') {
+      apiProfile.getUserMedia(uid).then(res => {
+        if (res?.photos && Array.isArray(res.photos) && res.photos.length > 0) {
+          setGalleryPhotos(res.photos);
+          safeStorage.setItem(`vlive_user_photos_${currentUsername || 'me'}`, JSON.stringify(res.photos));
+        }
+        if (res?.videos && Array.isArray(res.videos) && res.videos.length > 0) {
+          setGalleryVideos(res.videos);
+          safeStorage.setItem(`vlive_user_videos_${currentUsername || 'me'}`, JSON.stringify(res.videos));
+        }
+      }).catch(() => {});
+    }
+  }, [currentUsername, props.currentUser?.id]);
+
   const [profileLikers, setProfileLikers] = useState(() => {
     const uid = props.currentUser?.id || getUserId() || currentUsername || 'me';
     return apiProfile.getProfileLikers(uid);
@@ -1547,6 +1564,9 @@ export default function ProfileTab(props) {
                           setGalleryPhotos(prev => {
                             const updated = [newPhoto, ...prev];
                             safeStorage.setItem(`vlive_user_photos_${currentUsername || 'me'}`, JSON.stringify(updated));
+                            if (apiProfile && typeof apiProfile.saveUserPhotos === 'function') {
+                              apiProfile.saveUserPhotos(updated);
+                            }
                             return updated;
                           });
                           showToast(window.loc('عکس با موفقیت افزوده شد 📸', 'Photo added successfully 📸'));
@@ -1573,6 +1593,9 @@ export default function ProfileTab(props) {
                             setGalleryPhotos(prev => {
                               const updated = prev.filter(item => item.id !== p.id);
                               safeStorage.setItem(`vlive_user_photos_${currentUsername || 'me'}`, JSON.stringify(updated));
+                              if (apiProfile && typeof apiProfile.saveUserPhotos === 'function') {
+                                apiProfile.saveUserPhotos(updated);
+                              }
                               return updated;
                             });
                             showToast(window.loc('عکس حذف شد 🗑️', 'Photo removed 🗑️'));
@@ -1613,6 +1636,9 @@ export default function ProfileTab(props) {
                             setGalleryVideos(prev => {
                               const updated = [newVid, ...prev];
                               safeStorage.setItem(`vlive_user_videos_${currentUsername || 'me'}`, JSON.stringify(updated));
+                              if (apiProfile && typeof apiProfile.saveUserVideos === 'function') {
+                                apiProfile.saveUserVideos(updated);
+                              }
                               return updated;
                             });
                             showToast(window.loc('ویدیو با موفقیت بارگذاری شد 📹', 'Video uploaded successfully 📹'));
@@ -1641,6 +1667,9 @@ export default function ProfileTab(props) {
                             setGalleryVideos(prev => {
                               const updated = prev.filter(item => item.id !== p.id);
                               safeStorage.setItem(`vlive_user_videos_${currentUsername || 'me'}`, JSON.stringify(updated));
+                              if (apiProfile && typeof apiProfile.saveUserVideos === 'function') {
+                                apiProfile.saveUserVideos(updated);
+                              }
                               return updated;
                             });
                             showToast(window.loc('ویدیو حذف شد 🗑️', 'Video removed 🗑️'));

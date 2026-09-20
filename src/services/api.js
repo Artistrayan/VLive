@@ -570,6 +570,18 @@ export const apiProfile = {
         }
       }
 
+      let parsedPhotos = [];
+      try {
+        if (Array.isArray(profile.photos)) parsedPhotos = profile.photos;
+        else if (typeof profile.photos === 'string') parsedPhotos = JSON.parse(profile.photos);
+      } catch {}
+
+      let parsedVideos = [];
+      try {
+        if (Array.isArray(profile.videos)) parsedVideos = profile.videos;
+        else if (typeof profile.videos === 'string') parsedVideos = JSON.parse(profile.videos);
+      } catch {}
+
       return {
         ...profile,
         avatar: resolvedAvatar,
@@ -585,7 +597,9 @@ export const apiProfile = {
         coins: resolvedCoins,
         userCoins: resolvedCoins,
         diamonds: profile.diamonds ?? 0,
-        usdt_balance: wallet?.usdt_balance ?? 0.0
+        usdt_balance: wallet?.usdt_balance ?? 0.0,
+        photos: parsedPhotos,
+        videos: parsedVideos
       };
     } catch (e) {
       console.warn('apiProfile.getProfile error:', e);
@@ -1337,6 +1351,126 @@ export const apiProfile = {
 
       return { success: true, isLiked: false, likesCount: totalLikes, likers };
     } catch (e) {
+      return { success: false };
+    }
+  },
+
+  // ==================== USER MEDIA (PHOTOS & VIDEOS) ====================
+  async getUserMedia(targetUserId) {
+    if (!targetUserId) return { photos: [], videos: [] };
+    try {
+      const resolvedUid = (await resolveProfileUuid(targetUserId)) || targetUserId;
+      let dbPhotos = [];
+      let dbVideos = [];
+
+      // 1. Fetch from profiles table
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('photos, videos')
+        .eq('id', resolvedUid)
+        .maybeSingle();
+
+      if (prof) {
+        if (Array.isArray(prof.photos)) dbPhotos = prof.photos;
+        else if (typeof prof.photos === 'string') {
+          try { dbPhotos = JSON.parse(prof.photos); } catch {}
+        }
+        if (Array.isArray(prof.videos)) dbVideos = prof.videos;
+        else if (typeof prof.videos === 'string') {
+          try { dbVideos = JSON.parse(prof.videos); } catch {}
+        }
+      }
+
+      // 2. Fallback to posts table if empty
+      if (dbPhotos.length === 0 && dbVideos.length === 0) {
+        const { data: posts } = await supabase
+          .from('posts')
+          .select('id, image_url, caption, created_at')
+          .eq('user_id', resolvedUid)
+          .order('created_at', { ascending: false });
+
+        if (posts && posts.length > 0) {
+          posts.forEach(p => {
+            const url = p.image_url;
+            if (!url) return;
+            if (url.startsWith('data:video') || url.endsWith('.mp4') || url.endsWith('.webm') || (p.caption && p.caption.includes('[VIDEO]'))) {
+              dbVideos.push({ id: p.id || `vid_${Date.now()}`, url, created_at: p.created_at || new Date().toISOString() });
+            } else {
+              dbPhotos.push({ id: p.id || `pho_${Date.now()}`, url, created_at: p.created_at || new Date().toISOString() });
+            }
+          });
+        }
+      }
+
+      // 3. Fallback to local cache if viewing self or cached
+      if (dbPhotos.length === 0) {
+        try {
+          const cachedPhotos = localStorage.getItem(`vlive_user_photos_${targetUserId}`) || localStorage.getItem('vlive_user_photos_me');
+          if (cachedPhotos) {
+            const parsed = JSON.parse(cachedPhotos);
+            if (Array.isArray(parsed)) dbPhotos = parsed;
+          }
+        } catch {}
+      }
+
+      if (dbVideos.length === 0) {
+        try {
+          const cachedVideos = localStorage.getItem(`vlive_user_videos_${targetUserId}`) || localStorage.getItem('vlive_user_videos_me');
+          if (cachedVideos) {
+            const parsed = JSON.parse(cachedVideos);
+            if (Array.isArray(parsed)) dbVideos = parsed;
+          }
+        } catch {}
+      }
+
+      return {
+        photos: dbPhotos,
+        videos: dbVideos
+      };
+    } catch (e) {
+      console.warn('apiProfile.getUserMedia error:', e);
+      return { photos: [], videos: [] };
+    }
+  },
+
+  async saveUserPhotos(photos) {
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData?.user?.id || getUserId();
+      if (!uid) return { success: false };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ photos: photos, updated_at: new Date().toISOString() })
+        .eq('id', uid);
+
+      if (error) {
+        console.warn('saveUserPhotos supabase update error:', error);
+      }
+      return { success: !error };
+    } catch (e) {
+      console.warn('apiProfile.saveUserPhotos error:', e);
+      return { success: false };
+    }
+  },
+
+  async saveUserVideos(videos) {
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData?.user?.id || getUserId();
+      if (!uid) return { success: false };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ videos: videos, updated_at: new Date().toISOString() })
+        .eq('id', uid);
+
+      if (error) {
+        console.warn('saveUserVideos supabase update error:', error);
+      }
+      return { success: !error };
+    } catch (e) {
+      console.warn('apiProfile.saveUserVideos error:', e);
       return { success: false };
     }
   },

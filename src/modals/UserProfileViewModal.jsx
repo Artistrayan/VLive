@@ -36,7 +36,7 @@ export default function UserProfileViewModal({
   const [likesCount, setLikesCount] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
   const [viewsCount, setViewsCount] = useState(0);
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'media' | 'lives' | 'about'
+  const [activeTab, setActiveTab] = useState('photos'); // 'photos' | 'videos' | 'about'
   
   // Report Modal State
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -49,23 +49,23 @@ export default function UserProfileViewModal({
   const [isStreamer, setIsStreamer] = useState(user?.isStreamer || user?.is_streamer || user?.isHost || false);
   const [adminNote, setAdminNote] = useState('');
 
-  // Sample User Media
+  // User Media (Photos & Videos)
   const [fetchedPhotos, setFetchedPhotos] = useState([]);
-  const [fetchedPosts, setFetchedPosts] = useState([]);
+  const [fetchedVideos, setFetchedVideos] = useState([]);
+  const [selectedMediaPreview, setSelectedMediaPreview] = useState(null);
 
-  // Fetch posts and photos for user profile
+  // Fetch photos and videos for user profile
   useEffect(() => {
-    if (user && isOpen && typeof apiSocial !== 'undefined' && apiSocial.getUserPosts) {
+    if (user && isOpen) {
       const targetId = user.id || user.username;
-      apiSocial.getUserPosts(targetId).then(posts => {
-        if (posts && Array.isArray(posts)) {
-          setFetchedPosts(posts);
-          const mediaUrls = posts.map(p => p.imageUrl || p.videoUrl).filter(Boolean);
-          if (mediaUrls.length > 0) {
-            setFetchedPhotos(mediaUrls);
+      if (apiProfile && typeof apiProfile.getUserMedia === 'function') {
+        apiProfile.getUserMedia(targetId).then(res => {
+          if (res) {
+            if (Array.isArray(res.photos)) setFetchedPhotos(res.photos);
+            if (Array.isArray(res.videos)) setFetchedVideos(res.videos);
           }
-        }
-      }).catch(() => {});
+        }).catch(() => {});
+      }
     }
   }, [user, isOpen]);
 
@@ -124,8 +124,8 @@ export default function UserProfileViewModal({
   const realFullName = user?.name || user?.fullName || user?.hostName || '';
   const nickname = user?.nickname || user?.user_metadata?.nickname || '';
   const username = user?.username || user?.host || user?.id || 'user_vlive';
-  const displayName = nickname || username || 'User';
-  const userName = (isAdminUser || isSuperAdmin) ? (realFullName || displayName) : displayName;
+  const displayName = nickname || realFullName || username || 'User';
+  const userName = displayName;
   const avatar = user?.avatar || user?.thumbnail || '';
   const cover = user?.cover || '';
   const birthDateVal = user?.birth_date || user?.birthdate || user?.birthday;
@@ -142,7 +142,15 @@ export default function UserProfileViewModal({
 
   const isSelf = currentUser && user && ((String(currentUser.id) === String(user.id)) || (String(currentUser.username) === String(user.username)));
 
-  const publicPhotos = fetchedPhotos.length > 0 ? fetchedPhotos : (user?.photos || []);
+  const publicPhotos = (fetchedPhotos && fetchedPhotos.length > 0)
+    ? fetchedPhotos
+    : (Array.isArray(user?.photos) ? user.photos : []);
+
+  const publicVideos = (fetchedVideos && fetchedVideos.length > 0)
+    ? fetchedVideos
+    : (Array.isArray(user?.videos) ? user.videos : []);
+
+  const totalMediaCount = publicPhotos.length + publicVideos.length;
 
   const toggleFollow = async () => {
     const targetId = user.id || user.username;
@@ -340,15 +348,6 @@ export default function UserProfileViewModal({
               )}
             </div>
 
-            {/* Admin-only full name visibility indicator */}
-            {(isAdminUser || isSuperAdmin) && realFullName && (
-              <div className="flex items-center gap-1.5 py-1 px-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs w-fit">
-                <Shield className="w-3.5 h-3.5 text-amber-400" />
-                <span className="font-bold">{loc('نام و نام خانوادگی واقعی (فقط رویت ادمین):', 'Real Full Name (Admin Only):')}</span>
-                <span className="text-white font-black">{realFullName}</span>
-              </div>
-            )}
-
             <div className="flex items-center gap-2 text-xs text-slate-400 flex-wrap">
               <span className="text-cyan-400 font-mono">@{username}</span>
               <span>•</span>
@@ -440,7 +439,7 @@ export default function UserProfileViewModal({
               <span className="text-[10px] text-slate-400">{window.loc('لایک‌ها', 'Likes')}</span>
             </div>
             <div>
-              <span className="block font-black text-cyan-400 text-sm">{publicPhotos.length}</span>
+              <span className="block font-black text-cyan-400 text-sm">{totalMediaCount}</span>
               <span className="text-[10px] text-slate-400">{window.loc('عکس/فیلم', 'Media')}</span>
             </div>
             <div>
@@ -511,88 +510,101 @@ export default function UserProfileViewModal({
             </div>
           )}
 
-          {/* SUB-TABS */}
+          {/* SUB-TABS: PHOTOS, VIDEOS, ABOUT */}
           <div className="space-y-3 pt-1">
             <div className="flex items-center gap-2 p-1 bg-slate-900 rounded-2xl border border-slate-800">
               {[
-                { id: 'overview', label: window.loc('عکس‌ها', 'Photos') },
-                { id: 'posts', label: window.loc('پست‌ها', 'Posts') },
-                { id: 'about', label: window.loc('درباره', 'About') }
-              ].map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setActiveTab(t.id)}
-                  className={`flex-1 py-2 rounded-xl font-bold text-xs transition ${
-                    activeTab === t.id
-                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
+                { id: 'photos', label: window.loc('عکس‌ها', 'Photos'), icon: Camera, count: publicPhotos.length },
+                { id: 'videos', label: window.loc('فیلم‌ها', 'Videos'), icon: Video, count: publicVideos.length },
+                { id: 'about', label: window.loc('درباره', 'About'), icon: Sparkles }
+              ].map(t => {
+                const TabIcon = t.icon;
+                const isActive = activeTab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveTab(t.id)}
+                    className={`flex-1 py-2.5 px-2 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 ${
+                      isActive
+                        ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <TabIcon className="w-3.5 h-3.5" />
+                    <span>{t.label}</span>
+                    {typeof t.count === 'number' && (
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${isActive ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                        {t.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             {/* TAB CONTENT: PHOTOS */}
-            {activeTab === 'overview' && (
-              <div className="grid grid-cols-2 gap-2.5 animate-fadeIn">
-                {publicPhotos.map((p, i) => (
-                  <div key={i} className="rounded-2xl overflow-hidden aspect-square bg-slate-900 border border-slate-800 relative group">
-                    <img src={p} alt="User media" className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+            {activeTab === 'photos' && (
+              <div className="space-y-3 animate-fadeIn">
+                {publicPhotos.length === 0 ? (
+                  <div className="text-center py-10 px-4 bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-2">
+                    <Camera className="w-10 h-10 text-slate-600 mx-auto" />
+                    <p className="text-xs text-slate-400 font-bold">{window.loc('عکسی توسط این کاربر ثبت نشده است', 'No photos uploaded yet')}</p>
                   </div>
-                ))}
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {publicPhotos.map((p, i) => {
+                      const photoUrl = typeof p === 'string' ? p : (p.url || p.image || '');
+                      if (!photoUrl) return null;
+                      return (
+                        <div 
+                          key={p.id || i} 
+                          onClick={() => setSelectedMediaPreview({ type: 'image', url: photoUrl })}
+                          className="rounded-2xl overflow-hidden aspect-square bg-slate-900 border border-slate-800 relative group cursor-pointer shadow-md hover:border-pink-500/50 transition"
+                        >
+                          <img 
+                            src={photoUrl} 
+                            alt="User photo" 
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-300" 
+                          />
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                            <Eye className="w-6 h-6 text-white drop-shadow-md" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* TAB CONTENT: POSTS */}
-            {activeTab === 'posts' && (
-              <div className="space-y-4 animate-fadeIn pb-6">
-                {fetchedPosts.length === 0 ? (
-                  <div className="text-center p-6 space-y-2">
-                    <div className="text-4xl">📭</div>
-                    <p className="text-xs text-slate-400 font-bold">{window.loc('پستی وجود ندارد', 'No posts available')}</p>
+            {/* TAB CONTENT: VIDEOS */}
+            {activeTab === 'videos' && (
+              <div className="space-y-3 animate-fadeIn pb-6">
+                {publicVideos.length === 0 ? (
+                  <div className="text-center py-10 px-4 bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-2">
+                    <Video className="w-10 h-10 text-slate-600 mx-auto" />
+                    <p className="text-xs text-slate-400 font-bold">{window.loc('ویدیویی توسط این کاربر ثبت نشده است', 'No videos uploaded yet')}</p>
                   </div>
                 ) : (
-                  fetchedPosts.map(post => (
-                    <div key={post.id} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3 relative">
-                      <div className="flex items-center gap-2">
-                        <img src={post.userAvatar || user.avatar || ''} alt={post.username} className="w-8 h-8 rounded-full border border-slate-700" />
-                        <div>
-                          <div className="font-bold text-white text-xs">{post.username}</div>
-                          <div className="text-[10px] text-slate-400">{post.time}</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {publicVideos.map((v, i) => {
+                      const videoUrl = typeof v === 'string' ? v : (v.url || v.video || '');
+                      if (!videoUrl) return null;
+                      return (
+                        <div 
+                          key={v.id || i} 
+                          className="rounded-2xl overflow-hidden aspect-video bg-slate-950 border border-slate-800 relative group shadow-md"
+                        >
+                          <video 
+                            src={videoUrl} 
+                            controls 
+                            playsInline 
+                            className="w-full h-full object-cover bg-black" 
+                          />
                         </div>
-                      </div>
-                      
-                      {post.caption && (
-                        <p className="text-xs text-slate-300 leading-relaxed dir-rtl">{post.caption}</p>
-                      )}
-                      
-                      {post.imageUrl && (
-                        <div className="rounded-xl overflow-hidden max-h-64 mt-2">
-                          <img src={post.imageUrl} alt="post" className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                      
-                      {post.videoUrl && (
-                        <div className="rounded-xl overflow-hidden max-h-64 mt-2">
-                          <video src={post.videoUrl} controls className="w-full h-full object-cover" />
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-                         <div className="flex items-center gap-4 text-slate-400 text-xs">
-                           <button className="flex items-center gap-1.5 hover:text-pink-400 transition">
-                             <Heart className="w-4 h-4" />
-                             <span>{post.likes}</span>
-                           </button>
-                           <button className="flex items-center gap-1.5 hover:text-cyan-400 transition">
-                             <MessageSquare className="w-4 h-4" />
-                             <span>{post.comments}</span>
-                           </button>
-                         </div>
-                      </div>
-                    </div>
-                  ))
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
@@ -649,6 +661,28 @@ export default function UserProfileViewModal({
 
         </div>
       </div>
+
+      {/* ================= LIGHTBOX PREVIEW MODAL ================= */}
+      {selectedMediaPreview && (
+        <div 
+          onClick={() => setSelectedMediaPreview(null)}
+          className="fixed inset-0 z-[120] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn"
+        >
+          <div className="relative max-w-2xl w-full max-h-[90vh] flex flex-col items-center" onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => setSelectedMediaPreview(null)}
+              className="absolute -top-12 right-0 p-2 text-white bg-slate-800/80 rounded-full hover:bg-slate-700 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img 
+              src={selectedMediaPreview.url} 
+              alt="Preview" 
+              className="max-h-[80vh] w-auto object-contain rounded-2xl shadow-2xl border border-slate-800" 
+            />
+          </div>
+        </div>
+      )}
 
       {/* ================= REPORT MODAL POPUP ================= */}
       {isReportModalOpen && (
