@@ -846,14 +846,28 @@ export const apiProfile = {
       try {
         const { error } = await supabase.from('kyc_applications').insert([{
           user_id: uid,
+          username: data?.username || '',
           full_name: fullName,
           national_id: metadataJson,
+          description: data?.description || '',
           selfie_url: selfieUrl,
           document_url: docUrl,
+          doc_url: docUrl,
           status: 'Pending'
         }]);
         if (error) {
-          console.warn('KYC DB insert error:', error);
+          // Schema fallback if specific optional column is absent
+          const { error: fallbackErr } = await supabase.from('kyc_applications').insert([{
+            user_id: uid,
+            full_name: fullName,
+            national_id: metadataJson,
+            selfie_url: selfieUrl,
+            document_url: docUrl,
+            status: 'Pending'
+          }]);
+          if (fallbackErr) {
+            console.warn('KYC DB insert fallback error:', fallbackErr);
+          }
         }
       } catch(err) {
         console.warn('KYC DB insert exception:', err);
