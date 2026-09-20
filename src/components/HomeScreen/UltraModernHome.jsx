@@ -367,13 +367,8 @@ export default function UltraModernHome({
       if (activeFilter === 'vip' && !card.isVip) return false;
 
       // 3. Search Query:
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchTitle = card.title?.toLowerCase().includes(q);
-        const matchUser = card.username?.toLowerCase().includes(q);
-        if (!matchTitle && !matchUser) return false;
-      }
-
+      // Search disabled
+      
       return true;
     });
 
@@ -408,7 +403,7 @@ export default function UltraModernHome({
       if (a.isVip !== b.isVip) return a.isVip ? -1 : 1;
       return 0;
     });
-  }, [streamsList, usersList, activeMode, activeFilter, searchQuery, loc, followedUsers]);
+  }, [streamsList, usersList, activeMode, activeFilter, loc, followedUsers]);
 
   return (
     <div className="relative w-full max-w-4xl mx-auto space-y-3 pb-24 select-none text-slate-100 font-sans">
@@ -421,29 +416,7 @@ export default function UltraModernHome({
       </div>
 
       {/* SEARCH BAR (WHEN SEARCH TAB IS ACTIVE) */}
-      {isSearchTabActive && (
-        <div className="relative z-20 px-1">
-          <div className="relative flex items-center">
-            <Search className="absolute right-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={loc('جستجو...', 'Search...')}
-              className="w-full bg-slate-900/90 border border-white/10 rounded-2xl pr-10 pl-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-pink-500/60 transition"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute left-3 text-slate-400 hover:text-white text-xs"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Search disabled */}
 
       {/* =========================================================================
           1. STORIES ROW (HORIZONTAL SCROLL) - ABOVE TABS
