@@ -308,6 +308,11 @@ export default function UltraModernHome({
     (usersList || []).forEach(user => {
       if (!user || user.status === 'banned' || user.isBanned) return;
 
+      // Filter out the current user themselves from appearing in the match/discovery grid
+      const userUid = String(user.id || user.username || '').toLowerCase();
+      const currentUid = String(currentUser?.id || currentUsername || '').toLowerCase();
+      if (userUid && currentUid && userUid === currentUid) return;
+
       // STRICT RULE: Only female users are displayed in the list
       if (!isFemaleProfile(user)) return;
 

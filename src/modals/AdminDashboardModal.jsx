@@ -148,8 +148,13 @@ export default function AdminDashboardModal(props) {
     const combined = [...(props.kycApplications || [])];
     const sourceUsers = (props.adminUsersList && props.adminUsersList.length > 0) ? props.adminUsersList : (props.usersList || []);
     sourceUsers.forEach(u => {
-      if (u.kyc_status === 'pending' || u.wantToBeStreamer || u.isStreamerRequested) {
-        const existingIdx = combined.findIndex(c => c.username === u.username || c.user_id === u.id);
+      const userKycStatus = String(u.kyc_status || '').toLowerCase();
+      const isAlreadyStreamer = Boolean(u.isStreamer || u.isHost || u.is_streamer || u.user_type === 'STREAMER');
+      if (!isAlreadyStreamer && userKycStatus !== 'approved' && userKycStatus !== 'rejected' && (userKycStatus === 'pending' || u.wantToBeStreamer || u.isStreamerRequested)) {
+        const existingIdx = combined.findIndex(c => 
+          (c.username && u.username && String(c.username).toLowerCase() === String(u.username).toLowerCase()) ||
+          (c.user_id && u.id && String(c.user_id) === String(u.id))
+        );
         const dynamicApp = {
           id: 'user_kyc_' + (u.username || u.id),
           user_id: u.id,
@@ -163,12 +168,12 @@ export default function AdminDashboardModal(props) {
           idCardPhoto: u.avatar || '',
           avatar: u.avatar || '',
           verificationType: 'ONBOARDING_APPLICATION',
-          requestedPose: u.requestedPose || '✌️ ژست پپیروزی',
+          requestedPose: u.requestedPose || '✌️ ژست پیروزی',
           created_at: u.created_at || new Date().toISOString()
         };
         if (existingIdx === -1) {
           combined.push(dynamicApp);
-        } else if (combined[existingIdx].status === 'Pending') {
+        } else if (String(combined[existingIdx].status || '').toLowerCase() === 'pending') {
           combined[existingIdx] = { ...dynamicApp, ...combined[existingIdx], status: 'Pending' };
         }
       }
@@ -177,7 +182,7 @@ export default function AdminDashboardModal(props) {
     const unique = [];
     const seen = new Set();
     for (const app of combined) {
-      const key = (app.id || app.username || Math.random()).toString().toLowerCase();
+      const key = (app.id || app.user_id || app.username || Math.random()).toString().toLowerCase();
       if (!seen.has(key)) {
         seen.add(key);
         unique.push(app);
