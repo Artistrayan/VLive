@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  Search, Bell, Coins, Plus, Crown, Heart, Eye, Flame, ShieldAlert,
+  Bell, Coins, Plus, Crown, Heart, Eye, Flame, ShieldAlert,
   Radio, Video, ChevronRight, CheckCircle2, User, Globe, Shield,
   Wifi, Battery, Sparkles, SlidersHorizontal, Lock, MessageSquare, ShieldCheck,
   Trophy, UserCheck
@@ -61,7 +61,6 @@ export default function UltraModernHome({
   notificationsList = [],
   totalUnreadMessages = 0,
   activeTab = 'home',
-  isSearchTabActive = false,
   setActiveTab,
   setSelectedUser,
   setIsUserProfileModalOpen,
@@ -92,17 +91,7 @@ export default function UltraModernHome({
     setActiveFilter('all');
   };
 
-  // Search input state
-  const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'online' | 'vip' | 'live'
-  const searchInputRef = useRef(null);
-
-  // When search tab is active, auto-focus search input
-  useEffect(() => {
-    if (isSearchTabActive && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [isSearchTabActive]);
 
   // Check if current user is an approved streamer or admin
   const canAccessBroadcasting = Boolean(
