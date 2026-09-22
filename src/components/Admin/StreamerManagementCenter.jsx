@@ -107,8 +107,8 @@ export default function StreamerManagementCenter({
       const isAlreadyStreamer = u.isStreamer || u.isHost || u.is_streamer || u.user_type === 'STREAMER';
       const userKycStatus = String(u.kyc_status || '').toLowerCase();
       
-      // Do not add dynamic pending request if user is already handled or a streamer
-      if (!isAlreadyStreamer && userKycStatus !== 'approved' && userKycStatus !== 'rejected' && (userKycStatus === 'pending' || u.wantToBeStreamer || u.isStreamerRequested)) {
+      // Include if explicitly requested, even if kyc_status is not 'pending'
+      if (!isAlreadyStreamer && (u.wantToBeStreamer || u.isStreamerRequested || (userKycStatus !== 'approved' && userKycStatus !== 'rejected' && userKycStatus === 'pending'))) {
         const existingIdx = combined.findIndex(c => 
           (c.username && u.username && String(c.username).toLowerCase() === String(u.username).toLowerCase()) || 
           (c.user_id && u.id && String(c.user_id) === String(u.id))
