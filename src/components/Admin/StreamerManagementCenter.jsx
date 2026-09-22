@@ -137,6 +137,7 @@ export default function StreamerManagementCenter({
       }
     });
 
+    console.log('DEBUG: StreamerManagementCenter mergedKycApplications:', combined);
     // Remove duplicates safely by application ID
     const unique = [];
     const seen = new Set();

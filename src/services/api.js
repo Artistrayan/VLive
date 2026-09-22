@@ -5538,6 +5538,12 @@ export const apiAdmin = {
         .select('*, profiles:user_id(id, username, name, avatar, bio, user_type, is_verified, status)')
         .order('created_at', { ascending: false });
       
+      if (error) {
+        console.error('DEBUG: getKycApplications Supabase error:', error);
+      } else {
+        console.log('DEBUG: getKycApplications data length:', data?.length);
+      }
+      
       let dbApps = [];
       if (!error && Array.isArray(data) && data.length > 0) {
         dbApps = data.map(app => {
