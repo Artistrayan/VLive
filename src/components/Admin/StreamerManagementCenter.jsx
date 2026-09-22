@@ -150,13 +150,6 @@ export default function StreamerManagementCenter({
     return unique.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
   }, [kycApplications, usersList]);
 
-  // UI for Debugging
-  const DebugBar = () => (
-    <div className="bg-red-900 text-white p-2 text-[10px] fixed top-0 inset-x-0 z-[1000] text-center border-b border-red-500">
-      DEBUG: KYC_PROPS={kycApplications?.length} | USERS_LIST={usersList?.length} | MERGED={mergedKycApplications?.length}
-    </div>
-  );
-
   const pendingKycCount = mergedKycApplications.filter(a => (a.status || '').toLowerCase() === 'pending').length;
   const defaultTab = initialSubTab || (pendingKycCount > 0 ? 'kyc' : 'kyc');
   const [streamerSubTab, setStreamerSubTab] = useState(defaultTab); // 'streamers' | 'scores' | 'kyc' | 'history' | 'ai_risk' | 'settings' | 'logs'
@@ -203,11 +196,10 @@ export default function StreamerManagementCenter({
   const handleRefreshApplications = async () => {
     setIsRefreshing(true);
     try {
-      if (apiAdmin && typeof apiAdmin.getKycApplications === 'function') {
-        const freshApps = await apiAdmin.getKycApplications();
-        if (freshApps && Array.isArray(freshApps)) {
-          setKycApplications(freshApps);
-        }
+      // Always try to fetch fresh data if props are missing
+      const freshApps = await apiAdmin.getKycApplications();
+      if (freshApps && Array.isArray(freshApps)) {
+        setKycApplications(freshApps);
       }
     } catch (e) {
       console.warn('Refresh KYC applications error:', e);
@@ -217,7 +209,10 @@ export default function StreamerManagementCenter({
   };
 
   React.useEffect(() => {
-    handleRefreshApplications();
+    // If props kycApplications is empty, force a fetch
+    if (!kycApplications || kycApplications.length === 0) {
+        handleRefreshApplications();
+    }
 
     const handleKycEvent = () => {
       handleRefreshApplications();
@@ -414,7 +409,6 @@ export default function StreamerManagementCenter({
 
   return (
     <div className="space-y-4 text-xs">
-      <DebugBar />
       
       {/* ================= STREAMER CENTER HEADER ================= */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gradient-to-r from-pink-950/80 via-purple-950/60 to-slate-950 p-4 rounded-3xl border border-pink-500/40 shadow-xl">

@@ -1576,8 +1576,8 @@ export default function AdminDashboardModal(props) {
               {/* 14. STREAMER MANAGEMENT CENTER & VERIFICATION */}
               {adminActiveTab === 'verification' && (
                 <StreamerManagementCenter
-                  usersList={effectiveUsersList}
-                  setUsersList={handleSetUsersList}
+                  usersList={adminUsersList || []}
+                  setUsersList={setAdminUsersList}
                   adminWithdrawalsList={adminWithdrawalsList}
                   setAdminWithdrawalsList={setAdminWithdrawalsList}
                   addAdminAuditLog={addAdminAuditLog}
