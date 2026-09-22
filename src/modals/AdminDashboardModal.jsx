@@ -221,6 +221,7 @@ export default function AdminDashboardModal(props) {
       // 1. KYC / Streamer applications
       if (apiAdmin && typeof apiAdmin.getKycApplications === 'function') {
         apiAdmin.getKycApplications().then(apps => {
+          console.log('DEBUG: Admin fetched kyc applications:', apps);
           if (apps && props.setKycApplications) {
             props.setKycApplications(apps);
           }

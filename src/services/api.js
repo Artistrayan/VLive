@@ -34,7 +34,9 @@ export async function resolveProfileUuid(identifier) {
 }
 
 export async function verifyAdminServerRole(inputTelegramId = null) {
-  return await verifyAdminAccess();
+  const isAdmin = await verifyAdminAccess();
+  console.log('DEBUG: verifyAdminServerRole result:', isAdmin);
+  return isAdmin;
 }
 
 // ==========================================
