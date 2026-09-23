@@ -824,6 +824,37 @@ export const apiProfile = {
       }
     }
     
+    let selfieUrl = data?.selfiePhoto || data?.selfie_url || data?.selfieUrl || '';
+    const docUrl = data?.idCardPhoto || data?.docUrl || data?.avatar || '';
+    const fullName = data?.name || data?.username || 'کاربر متقاضی';
+
+    // If selfieUrl is base64, attempt storage upload for faster loading and permanent public URL
+    if (selfieUrl && typeof selfieUrl === 'string' && selfieUrl.startsWith('data:image/')) {
+      try {
+        const cleanUname = String(data?.username || uid || 'selfie').replace(/[^a-zA-Z0-9_]/g, '_');
+        const customFileName = `kyc_selfies/${cleanUname}_${Date.now()}.jpg`;
+        const parts = selfieUrl.split(',');
+        if (parts.length === 2) {
+          const byteString = atob(parts[1]);
+          const mimeMatch = parts[0].match(/:(.*?);/);
+          const mimeString = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          const blob = new Blob([ab], { type: mimeString });
+          const fileObj = new File([blob], `${cleanUname}_selfie.jpg`, { type: mimeString });
+          const uploadRes = await apiStorage.uploadFile('avatars', fileObj, customFileName);
+          if (uploadRes && uploadRes.success && uploadRes.url) {
+            selfieUrl = uploadRes.url;
+          }
+        }
+      } catch (storageErr) {
+        console.warn('Storage upload for KYC selfie note:', storageErr);
+      }
+    }
+
     // Pack all streamer application metadata into JSON for national_id column
     const metadataObj = {
       description: data?.description || '',
@@ -835,13 +866,14 @@ export const apiProfile = {
       verificationType: data?.verificationType || 'MANUAL_GESTURE_SELFIE',
       rulesAcceptedAt: data?.rulesAcceptedAt || new Date().toISOString(),
       avatar: data?.avatar || data?.idCardPhoto || '',
-      name: data?.name || data?.username || ''
+      name: data?.name || data?.username || '',
+      selfiePhoto: selfieUrl,
+      selfie_url: selfieUrl,
+      selfieUrl: selfieUrl,
+      idCardPhoto: docUrl,
+      docUrl: docUrl
     };
     const metadataJson = JSON.stringify(metadataObj);
-
-    const docUrl = data?.idCardPhoto || data?.docUrl || data?.avatar || '';
-    const selfieUrl = data?.selfiePhoto || data?.selfie_url || '';
-    const fullName = data?.name || data?.username || 'کاربر متقاضی';
 
     // Insert into real Supabase kyc_applications table with exact valid columns
     if (uid && String(uid).length > 10 && !String(uid).startsWith('user_')) {
@@ -5626,6 +5658,9 @@ export const apiAdmin = {
           else if (rawStatus === 'rejected') currentStatus = 'Rejected';
           else if (rawStatus === 'correction') currentStatus = 'Correction';
 
+          const docPhoto = app.document_url || app.doc_url || parsed.idCardPhoto || parsed.docUrl || profile.avatar || '';
+          const selfiePhoto = app.selfie_url || parsed.selfiePhoto || parsed.selfie_url || parsed.selfieUrl || '';
+
           return {
             id: app.id,
             user_id: app.user_id || profile.id,
@@ -5638,11 +5673,12 @@ export const apiAdmin = {
             requestedPose: parsed.requestedPose || '✌️ ژست پیروزی',
             verificationType: parsed.verificationType || 'MANUAL_GESTURE_SELFIE',
             aiConfidence: parsed.aiConfidence || '98.5%',
-            idCardPhoto: app.document_url || app.doc_url || profile.avatar || '',
-            avatar: profile.avatar || app.document_url || '',
-            selfiePhoto: app.selfie_url || '',
+            idCardPhoto: docPhoto,
+            avatar: profile.avatar || docPhoto || '',
+            selfiePhoto: selfiePhoto,
+            selfie_url: selfiePhoto,
             videoDemoUrl: parsed.videoDemoUrl || '',
-            docUrl: app.document_url || app.doc_url || '',
+            docUrl: docPhoto,
             admin_notes: parsed.admin_notes || app.admin_notes || '',
             rejectionReason: parsed.rejection_reason || parsed.rejectionReason || (currentStatus === 'Rejected' ? parsed.admin_notes : ''),
             correctionMessage: parsed.correction_message || parsed.correctionMessage || (currentStatus === 'Correction' ? parsed.admin_notes : ''),
@@ -5675,7 +5711,8 @@ export const apiAdmin = {
             aiConfidence: '98.5%',
             idCardPhoto: p.avatar || '',
             avatar: p.avatar || '',
-            selfiePhoto: p.avatar || '',
+            selfiePhoto: p.selfiePhoto || p.selfie_url || '',
+            selfie_url: p.selfiePhoto || p.selfie_url || '',
             videoDemoUrl: '',
             docUrl: p.avatar || '',
             admin_notes: '',

@@ -164,7 +164,8 @@ export default function AdminDashboardModal(props) {
           description: u.bio || `درخواست استریمر کاربر ${u.username} (ثبت نام)`,
           streamCategory: u.category || 'عمومی',
           streamTopic: u.topic || 'گپ و گفتگو',
-          selfiePhoto: u.selfiePhoto || u.avatar || '',
+          selfiePhoto: u.selfiePhoto || u.selfie_url || '',
+          selfie_url: u.selfiePhoto || u.selfie_url || '',
           idCardPhoto: u.avatar || '',
           avatar: u.avatar || '',
           verificationType: 'ONBOARDING_APPLICATION',
@@ -174,7 +175,16 @@ export default function AdminDashboardModal(props) {
         if (existingIdx === -1) {
           combined.push(dynamicApp);
         } else if (String(combined[existingIdx].status || '').toLowerCase() === 'pending') {
-          combined[existingIdx] = { ...dynamicApp, ...combined[existingIdx], status: 'Pending' };
+          const ex = combined[existingIdx];
+          combined[existingIdx] = {
+            ...dynamicApp,
+            ...ex,
+            selfiePhoto: ex.selfiePhoto || ex.selfie_url || dynamicApp.selfiePhoto || '',
+            selfie_url: ex.selfie_url || ex.selfiePhoto || dynamicApp.selfie_url || '',
+            idCardPhoto: ex.idCardPhoto || ex.docUrl || ex.document_url || dynamicApp.idCardPhoto || '',
+            avatar: ex.avatar || dynamicApp.avatar || '',
+            status: 'Pending'
+          };
         }
       }
     });

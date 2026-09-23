@@ -401,7 +401,9 @@ export default function UserOnboardingModal({
           name: fullName.trim() || username.trim(),
           avatar: avatarPreview || '',
           idCardPhoto: avatarPreview || '', // Profile Photo
-          selfiePhoto: capturedSelfie || avatarPreview || '', // Live Gesture Selfie
+          selfiePhoto: capturedSelfie || '', // Live Gesture Selfie (Distinct from avatar)
+          selfie_url: capturedSelfie || '',
+          selfieUrl: capturedSelfie || '',
           docUrl: avatarPreview || '',
           videoDemoUrl: '',
           gender: gender || 'female',
