@@ -1696,34 +1696,63 @@ export const apiProfile = {
 export const apiHome = {
   async getActiveStreams() {
     try {
-      const { data, error } = await supabase
-        .from('streams')
-        .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, last_heartbeat_at, started_at, profiles:host_id(id, username, name, avatar)')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+      let data = null;
+      let error = null;
 
-      if (error) {
-        console.error('getActiveStreams Supabase query error:', error.message);
-        return [];
+      // 1. Primary query: Joined select for streams with active, starting, or live status
+      try {
+        const res1 = await supabase
+          .from('streams')
+          .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, last_heartbeat_at, started_at, profiles:host_id(id, username, name, avatar)')
+          .neq('status', 'ended')
+          .order('created_at', { ascending: false });
+        data = res1.data;
+        error = res1.error;
+      } catch (e) {
+        error = e;
       }
 
+      // 2. Fallback query if joined query failed (e.g., schema foreign key cache issue or RLS)
+      if (error || !Array.isArray(data)) {
+        try {
+          const res2 = await supabase
+            .from('streams')
+            .select('id, host_id, title, status, thumbnail, category, is_vip, entry_fee, created_at, last_heartbeat_at, started_at')
+            .neq('status', 'ended')
+            .order('created_at', { ascending: false });
+          data = res2.data || [];
+        } catch (e) {
+          data = [];
+        }
+      }
+
+      // 3. Fetch all profiles map to resolve host metadata reliably
+      let profilesMap = new Map();
+      try {
+        const { data: profs } = await supabase.from('profiles').select('id, username, name, avatar, status');
+        if (Array.isArray(profs)) {
+          profs.forEach(p => {
+            if (p.id) profilesMap.set(String(p.id).toLowerCase(), p);
+            if (p.username) profilesMap.set(String(p.username).toLowerCase(), p);
+          });
+        }
+      } catch (e) {}
+
+      // 4. Filter out ended or stale streams (keep streams active within last 12 hours)
       const now = Date.now();
       const validData = (data || []).filter(s => {
-        const createdMs = new Date(s.created_at).getTime();
-        if (s.last_heartbeat_at) {
-          const hbMs = new Date(s.last_heartbeat_at).getTime();
-          return (now - hbMs) < 60000; // 1 min timeout
-        }
-        return (now - createdMs) < 120000; // 2 min grace without heartbeat
+        if (!s || String(s.status).toLowerCase() === 'ended') return false;
+        const createdMs = s.created_at ? new Date(s.created_at).getTime() : now;
+        const hbMs = s.last_heartbeat_at ? new Date(s.last_heartbeat_at).getTime() : createdMs;
+        // Keep streams active for up to 12 hours instead of dropping after 60 seconds
+        return (now - hbMs) < (12 * 3600 * 1000);
       });
 
-      if (!Array.isArray(data)) {
-        return [];
-      }
-
-      return validData.map(s => {
-        const hostProfile = s.profiles || {};
-        const hostName = hostProfile.name || hostProfile.username || 'Streamer';
+      const mappedDbStreams = validData.map(s => {
+        const hostProfile = (s.profiles && typeof s.profiles === 'object' && !Array.isArray(s.profiles) ? s.profiles : null)
+          || (s.host_id && profilesMap.get(String(s.host_id).toLowerCase()))
+          || {};
+        const hostName = hostProfile.name || hostProfile.username || s.host || 'Streamer';
         const hostAvatar = getValidAvatarUrl(hostProfile, hostName);
         const canonicalRoom = getCanonicalLiveKitRoomName(s.id);
 
@@ -1736,8 +1765,8 @@ export const apiHome = {
           thumbnail: getValidAvatarUrl(s.thumbnail || hostAvatar, s.title || hostName),
           category: s.category || 'General',
           live_type: s.is_vip ? 'vip' : 'standard',
-          viewers: 1,
-          description: '',
+          viewers: Number(s.viewers || 1),
+          description: s.description || '',
           tags: '#vlive',
           livekit_room: canonicalRoom,
           livekit_server_url: getLiveKitConfig().url,
@@ -1748,6 +1777,39 @@ export const apiHome = {
           created_at: s.created_at || new Date().toISOString()
         };
       });
+
+      // 5. Merge local client streams (if created in local state/session)
+      const localStreams = [];
+      const scanKeys = ['vlive_active_streams', 'vlive_local_streams', 'vlive_current_stream'];
+      scanKeys.forEach(k => {
+        try {
+          const raw = safeStorage.getItem(k);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) localStreams.push(...parsed);
+            else if (typeof parsed === 'object' && parsed !== null) localStreams.push(parsed);
+          }
+        } catch (e) {}
+      });
+
+      const combined = [...mappedDbStreams];
+      const seenIds = new Set(mappedDbStreams.map(s => String(s.id).toLowerCase()));
+      const seenHostIds = new Set(mappedDbStreams.map(s => String(s.host_id || '').toLowerCase()).filter(Boolean));
+
+      localStreams.forEach(ls => {
+        if (!ls || !ls.id || String(ls.status).toLowerCase() === 'ended') return;
+        const sid = String(ls.id).toLowerCase();
+        if (!seenIds.has(sid)) {
+          seenIds.add(sid);
+          combined.push({
+            ...ls,
+            status: 'active',
+            is_live: true
+          });
+        }
+      });
+
+      return combined;
     } catch (e) {
       console.warn('getActiveStreams catch:', e);
       return [];

@@ -3886,6 +3886,11 @@ export default function App() {
             setIsStreamerFollowed={setIsStreamerFollowed}
             handleInitiateCall={handleInitiateCall}
             setIsExitLiveModalOpen={setIsExitLiveModalOpen}
+            setSelectedUser={setSelectedUser}
+            setIsUserProfileModalOpen={setIsUserProfileModalOpen}
+            usersList={usersList}
+            streamsList={streamsList}
+            setIsPkBattleOpen={setIsPkBattleOpen}
             showToast={showToast}
             loc={loc}
             isRtl={isRtl}

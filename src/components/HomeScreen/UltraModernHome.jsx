@@ -271,13 +271,7 @@ export default function UltraModernHome({
       const isAdmin = Boolean(hostUser?.role === 'admin' || hostUser?.role === 'super_admin' || hostUser?.is_admin || hostUser?.user_type === 'ADMIN' || hostUser?.user_type === 'SUPER_ADMIN');
       const hostLevel = hostUser?.level || hostUser?.user_level || getStreamerScores(hostUser || stream).level || 1;
 
-      // Filter logic: 
-      // 1. All users can see normal streams.
-      // 2. Only VIP, Admin, or SuperAdmin can see 18+ streams.
-      if (isAdultStream && !isVip && !isUserAdmin && !isUserSuperAdmin) {
-        return; // Skip this stream
-      }
-
+      // Add live stream card (cards show lock overlay for non-VIP users on adult/VIP streams)
       cards.push({
         id: `stream_${stream.id}`,
         type: 'stream',
@@ -324,7 +318,7 @@ export default function UltraModernHome({
       const isAdultUser = Boolean(
         user.is_adult || user.isAdult || (user.age >= 18 && (user.tariffPerMin > 150 || user.category === 'Adult'))
       );
-      const isUserLive = Boolean(user.online && (user.isStreamer || user.is_streamer || user.role === 'streamer'));
+      const isUserLive = Boolean(user.status === 'live' || user.is_live || user.isLive || (user.online && (user.isStreamer || user.is_streamer || user.role === 'streamer')));
       const isVerified = Boolean(user.is_verified || user.isVerified || user.verified);
       const isAdmin = Boolean(user.role === 'admin' || user.role === 'super_admin' || user.is_admin || user.user_type === 'ADMIN' || user.user_type === 'SUPER_ADMIN');
       const userLevel = user.level || user.user_level || getStreamerScores(user).level || 1;

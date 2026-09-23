@@ -1111,170 +1111,69 @@ export default function LiveStudioModal({
       {studioPhase === 'PRE_LIVE' && (
         <div className="relative z-10 flex-1 flex flex-col justify-between p-4 max-w-lg mx-auto w-full h-full animate-fadeIn pointer-events-auto">
           
-          {/* Top Gradient & Header */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              {/* Host User Info Glass Pill */}
-              <div className="flex items-center gap-2.5 bg-black/45 backdrop-blur-md border border-white/15 px-3 py-1.5 rounded-full shadow-lg">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 via-purple-600 to-amber-500 p-0.5 flex items-center justify-center">
-                  <Video className="w-4 h-4 text-white animate-pulse" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-black text-white">@{currentUsername || currentUser?.username || 'Host'}</span>
-                    <span className="bg-amber-500/25 text-amber-300 border border-amber-500/40 text-[9px] px-1.5 py-0.2 rounded-full font-bold">
-                      Lv.{currentUser?.level || currentUser?.user_level || userLevel || 1}
-                    </span>
-                  </div>
-                </div>
+          {/* Top Header: User Name, Level & Close Studio */}
+          <div className="flex items-center justify-between w-full pt-2">
+            {/* User Info Pill */}
+            <div className="flex items-center gap-2.5 bg-black/50 backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-full shadow-lg">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 via-purple-600 to-amber-500 p-0.5 flex items-center justify-center">
+                <Video className="w-4 h-4 text-white animate-pulse" />
               </div>
-
-              {/* Close Studio Button */}
-              <button 
-                onClick={handleCloseStudio}
-                className="w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/15 text-white flex items-center justify-center font-bold text-base transition shadow-lg active:scale-95"
-                title={window.loc('بستن استودیو', 'Close studio')}
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-black text-white">
+                  {currentUser?.name || currentUsername || currentUser?.username || 'Host'}
+                </span>
+                <span className="bg-amber-500/30 text-amber-300 border border-amber-500/50 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                  {window.loc('سطح', 'Lv.')} {currentUser?.level || currentUser?.user_level || userLevel || 1}
+                </span>
+              </div>
             </div>
 
-            {/* Type Selector (Standard vs Adult 18+) Floating Glass Pill */}
-            <div className="inline-flex w-full grid grid-cols-2 gap-2 bg-black/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/15 shadow-xl">
-              <button
-                type="button"
-                onClick={() => setLiveType('standard')}
-                title={window.loc('لایواستریم استاندارد', 'Standard live stream')}
-                className={`py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                  liveType === 'standard'
-                    ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg font-black'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                <Video className="w-4 h-4 text-cyan-300" />
-                <span>{window.loc('لایو عمومی', 'Standard Live')}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setLiveType('adult')}
-                title={window.loc('لایواستریم ۱۸+', '18+ live stream')}
-                className={`py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                  liveType === 'adult'
-                    ? 'bg-gradient-to-r from-rose-600 via-purple-700 to-amber-500 text-white shadow-lg font-black'
-                    : 'text-rose-300 hover:text-rose-100'
-                }`}
-              >
-                <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
-                <span>{window.loc('لایو VIP / ۱۸+', '18+ Live')}</span>
-              </button>
-            </div>
+            {/* Close Button */}
+            <button 
+              onClick={handleCloseStudio}
+              className="w-10 h-10 rounded-full bg-black/50 hover:bg-black/75 backdrop-blur-md border border-white/20 text-white flex items-center justify-center font-bold text-lg transition shadow-lg active:scale-95"
+              title={window.loc('بستن استودیو', 'Close studio')}
+            >
+              ✕
+            </button>
           </div>
 
-          {/* Right Floating Studio Tools (TikTok / Instagram Live Style) */}
-          <div className="self-end flex flex-col gap-3 my-auto">
-            {/* Switch Camera */}
+          {/* Controls: Camera Flip & Microphone Toggle ONLY */}
+          <div className="self-end flex flex-col gap-4 my-auto">
+            {/* 1. Camera Flip (Front/Rear) */}
             <button
               onClick={toggleCameraFacingMode}
-              className="w-12 h-12 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] flex items-center justify-center transition hover:scale-110 active:scale-90"
-              title={window.loc('تغییر دوربین جلو / عقب', 'Flip Camera (Front/Rear)')}
+              className="w-13 h-13 rounded-full bg-black/50 backdrop-blur-md border border-white/25 text-white shadow-2xl flex items-center justify-center transition hover:scale-110 active:scale-90"
+              title={window.loc('تغییر دوربین جلو / عقب', 'Flip Camera')}
             >
               <SwitchCamera className="w-6 h-6 text-cyan-400" />
             </button>
-            
-            {/* Toggle Camera */}
-            <button
-              onClick={() => setIsCamEnabled(!isCamEnabled)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition hover:scale-110 active:scale-90 drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] ${
-                isCamEnabled ? 'bg-slate-900/60 backdrop-blur-md border border-white/20 text-white' : 'bg-rose-900/60 backdrop-blur-md border border-rose-500 text-rose-400'
-              }`}
-              title={isCamEnabled ? window.loc('دوربین روشن', 'Camera on') : window.loc('دوربین خاموش', 'Camera off')}
-            >
-              {isCamEnabled ? <Camera className="w-6 h-6" /> : <CameraOff className="w-6 h-6" />}
-            </button>
 
-            {/* Toggle Mic */}
+            {/* 2. Microphone Toggle (Mute/Unmute) */}
             <button
               onClick={() => setIsMicEnabled(!isMicEnabled)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition hover:scale-110 active:scale-90 drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)] ${
-                isMicEnabled ? 'bg-transparent text-white' : 'bg-transparent text-rose-400'
+              className={`w-13 h-13 rounded-full flex items-center justify-center transition hover:scale-110 active:scale-90 shadow-2xl backdrop-blur-md border ${
+                isMicEnabled 
+                  ? 'bg-black/50 border-white/25 text-white' 
+                  : 'bg-rose-600/80 border-rose-400 text-white'
               }`}
-              title={isMicEnabled ? window.loc('میکروفون فعال', 'Active microphone') : window.loc('میکروفون قطع', 'Microphone cut off')}
+              title={isMicEnabled ? window.loc('میکروفون فعال', 'Active microphone') : window.loc('میکروفون قطع', 'Microphone muted')}
             >
-              {isMicEnabled ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
+              {isMicEnabled ? <Mic className="w-6 h-6 text-emerald-400" /> : <MicOff className="w-6 h-6 text-rose-200" />}
             </button>
-
           </div>
 
-          {/* Bottom Area: Ticketed Stream Option + START Button */}
-          <div className="space-y-3 pt-2">
-            {/* Audio Indicator */}
-            {isMicEnabled && (
-              <div className="inline-flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-[10px] text-emerald-300">
-                <Mic className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-                <div className="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden flex">
-                  <div className="h-full bg-gradient-to-r from-emerald-500 via-amber-400 to-rose-500 w-3/4 animate-pulse rounded-full" />
-                </div>
-                <span className="font-mono text-[9px] font-bold">HD Live Audio</span>
-              </div>
-            )}
-
-            {/* Ticketed VIP Stream Switch & Pricing Floating Glass Card */}
-            <div className="p-3 rounded-2xl bg-black/50 backdrop-blur-md border border-white/15 space-y-2 shadow-xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${isTicketedLive ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-white/10 text-slate-300'}`}>
-                    <Lock className="w-3.5 h-3.5" />
-                  </div>
-                  <span className="text-xs font-bold text-white">{window.loc('لایو پولی / ورود با بلیط', 'Ticketed Paid Live')}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsTicketedLive(!isTicketedLive)}
-                  className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${isTicketedLive ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-slate-800'}`}
-                >
-                  <div className={`w-5 h-5 rounded-full bg-white transition-transform ${isTicketedLive ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
-              </div>
-
-              {isTicketedLive && (
-                <div className="pt-2 border-t border-white/10 space-y-1.5 animate-fadeIn">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-200 font-bold">{window.loc('💰 مبلغ بلیط ورودی:', '💰 Ticket Price:')}</span>
-                    <span className="font-mono font-black text-amber-300">{ticketPrice} Coins</span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {[25, 50, 100, 250].map((price) => (
-                      <button
-                        key={price}
-                        type="button"
-                        onClick={() => setTicketPrice(price)}
-                        className={`py-1.5 rounded-xl font-mono text-[11px] font-bold border transition ${
-                          ticketPrice === price 
-                            ? 'bg-amber-500/30 border-amber-400 text-amber-300 font-black shadow-md' 
-                            : 'bg-black/40 border-white/10 text-slate-300 hover:text-white'
-                        }`}
-                      >
-                        {price} 🪙
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Launch Live Button - Pure Animated Color-Shift Text START */}
-            <div className="py-2 flex items-center justify-center">
-              <button
-                onClick={handleInitiateStart}
-                className="bg-transparent border-0 outline-none hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 group cursor-pointer animate-start-text-glow py-2 px-6 rounded-full"
-              >
-                <Play className="w-9 h-9 text-pink-500 fill-pink-500 group-hover:scale-120 transition-transform duration-300 drop-shadow-[0_0_12px_rgba(236,72,153,0.8)]" />
-                <span className="animated-gradient-text font-black tracking-widest text-4xl uppercase font-sans drop-shadow-[0_0_18px_rgba(168,85,247,0.8)]">
-                  START
-                </span>
-              </button>
-            </div>
+          {/* Bottom Area: START Button ONLY */}
+          <div className="pb-6 flex items-center justify-center w-full">
+            <button
+              onClick={handleInitiateStart}
+              className="bg-transparent border-0 outline-none hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 group cursor-pointer animate-start-text-glow py-3 px-8 rounded-full"
+            >
+              <Play className="w-10 h-10 text-pink-500 fill-pink-500 group-hover:scale-120 transition-transform duration-300 drop-shadow-[0_0_15px_rgba(236,72,153,0.9)]" />
+              <span className="animated-gradient-text font-black tracking-widest text-4xl uppercase font-sans drop-shadow-[0_0_20px_rgba(168,85,247,0.9)]">
+                START
+              </span>
+            </button>
           </div>
         </div>
       )}
