@@ -542,36 +542,14 @@ export default function UltraPremiumLiveViewer({
         </header>
 
         {/* ----------------------------------------------------------------------- */}
-        {/* BOTTOM SECTION: GIFTS BAR + 3-LINE CHAT FEED + CHAT INPUT               */}
+        {/* BOTTOM SECTION: CHAT FEED + CHAT INPUT BAR + SMALLER GIFTS BAR (BELOW INPUT) */}
         {/* ----------------------------------------------------------------------- */}
-        <footer className="relative z-40 pb-4 px-3 sm:px-5 flex flex-col gap-2 max-w-lg w-full mx-auto pointer-events-auto">
+        <footer className="relative z-40 pb-3 px-3 sm:px-5 flex flex-col gap-2 max-w-lg w-full mx-auto pointer-events-auto">
           
-          {/* 1. HORIZONTAL SCROLLABLE GIFTS BAR (FRAMELESS / NO CARDS) */}
-          <div className="w-full flex items-center gap-3 overflow-x-auto py-2 px-1 no-scrollbar">
-            {GIFTS_CATALOG.map((gift) => (
-              <button
-                key={gift.id}
-                onClick={() => handleExecuteSendGift(gift)}
-                className="flex flex-col items-center justify-center shrink-0 group transition-transform active:scale-90 hover:scale-110 cursor-pointer p-1"
-                title={gift.name}
-              >
-                <span className="text-3xl filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] group-hover:animate-bounce transition-transform">
-                  {gift.emoji || gift.icon || '🎁'}
-                </span>
-                <span className="text-[10px] font-bold text-white text-shadow-sm mt-0.5 truncate max-w-[64px]">
-                  {gift.name}
-                </span>
-                <span className="text-[9px] font-mono font-black text-amber-300 drop-shadow">
-                  {gift.coins} 🪙
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* 2. CHAT FEED (SHOWS ONLY 3 RECENT MESSAGES, SCROLLABLE FOR OLDER CHAT) */}
+          {/* 1. CHAT FEED (SHOWS ONLY 3 RECENT MESSAGES, SCROLLABLE FOR OLDER CHAT) */}
           <div
             ref={chatScrollRef}
-            className="h-20 overflow-y-auto space-y-1.5 px-3 py-1 custom-scrollbar text-right dir-rtl pointer-events-auto"
+            className="h-20 overflow-y-auto space-y-1 px-3 py-1 custom-scrollbar text-right dir-rtl pointer-events-auto"
           >
             {streamChatMessages.map((msg, idx) => (
               <div
@@ -588,8 +566,8 @@ export default function UltraPremiumLiveViewer({
             ))}
           </div>
 
-          {/* 3. CHAT INPUT BAR */}
-          <div className="flex items-center gap-2 w-full pt-1">
+          {/* 2. CHAT INPUT BAR (MOVED HIGHER UP) */}
+          <div className="flex items-center gap-2 w-full">
             <input
               id="vlive-stream-chat-input"
               type="text"
@@ -597,15 +575,37 @@ export default function UltraPremiumLiveViewer({
               onChange={e => setStreamChatInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSendStreamChat()}
               placeholder={loc('ارسال پیام زنده...', 'Send live message...')}
-              className="flex-1 px-4 py-2.5 rounded-full bg-black/40 border border-white/20 text-xs text-white placeholder:text-white/50 outline-none focus:border-pink-500 backdrop-blur-md transition-all"
+              className="flex-1 px-4 py-2 rounded-full bg-black/30 border border-white/15 text-xs text-white placeholder:text-white/50 outline-none focus:border-pink-500 backdrop-blur-md transition-all"
             />
             <button
               onClick={handleSendStreamChat}
               disabled={!streamChatInput?.trim()}
-              className="p-2.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-xs transition-all active:scale-95 disabled:opacity-40"
+              className="p-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-xs transition-all active:scale-95 disabled:opacity-40 shadow-lg"
             >
               <Send className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
             </button>
+          </div>
+
+          {/* 3. HORIZONTAL SCROLLABLE GIFTS BAR (MOVED BELOW INPUT, SMALLER & TRANSPARENT) */}
+          <div className="w-full flex items-center gap-2 overflow-x-auto py-1 px-1 no-scrollbar opacity-90 hover:opacity-100 transition-opacity">
+            {GIFTS_CATALOG.map((gift) => (
+              <button
+                key={gift.id}
+                onClick={() => handleExecuteSendGift(gift)}
+                className="flex flex-col items-center justify-center shrink-0 group transition-all active:scale-90 hover:scale-110 cursor-pointer p-0.5 bg-transparent border-0"
+                title={gift.name}
+              >
+                <span className="text-2xl filter drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] group-hover:animate-bounce transition-transform">
+                  {gift.emoji || gift.icon || '🎁'}
+                </span>
+                <span className="text-[9px] font-bold text-white/90 text-shadow-sm truncate max-w-[50px] leading-tight">
+                  {gift.name}
+                </span>
+                <span className="text-[8px] font-mono font-black text-amber-300 drop-shadow">
+                  {gift.coins}🪙
+                </span>
+              </button>
+            ))}
           </div>
 
         </footer>

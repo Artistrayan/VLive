@@ -350,15 +350,17 @@ export default function UltraModernHome({
     // Apply Filters & Search
     const filtered = cards.filter(card => {
       // 1. Filter by Active Mode Tabs:
-      // Mode 'normal': only normal lives and normal profiles (hide adult 18+)
+      // Mode 'normal': ONLY active standard live streams
       if (activeMode === 'normal') {
+        if (!card.isLive) return false;
         if (card.isAdult) return false;
       }
-      // Mode 'adult': only adult +18 lives and adult profiles
+      // Mode 'adult': ONLY active adult +18 live streams
       else if (activeMode === 'adult') {
+        if (!card.isLive) return false;
         if (!card.isAdult) return false;
       }
-      // Mode 'all': shows all female users (both standard & 18+)
+      // Mode 'all': shows all female users and female streamers
 
       // 2. Sub-filters:
       if (activeFilter === 'online' && !card.isOnline) return false;
@@ -772,22 +774,16 @@ export default function UltraModernHome({
                   {/* Aspect Ratio 3:4 Thumbnail Container */}
                   <div 
                     onClick={handleCardMainClick}
-                    className="aspect-[3/4] relative overflow-hidden cursor-pointer"
+                    className="aspect-[3/4] relative overflow-hidden cursor-pointer bg-gradient-to-br from-slate-900 via-slate-800 to-rose-950"
                   >
-                    {card.thumbnail ? (
-                      <img
-                        src={card.thumbnail || getValidAvatarUrl(card, card.username)}
-                        alt={card.username}
-                        onError={(e) => { e.target.src = createDefaultAvatarSvg(card.username || 'Live'); }}
-                        className={`w-full h-full object-cover transition-transform duration-500 ${
-                          isStreamLocked ? 'filter blur-md scale-105' : 'group-hover:scale-105'
-                        }`}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-slate-900 flex items-center justify-center text-slate-500 font-bold text-sm">
-                        {card.username.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <img
+                      src={getValidAvatarUrl(card.thumbnail || card.avatar || card.userData || card, card.username)}
+                      alt={card.username}
+                      onError={(e) => { e.target.src = createDefaultAvatarSvg(card.username || 'User'); }}
+                      className={`w-full h-full object-cover transition-transform duration-500 ${
+                        isStreamLocked ? 'filter blur-md scale-105' : 'group-hover:scale-105'
+                      }`}
+                    />
 
                     {/* Locked +18 Overlay */}
                     {isStreamLocked && (
