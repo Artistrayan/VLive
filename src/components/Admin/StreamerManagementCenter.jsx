@@ -105,9 +105,10 @@ export default function StreamerManagementCenter({
     (usersList || []).forEach(u => {
       const isAlreadyStreamer = u.isStreamer || u.isHost || u.is_streamer || u.user_type === 'STREAMER';
       const userKycStatus = String(u.kyc_status || '').toLowerCase();
+      const isExplicitResolved = isAlreadyStreamer || userKycStatus === 'approved' || userKycStatus === 'rejected' || userKycStatus === 'correction';
       
-      // Include if explicitly requested, even if kyc_status is not 'pending'
-      if (!isAlreadyStreamer && (u.wantToBeStreamer || u.isStreamerRequested || (userKycStatus !== 'approved' && userKycStatus !== 'rejected' && userKycStatus === 'pending'))) {
+      // Include dynamic app ONLY if not already resolved and explicitly requested
+      if (!isExplicitResolved && (u.wantToBeStreamer || u.isStreamerRequested || userKycStatus === 'pending')) {
         const existingIdx = combined.findIndex(c => 
           (c.username && u.username && String(c.username).toLowerCase() === String(u.username).toLowerCase()) || 
           (c.user_id && u.id && String(c.user_id) === String(u.id))
@@ -140,7 +141,7 @@ export default function StreamerManagementCenter({
             selfie_url: ex.selfie_url || ex.selfiePhoto || dynamicApp.selfie_url || '',
             idCardPhoto: ex.idCardPhoto || ex.docUrl || ex.document_url || dynamicApp.idCardPhoto || '',
             avatar: ex.avatar || dynamicApp.avatar || '',
-            status: 'Pending'
+            status: ex.status || 'Pending'
           };
         }
       }
@@ -266,7 +267,13 @@ export default function StreamerManagementCenter({
     }
     setKycApplications(prev => {
       const arr = Array.isArray(prev) ? prev : [];
-      return arr.map(a => (a.id === app.id || (a.username && a.username === app.username) || (a.user_id && a.user_id === app.user_id)) ? { ...a, status: 'Approved', admin_notes: '' } : a);
+      const idx = arr.findIndex(a => a.id === app.id || (a.username && app.username && a.username === app.username) || (a.user_id && app.user_id && a.user_id === app.user_id));
+      const updatedItem = { ...app, status: 'Approved', admin_notes: '' };
+      if (idx !== -1) {
+        return arr.map((a, i) => i === idx ? { ...a, ...updatedItem } : a);
+      } else {
+        return [updatedItem, ...arr];
+      }
     });
     setUsersList(prev => prev.map(u => (u.username === app.username || u.id === app.user_id) ? { 
       ...u, 
@@ -291,13 +298,13 @@ export default function StreamerManagementCenter({
     }
     setKycApplications(prev => {
       const arr = Array.isArray(prev) ? prev : [];
-      return arr.map(a => (a.id === app.id || (a.username && a.username === app.username) || (a.user_id && a.user_id === app.user_id)) ? { 
-        ...a, 
-        status: 'Rejected', 
-        rejectionReason: reason, 
-        rejection_reason: reason,
-        admin_notes: reason 
-      } : a);
+      const idx = arr.findIndex(a => a.id === app.id || (a.username && app.username && a.username === app.username) || (a.user_id && app.user_id && a.user_id === app.user_id));
+      const updatedItem = { ...app, status: 'Rejected', rejectionReason: reason, rejection_reason: reason, admin_notes: reason };
+      if (idx !== -1) {
+        return arr.map((a, i) => i === idx ? { ...a, ...updatedItem } : a);
+      } else {
+        return [updatedItem, ...arr];
+      }
     });
     setUsersList(prev => prev.map(u => (u.username === app.username || u.id === app.user_id) ? { 
       ...u, 
@@ -317,13 +324,13 @@ export default function StreamerManagementCenter({
     }
     setKycApplications(prev => {
       const arr = Array.isArray(prev) ? prev : [];
-      return arr.map(a => (a.id === app.id || (a.username && a.username === app.username) || (a.user_id && a.user_id === app.user_id)) ? { 
-        ...a, 
-        status: 'Correction', 
-        correctionMessage: msg, 
-        correction_message: msg,
-        admin_notes: msg 
-      } : a);
+      const idx = arr.findIndex(a => a.id === app.id || (a.username && app.username && a.username === app.username) || (a.user_id && app.user_id && a.user_id === app.user_id));
+      const updatedItem = { ...app, status: 'Correction', correctionMessage: msg, correction_message: msg, admin_notes: msg };
+      if (idx !== -1) {
+        return arr.map((a, i) => i === idx ? { ...a, ...updatedItem } : a);
+      } else {
+        return [updatedItem, ...arr];
+      }
     });
     setUsersList(prev => prev.map(u => (u.username === app.username || u.id === app.user_id) ? { 
       ...u, 

@@ -5288,9 +5288,17 @@ export const apiAdmin = {
         return unique.map(u => {
         const isOnline = presenceService.isUserOnline(u);
         const w = walMap.get(u.id);
-        const override = adminStateMap.get(u.id);
-        const dbKycStatus = kycStatusMap.get(String(u.id).toLowerCase());
-        const isApprovedKyc = dbKycStatus === 'Approved' || String(u.kyc_status || '').toLowerCase() === 'approved';
+        const uidLower = u.id ? String(u.id).toLowerCase() : '';
+        const unameLower = u.username ? String(u.username).toLowerCase() : '';
+        const override = (u.id && adminStateMap.get(u.id)) || 
+          (uidLower && adminStateMap.get(uidLower)) || 
+          (unameLower && adminStateMap.get(unameLower)) || null;
+
+        const dbKycStatus = (uidLower && kycStatusMap.get(uidLower)) || (unameLower && kycStatusMap.get(unameLower)) || null;
+
+        const effectiveKycStatus = String(override?.kyc_status || override?.status || dbKycStatus || u.kyc_status || (u.wantToBeStreamer || u.isStreamerRequested || u.want_to_be_streamer || u.is_streamer_requested ? 'pending' : 'none')).toLowerCase();
+
+        const isApprovedKyc = effectiveKycStatus === 'approved';
 
         // Streamer logic: explicit boolean override has highest priority
         const isStreamerVal = typeof override?.is_streamer === 'boolean'
@@ -5323,8 +5331,8 @@ export const apiAdmin = {
         const statusVal = isBannedVal ? 'banned' : (override?.status || u.status || 'approved');
         const userTypeVal = isStreamerVal ? 'STREAMER' : (override?.user_type || u.user_type || 'REAL_USER');
 
-        const kycStatusRaw = dbKycStatus || u.kyc_status || (u.wantToBeStreamer || u.isStreamerRequested ? 'pending' : 'none');
-        const isKycRequested = !isStreamerVal && (String(kycStatusRaw).toLowerCase() === 'pending' || Boolean(u.wantToBeStreamer || u.want_to_be_streamer || u.isStreamerRequested || u.is_streamer_requested));
+        const isExplicitActioned = isStreamerVal || effectiveKycStatus === 'approved' || effectiveKycStatus === 'rejected' || effectiveKycStatus === 'correction' || Boolean(override?.kyc_status) || Boolean(override?.status);
+        const isKycRequested = !isExplicitActioned && (effectiveKycStatus === 'pending' || Boolean(u.wantToBeStreamer || u.want_to_be_streamer || u.isStreamerRequested || u.is_streamer_requested));
 
         let adminNotesList = [];
         if (override?.admin_notes) {
