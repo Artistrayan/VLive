@@ -5413,7 +5413,7 @@ export const apiAdmin = {
           is_verified: isVerifiedVal,
           isVerified: isVerifiedVal,
           verified: isVerifiedVal,
-          kyc_status: kycStatusRaw,
+          kyc_status: effectiveKycStatus,
           wantToBeStreamer: isKycRequested,
           isStreamerRequested: isKycRequested,
           adminNotes: adminNotesList.length > 0 ? adminNotesList : (u.adminNotes || []),
@@ -5737,13 +5737,13 @@ export const apiAdmin = {
 
           const uname = app.username || profile.username || app.full_name || (app.user_id ? `user_${String(app.user_id).slice(-4)}` : 'applicant');
           
-          let rawStatus = (adminOverride.kyc_status || adminOverride.status || profile.kyc_status || profile.status || app.status || parsed.status || '').toLowerCase();
+          let rawStatus = (adminOverride.kyc_status || profile.kyc_status || app.status || parsed.status || '').toLowerCase();
           
-          if (profile.user_type === 'STREAMER' || profile.status === 'approved' || profile.kyc_status === 'approved') {
+          if (profile.user_type === 'STREAMER' || profile.kyc_status === 'approved' || adminOverride.kyc_status === 'approved') {
             rawStatus = 'approved';
-          } else if (profile.status === 'rejected' || profile.kyc_status === 'rejected') {
+          } else if (profile.kyc_status === 'rejected' || adminOverride.kyc_status === 'rejected') {
             rawStatus = 'rejected';
-          } else if (profile.status === 'correction' || profile.kyc_status === 'correction') {
+          } else if (profile.kyc_status === 'correction' || adminOverride.kyc_status === 'correction') {
             rawStatus = 'correction';
           }
 
@@ -5791,7 +5791,7 @@ export const apiAdmin = {
 
         // Check if profile is already resolved or overridden in adminStateMap/profilesMap
         const pOverride = (pUid && adminStateMap.get(pUid)) || (pUname && adminStateMap.get(pUname)) || {};
-        const pStatus = String(pOverride.kyc_status || pOverride.status || p.kyc_status || p.status || '').toLowerCase();
+        const pStatus = String(pOverride.kyc_status || p.kyc_status || '').toLowerCase();
 
         if (p.user_type === 'STREAMER' || pStatus === 'approved' || pStatus === 'rejected' || pStatus === 'correction') {
           return; // Skip profiles that have already been acted upon
@@ -5867,12 +5867,12 @@ export const apiAdmin = {
         const locProfile = (locUid && allProfilesMap.get(locUid)) || (locUname && allProfilesMap.get(locUname)) || {};
         const locOverride = (locUid && adminStateMap.get(locUid)) || (locUname && adminStateMap.get(locUname)) || {};
 
-        let dbStatusOverride = String(locOverride.kyc_status || locOverride.status || locProfile.kyc_status || locProfile.status || '').toLowerCase();
-        if (locProfile.user_type === 'STREAMER' || locProfile.status === 'approved' || locProfile.kyc_status === 'approved') {
+        let dbStatusOverride = String(locOverride.kyc_status || locProfile.kyc_status || '').toLowerCase();
+        if (locProfile.user_type === 'STREAMER' || locProfile.kyc_status === 'approved' || locOverride.kyc_status === 'approved') {
           dbStatusOverride = 'approved';
-        } else if (locProfile.status === 'rejected' || locProfile.kyc_status === 'rejected') {
+        } else if (locProfile.kyc_status === 'rejected' || locOverride.kyc_status === 'rejected') {
           dbStatusOverride = 'rejected';
-        } else if (locProfile.status === 'correction' || locProfile.kyc_status === 'correction') {
+        } else if (locProfile.kyc_status === 'correction' || locOverride.kyc_status === 'correction') {
           dbStatusOverride = 'correction';
         }
 
