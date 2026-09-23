@@ -192,7 +192,17 @@ export default function AdminDashboardModal(props) {
   }, [props.kycApplications, props.usersList, props.adminUsersList]);
 
   const effectiveUsersList = React.useMemo(() => {
-    const rawList = (adminUsersList && adminUsersList.length > 0) ? adminUsersList : (usersList || []);
+    const rawList = [];
+    if (Array.isArray(adminUsersList) && adminUsersList.length > 0) {
+      rawList.push(...adminUsersList);
+    }
+    if (Array.isArray(usersList) && usersList.length > 0) {
+      rawList.push(...usersList);
+    }
+    if (props.currentUser && props.currentUser.id) {
+      rawList.push(props.currentUser);
+    }
+
     const unique = [];
     const seenIds = new Set();
     const seenUsernames = new Set();
@@ -200,14 +210,21 @@ export default function AdminDashboardModal(props) {
       if (!u) continue;
       const uid = u.id ? String(u.id).trim().toLowerCase() : null;
       const uname = u.username ? String(u.username).trim().toLowerCase() : null;
-      if (uid && seenIds.has(uid)) continue;
-      if (uname && seenUsernames.has(uname)) continue;
-      if (uid) seenIds.add(uid);
-      if (uname) seenUsernames.add(uname);
-      unique.push(u);
+      if (uid) {
+        if (seenIds.has(uid)) continue;
+        seenIds.add(uid);
+        if (uname) seenUsernames.add(uname);
+        unique.push(u);
+      } else if (uname) {
+        if (seenUsernames.has(uname)) continue;
+        seenUsernames.add(uname);
+        unique.push(u);
+      } else {
+        unique.push(u);
+      }
     }
     return unique;
-  }, [adminUsersList, usersList]);
+  }, [adminUsersList, usersList, props.currentUser]);
 
   const handleSetUsersList = React.useCallback((updater) => {
     const currentBase = (adminUsersList && adminUsersList.length > 0) ? adminUsersList : (usersList || []);

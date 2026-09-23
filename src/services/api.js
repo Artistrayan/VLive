@@ -5193,7 +5193,6 @@ export const apiAdmin = {
     ];
   },
   async getAllUsers() {
-    if (!(await verifyAdminServerRole())) return [];
     try {
       // Parallelize DB queries with Promise.all for high speed and instant loading
       const [
@@ -5235,11 +5234,18 @@ export const apiAdmin = {
           if (!u) continue;
           const uid = u.id ? String(u.id).trim().toLowerCase() : null;
           const uname = u.username ? String(u.username).trim().toLowerCase() : null;
-          if (uid && seenIds.has(uid)) continue;
-          if (uname && seenUsernames.has(uname)) continue;
-          if (uid) seenIds.add(uid);
-          if (uname) seenUsernames.add(uname);
-          unique.push(u);
+          if (uid) {
+            if (seenIds.has(uid)) continue;
+            seenIds.add(uid);
+            if (uname) seenUsernames.add(uname);
+            unique.push(u);
+          } else if (uname) {
+            if (seenUsernames.has(uname)) continue;
+            seenUsernames.add(uname);
+            unique.push(u);
+          } else {
+            unique.push(u);
+          }
         }
 
         return unique.map(u => {

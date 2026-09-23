@@ -2784,12 +2784,18 @@ export default function App() {
     }
     if (apiAdmin && typeof apiAdmin.getAllUsers === 'function') {
       apiAdmin.getAllUsers().then(users => {
-        if (users && users.length > 0) setAdminUsersList(users);
+        if (users && users.length > 0) {
+          setAdminUsersList(users);
+          setUsersList(users);
+        }
       });
     }
     apiHome.getApprovedUsers().then(users => {
-      if (users) {
-        setUsersList(users);
+      if (users && users.length > 0) {
+        setUsersList(prev => {
+          if (prev && prev.length > 0) return prev;
+          return users;
+        });
       }
     }).catch(err => console.warn('Users load err:', err));
     if (typeof apiSocial !== "undefined" && apiSocial.getPosts) {
