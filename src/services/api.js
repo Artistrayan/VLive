@@ -521,22 +521,33 @@ export const apiProfile = {
       // Fetch wallet balance
       const { data: wallet } = await supabase.from('wallets').select('coins, usdt_balance').eq('user_id', uid).maybeSingle();
       
-      // True persistent coin resolution: wallet or profile (whichever is valid and highest/authoritative)
+      const wCoins = (wallet && typeof wallet.coins === 'number') ? Number(wallet.coins) : null;
+      const pCoins = (profile && typeof profile.coins === 'number') ? Number(profile.coins) : null;
+
       let resolvedCoins = 0;
-      if (wallet && typeof wallet.coins === 'number') {
-        resolvedCoins = Number(wallet.coins);
-      } else if (profile && typeof profile.coins === 'number') {
-        resolvedCoins = Number(profile.coins);
+      if (wCoins !== null && pCoins !== null) {
+        resolvedCoins = Math.max(wCoins, pCoins);
+      } else if (pCoins !== null) {
+        resolvedCoins = pCoins;
+      } else if (wCoins !== null) {
+        resolvedCoins = wCoins;
       }
 
-      // Auto-reconcile wallets if missing or out of sync
-      if (!wallet && uid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(uid))) {
-        supabase.from('wallets').upsert({
-          user_id: uid,
-          coins: resolvedCoins,
-          usdt_balance: 0.0,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id' });
+      // Auto-reconcile wallets & profiles if out of sync
+      if (uid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(uid))) {
+        if (pCoins !== resolvedCoins) {
+          try { await supabase.from('profiles').update({ coins: resolvedCoins, user_coins: resolvedCoins }).eq('id', uid); } catch(e){}
+        }
+        if (wCoins !== resolvedCoins) {
+          try {
+            await supabase.from('wallets').upsert({
+              user_id: uid,
+              coins: resolvedCoins,
+              usdt_balance: Number(wallet?.usdt_balance || 0),
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+          } catch(e){}
+        }
       }
       
       // Calculate dynamic age from birthdate if available
@@ -3093,11 +3104,29 @@ export const apiWallet = {
       const { data: walData } = await supabase.from('wallets').select('coins, usdt_balance').eq('user_id', uid).maybeSingle();
       const { data: profData } = await supabase.from('profiles').select('coins').eq('id', uid).maybeSingle();
       
+      const wCoins = (walData && typeof walData.coins === 'number') ? Number(walData.coins) : null;
+      const pCoins = (profData && typeof profData.coins === 'number') ? Number(profData.coins) : null;
+
       let coins = 0;
-      if (walData && typeof walData.coins === 'number') {
-        coins = Number(walData.coins);
-      } else if (profData && typeof profData.coins === 'number') {
-        coins = Number(profData.coins);
+      if (wCoins !== null && pCoins !== null) {
+        coins = Math.max(wCoins, pCoins);
+      } else if (pCoins !== null) {
+        coins = pCoins;
+      } else if (wCoins !== null) {
+        coins = wCoins;
+      }
+
+      // Keep both tables strictly synced if they differ
+      if (uid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(uid)) && (wCoins !== coins || pCoins !== coins)) {
+        try { await supabase.from('profiles').update({ coins, user_coins: coins }).eq('id', uid); } catch(e){}
+        try {
+          await supabase.from('wallets').upsert({
+            user_id: uid,
+            coins,
+            usdt_balance: Number(walData?.usdt_balance || 0),
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+        } catch(e){}
       }
 
       return {
@@ -3170,18 +3199,22 @@ export const apiWallet = {
     }
 
     const bonusCoins = 50;
+    const current = await this.getBalance();
+    const newCoins = (current.coins || 0) + bonusCoins;
+
     safeStorage.setItem(storageKey, String(now));
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('vlive_daily_reward_claimed', { detail: { timestamp: now, bonusCoins } }));
-    }
+    safeStorage.setItem('vlive_user_coins', String(newCoins));
 
     try {
-      if (uid && uid !== 'me') {
-        const { data: prof } = await supabase.from('profiles').select('coins').eq('id', uid).maybeSingle();
-        const currentCoins = Number(prof?.coins || 0);
-        const newCoins = currentCoins + bonusCoins;
-        await supabase.from('profiles').update({ coins: newCoins }).eq('id', uid);
-        await supabase.from('wallets').update({ coins: newCoins }).eq('user_id', uid);
+      if (uid && uid !== 'me' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(uid))) {
+        await supabase.from('profiles').update({ coins: newCoins, user_coins: newCoins }).eq('id', uid);
+        await supabase.from('wallets').upsert({
+          user_id: uid,
+          coins: newCoins,
+          usdt_balance: current.usdt_balance || 0,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+
         await supabase.from('transactions').insert({
           user_id: uid,
           tx_type: 'buy_coins',
@@ -3191,10 +3224,15 @@ export const apiWallet = {
         });
       }
     } catch (e) {
-      // Safe fallback
+      console.warn('claimDailyBonus DB update error:', e);
     }
 
-    return { success: true, bonusCoins, nextClaimTs: now + TWENTY_FOUR_HOURS };
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('vlive_balance_updated', { detail: { coins: newCoins, userId: uid } }));
+      window.dispatchEvent(new CustomEvent('vlive_daily_reward_claimed', { detail: { timestamp: now, bonusCoins, newCoins } }));
+    }
+
+    return { success: true, bonusCoins, newCoins, nextClaimTs: now + TWENTY_FOUR_HOURS };
   },
 
   async spinWheel() {
@@ -4951,9 +4989,15 @@ export const apiAdmin = {
       const stateCoins = typeof existingState.coins === 'number' ? existingState.coins : null;
 
       let currentCoins = 0;
-      if (walletCoins !== null) currentCoins = walletCoins;
-      else if (profileCoins !== null) currentCoins = profileCoins;
-      else if (stateCoins !== null) currentCoins = stateCoins;
+      if (walletCoins !== null && profileCoins !== null) {
+        currentCoins = Math.max(walletCoins, profileCoins);
+      } else if (profileCoins !== null) {
+        currentCoins = profileCoins;
+      } else if (walletCoins !== null) {
+        currentCoins = walletCoins;
+      } else if (stateCoins !== null) {
+        currentCoins = stateCoins;
+      }
 
       const newCoins = Math.max(0, currentCoins + val);
 

@@ -1406,20 +1406,24 @@ export default function App() {
         const now = Date.now();
         setLastRewardClaimTimestamp(now);
         setDailyStreak(prev => prev + 1);
-        setUserCoins(prev => prev + (res.bonusCoins || 50));
+        const updatedCoins = typeof res.newCoins === 'number' ? res.newCoins : (userCoins + (res.bonusCoins || 50));
+        setUserCoins(updatedCoins);
+        setCurrentUser(prev => prev ? { ...prev, coins: updatedCoins, userCoins: updatedCoins } : prev);
+        safeStorage.setItem('vlive_user_coins', String(updatedCoins));
         setUnlockedRewardData({ title: loc('پاداش روزانه ورود', 'Daily Login Reward'), coins: res.bonusCoins || 50, streak: dailyStreak + 1 });
         setIsRewardOpeningModalOpen(true);
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('vlive_daily_reward_claimed', { detail: { timestamp: now, bonusCoins: res.bonusCoins || 50 } }));
+          window.dispatchEvent(new CustomEvent('vlive_daily_reward_claimed', { detail: { timestamp: now, bonusCoins: res.bonusCoins || 50, newCoins: updatedCoins } }));
+          window.dispatchEvent(new CustomEvent('vlive_balance_updated', { detail: { coins: updatedCoins } }));
         }
-        showToast(loc(('🎁 جایزه روزانه ' + (res.bonusCoins || 50) + ' سکه دریافت شد!'), '🎁 Daily reward claimed!'));
+        showToast(loc(('🎁 جایزه روزانه ' + (res.bonusCoins || 50) + ' سکه به موجودی اضافه شد!'), '🎁 Daily reward added!'));
       } else {
         showToast(loc('جایزه روزانه امروز را قبلاً دریافت کرده‌اید', 'Daily reward already claimed today'));
       }
     } catch (err) {
       showToast(loc('خطا در دریافت جایزه روزانه', 'Error claiming daily reward'));
     }
-  }, [dailyStreak, showToast]);
+  }, [dailyStreak, userCoins, showToast]);
 
   const handleSpinLuckyWheel = useCallback(async () => {
     if (isWheelSpinning) return;
