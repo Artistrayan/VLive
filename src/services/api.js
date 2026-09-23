@@ -871,6 +871,16 @@ export const apiProfile = {
             console.warn('KYC DB insert fallback error:', fallbackErr);
           }
         }
+
+        // Also update profiles table so streamer request is reflected immediately in all user queries
+        try {
+          await supabase.from('profiles').update({
+            kyc_status: 'pending',
+            want_to_be_streamer: true,
+            is_streamer_requested: true,
+            updated_at: new Date().toISOString()
+          }).eq('id', uid);
+        } catch(profErr) {}
       } catch(err) {
         console.warn('KYC DB insert exception:', err);
       }
@@ -5190,12 +5200,12 @@ export const apiAdmin = {
         { data: profs, error },
         { data: walData },
         { data: adminStates },
-        { data: approvedKycs }
+        { data: allKycs }
       ] = await Promise.all([
         supabase.from('profiles').select('*').order('created_at', { ascending: false }),
         supabase.from('wallets').select('user_id, coins, usdt_balance'),
         supabase.from('support_tickets').select('user_id, subject, message').like('subject', 'ADMIN_USER_STATE:%'),
-        supabase.from('kyc_applications').select('user_id').eq('status', 'Approved')
+        supabase.from('kyc_applications').select('user_id, status')
       ]);
 
       const walMap = new Map((walData || []).map(w => [w.user_id, w]));
@@ -5210,7 +5220,12 @@ export const apiAdmin = {
         });
       }
 
-      const approvedKycSet = new Set((approvedKycs || []).map(k => k.user_id));
+      const kycStatusMap = new Map();
+      if (Array.isArray(allKycs)) {
+        allKycs.forEach(k => {
+          if (k.user_id) kycStatusMap.set(String(k.user_id).toLowerCase(), k.status);
+        });
+      }
 
       const processUsers = (list) => {
         const unique = [];
@@ -5231,7 +5246,8 @@ export const apiAdmin = {
         const isOnline = presenceService.isUserOnline(u);
         const w = walMap.get(u.id);
         const override = adminStateMap.get(u.id);
-        const isApprovedKyc = approvedKycSet.has(u.id);
+        const dbKycStatus = kycStatusMap.get(String(u.id).toLowerCase());
+        const isApprovedKyc = dbKycStatus === 'Approved' || String(u.kyc_status || '').toLowerCase() === 'approved';
 
         // Streamer logic: explicit boolean override has highest priority
         const isStreamerVal = typeof override?.is_streamer === 'boolean'
@@ -5264,6 +5280,9 @@ export const apiAdmin = {
         const statusVal = isBannedVal ? 'banned' : (override?.status || u.status || 'approved');
         const userTypeVal = isStreamerVal ? 'STREAMER' : (override?.user_type || u.user_type || 'REAL_USER');
 
+        const kycStatusRaw = dbKycStatus || u.kyc_status || (u.wantToBeStreamer || u.isStreamerRequested ? 'pending' : 'none');
+        const isKycRequested = !isStreamerVal && (String(kycStatusRaw).toLowerCase() === 'pending' || Boolean(u.wantToBeStreamer || u.want_to_be_streamer || u.isStreamerRequested || u.is_streamer_requested));
+
         let adminNotesList = [];
         if (override?.admin_notes) {
           try {
@@ -5278,6 +5297,7 @@ export const apiAdmin = {
           coins: realCoins,
           userCoins: realCoins,
           usdt_balance: realUsdt,
+          bio: u.bio || '',
           city: u.location || u.city || '',
           is_streamer: isStreamerVal,
           isStreamer: isStreamerVal,
@@ -5294,6 +5314,9 @@ export const apiAdmin = {
           is_verified: isVerifiedVal,
           isVerified: isVerifiedVal,
           verified: isVerifiedVal,
+          kyc_status: kycStatusRaw,
+          wantToBeStreamer: isKycRequested,
+          isStreamerRequested: isKycRequested,
           adminNotes: adminNotesList.length > 0 ? adminNotesList : (u.adminNotes || []),
           online: isOnline,
           isOnline: isOnline,
@@ -5535,17 +5558,46 @@ export const apiAdmin = {
   async getKycApplications() {
     if (!(await verifyAdminServerRole())) return [];
     try {
-      const { data, error } = await supabase
-        .from('kyc_applications')
-        .select('*, profiles:user_id(id, username, name, avatar, bio, user_type, is_verified, status)')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('DEBUG: getKycApplications Supabase error:', error);
-      } else {
-        console.log('DEBUG: getKycApplications data length:', data?.length);
+      // 1. Query kyc_applications with fallback to avoid foreign-key schema errors
+      let data = null;
+      let error = null;
+      try {
+        const res = await supabase
+          .from('kyc_applications')
+          .select('*')
+          .order('created_at', { ascending: false });
+        data = res.data;
+        error = res.error;
+      } catch (e) {
+        error = e;
       }
-      
+
+      // 2. Also query profiles for any pending streamer requests
+      let pendingProfiles = [];
+      try {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, username, name, avatar, bio, user_type, is_verified, status, kyc_status, want_to_be_streamer, is_streamer_requested, category, topic, created_at')
+          .or('kyc_status.ilike.%pending%,want_to_be_streamer.eq.true,is_streamer_requested.eq.true');
+        if (Array.isArray(profs)) {
+          pendingProfiles = profs;
+        }
+      } catch(e) {}
+
+      // 3. Fetch all profiles for user_id mapping
+      let allProfilesMap = new Map();
+      try {
+        const { data: allProfs } = await supabase
+          .from('profiles')
+          .select('id, username, name, avatar, bio, user_type, is_verified, status');
+        if (Array.isArray(allProfs)) {
+          allProfs.forEach(p => {
+            if (p.id) allProfilesMap.set(String(p.id).toLowerCase(), p);
+            if (p.username) allProfilesMap.set(String(p.username).toLowerCase(), p);
+          });
+        }
+      } catch(e) {}
+
       let dbApps = [];
       if (!error && Array.isArray(data) && data.length > 0) {
         dbApps = data.map(app => {
@@ -5556,8 +5608,11 @@ export const apiAdmin = {
             }
           } catch(e) {}
 
-          const profile = app.profiles || {};
-          const uname = profile.username || app.full_name || (app.user_id ? `user_${String(app.user_id).slice(-4)}` : 'applicant');
+          const profile = (app.user_id && allProfilesMap.get(String(app.user_id).toLowerCase())) 
+            || (app.username && allProfilesMap.get(String(app.username).toLowerCase())) 
+            || {};
+
+          const uname = app.username || profile.username || app.full_name || (app.user_id ? `user_${String(app.user_id).slice(-4)}` : 'applicant');
           
           const rawStatus = (app.status || parsed.status || '').toLowerCase();
           let currentStatus = 'Pending';
@@ -5567,21 +5622,21 @@ export const apiAdmin = {
 
           return {
             id: app.id,
-            user_id: app.user_id,
+            user_id: app.user_id || profile.id,
             username: uname,
             name: app.full_name || profile.name || uname,
             status: currentStatus,
-            description: parsed.description || '',
-            streamCategory: parsed.streamCategory || 'عمومی',
-            streamTopic: parsed.streamTopic || 'لایو گپ و گفتگو',
+            description: parsed.description || app.description || profile.bio || '',
+            streamCategory: parsed.streamCategory || app.category || 'عمومی',
+            streamTopic: parsed.streamTopic || app.topic || 'لایو گپ و گفتگو',
             requestedPose: parsed.requestedPose || '✌️ ژست پیروزی',
             verificationType: parsed.verificationType || 'MANUAL_GESTURE_SELFIE',
             aiConfidence: parsed.aiConfidence || '98.5%',
-            idCardPhoto: app.document_url || profile.avatar || '',
+            idCardPhoto: app.document_url || app.doc_url || profile.avatar || '',
             avatar: profile.avatar || app.document_url || '',
             selfiePhoto: app.selfie_url || '',
             videoDemoUrl: parsed.videoDemoUrl || '',
-            docUrl: app.document_url || '',
+            docUrl: app.document_url || app.doc_url || '',
             admin_notes: parsed.admin_notes || app.admin_notes || '',
             rejectionReason: parsed.rejection_reason || parsed.rejectionReason || (currentStatus === 'Rejected' ? parsed.admin_notes : ''),
             correctionMessage: parsed.correction_message || parsed.correctionMessage || (currentStatus === 'Correction' ? parsed.admin_notes : ''),
@@ -5589,6 +5644,41 @@ export const apiAdmin = {
           };
         });
       }
+
+      // Merge dynamic pending profiles if not already in dbApps
+      const existingUserIds = new Set(dbApps.map(a => String(a.user_id || '').toLowerCase()).filter(Boolean));
+      const existingUsernames = new Set(dbApps.map(a => String(a.username || '').toLowerCase()).filter(Boolean));
+
+      pendingProfiles.forEach(p => {
+        const pUid = p.id ? String(p.id).toLowerCase() : '';
+        const pUname = p.username ? String(p.username).toLowerCase() : '';
+        if ((!pUid || !existingUserIds.has(pUid)) && (!pUname || !existingUsernames.has(pUname))) {
+          if (pUid) existingUserIds.add(pUid);
+          if (pUname) existingUsernames.add(pUname);
+          dbApps.push({
+            id: 'prof_kyc_' + (p.id || p.username),
+            user_id: p.id,
+            username: p.username,
+            name: p.name || p.username,
+            status: 'Pending',
+            description: p.bio || `درخواست استریمر کاربر ${p.username}`,
+            streamCategory: p.category || 'عمومی',
+            streamTopic: p.topic || 'لایو گپ و گفتگو',
+            requestedPose: '✌️ ژست پیروزی',
+            verificationType: 'ONBOARDING_APPLICATION',
+            aiConfidence: '98.5%',
+            idCardPhoto: p.avatar || '',
+            avatar: p.avatar || '',
+            selfiePhoto: p.avatar || '',
+            videoDemoUrl: '',
+            docUrl: p.avatar || '',
+            admin_notes: '',
+            rejectionReason: '',
+            correctionMessage: '',
+            created_at: p.created_at || new Date().toISOString()
+          });
+        }
+      });
 
       // Collect local applications from all possible storage keys
       const localApps = [];

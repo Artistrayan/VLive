@@ -513,9 +513,9 @@ export default function UserManagementCenter({
                           alt="" 
                           className="w-9 h-9 rounded-full object-cover border border-slate-700" 
                         />
-                        <div>
+                        <div className="flex flex-col min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-bold text-white">{u.name || u.fullName || 'User'}</span>
+                            <span className="font-bold text-white truncate">{u.name || u.fullName || 'User'}</span>
                             {u.nickname && (
                               <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-medium">
                                 ~{u.nickname}
@@ -524,6 +524,11 @@ export default function UserManagementCenter({
                             {u.isBanned && <span className="bg-rose-500/20 text-rose-300 text-[9px] px-1.5 rounded font-bold">BANNED</span>}
                           </div>
                           <span className="text-[10px] text-cyan-400 font-mono">@{u.username}</span>
+                          {u.bio && (
+                            <p className="text-[10px] text-slate-400 max-w-[200px] truncate mt-0.5 line-clamp-1 italic" title={u.bio}>
+                              {u.bio}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -543,6 +548,12 @@ export default function UserManagementCenter({
                         {(u.isStreamer || u.isHost) && (
                           <span className="px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-300 border border-pink-500/30 text-[10px] font-bold">
                             Streamer
+                          </span>
+                        )}
+                        {(u.isStreamerRequested || u.wantToBeStreamer || String(u.kyc_status || '').toLowerCase() === 'pending') && !u.isStreamer && !u.isHost && (
+                          <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold animate-pulse flex items-center gap-1">
+                            <Sparkles className="w-2.5 h-2.5 text-rose-400" />
+                            <span>{window.loc('درخواست استریمر', 'Streamer Req')}</span>
                           </span>
                         )}
                       </div>

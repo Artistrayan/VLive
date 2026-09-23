@@ -292,27 +292,39 @@ export default function SettingsModal(props) {
   const setAuthStep = props.setAuthStep || (() => {});
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = React.useState(false);
   const [deletePassInput, setDeletePassInput] = React.useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = React.useState(false);
 
   const handleDeleteAccount = async () => {
-    if (!deletePassInput.trim()) {
-      showToast(safeLoc('لطفاً رمز عبور را جهت تایید حذف وارد کنید', 'Please enter your password to confirm deletion'));
-      return;
-    }
+    setIsDeletingAccount(true);
     try {
-      const uid = getUserId();
-      if (uid) {
-        try { await supabase.from('profiles').update({ is_deleted: true, status: 'deleted' }).eq('id', uid); } catch (e) {}
+      if (apiProfile && typeof apiProfile.deleteAccount === 'function') {
+        await apiProfile.deleteAccount();
+      } else {
+        const uid = getUserId();
+        if (uid) {
+          try { await supabase.from('profiles').update({ is_deleted: true, status: 'deleted' }).eq('id', uid); } catch (e) {}
+        }
+        try { await supabase.auth.signOut(); } catch (e) {}
       }
-      try { await supabase.auth.signOut(); } catch (e) {}
-    } catch (e) {}
+    } catch (e) {
+      console.warn('handleDeleteAccount error:', e);
+    }
 
     setIsDeleteConfirmOpen(false);
     setIsSettingsModalOpen(false);
-    safeStorage.clear();
-    safeStorage.setItem('vlive_user_logged_in', 'false');
-    setIsLoggedIn(false);
-    setAuthStep('welcome');
-    showToast(safeLoc('حساب کاربری شما برای همیشه حذف شد', 'Your account has been deleted permanently'));
+    
+    if (typeof props.handleLogout === 'function') {
+      await props.handleLogout();
+    } else {
+      if (apiAuth && typeof apiAuth.logout === 'function') {
+        await apiAuth.logout();
+      }
+      setIsLoggedIn(false);
+      setAuthStep('welcome');
+      safeStorage.setItem('vlive_user_logged_in', 'false');
+    }
+    setIsDeletingAccount(false);
+    showToast(safeLoc('حساب کاربری شما با موفقیت برای همیشه حذف شد', 'Your account has been deleted permanently'));
   };
 
   // Real device detection helper

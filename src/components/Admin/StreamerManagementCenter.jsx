@@ -137,15 +137,25 @@ export default function StreamerManagementCenter({
       }
     });
 
-    // Remove duplicates safely by application ID
+    // Remove duplicates safely by user ID, username, and application ID
     const unique = [];
-    const seen = new Set();
+    const seenIds = new Set();
+    const seenUserIds = new Set();
+    const seenUsernames = new Set();
     for (const app of combined) {
-      const key = String(app.id || app.user_id || app.username || Math.random()).toLowerCase();
-      if (!seen.has(key)) {
-        seen.add(key);
-        unique.push(app);
-      }
+      if (!app) continue;
+      const appId = app.id ? String(app.id).toLowerCase() : null;
+      const appUid = app.user_id ? String(app.user_id).toLowerCase() : null;
+      const appUname = app.username ? String(app.username).toLowerCase() : null;
+
+      if (appId && seenIds.has(appId)) continue;
+      if (appUid && seenUserIds.has(appUid)) continue;
+      if (appUname && seenUsernames.has(appUname)) continue;
+
+      if (appId) seenIds.add(appId);
+      if (appUid) seenUserIds.add(appUid);
+      if (appUname) seenUsernames.add(appUname);
+      unique.push(app);
     }
     return unique.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
   }, [kycApplications, usersList]);
