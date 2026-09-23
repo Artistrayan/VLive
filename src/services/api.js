@@ -5605,6 +5605,26 @@ export const apiAdmin = {
   async getKycApplications() {
     if (!(await verifyAdminServerRole())) return [];
     try {
+      // Fetch admin state overrides from support_tickets table
+      let adminStateMap = new Map();
+      try {
+        const { data: adminTickets } = await supabase
+          .from('support_tickets')
+          .select('subject, message')
+          .like('subject', 'ADMIN_USER_STATE:%');
+        if (Array.isArray(adminTickets)) {
+          adminTickets.forEach(t => {
+            try {
+              const key = String(t.subject || '').replace('ADMIN_USER_STATE:', '').trim().toLowerCase();
+              if (key && t.message) {
+                const parsed = JSON.parse(t.message);
+                adminStateMap.set(key, parsed);
+              }
+            } catch(e) {}
+          });
+        }
+      } catch(e) {}
+
       // 1. Query kyc_applications with fallback to avoid foreign-key schema errors
       let data = null;
       let error = null;
@@ -5619,7 +5639,21 @@ export const apiAdmin = {
         error = e;
       }
 
-      // 2. Also query profiles for any pending streamer requests
+      // 2. Query all profiles for user_id mapping and status checks
+      let allProfilesMap = new Map();
+      try {
+        const { data: allProfs } = await supabase
+          .from('profiles')
+          .select('id, username, name, avatar, bio, user_type, is_verified, status, kyc_status, want_to_be_streamer, is_streamer_requested, category, topic, created_at');
+        if (Array.isArray(allProfs)) {
+          allProfs.forEach(p => {
+            if (p.id) allProfilesMap.set(String(p.id).toLowerCase(), p);
+            if (p.username) allProfilesMap.set(String(p.username).toLowerCase(), p);
+          });
+        }
+      } catch(e) {}
+
+      // 3. Query profiles specifically requesting streamer access
       let pendingProfiles = [];
       try {
         const { data: profs } = await supabase
@@ -5628,20 +5662,6 @@ export const apiAdmin = {
           .or('kyc_status.ilike.%pending%,want_to_be_streamer.eq.true,is_streamer_requested.eq.true');
         if (Array.isArray(profs)) {
           pendingProfiles = profs;
-        }
-      } catch(e) {}
-
-      // 3. Fetch all profiles for user_id mapping
-      let allProfilesMap = new Map();
-      try {
-        const { data: allProfs } = await supabase
-          .from('profiles')
-          .select('id, username, name, avatar, bio, user_type, is_verified, status');
-        if (Array.isArray(allProfs)) {
-          allProfs.forEach(p => {
-            if (p.id) allProfilesMap.set(String(p.id).toLowerCase(), p);
-            if (p.username) allProfilesMap.set(String(p.username).toLowerCase(), p);
-          });
         }
       } catch(e) {}
 
@@ -5659,9 +5679,22 @@ export const apiAdmin = {
             || (app.username && allProfilesMap.get(String(app.username).toLowerCase())) 
             || {};
 
+          const adminOverride = (app.user_id && adminStateMap.get(String(app.user_id).toLowerCase()))
+            || (app.username && adminStateMap.get(String(app.username).toLowerCase()))
+            || {};
+
           const uname = app.username || profile.username || app.full_name || (app.user_id ? `user_${String(app.user_id).slice(-4)}` : 'applicant');
           
-          const rawStatus = (app.status || parsed.status || '').toLowerCase();
+          let rawStatus = (adminOverride.kyc_status || adminOverride.status || profile.kyc_status || profile.status || app.status || parsed.status || '').toLowerCase();
+          
+          if (profile.user_type === 'STREAMER' || profile.status === 'approved' || profile.kyc_status === 'approved') {
+            rawStatus = 'approved';
+          } else if (profile.status === 'rejected' || profile.kyc_status === 'rejected') {
+            rawStatus = 'rejected';
+          } else if (profile.status === 'correction' || profile.kyc_status === 'correction') {
+            rawStatus = 'correction';
+          }
+
           let currentStatus = 'Pending';
           if (rawStatus === 'approved') currentStatus = 'Approved';
           else if (rawStatus === 'rejected') currentStatus = 'Rejected';
@@ -5688,21 +5721,30 @@ export const apiAdmin = {
             selfie_url: selfiePhoto,
             videoDemoUrl: parsed.videoDemoUrl || '',
             docUrl: docPhoto,
-            admin_notes: parsed.admin_notes || app.admin_notes || '',
-            rejectionReason: parsed.rejection_reason || parsed.rejectionReason || (currentStatus === 'Rejected' ? parsed.admin_notes : ''),
-            correctionMessage: parsed.correction_message || parsed.correctionMessage || (currentStatus === 'Correction' ? parsed.admin_notes : ''),
+            admin_notes: adminOverride.admin_notes || parsed.admin_notes || app.admin_notes || '',
+            rejectionReason: parsed.rejection_reason || parsed.rejectionReason || (currentStatus === 'Rejected' ? (adminOverride.admin_notes || parsed.admin_notes) : ''),
+            correctionMessage: parsed.correction_message || parsed.correctionMessage || (currentStatus === 'Correction' ? (adminOverride.admin_notes || parsed.admin_notes) : ''),
             created_at: app.created_at
           };
         });
       }
 
-      // Merge dynamic pending profiles if not already in dbApps
+      // Merge dynamic pending profiles if not already in dbApps and if NOT already approved/rejected
       const existingUserIds = new Set(dbApps.map(a => String(a.user_id || '').toLowerCase()).filter(Boolean));
       const existingUsernames = new Set(dbApps.map(a => String(a.username || '').toLowerCase()).filter(Boolean));
 
       pendingProfiles.forEach(p => {
         const pUid = p.id ? String(p.id).toLowerCase() : '';
         const pUname = p.username ? String(p.username).toLowerCase() : '';
+
+        // Check if profile is already resolved or overridden in adminStateMap/profilesMap
+        const pOverride = (pUid && adminStateMap.get(pUid)) || (pUname && adminStateMap.get(pUname)) || {};
+        const pStatus = String(pOverride.kyc_status || pOverride.status || p.kyc_status || p.status || '').toLowerCase();
+
+        if (p.user_type === 'STREAMER' || pStatus === 'approved' || pStatus === 'rejected' || pStatus === 'correction') {
+          return; // Skip profiles that have already been acted upon
+        }
+
         if ((!pUid || !existingUserIds.has(pUid)) && (!pUname || !existingUsernames.has(pUname))) {
           if (pUid) existingUserIds.add(pUid);
           if (pUname) existingUsernames.add(pUname);
@@ -5769,6 +5811,19 @@ export const apiAdmin = {
         const locUid = String(locApp.user_id || '').toLowerCase();
         const locUname = String(locApp.username || '').toLowerCase();
 
+        // Check DB profile / admin override for this local app
+        const locProfile = (locUid && allProfilesMap.get(locUid)) || (locUname && allProfilesMap.get(locUname)) || {};
+        const locOverride = (locUid && adminStateMap.get(locUid)) || (locUname && adminStateMap.get(locUname)) || {};
+
+        let dbStatusOverride = String(locOverride.kyc_status || locOverride.status || locProfile.kyc_status || locProfile.status || '').toLowerCase();
+        if (locProfile.user_type === 'STREAMER' || locProfile.status === 'approved' || locProfile.kyc_status === 'approved') {
+          dbStatusOverride = 'approved';
+        } else if (locProfile.status === 'rejected' || locProfile.kyc_status === 'rejected') {
+          dbStatusOverride = 'rejected';
+        } else if (locProfile.status === 'correction' || locProfile.kyc_status === 'correction') {
+          dbStatusOverride = 'correction';
+        }
+
         // Check if this local app matches an existing DB app
         const existingIdx = resultList.findIndex(a => 
           (locId && String(a.id || '').toLowerCase() === locId) ||
@@ -5778,8 +5833,8 @@ export const apiAdmin = {
 
         if (existingIdx !== -1) {
           const existing = resultList[existingIdx];
-          let effectiveStatus = existing.status || 'Pending';
-          if (existing.status === 'Pending' && locApp.status && locApp.status !== 'Pending') {
+          let effectiveStatus = dbStatusOverride || existing.status || 'Pending';
+          if (effectiveStatus === 'pending' && locApp.status && String(locApp.status).toLowerCase() !== 'pending') {
             effectiveStatus = locApp.status;
           }
 
@@ -5797,11 +5852,11 @@ export const apiAdmin = {
             ...existing,
             ...locApp,
             status: normalizedMergedStatus,
-            admin_notes: isApproved ? '' : (locApp.admin_notes || existing.admin_notes || ''),
-            rejectionReason: isRejected ? (locApp.rejectionReason || existing.rejectionReason || locApp.admin_notes || existing.admin_notes || '') : '',
-            rejection_reason: isRejected ? (locApp.rejection_reason || existing.rejection_reason || locApp.admin_notes || existing.admin_notes || '') : '',
-            correctionMessage: isCorrection ? (locApp.correctionMessage || existing.correctionMessage || locApp.admin_notes || existing.admin_notes || '') : '',
-            correction_message: isCorrection ? (locApp.correction_message || existing.correction_message || locApp.admin_notes || existing.admin_notes || '') : '',
+            admin_notes: isApproved ? '' : (locOverride.admin_notes || locApp.admin_notes || existing.admin_notes || ''),
+            rejectionReason: isRejected ? (locOverride.admin_notes || locApp.rejectionReason || existing.rejectionReason || locApp.admin_notes || existing.admin_notes || '') : '',
+            rejection_reason: isRejected ? (locOverride.admin_notes || locApp.rejection_reason || existing.rejection_reason || locApp.admin_notes || existing.admin_notes || '') : '',
+            correctionMessage: isCorrection ? (locOverride.admin_notes || locApp.correctionMessage || existing.correctionMessage || locApp.admin_notes || existing.admin_notes || '') : '',
+            correction_message: isCorrection ? (locOverride.admin_notes || locApp.correction_message || existing.correction_message || locApp.admin_notes || existing.admin_notes || '') : '',
             selfiePhoto: locApp.selfiePhoto || existing.selfiePhoto || '',
             idCardPhoto: locApp.idCardPhoto || locApp.avatar || existing.idCardPhoto || existing.avatar || '',
             avatar: locApp.avatar || locApp.idCardPhoto || existing.avatar || existing.idCardPhoto || '',
@@ -5811,7 +5866,7 @@ export const apiAdmin = {
             description: locApp.description || existing.description || ''
           };
         } else if (locId && !seenIds.has(locId) && !seenUsernames.has(locUname)) {
-          const rawLocStatus = String(locApp.status || 'Pending').toLowerCase();
+          let rawLocStatus = String(dbStatusOverride || locApp.status || 'Pending').toLowerCase();
           let normLocStatus = 'Pending';
           if (rawLocStatus === 'approved') normLocStatus = 'Approved';
           else if (rawLocStatus === 'rejected') normLocStatus = 'Rejected';
@@ -5854,10 +5909,12 @@ export const apiAdmin = {
       const isCorrection = normalizedStatus === 'Correction';
 
       let targetId = userId;
+      let cleanUsername = String(username || '').trim().replace(/^@/, '');
       let userProfile = null;
-      if (!targetId && username) {
+
+      if (!targetId && cleanUsername) {
         try {
-          const { data: prof } = await supabase.from('profiles').select('*').eq('username', username).maybeSingle();
+          const { data: prof } = await supabase.from('profiles').select('*').eq('username', cleanUsername).maybeSingle();
           if (prof?.id) {
             targetId = prof.id;
             userProfile = prof;
@@ -5866,12 +5923,15 @@ export const apiAdmin = {
       } else if (targetId) {
         try {
           const { data: prof } = await supabase.from('profiles').select('*').eq('id', targetId).maybeSingle();
-          if (prof) userProfile = prof;
+          if (prof) {
+            userProfile = prof;
+            if (!cleanUsername && prof.username) cleanUsername = prof.username;
+          }
         } catch(e) {}
       }
 
       // 1. Update kyc_applications table in Supabase
-      if (id && String(id).length > 10 && !String(id).startsWith('user_kyc_')) {
+      if (id && String(id).length > 10 && !String(id).startsWith('user_kyc_') && !String(id).startsWith('prof_kyc_') && !String(id).startsWith('onboard_kyc_')) {
         try {
           const { data: existingKyc } = await supabase
             .from('kyc_applications')
@@ -5903,78 +5963,119 @@ export const apiAdmin = {
         } catch (err) {
           console.warn('kyc_applications update error:', err);
         }
-      } else if (targetId && !String(targetId).startsWith('user_')) {
+      }
+
+      // Also update by user_id or username in kyc_applications if present
+      if (targetId || cleanUsername) {
         try {
-          const { data: existingKyc } = await supabase
-            .from('kyc_applications')
-            .select('id, national_id')
-            .eq('user_id', targetId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (existingKyc?.id) {
-            let meta = {};
-            try {
-              if (existingKyc.national_id && existingKyc.national_id.startsWith('{')) {
-                meta = JSON.parse(existingKyc.national_id);
-              }
-            } catch(e) {}
-
-            meta.admin_notes = notes || '';
-            if (isRejected) meta.rejection_reason = notes;
-            if (isCorrection) meta.correction_message = notes;
-            meta.status = normalizedStatus;
-            meta.updated_at = new Date().toISOString();
-
-            await supabase
-              .from('kyc_applications')
-              .update({ 
-                status: normalizedStatus, 
-                national_id: JSON.stringify(meta),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', existingKyc.id);
+          let query = supabase.from('kyc_applications').select('id, national_id');
+          if (targetId && !String(targetId).startsWith('user_')) {
+            query = query.eq('user_id', targetId);
+          } else if (cleanUsername) {
+            query = query.eq('username', cleanUsername);
           }
-        } catch (err) {}
+
+          const { data: existingKycs } = await query;
+          if (Array.isArray(existingKycs) && existingKycs.length > 0) {
+            for (const kRecord of existingKycs) {
+              let meta = {};
+              try {
+                if (kRecord.national_id && kRecord.national_id.startsWith('{')) {
+                  meta = JSON.parse(kRecord.national_id);
+                }
+              } catch(e) {}
+
+              meta.admin_notes = notes || '';
+              if (isRejected) meta.rejection_reason = notes;
+              if (isCorrection) meta.correction_message = notes;
+              meta.status = normalizedStatus;
+              meta.updated_at = new Date().toISOString();
+
+              await supabase
+                .from('kyc_applications')
+                .update({ 
+                  status: normalizedStatus, 
+                  national_id: JSON.stringify(meta),
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', kRecord.id);
+            }
+          }
+        } catch(err) {}
       }
       
-      // 2. Update user profile in Supabase using valid schema columns
+      // 2. Update user profile in Supabase resetting request flags completely
+      const profileUpdates = {
+        kyc_status: normalizedStatus.toLowerCase(),
+        want_to_be_streamer: false,
+        wantToBeStreamer: false,
+        is_streamer_requested: false,
+        isStreamerRequested: false,
+        updated_at: new Date().toISOString()
+      };
+
+      if (isApproved) {
+        profileUpdates.is_verified = true;
+        profileUpdates.user_type = 'STREAMER';
+        profileUpdates.status = 'approved';
+        profileUpdates.role = 'streamer';
+      } else if (isRejected) {
+        profileUpdates.status = 'rejected';
+        profileUpdates.user_type = 'REAL_USER';
+        profileUpdates.role = 'user';
+      } else if (isCorrection) {
+        profileUpdates.status = 'correction';
+      }
+
       if (targetId && String(targetId).length > 10 && !String(targetId).startsWith('user_')) {
         try {
-          if (isApproved) {
-            await supabase
-              .from('profiles')
-              .update({ 
-                is_verified: true, 
-                user_type: 'STREAMER', 
-                status: 'approved',
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', targetId);
-          } else if (isRejected) {
-            await supabase
-              .from('profiles')
-              .update({ 
-                status: 'rejected',
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', targetId);
-          } else if (isCorrection) {
-            await supabase
-              .from('profiles')
-              .update({ 
-                status: 'correction',
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', targetId);
-          }
+          await supabase.from('profiles').update(profileUpdates).eq('id', targetId);
         } catch (err) {
-          console.warn('Profile status update error:', err);
+          console.warn('Profile status update error by id:', err);
+        }
+      }
+      if (cleanUsername) {
+        try {
+          await supabase.from('profiles').update(profileUpdates).eq('username', cleanUsername);
+        } catch (err) {
+          console.warn('Profile status update error by username:', err);
         }
       }
 
-      // 3. Build descriptive notification payload for user
+      // 3. Persist Admin Override in support_tickets table
+      const adminOverrideObj = {
+        kyc_status: normalizedStatus.toLowerCase(),
+        status: normalizedStatus.toLowerCase(),
+        want_to_be_streamer: false,
+        is_streamer_requested: false,
+        is_streamer: isApproved,
+        is_verified: isApproved,
+        admin_notes: notes,
+        updated_at: new Date().toISOString()
+      };
+
+      const keysToOverride = [];
+      if (targetId) keysToOverride.push(`ADMIN_USER_STATE:${targetId}`);
+      if (cleanUsername) keysToOverride.push(`ADMIN_USER_STATE:${cleanUsername}`);
+
+      for (const subjKey of keysToOverride) {
+        try {
+          const { data: existingTicket } = await supabase.from('support_tickets').select('id, message').eq('subject', subjKey).maybeSingle();
+          let existingState = {};
+          if (existingTicket?.message) {
+            try { existingState = JSON.parse(existingTicket.message); } catch(e) {}
+          }
+          const mergedState = { ...existingState, ...adminOverrideObj };
+          if (existingTicket?.id) {
+            await supabase.from('support_tickets').update({ message: JSON.stringify(mergedState), updated_at: new Date().toISOString() }).eq('id', existingTicket.id);
+          } else {
+            const uidForTicket = targetId && String(targetId).length > 10 && !String(targetId).startsWith('user_') ? targetId : '00000000-0000-0000-0000-000000000000';
+            await supabase.from('support_tickets').insert([{ user_id: uidForTicket, subject: subjKey, message: JSON.stringify(mergedState), status: 'closed', priority: 'low' }]);
+          }
+        } catch(e) {}
+      }
+
+      // 4. Build descriptive notification payload for user
       let notifTitle = 'اعلان وضعیت احراز هویت استریمر';
       let notifDesc = '';
       let actionType = 'kyc_status';
@@ -5993,12 +6094,12 @@ export const apiAdmin = {
         actionType = 'kyc_correction';
       }
 
-      // 4. Send official notification via apiNotifications
-      const notifyTarget = targetId || username;
+      // 5. Send official notification via apiNotifications
+      const notifyTarget = targetId || cleanUsername;
       if (notifyTarget) {
         await apiNotifications.createNotification({
-          targetUserId: targetId || username,
-          username: username || userProfile?.username,
+          targetUserId: targetId || cleanUsername,
+          username: cleanUsername || userProfile?.username,
           type: 'system',
           title: notifTitle,
           content: notifDesc,
@@ -6015,10 +6116,19 @@ export const apiAdmin = {
         });
       }
 
-      // 5. Update local storage records across all keys
+      // 6. Update local storage records across all keys completely
       try {
         const updateAppRecord = (a) => {
-          if (a.id === id || (username && a.username === username) || (targetId && a.user_id === targetId)) {
+          if (!a) return a;
+          const aId = String(a.id || '').toLowerCase();
+          const aUid = String(a.user_id || a.userId || '').toLowerCase();
+          const aUname = String(a.username || '').toLowerCase();
+          const matches = (id && aId === String(id).toLowerCase()) ||
+            (cleanUsername && aUname === cleanUsername.toLowerCase()) ||
+            (targetId && aUid === String(targetId).toLowerCase()) ||
+            (cleanUsername && aId.includes(cleanUsername.toLowerCase()));
+
+          if (matches) {
             return {
               ...a,
               status: normalizedStatus,
@@ -6033,7 +6143,7 @@ export const apiAdmin = {
           return a;
         };
 
-        const keys = ['vlive_kyc_apps_local', 'vlive_kyc_applications', 'vlive_kyc_apps', 'vlive_verifications'];
+        const keys = ['vlive_kyc_apps_local', 'vlive_kyc_applications', 'vlive_kyc_apps', 'vlive_kyc_app', 'vlive_streamer_applications', 'vlive_verifications'];
         keys.forEach(k => {
           try {
             const raw = safeStorage.getItem(k);
@@ -6042,6 +6152,9 @@ export const apiAdmin = {
               if (Array.isArray(parsed)) {
                 const updated = parsed.map(updateAppRecord);
                 safeStorage.setItem(k, JSON.stringify(updated));
+              } else if (typeof parsed === 'object' && parsed !== null) {
+                const updated = updateAppRecord(parsed);
+                safeStorage.setItem(k, JSON.stringify(updated));
               }
             }
           } catch(e) {}
@@ -6049,7 +6162,14 @@ export const apiAdmin = {
 
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('vlive_kyc_updated', { 
-            detail: { id, status: normalizedStatus, notes, username, userId: targetId, actionType, notifTitle, notifDesc } 
+            detail: { id, status: normalizedStatus, notes, username: cleanUsername, userId: targetId, actionType, notifTitle, notifDesc } 
+          }));
+          window.dispatchEvent(new CustomEvent('vlive_user_updated', {
+            detail: {
+              userId: targetId,
+              username: cleanUsername,
+              updates: profileUpdates
+            }
           }));
         }
       } catch(e) {}
