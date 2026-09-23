@@ -5799,14 +5799,22 @@ export const apiAdmin = {
 
           const uname = app.username || profile.username || app.full_name || (app.user_id ? `user_${String(app.user_id).slice(-4)}` : 'applicant');
           
-          let rawStatus = (adminOverride.kyc_status || profile.kyc_status || app.status || parsed.status || '').toLowerCase();
-          
-          if (profile.user_type === 'STREAMER' || profile.kyc_status === 'approved' || adminOverride.kyc_status === 'approved') {
-            rawStatus = 'approved';
-          } else if (profile.kyc_status === 'rejected' || adminOverride.kyc_status === 'rejected') {
-            rawStatus = 'rejected';
-          } else if (profile.kyc_status === 'correction' || adminOverride.kyc_status === 'correction') {
-            rawStatus = 'correction';
+          let appStatusClean = String(app.status || parsed.status || '').trim().toLowerCase();
+          let rawStatus = 'pending';
+
+          if (appStatusClean === 'pending' || appStatusClean === 'in_review' || appStatusClean === '') {
+            // Fresh / unreviewed submission takes precedence
+            rawStatus = 'pending';
+          } else {
+            let candidateStatus = (adminOverride.kyc_status || profile.kyc_status || app.status || parsed.status || '').toLowerCase();
+            if (profile.user_type === 'STREAMER' || profile.kyc_status === 'approved' || adminOverride.kyc_status === 'approved') {
+              candidateStatus = 'approved';
+            } else if (profile.kyc_status === 'rejected' || adminOverride.kyc_status === 'rejected') {
+              candidateStatus = 'rejected';
+            } else if (profile.kyc_status === 'correction' || adminOverride.kyc_status === 'correction') {
+              candidateStatus = 'correction';
+            }
+            rawStatus = candidateStatus;
           }
 
           let currentStatus = 'Pending';
@@ -5929,13 +5937,21 @@ export const apiAdmin = {
         const locProfile = (locUid && allProfilesMap.get(locUid)) || (locUname && allProfilesMap.get(locUname)) || {};
         const locOverride = (locUid && adminStateMap.get(locUid)) || (locUname && adminStateMap.get(locUname)) || {};
 
-        let dbStatusOverride = String(locOverride.kyc_status || locProfile.kyc_status || '').toLowerCase();
-        if (locProfile.user_type === 'STREAMER' || locProfile.kyc_status === 'approved' || locOverride.kyc_status === 'approved') {
-          dbStatusOverride = 'approved';
-        } else if (locProfile.kyc_status === 'rejected' || locOverride.kyc_status === 'rejected') {
-          dbStatusOverride = 'rejected';
-        } else if (locProfile.kyc_status === 'correction' || locOverride.kyc_status === 'correction') {
-          dbStatusOverride = 'correction';
+        let locStatusClean = String(locApp.status || '').trim().toLowerCase();
+        let dbStatusOverride = 'pending';
+
+        if (locStatusClean === 'pending' || locStatusClean === 'in_review' || locStatusClean === '') {
+          dbStatusOverride = 'pending';
+        } else {
+          let candidateStatus = String(locOverride.kyc_status || locProfile.kyc_status || locApp.status || '').toLowerCase();
+          if (locProfile.user_type === 'STREAMER' || locProfile.kyc_status === 'approved' || locOverride.kyc_status === 'approved') {
+            candidateStatus = 'approved';
+          } else if (locProfile.kyc_status === 'rejected' || locOverride.kyc_status === 'rejected') {
+            candidateStatus = 'rejected';
+          } else if (locProfile.kyc_status === 'correction' || locOverride.kyc_status === 'correction') {
+            candidateStatus = 'correction';
+          }
+          dbStatusOverride = candidateStatus;
         }
 
         // Check if this local app matches an existing DB app

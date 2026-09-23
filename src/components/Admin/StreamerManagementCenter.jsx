@@ -147,6 +147,14 @@ export default function StreamerManagementCenter({
       }
     });
 
+    // Sort combined so Pending applications take priority over older resolved ones, and newest first
+    combined.sort((a, b) => {
+      const aPending = String(a.status || '').toLowerCase() === 'pending' ? 1 : 0;
+      const bPending = String(b.status || '').toLowerCase() === 'pending' ? 1 : 0;
+      if (aPending !== bPending) return bPending - aPending;
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
+
     // Remove duplicates safely by user ID, username, and application ID
     const unique = [];
     const seenIds = new Set();
@@ -167,7 +175,7 @@ export default function StreamerManagementCenter({
       if (appUname) seenUsernames.add(appUname);
       unique.push(app);
     }
-    return unique.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    return unique;
   }, [kycApplications, usersList]);
 
   const pendingKycCount = mergedKycApplications.filter(a => (a.status || '').toLowerCase() === 'pending').length;
