@@ -215,32 +215,38 @@ class PresenceService {
 
   isUserOnline(user) {
     if (!user) return false;
-    const uid = user.id ? String(user.id) : '';
-    const uname = user.username ? String(user.username).toLowerCase() : '';
+    const uid = user.id ? String(user.id).trim() : '';
+    const uname = user.username ? String(user.username).trim().toLowerCase().replace(/^@+/, '') : '';
+    const utg = user.telegram_id ? String(user.telegram_id).trim() : '';
 
     // Check 1: Realtime presence channel
     if (uid && this.onlineUsers.has(uid)) return true;
     if (uname && this.onlineUsers.has(uname)) return true;
+    if (utg && this.onlineUsers.has(utg)) return true;
 
-    // Check 2: If current self user
+    // Check 2: If current self user (session or telegram or local ID match)
     if (this.currentUser) {
-      const selfUid = this.currentUser.id ? String(this.currentUser.id) : '';
-      const selfUname = this.currentUser.username ? String(this.currentUser.username).toLowerCase() : '';
-      if (uid && uid === selfUid) return true;
-      if (uname && uname === selfUname) return true;
+      const selfUid = this.currentUser.id ? String(this.currentUser.id).trim() : '';
+      const selfUname = this.currentUser.username ? String(this.currentUser.username).trim().toLowerCase().replace(/^@+/, '') : '';
+      const selfTg = this.currentUser.telegram_id ? String(this.currentUser.telegram_id).trim() : '';
+      const currentStoredUid = getUserId();
+
+      if (uid && (uid === selfUid || uid === currentStoredUid)) return true;
+      if (uname && selfUname && (uname === selfUname || uname.includes(selfUname) || selfUname.includes(uname))) return true;
+      if (utg && selfTg && utg === selfTg) return true;
     }
 
     // Check 3: Explicit boolean online property
-    if (user.online === true || user.isOnline === true || user.status === 'online' || user.status === 'Online') {
+    if (user.online === true || user.isOnline === true || user.status === 'online' || user.status === 'Online' || user.is_online === true) {
       return true;
     }
 
-    // Check 4: Activity within last 4 minutes based on updated_at / last_seen
-    const timeField = user.updated_at || user.last_seen || user.last_active;
+    // Check 4: Activity within last 15 minutes based on updated_at / last_seen / created_at
+    const timeField = user.updated_at || user.last_seen || user.last_active || user.created_at;
     if (timeField) {
       const lastActiveTime = new Date(timeField).getTime();
       const now = Date.now();
-      if (!isNaN(lastActiveTime) && (now - lastActiveTime) < 4 * 60 * 1000) {
+      if (!isNaN(lastActiveTime) && (now - lastActiveTime) < 15 * 60 * 1000) {
         return true;
       }
     }

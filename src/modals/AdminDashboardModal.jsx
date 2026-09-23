@@ -194,15 +194,16 @@ export default function AdminDashboardModal(props) {
   const effectiveUsersList = React.useMemo(() => {
     const rawList = (adminUsersList && adminUsersList.length > 0) ? adminUsersList : (usersList || []);
     const unique = [];
-    const seenKeys = new Set();
+    const seenIds = new Set();
+    const seenUsernames = new Set();
     for (const u of rawList) {
       if (!u) continue;
-      const uKey = (u.id || u.username || '').toString().trim().toLowerCase();
-      const usernameKey = u.username ? ('user_' + String(u.username).trim().toLowerCase()) : null;
-      if (uKey && seenKeys.has(uKey)) continue;
-      if (usernameKey && seenKeys.has(usernameKey)) continue;
-      if (uKey) seenKeys.add(uKey);
-      if (usernameKey) seenKeys.add(usernameKey);
+      const uid = u.id ? String(u.id).trim().toLowerCase() : null;
+      const uname = u.username ? String(u.username).trim().toLowerCase() : null;
+      if (uid && seenIds.has(uid)) continue;
+      if (uname && seenUsernames.has(uname)) continue;
+      if (uid) seenIds.add(uid);
+      if (uname) seenUsernames.add(uname);
       unique.push(u);
     }
     return unique;
@@ -649,7 +650,7 @@ export default function AdminDashboardModal(props) {
                       <span className="text-[10px] text-slate-400 group-hover:text-cyan-300 flex items-center gap-1 transition">
                         <Users className="w-3.5 h-3.5 text-cyan-400" /> {window.loc('کل کاربران', 'Total users')}
                       </span>
-                      <p className="text-base font-black text-white group-hover:text-cyan-300 transition">{(adminUsersList || []).length}</p>
+                      <p className="text-base font-black text-white group-hover:text-cyan-300 transition">{(effectiveUsersList || []).length}</p>
                       <span className="text-[9px] text-slate-400 truncate block">{window.loc('مشاهده کامل لیست کاربران 👈', 'View full users list 👈')}</span>
                     </button>
 
@@ -661,7 +662,7 @@ export default function AdminDashboardModal(props) {
                       <span className="text-[10px] text-slate-400 group-hover:text-emerald-300 flex items-center gap-1 transition">
                         <Activity className="w-3.5 h-3.5 text-emerald-400" /> {window.loc('کاربران آنلاین', 'Online users')}
                       </span>
-                      <p className="text-base font-black text-emerald-400">{(adminUsersList || []).filter(u => u.status === 'Online' || u.isOnline || u.online || (typeof presenceService !== 'undefined' && presenceService.isUserOnline(u))).length} {window.loc('نفر', 'people')}</p>
+                      <p className="text-base font-black text-emerald-400">{(effectiveUsersList || []).filter(u => u.status === 'Online' || u.isOnline || u.online || (typeof presenceService !== 'undefined' && presenceService.isUserOnline(u))).length} {window.loc('نفر', 'people')}</p>
                       <span className="text-[9px] text-slate-400 truncate block">{window.loc('هم‌اکنون فعال - جزئیات 👈', 'Active now - details 👈')}</span>
                     </button>
 
@@ -1576,8 +1577,8 @@ export default function AdminDashboardModal(props) {
               {/* 14. STREAMER MANAGEMENT CENTER & VERIFICATION */}
               {adminActiveTab === 'verification' && (
                 <StreamerManagementCenter
-                  usersList={adminUsersList || []}
-                  setUsersList={setAdminUsersList}
+                  usersList={effectiveUsersList}
+                  setUsersList={handleSetUsersList}
                   adminWithdrawalsList={adminWithdrawalsList}
                   setAdminWithdrawalsList={setAdminWithdrawalsList}
                   addAdminAuditLog={addAdminAuditLog}

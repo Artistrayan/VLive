@@ -1742,7 +1742,8 @@ export const apiHome = {
 
       const approvedKycSet = new Set((approvedKycs || []).map(k => k.user_id));
 
-      const seenKeys = new Set();
+      const seenIds = new Set();
+      const seenUsernames = new Set();
       return data
         .filter(u => {
           if (!u) return false;
@@ -1752,12 +1753,12 @@ export const apiHome = {
             : (override?.status === 'banned' || u.status === 'banned');
           if (isBanned) return false;
 
-          const uKey = (u.id || u.username || '').toString().trim().toLowerCase();
-          const usernameKey = u.username ? ('user_' + String(u.username).trim().toLowerCase()) : null;
-          if (uKey && seenKeys.has(uKey)) return false;
-          if (usernameKey && seenKeys.has(usernameKey)) return false;
-          if (uKey) seenKeys.add(uKey);
-          if (usernameKey) seenKeys.add(usernameKey);
+          const uid = u.id ? String(u.id).trim().toLowerCase() : null;
+          const uname = u.username ? String(u.username).trim().toLowerCase() : null;
+          if (uid && seenIds.has(uid)) return false;
+          if (uname && seenUsernames.has(uname)) return false;
+          if (uid) seenIds.add(uid);
+          if (uname) seenUsernames.add(uname);
           return true;
         })
         .map(u => {
@@ -5213,15 +5214,16 @@ export const apiAdmin = {
 
       const processUsers = (list) => {
         const unique = [];
-        const seenKeys = new Set();
+        const seenIds = new Set();
+        const seenUsernames = new Set();
         for (const u of (list || [])) {
           if (!u) continue;
-          const uKey = (u.id || u.username || '').toString().trim().toLowerCase();
-          const usernameKey = u.username ? ('user_' + String(u.username).trim().toLowerCase()) : null;
-          if (uKey && seenKeys.has(uKey)) continue;
-          if (usernameKey && seenKeys.has(usernameKey)) continue;
-          if (uKey) seenKeys.add(uKey);
-          if (usernameKey) seenKeys.add(usernameKey);
+          const uid = u.id ? String(u.id).trim().toLowerCase() : null;
+          const uname = u.username ? String(u.username).trim().toLowerCase() : null;
+          if (uid && seenIds.has(uid)) continue;
+          if (uname && seenUsernames.has(uname)) continue;
+          if (uid) seenIds.add(uid);
+          if (uname) seenUsernames.add(uname);
           unique.push(u);
         }
 
