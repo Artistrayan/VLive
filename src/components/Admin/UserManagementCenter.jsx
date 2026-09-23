@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { apiAdmin } from '../../services/api';
+import { apiAdmin, presenceService } from '../../services/api';
 import { 
   Users, Search, Filter, ShieldCheck, ShieldAlert, Ban, UserX, UserCheck, 
   Crown, Video, CheckCircle2, AlertTriangle, Key, Trash2, RefreshCw, Eye, 
@@ -229,15 +229,16 @@ export default function UserManagementCenter({
   const uniqueUsersList = React.useMemo(() => {
     const raw = Array.isArray(usersList) ? usersList : [];
     const unique = [];
-    const seenKeys = new Set();
+    const seenIds = new Set();
+    const seenUsernames = new Set();
     for (const u of raw) {
       if (!u) continue;
-      const uKey = (u.id || u.username || '').toString().trim().toLowerCase();
-      const usernameKey = u.username ? ('user_' + String(u.username).trim().toLowerCase()) : null;
-      if (uKey && seenKeys.has(uKey)) continue;
-      if (usernameKey && seenKeys.has(usernameKey)) continue;
-      if (uKey) seenKeys.add(uKey);
-      if (usernameKey) seenKeys.add(usernameKey);
+      const uid = u.id ? String(u.id).trim().toLowerCase() : null;
+      const uname = u.username ? String(u.username).trim().toLowerCase() : null;
+      if (uid && seenIds.has(uid)) continue;
+      if (uname && seenUsernames.has(uname)) continue;
+      if (uid) seenIds.add(uid);
+      if (uname) seenUsernames.add(uname);
       unique.push(u);
     }
     return unique;
@@ -257,7 +258,9 @@ export default function UserManagementCenter({
 
     if (!matchesQuery) return false;
 
-    if (filterCategory === 'ONLINE') return user?.online === true;
+    if (filterCategory === 'ONLINE') {
+      return Boolean(user?.online || presenceService.isUserOnline(user));
+    }
     if (filterCategory === 'VERIFIED') return Boolean(user?.isVerified || user?.is_verified || user?.verified);
     if (filterCategory === 'VIP') return Boolean(user?.isVip || user?.is_vip || user?.vip);
     if (filterCategory === 'STREAMERS') return Boolean(user?.isStreamer || user?.isHost || user?.is_streamer);
@@ -425,7 +428,7 @@ export default function UserManagementCenter({
         <div className="flex items-center gap-2 overflow-x-auto text-[11px]">
           <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-emerald-400 font-bold flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{window.loc('آنلاین:', 'Online:')} {uniqueUsersList.filter(u => u.online).length}</span>
+            <span>{window.loc('آنلاین:', 'Online:')} {uniqueUsersList.filter(u => u.online || presenceService.isUserOnline(u)).length}</span>
           </span>
           <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-amber-300 font-bold flex items-center gap-1">
             <Crown className="w-3.5 h-3.5" />
@@ -557,7 +560,7 @@ export default function UserManagementCenter({
                     </td>
 
                     <td className="p-3.5">
-                      {u.online ? (
+                      {(u.online || presenceService.isUserOnline(u)) ? (
                         <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold inline-flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
                           {window.loc('آنلاین', 'Online')}

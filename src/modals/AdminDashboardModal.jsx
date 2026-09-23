@@ -662,7 +662,7 @@ export default function AdminDashboardModal(props) {
                       <span className="text-[10px] text-slate-400 group-hover:text-emerald-300 flex items-center gap-1 transition">
                         <Activity className="w-3.5 h-3.5 text-emerald-400" /> {window.loc('کاربران آنلاین', 'Online users')}
                       </span>
-                      <p className="text-base font-black text-emerald-400">{(effectiveUsersList || []).filter(u => u.status === 'Online' || u.isOnline || u.online || (typeof presenceService !== 'undefined' && presenceService.isUserOnline(u))).length} {window.loc('نفر', 'people')}</p>
+                      <p className="text-base font-black text-emerald-400">{(effectiveUsersList || []).filter(u => Boolean(u.online || (typeof presenceService !== 'undefined' && presenceService.isUserOnline(u)))).length} {window.loc('نفر', 'people')}</p>
                       <span className="text-[9px] text-slate-400 truncate block">{window.loc('هم‌اکنون فعال - جزئیات 👈', 'Active now - details 👈')}</span>
                     </button>
 

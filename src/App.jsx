@@ -3031,10 +3031,13 @@ export default function App() {
     if (!isLoggedIn) return;
 
     const currentProfile = {
-      id: getUserId() || getStoredToken() || currentTelegramId || currentUsername,
+      id: getUserId() || authUserRecord?.id || getStoredToken() || currentTelegramId || currentUsername,
       username: currentUsername,
       name: userName,
-      avatar: userAvatar
+      avatar: userAvatar,
+      telegram_id: currentTelegramId || authUserRecord?.telegram_id,
+      telegramId: currentTelegramId || authUserRecord?.telegram_id,
+      email: authEmail || authUserRecord?.email
     };
     presenceService.init(currentProfile);
 
@@ -3115,7 +3118,7 @@ export default function App() {
         window.removeEventListener('vlive_profile_updated', handleProfileUpdated);
       }
     };
-  }, [isLoggedIn, currentUsername, userName, userAvatar, currentTelegramId]);
+  }, [isLoggedIn, currentUsername, userName, userAvatar, currentTelegramId, authUserRecord, authEmail]);
 
   // Toast Helper
   // Live Timer for Story Progress
