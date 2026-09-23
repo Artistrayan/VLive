@@ -6,6 +6,7 @@ import {
   Trophy, UserCheck
 } from 'lucide-react';
 import { getStreamerScores } from '../../services/streamerScoring';
+import { getValidAvatarUrl, createDefaultAvatarSvg } from '../../services/api';
 
 /**
  * Helper to determine if a user/profile is female.
@@ -781,8 +782,9 @@ export default function UltraModernHome({
                   >
                     {card.thumbnail ? (
                       <img
-                        src={card.thumbnail}
+                        src={card.thumbnail || getValidAvatarUrl(card, card.username)}
                         alt={card.username}
+                        onError={(e) => { e.target.src = createDefaultAvatarSvg(card.username || 'Live'); }}
                         className={`w-full h-full object-cover transition-transform duration-500 ${
                           isStreamLocked ? 'filter blur-md scale-105' : 'group-hover:scale-105'
                         }`}

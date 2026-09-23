@@ -46,7 +46,6 @@ function HighQualityKycImage({ src, alt, className = "", onClick, badge = null, 
         loading="lazy"
         decoding="async"
         referrerPolicy="no-referrer"
-        crossOrigin={isDataUri ? undefined : "anonymous"}
         onLoad={() => setIsLoading(false)}
         onError={() => {
           setHasError(true);
@@ -1118,7 +1117,6 @@ export default function StreamerManagementCenter({
                               src={modalProfileImg || modalSelfieImg}
                               alt="Profile"
                               referrerPolicy="no-referrer"
-                              crossOrigin="anonymous"
                               className="max-h-[360px] w-full object-contain transition-transform duration-300"
                               style={{
                                 transform: `scale(${inspectorZoom}) rotate(${inspectorRotate}deg)`,
@@ -1143,7 +1141,6 @@ export default function StreamerManagementCenter({
                                 src={modalSelfieImg}
                                 alt="Selfie"
                                 referrerPolicy="no-referrer"
-                                crossOrigin="anonymous"
                                 className="max-h-[360px] w-full object-contain transition-transform duration-300"
                                 style={{
                                   transform: `scale(${inspectorZoom}) rotate(${inspectorRotate}deg)`,
@@ -1168,7 +1165,6 @@ export default function StreamerManagementCenter({
                           src={inspectorTab === 'selfie' ? modalSelfieImg : modalProfileImg || modalSelfieImg}
                           alt="Focused Full Inspection"
                           referrerPolicy="no-referrer"
-                          crossOrigin="anonymous"
                           className="max-h-[400px] w-auto object-contain transition-transform duration-300 rounded-2xl shadow-2xl"
                           style={{
                             transform: `scale(${inspectorZoom}) rotate(${inspectorRotate}deg)`,

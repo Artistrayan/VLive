@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { isUserAnAdmin } from '../utils/usernameUtils';
 import { calculateAge } from '../services/businessRules';
-import { apiProfile, apiSocial } from '../services/api';
+import { apiProfile, apiSocial, getValidAvatarUrl, createDefaultAvatarSvg } from '../services/api';
 import { 
   X, Heart, MessageSquare, PhoneCall, Video, Gift, Share2, ShieldAlert,
   Crown, CheckCircle, MapPin, Sparkles, UserCheck, UserX, Ban, Flag,
@@ -126,7 +126,7 @@ export default function UserProfileViewModal({
   const username = user?.username || user?.host || user?.id || 'user_vlive';
   const displayName = nickname || realFullName || username || 'User';
   const userName = displayName;
-  const avatar = user?.avatar || user?.thumbnail || '';
+  const avatar = getValidAvatarUrl(user, displayName);
   const cover = user?.cover || '';
   const birthDateVal = user?.birth_date || user?.birthdate || user?.birthday;
   const calculatedAge = birthDateVal ? calculateAge(birthDateVal) : null;
@@ -285,7 +285,12 @@ export default function UserProfileViewModal({
           <div className="flex items-end justify-between">
             <div className="relative">
               <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-2xl">
-                <img src={avatar} alt={userName} className="w-full h-full object-cover rounded-full bg-slate-900" />
+                <img 
+                  src={avatar} 
+                  alt={userName} 
+                  className="w-full h-full object-cover rounded-full bg-slate-900" 
+                  onError={(e) => { e.target.src = createDefaultAvatarSvg(userName); }}
+                />
               </div>
               {isOnline && (
                 <span className="absolute bottom-1 right-1 w-5 h-5 bg-emerald-500 border-4 border-slate-950 rounded-full shadow-lg" title="Online Now" />

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { apiAdmin, presenceService } from '../../services/api';
+import { apiAdmin, presenceService, getValidAvatarUrl, createDefaultAvatarSvg } from '../../services/api';
 import { 
   Users, Search, Filter, ShieldCheck, ShieldAlert, Ban, UserX, UserCheck, 
   Crown, Video, CheckCircle2, AlertTriangle, Key, Trash2, RefreshCw, Eye, 
@@ -516,9 +516,10 @@ export default function UserManagementCenter({
                     <td className="p-3.5">
                       <div className="flex items-center gap-2.5">
                         <img 
-                          src={u.avatar || u.thumbnail || ''} 
-                          alt="" 
-                          className="w-9 h-9 rounded-full object-cover border border-slate-700" 
+                          src={getValidAvatarUrl(u)} 
+                          alt={u.name || u.username} 
+                          className="w-9 h-9 rounded-full object-cover border border-slate-700 bg-slate-900" 
+                          onError={(e) => { e.target.src = createDefaultAvatarSvg(u.name || u.username); }}
                         />
                         <div className="flex flex-col min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">

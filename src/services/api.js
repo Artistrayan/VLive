@@ -5,8 +5,9 @@ import { fetchLiveKitToken, getCanonicalLiveKitRoomName, getLiveKitConfig } from
 import { safeStorage } from '../utils/safeStorage';
 import { getStoredToken, setStoredToken, getUserId, setStoredSession } from '../utils/authSession';
 import { verifyAdminAccess, recordAdminAuditLog } from './adminGuard';
+import { getValidAvatarUrl, createDefaultAvatarSvg } from '../utils/avatarUtils';
 
-export { safeStorage, presenceService, calculateAge, getStoredToken, setStoredToken, getUserId, setStoredSession };
+export { safeStorage, presenceService, calculateAge, getStoredToken, setStoredToken, getUserId, setStoredSession, getValidAvatarUrl, createDefaultAvatarSvg };
 
 // ==========================================
 // CORE HELPERS (RESOLVER & ADMIN SECURITY)
@@ -1712,7 +1713,7 @@ export const apiHome = {
       return validData.map(s => {
         const hostProfile = s.profiles || {};
         const hostName = hostProfile.name || hostProfile.username || 'Streamer';
-        const hostAvatar = hostProfile.avatar || '';
+        const hostAvatar = getValidAvatarUrl(hostProfile, hostName);
         const canonicalRoom = getCanonicalLiveKitRoomName(s.id);
 
         return {
@@ -1721,7 +1722,7 @@ export const apiHome = {
           host: hostName,
           host_id: s.host_id,
           avatar: hostAvatar,
-          thumbnail: s.thumbnail || hostAvatar || '',
+          thumbnail: getValidAvatarUrl(s.thumbnail || hostAvatar, s.title || hostName),
           category: s.category || 'General',
           live_type: s.is_vip ? 'vip' : 'standard',
           viewers: 1,
@@ -1833,8 +1834,12 @@ export const apiHome = {
             ? override.coins
             : Number(u.coins ?? u.userCoins ?? 0);
 
+          const validAvatar = getValidAvatarUrl(u, u.name || u.username || 'User');
           return {
             ...u,
+            avatar: validAvatar,
+            avatar_url: validAvatar,
+            thumbnail: validAvatar,
             age: calculatedAge !== null ? calculatedAge : u.age,
             birth_date: birthDateVal || '',
             city: u.location || u.city || '',
@@ -5330,8 +5335,12 @@ export const apiAdmin = {
           }
         }
 
+        const validAvatar = getValidAvatarUrl(u, u.name || u.username || 'User');
         return {
           ...u,
+          avatar: validAvatar,
+          avatar_url: validAvatar,
+          thumbnail: validAvatar,
           coins: realCoins,
           userCoins: realCoins,
           usdt_balance: realUsdt,
