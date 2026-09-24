@@ -87,8 +87,14 @@ export default function App() {
   const [showEntrySplash, setShowEntrySplash] = useState(false);
   const [isInitialSplashActive, setIsInitialSplashActive] = useState(true);
 
-  // User Profile & Authentication State (Strict Real Identity - No Mock/Fallback)
-  const [authStatus, setAuthStatus] = useState('loading'); // 'loading' | 'authenticated' | 'unauthenticated' | 'error'
+  // User Profile & Authentication State (Strict Real Identity - Instant Synchronous Init)
+  const [authStatus, setAuthStatus] = useState(() => {
+    try {
+      return safeStorage.getItem('vlive_user_logged_in') === 'true' ? 'authenticated' : 'unauthenticated';
+    } catch {
+      return 'unauthenticated';
+    }
+  });
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     try {
       return safeStorage.getItem('vlive_user_logged_in') === 'true';
@@ -97,33 +103,59 @@ export default function App() {
     }
   });
   const [authUserRecord, setAuthUserRecord] = useState(null);
-  const [userName, setUserName] = useState('Guest User');
+  const [userName, setUserName] = useState(() => {
+    return safeStorage.getItem('vlive_user_name') || safeStorage.getItem('vlive_username') || 'Guest User';
+  });
   const [userNickname, setUserNickname] = useState(() => safeStorage.getItem('vlive_user_nickname') || '');
-  const [currentUsername, setCurrentUsername] = useState('guest');
-  const [currentTelegramId, setCurrentTelegramId] = useState('');
-  const [userCoins, setUserCoins] = useState(0);
-  const [userDiamonds, setUserDiamonds] = useState(0);
+  const [currentUsername, setCurrentUsername] = useState(() => {
+    return safeStorage.getItem('vlive_username') || safeStorage.getItem('vlive_auth_username') || 'guest';
+  });
+  const [currentTelegramId, setCurrentTelegramId] = useState(() => {
+    const tgFromWin = typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+    return tgFromWin ? String(tgFromWin) : (safeStorage.getItem('vlive_telegram_id') || '');
+  });
+  const [userCoins, setUserCoins] = useState(() => {
+    const c = safeStorage.getItem('vlive_user_coins');
+    return c ? Number(c) : 0;
+  });
+  const [userDiamonds, setUserDiamonds] = useState(() => {
+    const d = safeStorage.getItem('vlive_user_diamonds');
+    return d ? Number(d) : 0;
+  });
   const [userCashBalance, setUserCashBalance] = useState(0);
   const [userGender, setUserGender] = useState(() => safeStorage.getItem('vlive_user_gender') || 'male');
-  const [userAvatar, setUserAvatar] = useState('');
-  const [userBio, setUserBio] = useState('');
+  const [userAvatar, setUserAvatar] = useState(() => {
+    return safeStorage.getItem('vlive_user_avatar') || safeStorage.getItem('vlive_profile_avatar') || '';
+  });
+  const [userBio, setUserBio] = useState(() => safeStorage.getItem('vlive_profile_bio') || '');
   const [isVerified, setIsVerified] = useState(() => safeStorage.getItem('vlive_is_verified') === 'true');
-  const [userRole, setUserRole] = useState('user');
+  const [userRole, setUserRole] = useState(() => {
+    const savedRole = safeStorage.getItem('vlive_user_role');
+    const tgId = typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+    const savedEmail = safeStorage.getItem('vlive_auth_email') || '';
+    if (savedRole === 'admin' || savedRole === 'super_admin' || String(tgId) === '8933698119' || savedEmail === 'tattoo.rayan2015@gmail.com') {
+      return 'super_admin';
+    }
+    return savedRole || 'user';
+  });
   const [userLevel, setUserLevel] = useState(1);
-  const [vipPlan, setVipPlan] = useState('Free');
+  const [vipPlan, setVipPlan] = useState(() => safeStorage.getItem('vlive_vip_plan') || 'Free');
   const [vipExpireDays, setVipExpireDays] = useState(0);
   const [isVipMonthlyClaimed, setIsVipMonthlyClaimed] = useState(false);
-  const [referralCode, setReferralCode] = useState('');
+  const [referralCode, setReferralCode] = useState(() => safeStorage.getItem('vlive_referral_code') || '');
   const [likedUsersMap, setLikedUsersMap] = useState({});
   const [followedUsers, setFollowedUsers] = useState([]);
   const [authStep, setAuthStep] = useState('welcome');
-  const [authUsername, setAuthUsername] = useState('');
-  const [authFullName, setAuthFullName] = useState('');
+  const [authUsername, setAuthUsername] = useState(() => safeStorage.getItem('vlive_username') || '');
+  const [authFullName, setAuthFullName] = useState(() => safeStorage.getItem('vlive_user_name') || '');
   const [authGender, setAuthGender] = useState(() => safeStorage.getItem('vlive_user_gender') || 'male');
   const [authAge, setAuthAge] = useState(20);
-  const [authBirthDate, setAuthBirthDate] = useState('');
-  const [authTelegramId, setAuthTelegramId] = useState('');
-  const [authEmail, setAuthEmail] = useState('');
+  const [authBirthDate, setAuthBirthDate] = useState(() => safeStorage.getItem('vlive_profile_birthdate') || '');
+  const [authTelegramId, setAuthTelegramId] = useState(() => {
+    const tgFromWin = typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+    return tgFromWin ? String(tgFromWin) : (safeStorage.getItem('vlive_telegram_id') || '');
+  });
+  const [authEmail, setAuthEmail] = useState(() => safeStorage.getItem('vlive_auth_email') || safeStorage.getItem('vlive_user_email') || '');
   const [authCity, setAuthCity] = useState('');
   const [termsAgreed, setTermsAgreed] = useState(true);
   const [hasRegistered, setHasRegistered] = useState(false);

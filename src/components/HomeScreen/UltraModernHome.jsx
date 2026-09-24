@@ -319,7 +319,10 @@ export default function UltraModernHome({
       const isAdultUser = Boolean(
         user.is_adult || user.isAdult || (user.age >= 18 && (user.tariffPerMin > 150 || user.category === 'Adult'))
       );
-      const isUserLive = Boolean(user.status === 'live' || user.is_live || user.isLive || (user.online && (user.isStreamer || user.is_streamer || user.role === 'streamer')));
+      const isUserLive = Boolean(
+        (user.status === 'live' || user.is_live || user.isLive) &&
+        activeStreams.some(s => String(s.host_id) === String(user.id) || (s.host && user.username && s.host.toLowerCase() === user.username.toLowerCase()))
+      );
       const isVerified = Boolean(user.is_verified || user.isVerified || user.verified);
       const isAdmin = Boolean(user.role === 'admin' || user.role === 'super_admin' || user.is_admin || user.user_type === 'ADMIN' || user.user_type === 'SUPER_ADMIN');
       const userLevel = user.level || user.user_level || getStreamerScores(user).level || 1;
