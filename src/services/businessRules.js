@@ -72,17 +72,79 @@ export function isAdminExempt(userRole, username, telegramId) {
 }
 
 // 1. AGE CALCULATOR & VALIDATOR
-export function calculateAge(birthDateString) {
-  if (!birthDateString) return null;
-  const birth = new Date(birthDateString);
-  if (isNaN(birth.getTime())) return null;
-  const today = new Date();
-  let age = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-    age--;
+export function calculateAge(birthInput) {
+  if (birthInput === null || birthInput === undefined || birthInput === '') return null;
+  const str = String(birthInput).trim();
+  if (!str) return null;
+
+  // 1. Direct Age Number check (e.g. "24" or 24)
+  if (/^\d{1,2}$/.test(str)) {
+    const ageNum = parseInt(str, 10);
+    if (ageNum >= 13 && ageNum <= 120) return ageNum;
   }
-  return age >= 0 && age < 130 ? age : null;
+
+  // 2. 4-digit Year only (e.g., "1380" or "1998")
+  if (/^\d{4}$/.test(str)) {
+    const yr = parseInt(str, 10);
+    if (yr >= 1300 && yr <= 1420) {
+      // Jalali year (current Jalali year is ~1404 in 2026)
+      const age = 1404 - yr;
+      return (age >= 13 && age <= 120) ? age : null;
+    }
+    if (yr >= 1900 && yr <= 2026) {
+      // Gregorian year
+      const currentYear = new Date().getFullYear();
+      const age = currentYear - yr;
+      return (age >= 13 && age <= 120) ? age : null;
+    }
+  }
+
+  // 3. Date format with delimiters (Jalali or Gregorian): e.g. "1380-05-10", "1380/05/10", "1998-05-10", "1998/05/10"
+  const parts = str.split(/[-/._\s]+/);
+  if (parts.length >= 1) {
+    const firstNum = parseInt(parts[0], 10);
+    if (!isNaN(firstNum)) {
+      if (firstNum >= 1300 && firstNum <= 1420) {
+        // Jalali birth year
+        const month = parseInt(parts[1] || '1', 10);
+        const day = parseInt(parts[2] || '1', 10);
+        // Current Jalali date approx: 1404 / 07 / 02
+        let age = 1404 - firstNum;
+        if (month > 7 || (month === 7 && day > 2)) {
+          age--;
+        }
+        return (age >= 13 && age <= 120) ? age : null;
+      }
+      if (firstNum >= 1900 && firstNum <= 2026) {
+        // Gregorian birth date
+        const cleanIso = str.replace(/\//g, '-');
+        const birth = new Date(cleanIso);
+        if (!isNaN(birth.getTime())) {
+          const today = new Date();
+          let age = today.getFullYear() - birth.getFullYear();
+          const m = today.getMonth() - birth.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+            age--;
+          }
+          return (age >= 13 && age <= 120) ? age : null;
+        }
+      }
+    }
+  }
+
+  // Fallback Standard JS Date parsing
+  const birth = new Date(str);
+  if (!isNaN(birth.getTime())) {
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    if (age >= 13 && age <= 120) return age;
+  }
+
+  return null;
 }
 
 export function isAgeAllowed(birthDateString, userRole, username, telegramId) {

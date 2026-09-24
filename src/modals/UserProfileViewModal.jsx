@@ -128,8 +128,8 @@ export default function UserProfileViewModal({
   const userName = displayName;
   const avatar = getValidAvatarUrl(user, displayName);
   const cover = user?.cover || '';
-  const birthDateVal = user?.birth_date || user?.birthdate || user?.birthday;
-  const calculatedAge = birthDateVal ? calculateAge(birthDateVal) : null;
+  const birthDateVal = user?.birth_date || user?.birthdate || user?.birthday || user?.birthDate;
+  const calculatedAge = calculateAge(birthDateVal || user?.age);
   const age = calculatedAge !== null ? calculatedAge : (user?.age || '');
   const city = user?.city || user?.location || '';
   const bio = user?.bio || user?.description || '';

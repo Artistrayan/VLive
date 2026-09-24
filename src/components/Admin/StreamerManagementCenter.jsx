@@ -93,6 +93,7 @@ export default function StreamerManagementCenter({
 }) {
   // Combine passed kycApplications with dynamic requests derived from usersList
   const mergedKycApplications = React.useMemo(() => {
+    // 1. Map passed kycApplications
     const combined = [...(kycApplications || [])].map(app => {
       const rawStatus = String(app.status || 'Pending').toLowerCase();
       let normalized = 'Pending';
@@ -102,24 +103,29 @@ export default function StreamerManagementCenter({
       return { ...app, status: normalized };
     });
 
+    // 2. Map dynamic users requesting streamer role
     (usersList || []).forEach(u => {
       const isAlreadyStreamer = u.isStreamer || u.isHost || u.is_streamer || u.user_type === 'STREAMER';
       const userKycStatus = String(u.kyc_status || '').toLowerCase();
-      const isExplicitResolved = isAlreadyStreamer || userKycStatus === 'approved' || userKycStatus === 'rejected' || userKycStatus === 'correction';
       
-      // Include dynamic app ONLY if not already resolved and explicitly requested
-      if (!isExplicitResolved && (u.wantToBeStreamer || u.isStreamerRequested || userKycStatus === 'pending')) {
-        const existingIdx = combined.findIndex(c => 
-          (c.username && u.username && String(c.username).toLowerCase() === String(u.username).toLowerCase()) || 
-          (c.user_id && u.id && String(c.user_id) === String(u.id))
-        );
-        const dynamicApp = {
+      let normUserKyc = 'Pending';
+      if (userKycStatus === 'approved' || isAlreadyStreamer) normUserKyc = 'Approved';
+      else if (userKycStatus === 'rejected') normUserKyc = 'Rejected';
+      else if (userKycStatus === 'correction') normUserKyc = 'Correction';
+
+      const existingIdx = combined.findIndex(c => 
+        (c.username && u.username && String(c.username).toLowerCase() === String(u.username).toLowerCase()) || 
+        (c.user_id && u.id && String(c.user_id) === String(u.id))
+      );
+
+      if (existingIdx === -1 && (u.wantToBeStreamer || u.isStreamerRequested || userKycStatus === 'pending')) {
+        combined.push({
           id: 'user_kyc_' + (u.username || u.id),
           user_id: u.id,
           username: u.username,
           name: u.name || u.username,
-          status: 'Pending',
-          description: u.bio || `درخواست استریمر کاربر ${u.username} (ثبت نام)`,
+          status: normUserKyc,
+          description: u.bio || `درخواست استریمر کاربر ${u.username}`,
           streamCategory: u.category || 'عمومی',
           streamTopic: u.topic || 'گپ و گفتگو',
           selfiePhoto: u.selfiePhoto || u.selfie_url || '',
@@ -129,53 +135,46 @@ export default function StreamerManagementCenter({
           verificationType: 'ONBOARDING_APPLICATION',
           requestedPose: u.requestedPose || '✌️ ژست پیروزی',
           created_at: u.created_at || new Date().toISOString()
-        };
-        if (existingIdx === -1) {
-          combined.push(dynamicApp);
-        } else if (String(combined[existingIdx].status || '').toLowerCase() === 'pending') {
-          const ex = combined[existingIdx];
-          combined[existingIdx] = {
-            ...dynamicApp,
-            ...ex,
-            selfiePhoto: ex.selfiePhoto || ex.selfie_url || dynamicApp.selfiePhoto || '',
-            selfie_url: ex.selfie_url || ex.selfiePhoto || dynamicApp.selfie_url || '',
-            idCardPhoto: ex.idCardPhoto || ex.docUrl || ex.document_url || dynamicApp.idCardPhoto || '',
-            avatar: ex.avatar || dynamicApp.avatar || '',
-            status: ex.status || 'Pending'
-          };
+        });
+      } else if (existingIdx !== -1) {
+        const ex = combined[existingIdx];
+        if (normUserKyc !== 'Pending' && ex.status === 'Pending') {
+          combined[existingIdx] = { ...ex, status: normUserKyc };
         }
       }
     });
 
-    // Sort combined so Pending applications take priority over older resolved ones, and newest first
-    combined.sort((a, b) => {
+    // Group by user key and take the most authoritative record (Approved/Rejected/Correction > Pending, and newest first)
+    const userGroups = new Map();
+    for (const app of combined) {
+      if (!app) continue;
+      const key = (app.user_id ? String(app.user_id) : (app.username ? String(app.username) : String(app.id))).toLowerCase();
+      if (!userGroups.has(key)) {
+        userGroups.set(key, app);
+      } else {
+        const prev = userGroups.get(key);
+        const prevIsResolved = prev.status && prev.status !== 'Pending';
+        const currIsResolved = app.status && app.status !== 'Pending';
+
+        if (currIsResolved && !prevIsResolved) {
+          userGroups.set(key, app);
+        } else if (currIsResolved === prevIsResolved) {
+          if (new Date(app.created_at || 0) > new Date(prev.created_at || 0)) {
+            userGroups.set(key, app);
+          }
+        }
+      }
+    }
+
+    const uniqueList = Array.from(userGroups.values());
+    uniqueList.sort((a, b) => {
       const aPending = String(a.status || '').toLowerCase() === 'pending' ? 1 : 0;
       const bPending = String(b.status || '').toLowerCase() === 'pending' ? 1 : 0;
       if (aPending !== bPending) return bPending - aPending;
       return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     });
 
-    // Remove duplicates safely by user ID, username, and application ID
-    const unique = [];
-    const seenIds = new Set();
-    const seenUserIds = new Set();
-    const seenUsernames = new Set();
-    for (const app of combined) {
-      if (!app) continue;
-      const appId = app.id ? String(app.id).toLowerCase() : null;
-      const appUid = app.user_id ? String(app.user_id).toLowerCase() : null;
-      const appUname = app.username ? String(app.username).toLowerCase() : null;
-
-      if (appId && seenIds.has(appId)) continue;
-      if (appUid && seenUserIds.has(appUid)) continue;
-      if (appUname && seenUsernames.has(appUname)) continue;
-
-      if (appId) seenIds.add(appId);
-      if (appUid) seenUserIds.add(appUid);
-      if (appUname) seenUsernames.add(appUname);
-      unique.push(app);
-    }
-    return unique;
+    return uniqueList;
   }, [kycApplications, usersList]);
 
   const pendingKycCount = mergedKycApplications.filter(a => (a.status || '').toLowerCase() === 'pending').length;

@@ -33,82 +33,106 @@ export const PERMISSIONS = {
   ADMIN_AUDIT_LOGS: 'admin:audit_logs'
 };
 
+let adminVerifyCache = { result: null, timestamp: 0 };
+let adminInFlightPromise = null;
+
 /**
  * Validates admin server role from authenticated Supabase session, Database profile,
- * or verified active admin session.
+ * or verified active admin session with high-performance caching.
  */
 export async function verifyAdminAccess() {
+  // Fast memory cache (5 seconds window to eliminate network latency on sequential checks)
+  if (adminVerifyCache.result !== null && (Date.now() - adminVerifyCache.timestamp < 5000)) {
+    return adminVerifyCache.result;
+  }
+
+  // Fast synchronous local check (0ms Instant Recognition)
   try {
-    // 1. Check verified local admin session
-    try {
-      const activeAdminSessionStr = safeStorage.getItem('vlive_admin_session');
-      if (activeAdminSessionStr) {
-        const parsed = JSON.parse(activeAdminSessionStr);
-        if (parsed && (
-          String(parsed.telegramId).trim() === ADMIN_TELEGRAM_ID ||
-          parsed.username === 'Rayan_Super_Admin' ||
-          String(parsed.role).toLowerCase().includes('admin')
-        )) {
-          return true;
-        }
-      }
-      const localTg = safeStorage.getItem('vlive_telegram_id') || safeStorage.getItem('vlive_auth_telegram_id');
-      if (String(localTg).trim() === ADMIN_TELEGRAM_ID) {
-        return true;
-      }
-    } catch (ex) {}
+    const localRole = safeStorage.getItem('vlive_user_role');
+    const localUserType = safeStorage.getItem('vlive_user_type');
+    const localEmail = safeStorage.getItem('vlive_user_email');
+    const localTg = safeStorage.getItem('vlive_telegram_id') || safeStorage.getItem('vlive_auth_telegram_id');
+    const activeAdminSessionStr = safeStorage.getItem('vlive_admin_session');
 
-    // 2. Check Supabase auth session
-    const { data: authData, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !authData?.user?.id) {
-      // Fallback check on Telegram ID or user role in local profile
-      const localRole = safeStorage.getItem('vlive_user_role');
-      if (localRole === 'admin' || localRole === 'super_admin') {
-        return true;
-      }
-      return false; // Fail closed if unauthenticated
-    }
-
-    const userId = authData.user.id;
-    const userEmail = String(authData.user.email || '').toLowerCase();
-
-    // Query profiles from Database
-    const { data: profile, error: profErr } = await supabase
-      .from('profiles')
-      .select('role, user_type, telegram_id, is_admin, username')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (profErr || !profile) {
-      // Fallback check on user_metadata from auth if profile row missing
-      const metaTg = authData.user.user_metadata?.telegram_id;
-      if (String(metaTg).trim() === ADMIN_TELEGRAM_ID || userEmail === 'tattoo.rayan2015@gmail.com') {
-        return true;
-      }
-      return false; // Fail closed
-    }
-
-    const tgFromMeta = authData.user.user_metadata?.telegram_id;
-    const tgFromEmail = authData.user.email?.startsWith('tg_') 
-      ? authData.user.email.replace('tg_', '').replace('@vlive.app', '') 
-      : '';
-    const cleanTg = String(profile.telegram_id || tgFromMeta || tgFromEmail || '').trim();
-    const cleanUserType = String(profile.user_type || '').toUpperCase();
-    const cleanRole = String(profile.role || '').toLowerCase();
-
-    const isMasterAdminTg = cleanTg === ADMIN_TELEGRAM_ID;
-    const isDbAdminRole = cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN' || profile.is_admin === true;
-    const isMasterEmail = userEmail === 'tattoo.rayan2015@gmail.com';
-
-    if (isMasterAdminTg || isDbAdminRole || isMasterEmail) {
+    if (
+      localRole === 'admin' || localRole === 'super_admin' ||
+      localUserType === 'ADMIN' || localUserType === 'SUPER_ADMIN' ||
+      localEmail === 'tattoo.rayan2015@gmail.com' ||
+      String(localTg).trim() === ADMIN_TELEGRAM_ID
+    ) {
+      adminVerifyCache = { result: true, timestamp: Date.now() };
       return true;
     }
 
-    return false; // Fail closed
-  } catch (e) {
-    console.error('verifyAdminAccess error:', e);
-    return false; // Fail closed
+    if (activeAdminSessionStr) {
+      const parsed = JSON.parse(activeAdminSessionStr);
+      if (parsed && (
+        String(parsed.telegramId).trim() === ADMIN_TELEGRAM_ID ||
+        parsed.username === 'Rayan_Super_Admin' ||
+        String(parsed.role).toLowerCase().includes('admin')
+      )) {
+        adminVerifyCache = { result: true, timestamp: Date.now() };
+        return true;
+      }
+    }
+  } catch (ex) {}
+
+  // If a network verification is already running, share the in-flight promise
+  if (adminInFlightPromise) {
+    return adminInFlightPromise;
   }
+
+  adminInFlightPromise = (async () => {
+    try {
+      // 2. Check Supabase auth session
+      const { data: authData, error: authErr } = await supabase.auth.getUser();
+      if (authErr || !authData?.user?.id) {
+        const localRole = safeStorage.getItem('vlive_user_role');
+        const isAdm = localRole === 'admin' || localRole === 'super_admin';
+        adminVerifyCache = { result: isAdm, timestamp: Date.now() };
+        return isAdm;
+      }
+
+      const userId = authData.user.id;
+      const userEmail = String(authData.user.email || '').toLowerCase();
+
+      // Query profiles from Database
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, user_type, telegram_id, is_admin, username')
+        .eq('id', userId)
+        .maybeSingle();
+
+      const tgFromMeta = authData.user.user_metadata?.telegram_id;
+      const tgFromEmail = authData.user.email?.startsWith('tg_') 
+        ? authData.user.email.replace('tg_', '').replace('@vlive.app', '') 
+        : '';
+      const cleanTg = String(profile?.telegram_id || tgFromMeta || tgFromEmail || '').trim();
+      const cleanUserType = String(profile?.user_type || '').toUpperCase();
+      const cleanRole = String(profile?.role || '').toLowerCase();
+
+      const isMasterAdminTg = cleanTg === ADMIN_TELEGRAM_ID;
+      const isDbAdminRole = cleanRole === 'admin' || cleanRole === 'super_admin' || cleanUserType === 'ADMIN' || cleanUserType === 'SUPER_ADMIN' || profile?.is_admin === true;
+      const isMasterEmail = userEmail === 'tattoo.rayan2015@gmail.com';
+
+      const isAdm = Boolean(isMasterAdminTg || isDbAdminRole || isMasterEmail);
+      if (isAdm) {
+        safeStorage.setItem('vlive_user_role', 'admin');
+        safeStorage.setItem('vlive_user_type', 'ADMIN');
+        if (userEmail) safeStorage.setItem('vlive_user_email', userEmail);
+        safeStorage.setItem('vlive_admin_session', JSON.stringify({ role: 'admin', telegramId: ADMIN_TELEGRAM_ID }));
+      }
+      adminVerifyCache = { result: isAdm, timestamp: Date.now() };
+      return isAdm;
+    } catch (e) {
+      console.error('verifyAdminAccess error:', e);
+      return false;
+    } finally {
+      adminInFlightPromise = null;
+    }
+  })();
+
+  return adminInFlightPromise;
 }
 
 /**

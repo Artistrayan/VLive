@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { getStreamerScores } from '../../services/streamerScoring';
 import { getValidAvatarUrl, createDefaultAvatarSvg } from '../../services/api';
+import { calculateAge } from '../../services/businessRules';
 
 /**
  * Helper to determine if a user/profile is female.
@@ -289,7 +290,7 @@ export default function UltraModernHome({
         thumbnail: stream.thumbnail || stream.avatar || hostUser?.avatar,
         viewers: Number(stream.viewers || 0),
         likes: Number(stream.likes || hostUser?.likes_count || hostUser?.likes || 0),
-        age: hostUser?.age || 22,
+        age: calculateAge(hostUser?.birth_date || hostUser?.birthdate || hostUser?.birthday || hostUser?.age) || hostUser?.age || 22,
         distance: hostUser?.distance || '',
         countryFlag: '🇮🇷',
         isOnline: true,
@@ -339,7 +340,7 @@ export default function UltraModernHome({
         thumbnail: user.avatar,
         viewers: 0,
         likes: Number(user.likes_count || user.likes || 0),
-        age: user.age || 21,
+        age: calculateAge(user?.birth_date || user?.birthdate || user?.birthday || user?.age) || user?.age || 21,
         distance: user.distance || '',
         countryFlag: user.country_flag || '🇮🇷',
         isOnline: Boolean(user.online || user.online_status === 'online' || user.status === 'online'),

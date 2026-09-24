@@ -6009,21 +6009,18 @@ export const apiAdmin = {
         const locOverride = (locUid && adminStateMap.get(locUid)) || (locUname && adminStateMap.get(locUname)) || {};
 
         let locStatusClean = String(locApp.status || '').trim().toLowerCase();
-        let dbStatusOverride = 'pending';
-
-        if (locStatusClean === 'pending' || locStatusClean === 'in_review' || locStatusClean === '') {
-          dbStatusOverride = 'pending';
-        } else {
-          let candidateStatus = String(locOverride.kyc_status || locProfile.kyc_status || locApp.status || '').toLowerCase();
-          if (locProfile.user_type === 'STREAMER' || locProfile.kyc_status === 'approved' || locOverride.kyc_status === 'approved') {
-            candidateStatus = 'approved';
-          } else if (locProfile.kyc_status === 'rejected' || locOverride.kyc_status === 'rejected') {
-            candidateStatus = 'rejected';
-          } else if (locProfile.kyc_status === 'correction' || locOverride.kyc_status === 'correction') {
-            candidateStatus = 'correction';
-          }
-          dbStatusOverride = candidateStatus;
+        let candidateStatus = String(locOverride.kyc_status || locProfile.kyc_status || '').toLowerCase();
+        if (locProfile.user_type === 'STREAMER' || locProfile.kyc_status === 'approved' || locOverride.kyc_status === 'approved') {
+          candidateStatus = 'approved';
+        } else if (locProfile.kyc_status === 'rejected' || locOverride.kyc_status === 'rejected') {
+          candidateStatus = 'rejected';
+        } else if (locProfile.kyc_status === 'correction' || locOverride.kyc_status === 'correction') {
+          candidateStatus = 'correction';
         }
+
+        let dbStatusOverride = (candidateStatus === 'approved' || candidateStatus === 'rejected' || candidateStatus === 'correction')
+          ? candidateStatus
+          : (locStatusClean || 'pending');
 
         // Check if this local app matches an existing DB app
         const existingIdx = resultList.findIndex(a => 
@@ -6034,8 +6031,14 @@ export const apiAdmin = {
 
         if (existingIdx !== -1) {
           const existing = resultList[existingIdx];
-          let effectiveStatus = dbStatusOverride || existing.status || 'Pending';
-          if (effectiveStatus === 'pending' && locApp.status && String(locApp.status).toLowerCase() !== 'pending') {
+          const existingStatusClean = String(existing.status || '').toLowerCase();
+          
+          let effectiveStatus = 'Pending';
+          if (existingStatusClean === 'approved' || existingStatusClean === 'rejected' || existingStatusClean === 'correction') {
+            effectiveStatus = existing.status;
+          } else if (dbStatusOverride === 'approved' || dbStatusOverride === 'rejected' || dbStatusOverride === 'correction') {
+            effectiveStatus = dbStatusOverride;
+          } else if (locApp.status && String(locApp.status).toLowerCase() !== 'pending') {
             effectiveStatus = locApp.status;
           }
 

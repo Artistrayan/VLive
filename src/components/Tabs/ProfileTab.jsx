@@ -195,13 +195,11 @@ export default function ProfileTab(props) {
         if (birthVal) {
           setUserBirthDate(birthVal);
           safeStorage.setItem('vlive_profile_birthdate', birthVal);
-          const calc = calculateAge(birthVal);
-          if (calc !== null) {
-            effectiveAge = String(calc);
-          }
         }
-
-        if (!effectiveAge && profile.age !== undefined && profile.age !== null && profile.age !== '') {
+        const calc = calculateAge(birthVal || profile.age);
+        if (calc !== null) {
+          effectiveAge = String(calc);
+        } else if (profile.age !== undefined && profile.age !== null && profile.age !== '') {
           effectiveAge = String(profile.age);
         }
 
