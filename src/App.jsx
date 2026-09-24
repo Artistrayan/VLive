@@ -2838,18 +2838,27 @@ export default function App() {
         });
       },
       onStreamEnded: (endedStreamId) => {
+        if (!endedStreamId) return;
+        const cleanEndedId = String(endedStreamId).replace(/^live_/, '');
         setViewingStream(prev => {
-          if (prev && prev.id === endedStreamId) {
-            showToast(window.loc('لایو توسط میزبان پایان یافت.', 'Live stream ended by host.'));
-            return null;
+          if (prev) {
+            const cleanPrevId = String(prev.id || '').replace(/^live_/, '');
+            if (cleanPrevId === cleanEndedId || String(prev.id) === String(endedStreamId)) {
+              showToast(window.loc('لایو توسط میزبان پایان یافت.', 'Live stream ended by host.'));
+              return null;
+            }
           }
           return prev;
         });
-        if (!endedStreamId) return;
-        setStreamsList(prev => {
-          const arr = Array.isArray(prev) ? prev : [];
-          return arr.filter(s => s.id !== endedStreamId);
-        });
+        const filterFn = s => {
+          if (!s) return false;
+          const cleanSId = String(s.id || '').replace(/^live_/, '');
+          return cleanSId !== cleanEndedId && String(s.id) !== String(endedStreamId);
+        };
+        setStreamsList(prev => (Array.isArray(prev) ? prev : []).filter(filterFn));
+        if (typeof setAdminLivesList === 'function') {
+          setAdminLivesList(prev => (Array.isArray(prev) ? prev : []).filter(filterFn));
+        }
       },
       onStreamUpdated: (updatedStream) => {
         if (!updatedStream || !updatedStream.id) return;
@@ -2871,19 +2880,28 @@ export default function App() {
     };
 
     const handleLocalStreamEnded = (e) => {
-      const endedId = e.detail?.streamId;
+      const endedId = e.detail?.streamId || e.detail?.cleanId;
+      if (!endedId) return;
+      const cleanEndedId = String(endedId).replace(/^live_/, '');
       setViewingStream(prev => {
-        if (prev && prev.id === endedId) {
-          showToast(window.loc('لایو پایان یافت.', 'Live ended.'));
-          return null;
+        if (prev) {
+          const cleanPrevId = String(prev.id || '').replace(/^live_/, '');
+          if (cleanPrevId === cleanEndedId || String(prev.id) === String(endedId)) {
+            showToast(window.loc('لایو پایان یافت.', 'Live ended.'));
+            return null;
+          }
         }
         return prev;
       });
-      if (!endedId) return;
-      setStreamsList(prev => {
-        const arr = Array.isArray(prev) ? prev : [];
-        return arr.filter(s => s.id !== endedId);
-      });
+      const filterFn = s => {
+        if (!s) return false;
+        const cleanSId = String(s.id || '').replace(/^live_/, '');
+        return cleanSId !== cleanEndedId && String(s.id) !== String(endedId);
+      };
+      setStreamsList(prev => (Array.isArray(prev) ? prev : []).filter(filterFn));
+      if (typeof setAdminLivesList === 'function') {
+        setAdminLivesList(prev => (Array.isArray(prev) ? prev : []).filter(filterFn));
+      }
     };
 
     window.addEventListener('vlive_stream_started', handleLocalStreamStarted);

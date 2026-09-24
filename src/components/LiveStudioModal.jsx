@@ -755,6 +755,23 @@ export default function LiveStudioModal({
     return () => clearInterval(timer);
   }, [studioPhase]);
 
+  // Window beforeunload effect to cleanly end live stream on tab/browser close
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (studioPhase === 'LIVE' && activeStreamRecord?.id) {
+        apiLive.endLiveStream(activeStreamRecord.id);
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+      }
+    };
+  }, [studioPhase, activeStreamRecord]);
+
   // PK Battle Timer Effect
   useEffect(() => {
     let pkTimer;

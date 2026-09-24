@@ -1738,15 +1738,33 @@ export const apiHome = {
         }
       } catch (e) {}
 
-      // 4. Filter out ended or stale streams (keep streams active within last 12 hours)
+      // 4. Filter out ended or stale streams (disconnected if no heartbeat in last 2 minutes)
       const now = Date.now();
+      const STALE_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes without heartbeat = disconnected / ended
+      const staleStreamIds = [];
+
       const validData = (data || []).filter(s => {
-        if (!s || String(s.status).toLowerCase() === 'ended') return false;
+        if (!s) return false;
+        const statusLower = String(s.status || '').toLowerCase();
+        if (statusLower === 'ended' || statusLower === 'closed' || statusLower === 'inactive') return false;
+
         const createdMs = s.created_at ? new Date(s.created_at).getTime() : now;
         const hbMs = s.last_heartbeat_at ? new Date(s.last_heartbeat_at).getTime() : createdMs;
-        // Keep streams active for up to 12 hours instead of dropping after 60 seconds
-        return (now - hbMs) < (12 * 3600 * 1000);
+
+        const isStale = (now - hbMs) > STALE_TIMEOUT_MS;
+        if (isStale) {
+          if (s.id) staleStreamIds.push(s.id);
+          return false;
+        }
+        return true;
       });
+
+      // Async cleanup of stale streams in DB
+      if (staleStreamIds.length > 0) {
+        try {
+          supabase.from('streams').update({ status: 'ended' }).in('id', staleStreamIds).then(() => {}).catch(() => {});
+        } catch (e) {}
+      }
 
       const mappedDbStreams = validData.map(s => {
         const hostProfile = (s.profiles && typeof s.profiles === 'object' && !Array.isArray(s.profiles) ? s.profiles : null)
@@ -1797,10 +1815,20 @@ export const apiHome = {
       const seenHostIds = new Set(mappedDbStreams.map(s => String(s.host_id || '').toLowerCase()).filter(Boolean));
 
       localStreams.forEach(ls => {
-        if (!ls || !ls.id || String(ls.status).toLowerCase() === 'ended') return;
+        if (!ls || !ls.id) return;
+        const statusLower = String(ls.status || '').toLowerCase();
+        if (statusLower === 'ended' || statusLower === 'closed' || statusLower === 'inactive') return;
+
         const sid = String(ls.id).toLowerCase();
-        if (!seenIds.has(sid)) {
+        const cleanSid = sid.replace(/^live_/, '');
+
+        const lsCreated = ls.created_at ? new Date(ls.created_at).getTime() : (ls.updatedAt || now);
+        const lsHb = ls.last_heartbeat_at ? new Date(ls.last_heartbeat_at).getTime() : lsCreated;
+        if ((now - lsHb) > STALE_TIMEOUT_MS) return;
+
+        if (!seenIds.has(sid) && !seenIds.has(cleanSid) && !seenIds.has(`live_${cleanSid}`)) {
           seenIds.add(sid);
+          seenIds.add(cleanSid);
           combined.push({
             ...ls,
             status: 'active',
@@ -2974,14 +3002,19 @@ export const apiLive = {
   async sendHeartbeat(streamId) {
     if (!streamId) return;
     try {
-      await supabase.from("streams").update({ last_heartbeat_at: new Date().toISOString() }).eq("id", streamId).eq("status", "active");
+      const cleanId = String(streamId).replace(/^live_/, '');
+      await supabase
+        .from("streams")
+        .update({ last_heartbeat_at: new Date().toISOString() })
+        .or(`id.eq.${cleanId},id.eq.${streamId},host_id.eq.${cleanId}`);
     } catch (e) {}
   },
 
   async activateLiveStream(streamId) {
     if (!streamId) return { success: false };
     try {
-      await supabase.from("streams").update({ status: "active", started_at: new Date().toISOString() }).eq("id", streamId);
+      const cleanId = String(streamId).replace(/^live_/, '');
+      await supabase.from("streams").update({ status: "active", started_at: new Date().toISOString() }).or(`id.eq.${cleanId},id.eq.${streamId}`);
       return { success: true };
     } catch (e) {
       return { success: false };
@@ -2991,21 +3024,49 @@ export const apiLive = {
   async endLiveStream(streamId) {
     if (!streamId) return { success: false, error: 'No streamId provided' };
 
+    const cleanId = String(streamId).replace(/^live_/, '');
     const { data: authData } = await supabase.auth.getUser();
     const currentUid = authData?.user?.id || getUserId();
     const hostUuid = (typeof currentUid === 'string' && currentUid.includes('-') && currentUid.length >= 30) ? currentUid : undefined;
 
-    // 1. Update public.streams table
-    const { error: endError } = await supabase
-      .from('streams')
-      .update({ status: 'ended' })
-      .eq('id', streamId);
+    // 1. Update public.streams table across all possible ID matches
+    let endQuery = supabase.from('streams').update({ status: 'ended' });
+    if (cleanId === streamId) {
+      endQuery = endQuery.or(`id.eq.${cleanId},host_id.eq.${cleanId}`);
+    } else {
+      endQuery = endQuery.or(`id.eq.${cleanId},id.eq.${streamId},host_id.eq.${cleanId}`);
+    }
+    const { error: endError } = await endQuery;
 
     if (hostUuid) {
       try { await supabase.from('profiles').update({ status: 'online' }).eq('id', hostUuid); } catch (e) {}
     }
 
-    // 2. Global realtime broadcast that stream has ended
+    // 2. Clean local storage records across all client keys
+    const scanKeys = ['vlive_active_streams', 'vlive_local_streams', 'vlive_current_stream', 'vlive_live_broadcast'];
+    scanKeys.forEach(k => {
+      try {
+        const raw = safeStorage.getItem(k);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            const filtered = parsed.filter(s => {
+              if (!s) return false;
+              const sId = String(s.id || '');
+              return sId !== String(streamId) && sId !== String(cleanId) && String(s.host_id || '') !== String(cleanId);
+            });
+            safeStorage.setItem(k, JSON.stringify(filtered));
+          } else if (typeof parsed === 'object' && parsed !== null) {
+            const sId = String(parsed.id || '');
+            if (sId === String(streamId) || sId === String(cleanId) || String(parsed.host_id || '') === String(cleanId)) {
+              safeStorage.removeItem(k);
+            }
+          }
+        }
+      } catch (e) {}
+    });
+
+    // 3. Global realtime broadcast that stream has ended
     try {
       const ch = supabase.channel('global_live_streams', {
         config: { broadcast: { ack: true, self: true } }
@@ -3015,14 +3076,15 @@ export const apiLive = {
           await ch.send({
             type: 'broadcast',
             event: 'live_ended',
-            payload: { streamId }
+            payload: { streamId, cleanId }
           }).catch(() => {});
+          setTimeout(() => { try { supabase.removeChannel(ch); } catch {} }, 2000);
         }
       });
     } catch (e) {}
 
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('vlive_stream_ended', { detail: { streamId } }));
+      window.dispatchEvent(new CustomEvent('vlive_stream_ended', { detail: { streamId, cleanId } }));
     }
 
     if (endError) {
@@ -5414,7 +5476,7 @@ export const apiAdmin = {
         // Ban logic: explicit boolean override has highest priority
         const isBannedVal = typeof override?.is_banned === 'boolean'
           ? override.is_banned
-          : (override?.status === 'banned' || u.status === 'banned');
+          : (override?.status === 'banned' ? true : (u.status === 'banned'));
 
         // Mute logic: explicit boolean override has highest priority
         const isMutedVal = typeof override?.is_muted === 'boolean'
@@ -5434,7 +5496,7 @@ export const apiAdmin = {
           ? override.is_verified
           : Boolean(u.is_verified || u.verified || u.isVerified);
 
-        const statusVal = isBannedVal ? 'banned' : (override?.status || u.status || 'approved');
+        const statusVal = isBannedVal ? 'banned' : ((override?.status && override.status !== 'banned') ? override.status : (u.status || 'approved'));
         const userTypeVal = isStreamerVal ? 'STREAMER' : (override?.user_type || u.user_type || 'REAL_USER');
 
         const isExplicitActioned = isStreamerVal || effectiveKycStatus === 'approved' || effectiveKycStatus === 'rejected' || effectiveKycStatus === 'correction' || Boolean(override?.kyc_status) || Boolean(override?.status);
@@ -5562,14 +5624,15 @@ export const apiAdmin = {
 
       let isSuccess = false;
       let matchedId = targetUuid;
+      const cleanUname = String(userId || '').replace(/^@/, '').trim();
 
-      // 2. Update profiles in DB
+      // 2. Update profiles in DB by ID and username
       if (targetUuid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUuid))) {
         const { error } = await supabase.from('profiles').update(safeProfilePayload).eq('id', targetUuid);
         if (!error) isSuccess = true;
-      } else {
-        const cleanUsername = String(userId).replace(/^@/, '');
-        const { error } = await supabase.from('profiles').update(safeProfilePayload).eq('username', cleanUsername);
+      }
+      if (cleanUname) {
+        const { error } = await supabase.from('profiles').update(safeProfilePayload).eq('username', cleanUname);
         if (!error) isSuccess = true;
       }
 
@@ -5587,6 +5650,12 @@ export const apiAdmin = {
             updated_at: new Date().toISOString()
           }).eq('user_id', matchedId);
         }
+        if (cleanUname) {
+          await supabase.from('kyc_applications').update({
+            status: 'Approved',
+            updated_at: new Date().toISOString()
+          }).eq('username', cleanUname);
+        }
       } else if (isStreamerExplicit && !isStreamerVal) {
         if (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) {
           await supabase.from('streamer_profiles').update({
@@ -5596,9 +5665,13 @@ export const apiAdmin = {
         }
       }
 
-      // 4. Save state permanently in Supabase support_tickets table (ADMIN_USER_STATE)
-      if (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) {
-        const subjectKey = `ADMIN_USER_STATE:${matchedId}`;
+      // 4. Save state permanently in Supabase support_tickets table (ADMIN_USER_STATE) across ALL candidate keys
+      const candidateKeys = new Set();
+      if (matchedId) candidateKeys.add(`ADMIN_USER_STATE:${matchedId}`);
+      if (cleanUname) candidateKeys.add(`ADMIN_USER_STATE:${cleanUname}`);
+      if (userId && String(userId) !== matchedId) candidateKeys.add(`ADMIN_USER_STATE:${userId}`);
+
+      for (const subjectKey of candidateKeys) {
         const { data: existingTicket } = await supabase
           .from('support_tickets')
           .select('id, message')
@@ -5614,7 +5687,7 @@ export const apiAdmin = {
 
         const mergedState = {
           ...existingState,
-          user_id: matchedId,
+          user_id: matchedId || userId,
           updated_at: new Date().toISOString()
         };
 
@@ -5657,7 +5730,7 @@ export const apiAdmin = {
           await supabase
             .from('support_tickets')
             .insert([{
-              user_id: matchedId,
+              user_id: (matchedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(matchedId))) ? matchedId : '00000000-0000-0000-0000-000000000000',
               subject: subjectKey,
               message: JSON.stringify(mergedState),
               status: 'closed'
@@ -5802,19 +5875,17 @@ export const apiAdmin = {
           let appStatusClean = String(app.status || parsed.status || '').trim().toLowerCase();
           let rawStatus = 'pending';
 
-          if (appStatusClean === 'pending' || appStatusClean === 'in_review' || appStatusClean === '') {
-            // Fresh / unreviewed submission takes precedence
-            rawStatus = 'pending';
+          let candidateStatus = (adminOverride.kyc_status || profile.kyc_status || '').toLowerCase();
+          if (profile.user_type === 'STREAMER' || candidateStatus === 'approved' || profile.kyc_status === 'approved' || adminOverride.kyc_status === 'approved') {
+            rawStatus = 'approved';
+          } else if (candidateStatus === 'rejected' || profile.kyc_status === 'rejected' || adminOverride.kyc_status === 'rejected') {
+            rawStatus = 'rejected';
+          } else if (candidateStatus === 'correction' || profile.kyc_status === 'correction' || adminOverride.kyc_status === 'correction') {
+            rawStatus = 'correction';
+          } else if (appStatusClean === 'approved' || appStatusClean === 'rejected' || appStatusClean === 'correction') {
+            rawStatus = appStatusClean;
           } else {
-            let candidateStatus = (adminOverride.kyc_status || profile.kyc_status || app.status || parsed.status || '').toLowerCase();
-            if (profile.user_type === 'STREAMER' || profile.kyc_status === 'approved' || adminOverride.kyc_status === 'approved') {
-              candidateStatus = 'approved';
-            } else if (profile.kyc_status === 'rejected' || adminOverride.kyc_status === 'rejected') {
-              candidateStatus = 'rejected';
-            } else if (profile.kyc_status === 'correction' || adminOverride.kyc_status === 'correction') {
-              candidateStatus = 'correction';
-            }
-            rawStatus = candidateStatus;
+            rawStatus = 'pending';
           }
 
           let currentStatus = 'Pending';
@@ -6382,18 +6453,48 @@ export const apiAdmin = {
     if (!(await verifyAdminServerRole())) return { success: false, error: '403 Forbidden: Admin privileges required.' };
     try {
       const cleanId = String(streamId).replace(/^live_/, '');
-      const { error } = await supabase.from('streams').update({ status: 'ended' }).or(`id.eq.${cleanId},id.eq.${streamId}`);
+      const { error } = await supabase.from('streams').update({ status: 'ended' }).or(`id.eq.${cleanId},id.eq.${streamId},host_id.eq.${cleanId}`);
+
+      // Clean local storage keys
+      const scanKeys = ['vlive_active_streams', 'vlive_local_streams', 'vlive_current_stream', 'vlive_live_broadcast'];
+      scanKeys.forEach(k => {
+        try {
+          const raw = safeStorage.getItem(k);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              const filtered = parsed.filter(s => {
+                if (!s) return false;
+                const sId = String(s.id || '');
+                return sId !== String(streamId) && sId !== String(cleanId) && String(s.host_id || '') !== String(cleanId);
+              });
+              safeStorage.setItem(k, JSON.stringify(filtered));
+            } else if (typeof parsed === 'object' && parsed !== null) {
+              const sId = String(parsed.id || '');
+              if (sId === String(streamId) || sId === String(cleanId) || String(parsed.host_id || '') === String(cleanId)) {
+                safeStorage.removeItem(k);
+              }
+            }
+          }
+        } catch (e) {}
+      });
+
       try {
         const ch = supabase.channel('global_live_streams', {
           config: { broadcast: { ack: true, self: true } }
         });
         ch.subscribe((status) => {
           if (status === 'SUBSCRIBED') {
-            ch.send({ type: 'broadcast', event: 'live_ended', payload: { streamId, id: streamId } });
+            ch.send({ type: 'broadcast', event: 'live_ended', payload: { streamId, id: streamId, cleanId } });
             setTimeout(() => { try { supabase.removeChannel(ch); } catch {} }, 2000);
           }
         });
       } catch (e) {}
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vlive_stream_ended', { detail: { streamId, cleanId } }));
+      }
+
       return { success: !error };
     } catch (e) {
       return { success: false, error: e.message };
