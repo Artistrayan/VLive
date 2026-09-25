@@ -192,11 +192,8 @@ export default function GiftBoxTab({
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-pink-400 to-purple-300 bg-clip-text text-transparent">
-                {loc('مرکز هدایا و دارایی‌های کاربر', 'Gift Box & Assets Center')}
+                {loc('مرکز هدایا و دارایی‌ها', 'Gift Box & Assets')}
               </h1>
-              <p className="text-xs text-slate-400 font-medium">
-                {loc('دریافت جوایز روزانه، پاداش ماموریت‌ها و مدیریت دارایی‌ها', 'Claim daily gifts, quest rewards & manage your inventory')}
-              </p>
             </div>
           </div>
 
@@ -256,28 +253,17 @@ export default function GiftBoxTab({
           
           {/* DAILY 7-DAY REWARDS CONTAINER */}
           <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-5 sm:p-6 shadow-2xl space-y-5 relative overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
                   <Flame className="w-6 h-6 animate-pulse" />
                 </div>
-                <div>
-                  <h2 className="text-base font-black text-white flex items-center gap-2">
-                    <span>{loc('هدایای ورود روزانه (چرخه ۷ روزه)', 'Daily Login Rewards (7-Day Cycle)')}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 text-[10px] font-bold border border-pink-500/30">
-                      {loc(`روز ${dailyStatus.currentDay} از ۷`, `Day ${dailyStatus.currentDay} of 7`)}
-                    </span>
-                  </h2>
-                  <p className="text-[11px] text-slate-400">
-                    {loc('هر روز وارد برنامه شوید تا هدایای متوالی قلب، دوربین، سکه و VIP را دریافت کنید', 'Log in daily to unlock Hearts, Cameras, Coins, and 24h VIP')}
-                  </p>
-                </div>
-              </div>
-
-              {/* Reset Rule Notice */}
-              <div className="text-[11px] text-amber-300/80 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-1.5 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span>{loc('بعد از روز هفتم، چرخه مجدداً از روز اول شروع می‌شود', 'After Day 7, the cycle resets back to Day 1')}</span>
+                <h2 className="text-base font-black text-white flex items-center gap-2">
+                  <span>{loc('هدایای ورود روزانه', 'Daily Login Rewards')}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 text-[10px] font-bold border border-pink-500/30">
+                    {loc(`روز ${dailyStatus.currentDay} از ۷`, `Day ${dailyStatus.currentDay} of 7`)}
+                  </span>
+                </h2>
               </div>
             </div>
 
@@ -292,7 +278,7 @@ export default function GiftBoxTab({
                   <div
                     key={dayItem.day}
                     onClick={() => setSelectedDayDetail(dayItem)}
-                    className={`relative rounded-2xl p-3 flex flex-col items-center justify-between text-center transition-all duration-300 cursor-pointer min-h-[155px] ${
+                    className={`relative rounded-2xl p-3 flex flex-col items-center justify-between text-center transition-all duration-300 cursor-pointer min-h-[140px] ${
                       isCurrentReady
                         ? 'bg-gradient-to-b from-amber-500/25 via-slate-900 to-slate-900 border-2 border-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.4)] scale-105'
                         : isPastClaimed
@@ -327,14 +313,11 @@ export default function GiftBoxTab({
                     </div>
 
                     {/* Reward Title */}
-                    <div className="w-full space-y-0.5">
+                    <div className="w-full">
                       <span className={`text-[11px] font-black leading-tight block ${
                         isCurrentReady ? 'text-amber-300' : isPastClaimed ? 'text-emerald-300' : 'text-slate-200'
                       }`}>
                         {loc(dayItem.title, dayItem.titleEn || dayItem.title)}
-                      </span>
-                      <span className="text-[9px] text-slate-400 block line-clamp-1">
-                        {loc(dayItem.desc, dayItem.descEn || dayItem.desc)}
                       </span>
                     </div>
 
@@ -342,7 +325,7 @@ export default function GiftBoxTab({
                     <div className="mt-2 w-full pt-1">
                       {isCurrentReady ? (
                         <span className="block w-full py-1 rounded-lg bg-amber-400 text-slate-950 font-black text-[9px] shadow-md animate-pulse">
-                          {loc('آماده دریافت ✨', 'Claim ✨')}
+                          {loc('دریافت ✨', 'Claim ✨')}
                         </span>
                       ) : isPastClaimed ? (
                         <span className="block w-full py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold text-[9px]">
@@ -379,12 +362,12 @@ export default function GiftBoxTab({
                 <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-center space-y-1.5">
                   <div className="flex items-center justify-center gap-2 text-emerald-400 font-bold text-xs">
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>{loc('هدیه امروز شما با موفقیت دریافت شد!', 'Today\'s daily reward has been claimed!')}</span>
+                    <span>{loc('هدیه امروز دریافت شد!', 'Today\'s daily reward claimed!')}</span>
                   </div>
                   {countdownText && (
                     <div className="flex items-center justify-center gap-2 text-slate-400 text-xs font-mono">
                       <Clock className="w-3.5 h-3.5 text-amber-400" />
-                      <span>{loc('هدیه بعدی در دسترس قرار می‌گیرد در:', 'Next reward unlocks in:')}</span>
+                      <span>{loc('هدیه بعدی:', 'Next reward in:')}</span>
                       <span className="font-bold text-amber-300 text-sm bg-slate-900 px-2.5 py-0.5 rounded-lg border border-slate-800">
                         {countdownText}
                       </span>
@@ -402,14 +385,9 @@ export default function GiftBoxTab({
                 <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
                   <Trophy className="w-5 h-5" />
                 </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-black text-white">
-                    {loc('ماموریت‌های پاداش‌دار و فعالیت‌ها', 'Activity Quests & Rewards')}
-                  </h3>
-                  <p className="text-[11px] text-slate-400">
-                    {loc('با انجام فعالیت‌های داخل برنامه، سکه، قلب و دوربین اضافه پاداش بگیرید', 'Complete in-app tasks to earn bonus Hearts, Cameras, and Coins')}
-                  </p>
-                </div>
+                <h3 className="text-sm sm:text-base font-black text-white">
+                  {loc('ماموریت‌ها و فعالیت‌ها', 'Activity Quests')}
+                </h3>
               </div>
             </div>
 
@@ -486,55 +464,6 @@ export default function GiftBoxTab({
             </div>
           </div>
 
-          {/* RULES & MECHANICS GUIDE BOX */}
-          <div className="rounded-3xl bg-slate-900/60 border border-slate-800/80 p-5 space-y-3">
-            <h3 className="text-xs font-black text-slate-300 flex items-center gap-2">
-              <Shield className="w-4 h-4 text-pink-400" />
-              <span>{loc('راهنما و قوانین استفاده از جوایز و آیتم‌ها', 'Rules & Asset Guidelines')}</span>
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-300 leading-relaxed">
-              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-cyan-500/20 space-y-1.5">
-                <div className="flex items-center gap-2 text-cyan-400 font-bold">
-                  <Video className="w-4 h-4" />
-                  <span>{loc('کوپن دوربین فیلمبرداری 📹', 'Video Camera Voucher 📹')}</span>
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  {loc(
-                    'مخصوص تماس تصویری اختیاری به مدت ۱ دقیقه. دقیقه اول رایگان است، بعد از ۱ دقیقه از سکه کسر خواهد شد و در صورت کمبود سکه تماس قطع می‌شود.',
-                    'Dedicated for 1-minute optional video call. 1st minute is free; afterwards coins are deducted, and call drops if balance is insufficient.'
-                  )}
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-rose-500/20 space-y-1.5">
-                <div className="flex items-center gap-2 text-rose-400 font-bold">
-                  <Heart className="w-4 h-4 fill-current" />
-                  <span>{loc('کوپن قلب ❤️', 'Heart Voucher ❤️')}</span>
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  {loc(
-                    'متصل به بخش Match. می‌توانید از قلب‌ها به عنوان شانس مچ‌زدن فوری و لایک ویژه در رادار مچ استفاده کنید.',
-                    'Connected to Match section. Use hearts as instant free swipe and match chances in Radar Match.'
-                  )}
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-amber-500/20 space-y-1.5">
-                <div className="flex items-center gap-2 text-amber-400 font-bold">
-                  <Crown className="w-4 h-4" />
-                  <span>{loc('اشتراک VIP ۲۴ ساعته 👑', '24h VIP Pass 👑')}</span>
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  {loc(
-                    'استفاده کاملاً رایگان از کلیه امکانات اعضای ویژه به مدت ۲۴ ساعت شامل تم طلایی، نشان ویژه و دسترسی اختصاصی.',
-                    'Full free access to all VIP premium perks for 24 hours including golden theme, special badge, and priority features.'
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
-
         </div>
       )}
 
@@ -554,7 +483,7 @@ export default function GiftBoxTab({
                   <Heart className="w-7 h-7 fill-current animate-pulse" />
                 </div>
                 <span className="px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 font-mono font-black text-xs">
-                  {loc('متصل به Match', 'Connected to Match')}
+                  {loc('بخش Match', 'Match')}
                 </span>
               </div>
 
@@ -565,9 +494,6 @@ export default function GiftBoxTab({
                 <div className="text-3xl font-black text-white font-mono mt-1">
                   {userAssets.hearts} <span className="text-sm font-sans font-bold text-rose-400">{loc('قلب ❤️', 'Hearts ❤️')}</span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  {loc('استفاده به عنوان شانس مچ و لایک مستقیم در بخش رادار', 'Use for direct likes and instant matching')}
-                </p>
               </div>
 
               <button
@@ -597,9 +523,6 @@ export default function GiftBoxTab({
                 <div className="text-3xl font-black text-white font-mono mt-1">
                   {userAssets.cameras} <span className="text-sm font-sans font-bold text-cyan-400">{loc('دوربین 📹', 'Cameras 📹')}</span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  {loc('تماس تصویری اختیاری ۱ دقیقه بدون هزینه اولیه', '1-min optional video call with free first minute')}
-                </p>
               </div>
 
               <button
@@ -641,18 +564,12 @@ export default function GiftBoxTab({
                     <div className="text-xl font-black text-amber-300 font-mono">
                       {vipCountdownText || '۲۴:۰۰:۰۰'}
                     </div>
-                    <span className="text-[10px] text-slate-400 block">
-                      {loc('زمان باقی‌مانده از اشتراک ۲۴ ساعته', 'Remaining 24h VIP period')}
-                    </span>
                   </div>
                 ) : (
                   <div className="mt-1">
                     <div className="text-2xl font-black text-slate-300 font-mono">
                       {userAssets.vipPasses} <span className="text-sm font-sans font-bold text-amber-400">{loc('کارت فعال‌نشده', 'Passes')}</span>
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      {loc('با دریافت هدیه روز هفتم، ۲۴ ساعت VIP فعال می‌شود', 'Day 7 gift gives a 24h VIP pass')}
-                    </p>
                   </div>
                 )}
               </div>
