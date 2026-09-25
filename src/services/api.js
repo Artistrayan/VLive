@@ -163,6 +163,13 @@ export const apiAuth = {
       interests: userData.interests || '',
       user_type: isSuperAdminId ? 'ADMIN' : 'REAL_USER',
       role: isSuperAdminId ? 'admin' : 'user',
+      is_verified: false,
+      is_vip: false,
+      vip_plan: 'none',
+      is_streamer: false,
+      can_live_stream: false,
+      is_banned: false,
+      is_muted: false,
       status: 'approved',
       telegram_id: userData.telegram_id || '',
       updated_at: new Date().toISOString()
@@ -472,6 +479,14 @@ export const apiAuth = {
           username: tgUser.username || `user_${String(tgId).slice(-4)}`,
           avatar,
           user_type: initialUserType,
+          role: initialRole,
+          is_verified: false,
+          is_vip: false,
+          vip_plan: 'none',
+          is_streamer: false,
+          can_live_stream: false,
+          is_banned: false,
+          is_muted: false,
           status: 'approved'
       }], { onConflict: 'id' }).select();
 

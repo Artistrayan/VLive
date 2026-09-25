@@ -573,12 +573,28 @@ export default function UltraPremiumLiveViewer({
               type="text"
               value={streamChatInput}
               onChange={e => setStreamChatInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSendStreamChat()}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  const isMutedUser = Boolean(currentUser?.is_muted || currentUser?.isMuted || localStorage.getItem('vlive_is_muted') === 'true');
+                  if (isMutedUser) {
+                    showToast?.(loc('🚫 چت شما توسط مدیریت مسدود و توقیف شده است.', '🚫 Your chat has been muted by the admin.'));
+                    return;
+                  }
+                  handleSendStreamChat();
+                }
+              }}
               placeholder={loc('ارسال پیام زنده...', 'Send live message...')}
               className="flex-1 px-4 py-2 rounded-full bg-black/30 border border-white/15 text-xs text-white placeholder:text-white/50 outline-none focus:border-pink-500 backdrop-blur-md transition-all"
             />
             <button
-              onClick={handleSendStreamChat}
+              onClick={() => {
+                const isMutedUser = Boolean(currentUser?.is_muted || currentUser?.isMuted || localStorage.getItem('vlive_is_muted') === 'true');
+                if (isMutedUser) {
+                  showToast?.(loc('🚫 چت شما توسط مدیریت مسدود و توقیف شده است.', '🚫 Your chat has been muted by the admin.'));
+                  return;
+                }
+                handleSendStreamChat();
+              }}
               disabled={!streamChatInput?.trim()}
               className="p-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-xs transition-all active:scale-95 disabled:opacity-40 shadow-lg"
             >

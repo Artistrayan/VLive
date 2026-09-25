@@ -605,6 +605,10 @@ export default function App() {
 
   const currentUser = useMemo(() => {
     if (!isLoggedIn) return null;
+    const isMutedVal = Boolean(authUserRecord?.is_muted || authUserRecord?.isMuted || safeStorage.getItem('vlive_is_muted') === 'true');
+    const isBannedVal = Boolean(authUserRecord?.is_banned || authUserRecord?.isBanned || authUserRecord?.status === 'banned' || safeStorage.getItem('vlive_is_banned') === 'true');
+    const isStreamerVal = Boolean(isUserAdmin || authUserRecord?.is_streamer || authUserRecord?.isStreamer || authUserRecord?.user_type === 'STREAMER' || userRole === 'streamer' || safeStorage.getItem('vlive_is_streamer') === 'true');
+
     return {
       id: getUserId() || authUserRecord?.id || '',
       name: userName,
@@ -618,13 +622,20 @@ export default function App() {
       vipPlan,
       isVip: Boolean(vipPlan && vipPlan !== 'Free' && vipPlan !== 'none' && vipPlan !== 'null') || Boolean(authUserRecord?.is_vip || authUserRecord?.isVip),
       is_vip: Boolean(vipPlan && vipPlan !== 'Free' && vipPlan !== 'none' && vipPlan !== 'null') || Boolean(authUserRecord?.is_vip || authUserRecord?.isVip),
+      is_muted: isMutedVal,
+      isMuted: isMutedVal,
+      is_banned: isBannedVal,
+      isBanned: isBannedVal,
+      is_streamer: isStreamerVal,
+      isStreamer: isStreamerVal,
+      can_live_stream: isStreamerVal,
       bio: userBio,
       telegramId: currentTelegramId,
       ...authUserRecord,
       role: userRole,
       telegram_id: currentTelegramId || authUserRecord?.telegram_id || authUserRecord?.telegramId
     };
-  }, [isLoggedIn, userName, userNickname, currentUsername, userAvatar, userCoins, userDiamonds, userGender, userRole, isVerified, vipPlan, userBio, currentTelegramId, authUserRecord]);
+  }, [isLoggedIn, userName, userNickname, currentUsername, userAvatar, userCoins, userDiamonds, userGender, userRole, isVerified, vipPlan, userBio, currentTelegramId, authUserRecord, isUserAdmin]);
 
   const isVip = useMemo(() => {
     return Boolean(vipPlan && vipPlan !== 'Free' && vipPlan !== 'none' && vipPlan !== 'null') ||
@@ -1320,6 +1331,15 @@ export default function App() {
   // Live Stream Chat & Gifts
   const handleSendStreamChat = useCallback(async () => {
     if (!streamChatInput.trim() || !viewingStream) return;
+    const isUserMuted = Boolean(
+      currentUser?.is_muted ||
+      currentUser?.isMuted ||
+      safeStorage.getItem('vlive_is_muted') === 'true'
+    );
+    if (isUserMuted) {
+      showToast(loc('🚫 چت شما توسط مدیریت مسدود و توقیف شده است.', '🚫 Your chat has been muted by the admin.'));
+      return;
+    }
     const cleanText = streamChatInput.trim();
     const msg = {
       id: Date.now(),
@@ -1345,7 +1365,7 @@ export default function App() {
     } catch {
       // suppressed
     }
-  }, [streamChatInput, userName, currentUsername, userAvatar, vipPlan, viewingStream]);
+  }, [streamChatInput, userName, currentUsername, userAvatar, vipPlan, viewingStream, currentUser, loc, showToast]);
 
   const handleLikeStream = useCallback(async () => {
     if (!viewingStream) return;
@@ -1638,12 +1658,21 @@ export default function App() {
 
   const handleSendDirectMessage = useCallback(async (text) => {
     if (!text.trim() || !activeConversationId) return;
+    const isUserMuted = Boolean(
+      currentUser?.is_muted ||
+      currentUser?.isMuted ||
+      safeStorage.getItem('vlive_is_muted') === 'true'
+    );
+    if (isUserMuted) {
+      showToast(loc('🚫 چت شما توسط مدیریت مسدود و توقیف شده است.', '🚫 Your chat has been muted by the admin.'));
+      return;
+    }
     try {
       await apiMessages.sendMessage(activeConversationId, text);
     } catch (err) {
       showToast(loc('خطا در ارسال پیام', 'Error sending message'));
     }
-  }, [activeConversationId, showToast]);
+  }, [activeConversationId, currentUser, showToast, loc]);
 
   const handleTranslateChatMessage = useCallback(async (msgId, text) => {
     let isToggledOff = false;
@@ -3061,21 +3090,40 @@ export default function App() {
     const handleUserUpdatedEvent = (e) => {
       const detail = e.detail;
       if (!detail) return;
+      const updates = detail.updates || detail;
       setUsersList(prev => (prev || []).map(u => {
         if ((detail.userId && u.id === detail.userId) || (detail.username && u.username === detail.username)) {
-          return { ...u, ...detail };
+          return { ...u, ...updates };
         }
         return u;
       }));
       setAdminUsersList(prev => (prev || []).map(u => {
         if ((detail.userId && u.id === detail.userId) || (detail.username && u.username === detail.username)) {
-          return { ...u, ...detail };
+          return { ...u, ...updates };
         }
         return u;
       }));
-      if (detail.userId === currentUser?.id || detail.username === currentUsername) {
-        setCurrentUser(prev => prev ? { ...prev, ...detail } : prev);
-        if (typeof detail.coins === 'number') setUserCoins(detail.coins);
+      if (detail.userId === currentUser?.id || detail.username === currentUsername || String(detail.userId) === String(getUserId())) {
+        setCurrentUser(prev => prev ? { ...prev, ...updates } : prev);
+        if (typeof updates.coins === 'number') setUserCoins(updates.coins);
+        if (typeof updates.is_verified === 'boolean') {
+          setIsVerified(updates.is_verified);
+          safeStorage.setItem('vlive_is_verified', updates.is_verified ? 'true' : 'false');
+        }
+        if (typeof updates.is_vip === 'boolean') {
+          const plan = updates.is_vip ? (updates.vip_plan || 'VIP_PREMIUM') : 'Free';
+          setVipPlan(plan);
+          safeStorage.setItem('vlive_vip_plan', plan);
+        }
+        if (typeof updates.is_muted === 'boolean') {
+          safeStorage.setItem('vlive_is_muted', updates.is_muted ? 'true' : 'false');
+        }
+        if (typeof updates.is_banned === 'boolean') {
+          safeStorage.setItem('vlive_is_banned', updates.is_banned ? 'true' : 'false');
+        }
+        if (typeof updates.is_streamer === 'boolean') {
+          safeStorage.setItem('vlive_is_streamer', updates.is_streamer ? 'true' : 'false');
+        }
       }
     };
 
@@ -3273,50 +3321,74 @@ export default function App() {
     return <VLiveEntrySplashLoader onLoadingComplete={handleInitialSplashComplete} />;
   }
 
-  // MANAGEMENT APPROVAL CHECK
-  const isManagementApproved = Boolean(
+  // CHECK IF CURRENT USER IS BANNED BY ADMIN
+  const isUserBanned = Boolean(
+    currentUser?.is_banned ||
+    currentUser?.isBanned ||
+    currentUser?.status === 'banned' ||
+    safeStorage.getItem('vlive_is_banned') === 'true'
+  );
+
+  if (isLoggedIn && isUserBanned && !isUserAdmin && !isUserSuperAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 text-center" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="max-w-md w-full p-8 rounded-3xl bg-slate-900 border border-rose-500/50 shadow-[0_0_50px_rgba(244,63,94,0.3)] space-y-6">
+          <div className="w-20 h-20 mx-auto rounded-3xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 text-3xl">
+            <Ban className="w-10 h-10" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-black text-white">{loc('حساب کاربری مسدود شده است', 'Account Banned')}</h2>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              {loc('دسترسی شما به برنامه توسط مدیریت مسدود شده است.', 'Your account access has been banned by the administrator.')}
+            </p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full py-3.5 rounded-2xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 font-bold text-xs transition"
+          >
+            {loc('خروج از حساب', 'Log Out')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // STRICT RULE: Streamer broadcasting access is strictly controlled by Admin.
+  // When Admin promotes or activates streamer access for ANY user, system obeys immediately!
+  const isStreamerUser = Boolean(
     isUserAdmin ||
-    
+    isUserSuperAdmin ||
+    currentUser?.is_streamer ||
+    currentUser?.isStreamer ||
+    currentUser?.can_live_stream ||
+    currentUser?.user_type === 'STREAMER' ||
     userRole === 'streamer' ||
     userRole === 'admin' ||
     userRole === 'super_admin' ||
-    currentUser?.role === 'streamer' ||
-    currentUser?.role === 'admin' ||
-    currentUser?.role === 'super_admin' ||
-    currentUser?.user_type === 'STREAMER' ||
-    currentUser?.isStreamer ||
-    currentUser?.is_streamer ||
-    currentUser?.isHost ||
     (kycApplications && Array.isArray(kycApplications) && kycApplications.some(a => (a.username === (currentUsername || userName) || a.user_id === currentUser?.id) && a.status === 'Approved'))
   );
-
-  // STRICT RULE: Streamer status requires Female gender AND Management Approval for regular users.
-  // ADMIN RULE: Admin has NO restrictions, NO approval requirements, and NO gender rules whatsoever!
-  const isStreamerUser = Boolean(isUserAdmin || (isFemaleUser && isManagementApproved));
 
   const isApprovedStreamerOrAdmin = Boolean(isUserAdmin || isStreamerUser);
 
   const handleOpenLiveBroadcast = () => {
-    // Admin has direct full access without any gender check or KYC requirement
-    if (isUserAdmin) {
+    // 1. Admin has direct full access without any restrictions
+    if (isUserAdmin || isUserSuperAdmin) {
       setIsLiveStudioOpen(true);
       return;
     }
-    if (!isFemaleUser) {
-      showToast(loc('🔒 ثبت‌نام و فعالیت و اجرای لایواستریم منحصراً مختص کاربران خانم می‌باشد.', '🔒 Live broadcast activity is strictly for female users.'));
-      return;
-    }
+    // 2. If user has been granted streamer status by Admin, allow immediately!
     if (isStreamerUser) {
       setIsLiveStudioOpen(true);
-    } else {
-      const userApp = (kycApplications || []).find(a => (a.username === (currentUsername || userName) || a.user_id === currentUser?.id));
-      if (userApp && userApp.status === 'Pending') {
-        showToast(loc('⏳ درخواست احراز هویت اجرای لایو شما در انتظار بررسی توسط مدیریت است', '⏳ Your live KYC application is pending admin review'));
-      } else {
-        showToast(loc('🔒 دسترسی به اجرای زنده نیازمند تایید توسط مدیریت است.', '🔒 Live broadcasting requires admin verification.'));
-      }
-      setIsBecomeStreamerModalOpen(true);
+      return;
     }
+    // 3. Non-streamer users cannot stream without admin grant
+    const userApp = (kycApplications || []).find(a => (a.username === (currentUsername || userName) || a.user_id === currentUser?.id));
+    if (userApp && userApp.status === 'Pending') {
+      showToast(loc('⏳ درخواست احراز هویت اجرای لایو شما در انتظار تایید مدیریت است', '⏳ Your live KYC application is pending admin review'));
+    } else {
+      showToast(loc('🔒 دسترسی به اجرای پخش زنده منحصراً باید توسط ادمین فعال شود.', '🔒 Live broadcasting access must be granted by the admin.'));
+    }
+    setIsBecomeStreamerModalOpen(true);
   };
 
   return <VisualUiEditorProvider isSuperAdmin={isUserSuperAdmin} showToast={showToast}>

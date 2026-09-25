@@ -544,6 +544,17 @@ export default function ChatTab(props) {
     const textToSend = typeof customText === 'string' ? customText.trim() : directInputText.trim();
     if (!textToSend || !activeConversationId) return;
 
+    const isMutedUser = Boolean(
+      currentUser?.is_muted ||
+      currentUser?.isMuted ||
+      props.isMuted ||
+      localStorage.getItem('vlive_is_muted') === 'true'
+    );
+    if (isMutedUser) {
+      showToast(window.loc('🚫 چت شما توسط مدیریت مسدود و توقیف شده است.', '🚫 Your chat has been muted by the admin.'));
+      return;
+    }
+
     if (conversationLimitInfo.isWaitingForFirstReply) {
       showToast(window.loc('⏳ لطفاً منتظر بمانید تا طرف مقابل به پیام اول شما پاسخ دهد.', '⏳ Please wait for recipient to reply to your first message before continuing.'));
       return;
