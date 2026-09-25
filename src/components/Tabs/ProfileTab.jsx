@@ -669,7 +669,8 @@ export default function ProfileTab(props) {
         const res = await apiProfile.unfollowUser(targetProfileId);
         if (res && res.success) {
           setIsUserFollowedState(false);
-          showToast(window.loc('لغو دنبال کردن انجام شد', 'Unfollowed'));
+          setFollowingList(apiProfile.getFollowingList());
+          showToast(window.loc('لغو دنبال کردن انجام شد (آن‌فالو)', 'Unfollowed successfully'));
         }
       } else {
         const targetObj = {
@@ -681,11 +682,46 @@ export default function ProfileTab(props) {
         const res = await apiProfile.followUser(targetObj);
         if (res && res.success) {
           setIsUserFollowedState(true);
+          setFollowingList(apiProfile.getFollowingList());
           showToast(window.loc('✓ کاربر را دنبال کردید', '✓ Followed user'));
         }
       }
     } catch (err) {
       console.warn('handleToggleFollow err:', err);
+    }
+  };
+
+  const handleFollowItem = async (targetUser, e) => {
+    if (e) e.stopPropagation();
+    try {
+      const targetObj = {
+        id: targetUser.id || targetUser.username,
+        username: targetUser.username || targetUser.id || 'user',
+        name: targetUser.name || targetUser.fullName || targetUser.username || 'User',
+        avatar: targetUser.avatar || targetUser.userAvatar || targetUser.avatar_url || '',
+        level: targetUser.level || targetUser.user_level || 1
+      };
+      const res = await apiProfile.followUser(targetObj);
+      if (res && res.success) {
+        setFollowingList(apiProfile.getFollowingList());
+        showToast(window.loc('✓ فالو بک انجام شد', '✓ Followed back successfully'));
+      }
+    } catch (err) {
+      console.warn('handleFollowItem err:', err);
+    }
+  };
+
+  const handleUnfollowItem = async (targetUser, e) => {
+    if (e) e.stopPropagation();
+    try {
+      const targetId = targetUser.id || targetUser.username;
+      const res = await apiProfile.unfollowUser(targetId);
+      if (res && res.success) {
+        setFollowingList(apiProfile.getFollowingList());
+        showToast(window.loc('✓ لغو دنبال کردن (آن‌فالو) با موفقیت انجام شد', '✓ Unfollowed successfully'));
+      }
+    } catch (err) {
+      console.warn('handleUnfollowItem err:', err);
     }
   };
 
@@ -1282,48 +1318,79 @@ export default function ProfileTab(props) {
 
                 <div className="space-y-2.5">
                   {followersList.length > 0 ? (
-                    followersList.map((u, idx) => (
-                      <div 
-                        key={u.id || u.username || idx} 
-                        onClick={() => handleOpenUserProfile(u)}
-                        className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-indigo-500/60 hover:bg-slate-900/90 transition flex items-center gap-3.5 shadow-sm cursor-pointer group active:scale-[0.99]"
-                      >
-                        {/* Profile Avatar with Tilted VIP Crown and Bottom-Right Level Badge */}
-                        <div className="relative w-12 h-12 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
-                          {/* Tilted VIP Crown (Top-Left) */}
-                          {Boolean(u.isVIP || u.vip || u.is_vip || (u.vipPlan && u.vipPlan !== 'none')) && (
-                            <div className="absolute -top-2.5 -left-2 z-10 transform -rotate-[22deg] pointer-events-none">
-                              <Crown className="w-5 h-5 text-amber-400 fill-amber-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
-                            </div>
-                          )}
+                    followersList.map((u, idx) => {
+                      const isFollowedByMe = followingList.some(f => String(f.id) === String(u.id) || String(f.username).toLowerCase() === String(u.username).toLowerCase()) || apiProfile.isUserFollowed(u.id || u.username);
+                      return (
+                        <div 
+                          key={u.id || u.username || idx} 
+                          onClick={() => handleOpenUserProfile(u)}
+                          className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-indigo-500/60 hover:bg-slate-900/90 transition flex items-center justify-between gap-3 shadow-sm cursor-pointer group active:scale-[0.99]"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            {/* Profile Avatar with Tilted VIP Crown and Bottom-Right Level Badge */}
+                            <div className="relative w-12 h-12 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
+                              {/* Tilted VIP Crown (Top-Left) */}
+                              {Boolean(u.isVIP || u.vip || u.is_vip || (u.vipPlan && u.vipPlan !== 'none')) && (
+                                <div className="absolute -top-2.5 -left-2 z-10 transform -rotate-[22deg] pointer-events-none">
+                                  <Crown className="w-5 h-5 text-amber-400 fill-amber-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                                </div>
+                              )}
 
-                          {/* Avatar Image */}
-                          {(u.avatar || u.userAvatar || u.avatar_url) ? (
-                            <img 
-                              src={u.avatar || u.userAvatar || u.avatar_url} 
-                              alt={u.username || 'User'} 
-                              className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900 group-hover:border-indigo-400/80 transition-colors" 
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 group-hover:border-indigo-400/80 flex items-center justify-center text-slate-400 transition-colors">
-                              <User className="w-6 h-6" />
-                            </div>
-                          )}
+                              {/* Avatar Image */}
+                              {(u.avatar || u.userAvatar || u.avatar_url) ? (
+                                <img 
+                                  src={u.avatar || u.userAvatar || u.avatar_url} 
+                                  alt={u.username || 'User'} 
+                                  className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900 group-hover:border-indigo-400/80 transition-colors" 
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 group-hover:border-indigo-400/80 flex items-center justify-center text-slate-400 transition-colors">
+                                  <User className="w-6 h-6" />
+                                </div>
+                              )}
 
-                          {/* User Level Number (Bottom-Right) */}
-                          <div className="absolute -bottom-1 -right-1 z-10 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-[10px] min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center border-2 border-slate-950 shadow-md font-mono">
-                            {formatNum(u.level || u.user_level || 1)}
+                              {/* User Level Number (Bottom-Right) */}
+                              <div className="absolute -bottom-1 -right-1 z-10 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-[10px] min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center border-2 border-slate-950 shadow-md font-mono">
+                                {formatNum(u.level || u.user_level || 1)}
+                              </div>
+                            </div>
+
+                            {/* Username */}
+                            <div className="flex flex-col justify-center min-w-0">
+                              <span className="font-bold text-white text-sm truncate group-hover:text-indigo-300 transition-colors" dir="ltr">
+                                @{u.username ? u.username.replace(/^@/, '') : (u.name || 'user')}
+                              </span>
+                              {u.name && u.name !== u.username && (
+                                <span className="text-slate-400 text-xs truncate">{u.name}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Follow Back or Unfollow Action Button */}
+                          <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                            {isFollowedByMe ? (
+                              <button
+                                onClick={(e) => handleUnfollowItem(u, e)}
+                                className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-rose-950/70 border border-slate-700 hover:border-rose-500/60 text-slate-300 hover:text-rose-300 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                                title={window.loc('آن‌فالو (لغو دنبال کردن)', 'Unfollow')}
+                              >
+                                <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>{window.loc('آن‌فالو', 'Unfollow')}</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={(e) => handleFollowItem(u, e)}
+                                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 hover:opacity-90 text-white text-xs font-black shadow-md shadow-pink-500/20 transition-all flex items-center gap-1.5 active:scale-95"
+                                title={window.loc('فالو بک (دنبال کردن متقابل)', 'Follow Back')}
+                              >
+                                <UserPlus className="w-3.5 h-3.5" />
+                                <span>{window.loc('فالو بک', 'Follow Back')}</span>
+                              </button>
+                            )}
                           </div>
                         </div>
-
-                        {/* Username Only */}
-                        <div className="flex flex-col justify-center min-w-0 flex-1">
-                          <span className="font-bold text-white text-sm truncate group-hover:text-indigo-300 transition-colors" dir="ltr">
-                            @{u.username ? u.username.replace(/^@/, '') : (u.name || 'user')}
-                          </span>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="text-center py-12 px-4 rounded-2xl bg-slate-950 border border-dashed border-slate-800 space-y-3">
                       <Users className="w-10 h-10 text-slate-600 mx-auto" />
@@ -1346,48 +1413,79 @@ export default function ProfileTab(props) {
 
                 <div className="space-y-2.5">
                   {followingList.length > 0 ? (
-                    followingList.map((u, idx) => (
-                      <div 
-                        key={u.id || u.username || idx} 
-                        onClick={() => handleOpenUserProfile(u)}
-                        className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-blue-500/60 hover:bg-slate-900/90 transition flex items-center gap-3.5 shadow-sm cursor-pointer group active:scale-[0.99]"
-                      >
-                        {/* Profile Avatar with Tilted VIP Crown and Bottom-Right Level Badge */}
-                        <div className="relative w-12 h-12 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
-                          {/* Tilted VIP Crown (Top-Left) */}
-                          {Boolean(u.isVIP || u.vip || u.is_vip || (u.vipPlan && u.vipPlan !== 'none')) && (
-                            <div className="absolute -top-2.5 -left-2 z-10 transform -rotate-[22deg] pointer-events-none">
-                              <Crown className="w-5 h-5 text-amber-400 fill-amber-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
-                            </div>
-                          )}
+                    followingList.map((u, idx) => {
+                      const isCurrentlyFollowed = apiProfile.isUserFollowed(u.id || u.username) || followingList.some(f => String(f.id) === String(u.id) || String(f.username).toLowerCase() === String(u.username).toLowerCase());
+                      return (
+                        <div 
+                          key={u.id || u.username || idx} 
+                          onClick={() => handleOpenUserProfile(u)}
+                          className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 hover:border-blue-500/60 hover:bg-slate-900/90 transition flex items-center justify-between gap-3 shadow-sm cursor-pointer group active:scale-[0.99]"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            {/* Profile Avatar with Tilted VIP Crown and Bottom-Right Level Badge */}
+                            <div className="relative w-12 h-12 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
+                              {/* Tilted VIP Crown (Top-Left) */}
+                              {Boolean(u.isVIP || u.vip || u.is_vip || (u.vipPlan && u.vipPlan !== 'none')) && (
+                                <div className="absolute -top-2.5 -left-2 z-10 transform -rotate-[22deg] pointer-events-none">
+                                  <Crown className="w-5 h-5 text-amber-400 fill-amber-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                                </div>
+                              )}
 
-                          {/* Avatar Image */}
-                          {(u.avatar || u.userAvatar || u.avatar_url) ? (
-                            <img 
-                              src={u.avatar || u.userAvatar || u.avatar_url} 
-                              alt={u.username || 'User'} 
-                              className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900 group-hover:border-blue-400/80 transition-colors" 
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 group-hover:border-blue-400/80 flex items-center justify-center text-slate-400 transition-colors">
-                              <User className="w-6 h-6" />
-                            </div>
-                          )}
+                              {/* Avatar Image */}
+                              {(u.avatar || u.userAvatar || u.avatar_url) ? (
+                                <img 
+                                  src={u.avatar || u.userAvatar || u.avatar_url} 
+                                  alt={u.username || 'User'} 
+                                  className="w-12 h-12 rounded-full object-cover border border-slate-700 bg-slate-900 group-hover:border-blue-400/80 transition-colors" 
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 group-hover:border-blue-400/80 flex items-center justify-center text-slate-400 transition-colors">
+                                  <User className="w-6 h-6" />
+                                </div>
+                              )}
 
-                          {/* User Level Number (Bottom-Right) */}
-                          <div className="absolute -bottom-1 -right-1 z-10 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-[10px] min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center border-2 border-slate-950 shadow-md font-mono">
-                            {formatNum(u.level || u.user_level || 1)}
+                              {/* User Level Number (Bottom-Right) */}
+                              <div className="absolute -bottom-1 -right-1 z-10 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-[10px] min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center border-2 border-slate-950 shadow-md font-mono">
+                                {formatNum(u.level || u.user_level || 1)}
+                              </div>
+                            </div>
+
+                            {/* Username */}
+                            <div className="flex flex-col justify-center min-w-0">
+                              <span className="font-bold text-white text-sm truncate group-hover:text-blue-300 transition-colors" dir="ltr">
+                                @{u.username ? u.username.replace(/^@/, '') : (u.name || 'user')}
+                              </span>
+                              {u.name && u.name !== u.username && (
+                                <span className="text-slate-400 text-xs truncate">{u.name}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Unfollow / Follow Action Button */}
+                          <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                            {isCurrentlyFollowed ? (
+                              <button
+                                onClick={(e) => handleUnfollowItem(u, e)}
+                                className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-rose-950/70 border border-slate-700 hover:border-rose-500/60 text-slate-300 hover:text-rose-300 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                                title={window.loc('آن‌فالو (لغو دنبال کردن)', 'Unfollow')}
+                              >
+                                <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>{window.loc('آن‌فالو', 'Unfollow')}</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={(e) => handleFollowItem(u, e)}
+                                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 text-white text-xs font-black shadow-md transition-all flex items-center gap-1.5 active:scale-95"
+                                title={window.loc('دنبال کردن مجدد', 'Follow Again')}
+                              >
+                                <UserPlus className="w-3.5 h-3.5" />
+                                <span>{window.loc('دنبال کردن', 'Follow')}</span>
+                              </button>
+                            )}
                           </div>
                         </div>
-
-                        {/* Username Only */}
-                        <div className="flex flex-col justify-center min-w-0 flex-1">
-                          <span className="font-bold text-white text-sm truncate group-hover:text-blue-300 transition-colors" dir="ltr">
-                            @{u.username ? u.username.replace(/^@/, '') : (u.name || 'user')}
-                          </span>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="text-center py-12 px-4 rounded-2xl bg-slate-950 border border-dashed border-slate-800 space-y-3">
                       <UserCheck className="w-10 h-10 text-slate-600 mx-auto" />

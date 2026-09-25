@@ -326,7 +326,7 @@ export default function ActiveCallOverlay({
             <button
               onClick={(e) => { e.stopPropagation(); handleToggleCameraCall(); }}
               className={`p-3.5 rounded-2xl border transition active:scale-95 shadow-lg ${activeCall.isCameraOff ? 'bg-rose-600 text-white border-rose-500 shadow-rose-600/30' : 'bg-slate-900/90 text-slate-200 border-slate-700 hover:border-pink-500/50'}`}
-              title={activeCall.isCameraOff ? loc('روشن کردن دوربین 📹', 'Turn camera on 📹') : loc('خاموش کردن دوربین 📷', 'Turn camera off 📷')}
+              title={activeCall.isCameraOff ? loc('روشن کردن دوربین 📹', 'Turn camera on 📹') : loc('خاموش کردن دوربین 📹', 'Turn camera off 📹')}
             >
               {activeCall.isCameraOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
             </button>

@@ -733,8 +733,8 @@ export default function UserOnboardingModal({
                         onClick={startCamera}
                         className="flex-1 py-3 rounded-2xl bg-pink-500 hover:bg-pink-400 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-pink-500/30"
                       >
-                        <Camera className="w-4 h-4" />
-                        <span>روشن کردن دوربین زنده 📷</span>
+                        <Video className="w-4 h-4" />
+                        <span>روشن کردن دوربین زنده 📹</span>
                       </button>
                     ) : (
                       <button

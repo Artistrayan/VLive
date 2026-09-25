@@ -104,6 +104,16 @@ export default function UserProfileViewModal({
       };
       window.addEventListener('vlive_profile_liked', handleLikeEvent);
 
+      // Realtime listener for follow updates
+      const handleFollowSync = (e) => {
+        if (e?.detail && (String(e.detail.targetId) === String(targetId) || String(e.detail.targetId) === String(user.username))) {
+          if (typeof e.detail.isFollowing === 'boolean') {
+            setIsFollowing(e.detail.isFollowing);
+          }
+        }
+      };
+      window.addEventListener('vlive_follow_changed', handleFollowSync);
+
       // Record profile view in real-time
       if (targetId) {
         apiProfile.recordProfileView(targetId, currentUser).then(res => {
@@ -115,6 +125,7 @@ export default function UserProfileViewModal({
 
       return () => {
         window.removeEventListener('vlive_profile_liked', handleLikeEvent);
+        window.removeEventListener('vlive_follow_changed', handleFollowSync);
       };
     }
   }, [user, isOpen]);
@@ -142,6 +153,15 @@ export default function UserProfileViewModal({
 
   const isSelf = currentUser && user && ((String(currentUser.id) === String(user.id)) || (String(currentUser.username) === String(user.username)));
 
+  const isFollowerOfCurrentUser = (() => {
+    try {
+      const followers = apiProfile.getFollowersList();
+      return followers.some(f => String(f.id) === String(user?.id) || (user?.username && String(f.username).toLowerCase() === String(user.username).toLowerCase())) || Boolean(user?.isFollower || user?.is_follower);
+    } catch {
+      return false;
+    }
+  })();
+
   const publicPhotos = (fetchedPhotos && fetchedPhotos.length > 0)
     ? fetchedPhotos
     : (Array.isArray(user?.photos) ? user.photos : []);
@@ -165,7 +185,11 @@ export default function UserProfileViewModal({
     }
 
     onFollowToggle(user, nextState);
-    showToast(nextState ? window.loc(`با موفقیت ${userName} را دنبال کردید 👤`, `You followed ${userName} 👤`) : window.loc(`دنبال کردن لغو شد`, `Unfollowed successfully`));
+    if (nextState) {
+      showToast(isFollowerOfCurrentUser ? window.loc(`✓ فالو بک با موفقیت انجام شد`, `✓ Followed back successfully`) : window.loc(`با موفقیت ${userName} را دنبال کردید 👤`, `You followed ${userName} 👤`));
+    } else {
+      showToast(window.loc(`لغو دنبال کردن انجام شد (آن‌فالو)`, `Unfollowed successfully`));
+    }
   };
 
   const toggleLike = async () => {
@@ -325,14 +349,30 @@ export default function UserProfileViewModal({
 
                   <button
                     onClick={toggleFollow}
-                    className={`px-5 py-2.5 rounded-2xl font-black text-xs shadow-lg transition flex items-center gap-1.5 ${
+                    className={`px-5 py-2.5 rounded-2xl font-black text-xs shadow-lg transition-all flex items-center gap-1.5 active:scale-95 ${
                       isFollowing
-                        ? 'bg-slate-800 text-slate-200 border border-slate-700'
-                        : 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white shadow-pink-500/30'
+                        ? 'bg-slate-800 hover:bg-rose-950/70 text-slate-200 hover:text-rose-300 border border-slate-700 hover:border-rose-500/50'
+                        : isFollowerOfCurrentUser
+                          ? 'bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white shadow-pink-500/30'
+                          : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-cyan-500/30'
                     }`}
                   >
-                    {isFollowing ? <UserCheck className="w-4 h-4 text-emerald-400" /> : <Users className="w-4 h-4" />}
-                    <span>{isFollowing ? window.loc('دنبال می‌کنید', 'Following') : window.loc('دنبال کردن', 'Follow')}</span>
+                    {isFollowing ? (
+                      <>
+                        <UserCheck className="w-4 h-4 text-emerald-400" />
+                        <span>{window.loc('آن‌فالو', 'Unfollow')}</span>
+                      </>
+                    ) : isFollowerOfCurrentUser ? (
+                      <>
+                        <UserPlus className="w-4 h-4" />
+                        <span>{window.loc('فالو بک', 'Follow Back')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4" />
+                        <span>{window.loc('دنبال کردن', 'Follow')}</span>
+                      </>
+                    )}
                   </button>
                 </>
               )}

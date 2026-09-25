@@ -93,12 +93,12 @@ const DEFAULT_ECONOMY_CONFIG = {
   // 8. Daily Reward Consecutive Schedule
   dailyRewardSchedule: [
     { day: 1, hearts: 3, cameras: 0, coins: 0, vip24h: 0, icon: '❤️', title: '۳ عدد قلب', titleEn: '3 Hearts', actionType: 'match' },
-    { day: 2, hearts: 0, cameras: 1, coins: 0, vip24h: 0, icon: '📷', title: '۱ عدد دوربین', titleEn: '1 Camera Voucher', actionType: 'video_call' },
+    { day: 2, hearts: 0, cameras: 1, coins: 0, vip24h: 0, icon: '📹', title: '۱ عدد دوربین فیلمبرداری', titleEn: '1 Video Camera Voucher', actionType: 'video_call' },
     { day: 3, hearts: 0, cameras: 0, coins: 10, vip24h: 0, icon: '🪙', title: '۱۰ سکه', titleEn: '10 Coins', actionType: 'coins' },
     { day: 4, hearts: 0, cameras: 0, coins: 15, vip24h: 0, icon: '🪙', title: '۱۵ سکه', titleEn: '15 Coins', actionType: 'coins' },
-    { day: 5, hearts: 3, cameras: 1, coins: 0, vip24h: 0, icon: '📷❤️', title: '۱ عدد دوربین + ۳ عدد قلب', titleEn: '1 Camera + 3 Hearts', actionType: 'combo' },
+    { day: 5, hearts: 3, cameras: 1, coins: 0, vip24h: 0, icon: '📹❤️', title: '۱ عدد دوربین فیلمبرداری + ۳ عدد قلب', titleEn: '1 Video Camera + 3 Hearts', actionType: 'combo' },
     { day: 6, hearts: 0, cameras: 0, coins: 40, vip24h: 0, icon: '🪙', title: '۴۰ سکه', titleEn: '40 Coins', actionType: 'coins' },
-    { day: 7, hearts: 0, cameras: 1, coins: 0, vip24h: 1, icon: '👑📷', title: 'اشتراک VIP ۲۴ ساعته + ۱ عدد دوربین', titleEn: '24h VIP + 1 Camera', actionType: 'vip_combo' }
+    { day: 7, hearts: 0, cameras: 1, coins: 0, vip24h: 1, icon: '👑📹', title: 'اشتراک VIP ۲۴ ساعته + ۱ عدد دوربین فیلمبرداری', titleEn: '24h VIP + 1 Video Camera', actionType: 'vip_combo' }
   ],
 
   // 9. Referral Settings

@@ -497,7 +497,7 @@ export default function GiftBoxTab({
               <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-cyan-500/20 space-y-1.5">
                 <div className="flex items-center gap-2 text-cyan-400 font-bold">
                   <Video className="w-4 h-4" />
-                  <span>{loc('کوپن دوربین 📷', 'Camera Voucher 📷')}</span>
+                  <span>{loc('کوپن دوربین فیلمبرداری 📹', 'Video Camera Voucher 📹')}</span>
                 </div>
                 <p className="text-[11px] text-slate-400">
                   {loc(
@@ -595,7 +595,7 @@ export default function GiftBoxTab({
                   {loc('کوپن تماس تصویری', 'Video Call Vouchers')}
                 </span>
                 <div className="text-3xl font-black text-white font-mono mt-1">
-                  {userAssets.cameras} <span className="text-sm font-sans font-bold text-cyan-400">{loc('دوربین 📷', 'Cameras 📷')}</span>
+                  {userAssets.cameras} <span className="text-sm font-sans font-bold text-cyan-400">{loc('دوربین 📹', 'Cameras 📹')}</span>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
                   {loc('تماس تصویری اختیاری ۱ دقیقه بدون هزینه اولیه', '1-min optional video call with free first minute')}
@@ -784,7 +784,7 @@ export default function GiftBoxTab({
                         )}
                         {item.cameras > 0 && (
                           <span className="px-2 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-300 font-mono">
-                            +{item.cameras} 📷
+                            +{item.cameras} 📹
                           </span>
                         )}
                         {item.coins > 0 && (

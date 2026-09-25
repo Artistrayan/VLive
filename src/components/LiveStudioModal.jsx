@@ -638,7 +638,7 @@ export default function LiveStudioModal({
 
         showToast(
           finalFacing === 'environment'
-            ? window.loc('دوربین عقب فعال شد 📷', 'Switched to rear camera 📷')
+            ? window.loc('دوربین عقب فعال شد 📹', 'Switched to rear camera 📹')
             : window.loc('دوربین جلو فعال شد 🤳', 'Switched to front camera 🤳')
         );
       }

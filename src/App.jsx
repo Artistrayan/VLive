@@ -1105,7 +1105,7 @@ export default function App() {
       const nextCameraOff = !prev.isCameraOff;
       livekitManager.toggleVideo(!nextCameraOff);
       livekitManager.toggleCamera(!nextCameraOff);
-      showToast(nextCameraOff ? loc('دوربین شما خاموش شد 📷', 'Your camera is off 📷') : loc('دوربین شما روشن شد 📹', 'Your camera is on 📹'));
+      showToast(nextCameraOff ? loc('دوربین شما خاموش شد 📹', 'Your camera is off 📹') : loc('دوربین شما روشن شد 📹', 'Your camera is on 📹'));
       return { ...prev, isCameraOff: nextCameraOff };
     });
   }, [showToast, loc]);

@@ -213,7 +213,7 @@ export default function SettingsModal(props) {
 
     if (key === 'camera') {
       safeStorage.setItem('vlive_camera_permission_granted', nextVal ? 'true' : 'false');
-      showToast(nextVal ? safeLoc('دسترسی دوربین فعال شد 📷', 'Camera access enabled 📷') : safeLoc('دسترسی دوربین غیرفعال شد', 'Camera access disabled'));
+      showToast(nextVal ? safeLoc('دسترسی دوربین فیلمبرداری فعال شد 📹', 'Camera access enabled 📹') : safeLoc('دسترسی دوربین غیرفعال شد', 'Camera access disabled'));
     } else if (key === 'microphone') {
       safeStorage.setItem('vlive_mic_permission_granted', nextVal ? 'true' : 'false');
       showToast(nextVal ? safeLoc('دسترسی میکروفون فعال شد 🎙️', 'Microphone access enabled 🎙️') : safeLoc('دسترسی میکروفون غیرفعال شد', 'Microphone access disabled'));
