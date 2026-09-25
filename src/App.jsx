@@ -29,6 +29,8 @@ import StreamerDashboardModal from './components/StreamerDashboardModal';
 import WalletTab from './components/Tabs/WalletTab';
 import ChatTab from './components/Tabs/ChatTab';
 import ProfileTab from './components/Tabs/ProfileTab';
+import GiftBoxTab from './components/Tabs/GiftBoxTab';
+import { giftBoxService } from './services/giftBoxService';
 
 // Modals
 import UserOnboardingModal from './modals/UserOnboardingModal';
@@ -835,9 +837,14 @@ export default function App() {
     if (!targetUser) return;
 
     let isFreePassUsed = false;
+    let isCameraVoucherUsed = false;
     const requiredCoins = targetUser.tariffPerMin || 100;
-    
-    if (isRadarCall && !isUserSuperAdmin && freeMatchCallsLeft > 0) {
+    const normalizedCallType = (callType === 'voice' || callType === 'audio') ? 'audio' : 'video';
+    const userAssetData = giftBoxService.getUserAssets(currentUser?.id);
+
+    if (normalizedCallType === 'video' && userAssetData.cameras > 0) {
+      isCameraVoucherUsed = true;
+    } else if (isRadarCall && !isUserSuperAdmin && freeMatchCallsLeft > 0) {
       isFreePassUsed = true;
     } else if (!isUserSuperAdmin && userCoins < requiredCoins) {
       showToast(loc('موجودی سکه کافی نیست', 'Insufficient coins'));
@@ -847,7 +854,6 @@ export default function App() {
     setPreCallConfirmHost(null);
     try {
       showToast(loc('در حال ارسال درخواست تماس...', 'Calling...'));
-      const normalizedCallType = (callType === 'voice' || callType === 'audio') ? 'audio' : 'video';
       const res = await apiCalls.initiateCall({
         receiverId: targetUser.id || targetUser.username,
         receiverUser: targetUser,
@@ -856,7 +862,10 @@ export default function App() {
       });
 
       if (res && res.success) {
-        if (isFreePassUsed) {
+        if (isCameraVoucherUsed) {
+          giftBoxService.useCameraVoucher(currentUser?.id);
+          showToast(loc('📹 ۱ کوپن دوربین مصرف شد (۱ دقیقه اول رایگان)', '📹 1 Camera voucher used (1st min free)'));
+        } else if (isFreePassUsed) {
           setFreeMatchCallsLeft(prev => Math.max(0, prev - 1));
         }
 
@@ -3545,8 +3554,31 @@ export default function App() {
         <ChatTab currentUser={currentUser} currentUsername={currentUsername} vipPlan={vipPlan} setIsVipModalOpen={setIsVipModalOpen} userRole={userRole} isUserRayan={isUserRayan} activeTab={activeTab} usersList={usersList} txHistoryList={txHistoryList} userAvatar={userAvatar} userName={userName} totalUnreadMessages={totalUnreadMessages} msgSearchQuery={msgSearchQuery} setMsgSearchQuery={setMsgSearchQuery} msgSearchField={msgSearchField} setMsgSearchField={setMsgSearchField} msgFilterTab={msgFilterTab} setMsgFilterTab={setMsgFilterTab} isCreateGroupModalOpen={isCreateGroupModalOpen} setIsCreateGroupModalOpen={setIsCreateGroupModalOpen} newGroupName={newGroupName} setNewGroupName={setNewGroupName} newGroupDesc={newGroupDesc} setNewGroupDesc={setNewGroupDesc} isNewChatModalOpen={isNewChatModalOpen} setIsNewChatModalOpen={setIsNewChatModalOpen} isChatGalleryOpen={isChatGalleryOpen} setIsChatGalleryOpen={setIsChatGalleryOpen} isSendGiftInChatOpen={isSendGiftInChatOpen} setIsSendGiftInChatOpen={setIsSendGiftInChatOpen} conversations={conversations} setConversations={setConversations} activeConversationId={activeConversationId} setActiveConversationId={setActiveConversationId} chatSearchQuery={chatSearchQuery} setChatSearchQuery={setChatSearchQuery} isChatSearchOpen={isChatSearchOpen} setIsChatSearchOpen={setIsChatSearchOpen} activeChatCall={activeChatCall} setActiveChatCall={setActiveChatCall} isAutoTranslateActive={isAutoTranslateActive} setIsAutoTranslateActive={setIsAutoTranslateActive} handleTranslateChatMessage={handleTranslateChatMessage} handleSendDirectMessage={handleSendDirectMessage} handleInitiateCall={handleInitiateCall} userCoins={userCoins} setUserCoins={setUserCoins} langCode={currentAppLang} t={t} showToast={showToast} loc={loc} isRtl={isRtl} />
         {/* TAB 3: WALLET & EARNINGS TAB */}
         <WalletTab currentUser={currentUser} userRole={userRole} currentUsername={currentUsername} isUserRayan={isUserRayan} handleBuyService={handleBuyService} activeTab={activeTab} txHistoryList={txHistoryList} userCoins={userCoins} setUserCoins={setUserCoins} userDiamonds={userDiamonds} setUserDiamonds={setUserDiamonds} userCashBalance={userCashBalance} setUserCashBalance={setUserCashBalance} walletSubTab={walletSubTab} setWalletSubTab={setWalletSubTab} referralCode={referralCode} setIsVipModalOpen={setIsVipModalOpen} setIsReferralRulesModalOpen={setIsReferralRulesModalOpen} showToast={showToast} isVerified={isVerified} isUserSuperAdmin={isUserSuperAdmin} loc={loc} isRtl={isRtl} isStreamerUser={isStreamerUser} />
-        {/* TAB 4: PROFILE TAB */}
-        <ProfileTab currentUser={currentUser} userRole={userRole} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsKycModalOpen={setIsKycModalOpen} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userNickname={userNickname} setUserNickname={setUserNickname} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsLiveStudioOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={isVerified} isStreamerUser={isStreamerUser} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} advancedStories={advancedStories} setIsAddStoryModalOpen={setIsAddStoryModalOpen} setActiveStoryView={setActiveStoryView} setSelectedUser={setSelectedUser} setIsUserProfileModalOpen={setIsUserProfileModalOpen} />
+        {/* TAB 4: GIFT BOX & USER ASSETS TAB */}
+        {activeTab === 'giftbox' && (
+          <GiftBoxTab
+            currentUser={currentUser}
+            currentUsername={currentUsername}
+            userCoins={userCoins}
+            setUserCoins={setUserCoins}
+            userDiamonds={userDiamonds}
+            vipPlan={vipPlan}
+            isVip={isVip}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            showToast={showToast}
+            loc={loc}
+            isRtl={isRtl}
+            followedUsers={followedUsers}
+            txHistoryList={txHistoryList}
+            handleInitiateCall={handleInitiateCall}
+            setIsVipModalOpen={setIsVipModalOpen}
+          />
+        )}
+        {/* TAB 5: PROFILE TAB */}
+        {activeTab === 'profile' && (
+          <ProfileTab currentUser={currentUser} userRole={userRole} userGender={userGender} setUserGender={setUserGender} setIsBecomeStreamerModalOpen={setIsBecomeStreamerModalOpen} setIsKycModalOpen={setIsKycModalOpen} handleLogout={handleLogout} setIsAdminPanelOpen={setIsAdminPanelOpen} setAdminActiveTab={setAdminActiveTab} setActiveTab={setActiveTab} setIsStreamerCenterOpen={setIsStreamerCenterOpen} activeTab={activeTab} txHistoryList={txHistoryList} userAvatar={userAvatar} setUserAvatar={setUserAvatar} userName={userName} setUserName={setUserName} userNickname={userNickname} setUserNickname={setUserNickname} userBio={userBio} setUserBio={setUserBio} userCoins={userCoins} userDiamonds={userDiamonds} userCashBalance={userCashBalance} activeProfileTab={activeProfileTab} setActiveProfileTab={setActiveProfileTab} currentUsername={currentUsername} authUsername={authUsername} isUserRayan={isUserRayan} userLevel={userLevel} vipPlan={vipPlan} PRESET_AVATARS={PRESET_AVATARS} compressImageFile={compressImageFile} setIsVipModalOpen={setIsVipModalOpen} setIsLanguageModalOpen={setIsLanguageModalOpen} handleSelectLanguage={handleSelectLanguage} currentAppLang={currentAppLang} setIsQrCodeModalOpen={setIsQrCodeModalOpen} setWalletSubTab={setWalletSubTab} setIsLoggedIn={setIsLoggedIn} setAuthStep={setAuthStep} setIsHostLiveOpen={setIsLiveStudioOpen} setIsLiveStudioOpen={setIsLiveStudioOpen} isVerified={isVerified} isStreamerUser={isStreamerUser} followedUsers={followedUsers} usersList={usersList} adminReportsList={adminReportsList} adminWhitelist={adminWhitelist} adminRolesList={adminRolesList} setUsersList={setUsersList} addAdminAuditLog={addAdminAuditLog} showToast={showToast} loc={loc} setIsSupportModalOpen={setIsSupportModalOpen} advancedStories={advancedStories} setIsAddStoryModalOpen={setIsAddStoryModalOpen} setActiveStoryView={setActiveStoryView} setSelectedUser={setSelectedUser} setIsUserProfileModalOpen={setIsUserProfileModalOpen} />
+        )}
         </main>
       <nav className="fixed bottom-0 w-full max-w-[800px] z-40 bg-slate-950/90 backdrop-blur-3xl border-t border-slate-800/80 p-2 sm:px-6 flex justify-between items-center shadow-[0_-10px_40px_rgba(0,0,0,0.8)]">
         
@@ -3588,9 +3620,9 @@ export default function App() {
           )}
         </button>
 
-        {/* 5. Profile (👤) */}
-        <button onClick={() => setActiveTab('profile')} className={activeTab === 'profile' ? "relative -top-4 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.8)] border-2 border-white/10 active:scale-95 transition-all duration-300 group" : "flex flex-col items-center gap-1 p-2 rounded-2xl text-slate-500 hover:text-slate-300 active:scale-95 transition-all duration-300 group"} title={loc('پروفایل', 'Profile')}>
-          {activeTab === 'profile' ? <User className="w-6 h-6 font-black group-hover:scale-110 transition duration-300 drop-shadow-md" /> : <User className="w-6 h-6 group-hover:scale-110 transition duration-300" />}
+        {/* 5. Gift Box & User Assets (🎁) - Replaces Avatar Icon */}
+        <button onClick={() => setActiveTab('giftbox')} className={activeTab === 'giftbox' ? "relative -top-4 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-amber-400 via-pink-500 to-purple-600 text-white flex items-center justify-center shadow-[0_0_25px_rgba(245,158,11,0.8)] border-2 border-white/20 active:scale-95 transition-all duration-300 group" : "flex flex-col items-center gap-1 p-2 rounded-2xl text-slate-500 hover:text-slate-300 active:scale-95 transition-all duration-300 group"} title={loc('جعبه کادو و دارایی‌ها', 'Gift Box & Assets')}>
+          {activeTab === 'giftbox' ? <Gift className="w-6 h-6 font-black group-hover:scale-110 transition duration-300 drop-shadow-md text-amber-300 animate-pulse" /> : <Gift className="w-6 h-6 group-hover:scale-110 transition duration-300 text-pink-400" />}
         </button>
 
       </nav>
@@ -3672,7 +3704,7 @@ export default function App() {
 
       {/* FLOATING DRAGGABLE ANIMATED DAILY GIFT */}
       <FloatingDailyGift 
-        onClick={() => setIsRewardOpeningModalOpen(true)} 
+        onClick={() => setActiveTab('giftbox')} 
         userId={currentUser?.id || getUserId?.() || 'me'} 
       />
 
@@ -3819,7 +3851,7 @@ export default function App() {
         })()}
       
       {/* ==================== PRE-CALL PAID TARIFF CONFIRMATION MODAL ==================== */}
-      <PreCallConfirmModal preCallConfirmHost={preCallConfirmHost} isRtl={isRtl} loc={loc} userCoins={userCoins} setPreCallConfirmHost={setPreCallConfirmHost} handleStartCallDirect={handleStartCallDirect} />
+      <PreCallConfirmModal preCallConfirmHost={preCallConfirmHost} isRtl={isRtl} loc={loc} userCoins={userCoins} setPreCallConfirmHost={setPreCallConfirmHost} handleStartCallDirect={handleStartCallDirect} currentUser={currentUser} />
 
       {/* ==================== POST-CALL RATING & FEEDBACK MODAL ==================== */}
       {postCallRatingData && (
